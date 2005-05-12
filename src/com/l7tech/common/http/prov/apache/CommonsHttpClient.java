@@ -19,13 +19,14 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * GenericHttpClient driver for the Apache Commons HTTP client.
  */
 public class CommonsHttpClient implements GenericHttpClient {
+    private static final Logger logger = Logger.getLogger(CommonsHttpClient.class.getName());
     final HttpConnectionManager cman;
 
     public CommonsHttpClient(HttpConnectionManager cman) {
@@ -41,22 +42,7 @@ public class CommonsHttpClient implements GenericHttpClient {
         if ("https".equals(targetProto)) {
             final SSLSocketFactory sockFac = params.getSslSocketFactory();
             if (sockFac != null) {
-                final int targetPort = targetUrl.getPort();
-                Protocol protocol = new Protocol("https", new SecureProtocolSocketFactory() {
-                    public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-                        return sockFac.createSocket(socket, host, port, autoClose);
-                    }
-
-                    public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
-                        return sockFac.createSocket(host, port, clientAddress, clientPort);
-                    }
-
-                    public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-                        return sockFac.createSocket(host, port);
-                    }
-                }, targetPort);
-                hconf = new HostConfiguration();
-                hconf.setHost(targetUrl.getHost(), targetPort, protocol);
+                hconf = getHostConfig(targetUrl, sockFac);
             } else
                 hconf = null;
         } else
@@ -186,5 +172,32 @@ public class CommonsHttpClient implements GenericHttpClient {
                 }
             }
         };
+    }
+
+    private static Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());
+
+    private HostConfiguration getHostConfig(final URL targetUrl, final SSLSocketFactory sockFac) {
+        HostConfiguration hconf;
+        Protocol protocol = (Protocol)protoBySockFac.get(sockFac);
+        if (protocol == null) {
+            logger.finer("Creating new commons Protocol for https");
+            protocol = new Protocol("https", new SecureProtocolSocketFactory() {
+                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+                    return sockFac.createSocket(socket, host, port, autoClose);
+                }
+
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+                    return sockFac.createSocket(host, port, clientAddress, clientPort);
+                }
+
+                public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                    return sockFac.createSocket(host, port);
+                }
+            }, 443);
+            protoBySockFac.put(sockFac, protocol);
+        }
+        hconf = new HostConfiguration();
+        hconf.setHost(targetUrl.getHost(), targetUrl.getPort(), protocol);
+        return hconf;
     }
 }
