@@ -51,7 +51,11 @@ class CustomAssertions {
           CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
           if (a.equals(cd.getAssertion())) {
               try {
-                  return (CustomAssertionUI)cd.getUiClass().newInstance();
+                  Class uiClass = cd.getUiClass();
+                  if (uiClass == null) {
+                      return null;
+                  }
+                  return (CustomAssertionUI)uiClass.newInstance();
               } catch (Exception e) {
                   throw new RuntimeException(e);
               }
