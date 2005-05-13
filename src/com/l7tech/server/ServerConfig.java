@@ -8,10 +8,7 @@ package com.l7tech.server;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -59,6 +56,9 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
     public static final String PROPS_RESOURCE_PATH = "serverconfig.properties";
+
+    public static final String PROPS_OVER_PATH_PROPERTY = "com.l7tech.server.serverConfigOverridePropertiesPath";
+    public static final String PROPS_OVER_PATH_DEFAULT = "/ssg/etc/conf/serverconfig_override.properties";
 
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
@@ -155,8 +155,8 @@ public class ServerConfig extends ApplicationObjectSupport {
         String configPropertiesPath = System.getProperty(PROPS_PATH_PROPERTY);
         if (configPropertiesPath == null) configPropertiesPath = PROPS_PATH_DEFAULT;
 
+        InputStream propStream = null;
         try {
-            InputStream propStream = null;
 
             File file = new File(configPropertiesPath);
             if (file.exists())
@@ -173,7 +173,36 @@ public class ServerConfig extends ApplicationObjectSupport {
         } catch (IOException ioe) {
             logger.severe("Couldn't load serverconfig.properties!");
             throw new RuntimeException("Couldn't load serverconfig.properties!");
+        } finally {
+            if (propStream != null) try { propStream.close(); } catch (IOException e) {}
         }
+
+        // Find and process any override properties
+        String overridePath = System.getProperty(PROPS_OVER_PATH_PROPERTY);
+        if (overridePath == null) overridePath = PROPS_OVER_PATH_DEFAULT;
+
+        InputStream overStream = null;
+        try {
+            if (overridePath != null) {
+                propStream = new FileInputStream(overridePath);
+                Properties op = new Properties();
+                op.load(propStream);
+
+                Set opKeys = op.keySet();
+                for (Iterator i = opKeys.iterator(); i.hasNext();) {
+                    Object s = i.next();
+                    _properties.put(s, op.get(s));
+                    logger.log(Level.FINE, "Overriding serverconfig property: " + s);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            logger.log(Level.INFO, "Couldn't find serverconfig_override.properties; continuing with no overrides");
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Error loading serverconfig_override.properties; continuing with no overrides", e);
+        } finally {
+            if (overStream != null) try { overStream.close(); } catch (IOException e) {}
+        }
+
         // export as system property. This is required so custom assertions
         // do not need to import in the ServerConfig and the clases referred by it
         // (LogManager, TransportProtocol) to read the single property.  - em20040506
