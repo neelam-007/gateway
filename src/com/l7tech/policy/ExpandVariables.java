@@ -11,14 +11,20 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 /**
- * The class
+ * The class replaces the variables placeholders in the string that is passed to the
+ * {@link ExpandVariables#process(String)} method.
+ * The variables placeholders are by default of format <code>${var.name}</code> where
+ * <code>var.name</code> is the variable name.
+ * The variables are passed in the <code>Map</code> of string key-value pairs. The default
+ * variables are passed in constructor and optional overriding variables can be passed in
+ * {@link ExpandVariables#process(String, java.util.Map)} method.
  *
  * @author emil
  * @version Apr 8, 2005
  */
 public class ExpandVariables {
-    public static final String DEF_PREFIX = "(\\$\\{)";
-    public static final String DEF_SUFFIX = "(\\})";
+    public static final String DEF_PREFIX = "(?:\\$\\{)";
+    public static final String DEF_SUFFIX = "(?:\\})";
     private final Pattern regexPattern;
     private final String variablePrefix;
     private final String variableSuffix;
@@ -78,10 +84,10 @@ public class ExpandVariables {
 
         while (matcher.find()) {
             int matchingCount = matcher.groupCount();
-            if (matchingCount != 3) {
+            if (matchingCount != 1) {
                 throw new IllegalStateException("Expecting 3 matching groups received: "+matchingCount);
             }
-            String var = matcher.group(2);
+            String var = matcher.group(1);
             String replacement = (String)userVariables.get(var);
             if (replacement == null) {
                 replacement = (String)defaultVariables.get(var);
