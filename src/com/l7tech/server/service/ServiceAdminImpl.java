@@ -43,6 +43,8 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
     private final String UDDI_CONFIG_FILENAME = "uddi.properties";
+    private static final String UDDI_PROP_MAX_ROWS = "uddi.result.max_rows";
+    private static final String UDDI_PROP_BATCH_SIZE = "uddi.result.batch_size";
 
     private ServiceManager serviceManager;
     private PolicyValidator policyValidator;
@@ -249,11 +251,38 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
             uddiProps = readUDDIConfig();
         } catch (IOException ioe) {
             logger.severe("IOException caught. Could not load UDDI Registry properties");
-            throw new FindException("Could not load UDDI Registry propertie");
+            throw new FindException("Could not load UDDI Registry properties");
         }
+
+        int maxRows = getInt(uddiProps.get(UDDI_PROP_MAX_ROWS));
+        int batchSize = getInt(uddiProps.get(UDDI_PROP_BATCH_SIZE));
+        if (batchSize == 0) batchSize = 100;
+        if (batchSize < 50) batchSize = 50;
+        if (maxRows < batchSize) maxRows = batchSize;
+        uddiProps.put(UDDI_PROP_MAX_ROWS, Integer.toString(maxRows));
+        uddiProps.put(UDDI_PROP_BATCH_SIZE, Integer.toString(batchSize));
+        logger.finer("Using UDDI batchSize=" + batchSize + ", maxRows=" + maxRows);
+
         UddiAgentV3 uddiAgent = new UddiAgentV3(uddiURL, uddiProps);
 
         return uddiAgent.getWsdlByServiceName(namePattern, caseSensitive);
+    }
+
+    private int getInt(Object o) {
+        if (o == null)
+            return 0;
+        if (o instanceof Integer)
+            return ((Integer)o).intValue();
+        else if (o instanceof Long)
+            return (int)((Long)o).longValue();
+        else if (o instanceof String) {
+            try {
+                return Integer.parseInt((String)o);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        return 0;
     }
 
     private Properties readUDDIConfig() throws IOException {
