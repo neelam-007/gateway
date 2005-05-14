@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+
+import sun.security.x509.X500Name;
 
 /**
  * Class <code>ServerRequestWssSaml</code> represents the server
@@ -123,12 +126,23 @@ public class ServerRequestWssSaml implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED);
                 return AssertionStatus.FALSIFIED;
             }
-            context.setCredentials(new LoginCredentials(samlAssertion.getNameIdentifierValue(),
-                null,
-                CredentialFormat.SAML,
-                SamlAuthenticationStatement.class,
-                null,
-                samlAssertion));
+
+            String nameIdentifier = null;
+            X509Certificate subjectCertificate = samlAssertion.getSubjectCertificate();
+            if (subjectCertificate != null) {
+                // Save pincipal credential for later authentication
+                X500Name x500name = new X500Name(subjectCertificate.getSubjectX500Principal().getName());
+                nameIdentifier = x500name.getCommonName();
+            } else {
+              nameIdentifier = samlAssertion.getNameIdentifierValue();
+            }
+
+            context.setCredentials(new LoginCredentials(nameIdentifier,
+                                                        null,
+                                                        CredentialFormat.SAML,
+                                                        SamlAuthenticationStatement.class,
+                                                        null,
+                                                        samlAssertion));
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             throw (IOException)new IOException().initCause(e);
