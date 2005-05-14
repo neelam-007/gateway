@@ -33,6 +33,7 @@ public class AssertionMessages extends Messages {
     public static final M BAD_ORIGINAL_REQUEST_URL             = m(4021, Level.WARNING, "Invalid original request URI -- using default");
     public static final M ACCESS_DENIED                        = m(4022, Level.WARNING, "Protected service denies access with current BridgeRoutingAssertion credentials");
     public static final M TOO_MANY_ROUTING_ATTEMPTS            = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
+    public static final M SAML_SV_REQUEST_NOT_AUTHENTICATED    = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");

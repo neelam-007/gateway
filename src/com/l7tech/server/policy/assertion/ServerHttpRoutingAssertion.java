@@ -29,6 +29,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
@@ -286,22 +287,33 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
-                    Document document = context.getRequest().getXmlKnob().getDocumentWritable();
-                    SamlAssertionGenerator ag = new SamlAssertionGenerator(senderVouchesSignerInfo);
-                    SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-                    samlOptions.setAttestingEntity(senderVouchesSignerInfo);
-                    TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
-                    if (requestTcp != null) {
-                        try {
-                            InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
-                            samlOptions.setClientAddress(clientAddress);
-                        } catch (UnknownHostException e) {
-                            auditor.logAndAudit(AssertionMessages.CANNOT_RESOLVE_IP_ADDRESS, null, e);
+                    LoginCredentials svInputCredentials = context.getCredentials();
+                    if (svInputCredentials == null) {
+                        User user = context.getAuthenticatedUser();
+                        if (user != null && user.getLogin() !=null) {
+                            svInputCredentials = new LoginCredentials(user.getLogin(), null, null, null);
                         }
                     }
-                    samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
-                    SubjectStatement statement = SubjectStatement.createAuthenticationStatement(context.getCredentials(), SubjectStatement.SENDER_VOUCHES);
-                    ag.attachStatement(document, statement, samlOptions);
+                    if (svInputCredentials == null) {
+                        auditor.logAndAudit(AssertionMessages.SAML_SV_REQUEST_NOT_AUTHENTICATED);
+                    } else {
+                        Document document = context.getRequest().getXmlKnob().getDocumentWritable();
+                        SamlAssertionGenerator ag = new SamlAssertionGenerator(senderVouchesSignerInfo);
+                        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+                        samlOptions.setAttestingEntity(senderVouchesSignerInfo);
+                        TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+                        if (requestTcp != null) {
+                            try {
+                                InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
+                                samlOptions.setClientAddress(clientAddress);
+                            } catch (UnknownHostException e) {
+                                auditor.logAndAudit(AssertionMessages.CANNOT_RESOLVE_IP_ADDRESS, null, e);
+                            }
+                        }
+                        samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
+                        SubjectStatement statement = SubjectStatement.createAuthenticationStatement(svInputCredentials, SubjectStatement.SENDER_VOUCHES);
+                        ag.attachStatement(document, statement, samlOptions);
+                    }
                 }
                 attachCookies(client, context, url, auditor);
 
