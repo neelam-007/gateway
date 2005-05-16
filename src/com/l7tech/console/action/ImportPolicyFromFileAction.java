@@ -120,6 +120,10 @@ public class ImportPolicyFromFileAction extends SecureAction {
             }
         } catch (IOException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(),
+                                          "Could not find policy export in the selected file",
+                                          "Policy Not Found",
+                                          JOptionPane.WARNING_MESSAGE);
         }
     }
 
