@@ -61,12 +61,7 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
 
         try {
             InternalUser dbUser = null;
-            // If the login looks like a DN, assume it's an IIP user DN and try without the CN= first (Bug #1810)
-            if (login != null && login.length() > 3 && (login.startsWith("CN=") || login.startsWith("cn=")))
-                dbUser = (InternalUser)userManager.findByLogin( login.substring(3) );
-            if (dbUser == null)
-                dbUser = (InternalUser)userManager.findByLogin( login );
-
+            dbUser = (InternalUser)userManager.findByLogin( login );
             if ( dbUser == null ) {
                 String err = "Couldn't find user with login " + login;
                 logger.info(err);
