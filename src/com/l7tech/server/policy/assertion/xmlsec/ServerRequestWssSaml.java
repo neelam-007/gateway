@@ -6,6 +6,7 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
@@ -130,9 +131,11 @@ public class ServerRequestWssSaml implements ServerAssertion {
             String nameIdentifier = null;
             X509Certificate subjectCertificate = samlAssertion.getSubjectCertificate();
             if (subjectCertificate != null) {
-                // Save pincipal credential for later authentication
                 X500Name x500name = new X500Name(subjectCertificate.getSubjectX500Principal().getName());
                 nameIdentifier = x500name.getCommonName();
+            } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(samlAssertion.getNameIdentifierFormat())) {
+                   X500Name x500name = new X500Name(samlAssertion.getNameIdentifierValue());
+                   nameIdentifier = x500name.getCommonName();
             } else {
               nameIdentifier = samlAssertion.getNameIdentifierValue();
             }
