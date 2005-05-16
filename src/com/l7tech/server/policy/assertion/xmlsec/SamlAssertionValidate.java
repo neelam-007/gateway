@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 package com.l7tech.server.policy.assertion.xmlsec;
 
@@ -258,14 +257,14 @@ public class SamlAssertionValidate {
             now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
             if (now.before(notBefore)) {
                 logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
-                validationResults.add(new Error("Condition 'Not Before' check failed",
-                                                conditionsType.toString(), new Object[]{notBefore.toString(), now.toString()}, null));
+                validationResults.add(new Error("Condition 'Not Before' check failed Now/ Not Before: {0}/{1}",
+                                                conditionsType.toString(), new Object[]{now.getTime().toString(), notBefore.getTime().toString()}, null));
             }
 
             if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
                 logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
-                validationResults.add(new Error("Condition 'Not On Or After' check failed",
-                                                conditionsType.toString(), new Object[]{notOnOrAfter.toString(), now.toString()}, null));
+                validationResults.add(new Error("Condition 'Not On Or After' check failed Now/Not On Or After: {0}/{1}",
+                                                conditionsType.toString(), new Object[]{now.getTime().toString(), notOnOrAfter.getTime().toString()}, null));
             }
         }
 
@@ -316,7 +315,7 @@ public class SamlAssertionValidate {
             if (nameIdentifierType != null) {
                 String presentedNameQualifier = nameIdentifierType.getNameQualifier();
                 if (!nameQualifier.equals(presentedNameQualifier)) {
-                    Error result = new Error("Name Qualifiers does not match presented/required",
+                    Error result = new Error("Name Qualifiers does not match presented/required {0}/{1}",
                                              subjectStatementAbstractType.toString(),
                                              new Object[]{presentedNameQualifier, nameQualifier}, null);
                     validationResults.add(result);
@@ -343,7 +342,7 @@ public class SamlAssertionValidate {
             }
         }
         if (!nameFormatMatch) {
-            Error result = new Error("Name Format does not match presented/required",
+            Error result = new Error("Name Format does not match presented/required {0}/{1}",
                                      subjectStatementAbstractType.toString(),
                                      new Object[]{presentedNameFormat, Arrays.asList(nameFormats)}, null);
             validationResults.add(result);
