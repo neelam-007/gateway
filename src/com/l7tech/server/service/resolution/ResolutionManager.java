@@ -24,7 +24,6 @@ import java.util.logging.Logger;
  * <p/>
  * User: flascell<br/>
  * Date: Nov 25, 2003<br/>
- * $Id$
  */
 public class ResolutionManager extends HibernateDaoSupport {
 
@@ -49,14 +48,23 @@ public class ResolutionManager extends HibernateDaoSupport {
         if (isSameParameters(distinctItemsToSave, existingParameters)) {
             logger.finest("resolution parameters unchanged");
             return;
+        } else {
+            logger.finest("different resolution parameters will be recorded");
         }
 
         Session session = getSession();
 
+        // delete the resolution parameters that are no longer part of the new ones
         try {
             for (Iterator i = existingParameters.iterator(); i.hasNext();) {
-                ResolutionParameters todelete = (ResolutionParameters)i.next();
-                session.delete(todelete);
+                ResolutionParameters maybeTodelete = (ResolutionParameters)i.next();
+                boolean delete = true;
+                if (distinctItemsToSave != null && distinctItemsToSave.contains(maybeTodelete)) {
+                    delete = false;
+                }
+                if (delete) {
+                    session.delete(maybeTodelete);
+                }
             }
         } catch (HibernateException e) {
             String msg = "error deleting exsiting resolution parameters";
@@ -64,12 +72,18 @@ public class ResolutionManager extends HibernateDaoSupport {
             throw new UpdateException(msg, e);
         }
 
-        // insert these new ones
+        // insert the ones that did not exist before
         try {
-            checkForDuplicateResolutionParameters(distinctItemsToSave);
+            checkForDuplicateResolutionParameters(distinctItemsToSave, service.getOid());
             for (Iterator i = distinctItemsToSave.iterator(); i.hasNext();) {
-                ResolutionParameters toadd = (ResolutionParameters)i.next();
-                session.save(toadd);
+                ResolutionParameters maybeToAdd = (ResolutionParameters)i.next();
+                boolean add = true;
+                if (existingParameters != null && existingParameters.contains(maybeToAdd)) {
+                    add = false;
+                }
+                if (add) {
+                    session.save(maybeToAdd);
+                }
             }
             logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
         } catch (HibernateException e) {
@@ -98,16 +112,23 @@ public class ResolutionManager extends HibernateDaoSupport {
     }
 
     private boolean isSameParameters(Collection paramcol1, Collection paramcol2) {
-        if (paramcol1.size() != paramcol2.size()) return false;
-        if (!paramcol2.containsAll(paramcol1)) return false;
+        if (paramcol1.size() != paramcol2.size()) {
+            return false;
+        }
+
+        if (!paramcol2.containsAll(paramcol1)) {
+            return false;
+        }
         return true;
     }
 
     private Collection getDistinct(PublishedService service) {
         ArrayList listOfParameters = new ArrayList();
+
         SoapActionResolver soapresolver = new SoapActionResolver();
         UrnResolver urnresolver = new UrnResolver();
         HttpUriResolver uriresolver = new HttpUriResolver();
+
         String httpuri = (String)uriresolver.doGetTargetValues(service)[0];
         Set soapactions = soapresolver.getDistinctParameters(service);
         for (Iterator i = soapactions.iterator(); i.hasNext();) {
@@ -162,7 +183,7 @@ public class ResolutionManager extends HibernateDaoSupport {
      * @throws DuplicateObjectException on duplicate detect
      * @throws HibernateException       on hibernate error
      */
-    private void checkForDuplicateResolutionParameters(Collection parameters)
+    private void checkForDuplicateResolutionParameters(Collection parameters, long serviceIdToIgnore)
       throws HibernateException, DuplicateObjectException {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName();
 
@@ -173,7 +194,7 @@ public class ResolutionManager extends HibernateDaoSupport {
             ResolutionParameters rp = (ResolutionParameters)ir.next();
             for (Iterator ip = parameters.iterator(); ip.hasNext();) {
                 ResolutionParameters r = (ResolutionParameters)ip.next();
-                if (r.resolutionEquals(rp)) {
+                if (r.resolutionEquals(rp) && r.getServiceid() != serviceIdToIgnore) {
                     duplicates.add(r);
                 }
             }
