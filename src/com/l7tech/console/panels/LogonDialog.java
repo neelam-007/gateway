@@ -41,6 +41,8 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import sun.security.x509.X500Name;
+
 /**
  * This class is the SSG console Logon dialog.
  *
@@ -57,7 +59,6 @@ public class LogonDialog extends JDialog {
      */
     private boolean rememberUser = false;
 
-    /* was the error handled (to avoid double exception messages) */
     private boolean sslHostNameMismatchUserNotified = false;
 
 
@@ -153,11 +154,11 @@ public class LogonDialog extends JDialog {
         layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
           .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close-it");
         layeredPane.getActionMap().put("close-it",
-          new AbstractAction() {
-              public void actionPerformed(ActionEvent evt) {
-                  windowAction(CMD_CANCEL);
-              }
-          });
+                                       new AbstractAction() {
+                                           public void actionPerformed(ActionEvent evt) {
+                                               windowAction(CMD_CANCEL);
+                                           }
+                                       });
 
         constraints = new GridBagConstraints();
 
@@ -188,12 +189,12 @@ public class LogonDialog extends JDialog {
         JLabel userNameLabel = new JLabel();
         userNameLabel.setToolTipText(resources.getString("userNameTextField.tooltip"));
         userNameTextField.setDocument(new FilterDocument(200,
-          new FilterDocument.Filter() {
-              public boolean accept(String str) {
-                  if (str == null) return false;
-                  return true;
-              }
-          }));
+                                                         new FilterDocument.Filter() {
+                                                             public boolean accept(String str) {
+                                                                 if (str == null) return false;
+                                                                 return true;
+                                                             }
+                                                         }));
 
         DocumentListener inputValidDocumentListener = new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
@@ -240,7 +241,6 @@ public class LogonDialog extends JDialog {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         contents.add(Box.createHorizontalStrut(100), constraints);
-        
 
 
         // last ID logic
@@ -248,8 +248,8 @@ public class LogonDialog extends JDialog {
         rememberUser = false;
         preferences = Preferences.getPreferences();
         lastID = preferences.rememberLoginId() ?
-          preferences.getString(Preferences.LAST_LOGIN_ID) :
-          null;
+                 preferences.getString(Preferences.LAST_LOGIN_ID) :
+                 null;
 
         if (preferences.rememberLoginId()) {
             userNameTextField.setText(lastID);
@@ -260,20 +260,20 @@ public class LogonDialog extends JDialog {
         final String fLastID = lastID; // anon class requires final
         userNameTextField.
           addFocusListener(new FocusAdapter() {
-              private boolean hasbeenInvoked = false;
+            private boolean hasbeenInvoked = false;
 
-              /**
-               * Invoked when a component gains the keyboard focus.
-               */
-              public void focusGained(FocusEvent e) {
-                  if (!hasbeenInvoked) {
-                      if (fLastID != null) {
-                          LogonDialog.this.userNameTextField.transferFocus();
-                      }
-                  }
-                  hasbeenInvoked = true;
-              }
-          });
+            /**
+             * Invoked when a component gains the keyboard focus.
+             */
+            public void focusGained(FocusEvent e) {
+                if (!hasbeenInvoked) {
+                    if (fLastID != null) {
+                        LogonDialog.this.userNameTextField.transferFocus();
+                    }
+                }
+                hasbeenInvoked = true;
+            }
+        });
 
         passwordField = new JPasswordField(); // needed below
 
@@ -313,7 +313,6 @@ public class LogonDialog extends JDialog {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         contents.add(Box.createHorizontalStrut(100), constraints);
-              
 
 
         //url label
@@ -456,7 +455,7 @@ public class LogonDialog extends JDialog {
     }
 
     private void doLogon() {
-        authenticationCredentials = new PasswordAuthentication(userNameTextField.getText(),    passwordField.getPassword());
+        authenticationCredentials = new PasswordAuthentication(userNameTextField.getText(), passwordField.getPassword());
         Container parentContainer = getParent();
         // service URL
         final String selectedURL = (String)serverComboBox.getSelectedItem();
@@ -570,9 +569,9 @@ public class LogonDialog extends JDialog {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
           showMessageDialog(this,
-            resources.getString("logon.invalid.credentials"),
-            "Warning",
-            JOptionPane.WARNING_MESSAGE);
+                            resources.getString("logon.invalid.credentials"),
+                            "Warning",
+                            JOptionPane.WARNING_MESSAGE);
     }
 
     /**
@@ -604,7 +603,7 @@ public class LogonDialog extends JDialog {
         SslRMIClientSocketFactory.resetSocketFactory();
         SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
             public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
-                if (chain == null) {
+                if (chain == null || chain.length == 0) {
                     return false;
                 }
                 final AuthenticationProvider authenticationProvider = getCredentialManager().getAuthenticationProvider();
@@ -612,17 +611,33 @@ public class LogonDialog extends JDialog {
                     // temp failure handler to obtain the server cert
                     SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
                         public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
-                            return true;
+                            if (chain == null || chain.length == 0) {
+                                return false;
+                            }
+                            String peerHost = null;
+                            try {
+                                peerHost = new X500Name(chain[0].getSubjectX500Principal().getName()).getCommonName();
+                            } catch (IOException e1) {
+                                log.log(Level.WARNING, "Could not obtain the CN from X500 Name in cert", e);
+                                throw new RuntimeException(e1);
+                            }
+                            String host = adminServiceNamingURL.getHost();
+                            if (host.equals(peerHost)) return true;
+                            String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
+                                                              new Object[]{host, peerHost});
+                            sslHostNameMismatchUserNotified = true;
+                            JOptionPane.showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                            return false;
                         }
                     });
                     authenticationProvider.validateServer(authenticationCredentials,
-                                                                     chain[0],
-                                                                     adminServiceNamingURL.toString());
+                                                          chain[0],
+                                                          adminServiceNamingURL.toString());
                 } catch (RemoteException rex) {
                     log.log(Level.SEVERE, "Remote error validating the server certificate", e);
                     return false;
-                } catch(SecurityException sex) {
-                    log.log(Level.SEVERE, "Error validating the server certificate "+chain[0], e);
+                } catch (SecurityException sex) {
+                    log.log(Level.SEVERE, "Error validating the server certificate " + chain[0], e);
                     return false;
                 } finally {
                     SslRMIClientSocketFactory.setTrustFailureHandler(this);
@@ -725,27 +740,31 @@ public class LogonDialog extends JDialog {
             String msg = null;
             if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch2"),
-                  new Object[]{
-                      "'" + versionex.getReceivedVersion() + "'",
-                      "'" + versionex.getExpectedVersion() + "'",
-                      BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
-                  });
+                                           new Object[]{
+                                               "'" + versionex.getReceivedVersion() + "'",
+                                               "'" + versionex.getExpectedVersion() + "'",
+                                               BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
+                                           });
             } else {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch"),
-                  new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
+                                           new Object[]{
+                                               BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
             }
             JOptionPane.showMessageDialog(this, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof ConnectException ||
           cause instanceof UnknownHostException) {
             log.log(Level.WARNING, "logon()", e);
-            String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{serviceUrl.getHost()});
+            String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{
+                serviceUrl.getHost()});
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
+        } else
+        if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
             log.log(Level.WARNING, "logon()", e);
             showInvalidCredentialsMessage();
         } else if (cause instanceof RemoteException || cause instanceof IOException) {
             log.log(Level.WARNING, "Could not connect to admin service server", e);
-            String msg = MessageFormat.format(resources.getString("service.unavailable.error"), new Object[]{serviceUrl.getHost()});
+            String msg = MessageFormat.format(resources.getString("service.unavailable.error"), new Object[]{
+                serviceUrl.getHost()});
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             log.log(Level.WARNING, "logon()", e);
