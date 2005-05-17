@@ -206,7 +206,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     }
 
     private synchronized void closeBag() {
-        bag.close();
+        if (bag != null)
+            bag.close();
         bag = null;
     }
 
