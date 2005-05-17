@@ -52,6 +52,14 @@ public class ResolutionManager extends HibernateDaoSupport {
             logger.finest("different resolution parameters will be recorded");
         }
 
+        try {
+            checkForDuplicateResolutionParameters(distinctItemsToSave, service.getOid());
+        } catch (HibernateException e) {
+            String msg = "error checking for duplicate resolution parameters";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
+
         Session session = getSession();
 
         // delete the resolution parameters that are no longer part of the new ones
@@ -74,7 +82,6 @@ public class ResolutionManager extends HibernateDaoSupport {
 
         // insert the ones that did not exist before
         try {
-            checkForDuplicateResolutionParameters(distinctItemsToSave, service.getOid());
             for (Iterator i = distinctItemsToSave.iterator(); i.hasNext();) {
                 ResolutionParameters maybeToAdd = (ResolutionParameters)i.next();
                 boolean add = true;
@@ -194,7 +201,7 @@ public class ResolutionManager extends HibernateDaoSupport {
             ResolutionParameters rp = (ResolutionParameters)ir.next();
             for (Iterator ip = parameters.iterator(); ip.hasNext();) {
                 ResolutionParameters r = (ResolutionParameters)ip.next();
-                if (r.resolutionEquals(rp) && r.getServiceid() != serviceIdToIgnore) {
+                if (r.resolutionEquals(rp) && rp.getServiceid() != serviceIdToIgnore) {
                     duplicates.add(r);
                 }
             }
