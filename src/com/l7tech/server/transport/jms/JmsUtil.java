@@ -130,7 +130,7 @@ public class JmsUtil {
             return result;
         } catch ( RuntimeException rte ) {
             logger.log( Level.WARNING, "Caught RuntimeException while attempting to connect to JMS provider" );
-            throw new JmsConfigException(rte.toString());
+            throw (JmsConfigException)new JmsConfigException(rte.toString()).initCause(rte);
         } finally {
             try { if ( sess != null ) sess.close(); } catch (Throwable t) { logit(t); }
             try { if ( conn != null ) conn.close(); } catch (Throwable t) { logit(t); }
