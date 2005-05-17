@@ -7,10 +7,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.audit.AuditContext;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.common.message.HttpServletResponseKnob;
-import com.l7tech.common.message.Message;
+import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
@@ -123,6 +120,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         response.attachHttpResponseKnob(respKnob);
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        context.setReplyExpected(true); // HTTP always expects to receive a reply
 
         final StashManager stashManager = StashManagerFactory.createStashManager();
 
@@ -147,6 +145,16 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 }
 
                 if (status == AssertionStatus.NONE) {
+                    if (response.getKnob(MimeKnob.class) == null) {
+                        // Routing successful, but no actual response received, probably due to a one-way JMS send.
+                        hresponse.setStatus(200);
+                        hresponse.setContentType(null);
+                        hresponse.setContentLength(0);
+                        hresponse.getOutputStream().close();
+                        logger.fine("servlet transport returning a placeholder empty response to a successful one-way message");
+                        return;
+                    }
+
                     // Transmit the response and return
                     hresponse.setStatus(routeStat);
                     hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
