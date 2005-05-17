@@ -31,7 +31,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * Simple command line utility to export signed audit records.
+ * Simple utility to export signed audit records.
  */
 public class AuditExporter extends HibernateDaoSupport {
     private static final String SQL = "select * from audit_main left ou" +
@@ -112,7 +112,7 @@ public class AuditExporter extends HibernateDaoSupport {
             if (rs == null) throw new SQLException("Unable to obtain audits with query: " + SQL);
             ResultSetMetaData md = rs.getMetaData();
 
-            int timecolumn = 3;
+            int timecolumn = 3; // initial guess
             int columns = md.getColumnCount();
             for (int i = 1; i <= columns; ++i) {
                 final String columnName = quoteMeta(md.getColumnName(i));
