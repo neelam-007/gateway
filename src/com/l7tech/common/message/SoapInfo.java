@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.message;
@@ -9,11 +8,12 @@ package com.l7tech.common.message;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 
 /**
- * Represents information extracted from a SOAP document that can be used for future service resolution.
+ * Represents information extracted from an XML document that can be used for future service resolution.
  * The same SoapInfo class is used for both software or hardware processing.
  */
 public class SoapInfo {
-    protected SoapInfo(String payloadNsUri, boolean hasSecurityNode) {
+    protected SoapInfo(boolean soap, String payloadNsUri, boolean hasSecurityNode) {
+        this.soap = soap;
         this.payloadNsUri = payloadNsUri;
         this.hasSecurityNode = hasSecurityNode;
     }
@@ -25,6 +25,19 @@ public class SoapInfo {
         return null;
     }
 
+    public boolean isSoap() {
+        return soap;
+    }
+
+    public String getPayloadNsUri() {
+        return payloadNsUri;
+    }
+
+    public boolean isHasSecurityNode() {
+        return hasSecurityNode;
+    }
+
+    final boolean soap;
     final String payloadNsUri;
     final boolean hasSecurityNode;
 }

@@ -251,14 +251,23 @@ public final class Message {
         if (!isXml())
             return false;
 
-        // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
         SoapInfo info = null;
-        try {
-            info = SoapFacet.getSoapInfo(this);
-        } catch (NoSuchPartException e) {
-            throw new CausedIllegalStateException(e);
+
+        // See if we have already inspected a non-SOAP XML message
+        TarariKnob tk = (TarariKnob)getKnob(TarariKnob.class);
+        if (tk != null)
+            info = tk.getSoapInfo();
+
+        if (info == null) {
+            // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
+            try {
+                info = SoapFacet.getSoapInfo(this);
+            } catch (NoSuchPartException e) {
+                throw new CausedIllegalStateException(e);
+            }
         }
-        if (info == null)
+
+        if (info == null || !info.isSoap())
             return false;
 
         rootFacet = new SoapFacet(this, rootFacet, info);

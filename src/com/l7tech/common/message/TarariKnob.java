@@ -23,12 +23,14 @@ public class TarariKnob implements CloseableMessageKnob {
 
     private final Message message;
     private TarariMessageContext context;
+    private SoapInfo soapInfo;
     private boolean giveup = false; // if true, stop attempting to run this message through the hardware
 
-    public TarariKnob(Message message, TarariMessageContext context) {
+    public TarariKnob(Message message, TarariMessageContext context, SoapInfo soapInfo) {
         if (message == null) throw new NullPointerException();
         this.message = message;
         this.context = context;
+        this.soapInfo = soapInfo;
     }
 
     /**
@@ -49,9 +51,17 @@ public class TarariKnob implements CloseableMessageKnob {
                 return null;
             }
 
+            SoapInfoFactory siFac = TarariLoader.getSoapInfoFactory();
+            if (siFac == null) {
+                logger.log(Level.WARNING, "TarariKnob is present, but no Tarari SoapInfoFactory"); // can't happen
+                giveup = true;
+                return null;
+            }
+
             try {
                 logger.log(Level.FINE, "Passing message into Tarari hardware again");
                 context = mcfac.makeMessageContext(message.getMimeKnob().getFirstPart().getInputStream(false));
+                soapInfo = siFac.getSoapInfo(context);
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);
@@ -60,6 +70,22 @@ public class TarariKnob implements CloseableMessageKnob {
             }
         }
         return context;
+    }
+
+    /**
+     * Manually attach a TarariMessageContext to this TarariKnob.  If a context already exists, it'll be replaced.
+     *
+     * @param tmc the context to attach.  Must not be null.
+     */
+    public void setContext(TarariMessageContext tmc, SoapInfo soapInfo) {
+        close();
+        this.context = tmc;
+        this.soapInfo = soapInfo;
+    }
+
+    /** @return SoapInfo, or null if there isn't any known. */
+    public SoapInfo getSoapInfo() {
+        return soapInfo;
     }
 
     public void close() {

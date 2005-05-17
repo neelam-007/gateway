@@ -42,8 +42,8 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
     }
 
     private static class TarariSoapInfo extends SoapInfo {
-        public TarariSoapInfo(String payloadNsUri, boolean hasSecurityNode) {
-            super(payloadNsUri, hasSecurityNode);
+        public TarariSoapInfo(boolean isSoap, String payloadNsUri, boolean hasSecurityNode) {
+            super(isSoap, payloadNsUri, hasSecurityNode);
         }
     }
 
@@ -89,9 +89,9 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
                     node = secNodes.getNextNode();
                 }
             }
-            return new TarariSoapInfo(payloadNs, hasSecurityHeaders);
+            return new TarariSoapInfo(true, payloadNs, hasSecurityHeaders);
         } else {
-            return null;
+            return new TarariSoapInfo(false, null, false);
         }
     }
 

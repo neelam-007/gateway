@@ -53,7 +53,7 @@ class SoapFacet extends MessageFacet {
      * for creating a SoapFacet.
      *
      * @param message  the Message to examine.  Must already have a MimeKnob and an XmlKnob.
-     * @return the SoapInfo if this Message is SOAP, or null if it is not SOAP.
+     * @return the SoapInfo for this Message.  Never null.  See {@link SoapInfo#isSoap()}
      * @throws IOException if there is a problem reading the Message data.
      * @throws SAXException if the XML is not well formed or has invalid namespace declarations
      * @throws NoSuchPartException if the Message first part has already been destructively read
@@ -63,19 +63,18 @@ class SoapFacet extends MessageFacet {
         SoapInfoFactory fac = TarariLoader.getSoapInfoFactory();
         if (mcfac != null && fac != null) {
             try {
-                MimeKnob mime = message.getMimeKnob();
-                String encoding = mime.getOuterContentType().getEncoding();
-                InputStream is = null;
-                if ("utf8".equalsIgnoreCase(encoding) || "utf-8".equalsIgnoreCase(encoding)) {
-                    is = mime.getFirstPart().getInputStream(false);
+                InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
+                TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
+                SoapInfo soapInfo = fac.getSoapInfo(mc);
 
-                    TarariMessageContext mc = mcfac.makeMessageContext(is);
-                    SoapInfo soapInfo = fac.getSoapInfo(mc);
-                    message.attachKnob(TarariKnob.class, new TarariKnob(message, mc));
-                    return soapInfo;
+                TarariKnob tarariKnob = (TarariKnob)message.getKnob(TarariKnob.class);
+                if (tarariKnob == null) {
+                    message.attachKnob(TarariKnob.class, new TarariKnob(message, mc, soapInfo));
                 } else {
-                    logger.info("Document encoding '" + encoding + "' not supported with hardware acceleration");
+                    tarariKnob.setContext(mc, soapInfo);
                 }
+
+                return soapInfo;
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);
@@ -85,7 +84,10 @@ class SoapFacet extends MessageFacet {
         return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly());
     }
 
-    /** Software fallback version of getSoapInfo.  Requires DOM parsing have been done already. */
+    /**
+     * Software fallback version of getSoapInfo.  Requires DOM parsing have been done already.
+     * @return a SoapInfo.  Never null.
+     */
     private static SoapInfo getSoapInfoDom(Document document) throws SAXException {
         boolean hasSecurityNode = false;
         String payloadNs = null;
@@ -94,12 +96,12 @@ class SoapFacet extends MessageFacet {
                 List els = SoapUtil.getSecurityElements(document);
                 if (els != null && !els.isEmpty()) hasSecurityNode = true;
                 payloadNs = SoapUtil.getPayloadNamespaceUri(document);
-                return new SoapInfo(payloadNs, hasSecurityNode);
+                return new SoapInfo(true, payloadNs, hasSecurityNode);
             } catch (InvalidDocumentFormatException e) {
                 throw new SAXException(e);
             }
         } else {
-            return null;
+            return new SoapInfo(false, null, false);
         }
     }
 
