@@ -7,6 +7,8 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.message.JmsKnob;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
@@ -107,7 +109,12 @@ class JmsRequestHandler {
                 try {
                     status = messageProcessor.processMessage(context);
                     _logger.finest("Policy resulted in status " + status);
-                    responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
+                    if (context.getResponse().getKnob(XmlKnob.class) != null || context.getResponse().getKnob(MimeKnob.class) != null)
+                        responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
+                    else {
+                        _logger.finer("No response received");
+                        responseStream = null;
+                    }
                 } catch ( PolicyVersionException pve ) {
                     String msg1 = "Request referred to an outdated version of policy";
                     _logger.log( Level.INFO, msg1 );

@@ -6,16 +6,12 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.xml.SoapFaultDetailImpl;
-import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.common.message.MimeKnob;
-import com.l7tech.common.message.TcpKnob;
+import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -24,6 +20,8 @@ import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.*;
+import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -180,6 +178,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         PostMethod postMethod = null;
         InputStream inputStream = null;
+        int status = 0;
 
         try {
             try {
@@ -232,7 +231,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     hostValue.append(port);
                 }
                 postMethod.setRequestHeader(HOST, hostValue.toString());
-                postMethod.setRequestHeader(SoapUtil.SOAPACTION, context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SoapUtil.SOAPACTION));
+                HttpRequestKnob httpRequestKnob = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                if (httpRequestKnob == null) {
+                    postMethod.setRequestHeader(SoapUtil.SOAPACTION, "\"\"");
+                } else {
+                    postMethod.setRequestHeader(SoapUtil.SOAPACTION, httpRequestKnob.getHeaderSingleValue(SoapUtil.SOAPACTION));
+                }
 
                 if (httpRoutingAssertion.isTaiCredentialChaining()) {
                     String chainId = null;
@@ -335,13 +339,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     client.executeMethod(hconf, postMethod);
                 }
 
-                int status = postMethod.getStatusCode();
+                status = postMethod.getStatusCode();
                 if (status == 200)
                     auditor.logAndAudit(AssertionMessages.ROUTED_OK);
                 else
                     auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
-                context.getResponse().getHttpResponseKnob().setStatus(status);
+                HttpResponseKnob httpResponseKnob = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                if (httpResponseKnob != null)
+                    httpResponseKnob.setStatus(status);
 
                 context.setRoutingStatus(RoutingStatus.ROUTED);
 
@@ -371,7 +377,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 String ctype = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE).getValue();
 
                 // Special case for bugzilla #1406, we encapsulate downstream ugly html error pages in a neat soapfault
-                int status = context.getResponse().getHttpResponseKnob().getStatus();
                 if (status != 200) {
                     boolean encapsulatePayloadInSoapFault = false;
                     // html and xhtml are type we automatically consider to be non-xml (probably not a soap fault)
