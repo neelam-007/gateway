@@ -299,7 +299,7 @@ public class SamlAssertionGenerator {
         calendar.set(Calendar.MILLISECOND, 0);
         ct.setNotBefore(calendar);
         Calendar c2 = (Calendar)calendar.clone();
-        c2.roll(Calendar.MINUTE, expiryMinutes);
+        c2.add(Calendar.MINUTE, expiryMinutes);
         ct.setNotOnOrAfter(c2);
         assertion.setConditions(ct);
         return assertion;
