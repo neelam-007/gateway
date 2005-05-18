@@ -45,8 +45,8 @@ mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 
-chmod 755 /etc/init.d/*
-chmod 755 /etc/profile.d/*.sh
+chmod 755 %{buildroot}/etc/init.d/*
+chmod 755 %{buildroot}/etc/profile.d/*.sh
 
 %files 
 %defattr(-,root,root)
@@ -74,21 +74,27 @@ fi
 
 %post
 # Check for existence of install crumbs left by install.pl
-if [ -e /etc/SSG_INSTALL ]; then 
-	if [ grep "# SSG_INSTALL V3.1" /etc/SSG_INSTALL ]; then
-		# reinstall or minor upgrade
-		echo -n ""
-	else 
+if [ -e "/etc/SSG_INSTALL" ]; then 
+	version=`grep V3.1 /etc/SSG_INSTALL`
+	if [ -z "$version" ]; then
 		echo "** Upgrading from 3.0 to 3.1: Run upgrade script: /ssg/bin/upgrade.sh doUpgrade **"
+	else 
+		echo -n ""
 	fi
 else 
 	echo "** New system: Run interactive /ssg/bin/install.pl to configure this system **"
 fi
 
-echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue
-echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
+echo "Layer 7 SecureSpan(tm) Gateway v3.1" >/etc/issue
+echo "Kernel \r on an \m" >>/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v3.1" >/etc/issue.net
+echo "Kernel \r on an \m" >>/etc/issue.net
 
 %postun
+
+if [ -e "/etc/SSG_INSTALL" ]; then 
+	rm -f /etc/SSG_INSTALL
+fi
 
 %changelog 
 
