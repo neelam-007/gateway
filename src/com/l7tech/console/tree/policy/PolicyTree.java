@@ -56,9 +56,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private PolicyEditorPanel policyEditorPanel;
 
     // d&d
-    private TreePath pathSource;				// The path being dragged
-    private BufferedImage imgGhost;					// The 'drag image'
-    private Point ptOffset = new Point();	// Where, in the drag image, the mouse was clicked
+    private TreePath pathSource;                // The path being dragged
+    private BufferedImage imgGhost;                    // The 'drag image'
+    private Point ptOffset = new Point();    // Where, in the drag image, the mouse was clicked
     private Border topBorder;
 
 
@@ -120,7 +120,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
      * KeyAdapter for the policy trees
      */
     class TreeKeyListener extends KeyAdapter {
-
         /**
          * Invoked when a key has been pressed.
          */
@@ -321,16 +320,16 @@ public class PolicyTree extends JTree implements DragSourceListener,
         // Work out the offset of the drag point from the TreePath bounding rectangle origin
         Rectangle raPath = getPathBounds(path);
         ptOffset.setLocation(ptDragOrigin.x - raPath.x, ptDragOrigin.y - raPath.y);
-			
+
         // Get the cell renderer (which is a JLabel) for the path being dragged
         JLabel lbl = (JLabel)getCellRenderer().getTreeCellRendererComponent
           (this, // tree
-            path.getLastPathComponent(), // value
-            false, // isSelected	(dont want a colored background)
-            isExpanded(path), // isExpanded
-            getModel().isLeaf(path.getLastPathComponent()), // isLeaf
-            0, // row			(not important for rendering)
-            false											// hasFocus		(dont want a focus rectangle)
+           path.getLastPathComponent(), // value
+           false, // isSelected	(dont want a colored background)
+           isExpanded(path), // isExpanded
+           getModel().isLeaf(path.getLastPathComponent()), // isLeaf
+           0, // row			(not important for rendering)
+           false                                            // hasFocus		(dont want a focus rectangle)
           );
         lbl.setSize((int)raPath.getWidth(), (int)raPath.getHeight()); // <-- The layout manager would normally do this
 
@@ -339,21 +338,21 @@ public class PolicyTree extends JTree implements DragSourceListener,
         Graphics2D g2 = imgGhost.createGraphics();
 
         // Ask the cell renderer to paint itself into the BufferedImage
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC, 0.5f));		// Make the image ghostlike
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC, 0.5f));        // Make the image ghostlike
         lbl.paint(g2);
 
         // Now paint a gradient UNDER the ghosted JLabel text (but not under the icon if any)
         Icon icon = lbl.getIcon();
         int nStartOfText = (icon == null) ? 0 : icon.getIconWidth() + lbl.getIconTextGap();
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.DST_OVER, 0.5f));	// Make the gradient ghostlike
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.DST_OVER, 0.5f));    // Make the gradient ghostlike
         g2.setPaint(new GradientPaint(nStartOfText, 0, SystemColor.controlShadow,
-          getWidth(), 0, new Color(255, 255, 255, 0)));
+                                      getWidth(), 0, new Color(255, 255, 255, 0)));
         g2.fillRect(nStartOfText, 0, getWidth(), imgGhost.getHeight());
 
         g2.dispose();
 
 
-        setSelectionPath(path);	// Select this path in the tree
+        setSelectionPath(path);    // Select this path in the tree
 
         log.fine("DRAGGING: " + path.getLastPathComponent());
 
@@ -361,8 +360,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         Transferable transferable = new TransferableTreePath(path);
 
         // Remember the path being dragged (because if it is being moved, we will have to delete it later)
-        pathSource = path;	
-		
+        pathSource = path;
+
         // We pass our drag image just in case it IS supported by the platform
         dge.startDrag(null, imgGhost, new Point(5, 5), transferable, this);
     }
@@ -371,7 +370,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         if (path == null)
             return false;
         if (isRootPath(path))
-            return false;	// Ignore user trying to drag the root node
+            return false;    // Ignore user trying to drag the root node
         if (isIdentityView())
             return false; // Ignore if in identity view
 
@@ -398,7 +397,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 
     // helpers...
-    private TreePath getChildPath(TreePath pathParent, int nChildIndex) {
+      private TreePath getChildPath(TreePath pathParent, int nChildIndex) {
         TreeModel model = getModel();
         return pathParent.pathByAddingChild(model.getChild(pathParent.getLastPathComponent(), nChildIndex));
     }
@@ -427,8 +426,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
             log.fine(i + ". " + nIndex[i]);
         }
     }
-    
+
 // PolicyDropTargetListener interface object...
+
     class PolicyDropTargetListener implements DropTargetListener {
         // Fields...
         private TreePath pathLast = null;
@@ -437,36 +437,36 @@ public class PolicyTree extends JTree implements DragSourceListener,
         private Color colorCueLine;
         private Point ptLast = new Point();
         private Timer timerHover;
-        private int nLeftRight = 0;	// Cumulative left/right mouse movement
+        private int nLeftRight = 0;    // Cumulative left/right mouse movement
         private BufferedImage imgRight = new ArrowImage(15, 15, ArrowImage.ARROW_RIGHT);
         private BufferedImage imgLeft = new ArrowImage(15, 15, ArrowImage.ARROW_LEFT);
         private int nShift = 0;
 
         // Constructor...
-        public PolicyDropTargetListener() {
+          public PolicyDropTargetListener() {
             colorCueLine = new Color(SystemColor.controlShadow.getRed(),
-              SystemColor.controlShadow.getGreen(),
-              SystemColor.controlShadow.getBlue(),
-              64);
+                                     SystemColor.controlShadow.getGreen(),
+                                     SystemColor.controlShadow.getBlue(),
+                                     64);
 
             // Set up a hover timer, so that a node will be automatically expanded or collapsed
             // if the user lingers on it for more than a short time
             timerHover = new Timer(1000, new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    nLeftRight = 0;	// Reset left/right movement trend
+                    nLeftRight = 0;    // Reset left/right movement trend
                     if (isRootPath(pathLast))
-                        return;	// Do nothing if we are hovering over the root node
+                        return;    // Do nothing if we are hovering over the root node
                     if (isExpanded(pathLast))
                         collapsePath(pathLast);
                     else
                         expandPath(pathLast);
                 }
             });
-            timerHover.setRepeats(false);	// Set timer to one-shot mode
+            timerHover.setRepeats(false);    // Set timer to one-shot mode
         }
 
         // PolicyDropTargetListener interface
-        public void dragEnter(DropTargetDragEvent e) {
+          public void dragEnter(DropTargetDragEvent e) {
             if (!hasWriteAccess()) {
                 e.rejectDrag();
                 return;
@@ -514,7 +514,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
             Point pt = e.getLocation();
             if (pt.equals(ptLast))
                 return;
-			
+
             // Try to determine whether the user is flicking the cursor right or left
             int nDeltaLeftRight = pt.x - ptLast.x;
             if ((nLeftRight > 0 && nDeltaLeftRight < 0) || (nLeftRight < 0 && nDeltaLeftRight > 0))
@@ -525,11 +525,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             // If a drag image is not supported by the platform, then draw our own drag image
             if (!DragSource.isDragImageSupported()) {
-                paintImmediately(raGhost.getBounds());	// Rub out the last ghost image and cue line
+                paintImmediately(raGhost.getBounds());    // Rub out the last ghost image and cue line
                 // And remember where we are about to draw the new ghost image
                 raGhost.setRect(pt.x - ptOffset.x, pt.y - ptOffset.y, imgGhost.getWidth(), imgGhost.getHeight());
                 g2.drawImage(imgGhost, AffineTransform.getTranslateInstance(raGhost.getX(), raGhost.getY()), null);
-            } else	// Just rub out the last cue line
+            } else    // Just rub out the last cue line
                 paintImmediately(raCueLine.getBounds());
 
 
@@ -540,7 +540,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 path = new TreePath(getModel().getRoot());
             }
             if (!(path == pathLast)) {
-                nLeftRight = 0; 	// We've moved up or down, so reset left/right movement trend
+                nLeftRight = 0;     // We've moved up or down, so reset left/right movement trend
                 pathLast = path;
                 timerHover.restart();
             }
@@ -551,7 +551,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             g2.setColor(colorCueLine);
             g2.fill(raCueLine);
-			
+
             // Now superimpose the left/right movement indicator if necessary
             if (nLeftRight > 20) {
                 g2.drawImage(imgRight, AffineTransform.getTranslateInstance(pt.x - ptOffset.x, pt.y - ptOffset.y), null);
@@ -561,7 +561,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 nShift = -1;
             } else
                 nShift = 0;
-			
+
 
             // And include the cue line in the area to be rubbed out next time
             raGhost = raGhost.createUnion(raCueLine);
@@ -636,7 +636,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
                 if (target.accept(node)) {
                     e.acceptDrop(e.getDropAction());
-                    if (dropAsFirstContainerChild || (target instanceof CompositeAssertionTreeNode && target != root)) {
+                    if (dropAsFirstContainerChild) {
+                        if (target instanceof CompositeAssertionTreeNode) {
+                            CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
+                            compositeAssertionTreeNode.receive(node, 0);
+                        } else {
+                            target.receive(node);
+                        }
+                        e.dropComplete(true);
+                    } else if ((target instanceof CompositeAssertionTreeNode && target != root)) {
                         CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
                         compositeAssertionTreeNode.receive(node, 0);
                     } else {
@@ -656,7 +664,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         private void dropTreePath(DropTargetDropEvent e) {
-            timerHover.stop();	// Prevent hover timer from doing an unwanted expandPath or collapsePath
+            timerHover.stop();    // Prevent hover timer from doing an unwanted expandPath or collapsePath
 
             if (!isTreePathDropAcceptable(e)) {
                 e.rejectDrop();
@@ -679,6 +687,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         if (row == -1) {
                             pathTarget = new TreePath(getModel().getRoot());
                         }
+                        boolean dropAsFirstContainerChild = false;
+
+                        Insets insets = topBorder.getBorderInsets(PolicyTree.this);
+                        if (insets.top >= pt.y) {
+                            dropAsFirstContainerChild = true;
+                        }
+
                         TreePath pathSource = (TreePath)transferable.getTransferData(flavor);
                         log.fine("DROPPING: " + pathSource.getLastPathComponent());
                         PolicyTreeModel model = (PolicyTreeModel)getModel();
@@ -692,7 +707,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
                         if (targetTreeNode.getAllowsChildren()) {
                             int targetIndex = 0;
-                            if (targetTreeNode == model.getRoot()) {
+                            if (!dropAsFirstContainerChild && targetTreeNode == model.getRoot()) {
                                 targetIndex = targetTreeNode.getChildCount();
                             }
                             if (e.getDropAction() == DnDConstants.ACTION_MOVE)
@@ -731,7 +746,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 
         // Helpers...
-        public boolean isDragAcceptable(DropTargetDragEvent e) {
+          public boolean isDragAcceptable(DropTargetDragEvent e) {
             if (!hasWriteAccess()) return false;
 
             // Only accept COPY or MOVE gestures (ie LINK is not supported)
@@ -794,16 +809,17 @@ public class PolicyTree extends JTree implements DragSourceListener,
 //
 // The relevant chapter of which can be found at:
 //		http://www.oreilly.com/catalog/jswing/chapter/dnd.beta.pdf
-	
+
     private static final int AUTOSCROLL_MARGIN = 12;
 
 // Ok, we�ve been told to scroll because the mouse cursor is in our
 // scroll zone.
+
     public void autoscroll(Point pt) {
         // Figure out which row we�re on.
         int nRow = getRowForLocation(pt.x, pt.y);
-		
-// If we are not on a row then ignore this autoscroll request
+
+        // If we are not on a row then ignore this autoscroll request
         if (nRow < 0)
             return;
 
@@ -812,27 +828,29 @@ public class PolicyTree extends JTree implements DragSourceListener,
 // bottom. We do this to make the previous row (or the next
 // row) visible as appropriate. If we�re at the absolute top or
 // bottom, just return the first or last row respectively.
-		
-        nRow = (pt.y + raOuter.y <= AUTOSCROLL_MARGIN)			// Is row at top of screen? 
-          ?
-          (nRow <= 0 ? 0 : nRow - 1)						// Yes, scroll up one row
-          :
-          (nRow < getRowCount() - 1 ? nRow + 1 : nRow);	// No, scroll down one row
+
+        nRow = (pt.y + raOuter.y <= AUTOSCROLL_MARGIN)            // Is row at top of screen?
+               ?
+               (nRow <= 0 ? 0 : nRow - 1)                        // Yes, scroll up one row
+               :
+               (nRow < getRowCount() - 1 ? nRow + 1 : nRow);    // No, scroll down one row
 
         scrollRowToVisible(nRow);
     }
 
 // Calculate the insets for the *JTREE*, not the viewport
 // the tree is in. This makes it a bit messy.
+
     public Insets getAutoscrollInsets() {
         Rectangle raOuter = getBounds();
         Rectangle raInner = getParent().getBounds();
         return new Insets(raInner.y - raOuter.y + AUTOSCROLL_MARGIN, raInner.x - raOuter.x + AUTOSCROLL_MARGIN,
-          raOuter.height - raInner.height - raInner.y + raOuter.y + AUTOSCROLL_MARGIN,
-          raOuter.width - raInner.width - raInner.x + raOuter.x + AUTOSCROLL_MARGIN);
+                          raOuter.height - raInner.height - raInner.y + raOuter.y + AUTOSCROLL_MARGIN,
+                          raOuter.width - raInner.width - raInner.x + raOuter.x + AUTOSCROLL_MARGIN);
     }
 
 // TreeModelListener interface implemntations
+
     public void treeNodesChanged(TreeModelEvent e) {
         //   log.fine("treeNodesChanged");
         //   sayWhat(e);
