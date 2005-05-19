@@ -46,5 +46,5 @@ ALTER TABLE audit_message ADD routing_latency INTEGER;
 
 ALTER TABLE service_resolution modify column soapaction varchar(255) character set latin1 binary default '';
 ALTER TABLE service_resolution modify column urn varchar(255) character set latin1 binary default '';
-
+ALTER TABLE service_resolution modify column uri varchar(255) character set latin1 binary default '';
 
