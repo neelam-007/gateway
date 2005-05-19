@@ -43,3 +43,8 @@ alter table fed_user  modify column login varchar(255);
 ALTER TABLE audit_message ADD operation_name VARCHAR(255);
 ALTER TABLE audit_message ADD response_status INTEGER;
 ALTER TABLE audit_message ADD routing_latency INTEGER;
+
+ALTER TABLE service_resolution modify column soapaction varchar(255) character set latin1 binary default '';
+ALTER TABLE service_resolution modify column urn varchar(255) character set latin1 binary default '';
+
+

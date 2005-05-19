@@ -168,9 +168,9 @@ DROP TABLE IF EXISTS service_resolution;
 CREATE TABLE service_resolution (
   objectid bigint(20) NOT NULL,
   serviceid bigint NOT NULL,
-  soapaction varchar(255) character set latin1 default '',
-  urn varchar(255) character set latin1 default '',
-  uri varchar(255) character set latin1 default '',
+  soapaction varchar(255) character set latin1 BINARY default '',
+  urn varchar(255) character set latin1 BINARY default '',
+  uri varchar(255) character set latin1 BINARY default '',
   unique(soapaction, urn, uri),
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB;
@@ -380,7 +380,6 @@ CREATE TABLE audit_message (
   status varchar(32) NOT NULL,
   request_id varchar(40) NOT NULL,
   service_oid bigint(20),
-  operation_name varchar(255),
   user_name varchar(64),
   authenticated tinyint(1) default '0',
   provider_oid bigint(20),
@@ -389,8 +388,6 @@ CREATE TABLE audit_message (
   response_length int(11),
   request_xml mediumtext,
   response_xml mediumtext,
-  response_status int(11),
-  routing_latency int(11),
   PRIMARY KEY  (objectid),
   KEY idx_status (status),
   KEY idx_request_id (request_id),
