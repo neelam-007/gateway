@@ -1,10 +1,10 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.PauseListener;
-import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.common.gui.widgets.SquigglyTextArea;
 import com.l7tech.console.event.BeanEditSupport;
 import com.l7tech.policy.assertion.Regex;
+import com.l7tech.common.gui.widgets.SquigglyTextArea;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.common.gui.util.PauseListener;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -15,14 +15,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.text.NumberFormat;
 
 /**
  * @author emil
@@ -46,62 +45,63 @@ public class RegexDialog extends JDialog {
     private Pattern pattern = null;
     private JButton clearTestOutputButton;
     private JCheckBox caseInsensitivecheckBox;
-    private JRadioButton matchRadioButton;
+    private JRadioButton proceedIfMatchRadioButton;
     private JRadioButton matchAndReplaceRadioButton;
     private JTextPane testResultTextPane;
-    private JLabel replaceMentTextAreaLabel;
+    private JLabel replacementTextAreaLabel;
     private JLabel testInputTextAreaLabel;
     private JLabel testResultTextAreaLabel;
+    private JRadioButton proceedIfNoMatchRadioButton;
+    private JLabel assertionResultLabel;
     private JFormattedTextField mimePartTextField;
     private JFormattedTextField encodingField;
 
-    public RegexDialog(Frame owner, Regex regexAssertion)
-      throws HeadlessException {
+    public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
         super(owner, true);
         setTitle("Regular Expression Assertion");
         if (regexAssertion == null) {
             throw new IllegalArgumentException();
         }
         this.regexAssertion = regexAssertion;
-        try {
-            initialize();
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
+        initialize();
     }
 
-    private void initialize() throws ParseException {
+    private void initialize() {
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(mainPanel);
         if (regexAssertion.getRegex() != null) {
             regexTextArea.setText(regexAssertion.getRegex());
         }
-
         if (regexAssertion.getEncoding() != null) {
             encodingField.setText(regexAssertion.getEncoding());
         }
 
         ButtonGroup group = new ButtonGroup();
-        group.add(matchRadioButton);
+        group.add(proceedIfMatchRadioButton);
         group.add(matchAndReplaceRadioButton);
+        group.add(proceedIfNoMatchRadioButton);
 
         final ItemListener radioButtonListener = new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 boolean enable = matchAndReplaceRadioButton.isSelected();
                 replaceTextArea.setEnabled(enable);
-                replaceMentTextAreaLabel.setEnabled(enable);
+                replacementTextAreaLabel.setEnabled(enable);
             }
         };
-        matchRadioButton.addItemListener(radioButtonListener);
-        matchAndReplaceRadioButton.addItemListener(radioButtonListener);
 
-        matchRadioButton.setSelected(!regexAssertion.isReplace());
+        proceedIfMatchRadioButton.addItemListener(radioButtonListener);
+        matchAndReplaceRadioButton.addItemListener(radioButtonListener);
+        proceedIfNoMatchRadioButton.addItemListener(radioButtonListener);
+
+        proceedIfMatchRadioButton.setSelected(!regexAssertion.isReplace() && regexAssertion.isProceedIfPatternMatches());
+        proceedIfNoMatchRadioButton.setSelected(!regexAssertion.isReplace() && !regexAssertion.isProceedIfPatternMatches());
         matchAndReplaceRadioButton.setSelected(regexAssertion.isReplace());
 
         if (regexAssertion.isReplace() && regexAssertion.getReplacement() != null) {
             replaceTextArea.setText(regexAssertion.getReplacement());
         }
+        caseInsensitivecheckBox.setSelected(regexAssertion.isCaseInsensitive());
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -117,12 +117,13 @@ public class RegexDialog extends JDialog {
                 regexAssertion.setReplacement(replaceTextArea.getText());
                 regexAssertion.setCaseInsensitive(caseInsensitivecheckBox.isSelected());
                 regexAssertion.setReplace(matchAndReplaceRadioButton.isSelected());
+                regexAssertion.setProceedIfPatternMatches(!proceedIfNoMatchRadioButton.isSelected());
+
                 Object val = mimePartTextField.getValue();
                 regexAssertion.setMimePart(val != null ? ((Integer)val).intValue() : 0);
 
                 String enc = encodingField.getText();
-                if (enc != null && enc.length() > 0)
-                    regexAssertion.setEncoding(enc);
+                regexAssertion.setEncoding(enc);
 
                 beanEditSupport.fireEditAccepted(regexAssertion);
             }
@@ -145,7 +146,7 @@ public class RegexDialog extends JDialog {
 
                     while (matcher.find()) {
                         matcher.appendReplacement(sb, replaceText);
-                        highlights.add(new int[]{sb.length() - replaceText.length(), replaceText.length()});
+                        highlights.add(new int[] {sb.length() - replaceText.length(), replaceText.length()});
                     }
                     matcher.appendTail(sb);
 
@@ -163,7 +164,7 @@ public class RegexDialog extends JDialog {
                     }
 
                     while (matcher.find()) {
-                        highlights.add(new int[]{matcher.start(), matcher.end() - matcher.start()});
+                        highlights.add(new int[] {matcher.start(), matcher.end() - matcher.start()});
                     }
                 }
                 for (Iterator iterator = highlights.iterator(); iterator.hasNext();) {
@@ -239,6 +240,12 @@ public class RegexDialog extends JDialog {
             }
         }, 700);
 
+        caseInsensitivecheckBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                updatePattern();
+            }
+        });
+
         Integer mimePartIndex = new Integer(regexAssertion.getMimePart());
         NumberFormat fmt = NumberFormat.getNumberInstance();
         fmt.setMaximumIntegerDigits(2);
@@ -252,12 +259,6 @@ public class RegexDialog extends JDialog {
         DefaultFormatterFactory fmtFactory = new DefaultFormatterFactory(defaultFormat);
         mimePartTextField.setFormatterFactory(fmtFactory);
         mimePartTextField.setValue(mimePartIndex);
-
-        caseInsensitivecheckBox.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                updatePattern();
-            }
-        });
     }
 
     private boolean shouldEnableTestButton() {
