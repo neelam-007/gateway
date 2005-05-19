@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.service.resolution;
@@ -18,7 +16,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public abstract class WsdlOperationServiceResolver extends NameValueServiceResolver {
     protected Object[] doGetTargetValues( PublishedService service ) {
@@ -30,6 +27,8 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
         int max = getMaxLength();
         try {
             Wsdl wsdl = service.parsedWsdl();
+            // fla bugfix for 1827 soap bindings only should be considered for soap web services
+            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
             if (wsdl == null) return new Object[0];
             Iterator operations = wsdl.getBindingOperations().iterator();
             BindingOperation operation;
@@ -62,6 +61,8 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
         }
         try {
             Wsdl wsdl = candidateService.parsedWsdl();
+            // fla bugfix for 1827 soap bindings only should be considered for soap web services
+            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
             Iterator operations = wsdl.getBindingOperations().iterator();
             BindingOperation operation;
             while (operations.hasNext()) {
