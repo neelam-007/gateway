@@ -13,6 +13,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -44,7 +45,12 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
             throws SAXException, IOException, PolicyAssertionException
     {
         if (context.getService().isSoap()) {
-            if (context.getRequest().getXmlKnob().getProcessorResult() == null) {
+            final XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
+            if (requestXml == null) {
+                logger.finest("skipping this because the message isn't XML");
+                return;
+            }
+            if (requestXml.getProcessorResult() == null) {
                 logger.finest("skipping this because no security header were processed");
                 return;
             }
