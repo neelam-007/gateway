@@ -44,6 +44,10 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
             throws SAXException, IOException, PolicyAssertionException
     {
         if (context.getService().isSoap()) {
+            if (context.getRequest().getXmlKnob().getProcessorResult() == null) {
+                logger.finest("skipping this because no security header were processed");
+                return;
+            }
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             if (secHeaderHandlingOption == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER ||
                 secHeaderHandlingOption == RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER) {
