@@ -46,7 +46,6 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Wsdl {
-
     public static final String NS = "ns";
     /**
      * bitmask for soap bindings filtering
@@ -62,6 +61,15 @@ public class Wsdl {
     public static final int ALL_BINDINGS = SOAP_BINDINGS | HTTP_BINDINGS;
 
     private int showBindings = ALL_BINDINGS;
+
+    /** rpc style constaint */
+    public static final String STYLE_RPC = "rpc";
+    /** document style constaint */
+    public static final String STYLE_DOCUMENT = "document";
+
+    /**
+     * bitmask that accepts all bindings
+     */
 
     /**
      * The protected constructor accepting the <code>Definition</code>
@@ -87,14 +95,6 @@ public class Wsdl {
      * @param reader          the character stream that contains the WSDL document,
      *                        an XML document obeying the WSDL schema.
      *                        <p/>
-     *                        <p>The example reads the WSDL definition from StringReader: <pre>
-     *                                                                                                                                                                                         // Retrieve the WSDL definition from the string representing
-     *                                                                                                                                                                                         // the wsdl and iterate over the services.
-     *                                                                                                                                                                                         <p/>
-     *                                                                                                                                                                                         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                                                                                                                                                                                         Iterator services = wsdl.getServices().iterator();
-     *                                                                                                                                                                                         ...
-     *                                                                                                                                                                                         </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
@@ -200,10 +200,10 @@ public class Wsdl {
         final Collection allBindings = new ArrayList();
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                if(def == null) return;
+                if (def == null) return;
 
                 Map bindings = def.getBindings();
-                if(bindings != null && bindings.values() != null) {
+                if (bindings != null && bindings.values() != null) {
                     allBindings.addAll(bindings.values());
                 }
             }
@@ -291,10 +291,10 @@ public class Wsdl {
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                if(def == null) return;
+                if (def == null) return;
 
                 Map messages = def.getMessages();
-                if(messages != null && messages.values() != null) {
+                if (messages != null && messages.values() != null) {
                     allMessages.addAll(def.getMessages().values());
                 }
             }
@@ -312,10 +312,10 @@ public class Wsdl {
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                if(def == null) return;
+                if (def == null) return;
 
                 Map portTypes = def.getPortTypes();
-                if( portTypes != null && portTypes.values() != null) {
+                if (portTypes != null && portTypes.values() != null) {
                     allPortTypes.addAll(def.getPortTypes().values());
                 }
             }
@@ -334,10 +334,10 @@ public class Wsdl {
 
         collectElements(new ElementCollector() {
             public void collect(Definition def) {
-                if(def == null) return;
+                if (def == null) return;
 
                 Map services = def.getServices();
-                if(services != null && services.values() != null) {
+                if (services != null && services.values() != null) {
                     allServices.addAll(def.getServices().values());
                 }
             }
@@ -367,7 +367,7 @@ public class Wsdl {
      * Write the internal WSDL definition to the <code>Writer</code
      * passed
      *
-     * @param writer the writer where the
+     * @param writer the target writer
      *               <p/>
      *               <p>The example reads the WSDL definition from StringReader
      *               and then writes it ti the StringWriter:
@@ -394,7 +394,7 @@ public class Wsdl {
     /**
      * Write the internal WSDL definition to the <code>OutputStream</code>
      *
-     * @param os the output stream
+     * @param os the target output stream
      *           <p/>
      *           <p>The example reads the WSDL definition from StringReader
      *           and then writes it ti the file:
@@ -454,18 +454,30 @@ public class Wsdl {
         while (bindings.hasNext()) {
             Binding binding = (Binding)bindings.next();
             if (binding.getBindingOperations().contains(bo)) {
-                ExtensibilityElement bindingProtocol = getBindingProtocol(binding);
-                if (bindingProtocol == null ||
-                  bindingProtocol instanceof HTTPBinding) {
-                    return "document"; // GET/POST uses document?
-                } else if (bindingProtocol instanceof SOAPBinding) {
-                    SOAPBinding sb = (SOAPBinding)bindingProtocol;
-                    return sb.getStyle();
-                }
+                return getBindingStyle(binding);
             }
         }
-        return "document"; //default
+        return Wsdl.STYLE_DOCUMENT; //default
     }
+
+    /**
+     * Determine the binding style ("document | "rpc") for an binding.
+     *
+     * @param binding the binding to determine the style for
+     * @return the operation style "rpc" | "document", if undefined "rpc" is returned
+     */
+    public String getBindingStyle(Binding binding) {
+        ExtensibilityElement bindingProtocol = getBindingProtocol(binding);
+        if (bindingProtocol == null ||
+          bindingProtocol instanceof HTTPBinding) {
+            return Wsdl.STYLE_DOCUMENT; // GET/POST uses document?
+        } else if (bindingProtocol instanceof SOAPBinding) {
+            SOAPBinding sb = (SOAPBinding)bindingProtocol;
+            return sb.getStyle();
+        }
+        return Wsdl.STYLE_DOCUMENT; //default
+    }
+
 
     /**
      * Return the protocol binding (soap, http etc) extensibility
@@ -532,7 +544,8 @@ public class Wsdl {
                     }
                 }
             }
-            if (numPorts > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first.");
+            if (numPorts > 1)
+                logger.warning("WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first.");
         }
         return soapPort;
     }
@@ -719,6 +732,7 @@ public class Wsdl {
 
     /**
      * extract base URI from the URL specified.
+     *
      * @param url
      * @return
      */
@@ -726,7 +740,7 @@ public class Wsdl {
 
         int lastIndexOfSlash = url.lastIndexOf('/');
         String baseURL;
-        if(lastIndexOfSlash == -1) {
+        if (lastIndexOfSlash == -1) {
             baseURL = "./";
         } else {
             baseURL = url.substring(0, lastIndexOfSlash + 1);
@@ -752,7 +766,8 @@ public class Wsdl {
             }
         }
 
-        if (num > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
+        if (num > 1)
+            logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
 
         return uri;
     }
@@ -780,7 +795,8 @@ public class Wsdl {
             }
         }
 
-        if (num > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
+        if (num > 1)
+            logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
     }
 
     public String getPortUrl(Port wsdlPort) {
@@ -805,16 +821,17 @@ public class Wsdl {
     /**
      * Traverses all the imported definitions and invokes collect on the collector
      * for reach definition
+     *
      * @param collector
      */
     private void collectElements(ElementCollector collector, Definition def) {
         collector.collect(def);
         final Map imports = def.getImports();
         for (Iterator iterator = imports.values().iterator(); iterator.hasNext();) {
-            List importList = (List) iterator.next();
+            List importList = (List)iterator.next();
             for (int i = 0; i < importList.size(); i++) {
-                Import importDef = (Import) importList.get(i);
-                if(importDef.getDefinition() != null) {
+                Import importDef = (Import)importList.get(i);
+                if (importDef.getDefinition() != null) {
                     collectElements(collector, importDef.getDefinition());
                 }
             }
@@ -824,37 +841,37 @@ public class Wsdl {
     /**
      * Get the schema element from the wsdl definiton.
      *
-     * @param def  the wsdl definition
+     * @param def the wsdl definition
      * @return Element the "schema" element in the wsdl
-     * @throws RemoteException  if failed to call the remote object
-     * @throws MalformedURLException  if URL format is invalide
-     * @throws IOException   when error occured in reading the wsdl document
-     * @throws SAXException  when error occured in parsing XML
+     * @throws RemoteException       if failed to call the remote object
+     * @throws MalformedURLException if URL format is invalide
+     * @throws IOException           when error occured in reading the wsdl document
+     * @throws SAXException          when error occured in parsing XML
      */
     public static Element getSchemaElement(Definition def)
-            throws RemoteException, MalformedURLException, IOException, SAXException {
+      throws RemoteException, MalformedURLException, IOException, SAXException {
         Element schemaElement = null;
         Import imp = null;
         if (def.getImports().size() > 0) {
             Iterator itr = def.getImports().keySet().iterator();
             while (itr.hasNext()) {
                 Object importDef = itr.next();
-                List importList = (List) def.getImports().get(importDef);
+                List importList = (List)def.getImports().get(importDef);
                 for (int k = 0; k < importList.size(); k++) {
-                    imp = (Import) importList.get(k);
+                    imp = (Import)importList.get(k);
                     // check if the schema is inside the file
                     String url = imp.getLocationURI();
                     String resolvedXml = null;
-                    resolvedXml =  Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
+                    resolvedXml = Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
 
-                    if(resolvedXml != null) {
+                    if (resolvedXml != null) {
                         Document resultDoc = XmlUtil.stringToDocument(resolvedXml);
-                        if(resultDoc != null) {
+                        if (resultDoc != null) {
                             NodeList nodeList = resultDoc.getElementsByTagName("schema");
 
-                            if(nodeList != null && nodeList.item(0) != null) {
+                            if (nodeList != null && nodeList.item(0) != null) {
                                 // should only have one
-                                return (Element) nodeList.item(0);
+                                return (Element)nodeList.item(0);
                             }
                         }
                     }
@@ -863,7 +880,7 @@ public class Wsdl {
         }
 
         // if not found
-        if(schemaElement == null) {
+        if (schemaElement == null) {
             if (imp != null && imp.getDefinition() != null) {
                 schemaElement = getSchemaElement(imp.getDefinition());
             }
@@ -876,9 +893,10 @@ public class Wsdl {
 
     private transient Logger logger = Logger.getLogger(getClass().getName());
 
-    private interface ElementCollector  {
+    private interface ElementCollector {
         /**
          * The implementation collects the elements of the interest fro mthe definition
+         *
          * @param def the wsdl DEfinition
          */
         void collect(Definition def);
