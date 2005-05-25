@@ -364,6 +364,12 @@ public class ServerConfig extends ApplicationObjectSupport {
         return _hostname;
     }
 
+    /**
+     * Get the attachment disk spooling threshold in bytes.
+     * WARNING: This method is a tad slow and is not recommended to be called on the critical path.
+     *
+     * @return The theshold in bytes above which MIME parts will be spooled to disk.  Always nonnegative.
+     */
     public int getAttachmentDiskThreshold() {
         String str = getProperty(PARAM_ATTACHMENT_DISK_THRESHOLD);
 
