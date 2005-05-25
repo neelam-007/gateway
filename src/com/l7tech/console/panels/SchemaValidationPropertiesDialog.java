@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
@@ -21,15 +22,15 @@ import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
+import javax.wsdl.Binding;
+import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.EventListener;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +43,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 6, 2004<br/>
- * $Id$<br/>
  *
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
@@ -113,9 +113,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 }
             }
         });
-        if (!service.isSoap()) {
-            readFromWsdlButton.setEnabled(false);
-        }
+
+        readFromWsdlButton.setEnabled(wsdlExtractSupported());
+        readFromWsdlButton.setToolTipText("Extract schema from WSDL; available for 'document/literal' style services");
         resolveButton.addActionListener( new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -143,6 +143,37 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 }
             }
         });
+    }
+
+    /**
+     * Determine whether wsdl extracting is supported. This is supported for 'document'
+     * style services only.
+     * Traverse all the soap bindings, and if all the bindings are of style 'document'
+     * returns true.
+     * @return  true if 'document' stle supported, false otherwise
+     */
+    private boolean wsdlExtractSupported() {
+        if (!service.isSoap()) return false;
+        String wsdlXml = service.getWsdlXml();
+        if (wsdlXml == null) return false;
+
+        try {
+            Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
+            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+            Collection bindings = wsdl.getBindings();
+            if (bindings.isEmpty()) return false;
+
+            for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+                Binding binding = (Binding)iterator.next();
+                if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding))) {
+                     return false;
+                }
+            }
+            return true;
+        } catch (WSDLException e) {
+            log.log(Level.WARNING, "Wsdl parsing error", e);
+        }
+        return false;
     }
 
     private void ok() {
