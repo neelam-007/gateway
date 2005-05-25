@@ -67,7 +67,7 @@ stop() {
 		exit
 	fi	
 	if [ $RETVAL = 0 ]; then 
-		sleep 5;
+		sleep 7;
 		find_tomcat;
 		if [ -z "$pid" ] ; then
  			echo "Success"
@@ -111,6 +111,7 @@ case "$1" in
 	;;
   restart)
 	stop
+        sleep 5
 	start
 	;;
 esac
