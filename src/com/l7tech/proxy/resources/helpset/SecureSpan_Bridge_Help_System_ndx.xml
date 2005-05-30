@@ -1,0 +1,171 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE index PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Index Version 1.0//EN" "http://java.sun.com/products/javahelp/index_1_0.dtd">
+<index version="1.0">
+ <indexitem text="About Message Routing" target="about_message_routing_htm" />
+ <indexitem text="About SSL/TLS Security Sessions" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="About Stored Policies:About Stored Policies" target="about_stored_policies_htm" />
+ <indexitem text="About Stored Policies:SecureSpan Bridge Workflow" target="securespan_bridge_workflow_htm" />
+ <indexitem text="Ad-Hoc Identity Bridging" target="identity_bridging_requirements_htm" />
+ <indexitem text="Add Certificate Wizard" target="add_edit_certificates_htm" />
+ <indexitem text="Analyze SecureSpan™ Bridge Performance" target="analyze_securespan_bridge_performance_htm" />
+ <indexitem text="Associated Policy window:About Stored Policies" target="about_stored_policies_htm" />
+ <indexitem text="Associated Policy window:Import/Export Policies" target="import_export_policies_htm" />
+ <indexitem text="Associated Policy window:Manage Stored Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Authentication Domain" target="identity_bridging_requirements_htm" />
+ <indexitem text="Authorization Domain" target="identity_bridging_requirements_htm" />
+ <indexitem text="Body Namespace" target="manage_stored_policies_htm" />
+ <indexitem text="Bridge Interface" target="securespan_bridge_interface_htm" />
+ <indexitem text="Cached Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Cached Policies Table" target="about_stored_policies_htm" />
+ <indexitem text="Certificate Signing Request:About SSL/TLS Security Sessions" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="Certificate Signing Request:Manage Gateway Accounts" target="edit_gateway_accounts_htm" />
+ <indexitem text="Certificates Overview" target="certificates_overview_htm" />
+ <indexitem text="Certificates Properties" target="add_edit_certificates_htm" />
+ <indexitem text="Change Account Password" target="edit_gateway_accounts_htm" />
+ <indexitem text="Change Password" target="edit_gateway_accounts_htm" />
+ <indexitem text="Clear Policy Cache" target="manage_stored_policies_htm" />
+ <indexitem text="Clear Recent Message" target="view_message_activity_htm" />
+ <indexitem text="Client Certificate" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Client Certificate Authentication" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="Client Certificate Request Process" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="Configure Client Applications" target="configure_client_applications_htm" />
+ <indexitem text="Configure Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Configure Policy Attachment Key:Import/Export Policies" target="import_export_policies_htm" />
+ <indexitem text="Configure Policy Attachment Key:Manage Stored Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Configure SAML Policies:Configure SAML Policies" target="configure_saml_policies_htm" />
+ <indexitem text="Configure SAML Policies:Identity Bridging Policy Overview" target="identity_bridging_policy_overview_htm" />
+ <indexitem text="Consume Shared Web Service" target="consume_shared_web_service_htm" />
+ <indexitem text="Contact Information" target="technical_support_and_contact_information_htm" />
+ <indexitem text="Content-Type" target="configure_client_applications_htm" />
+ <indexitem text="Create Federated Gateway Accounts" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Create Federated Identity Provider Wizard" target="add_edit_fip_users_and_groups_htm" />
+ <indexitem text="Create Federated User:Add/Edit Certificates" target="add_edit_certificates_htm" />
+ <indexitem text="Create Federated User:Add/Edit FIP Users and Groups" target="add_edit_fip_users_and_groups_htm" />
+ <indexitem text="Create Gateway Account:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Create Gateway Account:Manage Gateway Accounts" target="edit_gateway_accounts_htm" />
+ <indexitem text="Create Gateway Account:SecureSpan Bridge Workflow" target="securespan_bridge_workflow_htm" />
+ <indexitem text="Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Create Virtual Group" target="add_edit_fip_users_and_groups_htm" />
+ <indexitem text="Daemon Mode" target="daemon_mode_htm" />
+ <indexitem text="Edit Certificates" target="add_edit_certificates_htm" />
+ <indexitem text="Edit Federated Identity Provider Users" target="add_edit_fip_users_and_groups_htm" />
+ <indexitem text="Edit Policy Attachment Key" target="manage_stored_policies_htm" />
+ <indexitem text="Enter New SecureSpan Gateway Password" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Failover Strategy" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Federated Gateway:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Federated Gateway:Create Federated Gateway Accounts" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Federated Gateway Account:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Federated Gateway Account:Create Federated Gateway Accounts" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Federated Gateway Account:SecureSpan Gateway Accounts Overview" target="securespan_gateway_accounts_overview_htm" />
+ <indexitem text="Federated Identity Provider:Add/Edit Certificates" target="add_edit_certificates_htm" />
+ <indexitem text="Federated Identity Provider:Federated Identity Provider Overview" target="federated_identity_provider_overview_htm" />
+ <indexitem text="Federated Identity Provider Overview" target="federated_identity_provider_overview_htm" />
+ <indexitem text="Federated SecureSpan™ Gateway Account" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Full Identity Bridging:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Full Identity Bridging:Identity Bridging Requirements" target="identity_bridging_requirements_htm" />
+ <indexitem text="Gateway Account Properties:About Stored Policies" target="about_stored_policies_htm" />
+ <indexitem text="Gateway Account Properties:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Gateway Account Properties:Import/Export Policies" target="import_export_policies_htm" />
+ <indexitem text="Gateway Account Properties:Manage Gateway Accounts" target="edit_gateway_accounts_htm" />
+ <indexitem text="Gateway Account Properties:Manage Policies Overview" target="manage_policies_overview_htm" />
+ <indexitem text="Gateway Account Properties:Manage Stored Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Gateway Accounts:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Gateway Accounts:Manage Policies Overview" target="manage_policies_overview_htm" />
+ <indexitem text="Gateway Accounts:SecureSpan Gateway Accounts Overview" target="securespan_gateway_accounts_overview_htm" />
+ <indexitem text="Gateway Host Name" target="edit_gateway_accounts_htm" />
+ <indexitem text="Gateway Properties" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="GUI" target="daemon_mode_htm" />
+ <indexitem text="GUI window" target="analyze_securespan_bridge_performance_htm" />
+ <indexitem text="Help System" target="securespan_bridge_documentation_htm" />
+ <indexitem text="Help System Tabs" target="securespan_bridge_documentation_htm" />
+ <indexitem text="Help System window" target="securespan_bridge_documentation_htm" />
+ <indexitem text="Help Topics" target="securespan_bridge_documentation_htm" />
+ <indexitem text="Identity Bridging" target="identity_bridging_overview_htm" />
+ <indexitem text="Identity Bridging Overview" target="identity_bridging_overview_htm" />
+ <indexitem text="Identity Bridging Requirements" target="identity_bridging_requirements_htm" />
+ <indexitem text="Import Certificate:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Import Certificate:Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Import Client Certificate:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Import Client Certificate:Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Import/Export Policies" target="import_export_policies_htm" />
+ <indexitem text="Info@layer7tech.com" target="technical_support_and_contact_information_htm" />
+ <indexitem text="Lifecycle" target="lifecycle_of_security_sessions_htm" >
+  <indexitem text="Security Sessions" target="lifecycle_of_security_sessions_htm" />
+  </indexitem>
+ <indexitem text="Log" target="view_log_files_htm" />
+ <indexitem text="Logging.properties” file" target="view_log_files_htm" />
+ <indexitem text="Manage Certificates" target="add_edit_certificates_htm" />
+ <indexitem text="Manage Gateway Accounts" target="edit_gateway_accounts_htm" />
+ <indexitem text="Manage Stored Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Message Routing Overview" target="message_routing_overview_htm" />
+ <indexitem text="Namespace" target="manage_stored_policies_htm" />
+ <indexitem text="New Trusted Gateway Account" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Non-SOAP" target="manage_stored_policies_htm" />
+ <indexitem text="Policies Overview" target="manage_policies_overview_htm" />
+ <indexitem text="Policy Attachment Key:About Stored Policies" target="about_stored_policies_htm" />
+ <indexitem text="Policy Attachment Key:Import/Export Policies" target="import_export_policies_htm" />
+ <indexitem text="Policy Attachment Key:Manage Stored Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Previously-configured Trusted Gateway" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Previously-Created Trusted Gateway" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Print Help Topics" target="securespan_bridge_documentation_htm" />
+ <indexitem text="Proxy URI" target="manage_stored_policies_htm" />
+ <indexitem text="Recent Message Traffic" target="view_message_activity_htm" />
+ <indexitem text="Recent Message Traffic window" target="view_message_activity_htm" />
+ <indexitem text="Reformat Message XML" target="view_message_activity_htm" />
+ <indexitem text="Reformat XML" target="view_message_activity_htm" />
+ <indexitem text="Request Message Conforms" target="about_message_routing_htm" />
+ <indexitem text="Request Message Does Not Conform" target="about_message_routing_htm" />
+ <indexitem text="Routed Messages" target="configure_client_applications_htm" />
+ <indexitem text="SAML" target="configure_saml_policies_htm" />
+ <indexitem text="SAML Assertion:Configure SAML Policies" target="configure_saml_policies_htm" />
+ <indexitem text="SAML Assertion:Identity Bridging Policy Overview" target="identity_bridging_policy_overview_htm" />
+ <indexitem text="SAML Constraints Wizard" target="configure_saml_policies_htm" />
+ <indexitem text="SAML Policy:Configure SAML Policies" target="configure_saml_policies_htm" />
+ <indexitem text="SAML Policy:Identity Bridging Policy Overview" target="identity_bridging_policy_overview_htm" />
+ <indexitem text="SAML Statement Type" target="configure_saml_policies_htm" />
+ <indexitem text="SAML workflow" target="identity_bridging_policy_overview_htm" />
+ <indexitem text="Saved SSL Certificate" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="SecureSpan Bridge" target="securespan_overview_htm" />
+ <indexitem text="SecureSpan Bridge GUI" target="daemon_mode_htm" />
+ <indexitem text="SecureSpan Gateway" target="securespan_overview_htm" />
+ <indexitem text="SecureSpan Manager" target="securespan_overview_htm" />
+ <indexitem text="Security Sessions" target="lifecycle_of_security_sessions_htm" />
+ <indexitem text="Security Token Service" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Server Certificate Discovery" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="Service Policies:About Stored Policies" target="about_stored_policies_htm" />
+ <indexitem text="Service Policies:Import/Export Policies" target="import_export_policies_htm" />
+ <indexitem text="Service Policies:Manage Policies Overview" target="manage_policies_overview_htm" />
+ <indexitem text="Service Policies:Manage Stored Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Signing Client Certificates" target="add_edit_certificates_htm" />
+ <indexitem text="Signing SAML Tokens" target="add_edit_certificates_htm" />
+ <indexitem text="SOAPAction:Import/Export Policies" target="import_export_policies_htm" />
+ <indexitem text="SOAPAction:Manage Stored Policies" target="manage_stored_policies_htm" />
+ <indexitem text="Support" target="technical_support_and_contact_information_htm" />
+ <indexitem text="Support@layer7tech.com" target="technical_support_and_contact_information_htm" />
+ <indexitem text="Technical Support" target="technical_support_and_contact_information_htm" />
+ <indexitem text="Technical Support Representative" target="technical_support_and_contact_information_htm" />
+ <indexitem text="Troubleshooting Mode" target="securespan_bridge_troubleshooting_mode_htm" />
+ <indexitem text="Trusted Gateway:Add/Edit Certificates" target="add_edit_certificates_htm" />
+ <indexitem text="Trusted Gateway:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Trusted Gateway:Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Trusted Gateway Account:Configure SecureSpan Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+ <indexitem text="Trusted Gateway Account:Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Trusted Gateway Account:SecureSpan Gateway Accounts Overview" target="securespan_gateway_accounts_overview_htm" />
+ <indexitem text="Trusted SecureSpan™ Gateway Account" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="Version Information" target="version_and_legalities_htm" />
+ <indexitem text="View Client Certificate:About SSL/TLS Security Sessions" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="View Client Certificate:Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="View Log Files" target="view_log_files_htm" />
+ <indexitem text="View Message Activity" target="view_message_activity_htm" />
+ <indexitem text="View Message Details" target="view_message_activity_htm" />
+ <indexitem text="View Server Certificate:About SSL/TLS Security Sessions" target="about_ssl_tls_security_sessions_htm" />
+ <indexitem text="View Server Certificate:Create Federated Gateway Accounts" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="View Server Certificate:Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+ <indexitem text="View Token Service Certificate" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="Workflow:Identity Bridging Workflow" target="identity_bridging_workflow_htm" />
+ <indexitem text="Workflow:Identity Bridging Workflow Using an X.509 Certificate" target="identity_bridging_workflow_using_an_x_509_certificate_htm" />
+ <indexitem text="WS-Trust Security Token Service" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="WS-Trust URL" target="create_federated_gateway_accounts_htm" />
+ <indexitem text="X.509" target="identity_bridging_workflow_using_an_x_509_certificate_htm" />
+ <indexitem text="X.509 Certificate" target="identity_bridging_workflow_using_an_x_509_certificate_htm" />
+</index>

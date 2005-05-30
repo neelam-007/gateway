@@ -1,0 +1,467 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Manage Gateway Accounts</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=4052>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;WSDL;Uptime;uptime;Unix;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;WS;username;Username;Xml-based;DMZ;non-invasively;Solaris;internetworking;Beatty;ext;GUI-based;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;connection(s;Bridge.sh;daemon;Extranet;workflows;interoperable;PKCS;JMS;XSLT;WS-SecureConversation;WS-Metadata;WS-Policy;WSRP;MQ;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;CN=*;A(s;requestor-side;FIPs;certificate(s;CN=;IIP;CN=user;uncheck;F;HOK;NameQualifier;ssgs.xml;Files\Layer;Technologies\SecureSpan;bd;Ctrl;Y;ps;PID;axuf|grep;killall;java;JSP;non-LDAP;Netegrity;SiteMinder;keystore;CSR">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Manage Gateway Accounts</h1>
+
+<p>In the SecureSpan™ Bridge, configured SecureSpan™ Gateway Accounts appear 
+ in the Account List. Each column in the Account List corresponds with 
+ a property of the associated Gateway Account:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The URL in the Gateway column is the host name 
+ of the SecureSpan Gateway that is protecting the target service</p></li>
+	
+	<li class="kadov-p"><p>The name in the Proxy column is the unique proxy 
+ URI prefix assigned to the Gateway Account by the SecureSpan Bridge. The 
+ numbered portion of the identifier, “gateway&lt;sequential number&gt;,” 
+ is assigned based on the sequential number of Gateway Accounts configured 
+ in the SecureSpan Bridge</p></li>
+	
+	<li class="kadov-p"><p>The Type column identifies the type of Gateway 
+ Account — trusted or federated — configured between the SecureSpan Bridge 
+ and the SecureSpan Gateway</p></li>
+	
+	<li class="kadov-p"><p>The User Name column contains the user name portion 
+ of the credentials, if any, configured for the Gateway Account. </p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ See <a href="SecureSpan_Bridge_Interface.htm">SecureSpan<symbol name=Trademark>&#8482; 
+ Bridge Interface</a> for more information about the SecureSpan™ Bridge 
+ interface, and <a HREF="About_Stored_Policies.htm">About Stored Policies</a> 
+ and <a HREF="About_Message_Routing.htm">About Message Routing</a> for 
+ more information about stored service policies and the message routing 
+ process.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>A Gateway Account can be edited or deleted, the password for the Gateway 
+ Account and SecureSpan Gateway can be changed, a Gateway Account can be 
+ set as the default in the Account List, and the default status in the 
+ SecureSpan Bridge can be removed at any time. </p>
+
+<p>&nbsp;</p>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#Edit_a_Gateway_Account">Edit a Gateway Account</a></p>
+
+<p class="quicklinks"><a href="#Delete_a_SecureSpan__Gateway_Account">Delete 
+ a Gateway Account</a></p>
+
+<p class="quicklinks"><a href="#Change_the_SecureSpan__Gateway_Password">Change 
+ the SecureSpan™ Gateway Password</a></p>
+
+<p class="quicklinks"><a href="#Change_the_Default_Gateway_Account">Change 
+ the Default Gateway Account</a></p>
+
+<p class="quicklinks"><a href="#Remove_the_Default_Status">Remove the Default 
+ Status</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Edit_a_Gateway_Account
+								style="color: #000000;">Edit a Gateway 
+ Account</a></h2>
+
+<p>To edit the configuration settings of a Gateway Account:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List. </p></li>
+	
+	<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Properties</B></span>] 
+ button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Properties</B></span> from the Main 
+ Menu.</p></li>
+	
+	<li class="kadov-p"><p>The Gateway Account Properties form appears. See 
+ <a HREF="Create_Trusted_Gateway_Accounts.htm">Create Trusted Gateway Accounts</a> 
+ or <a HREF="Create_Federated_Gateway_Accounts.htm">Create Federated Gateway 
+ Accounts</a> for field-level information and instructions.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Delete_a_SecureSpan__Gateway_Account
+								style="color: #000000;">Delete a Gateway 
+ Account</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Deleting the default Gateway Account from the Account List will not automatically 
+ assign default status to a different Gateway Account. You must manually 
+ specify a new default Gateway Account for the SecureSpan™ Bridge as outlined 
+ in <a href="#Change_the_Default_Gateway_Account">Change the Default Gateway 
+ Account</a>. Deleting a default or non-default Gateway Account will not 
+ result in the re-numbering of the remaining Gateway Accounts in the Account 
+ List. </p>
+</div>
+
+<p>To delete a Gateway Account from the SecureSpan™ Bridge:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List. </p></li>
+	
+	<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Remove</B></span>] 
+ button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Remove</B></span> from the Main Menu.</p></li>
+	
+	<li class="kadov-p"><p>A confirmation message appears. Click [<span style="font-weight: bold;"><B>Remove</B></span>].</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If the Gateway Account is attached to a client certificate private key 
+ that will also be deleted, then a warning message will appear. Click [OK] 
+ to proceed to delete the Gateway Account. If the removed private key is 
+ required by another Gateway Account in the SecureSpan™ Bridge, then do 
+ one of the following before proceeding to delete the Gateway Account: 
+ 1) Import the client certificate and private key into the other Gateway 
+ Account as outlined in the <span style="font-style: italic;"><I>Import the 
+ Client Certificate</I></span> section in <a href="Create_Trusted_Gateway_Accounts.htm">Create 
+ Trusted Gateway Accounts</a>, or 2) Make a backup copy of the keystore 
+ file “ ~/.l7tech/keysNNN.p12,” delete the first Gateway Account, then 
+ restore the keystore file to the appropriate directory for use by the 
+ other Gateway Account.</p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Gateway Account is removed from the Account 
+ List.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Change_the_SecureSpan__Gateway_Password
+								style="color: #000000;">Change the SecureSpan™ 
+ Gateway Password</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ You can only change a password for a user name that is provided by the 
+ Internal Identity Provider in the SecureSpan™ Gateway. Credentials that 
+ are provided by an LDAP Identity Provider or non-LDAP identity provider 
+ should be changed with their management program. For information about 
+ identity providers and the optional add-on assertions that permit connections 
+ to external programs, or non-LDAP identity providers, see the &nbsp;“SecureSpan™ 
+ Manager User Manual” or program-based “SecureSpan™ Manager Help System.”</p>
+</div>
+
+<p>The SecureSpan™ Gateway password that is used in the Gateway Account 
+ in the SecureSpan™ Bridge and that is used to login to the SecureSpan 
+ Gateway and SecureSpan™ Manager can be modified as follows:</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The password associated with a Gateway Account in the SecureSpan™ Bridge 
+ is also used to login to the SecureSpan™ Gateway from the SecureSpan™ 
+ Manager. Therefore, changing the password from the SecureSpan Bridge changes 
+ the SecureSpan Gateway password everywhere. If the credentials for the 
+ Gateway Account are tied to a client certificate, then changing the password 
+ will automatically revoke the client certificate that is saved in the 
+ SecureSpan Bridge and SecureSpan Gateway. For information on the use of 
+ client certificates in a Gateway Account, see <a HREF="About_SSL_TLS_Security_Sessions.htm">About 
+ SSL/TLS Security Sessions</a>.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List. </p></li>
+	
+	<li class="kadov-p"><p>Select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Change Account Password</B></span> from 
+ the Main Menu.</p></li>
+	
+	<li class="kadov-p"><p>A confirmation message appears. Click [<span style="font-weight: bold;"><B>Change 
+ Password</B></span>].</p></li>
+	
+	<li class="kadov-p"><p>The Log on Gateway form appears. Enter the user 
+ name into the <span style="font-weight: bold;"><B>User Name</B></span> field. 
+ </p></li>
+	
+	<li class="kadov-p"><p>Enter the current password for the user name into 
+ the <span style="font-weight: bold;"><B>Password</B></span> field. Click [<span 
+ style="font-weight: bold;"><B>OK</B></span>]. </p></li>
+	
+	<li class="kadov-p"><p>The Change Password form appears. Enter the new 
+ password into the <span style="font-weight: bold;"><B>Password</B></span> field. 
+ Repeat the new password in the <span style="font-weight: bold;"><B>Verify 
+ Password</B></span> field. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The new password is automatically applied to the SecureSpan Gateway and 
+ Gateway Account in the SecureSpan Bridge. If the Gateway Account included 
+ a client certificate, then the client certificate is revoked and the new 
+ password is automatically applied to the SecureSpan Gateway and Gateway 
+ Account in the SecureSpan Bridge. During the next consumption of the service, 
+ the SecureSpan Bridge will use a Certificate Signing Request (CSR) to 
+ request a new private key from the SecureSpan Gateway. Repeat the client 
+ certificate generation process outlined in <a HREF="About_SSL_TLS_Security_Sessions.htm">About 
+ SSL/TLS Security Sessions</a>.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Change_the_Default_Gateway_Account
+								style="color: #000000;">Change the Default 
+ Gateway Account</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If you do not want to have a default Gateway Account in the SecureSpan™ 
+ Bridge, then follow the instructions in <a href="#Remove_the_Default_Status">Remove 
+ the Default Status</a>.</p>
+</div>
+
+<p>The default Gateway Account is the default handler for service requests 
+ sent to “localhost” without a specified SecureSpan™ Gateway. Default status 
+ is automatically assigned to the first Gateway Account configured in the 
+ SecureSpan Bridge. Default status can be changed to another Gateway Account 
+ at any time as follows:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List. </p></li>
+	
+	<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Set 
+ Default</B></span>] button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Set Default</B></span> from the Main 
+ Menu.</p></li>
+	
+	<li class="kadov-p"><p>The new default Gateway Account in the Account 
+ List is bolded.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Remove_the_Default_Status
+								style="color: #000000;">Remove the Default 
+ Status</a></h2>
+
+<p>For security purposes, you may not want to assign default status to 
+ a Gateway Account in the Account List. To remove the default status from 
+ the Account List and SecureSpan™ Bridge:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Create a dummy Gateway Account as follows:</p></li>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Open the Create Gateway Account form by one 
+ of two methods:</p></li>
+	</ol>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>New</B></span>] 
+ on the Main Tool Bar or,</p></li>
+			
+			<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>New</B></span> from the Main Menu.</p></li>
+		</ul>
+	</ul>
+	
+	<ol start=2
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>In the Create Gateway Account form, click 
+ [<span style="font-weight: bold;"><B>Create</B></span>]. The Gateway Account 
+ Properties form appears. </p></li>
+		
+		<li class="kadov-p"><p>Enter any two characters into the <span style="font-weight: bold;"><B>Gateway 
+ Host Name</B></span> field. Click [<span style="font-weight: bold;"><B>OK</B></span>].</p></li>
+		
+		<li class="kadov-p"><p>The dummy Gateway Account appears in the Account 
+ List. The two characters that were entered in the Gateway Host Name field 
+ appear in the Gateway column of the Account List. Use them to identify 
+ the dummy Gateway Account.</p></li>
+	</ol>
+	
+	<li class="kadov-p"><p>Make the dummy Gateway Account the default Gateway 
+ Account as outlined in <a href="#Change_the_Default_Gateway_Account">Change 
+ the Default Gateway Account</a>.</p></li>
+	
+	<li class="kadov-p"><p>Delete the Gateway Account as outlined in <a href="#Delete_a_SecureSpan__Gateway_Account">Delete 
+ a Gateway Account</a>. The bolded default dummy Gateway Account is removed 
+ from the Account List. The SecureSpan Bridge does not automatically assign 
+ default status to another Gateway Account, so the Account List no longer 
+ contains a default Gateway Account.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ To re-assign default status to a Gateway Account in the Account List, 
+ select the target Gateway Account and click [Set Default] on the Main 
+ Tool Bar.</p>
+</div>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

@@ -1,0 +1,436 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Identity Bridging Policy Overview</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Identity Bridging Policy Overview">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1959>
+<meta name=layout-width content=774>
+<meta name=x-ignored-words content="SAML;FIP;workflows;requestor;HOK">
+
+
+
+
+ <link rel="StyleSheet" href="WebHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Configure SAML Policies</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
+ B&quot; references are used in the identity bridging examples, workflows, 
+ and instructions. The Trusted Gateway A is the certificate authority (CA) 
+ that issues and manages security credentials and that is responsible for 
+ authentication. The Federated Gateway B is the Web service provider that 
+ is responsible for authorization. </p>
+</div>
+
+<p>As part of the required SAML credential source workflow, a SecureSpan™ 
+ Manager policy must be configured for the shared Web service with:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">The SAML Assertion 
+ from the Access Control category of the [Assertions] tab configured with 
+ the holder-of-key (HOK) confirmation method</p></li>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">The federated identities 
+ (users, groups, and/or virtual groups) containing credentials shared by 
+ the Trusted Gateway A and Federated Gateway B.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ See <a href="Identity_Bridging_Workflow.htm">Identity Bridging Workflow 
+ Using SAML</a> for more information about the SAML workflow.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>In the Manager, you can only configure a policy for a published Web 
+ service. See Manage SOAP Web Services 
+ for more information. After adding the SAML Assertion and federated users, 
+ groups, and/or virtual groups to the policy, configure additional policy 
+ assertions for the Web service as outlined in Policy 
+ Assertions Overview and Configure 
+ and Edit Policies.</p>
+
+<h2 style="color: #000000;">Configure a SAML Policy</h2>
+
+<p>The SecureSpan™ Manager Policy Development window is the repository 
+ for the assertions used to develop a policy. Most assertions require configuration 
+ either before or after being added to the Policy Development window. When 
+ all or most of the required assertions have been added and configured 
+ in the Policy Development window, then they must be organized into the 
+ logical structure defined below and/or in Policy 
+ Organization and Rules. For more information about the policy configuration 
+ process, or for information about the other policy assertions, see Configure and Edit Policies and 
+ Policy Assertions Overview, 
+ respectively. </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Before constructing a policy, ensure that the Policy Validation Messages 
+ window is enabled. To enable the window, select [View] &gt; Policy Messages 
+ from the Main Menu (check box checked). The Policy Validation Messages 
+ window provides you with policy and assertion-level confirmation, warning, 
+ or error messages that you can use during the configuration process. See 
+ the &quot;Validate a Policy&quot; section in Configure 
+ and Edit Policies for more information.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Access the Policy Development window for the target 
+ Web service by one of two methods:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Only published Web services appear in the [Services] tab. See Manage 
+ SOAP Web Services for more information. </p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or,</p></li>
+		
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Policy Development window appears. Add the 
+ SAML Assertion to the policy by one of two methods:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about the SAML Assertion, see Configure 
+ and Edit Access Control Assertions.</p>
+</div>
+
+<ul start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the SAML Assertion from the 
+ Access Control category of the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab into the Policy Development window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the SAML Assertion in the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 22px;
+			height: 18px;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+			margin-bottom: -2.5px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ul>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add a Grant Access to Users/Groups assertion to 
+ the policy by one of two methods:</p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the Grant Access to Users/Groups 
+ assertion from the Access Control category of the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab into the Policy Development window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the Grant Access to Users/Groups 
+ assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Search Identity Provider form appears. Add 
+ the shared federated user configured in <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a> to the policy as follows:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Select the Federated Identity Provider name 
+ from the <span style="font-weight: bold;"><B>Search</B></span> drop-down list</p></li>
+		
+		<li class="kadov-p"><p>Select the &quot;Users&quot; search target 
+ from the <span style="font-weight: bold;"><B>Type</B></span> drop-down list</p></li>
+		
+		<li class="kadov-p"><p>If necessary, specify any search criteria 
+ using the <span style="font-weight: bold;"><B>Name</B></span> drop-down list 
+ and field</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ The Search Identity Provider form supports the following wild card characters 
+ in the Name field:</p>
+
+<p class="tipsnotes">• &nbsp;The 
+ asterisk truncation operator (*) retrieves terms with a common initial 
+ spelling. It substitutes a string of zero or more characters when searching 
+ the Internal Identity Provider, Federated Identity Providers, and LDAP 
+ Identity Providers</p>
+
+<p class="tipsnotes">• &nbsp;The 
+ question mark wild card operator (?) substitutes zero or one character 
+ in a term. Use within a word or at the end of a word when searching the 
+ Internal Identity Provider.</p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul start=2
+		style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Search</B></span>].</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ To stop a search that is in progress, click [Stop].</p>
+</div>
+
+<ol start=5>
+	
+	<li class="kadov-p"><p>Search results appear in the Search Results window. 
+ Select the target federated user, such as &quot;user A,&quot; from the 
+ Search Results window by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Double-click the target federated user name, 
+ or </p></li>
+		
+		<li class="kadov-p"><p>Select the target federated user name and 
+ click [<span style="font-weight: bold;"><B>Select</B></span>].</p></li>
+	</ul>
+</ol>
+
+<ol start=6
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Repeat to add additional federated users, groups, 
+ and/or virtual groups as required.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ A policy with more than one Grant Access to Users/Groups assertion must 
+ organize the identities into &quot;At least one assertion must evaluate 
+ to true&quot; assertion folders. To add a folder to the Policy Development 
+ window, right-click any assertion and select &quot;Add 'One or More' Assertion&quot; 
+ from the drop-down menu. Drag and drop federated users, groups, and/or 
+ virtual groups into the individual folders as required. For more information, 
+ see Policy Organization and 
+ Rules and Configure and 
+ Edit Policies. </p>
+</div>
+
+<ol start=7
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Configure additional policy assertions for the 
+ Web service as outlined in Policy 
+ Assertions Overview and Configure 
+ and Edit Policies. When completed, click [<span style="font-weight: bold;"><B>Save</B></span>] 
+ in the Policy Tool Bar. Note any error or warning messages in the Policy 
+ Validation Messages window. If necessary, correct policy errors as outlined 
+ in the <span style="margin-left: 0px;">&quot;Validate a Policy&quot; section 
+ in Configure and Edit Policies. 
+ </span></p></li>
+</ol>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<p style="margin-left: 0px;">Proceed to configure the required Gateway 
+ Accounts in the SecureSpan™ Bridge. See <a href="Configure_SecureSpan_Gateway_Accounts.htm">Add 
+ SecureSpan™ Gateway Accounts</a> for more information.</p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

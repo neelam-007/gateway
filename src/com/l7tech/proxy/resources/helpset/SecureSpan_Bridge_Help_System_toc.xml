@@ -1,0 +1,68 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE toc PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp TOC Version 1.0//EN" "http://java.sun.com/products/javahelp/toc_1_0.dtd">
+<toc version="1.0">
+ <tocitem text="Welcome" target="welcome_htm" />
+ <tocitem text="Getting Started">
+  <tocitem text="SecureSpan Overview" target="securespan_overview_htm" />
+  <tocitem text="Documentation" target="securespan_bridge_documentation_htm" />
+  </tocitem>
+ <tocitem text="SecureSpan Bridge">
+  <tocitem text="Overview" target="securespan_bridge_overview_htm" />
+  <tocitem text="Interface" target="securespan_bridge_interface_htm" />
+  <tocitem text="Workflow" target="securespan_bridge_workflow_htm" />
+  <tocitem text="Troubleshooting Mode" target="securespan_bridge_troubleshooting_mode_htm" />
+  <tocitem text="Daemon Mode" target="daemon_mode_htm" />
+  <tocitem text="Manage Gateway Accounts">
+   <tocitem text="Overview" target="securespan_gateway_accounts_overview_htm" />
+   <tocitem text="Create Trusted Gateway Accounts" target="create_trusted_gateway_accounts_htm" />
+   <tocitem text="Create Federated Gateway Accounts" target="create_federated_gateway_accounts_htm" />
+   <tocitem text="Manage Gateway Accounts" target="edit_gateway_accounts_htm" />
+   </tocitem>
+  <tocitem text="Manage Policies">
+   <tocitem text="Overview" target="manage_policies_overview_htm" />
+   <tocitem text="About Stored Policies" target="about_stored_policies_htm" />
+   <tocitem text="Manage Stored Policies" target="manage_stored_policies_htm" />
+   <tocitem text="Import/Export Policies" target="import_export_policies_htm" />
+   </tocitem>
+  <tocitem text="Configure Message Routing">
+   <tocitem text="Overview" target="message_routing_overview_htm" />
+   <tocitem text="About Message Routing" target="about_message_routing_htm" />
+   <tocitem text="Configure Client Applications" target="configure_client_applications_htm" />
+   </tocitem>
+  <tocitem text="Manage Security Sessions">
+   <tocitem text="Overview" target="securespan_gateway_security_sessions_overview_htm" />
+   <tocitem text="About SSL/TLS Security Sessions" target="about_ssl_tls_security_sessions_htm" />
+   <tocitem text="Lifecycle of Security Sessions" target="lifecycle_of_security_sessions_htm" />
+   </tocitem>
+  <tocitem text="Analyze Performance">
+   <tocitem text="Overview" target="analyze_securespan_bridge_performance_htm" />
+   <tocitem text="View Message Activity" target="view_message_activity_htm" />
+   <tocitem text="View Log Files" target="view_log_files_htm" />
+   </tocitem>
+  </tocitem>
+ <tocitem text="Identity Bridging">
+  <tocitem text="Overview" target="identity_bridging_overview_htm" />
+  <tocitem text="Requirements" target="identity_bridging_requirements_htm" />
+  <tocitem text="SAML Workflow" target="identity_bridging_workflow_htm" />
+  <tocitem text="X.509 Certificate Workflow" target="identity_bridging_workflow_using_an_x_509_certificate_htm" />
+  <tocitem text="Manage Certificates">
+   <tocitem text="Overview" target="certificates_overview_htm" />
+   <tocitem text="Add/Edit Certificates" target="add_edit_certificates_htm" />
+   </tocitem>
+  <tocitem text="Manage Federated Identity Providers">
+   <tocitem text="Overview" target="federated_identity_provider_overview_htm" />
+   <tocitem text="Add/Edit Federated Identity Providers" target="add_edit_federated_identity_providers_htm" />
+   <tocitem text="Add/Edit FIP Users and Groups" target="add_edit_fip_users_and_groups_htm" />
+   </tocitem>
+  <tocitem text="Configure SAML Policies" target="configure_saml_policies_htm" />
+  <tocitem text="Configure Gateway Accounts">
+   <tocitem text="Overview" target="gateway_accounts_and_identity_bridging_htm" />
+   <tocitem text="Configure Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
+   </tocitem>
+  <tocitem text="Consume Shared Web Services" target="consume_shared_web_service_htm" />
+  </tocitem>
+ <tocitem text="Support/Contacts">
+  <tocitem text="Support/Contacts" target="technical_support_and_contact_information_htm" />
+  <tocitem text="Legalities/Version" target="version_and_legalities_htm" />
+  </tocitem>
+</toc>

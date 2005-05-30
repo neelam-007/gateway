@@ -1,0 +1,187 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>About Message Routing</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1866>
+<meta name=layout-width content=802>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>About Message Routing</h1>
+
+<p>The SecureSpan™ Bridge routes request and response messages between 
+ the client application and SecureSpan™ Gateway according to the following 
+ process:</p>
+
+<p>&nbsp;</p>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#About_Request_Message_Routing">About Request 
+ Message Routing</a></p>
+
+<p class="quicklinks"><a href="#About_Response_Message_Routing">About Response 
+ Message Routing</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=About_Request_Message_Routing
+								style="color: #000000;">About Request Message 
+ Routing</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ The SecureSpan™ Bridge can accept decorated or undecorated XML or SOAP 
+ messages from client applications. See <a HREF="Configure_Client_Applications.htm">Configure 
+ Client Applications</a> for more information. For information about SecureSpan 
+ Bridge policies, see <a HREF="About_Stored_Policies.htm">About Stored 
+ Policies</a>.</p>
+</div>
+
+<p>When the SecureSpan™ Bridge receives a service request message from 
+ a client application, it decorates the message according to the security 
+ requirements in its saved policy. It then routes the decorated request 
+ message to the SecureSpan™ Gateway. The SecureSpan Gateway analyzes the 
+ decoration to confirm that it conforms to the policy for the target service, 
+ yielding one of three outcomes:</p>
+
+<p>&nbsp;</p>
+
+<h3>Request Message Conforms to the Policy</h3>
+
+<p>If the decorated request message conforms to the policy requirements 
+ stored in the target SecureSpan™ Gateway, then the request message will 
+ be processed. Once completed, the SecureSpan Gateway will send a service 
+ response message to the SecureSpan™ Bridge. The SecureSpan Bridge will 
+ un-decorate the response message as required before routing it to the 
+ client application. </p>
+
+<h3>Request Message Does Not Conform to the Policy</h3>
+
+<p>If the decorated request message does not conform to the policy requirements 
+ stored in the target SecureSpan™ Gateway, then the request message will 
+ be rejected by the SecureSpan Gateway. In this case, the SecureSpan Gateway 
+ will note the out-of-date policy and will automatically send the updated 
+ policy to the SecureSpan™ Bridge. The SecureSpan Bridge then re-decorates 
+ the request message according to the security requirements of the new 
+ policy before re-routing it to the SecureSpan Gateway.</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ If the target policy in the SecureSpan™ Bridge is locked, then the SecureSpan™ 
+ Gateway will not be able to automatically update the outdated policy. 
+ In this case, the service request will fail. For information about locked 
+ and unlocked policies, see <a HREF="Manage_Stored_Policies.htm">Manage 
+ Stored Policies</a>.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<h3>Request Message Conforms to the Policy, but is Invalid </h3>
+
+<p>If the decorated request message conforms to the policy requirements 
+ stored in the target SecureSpan™ Gateway, but contains an invalid decoration, 
+ user name and/or password, or other invalid component, then the SecureSpan 
+ Gateway will reject the message. Confirm the non-policy details required 
+ by the SecureSpan Gateway and update the Gateway Account properties accordingly. 
+ If errors still occur, contact a Technical Support Representative as outlined 
+ in <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
+ and Contact Information</a>.</p>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=About_Response_Message_Routing
+								style="color: #000000;">About Response 
+ Message Routing</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ The SecureSpan™ Bridge sends the response message to the client application 
+ as an un-decorated plain text XML message without a SOAP security header. 
+ </p>
+</div>
+
+<p>Upon receiving a service response message from the SecureSpan™ Gateway, 
+ the SecureSpan™ Bridge un-decorates the message, removing any security 
+ requirements applied to conform to the service’s policy. The SecureSpan 
+ Bridge will then send the service response message to the client application, 
+ concluding the service transaction process.</p>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p><a HREF="Configure_Client_Applications.htm">Configure Client Applications</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

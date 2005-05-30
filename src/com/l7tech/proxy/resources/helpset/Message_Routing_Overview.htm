@@ -1,0 +1,107 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Message Routing Overview</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=905>
+<meta name=layout-width content=802>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Message Routing Overview</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ The term &quot;identity&quot; includes both users and groups, the term 
+ &quot;user&quot; can represent an individual human or machine, the term 
+ “service” includes both Web services and XML applications, and the term 
+ &quot;SecureSpan™ Gateway&quot; includes all of the SecureSpan Gateway 
+ products.</p>
+</div>
+
+<p>The SecureSpan™ Bridge performs three main tasks that enable it to act 
+ as an effective proxy between a client application and a SecureSpan™ Gateway-protected 
+ service:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The SecureSpan Bridge obtains and saves the security 
+ requirements for a service as a policy in the applicable Gateway Account. 
+ A policy is downloaded from the SecureSpan Gateway during the first consumption 
+ of a service, or imported from another location into the SecureSpan Bridge. 
+ See <a HREF="Manage_Policies_Overview.htm">Policies Overview</a> for more 
+ information.</p></li>
+	
+	<li class="kadov-p"><p>When the SecureSpan Bridge receives a service 
+ request message from a client application, it decorates the message according 
+ to the security requirements required by the service as defined in the 
+ saved policy before routing the request to the target SecureSpan Gateway 
+ for processing. </p></li>
+	
+	<li class="kadov-p"><p>When the SecureSpan Bridge receives a response 
+ message from the SecureSpan Gateway, it un-decorates the message according 
+ to the security requirements that were in effect for the corresponding 
+ request. The SecureSpan Bridge then returns the response message to the 
+ client application to complete the service transaction process. </p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<p>See <a href="About_Message_Routing.htm">About Message Routing</a> for 
+ more information about the request and response message routing process. 
+ For information about configuring a client application to send service 
+ request messages to the SecureSpan Bridge, see <a HREF="Configure_Client_Applications.htm">Configure 
+ Client Applications</a>.</p>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p><a HREF="About_Message_Routing.htm">About Message Routing</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

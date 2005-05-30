@@ -1,0 +1,534 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Lifecycle of Security Sessions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1299>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;WSDL;Uptime;uptime;Unix;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;WS;username;Username;Xml-based;DMZ;non-invasively;Solaris;internetworking;Beatty;ext;GUI-based;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;connection(s;Bridge.sh;daemon;Extranet;workflows;interoperable;PKCS;JMS;XSLT;WS-SecureConversation;WS-Metadata;WS-Policy;WSRP;MQ;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;CN=*;A(s;requestor-side;FIPs;certificate(s;CN=;IIP;CN=user;uncheck;F;HOK;NameQualifier;ssgs.xml;Files\Layer;Technologies\SecureSpan;bd;Ctrl;Y;ps;PID;axuf|grep;killall;java;JSP;non-LDAP;Netegrity;SiteMinder;keystore;CSR;machinename.domain.com.;DNS;gateway.hostname;IPs;failover;CN;proxying;WSS;DNs;Logon;SecurityContext-Token;Security-ContextToken;Tivoli;timestamps">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Lifecycle of Security Sessions</h1>
+
+<p>The following table highlights the information shared between the SecureSpan™ 
+ Bridge and SecureSpan™ Gateway during various security sessions. For in-depth 
+ information about an SSL/TLS security session, see <a HREF="About_SSL_TLS_Security_Sessions.htm">About 
+ SSL/TLS Security Sessions</a>.</p>
+
+<p>&nbsp;</p>
+
+
+<table x-use-null-cells style="x-cell-content-align: top;
+				border-left-style: Groove;
+				border-top-style: Groove;
+				border-right-style: Groove;
+				border-bottom-style: Groove;
+				border-left-width: 1px;
+				border-right-width: 1px;
+				border-top-width: 1px;
+				border-bottom-width: 1px;
+				border-spacing: 0px;
+				left: 0px;
+				top: 176px;
+				width: 700px;" width="700" cellspacing="0" BORDER="1">
+<col style="width: 116px;">
+<col style="width: 116px;">
+<col style="width: 116px;">
+<col style="width: 116px;">
+<col style="width: 116px;">
+<col style="width: 116px;">
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-left-color: #000000;
+			border-top-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;
+			border-top-width: 1px;
+			border-top-style: Groove;
+			width: 115px;"
+	bgcolor=#C0C0C0
+	width=115px>
+<p class="tipsnotes" style="font-weight: bold; text-align: center;" Align="center">Information</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-top-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-top-width: 1px;
+			border-top-style: Groove;
+			width: 115px;"
+	bgcolor=#C0C0C0
+	width=115px>
+<p class="tipsnotes" style="font-weight: bold; text-align: center;" Align="center">Use</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-top-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-top-width: 1px;
+			border-top-style: Groove;
+			width: 115px;"
+	bgcolor=#C0C0C0
+	width=115px>
+<p class="tipsnotes" style="font-weight: bold; text-align: center;" Align="center">Creation</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-top-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-style: Groove;
+			border-top-width: 1px;
+			border-top-style: Groove;
+			border-right-width: 1px;
+			width: 115px;"
+	bgcolor=#C0C0C0
+	width=115px>
+<p class="tipsnotes" style="font-weight: bold; text-align: center;" Align="center">Lifetime</td>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-top-style: Groove;
+			border-top-color: #000000;
+			border-right-style: Groove;
+			border-right-color: #000000;
+			border-bottom-style: Groove;
+			border-bottom-color: #000000;
+			border-top-width: 1px;
+			border-bottom-width: 1px;
+			border-right-width: 1px;
+			width: 115px;"
+	bgcolor=#C0C0C0
+	width=115px>
+<p class="tipsnotes" style="font-weight: bold; text-align: center;" Align="center">SecureSpan™ Bridge Location</td>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-top-style: Groove;
+			border-top-width: 1px;
+			border-top-color: #000000;
+			border-right-style: Groove;
+			border-right-width: 1px;
+			border-right-color: #000000;
+			border-bottom-style: Groove;
+			border-bottom-width: 1px;
+			border-bottom-color: #000000;
+			width: 115px;"
+	bgcolor=#C0C0C0
+	width=115px>
+<p class="tipsnotes" style="font-weight: bold; text-align: center;" Align="center">SecureSpan™ Gateway Location</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">SSL/TLS Session</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Allows quick reestablishment 
+ of an SSL/TLS connection.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">On first SSL/TLS connection 
+ to the SecureSpan Gateway</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Lasts as long as both 
+ sides agree to recognize it. Lost on timeout, restart of the SecureSpan 
+ Bridge or SecureSpan Gateway node, or on use of the Logon to the Gateway 
+ form or Gateway Account Properties form for the corresponding Gateway 
+ Account.</td>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-style: Groove;
+			border-right-width: 1px;
+			border-right-color: #000000;
+			border-bottom-style: Groove;
+			border-bottom-width: 1px;
+			border-bottom-color: #000000;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">RAM, per Gateway Account</td>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">RAM, per target node</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">WS-SecureConversation 
+ Security Context</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Allows message-level signing 
+ and encryption without requiring PKI operations for each message.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">On first transmission 
+ by the SecureSpan Bridge of a request whose policy either requires a SecurityContext-Token 
+ or expects a Security-ContextToken to be present in the response.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Lasts as long as both 
+ sides agree to recognize it. Lost on timeout or the restart of the SecureSpan 
+ Bridge or SecureSpan Gateway node.</td>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">RAM, per Gateway Account</td>
+<td style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">RAM, per target node</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">HTTP Cookie</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Allows quick reuse of 
+ an existing Tivoli® Access Manager (TAM) login session.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">On first successful use 
+ of a service that uses the TAM assertion for authentication.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Lost on timeout, restart 
+ of SecureSpan Bridge, being overwritten by a new cookie from the SecureSpan 
+ Gateway, or being cancelled by the SecureSpan Gateway.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">RAM, per Gateway Account</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Not stored by the SecureSpan 
+ Gateway. &nbsp;Passed 
+ on to the TAM server.</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Message replay cache containing 
+ hashes of timestamps and the certificate or session ID</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Allows SecureSpan &nbsp;Gateway 
+ to detect a replay of a previously received signed request, if the policy 
+ so requires.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">By the Replay Assertion 
+ when encountered in a policy.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Lasts until the message 
+ expires date has passed, or until it has exceeded the maximum permitted 
+ message age (currently 30 days).</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Not stored by the SecureSpan 
+ Bridge. &nbsp;SecureSpan 
+ Bridge instead requires reply to refer to the request ID.</td>
+<td colspan=1
+	rowspan=1
+	style="padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			width: 115px;"
+	width=115px>
+<p class="tipsnotes" style="margin-top: 0pt; margin-bottom: 0pt;">Stored in RAM and backed 
+ up to the database. Shared cluster-wide.</td></tr>
+</table>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

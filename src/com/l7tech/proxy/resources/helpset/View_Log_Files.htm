@@ -1,0 +1,82 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>View Log Files</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=835>
+<meta name=layout-width content=809>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;Settings\;Linux">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>View Log Files</h1>
+
+<p>During the first installation of the SecureSpan™ Bridge, a “logging.properties” 
+ file is installed that will govern what information is included in the 
+ default SecureSpan Bridge Log files. The “logging.properties” file should 
+ not be changed unless recommended by your Network Administrator or Layer 
+ 7 Technologies for troubleshooting purposes.</p>
+
+<p>&nbsp;</p>
+
+<p>Navigate to the local location of the SecureSpan Bridge Log files to 
+ view detailed connectivity and communication messages:</p>
+
+<p>&nbsp;</p>
+
+<h2>Windows Location</h2>
+
+<p>If the SecureSpan™ Bridge was installed in a Microsoft Windows XP environment, 
+ then the Log files will be located in the “C:\Documents and Settings\&lt;user&gt;\.l7tech” 
+ directory.</p>
+
+<p>&nbsp;</p>
+
+<h2>Linux Location</h2>
+
+<p>If the SecureSpan™ Bridge was installed in a Linux environment, then 
+ the Log files will be located in the user home or “/root/.l7tech” directory.</p>
+
+<p>&nbsp;</p>
+
+<p>The SecureSpan Bridge Log files are named “ssa0.log” and “ssa1.log,” 
+ respectively. Information is logged to the two Log files in a pre-configured 
+ rollover fashion. The SecureSpan Bridge logs information to the “ssa0.log” 
+ file until it reaches the maximum file size of 10MB; the SecureSpan Bridge 
+ then automatically switches and starts logging information to the “ssa1.log” 
+ file. When the “ssa1.log” file reaches the maximum file size of 10MB, 
+ the SecureSpan Bridge will transition back to logging information to the 
+ “ssa0.log,” automatically overwriting the older log information in the 
+ “ssa0.log” file.</p>
+
+</body>
+
+</html>

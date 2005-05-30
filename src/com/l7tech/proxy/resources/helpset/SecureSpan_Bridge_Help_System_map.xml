@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE map PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Map Version 1.0//EN" "http://java.sun.com/products/javahelp/map_1_0.dtd">
+
+<map version="1.0">
+  <mapID target="welcome_htm" url="Welcome.htm" />
+  <mapID target="securespan_overview_htm" url="SecureSpan_Overview.htm" />
+  <mapID target="securespan_bridge_documentation_htm" url="SecureSpan_Bridge_Documentation.htm" />
+  <mapID target="securespan_bridge_overview_htm" url="SecureSpan_Bridge_Overview.htm" />
+  <mapID target="securespan_bridge_interface_htm" url="SecureSpan_Bridge_Interface.htm" />
+  <mapID target="securespan_bridge_workflow_htm" url="SecureSpan_Bridge_Workflow.htm" />
+  <mapID target="securespan_bridge_troubleshooting_mode_htm" url="SecureSpan_Bridge_Troubleshooting_Mode.htm" />
+  <mapID target="daemon_mode_htm" url="Daemon_Mode.htm" />
+  <mapID target="securespan_gateway_accounts_overview_htm" url="SecureSpan_Gateway_Accounts_Overview.htm" />
+  <mapID target="create_trusted_gateway_accounts_htm" url="Create_Trusted_Gateway_Accounts.htm" />
+  <mapID target="create_federated_gateway_accounts_htm" url="Create_Federated_Gateway_Accounts.htm" />
+  <mapID target="edit_gateway_accounts_htm" url="Edit_Gateway_Accounts.htm" />
+  <mapID target="manage_policies_overview_htm" url="Manage_Policies_Overview.htm" />
+  <mapID target="about_stored_policies_htm" url="About_Stored_Policies.htm" />
+  <mapID target="manage_stored_policies_htm" url="Manage_Stored_Policies.htm" />
+  <mapID target="import_export_policies_htm" url="Import_Export_Policies.htm" />
+  <mapID target="message_routing_overview_htm" url="Message_Routing_Overview.htm" />
+  <mapID target="about_message_routing_htm" url="About_Message_Routing.htm" />
+  <mapID target="configure_client_applications_htm" url="Configure_Client_Applications.htm" />
+  <mapID target="securespan_gateway_security_sessions_overview_htm" url="SecureSpan_Gateway_Security_Sessions_Overview.htm" />
+  <mapID target="about_ssl_tls_security_sessions_htm" url="About_SSL_TLS_Security_Sessions.htm" />
+  <mapID target="lifecycle_of_security_sessions_htm" url="Lifecycle_of_Security_Sessions.htm" />
+  <mapID target="analyze_securespan_bridge_performance_htm" url="Analyze_SecureSpan_Bridge_Performance.htm" />
+  <mapID target="view_message_activity_htm" url="View_Message_Activity.htm" />
+  <mapID target="view_log_files_htm" url="View_Log_Files.htm" />
+  <mapID target="identity_bridging_overview_htm" url="Identity_Bridging_Overview.htm" />
+  <mapID target="identity_bridging_requirements_htm" url="Identity_Bridging_Requirements.htm" />
+  <mapID target="identity_bridging_workflow_htm" url="Identity_Bridging_Workflow.htm" />
+  <mapID target="identity_bridging_workflow_using_an_x_509_certificate_htm" url="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm" />
+  <mapID target="certificates_overview_htm" url="Certificates_Overview.htm" />
+  <mapID target="add_edit_certificates_htm" url="Add_Edit_Certificates.htm" />
+  <mapID target="federated_identity_provider_overview_htm" url="Federated_Identity_Provider_Overview.htm" />
+  <mapID target="add_edit_federated_identity_providers_htm" url="Add_Edit_Federated_Identity_Providers.htm" />
+  <mapID target="add_edit_fip_users_and_groups_htm" url="Add_Edit_FIP_Users_and_Groups.htm" />
+  <mapID target="configure_saml_policies_htm" url="Configure_SAML_Policies.htm" />
+  <mapID target="gateway_accounts_and_identity_bridging_htm" url="Gateway_Accounts_and_Identity_Bridging.htm" />
+  <mapID target="configure_securespan_gateway_accounts_htm" url="Configure_SecureSpan_Gateway_Accounts.htm" />
+  <mapID target="consume_shared_web_service_htm" url="Consume_Shared_Web_Service.htm" />
+  <mapID target="technical_support_and_contact_information_htm" url="Technical_Support_and_Contact_Information.htm" />
+  <mapID target="version_and_legalities_htm" url="Version_and_Legalities.htm" />
+  <mapID target="identity_bridging_policy_overview_htm" url="Identity_Bridging_Policy_Overview.htm" />
+  <mapID target="RemoteUrlf393fcf0" url="http://www.layer7tech.com" />
+  <mapID target="RemoteUrlfb126e32" url="http://www.layer7tech.com/Resources/Extranet" />
+  <mapID target="RemoteUrlf67476ed" url="mailto:info@layer7tech.com" />
+  <mapID target="RemoteUrlc36769e" url="mailto:support@layer7tech.com" />
+</map>

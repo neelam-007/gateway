@@ -1,0 +1,314 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>About Stored Policies</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=4097>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;WSDL;Uptime;uptime;Unix;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;WS;username;Username;Xml-based;DMZ;non-invasively;Solaris;internetworking;Beatty;ext;GUI-based;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;connection(s;Bridge.sh;daemon;Extranet;workflows;interoperable;PKCS;JMS;XSLT;WS-SecureConversation;WS-Metadata;WS-Policy;WSRP;MQ;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;CN=*;A(s;requestor-side;FIPs;certificate(s;CN=;IIP;CN=user;uncheck;F;HOK;NameQualifier;ssgs.xml;Files\Layer;Technologies\SecureSpan;bd;Ctrl;Y;ps;PID;axuf|grep;killall;java;JSP;non-LDAP;Netegrity;SiteMinder;keystore;CSR;machinename.domain.com.;DNS;gateway.hostname;IPs;failover;CN;proxying;WSS;DNs;Logon;SecurityContext-Token;Security-ContextToken;Tivoli;timestamps;logon;URLs;example.com;ACME#listProducts;xml;version=;encoding=;xmlns;soap=;listProducts;xmlns=;warehouse.acme.com;currentOrders;ssg;SecurityContext;BinarySecurityToken;timestamp;undecorate">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>About Stored Policies</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ Policies are initially downloaded and saved in the SecureSpan™ Bridge 
+ based on the Policy Attachment Key in the initial service request message. 
+ A Policy Attachment Key is the combination of the Body Namespace value, 
+ SOAPAction header, and Proxy URI in the service request. The security 
+ requirements for a service are defined in the SecureSpan™ Manager and 
+ saved in the applicable SecureSpan™ Gateway or manually imported from 
+ another location. See the “SecureSpan™ Manager User Manual” for more information.</p>
+</div>
+
+<p>Message security requirements are automatically downloaded from the 
+ SecureSpan™ Gateway during the initial consumption of a service, or manually 
+ imported from another location and stored as a partial policy in the SecureSpan™ 
+ Bridge (see <a HREF="Import_Export_Policies.htm">Import/Export Policies</a>). 
+ When downloaded from the SecureSpan Gateway, the stored policy will contain 
+ the security requirements applicable to the user account that was used 
+ to download the policy. When downloaded or imported from any location 
+ as a formatted XML file, the stored policy will only contain the assertions 
+ applicable to the type of message decoration that will be performed by 
+ the SecureSpan Bridge. </p>
+
+<p>&nbsp;</p>
+
+<p>Policies are viewed by Policy Attachment Key in the Services with Cached 
+ Policies table and Associated Policy window in the [Service Policies] 
+ tab in the Gateway Account Properties form. </p>
+
+<p>&nbsp;</p>
+
+<p><img src="ServicePolicies.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 10px;
+				margin-bottom: 4px;
+				width: 524px;
+				height: 546px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="524" height="546" border="0"></p>
+
+<h6 style="color: #808080;">The [Service Policies] Tab in the Gateway Account 
+ Properties Form</h6>
+
+<p>&nbsp;</p>
+
+<h2>About the Services with Cached Policies Table</h2>
+
+<p>When the SecureSpan™ Bridge first connects to a service protected by 
+ the SecureSpan™ Gateway in the Gateway Account, the policy in force for 
+ the service will be automatically downloaded to the Services with Cached 
+ Policies table:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The <span style="font-weight: bold;"><B>Body Namespace</B></span> 
+ column lists the service namespace URI of the payload element of a SOAP 
+ message. The payload element is the first child of the SOAP Body element 
+ in a service message, such as “http://warehouse.acme.com/ws.” For non-SOAP 
+ or XML application messages, the body namespace is always an empty string</p></li>
+	
+	<li class="kadov-p"><p>The <span style="font-weight: bold;"><B>SOAPAction</B></span> 
+ column contains the content of the SOAPAction header that accompanies 
+ the service message. For example, “http://warehouse.acme.com/ws/currentOrders”</p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ Only the value in the SOAPAction field must be surrounded by quotes (“”). 
+ When editing or configuring a Policy Attachment Key, do not include quotes 
+ around the values in the Body Namespace field or Proxy URI field. See 
+ <a HREF="Manage_Stored_Policies.htm">Manage Stored Policies</a> for more 
+ information.</p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The <span style="font-weight: bold;"><B>Proxy URI</B></span> 
+ column contains the extra information in the path of the request into 
+ the SecureSpan Bridge. For example, if a request is made to the SecureSpan 
+ Gateway identified by the proxy URL “http://localhost:7700/ssg/soap,” 
+ then the Proxy URI for the request would be the string “/ssg/soap”</p></li>
+	
+	<li class="kadov-p"><p>The <span style="font-weight: bold;"><B>Match Type</B></span> 
+ column contains a drop-down list of two Policy Attachment Key match options. 
+ Select the “equals” option to require that request messages exactly match 
+ the Policy Attachment Key for the service. Select the “begins with” option 
+ to allow all request messages that match the start of the corresponding 
+ Policy Attachment Key settings for the service. For more information, 
+ see <a href="Manage_Stored_Policies.htm">Manage Stored Policies</a> </p></li>
+	
+	<li class="kadov-p"><p>The<span style="font-weight: bold;"><B> Lock</B></span> 
+ column contains a check box for each row corresponding to a service with 
+ a cached policy. When checked, the policy will automatically be saved 
+ to disk between SecureSpan Bridge invocations and cannot be overridden 
+ by the SecureSpan Gateway. For more information, see <a href="Manage_Stored_Policies.htm">Manage 
+ Stored Policies</a>.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>The Policy Attachment Key for a policy is the combination of the Body 
+ Namespace value, SOAPAction header, and Proxy URI. Depending on the setting 
+ in the Match Type column, a service request message must either exactly 
+ match the entire or beginning values of the Policy Attachment Key in order 
+ to be processed under the appropriate policy. The values that make up 
+ the Policy Attachment Key for a service can be edited. See <a href="Manage_Stored_Policies.htm">Manage 
+ Stored Policies</a> for more information.</p>
+
+<p>&nbsp;</p>
+
+<p>Select a row to view the read-only assertion details for the downloaded 
+ or imported policy in the Associated Policy window. See <a href="#About_the_Associated_Policy_Window">About 
+ the Associated Policy Window</a> below for more information. For information 
+ on configuring, importing, exporting, and deleting the policies in the 
+ Services with Cached Policies table, see <a href="Manage_Stored_Policies.htm">Manage 
+ Stored Policies</a> and <a href="Import_Export_Policies.htm">Import/Export 
+ Policies</a>.</p>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=About_the_Associated_Policy_Window
+								style="color: #000000;">About the Associated 
+ Policy Window</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ For information on configuring, importing, exporting, and deleting policies 
+ in the SecureSpan™ Bridge, see <a href="Manage_Stored_Policies.htm">Manage 
+ Stored Policies</a> and <a href="Import_Export_Policies.htm">Import/Export 
+ Policies</a>. For information about the assertions that make up a policy, 
+ see the “SecureSpan Manager User Manual” or the program-based “SecureSpan 
+ Manager Help System.”</p>
+</div>
+
+<p>The Associated Policy window displays the read-only assertions that 
+ make up the policy for the service selected in the Services with Cached 
+ Policies table. The assertions are presented in a tree structure similar 
+ to the assertion tree in the SecureSpan™ Manager’s Policy Development 
+ window. </p>
+
+<p>&nbsp;</p>
+
+<p>When a policy is stored in the SecureSpan™ Bridge, only the security 
+ requirements applicable to the type of message decoration that will be 
+ performed by the SecureSpan Bridge are referenced in the Associated Policy 
+ window. Other assertions will be identified as unsupported assertions 
+ and ignored by the SecureSpan Bridge during the message decoration process. 
+ The types of policy assertions that are viewable in the Associated Policy 
+ window are:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p><span style="font-weight: bold;"><B>SSL Requirement</B></span>: 
+ If SSL is required by the service, then the SecureSpan Bridge will negotiate 
+ a certificate-based security session with the SecureSpan™ Gateway. See 
+ <a HREF="About_SSL_TLS_Security_Sessions.htm">About SSL/TLS Security Sessions</a> 
+ for more information</p></li>
+	
+	<li class="kadov-p"><p><span style="font-weight: bold;"><B>Authentication 
+ Method</B></span>: The SecureSpan Bridge will send the credentials for connecting 
+ to a service based on the method of authentication specified in the policy. 
+ If a client certificate-based authentication method is required by the 
+ policy, then the SecureSpan Bridge will negotiate a certificate-based 
+ security session with the SecureSpan Gateway. If the SecureSpan Bridge 
+ must establish a WSS Secure Conversation security session with the SecureSpan 
+ Gateway, then the SecureSpan Bridge will contact the SecureSpan Gateways 
+ WS-Trust security token service to establish a WS-SecureConversation SecurityContext. 
+ The SecurityContext will be used for sending service requests to the target 
+ SecureSpan Gateway. If XPath evaluation is required, then the SecureSpan 
+ Bridge will verify that the request or response message contains a WS-Security 
+ BinarySecurityToken containing an X.509 certificate, and that the private 
+ key for this certificate was used to sign at least one element of the 
+ message. When the SecureSpan Bridge generates a message according to a 
+ policy with this requirement, it will always sign the timestamp and any 
+ other elements required by the policy</p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ The SecureSpan™ Bridge is only aware of the credential format requirements 
+ for a service, not the actual credentials (user names and passwords) that 
+ are required to connect to the service. The SecureSpan Bridge only transmits 
+ the credentials stored in the target Gateway Account. </p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p><span style="font-weight: bold;"><B>XML Signature 
+ or Encryption Requirement</B></span>: If required, the SecureSpan Bridge will 
+ decorate a request message (or elements of a message) according to the 
+ request signature or encryption requirements of a policy. If response 
+ message encryption or signing is required, then the SecureSpan Bridge 
+ will undecorate the response message from the SecureSpan Gateway accordingly</p></li>
+	
+	<li class="kadov-p"><p><span style="font-weight: bold;"><B>Replay Protection 
+ Requirement</B></span>: If replay protection is required by a policy, then 
+ the SecureSpan Bridge will include a signed, high-resolution timestamp 
+ in the request message. The SecureSpan Bridge will also confirm the timestamp 
+ and message ID of the response message before forwarding it to the client 
+ application. The timestamps guard against the replay of old request and 
+ response messages.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>For information about the assertions that make up a policy, see the 
+ “SecureSpan™ Manager User Manual” or the program-based “SecureSpan™ Manager 
+ Help System.”</p>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p><a HREF="Manage_Stored_Policies.htm">Manage Stored Policies</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

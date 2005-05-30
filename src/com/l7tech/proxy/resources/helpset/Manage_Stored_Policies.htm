@@ -1,0 +1,657 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Manage Stored Policies</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=5803>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content=uncheck>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Manage Stored Policies</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about the [Service Policies] tab, see <a HREF="About_Stored_Policies.htm">About 
+ Stored Policies</a>.</p>
+</div>
+
+<p>In the SecureSpan™ Bridge, stored policies are viewed in the Gateway 
+ Account Properties form for the Gateway Account representing the SecureSpan™ 
+ Gateway that is protecting the associated services. Polices are listed 
+ in the Services with Cached Policies table in the [Service Policies] tab 
+ according to the Policy Attachment Key gleaned from the policy that is 
+ automatically downloaded from the SecureSpan Gateway or manually configured 
+ during the manual importation of a policy. Policy details for a service 
+ selected in the Services with Cached Policies table are viewed in the 
+ Associated Policy window. For more information about the Services with 
+ Cached Policies table and the Associated Policy window, see <a href="About_Stored_Policies.htm">About 
+ Stored Policies</a>.</p>
+
+<p>&nbsp;</p>
+
+<p>Individual stored policies in the SecureSpan Bridge can be locked, unlocked, 
+ configured, and deleted, and all cached policies stored for a Gateway 
+ Account can be purged. For information about importing and exporting policies 
+ to and from the SecureSpan Bridge, see <a HREF="Import_Export_Policies.htm">Import/Export 
+ Policies</a>.</p>
+
+<p>&nbsp;</p>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#Lock_or_Unlock_a_Stored_Policy">Lock or Unlock 
+ a Stored Policy</a></p>
+
+<p class="quicklinks" style="color: #000000;"><a href="#Set_the_Policy_Match_Type">Set the 
+ Policy Match Type</a></p>
+
+<p class="quicklinks"><a href="#Edit_the_Policy_Attachment_Key">Edit the 
+ Policy Attachment Key</a></p>
+
+<p class="quicklinks"><a href="#Delete_a_Policy">Delete a Policy</a></p>
+
+<p class="quicklinks"><a href="#Delete_All_Cached_Policies">Delete All Cached 
+ Policies</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Lock_or_Unlock_a_Stored_Policy
+								style="color: #000000;">Lock or Unlock 
+ a Stored Policy</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also lock or unlock a policy in the Configure Policy Attachment 
+ Key form. See <a href="#Edit_the_Policy_Attachment_Key">Edit the Policy 
+ Attachment Key</a> for more information.</p>
+</div>
+
+<p>The Lock column in the Services with Cached Policies table contains 
+ a check box for each row in the table. When checked, the policy is considered 
+ locked and cannot be edited, deleted, or over-written by a policy that 
+ is automatically downloaded from the SecureSpan Gateway. By default, all 
+ manually configured and imported policies are locked, whereas automatically 
+ downloaded policies are unlocked. </p>
+
+<p>&nbsp;</p>
+
+<p>To lock an unlocked policy in the Services with Cached Policies table, 
+ check the check box in the Lock column that corresponds to the target 
+ service. To unlock a locked service policy, uncheck the check box in the 
+ corresponding Lock column. The locked or unlocked status of a policy can 
+ also be set in the Configure Policy Attachment Key form. See <a href="#Edit_the_Policy_Attachment_Key">Edit 
+ the Policy Attachment Key</a> for more information.</p>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Set_the_Policy_Match_Type
+								style="color: #000000;">Set the Policy 
+ Match Type</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
+ </B></span>You set the match type for a policy in the Match Type column in 
+ the Services with Cached Policies table and in the Configure Policy Attachment 
+ Key form. </p>
+</div>
+
+<p>In the SecureSpan™ Bridge, the match type setting for a Policy Attachment 
+ Key in the Services with Cached Policies table determines how an incoming 
+ request message is matched to a policy for the target service. Two match 
+ type options are available: “equals” and “begins with.”</p>
+
+<h3>Set an “Equal” Policy Match Type</h3>
+
+<p>An “equals” match requires that the incoming request message exactly 
+ match the Policy Attachment Key in order to be processed under its associated 
+ policy. To set the equal match type:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Select “equal” from the <span style="font-weight: bold;"><B>Match 
+ Type</B></span> column for the target service in the Services with Cached 
+ Policies table, or</p></li>
+	
+	<li class="kadov-p"><p>Select the target service from the Services with 
+ Cached Policies table. Click [<span style="font-weight: bold;"><B>Edit</B></span>]. 
+ The Configure Policy Attachment Key form appears. In the “Apply policy 
+ to requests…” statement, select “equals” from the drop-down list. </p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>If an incoming request message does not exactly match the Policy Attachment 
+ Key that belongs to the target policy and service, then the SecureSpan™ 
+ Bridge will not apply any security decorations and will process the message 
+ using SSL, with a client certificate if one exists. When the request message 
+ is routed to the SecureSpan™ Gateway for processing, the request may be 
+ denied for not matching the security requirements configured for the protected 
+ service.</p>
+
+<h3>Set a “Begins With” Policy Match Type</h3>
+
+<p>When selected in the Match Type column, the “begins with” match type 
+ permits the processing of an incoming request message that matches the 
+ partial values in the Policy Attachment Key. To configure an expected 
+ setting in the Policy Attachment Key for a “begins with” matching scenario:</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Ensure that you configure unique values for the Policy Attachment Keys 
+ that have a “begins with” setting. </p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>If the Policy Attachment Key already contains 
+ the partial values, select “begins with” from the <span style="font-weight: bold;"><B>Match 
+ Type</B></span> column for the target service in the Services with Cached 
+ Policies table, or</p></li>
+	
+	<li class="kadov-p"><p>If the Policy Attachment Key must be changed, 
+ then:</p></li>
+</ul>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Select the target service from the Services 
+ with Cached Policies table. Click [<span style="font-weight: bold;"><B>Edit</B></span>]. 
+ The Configure Policy Attachment Key form appears. </p></li>
+		
+		<li class="kadov-p"><p>Edit the Policy Attachment Key fields as outlined 
+ in <a href="#Edit_the_Policy_Attachment_Key">Edit the Policy Attachment 
+ Key</a>. Do one of the following:</p></li>
+	</ol>
+	
+	<ol style="list-style: disc;"
+		type=disc>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p>If configuring a Policy Attachment Key 
+ for a SOAP Web service, then enter at least one character for each field 
+ value</p></li>
+			
+			<li class="kadov-p"><p>If configuring a Policy Attachment Key 
+ for an XML application or non-SOAP service, then:</p></li>
+		</ul>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 124px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about SOAP and XML application or non-SOAP messages 
+ and Policy Attachment Keys, see <a HREF="About_Message_Routing.htm">About 
+ Message Routing</a>. </p>
+</div>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: decimal;"
+		type=1>
+		
+		<ul style="list-style: decimal;"
+			type=1>
+			
+			<ol style="list-style: decimal;"
+				type=1>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">Ensure that 
+ the <span style="font-weight: bold;"><B>Body Namespace</B></span> and <span style="font-weight: bold;"><B>SOAPAction</B></span> 
+ fields are blank.</p></li>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">Enter at 
+ least one character in the <span style="font-weight: bold;"><B>Proxy URI</B></span> 
+ field.</p></li>
+			</ol>
+		</ul>
+	</ul>
+	
+	<ol start=3
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">In the “Apply policy 
+ to requests…” statement, select “begin with” from the drop-down list. 
+ </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The Policy Attachment Key is immediately changed in the Services with 
+ Cached Policies table.</p></li>
+	</ol>
+</ul>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ “Begins with” in the Services with Cached Policies table and “begin with” 
+ in the Configure Policy Attachment Key form are same value.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>When the SecureSpan™ Bridge receives a service request message, it first 
+ compares the message’s Policy Attachment Key with all of the stored Policy 
+ Attachment Keys that have an “equals” setting. If an exact match is not 
+ found, then the SecureSpan Bridge will compare the message’s Policy Attachment 
+ Key with the stored Policy Attachment Keys that have a “begins with” setting. 
+ When a single match is found, the SecureSpan Bridge will proceed to decorate 
+ and route the request message as discussed in <a HREF="About_Message_Routing.htm">About 
+ Message Routing</a>. If the Policy Attachment Key matches more than one 
+ Policy Attachment Key with a “begins with” setting, then the SecureSpan 
+ Bridge will choose one of the matches. As a result, the request message 
+ may be processed under the incorrect policy, causing the SecureSpan™ Gateway 
+ to deny the request. To prevent this scenario, it is recommended that 
+ you configure unique partial values for the “begins with” Policy Attachment 
+ Keys. </p>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Edit_the_Policy_Attachment_Key
+								style="color: #000000;">Edit the Policy 
+ Attachment Key</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ You can also set the match type for the Policy Attachment Key in the Configure 
+ Policy Attachment Key form. For detailed information about the match type 
+ options, see <a href="#Set_the_Policy_Match_Type">Set the Policy Match 
+ Type</a>. </p>
+</div>
+
+<p>The Policy Attachment Key is the combination of the Body Namespace value, 
+ SOAPAction header, and Proxy URI from a policy. A service request must 
+ either exactly match a Policy Attachment Key or match the beginning values 
+ of a Policy Attachment Key in order to be processed under the target policy. 
+ If an incoming request does not match or partially match the Policy Attachment 
+ Key for the target service, then no security decorations will be applied 
+ to the request and it will be processed using SSL, with a client certificate 
+ if one exists, by the SecureSpan™ Bridge. When the request message is 
+ sent to the SecureSpan™ Gateway for processing, the request may be denied 
+ for not matching the security requirements configured for the protected 
+ service. See <a href="About_Message_Routing.htm">About Message Routing</a> 
+ for an example of a request message Policy Attachment Key.</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ When configuring a Policy Attachment Key for an XML application or non-SOAP 
+ service, leave the Body Namespace and SOAPAction fields blank in the Configure 
+ Policy Attachment Key form. For more information, see <a href="About_Message_Routing.htm">About 
+ Message Routing</a>.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>The values that make up the Policy Attachment Key for an unlocked service 
+ can be edited as follows:</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The following Policy Attachment Key example assumes an “equal” policy 
+ match. For information on configuring the Policy Attachment Key for the 
+ “begins with” match type, see <a href="#Set_the_Policy_Match_Type">Set 
+ the Policy Match Type</a>. For detailed information about the Services 
+ with Cached Policies table, see <a href="About_Stored_Policies.htm">About 
+ Stored Policies</a>.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List.</p></li>
+	
+	<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Properties</B></span>] 
+ button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Properties</B></span> from the Main 
+ Menu.</p></li>
+	
+	<li class="kadov-p"><p>The Gateway Account Properties form appears. Click 
+ the [<span style="font-weight: bold;"><B>Service Policies</B></span>] tab. </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The service in the Services with Cached Policies table must be unlocked 
+ in order to edit its Policy Attachment Key. If necessary, see <a href="#Lock_or_Unlock_a_Stored_Policy">Lock 
+ or Unlock a Stored Policy</a> above for information on unlocking the policy.</p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target service from the Services with 
+ Cached Policies table. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Edit</B></span>]. 
+ The Configure Policy Attachment Key form appears.</p></li>
+	
+	<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Body Namespace</B></span> 
+ field, enter a new service namespace. </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If the Policy Attachment Key and associated policy will be used for an 
+ XML application or non-SOAP service, then leave the Body Namespace and 
+ SOAPAction fields blank. For more information, see <a HREF="About_Message_Routing.htm">About 
+ Message Routing</a>.</p>
+</div>
+
+<ol start=7
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>SOAPAction</B></span> 
+ field, enter a new SOAPAction header value.</p></li>
+	
+	<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Proxy 
+ URI</B></span> field, enter a new unique qualifier for the SecureSpan Gateway. 
+ For example, if a request is made to the SecureSpan Gateway identified 
+ by the proxy URL “http://localhost:7700/gateway17/accounting/expenses,” 
+ then the Proxy URI for the request would be the string “/gateway17/accounting/expenses.”</p></li>
+	
+	<li class="kadov-p"><p>Set the match type for the Policy Attachment Key 
+ as outlined in <a href="#Set_the_Policy_Match_Type">Set the Policy Match 
+ Type</a>.</p></li>
+	
+	<li class="kadov-p"><p>To lock the Policy Attachment Key, check the <span 
+ style="font-weight: bold;"><B>Lock this policy</B></span> check box. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The Policy Attachment Key is immediately changed in the Services with 
+ Cached Policies table. </p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Delete_a_Policy
+								style="color: #000000;">Delete a Policy</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ You can only delete unlocked policies. For information on unlocking a 
+ locked policy, see <a href="#Lock_or_Unlock_a_Stored_Policy">Lock or Unlock 
+ a Stored Policy</a>. See <a href="#Delete_All_Cached_Policies">Delete 
+ All Cached Policies</a> for information on deleting all cached policies 
+ from the Gateway Account.</p>
+</div>
+
+<p>To delete a single unlocked Policy Attachment Key and its associated 
+ policy from the SecureSpan™ Bridge:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List.</p></li>
+	
+	<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Properties</B></span>] 
+ button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Properties</B></span> from the Main 
+ Menu.</p></li>
+	
+	<li class="kadov-p"><p>The Gateway Account Properties form appears. Click 
+ the [<span style="font-weight: bold;"><B>Service Policies</B></span>] tab. </p></li>
+	
+	<li class="kadov-p"><p>Select the target Policy Attachment Key from the 
+ Service Policies with Cached Policies table. Click [<span style="font-weight: bold;"><B>Delete</B></span>].</p></li>
+	
+	<li class="kadov-p"><p>A confirmation message appears. Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The policy is removed from the [Service Policies] tab and SecureSpan Bridge.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Delete_All_Cached_Policies
+								style="color: #000000;">Delete All Cached 
+ Policies</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ You can only delete unlocked policies. For information on unlocking a 
+ locked policy, see <a href="#Lock_or_Unlock_a_Stored_Policy">Lock or Unlock 
+ a Stored Policy</a>. For information on deleting a single policy, see 
+ <a href="#Delete_a_Policy">Delete a Policy</a>.</p>
+</div>
+
+<p>To delete all of the Policy Attachment Keys and associated policies 
+ attached to a Gateway Account from the SecureSpan™ Bridge:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List.</p></li>
+	
+	<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Properties</B></span>] 
+ button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Properties</B></span> from the Main 
+ Menu.</p></li>
+	
+	<li class="kadov-p"><p>The Gateway Account Properties form appears. Click 
+ the [<span style="font-weight: bold;"><B>Service Policies</B></span>] tab. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Clear 
+ Policy Cache</B></span>]. A confirmation message appears. Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ All policies are removed from the [Service Policies] tab and SecureSpan 
+ Bridge.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p><a HREF="Import_Export_Policies.htm">Import/Export Policies</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

@@ -1,0 +1,202 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>SecureSpan Gateway Accounts Overview</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=2027>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;WSDL;Uptime;uptime;Unix;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;WS;username;Username;Xml-based;DMZ;non-invasively;Solaris;internetworking;Beatty;ext;GUI-based;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;connection(s;Bridge.sh;daemon;Extranet;workflows;interoperable;PKCS;JMS;XSLT;WS-SecureConversation;WS-Metadata;WS-Policy;WSRP;MQ;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;CN=*;A(s;requestor-side;FIPs;certificate(s;CN=;IIP;CN=user;uncheck;F;HOK;NameQualifier;ssgs.xml;Files\Layer;Technologies\SecureSpan;bd;Ctrl;Y;ps;PID;axuf|grep;killall;java;JSP;non-LDAP;Netegrity;SiteMinder">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>SecureSpan™ Gateway Accounts Overview</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ The term &quot;identity&quot; includes both users and groups, the term 
+ &quot;user&quot; can represent an individual human or machine, the term 
+ “service” includes both Web services and XML applications, and the term 
+ &quot;SecureSpan™ Gateway&quot; includes all of the SecureSpan Gateway 
+ products.</p>
+</div>
+
+<p>The SecureSpan™ Bridge acts as a service proxy by establishing a PKI-based 
+ trust relationship with one or more SecureSpan™ Gateways. Known as a “Gateway 
+ Account,” the proxy relationship in the SecureSpan Bridge is essentially 
+ a setting that combines a SecureSpan Gateway with a single set of credentials 
+ that are used to process service requests. </p>
+
+<p>&nbsp;</p>
+
+<p>A single SecureSpan Gateway can be accessed by multiple SecureSpan Bridges. 
+ Furthermore, a single SecureSpan Bridge can access more than one Gateway 
+ Account — each with different credentials — for a single SecureSpan Gateway. 
+ In a configuration where the SecureSpan Bridge is servicing requests from 
+ a JSP page hosted on IIS, for example, the JSP page could be programmed 
+ to send requests in three ways. Requests from a certain IP address could 
+ be sent as “guest” users, requests with a user name and password could 
+ be sent as “member” users, and requests from inside the corporate firewall 
+ could be sent as “employee” users and routed to a separate internal SecureSpan 
+ Gateway. In this scenario, each way of sending requests requires a different 
+ set of credentials and a separate Gateway Account in the SecureSpan Bridge. 
+ For information about the role of Gateway Accounts in an identity bridging-configuration, 
+ see <a href="Gateway_Accounts_and_Identity_Bridging.htm">Gateway Accounts 
+ and Identity Bridging</a>. </p>
+
+<p>&nbsp;</p>
+
+<p>Two different types of Gateway Accounts are available in the SecureSpan 
+ Bridge:</p>
+
+<h2>Trusted Gateway Account</h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ All Gateway Accounts will normally be Trusted Gateway Accounts unless 
+ the SecureSpan™ Bridge is being used in an identity bridging-configuration. 
+ </p>
+</div>
+
+<p>In the SecureSpan™ Bridge, a “Trusted Gateway” is a SecureSpan™ Gateway 
+ on which you have an established identity, such as a user or group account 
+ in the Internal Identity Provider, in an LDAP Identity Provider, or in 
+ a non-LDAP identity provider such as Netegrity SiteMinder™. Only a Trusted 
+ Gateway is allowed to know the password configured for its corresponding 
+ Gateway Account in the SecureSpan Bridge. A Trusted Gateway can automatically 
+ establish the authenticity of its server certificate, and can then authenticate 
+ requests using the established user name and password, if provided, to 
+ issue a client certificate or to provide access to services. &nbsp;</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ For information about identity providers and the optional add-on assertions 
+ that permit connections to external programs, or non-LDAP identity providers, 
+ see the “SecureSpan™ Manager User Manual” or program-based “SecureSpan™ 
+ Manager Help System.”</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>As part of an identity bridging-configuration, a Trusted Gateway can 
+ act as a SAML security token service, allowing access to Federated Gateways 
+ on which no account exists but which trust security tokens issued by the 
+ Trusted Gateway. For more information, see <a href="Gateway_Accounts_and_Identity_Bridging.htm">Gateway 
+ Accounts and Identity Bridging</a> and <a href="Identity_Bridging_Overview.htm">Identity 
+ Bridging Overview</a>. For information on configuring a Trusted Gateway, 
+ see <a HREF="Create_Trusted_Gateway_Accounts.htm">Create Trusted Gateway 
+ Accounts</a>.</p>
+
+<h2>Federated Gateway Account</h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ A Federated Gateway Account will typically only be used in an identity 
+ bridging-configuration. For more information, see <a href="Gateway_Accounts_and_Identity_Bridging.htm">Gateway 
+ Accounts and Identity Bridging</a> and <a HREF="Identity_Bridging_Overview.htm">Identity 
+ Bridging Overview</a>. </p>
+</div>
+
+<p>In the SecureSpan™ Bridge, a “Federated Gateway” is a SecureSpan Gateway 
+ on which you do not have an established identity in its Internal Identity 
+ Provider, in an LDAP Identity Provider, or in a non-LDAP identity provider. 
+ A Federated Gateway authenticates requests by accepting SAML security 
+ tokens issued by a security token service on which you do have an established 
+ identity, or user or group account. The security token service can be 
+ either a third-party WS-Trust server or an already-configured Trusted 
+ Gateway. For information on configuring a Federated Gateway, see <a HREF="Create_Federated_Gateway_Accounts.htm">Create 
+ Federated Gateway Accounts</a>.</p>
+
+<p>&nbsp;</p>
+
+<p>See <a href="Edit_Gateway_Accounts.htm">Manage Gateway Accounts</a> 
+ for information on changing a Gateway Account password, editing and deleting 
+ a Gateway Account, or assigning and deleting the default status applied 
+ to a Gateway Account.</p>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Create_Trusted_Gateway_Accounts.htm">Create Trusted Gateway 
+ Accounts</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

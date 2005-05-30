@@ -1,0 +1,107 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Federated Identity Provider Overview</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="FIP Overview">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=658>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;WSDL;Uptime;uptime;Unix;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;WS;username;Username;Xml-based;DMZ;non-invasively;Solaris;internetworking;Beatty;ext;GUI-based;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;connection(s;Bridge.sh;daemon;Extranet;workflows;interoperable;PKCS;JMS;XSLT;WS-SecureConversation;WS-Metadata;WS-Policy;WSRP;MQ;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;CN=*;A(s;requestor-side;FIPs;certificate(s;CN=;IIP;CN=user;uncheck;F;HOK;NameQualifier;ssgs.xml;Files\Layer;Technologies\SecureSpan;bd;Ctrl;Y;ps;PID;axuf|grep;killall;java;JSP;non-LDAP;Netegrity;SiteMinder;keystore;CSR;machinename.domain.com.;DNS;gateway.hostname;IPs;failover;CN;proxying;WSS;DNs;Logon;SecurityContext-Token;Security-ContextToken;Tivoli;timestamps;logon;URLs;example.com;ACME#listProducts;xml;version=;encoding=;xmlns;soap=;listProducts;xmlns=;warehouse.acme.com;currentOrders;ssg;SecurityContext;BinarySecurityToken;timestamp;undecorate;wsp;exp;trustedmachinename.domain.com;federatedmachinename.domain.com;ssg.xml;Requestor-Side;OpenSSL;toolkit;source(s;CAs">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Federated Identity Provider Overview</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
+ B&quot; references are used in the identity bridging examples, workflows, 
+ and instructions. The Trusted Gateway A is the certificate authority (CA) 
+ that issues and manages security credentials and that is responsible for 
+ authentication. The Federated Gateway B is the Web service provider that 
+ is responsible for authorization. </p>
+</div>
+
+<p>In an identity bridging configuration, the Federated Identity Provider 
+ (FIP) allows the Federated Gateway B (authorization domain) to authorize 
+ requests containing credentials originating in the Trusted Gateway A (authentication 
+ domain). Credentials may be X.509 certificates signed by trusted certificate 
+ authorities (CAs) (see <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Bridging Workflow Using an X.509 Certificate</a>) or SAML tokens signed 
+ by a SecureSpan™ Gateway or other LDAP Identity Provider (see <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a>). Alternatively, a Federated Identity 
+ Provider may not contain any certificates. </p>
+
+<p>&nbsp;</p>
+
+<p>The trust store in the Federated Gateway B is the repository for the 
+ certificates from other security domains that may be required by the FIP 
+ in an identity bridging configuration. Certificates are defined and added 
+ to the trust store with the Add Certificate Wizard prior to creating the 
+ FIP in the Federated Gateway B (see <a href="Certificates_Overview.htm">Certificates 
+ Overview</a>). The chosen credential source and optional configuration 
+ elements outlined in <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Bridging Workflow Using an X.509 Certificate</a> or <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a> determine certificate and FIP configuration 
+ details. Once the trusted certificates are added to a new FIP, federated 
+ users, groups, and/or virtual groups can be created to authorize corresponding 
+ users, groups, or credential patterns in the Federated Gateway B security 
+ domain. See <a HREF="Add_Edit_FIP_Users_and_Groups.htm">Add and Edit Federated 
+ Identity Provider Users and Groups</a> for more information.</p>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Add_Edit_Federated_Identity_Providers.htm">Add and Edit Federated 
+ Identity Providers</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

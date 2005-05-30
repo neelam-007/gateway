@@ -1,0 +1,33 @@
+body { font-family:arial; background-color:#ffffff;  }
+h1 { font-weight:bold; margin-bottom:10pt; letter-spacing:.5pt; font-size:19pt; margin-top:1pt;  }
+li.kadov-h1 { font-weight:bold; letter-spacing:.5pt; font-size:19pt;  }
+h2 { font-weight:bold; margin-bottom:5pt; margin-top:14.5pt; letter-spacing:0.5pt; font-size:13pt; color:#000000;  }
+li.kadov-h2 { font-weight:bold; letter-spacing:0.5pt; font-size:13pt; color:#000000;  }
+h3 { font-weight:bold; margin-bottom:7pt; font-size:11pt;  }
+li.kadov-h3 { font-weight:bold; font-size:11pt;  }
+h4 { font-weight:bold; font-family:verdana, sans-serif; font-size:10pt; margin-top:10pt; margin-bottom:3pt;  }
+li.kadov-h4 { font-weight:bold; font-family:verdana, sans-serif; font-size:10pt;  }
+h5 { font-weight:bold; font-size:10.0pt;  }
+li.kadov-h5 { font-weight:bold; font-size:10.0pt;  }
+h6 { font-size:10pt; font-weight:normal; font-style:normal; margin-top:1pt; margin-bottom:1pt;  }
+li.kadov-h6 { font-size:10pt; font-weight:normal; font-style:normal;  }
+p { font-size:10pt; font-family:verdana, sans-serif; line-height:14pt; color:#000000; margin-top:5pt; margin-bottom:5pt;  }
+li.kadov-p { font-size:10pt; font-family:verdana, sans-serif; line-height:14pt; color:#000000;  }
+a.expandspot { color:#ff0000; cursor:hand; font-style:italic; x-text-underline:off; x-text-overline:off; x-text-line-through:off; text-decoration:none none none;  }
+span.expandtext { font-style:italic; font-weight:normal; color:#ff0000;  }
+a.dropspot { cursor:hand; color:#ff0000; font-style:italic; x-text-underline:off; x-text-overline:off; x-text-line-through:off; text-decoration:none none none;  }
+a.glossterm { cursor:hand; font-style:italic; x-text-underline:off; x-text-overline:off; x-text-line-through:off; color:#008080; text-decoration:none none none;  }
+span.glosstext { font-style:italic; font-weight:normal; color:#0000ff;  }
+ol { font-size:10pt; font-family:verdana, sans-serif; margin-top:6px; margin-bottom:6px; line-height:15pt;  }
+ul { font-size:10pt; font-family:verdana, sans-serif; margin-top:6px; margin-bottom:6px; line-height:15pt;  }
+a { ]:"a:hover"  "\007b"  "color:"  #ff0000; x-text-underline:off; color:#c10000; text-decoration:none;  }
+a:link { x-text-underline:off; color:#c10000; text-decoration:none;  }
+a:active { x-text-underline:off; color:#c10000; text-decoration:none;  }
+a:visited { x-text-underline:off; color:#c10000; text-decoration:none;  }
+a:hover { color:#c10000;  }
+p.tipsnotes { font-family:arial, sans-serif; margin-top:1pt; margin-bottom:1pt; line-height:normal;  }
+li.kadov-p-ctipsnotes { font-family:arial, sans-serif; line-height:normal;  }
+p.space { line-height:0; font-size:6pt; margin-bottom:8.5pt;  }
+li.kadov-p-cspace { line-height:0; font-size:6pt;  }
+p.quicklinks { margin-top:2pt; margin-bottom:2pt;  }
+li.kadov-p-cquicklinks {  }

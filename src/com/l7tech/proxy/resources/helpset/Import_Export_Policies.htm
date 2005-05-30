@@ -1,0 +1,168 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Import/Export Policies</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1689>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;WSDL;Uptime;uptime;Unix;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;WS;username;Username;Xml-based;DMZ;non-invasively;Solaris;internetworking;Beatty;ext;GUI-based;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;connection(s;Bridge.sh;daemon;Extranet;workflows;interoperable;PKCS;JMS;XSLT;WS-SecureConversation;WS-Metadata;WS-Policy;WSRP;MQ;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;CN=*;A(s;requestor-side;FIPs;certificate(s;CN=;IIP;CN=user;uncheck;F;HOK;NameQualifier;ssgs.xml;Files\Layer;Technologies\SecureSpan;bd;Ctrl;Y;ps;PID;axuf|grep;killall;java;JSP;non-LDAP;Netegrity;SiteMinder;keystore;CSR;machinename.domain.com.;DNS;gateway.hostname;IPs;failover;CN;proxying;WSS;DNs;Logon;SecurityContext-Token;Security-ContextToken;Tivoli;timestamps;logon;URLs;example.com;ACME#listProducts;xml;version=;encoding=;xmlns;soap=;listProducts;xmlns=;warehouse.acme.com;currentOrders;ssg;SecurityContext;BinarySecurityToken;timestamp;undecorate;wsp;exp">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Import/Export Policies</h1>
+
+<p>In the SecureSpan™ Bridge, XML-based policies can be imported into and 
+ exported from the Gateway Account Properties form.</p>
+
+<p>&nbsp;</p>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks" style="color: #000000;"><a href="#Import_a_Policy">Import a Policy</a></p>
+
+<p class="quicklinks" style="color: #000000;"><a href="#Export_a_Policy">Export a Policy</a></p>
+
+<p class="quicklinks" style="color: #000000;">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Import_a_Policy
+								style="color: #000000;">Import a Policy</a></h2>
+
+<p>An XML-based policy can be manually imported into the SecureSpan™ Bridge. 
+ The policy must contain references to recognizable SecureSpan™ Gateway 
+ assertions and contain a meaningful assertion tree structure in order 
+ to be recognized and applied to service request messages by the SecureSpan 
+ Bridge. The policy could be an exported SecureSpan™ Manager policy or 
+ a policy that was created in another program. </p>
+
+<p>&nbsp;</p>
+
+<p>When a policy is imported into the SecureSpan Bridge, the Policy Attachment 
+ Key for the service that it applies to must be manually configured in 
+ the Configure Policy Attachment Key form. Ensure that you have the service 
+ namespace, SOAPAction header, and proxy URI qualifier for the target service 
+ before you import a new policy. An imported policy will only contain the 
+ assertions applicable to the type of message decoration that will be performed 
+ by the SecureSpan Bridge. See <a HREF="About_Stored_Policies.htm">About 
+ Stored Policies</a> for more information.</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li style="color: #000000;" class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List.</p></li>
+	
+	<li style="color: #000000;" class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Properties</B></span>] 
+ button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Properties</B></span> from the Main 
+ Menu.</p></li>
+	
+	<li style="color: #000000;" class="kadov-p"><p>The Gateway Account Properties form appears. Click 
+ the [<span style="font-weight: bold;"><B>Service Policies</B></span>] tab. </p></li>
+	
+	<li style="color: #000000;" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Import</B></span>]. 
+ The Open form appears. Navigate to and select the target policy. Click 
+ [<span style="font-weight: bold;"><B>Open</B></span>].</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 44px;">
+<p><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+												width: 16px;
+												height: 15px;
+												float: none;
+												border-style: none;
+												border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Imported policies must be in XML format with a document element of either 
+ &lt;wsp:Policy&gt; or &lt;exp:Export&gt;, as saved from the SecureSpan™ 
+ Bridge or exported from the SecureSpan™ Manager. An “Unable to parse policy” 
+ error message will appear if the selected file is not a properly formatted 
+ XML file.</p>
+</div>
+
+<ol start=5
+	style="list-style: decimal;"
+	type=1>
+	
+	<li style="color: #000000;" class="kadov-p"><p>The Configure Policy Attachment Key form appears. 
+ Enter the Policy Attachment Key details and select the service options 
+ as outlined in <a HREF="Manage_Stored_Policies.htm">Manage Stored Policies</a>. 
+ &nbsp;</p></li>
+	
+	<li style="color: #000000;" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The Policy Attachment Key is added to the Services with Cached Policies 
+ table. See <a HREF="About_Stored_Policies.htm">About Stored Policies</a> 
+ for information on viewing the new policy.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Export_a_Policy
+								style="color: #000000;">Export a Policy</a></h2>
+
+<p>A copy of the policy stored in the SecureSpan™ Bridge can be exported 
+ as an XML file. For information about the policy assertions used by the 
+ SecureSpan Bridge, see <a href="About_Stored_Policies.htm">About Stored 
+ Policies</a>. </p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li style="color: #000000;" class="kadov-p"><p>Select the target Gateway Account from the Account 
+ List.</p></li>
+	
+	<li style="color: #000000;" class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Properties</B></span>] 
+ button on the Main Tool Bar or select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Properties</B></span> from the Main 
+ Menu.</p></li>
+	
+	<li style="color: #000000;" class="kadov-p"><p>The Gateway Account Properties form appears. Click 
+ the [<span style="font-weight: bold;"><B>Service Policies</B></span>] tab. </p></li>
+	
+	<li style="color: #000000;" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Export</B></span>]. 
+ The Export form appears. Navigate to the target directory. Click [<span 
+ style="font-weight: bold;"><B>Save</B></span>].</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

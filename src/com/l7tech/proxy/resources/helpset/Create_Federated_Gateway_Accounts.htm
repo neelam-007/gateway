@@ -1,0 +1,848 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Create Federated Gateway Accounts</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=7233>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;Daemon;SSL;TLS;Lifecycle;SAML;FIP;Namespace;Failover;GUI;Logging.properties;URI;workflow;SOAPAction;WS-Trust;logging.properties;XP;C;Settings\;Linux;WSDL;Uptime;uptime;Unix;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;WS;username;Username;Xml-based;DMZ;non-invasively;Solaris;internetworking;Beatty;ext;GUI-based;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;connection(s;Bridge.sh;daemon;Extranet;workflows;interoperable;PKCS;JMS;XSLT;WS-SecureConversation;WS-Metadata;WS-Policy;WSRP;MQ;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;CN=*;A(s;requestor-side;FIPs;certificate(s;CN=;IIP;CN=user;uncheck;F;HOK;NameQualifier;ssgs.xml;Files\Layer;Technologies\SecureSpan;bd;Ctrl;Y;ps;PID;axuf|grep;killall;java;JSP;non-LDAP;Netegrity;SiteMinder;keystore;CSR;machinename.domain.com.;DNS;gateway.hostname;IPs;failover">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Create Federated Gateway Accounts</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ See <a href="Edit_Gateway_Accounts.htm">Manage Gateway Accounts</a> for 
+ information on changing a Gateway Account password, editing and deleting 
+ a Gateway Account, or assigning and deleting the default status applied 
+ to a Gateway Account. For information about the role of Gateway Accounts 
+ in an identity bridging-configuration, see <a href="Gateway_Accounts_and_Identity_Bridging.htm">Gateway 
+ Accounts and Identity Bridging</a>. </p>
+</div>
+
+<p>A new Federated SecureSpan™ Gateway Account is configured with the SecureSpan™ 
+ Bridge’s Gateway Account Properties form. Accessed from the Create Gateway 
+ Account form when configuring a new Gateway Account, the Gateway Account 
+ Properties form configures the required and optional settings for the 
+ proxy relationship<span style="margin-bottom: 4.5pt;">. </span></p>
+
+<p>&nbsp;</p>
+
+<p><span style="margin-bottom: 4.5pt;">Two types of </span>Federated Gateway 
+ Accounts can be configured in the SecureSpan Bridge:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The source of the SAML security tokens used to 
+ authenticate requests can come from a third-party WS-Trust server, or</p></li>
+	
+	<li class="kadov-p"><p>The source of the SAML security tokens used to 
+ authenticate requests can come from an already-configured Trusted Gateway. 
+ </p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>For more information about Federated Gateway Accounts, see <a href="SecureSpan_Gateway_Accounts_Overview.htm">SecureSpan™ 
+ Gateway Accounts Overview</a>.</p>
+
+<h2>Add a New Federated Gateway Account</h2>
+
+<p>Use the SecureSpan™ Bridge’s Create Gateway Account form to establish 
+ a new Federated Gateway Account for a SecureSpan™ Gateway as follows:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Open the Create Gateway Account form by one of 
+ two methods:</p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>New</B></span>] 
+ button on the Main Tool Bar or,</p></li>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>New</B></span> from the Main Menu.</p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Create Gateway Account form appears. Select 
+ the <span style="font-weight: bold;"><B>Federated Gateway</B></span> option. 
+ </p></li>
+	
+	<li class="kadov-p"><p>Select one of the following security options:</p></li>
+</ol>
+
+<ol>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>To configure the Gateway Account to obtain 
+ SAML security tokens from a Security Token Service, proceed to <a href="#Use_a_Security_Token_Service">Use 
+ a Security Token Service</a></p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>To configure the Gateway Account to obtain 
+ SAML security tokens from a previously-configured Trusted Gateway, proceed 
+ to <a href="#Use_a_Trusted_Gateway">Use a Trusted Gateway</a>.</p></li>
+	</ul>
+</ol>
+
+<p>&nbsp;</p>
+
+<h4 style="margin-left: 40px;">Quick Links:</h4>
+
+<p class="quicklinks" style="margin-left: 40px;"><a href="#Use_a_Security_Token_Service">Use 
+ a Security Token Service</a></p>
+
+<p class="quicklinks" style="margin-left: 40px;"><a href="#Use_a_Trusted_Gateway">Use a Trusted 
+ Gateway</a></p>
+
+<p class="quicklinks" style="margin-left: 40px;">&nbsp;</p>
+
+<h3 style="margin-left: 40px; color: #000000;"><a name=Use_a_Security_Token_Service
+													style="color: #000000;">Use 
+ a Security Token Service</a></h3>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ol start=1
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Select the <span style="font-weight: bold;"><B>Obtain 
+ Security Tokens from a WS-Trust Security Token Service</B></span> option to 
+ configure the SecureSpan™ Bridge to use the specified third-party WS-Trust 
+ token server to obtain SAML security tokens whenever a service policy 
+ from this Federated Gateway specifies that a request must include a SAML 
+ security token.</p></li>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Create</B></span>]. 
+ The Gateway Account Properties form appears. </p></li>
+		
+		<li class="kadov-p"><p>In the [<span style="font-weight: bold;"><B>General</B></span>] 
+ tab of the Gateway Account Properties form, enter the URL of the SecureSpan 
+ Gateway into the <span style="font-weight: bold;"><B>Gateway Host Name</B></span> 
+ field in the following format: machinename.domain.com. </p></li>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 80px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ The host name must exactly match the name of the SecureSpan™ Gateway machine 
+ assigned during the creation of the SecureSpan Gateway server certificate. 
+ To check the host name in the server certificate after it has been discovered, 
+ click the [View Server Certificate] button. Verify that the SecureSpan 
+ Gateway DNS information or SecureSpan™ Bridge hosts file information for 
+ connecting to the SecureSpan Gateway server is correct. </p>
+</div>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ol start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Identity</B></span>] 
+ tab. Enter the URL of the security token service into the <span style="font-weight: bold;"><B>WS-Trust 
+ URL</B></span> field.</p></li>
+		
+		<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Default 
+ Applies To</B></span> field, enter the “WS-Trust Applies To” field information 
+ required by your token service. The WS-Trust request must include this 
+ information before it can issue you a security token for the Federated 
+ Gateway. </p></li>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Some token servers require the Applies To field to be set to the URL of 
+ the target service — such as “http://gateway.hostname/” — where “gateway.hostname” 
+ is the host name of the Federated Gateway. &nbsp;</p>
+</div>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ol start=6
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>&nbsp;In 
+ the <span style="font-weight: bold;"><B>User Name</B></span> field, enter the 
+ user name assigned to you by the security token service.</p></li>
+		
+		<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Password</B></span> 
+ field, enter the password assigned to you by the security token service.</p></li>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Test 
+ Token Service</B></span>]. One of the following will occur:</p></li>
+		
+		<ul>
+			
+			<li style="list-style: disc;" type="disc" class="kadov-p"><p>A pop-up error message notifies you that 
+ the SecureSpan Bridge could not connect to the token service. Do the following:</p></li>
+		</ul>
+		
+		<ul>
+			
+			<ol style="list-style: decimal;"
+				type=1>
+				
+				<li class="kadov-p"><p>Note the errors.</p></li>
+				
+				<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>] 
+ to close the dialog box.</p></li>
+				
+				<li class="kadov-p"><p>Verify the security token service 
+ information in Steps #4–7. Make changes if required.</p></li>
+				
+				<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Test 
+ Token Service</B></span>]. If a “Connection Established” message appears, 
+ proceed to Step #9 below. If the error message appears, contact the security 
+ token service to verify the connection information. If necessary, see 
+ <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
+ and Contact Information</a> to contact a Technical Support Representative.</p></li>
+			</ol>
+			
+			<li style="list-style: disc;" type="disc" class="kadov-p"><p>A “Connection Established” message appears. 
+ Proceed to Step #9 below.</p></li>
+		</ul>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 80px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ The SecureSpan™ Gateway server certificate and, in most cases, the token 
+ service certificate, will not be discovered until they are required by 
+ the SecureSpan™ Bridge. Once discovered, the certificates will appear 
+ when the respective [View Server Certificate] and [View Token Service 
+ Certificate] buttons are clicked.</p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ol start=9
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Network</B></span>] 
+ tab. In the Outgoing Requests to the Gateway section:</p></li>
+	</ol>
+	
+	<ol style="list-style: disc;"
+		type=disc>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Optionally change 
+ the default port settings (HTTP: 8080 and HTTPS: 8443; the <span style="font-weight: bold;"><B>Gateway 
+ Uses Standards Ports</B></span> option is selected by default) of the SecureSpan 
+ Gateway to custom port numbers as required by your network. To change 
+ the default ports:</p></li>
+			
+			<ol style="list-style: decimal;"
+				type=1>
+				
+				<li class="kadov-p"><p>Select the <span style="font-weight: bold;"><B>Gateway 
+ Requires Custom Ports</B></span> option.</p></li>
+				
+				<li class="kadov-p"><p>Enter the applicable port numbers 
+ into the <span style="font-weight: bold;"><B>HTTP Port</B></span> and <span style="font-weight: bold;"><B>HTTPS 
+ Port</B></span> fields.</p></li>
+			</ol>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Optionally specify 
+ one or more SecureSpan Gateway IPs (the <span style="font-weight: bold;"><B>Look 
+ Up IP Addresses in DNS option</B></span> is selected by default) that the 
+ SecureSpan Bridge can use for routing service messages and accepting policies 
+ and required certificates:</p></li>
+		</ul>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 120px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 16px;
+	height: 14px;
+	float: none;" width="16" height="14" border="0"> &nbsp;TIP: 
+ </B></span>Multiple hard-coded IPs allow the SecureSpan™ Bridge to bypass 
+ the DNS when a host name does not resolve to an appropriate SecureSpan™ 
+ Gateway IP address. Manual IP configuration can also be used for failover 
+ protection, to connect to a SecureSpan Gateway whose certificate does 
+ not contain a domain name, or to connect to a SecureSpan Gateway whose 
+ certificate contains an incorrect domain name. In most cases, however, 
+ it is best to get IP information from the DNS.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ol style="list-style: disc;"
+		type=disc>
+		
+		<ol style="list-style: decimal;"
+			type=1>
+			
+			<ol style="list-style: decimal;"
+				type=1>
+				
+				<li class="kadov-p"><p>Select the <span style="font-weight: bold;"><B>Use 
+ the Following IP Addresses</B></span> option.</p></li>
+				
+				<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+ The Add IP Address form appears.</p></li>
+				
+				<li class="kadov-p"><p>Enter the SecureSpan Gateway IP address 
+ into the <span style="font-weight: bold;"><B>IP Address</B></span> field. Click 
+ [<span style="font-weight: bold;"><B>OK</B></span>]. </p></li>
+				
+				<li class="kadov-p"><p>The IP address appears in the field. 
+ If required, repeat Steps #2-3 to add another SecureSpan Gateway IP address. 
+ </p></li>
+				
+				<li class="kadov-p"><p>When all IP addresses have been added, 
+ select one of the following processing options from the <span style="font-weight: bold;"><B>Failover 
+ Strategy</B></span> drop-down list:</p></li>
+			</ol>
+			
+			<ul style="list-style: disc;"
+				type=disc>
+				
+				<ul style="list-style: disc;"
+					type=disc>
+					
+					<li class="kadov-p"><p>When the <span style="font-weight: bold;"><B>Ordered 
+ Sticky with Failover</B></span> processing option is selected, the SecureSpan 
+ Bridge will send service messages to the first IP in the list, and continue 
+ to do so until the IP does not respond. The SecureSpan Bridge will then 
+ proceed to the next IP in the list</p></li>
+					
+					<li class="kadov-p"><p>When the <span style="font-weight: bold;"><B>Random 
+ Sticky with Failover</B></span> processing option is selected, the SecureSpan 
+ Bridge will choose an IP randomly at the beginning of each session and 
+ use it for the duration of the session. If the chosen IP address fails, 
+ then the SecureSpan Bridge will select another IP at random</p></li>
+					
+					<li class="kadov-p"><p>When the <span style="font-weight: bold;"><B>Pure 
+ Round Robin</B></span> processing option is selected, the SecureSpan Bridge 
+ will rotate through the IP list on a request-by-request basis (round-robin) 
+ from the first IP, to the second IP, and so on. When the end of the IP 
+ list is reached, the SecureSpan Bridge will cycle back to the top and 
+ start again.</p></li>
+				</ul>
+			</ul>
+		</ol>
+	</ol>
+	
+	<ol start=10
+		style="list-style: disc;"
+		type=disc>
+		
+		<li style="list-style: decimal;" type="1" class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Bridge 
+ Policy</B></span>] tab. By default, the <span style="font-weight: bold;"><B>Use 
+ SSL by Default</B></span> check box is checked. Optionally uncheck the check 
+ box to turn off the SSL download of policies to the SecureSpan Bridge.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 80px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ If you uncheck the Use SSL by Default check box, then the initial service 
+ request will not be secured. If the target service is secure, then you 
+ may be prompted for a password to download the policy for the target service, 
+ but you may have unwittingly transmitted unsecured sensitive data as part 
+ of the initial request. &nbsp;</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=11
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Service 
+ Policies</B></span>] tab. The Services with Cached Policies table is the repository 
+ for the policies, listed by Policy Attachment Key, being applied to service 
+ messages by the SecureSpan Bridge. The Associated Policy window contains 
+ assertion-level information about a policy selected in the Services with 
+ Cached Policies table. For more information, see <a href="About_Stored_Policies.htm">About 
+ Stored Policies</a>. For information on configuring, editing, and deleting 
+ policies, see <a href="Manage_Stored_Policies.htm">Manage Stored Policies</a>. 
+ For information on importing or exporting policies, see <a href="Import_Export_Policies.htm">Import/Export 
+ Policies</a>.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 80px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ If automatic policy discovery will be used in the Gateway Account, then 
+ no additional configuration in the [Service Policies] tab is required. 
+ When automated, the SecureSpan™ Gateway will automatically populate the 
+ [Services Policies] tab with any policies required by its services.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=12
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The SecureSpan Bridge automatically adds the new Gateway Account to the 
+ Account List with a unique identifier. The format of the identifier in 
+ the Proxy column of the Account List will be “gateway&lt;sequential number&gt;.” 
+ The “sequential number” part of the identifier is assigned based on the 
+ number of Gateway Accounts configured in the SecureSpan Bridge. The first 
+ configured Gateway Account, for example, is assigned a unique identifier 
+ of “gateway1” and considered the default Gateway Account. Subsequent Gateway 
+ Accounts will contain a number reflecting their configuration order and 
+ will not be assigned a default status. To change the default Gateway Account 
+ in the SecureSpan Bridge, or to remove the default status from the Account 
+ List, see <a href="Edit_Gateway_Accounts.htm">Manage Gateway Accounts</a>.</p></li>
+	</ol>
+</ol>
+
+<h3 style="margin-left: 40px; color: #000000;"><a name=Use_a_Trusted_Gateway
+													style="color: #000000;">Use 
+ a Trusted Gateway</a></h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 40px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ The relationship for the target trusted SecureSpan™ Gateway must already 
+ exist in the SecureSpan™ Bridge. See <a href="Create_Trusted_Gateway_Accounts.htm">Create 
+ Trusted Gateway Accounts</a> for information on configuring a Trusted 
+ Gateway Account. </p>
+</div>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ol start=1
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>In the Create Gateway Account form, select 
+ the <span style="font-weight: bold;"><B>Obtain Security Tokens from a Previously-Created 
+ Trusted Gateway</B></span> option to configure the SecureSpan™ Bridge to use 
+ a previously configured and tested Trusted Gateway to obtain SAML security 
+ tokens whenever a service policy from this Federated Gateway specifies 
+ that a request must include a SAML security token. From the drop-down 
+ list, select the target Trusted Gateway Account that will provide the 
+ security tokens.</p></li>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Create</B></span>]. 
+ The Gateway Account Properties form appears. </p></li>
+		
+		<li class="kadov-p"><p>In the [<span style="font-weight: bold;"><B>General</B></span>] 
+ tab of the Gateway Account Properties form, enter the URL of the SecureSpan 
+ Gateway into the <span style="font-weight: bold;"><B>Gateway Host Name</B></span> 
+ field in the following format: machinename.domain.com. </p></li>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 80px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ The host name must exactly match the name of the SecureSpan™ Gateway machine 
+ assigned during the creation of the SecureSpan Gateway server certificate. 
+ To check the host name in the server certificate after it has been discovered, 
+ click the [View Server Certificate] button. Verify that the SecureSpan 
+ Gateway DNS information or SecureSpan™ Bridge hosts file information for 
+ connecting to the SecureSpan Gateway server is correct. </p>
+</div>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ol start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Identity</B></span>] 
+ tab. Optionally click [<span style="font-weight: bold;"><B>View Server Certificate</B></span>] 
+ to view the server certificate, if created, for the Trusted Gateway.</p></li>
+	</ol>
+</ul>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ol start=5
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Network</B></span>] 
+ tab. In the Outgoing Requests to the Gateway section:</p></li>
+	</ol>
+	
+	<ol style="list-style: disc;"
+		type=disc>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Optionally change 
+ the default port settings (HTTP: 8080 and HTTPS: 8443; the <span style="font-weight: bold;"><B>Gateway 
+ Uses Standards Ports</B></span> option is selected by default) of the SecureSpan 
+ Gateway to custom port numbers as required by your network. To change 
+ the default ports:</p></li>
+			
+			<ol style="list-style: decimal;"
+				type=1>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">Select the 
+ <span style="font-weight: bold;"><B>Gateway Requires Custom Ports</B></span> 
+ option.</p></li>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">Enter the 
+ applicable port numbers into the <span style="font-weight: bold;"><B>HTTP 
+ Port</B></span> and <span style="font-weight: bold;"><B>HTTPS Port</B></span> fields.</p></li>
+			</ol>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Optionally specify 
+ one or more SecureSpan Gateway IPs (the <span style="font-weight: bold;"><B>Look 
+ Up IP Addresses in DNS option</B></span> is selected by default) that the 
+ SecureSpan Bridge can use for routing service messages and accepting policies 
+ and required certificates:</p></li>
+		</ul>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 120px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 16px;
+	height: 14px;
+	float: none;" width="16" height="14" border="0"> &nbsp;TIP: 
+ </B></span>Multiple hard-coded IPs allow the SecureSpan™ Bridge to bypass 
+ the DNS when a host name does not resolve to an appropriate SecureSpan™ 
+ Gateway IP address. Manual IP configuration can also be used for failover 
+ protection, to connect to a SecureSpan Gateway whose certificate does 
+ not contain a domain name, or to connect to a SecureSpan Gateway whose 
+ certificate contains an incorrect domain name. In most cases, however, 
+ it is best to get IP information from the DNS.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ol style="list-style: disc;"
+		type=disc>
+		
+		<ol style="list-style: decimal;"
+			type=1>
+			
+			<ol style="list-style: decimal;"
+				type=1>
+				
+				<li class="kadov-p"><p>Select the <span style="font-weight: bold;"><B>Use 
+ the Following IP Addresses</B></span> option.</p></li>
+				
+				<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+ The Add IP Address form appears.</p></li>
+				
+				<li class="kadov-p"><p>Enter the SecureSpan Gateway IP address 
+ into the <span style="font-weight: bold;"><B>IP Address</B></span> field. Click 
+ [<span style="font-weight: bold;"><B>OK</B></span>]. </p></li>
+				
+				<li class="kadov-p"><p>The IP address appears in the field. 
+ If required, repeat Steps #2-3 to add another SecureSpan Gateway IP address. 
+ </p></li>
+				
+				<li class="kadov-p"><p>When all IP addresses have been added, 
+ select one of the following processing options from the <span style="font-weight: bold;"><B>Failover 
+ Strategy</B></span> drop-down list:</p></li>
+			</ol>
+			
+			<ul style="list-style: disc;"
+				type=disc>
+				
+				<ul style="list-style: disc;"
+					type=disc>
+					
+					<li class="kadov-p"><p>When the <span style="font-weight: bold;"><B>Ordered 
+ Sticky with Failover</B></span> processing option is selected, the SecureSpan 
+ Bridge will send service messages to the first IP in the list, and continue 
+ to do so until the IP does not respond. The SecureSpan Bridge will then 
+ proceed to the next IP in the list</p></li>
+					
+					<li class="kadov-p"><p>When the <span style="font-weight: bold;"><B>Random 
+ Sticky with Failover</B></span> processing option is selected, the SecureSpan 
+ Bridge will choose an IP randomly at the beginning of each session and 
+ use it for the duration of the session. If the chosen IP address fails, 
+ then the SecureSpan Bridge will select another IP at random</p></li>
+					
+					<li class="kadov-p"><p>When the <span style="font-weight: bold;"><B>Pure 
+ Round Robin</B></span> processing option is selected, the SecureSpan Bridge 
+ will rotate through the IP list on a request-by-request basis (round-robin) 
+ from the first IP, to the second IP, and so on. When the end of the IP 
+ list is reached, the SecureSpan Bridge will cycle back to the top and 
+ start again.</p></li>
+				</ul>
+			</ul>
+		</ol>
+	</ol>
+	
+	<ol start=6
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Bridge 
+ Policy</B></span>] tab. By default, the <span style="font-weight: bold;"><B>Use 
+ SSL by Default</B></span> check box is checked. Optionally uncheck the check 
+ box to turn off the SSL download of policies to the SecureSpan Bridge.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 80px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ If you uncheck the Use SSL by Default check box, then the initial service 
+ request will not be secured. If the target service is secure, then you 
+ may be prompted for a password to download the policy for the target service, 
+ but you may have unwittingly transmitted unsecured sensitive data as part 
+ of the initial request. &nbsp;</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=7
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Service 
+ Policies</B></span>] tab. The Services with Cached Policies table is the repository 
+ for the policies, listed by Policy Attachment Key, being applied to service 
+ messages by the SecureSpan Bridge. The Associated Policy window contains 
+ assertion-level information about a policy selected in the Services with 
+ Cached Policies table.<span style="color: #ff00ff;"> <font color=fuchsia ></font></span>For more information, 
+ see <a href="About_Stored_Policies.htm">About Stored Policies</a>. For 
+ information on configuring, editing, and deleting policies, see <a href="Manage_Stored_Policies.htm">Manage 
+ Stored Policies</a>. For information on importing or exporting policies, 
+ see <a href="Import_Export_Policies.htm">Import/Export Policies</a>.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			width: 550px;
+			float: none;
+			margin-left: 80px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span></b> 
+ If automatic policy discovery will be used in the Gateway Account, then 
+ no additional configuration in the [Service Policies] tab is required. 
+ When automated, the SecureSpan™ Gateway will automatically populate the 
+ [Services Policies] tab with any policies required by its services.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=8
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The SecureSpan Bridge automatically adds the new Gateway Account to the 
+ Account List with a unique identifier. The format of the identifier in 
+ the Proxy column of the Account List will be “gateway&lt;sequential number&gt;.” 
+ The “sequential number” part of the identifier is assigned based on the 
+ number of Gateway Accounts configured in the SecureSpan Bridge. The first 
+ configured Gateway Account, for example, is assigned a unique identifier 
+ of “gateway1” and considered the default Gateway Account. Subsequent Gateway 
+ Accounts will contain a number reflecting their configuration order and 
+ will not be assigned a default status. To change the default Gateway Account 
+ in the SecureSpan Bridge, or to remove the default status from the Account 
+ List, see <a href="Edit_Gateway_Accounts.htm">Manage Gateway Accounts</a>.</p></li>
+	</ol>
+</ol>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p><a HREF="Edit_Gateway_Accounts.htm">Manage Gateway Accounts</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

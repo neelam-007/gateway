@@ -1,0 +1,116 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Gateway Accounts and Identity Bridging</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Client Proxy Overview">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1035>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;WSDL;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;AES;workflows;requestor;SAML">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Gateway Accounts and Identity Bridging</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
+ B&quot; references are used in the identity bridging examples, workflows, 
+ and instructions. The Trusted Gateway A is the certificate authority (CA) 
+ that issues and manages security credentials and that is responsible for 
+ authentication. The Federated Gateway B is the Web service provider that 
+ is responsible for authorization.</p>
+</div>
+
+<p>In an identity bridging configuration, the SecureSpan<symbol name=Trademark>&#8482; 
+ Bridge delegates authentication to the Trusted Gateway A while preserving 
+ authorization for the Federated Gateway B hosting the Web service. </p>
+
+<p>&nbsp;</p>
+
+<p>The SecureSpan Bridge interfaces to the requestor’s SAML or X.509 certificate 
+ authorization source that validates an authentication. Once the SecureSpan 
+ Bridge receives the authentication assertion or token, it will automatically 
+ embed this evidence and then sign the SOAP message. Since the Federated 
+ Gateway B will have already established a certificate-based trust relationship 
+ with the Trusted Gateway A's authentication source, the Federated Gateway 
+ B can then use this evidence to securely authorize access to the protected 
+ Web service. See the SAML credential source and X.509 certificate credential 
+ source diagrams in <a href="Identity_Bridging_Overview.htm">Identity Bridging 
+ Overview</a> for more information about the role of the SecureSpan Bridge 
+ in an identity bridging configuration.</p>
+
+<p>&nbsp;</p>
+
+<p>As part of the SAML and X.509 credential source workflows, Gateway Accounts 
+ corresponding to the Trusted Gateway A and/or Federated Gateway B must 
+ be configured in the SecureSpan Bridge. For in-depth information about 
+ SecureSpan Gateway Accounts in the SecureSpan Bridge, see <a href="SecureSpan_Gateway_Accounts_Overview.htm">SecureSpan™ 
+ Gateway Accounts Overview</a>. Once the required Gateway Accounts are 
+ configured, a Web service can be consumed as part of the identity bridging 
+ arrangement. See <a HREF="Consume_Shared_Web_Service.htm">Consume Shared 
+ Web Services</a> for more information.</p>
+
+<p>&nbsp;</p>
+
+<p>For information about identity bridging using SAML or an X.509 certificate, 
+ see <a href="Identity_Bridging_Workflow.htm">Identity Bridging Workflow 
+ Using SAML</a> or <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Bridging Workflow Using an X.509 Certificate</a>, respectively.</p>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Configure_SecureSpan_Gateway_Accounts.htm">Configure Gateway 
+ Accounts</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>
