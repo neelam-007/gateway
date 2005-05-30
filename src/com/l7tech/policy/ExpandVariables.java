@@ -85,7 +85,7 @@ public class ExpandVariables {
         while (matcher.find()) {
             int matchingCount = matcher.groupCount();
             if (matchingCount != 1) {
-                throw new IllegalStateException("Expecting 3 matching groups received: "+matchingCount);
+                throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
             }
             String var = matcher.group(1);
             String replacement = (String)userVariables.get(var);
