@@ -141,6 +141,8 @@
              <idref bean="jmsEndpointManager"/>
              <idref bean="jmsConnectionManager"/>
              <idref bean="auditExporter"/>
+             <idref bean="counterIDManager"/>
+             <idref bean="countedHitsManager"/>
          </list>
      </property>
  </bean>

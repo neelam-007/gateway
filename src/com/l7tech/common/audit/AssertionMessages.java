@@ -289,7 +289,11 @@ public class AssertionMessages extends Messages {
     public static final M HTTPFORM_BAD_MIME      = m(6805, Level.WARNING, "Unable to write new MIME message");
     public static final M HTTPFORM_TOO_BIG       = m(6806, Level.WARNING, "Field {0} is too large (>= " + 512 * 1024 + " bytes)");
 
+    // ServerThroughputQuota
+    public static final M THROUGHPUT_QUOTA_EXCEEDED =    m(6900, Level.INFO, "Quota exceeded on counter {0}. Assertion limit is {1} current counter value is {2}");
+    public static final M THROUGHPUT_QUOTA_ALREADY_MET = m(6901, Level.INFO, "Quota already exceeded on counter {0}.");
+
     // HTTP Form POST
-    public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(6901, Level.WARNING, "Message has no part #{0}");
-    public static final M INVERSE_HTTPFORM_TOO_BIG = m(6902, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
+    public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");
+    public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
 }

@@ -7,6 +7,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -104,6 +105,7 @@ public class AllAssertions {
         new Regex(),
         new UnknownAssertion(),
         new SnmpTrapAssertion(),
+        new ThroughputQuota(),
         new EmailAlertAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
@@ -147,7 +149,8 @@ public class AllAssertions {
         new Regex(),
         new UnknownAssertion(),
         new SnmpTrapAssertion(),
-        new EmailAlertAssertion(),        
+        new ThroughputQuota(),
+        new EmailAlertAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),

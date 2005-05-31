@@ -36,6 +36,7 @@ public class MiscFolderNode extends AbstractTreeNode {
         children = null;
         insert( new TimeRangePaletteNode(), index++ );
         insert( new RemoteIpRangePaletteNode(), index++ );
+        insert( new ThroughputQuotaPaletteNode(), index++ );
     }
 
     /**

@@ -262,5 +262,22 @@
         <property name="xmlProperties" column="properties" type="text"/>
     </class>
 
+    <class name="com.l7tech.server.sla.CounterIDRecord" table="counters">
+        <id name="counterId" column="counterid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <property name="userId" column="userid" type="string"/>
+        <property name="providerId" column="providerid" type="long"/>
+        <property name="counterName" column="countername" type="string"/>
+    </class>
+
+    <class name="com.l7tech.server.sla.CountedHitRecord" table="counted_hits">
+        <id name="hitId" column="hitid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <property name="counterId" column="counterid" type="long"/>
+        <property name="ts" column="ts" type="long"/>
+    </class>
+
 
 </hibernate-mapping>

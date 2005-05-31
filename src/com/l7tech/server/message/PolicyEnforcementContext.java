@@ -37,6 +37,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private static final Logger logger = Logger.getLogger(PolicyEnforcementContext.class.getName());
 
     private final RequestId requestId;
+    private ArrayList incrementedCounters = new ArrayList();
     private final Map deferredAssertions = new LinkedHashMap();
     private boolean replyExpected;
     private RoutingStatus routingStatus = RoutingStatus.NONE;
@@ -212,6 +213,10 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public Vector getUpdatedCookies() {
         return updatedCookies;
+    }
+
+    public ArrayList getIncrementedCounters() {
+        return incrementedCounters;
     }
 
     public void setVariable(String name, Object value) {

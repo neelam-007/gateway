@@ -473,4 +473,18 @@
         </constructor-arg>
     </bean>
 
+    <bean id="counterIDManager" class="com.l7tech.server.sla.CounterIDManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
+    <bean id="countedHitsManager" class="com.l7tech.server.sla.CountedHitsManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
+    <bean id="counterCache" class="com.l7tech.server.sla.CounterCache" />
+
 </beans>

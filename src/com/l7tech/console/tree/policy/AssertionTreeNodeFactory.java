@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -73,6 +74,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(XpathCredentialSource.class, XpathCredentialSourceTreeNode.class);
         assertionMap.put(SamlBrowserArtifact.class, SamlBrowserArtifactTreeNode.class);
         assertionMap.put(Regex.class, RegexPolicyNode.class);
+        assertionMap.put(ThroughputQuota.class, ThroughputQuotaTreeNode.class);
         assertionMap.put(HttpFormPost.class, HttpFormPostPolicyNode.class);
     }
 

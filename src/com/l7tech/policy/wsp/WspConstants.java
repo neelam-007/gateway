@@ -12,6 +12,7 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -163,6 +164,7 @@ public class WspConstants {
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new SnmpTrapAssertion(), "SnmpTrap"),
+        new AssertionMapping(new ThroughputQuota(), "ThroughputQuota"),
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert"),
         new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
 

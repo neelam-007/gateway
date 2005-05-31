@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -99,5 +100,6 @@ public class Advices {
         advicesMap.put(HttpFormPost.class, new Class[] {HttpFormPostAdvice.class});
         advicesMap.put(SnmpTrapAssertion.class, new Class[] {AddSnmpTrapAssertionAdvice.class});
         advicesMap.put(EmailAlertAssertion.class, new Class[] {AddEmailAlertAssertionAdvice.class});
+        advicesMap.put(ThroughputQuota.class, new Class[]{AddThroughputQuotaAssertionAdvice.class});
     }
 }

@@ -438,4 +438,22 @@ CREATE TABLE message_id (
   expires bigint(20) NOT NULL
 ) TYPE=InnoDB;
 
+DROP TABLE IF EXISTS counters;
+CREATE TABLE counters (
+  counterid bigint(20) NOT NULL,
+  userid varchar(128),
+  providerid bigint(20) NOT NULL,
+  countername varchar(128) NOT NULL,
+  unique(userid, providerid, countername),
+  PRIMARY KEY (counterid)
+) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS counted_hits;
+CREATE TABLE counted_hits (
+  hitid bigint(20) NOT NULL,
+  counterid bigint(20) NOT NULL,
+  ts bigint(20) NOT NULL,
+  PRIMARY KEY (hitid)
+) TYPE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS = 1;
