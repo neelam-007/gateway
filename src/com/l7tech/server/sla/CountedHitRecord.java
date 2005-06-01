@@ -15,7 +15,9 @@ import java.io.Serializable;
  * The counted_hits table records each hit that goes through a counter (ThroughputAssertion) at run time. It is used
  * to reconstitute teh CounterCache when the gateway reboots for example.
  *
+ * @deprecated this is no longer needed
  * @author flascelles@layer7-tech.com
+ * todo erase this class when refactor is complete
  */
 public class CountedHitRecord implements Serializable {
     private long counterId;

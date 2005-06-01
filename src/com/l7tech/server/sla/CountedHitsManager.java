@@ -15,6 +15,8 @@ import java.util.List;
  * Hibernate manager for the counted_hits table. Each row is represented by a CountedHitRecord record.
  *
  * @author flascelles@layer7-tech.com
+ * @deprecated this is no longer needed
+ * todo erase this class when refactor is complete
  */
 public class CountedHitsManager extends HibernateDaoSupport {
     private final Logger logger =  Logger.getLogger(getClass().getName());

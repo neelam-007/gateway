@@ -13,29 +13,23 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.HashMap;
 import java.util.Calendar;
-import java.util.List;
-import java.util.Iterator;
 
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 
 /**
- * Caches sla information. Reconstitutes it at boot time.
+ * Caches sla counters locally in a HashMap with internal locking mechanism.
+ * Not scalable across cluster.
+ * Reconstitutes counters at boot time.
  *
  * @author flascelles@layer7-tech.com
  */
-public class CounterCache extends ApplicationObjectSupport implements DisposableBean {
+public class CounterCache extends ApplicationObjectSupport implements CounterManager, DisposableBean {
     private final Logger logger =  Logger.getLogger(getClass().getName());
     private final HashMap counters = new HashMap();
 
     public CounterCache() {
     }
-
-    public class LimitAlreadyReachedException extends Exception {
-        public LimitAlreadyReachedException(String msg) {
-            super(msg);
-        }
-    };
 
     /**
      * Increment the counter identified by counterId only if the resulting value of the counter for
@@ -98,8 +92,8 @@ public class CounterCache extends ApplicationObjectSupport implements Disposable
             } else {
                 counter.copyFrom(tmpCounter);
                 // record hit in database
-                CountedHitsManager hitsCounter = (CountedHitsManager)getApplicationContext().getBean("countedHitsManager");
-                hitsCounter.recordHit(counterId, timestamp);
+                //CountedHitsManager hitsCounter = (CountedHitsManager)getApplicationContext().getBean("countedHitsManager");
+                //hitsCounter.recordHit(counterId, timestamp);
 
                 try {
                     switch (fieldOfInterest) {
@@ -172,8 +166,8 @@ public class CounterCache extends ApplicationObjectSupport implements Disposable
             write.acquire();
             incrementCounterNoLock(counter, timestamp);
             // record hit in database
-            CountedHitsManager hitsCounter = (CountedHitsManager)getApplicationContext().getBean("countedHitsManager");
-            hitsCounter.recordHit(counterId, timestamp);
+            //CountedHitsManager hitsCounter = (CountedHitsManager)getApplicationContext().getBean("countedHitsManager");
+            //hitsCounter.recordHit(counterId, timestamp);
 
             try {
                 switch (fieldOfInterest) {
@@ -268,7 +262,7 @@ public class CounterCache extends ApplicationObjectSupport implements Disposable
 
     /**
      * this will rebuild the cache from the persisted hits
-     */
+
     public void regenFromDatabase() {
         CountedHitsManager hitsCounter = (CountedHitsManager)getApplicationContext().getBean("countedHitsManager");
         Long res = hitsCounter.latestHit();
@@ -320,9 +314,9 @@ public class CounterCache extends ApplicationObjectSupport implements Disposable
 
             }
         }
-    }
+    }*/
 
-    private long startOfCurrentSec(Calendar current) {
+    /*private long startOfCurrentSec(Calendar current) {
         current.set(Calendar.MILLISECOND, 0);
         return current.getTimeInMillis();
     }
@@ -341,7 +335,7 @@ public class CounterCache extends ApplicationObjectSupport implements Disposable
     private long startOfCurrentMonth(Calendar current) {
         current.set(Calendar.DAY_OF_MONTH, 1);
         return current.getTimeInMillis();
-    }
+    }*/
 
     private void incrementCounterNoLock(Counter cntr, long timestamp) {
         Calendar now = Calendar.getInstance();
@@ -385,7 +379,7 @@ public class CounterCache extends ApplicationObjectSupport implements Disposable
 
     public void initialize() {
         // todo, if we were in a cluster here, we would sync with another node instead of synching with db
-        regenFromDatabase();
+        //regenFromDatabase();
         // todo initialize a process which cleans up the table from old records
     }
 }

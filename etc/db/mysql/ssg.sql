@@ -444,16 +444,13 @@ CREATE TABLE counters (
   userid varchar(128),
   providerid bigint(20) NOT NULL,
   countername varchar(128) NOT NULL,
+  cnt_sec bigint(20) default 0,
+  cnt_hr bigint(20) default 0,
+  cnt_day bigint(20) default 0,
+  cnt_mnt bigint(20) default 0,
+  last_update bigint(20) default 0,
   unique(userid, providerid, countername),
   PRIMARY KEY (counterid)
-) TYPE=InnoDB;
-
-DROP TABLE IF EXISTS counted_hits;
-CREATE TABLE counted_hits (
-  hitid bigint(20) NOT NULL,
-  counterid bigint(20) NOT NULL,
-  ts bigint(20) NOT NULL,
-  PRIMARY KEY (hitid)
 ) TYPE=InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;
