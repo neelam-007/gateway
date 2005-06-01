@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
  * Reconstitutes counters at boot time.
  *
  * @author flascelles@layer7-tech.com
+ * @deprecated (remove as soon as DBCounterManager is complete)
  */
 public class CounterCache extends ApplicationObjectSupport implements CounterManager, DisposableBean {
     private final Logger logger =  Logger.getLogger(getClass().getName());

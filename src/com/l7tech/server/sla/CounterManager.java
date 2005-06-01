@@ -34,6 +34,11 @@ public interface CounterManager {
     public long incrementAndReturnValue(long counterId, long timestamp, int fieldOfInterest);
 
     /**
+     * get a current counter value without incrementing anything
+     */ 
+    public long getCounterValue(long counterId, int fieldOfInterest);
+
+    /**
      * Decrement the counter.
      */
     public void decrement(long counterId);

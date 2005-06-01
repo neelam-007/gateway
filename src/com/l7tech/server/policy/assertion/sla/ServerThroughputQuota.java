@@ -10,6 +10,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.sla.CounterCache;
 import com.l7tech.server.sla.CounterIDManager;
+import com.l7tech.server.sla.CounterManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
@@ -37,14 +38,15 @@ public class ServerThroughputQuota implements ServerAssertion {
     private final Auditor auditor;
     private ApplicationContext  applicationContext;
     private final String[] TIME_UNITS = {"second", "hour", "day", "month"};
-    private CounterCache counter;
+    private CounterManager counter;
     private CounterIDManager counterIDManager;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
         this.assertion = assertion;
         this.applicationContext = ctx;
         auditor = new Auditor(this, applicationContext, logger);
-        counter = (CounterCache)applicationContext.getBean("counterCache");
+        counter = (CounterManager)applicationContext.getBean("counterCache");
+        // counter = (CounterManager)applicationContext.getBean("counterManager");
         counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
     }
 

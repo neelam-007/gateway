@@ -143,6 +143,13 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
+
+    <bean id="counterManager" class="com.l7tech.server.sla.DBCounterManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
     <!-- server side policy factory -->
     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory"></bean>
     <!-- server side service manager -->
