@@ -45,8 +45,8 @@ public class ServerThroughputQuota implements ServerAssertion {
         this.assertion = assertion;
         this.applicationContext = ctx;
         auditor = new Auditor(this, applicationContext, logger);
-        counter = (CounterManager)applicationContext.getBean("counterCache");
-        // counter = (CounterManager)applicationContext.getBean("counterManager");
+        //counter = (CounterManager)applicationContext.getBean("counterCache");
+        counter = (CounterManager)applicationContext.getBean("counterManager");
         counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
     }
 
@@ -78,7 +78,7 @@ public class ServerThroughputQuota implements ServerAssertion {
                 // no need to check the limit because the preceeding call would throw if limit was exceeded
                 logger.finest("Value " + val + " still within quota " + assertion.getQuota());
                 return AssertionStatus.NONE;
-            } catch (CounterCache.LimitAlreadyReachedException e) {
+            } catch (CounterManager.LimitAlreadyReachedException e) {
                 String msg = "throughput quota limit is already reached.";
                 logger.info(msg);
                 auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET,

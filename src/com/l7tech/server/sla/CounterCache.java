@@ -20,10 +20,10 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 /**
  * Caches sla counters locally in a HashMap with internal locking mechanism.
  * Not scalable across cluster.
- * Reconstitutes counters at boot time.
+ * Does not persist counters (reset at everyboot)
  *
  * @author flascelles@layer7-tech.com
- * @deprecated (remove as soon as DBCounterManager is complete)
+ * @deprecated (remove as soon as DBCounterManager is complete and works fine)
  */
 public class CounterCache extends ApplicationObjectSupport implements CounterManager, DisposableBean {
     private final Logger logger =  Logger.getLogger(getClass().getName());

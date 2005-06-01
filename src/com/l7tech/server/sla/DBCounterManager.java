@@ -79,11 +79,7 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
                         throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
                     }
 
-                    // todo, eraseme
-                    logger.severe("got counter: " + dbcnt);
-
-                    incrementCounterNoLock(dbcnt, timestamp);
-
+                    incrementCounter(dbcnt, timestamp);
 
                     // check if the increment violates the limit
                     boolean limitViolated = false;
@@ -156,21 +152,145 @@ public class DBCounterManager extends HibernateDaoSupport implements CounterMana
         throw new RuntimeException("unexpected result type " + result);
     }
 
-    public long incrementAndReturnValue(long counterId, long timestamp, int fieldOfInterest) {
-        // todo
-        return 1;
+    public long incrementAndReturnValue(final long counterId, final long timestamp, final int fieldOfInterest) {
+        Object result = getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) {
+                try {
+                    Object output = null;
+                    Connection conn = session.connection();
+                    Counter dbcnt = getLockedCounter(conn, counterId);
+                    if (dbcnt == null) {
+                        throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
+                    }
+
+                    incrementCounter(dbcnt, timestamp);
+                    // put new value in database
+                    recordNewCounterValue(conn, counterId, dbcnt);
+                    conn.commit();
+                    conn = null;
+
+                    // return the fieldOfInterest
+                    switch (fieldOfInterest) {
+                        case ThroughputQuota.PER_SECOND:
+                            output = new Long(dbcnt.getCurrentSecondCounter());
+                            break;
+                        case ThroughputQuota.PER_HOUR:
+                            output = new Long(dbcnt.getCurrentHourCounter());
+                            break;
+                        case ThroughputQuota.PER_DAY:
+                            output = new Long(dbcnt.getCurrentDayCounter());
+                            break;
+                        case ThroughputQuota.PER_MONTH:
+                            output = new Long(dbcnt.getCurrentMonthCounter());
+                            break;
+                    }
+
+                    return output;
+                } catch (SQLException e) {
+                    logger.log(Level.SEVERE, "SQLException getting counter from db", e);
+                    throw new RuntimeException(e);
+                } catch (HibernateException e) {
+                    logger.log(Level.SEVERE, "HibernateException getting counter from db", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        if (result instanceof Long) {
+            return ((Long)result).longValue();
+        }
+
+        throw new RuntimeException("unexpected result type " + result);
     }
 
-    public long getCounterValue(long counterId, int fieldOfInterest) {
-        // todo
-        return 1;
+    public long getCounterValue(final long counterId, final int fieldOfInterest) {
+        Object result = getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) {
+                try {
+                    String fieldstr = null;
+                    switch (fieldOfInterest) {
+                        case ThroughputQuota.PER_SECOND:
+                            fieldstr = "cnt_sec";
+                            break;
+                        case ThroughputQuota.PER_HOUR:
+                            fieldstr = "cnt_hr";
+                            break;
+                        case ThroughputQuota.PER_DAY:
+                            fieldstr = "cnt_day";
+                            break;
+                        case ThroughputQuota.PER_MONTH:
+                            fieldstr = "cnt_mnt";
+                            break;
+                    }
+
+                    Connection conn = session.connection();
+                    PreparedStatement ps = conn.prepareStatement("SELECT " + fieldstr +
+                                                                 " FROM counters WHERE counterid=" + counterId);
+                    ResultSet rs = ps.executeQuery();
+                    long desiredval = -1;
+                    while (rs.next()) {
+                        desiredval = rs.getLong(1);
+                        break;
+                    }
+                    rs.close();
+                    ps.close();
+                    conn.commit();
+                    conn = null;
+                    if (desiredval < 0) {
+                        return null;
+                    }
+                    return new Long(desiredval);
+                } catch (SQLException e) {
+                    logger.log(Level.SEVERE, "SQLException getting counter from db", e);
+                    throw new RuntimeException(e);
+                } catch (HibernateException e) {
+                    logger.log(Level.SEVERE, "HibernateException getting counter from db", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        if (result == null) {
+            throw new RuntimeException("could not find value in db (?)"); // should not happen
+        }
+        if (result instanceof Long) {
+            return ((Long)result).longValue();
+        }
+        throw new RuntimeException("unexpected result type " + result);
     }
 
-    public void decrement(long counterId) {
-        // todo
+    public void decrement(final long counterId) {
+        getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) {
+                try {
+                    Connection conn = session.connection();
+                    Counter dbcnt = getLockedCounter(conn, counterId);
+                    if (dbcnt == null) {
+                        throw new RuntimeException("the counter could not be fetched from db table"); // not supposed to happen
+                    }
+
+                    dbcnt.setCurrentSecondCounter(dbcnt.getCurrentSecondCounter()-1);
+                    dbcnt.setCurrentHourCounter(dbcnt.getCurrentHourCounter()-1);
+                    dbcnt.setCurrentDayCounter(dbcnt.getCurrentDayCounter()-1);
+                    dbcnt.setCurrentMonthCounter(dbcnt.getCurrentMonthCounter()-1);
+
+                    // put new value in database
+                    recordNewCounterValue(conn, counterId, dbcnt);
+                    conn.commit();
+                    conn = null;
+
+                    return null;
+                } catch (SQLException e) {
+                    logger.log(Level.SEVERE, "SQLException getting counter from db", e);
+                    throw new RuntimeException(e);
+                } catch (HibernateException e) {
+                    logger.log(Level.SEVERE, "HibernateException getting counter from db", e);
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
-    private void incrementCounterNoLock(Counter cntr, long timestamp) {
+    private void incrementCounter(Counter cntr, long timestamp) {
         Calendar now = Calendar.getInstance();
         now.setTimeInMillis(timestamp);
 
