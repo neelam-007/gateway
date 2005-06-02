@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security.xml;
@@ -111,6 +110,7 @@ public class WssDecoratorTest extends TestCase {
         public Element[] elementsToEncrypt;
         public Element[] elementsToSign;
         public boolean signSamlToken = false; // if true, SAML token should be signed
+        public boolean suppressBst = false;
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
@@ -119,7 +119,7 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToSign)
         {
             this(c, null, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
-                 elementsToEncrypt, elementsToSign, null, false);
+                 elementsToEncrypt, elementsToSign, null, false, false);
         }
 
         public TestDocument(Context c, Element senderSamlAssertion, X509Certificate senderCert, PrivateKey senderKey,
@@ -128,7 +128,8 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToEncrypt,
                             Element[] elementsToSign,
                             SecretKey secureConversationKey,
-                            boolean signSamlToken)
+                            boolean signSamlToken,
+                            boolean suppressBst)
         {
             this.c = c;
             this.senderSamlAssertion = senderSamlAssertion;
@@ -141,6 +142,7 @@ public class WssDecoratorTest extends TestCase {
             this.elementsToSign = elementsToSign;
             this.secureConversationKey = secureConversationKey;
             this.signSamlToken = signSamlToken;
+            this.suppressBst = suppressBst;
         }
     }
 
@@ -162,6 +164,7 @@ public class WssDecoratorTest extends TestCase {
         reqs.setSenderMessageSigningPrivateKey(d.senderKey);
         reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(null);
+        reqs.setSuppressBst(d.suppressBst);
         if (d.secureConversationKey != null)
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
@@ -370,7 +373,7 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[0],
                                 new Element[] { c.body },
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, false);
     }
 
     public void testSigningAndEncryptionWithSecureConversation() throws Exception {
@@ -387,9 +390,9 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[] { c.productid,  c.accountid },
                                 new Element[] { c.body },
-                                TestDocuments.getDotNetSecureConversationSharedSecret(), false);
+                                TestDocuments.getDotNetSecureConversationSharedSecret(), false, false);
     }
-    
+
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runTest(getSignedSamlHolderOfKeyRequestTestDocument());
     }
@@ -409,7 +412,7 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[0],
                                 new Element[] { c.body },
-                                null, false);
+                                null, false, false);
     }
 
     public void testSignedSamlSenderVouchesRequest() throws Exception {
@@ -432,7 +435,7 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[0],
                                 new Element[] { c.body },
                                 null,
-                                true);
+                                true, false);
     }
 
     private Element createSenderSamlToken(String subjectNameIdentifierValue,
@@ -607,5 +610,27 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[] { c.payload },
                                 new Element[] { c.body });
     }
+
+    public void testSignedAndEncryptedBodyWithNoBst() throws Exception {
+        runTest(getSignedAndEncryptedBodyWithNoBstTestDocument());
+    }
+
+    public TestDocument getSignedAndEncryptedBodyWithNoBstTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                null,
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                true,
+                                new Element[] { c.body },
+                                new Element[] { c.body },
+                                null,
+                                false,
+                                true);
+    }
+
+
 
 }

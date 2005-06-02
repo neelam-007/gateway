@@ -188,7 +188,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
             try {
                 deco.decorateMessage(requestDoc, decoReq);
                 requestXml.setDocument(requestDoc);
-                requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null));
+                requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null));
                 return AssertionStatus.NONE;
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);

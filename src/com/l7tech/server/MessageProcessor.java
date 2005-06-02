@@ -129,7 +129,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 try {
                     final XmlKnob reqXml = request.getXmlKnob();
                     wssOutput = trogdor.undecorateMessage(request,
-                        serverCertificate,
+                        null, serverCertificate,
                         serverPrivateKey,
                         SecureConversationContextManager.getInstance());
                     reqXml.setProcessorResult(wssOutput);

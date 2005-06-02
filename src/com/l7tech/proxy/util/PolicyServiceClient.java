@@ -170,7 +170,7 @@ public class PolicyServiceClient {
         WssProcessor wssProcessor = new WssProcessorImpl();
         ProcessorResult result;
         try {
-            result = wssProcessor.undecorateMessage(new Message(response), clientCert, clientKey, null);
+            result = wssProcessor.undecorateMessage(new Message(response), null, clientCert, clientKey, null);
         } catch (BadSecurityContextException e) {
             throw new ProcessorException(e); // can't happen
         } catch (IOException e) {

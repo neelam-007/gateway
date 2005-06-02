@@ -230,19 +230,19 @@
 
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
-            <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no" />
             <test name="com.l7tech.proxy.policy.ClientXpathAssertionsTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.policy.filter.FilterTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.server.policy.filter.FilterTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.security.xml.WssRoundTripTest" haltonfailure="no" fork="yes"/>
-            <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
-            <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no" fork="yes"/>
 
 <!--
              ** add policy tests into the com.l7tech.policy.AllPolicyTests class
             -->
-            <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no"/>
+            <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no" fork="yes"/>
 <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.
@@ -282,7 +282,7 @@
             <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no" fork="yes"/>
-            <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.KeysTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.mime.MimeHeaderTest" haltonfailure="no"/>

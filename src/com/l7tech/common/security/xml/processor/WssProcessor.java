@@ -28,8 +28,10 @@ public interface WssProcessor {
      * That is, the contents of the Header/Security are processed as per the WSS rules.
      *
      * @param message the xml document containing the soap message. this document may be modified on exit.
+     * @param senderCertificate    the sender's cert, if known, so that Signatures containing SKI KeyInfos can be matched up, or null to disable this feature.
      * @param recipientCertificate the recipient's cert to which encrypted keys may be encoded for
      * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
+     * @param securityContextFinder a security context finder for looking up ws-sc sessions, or null to disable WS-SC support.
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
      * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
      * @throws GeneralSecurityException if there is a problem with a key or certificate
@@ -42,6 +44,7 @@ public interface WssProcessor {
      * @throws IllegalStateException if the Message has not yet been initialized
      */
     ProcessorResult undecorateMessage(Message message,
+                                      X509Certificate senderCertificate,
                                       X509Certificate recipientCertificate,
                                       PrivateKey recipientPrivateKey,
                                       SecurityContextFinder securityContextFinder)

@@ -178,6 +178,11 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSoapWithSignedEncryptedAttachmentTestDocument()));
     }
 
+    public void testSignedAndEncryptedBodyWithNoBst() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedAndEncryptedBodyWithNoBst",
+                                               wssDecoratorTest.getSignedAndEncryptedBodyWithNoBstTestDocument()));
+    }
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;
@@ -205,6 +210,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setSenderMessageSigningPrivateKey(td.senderKey);
         reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(null);
+        reqs.setSuppressBst(td.suppressBst);
         if (td.secureConversationKey != null)
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }
@@ -235,6 +241,7 @@ public class WssRoundTripTest extends TestCase {
                    XmlUtil.nodeToString(message).equals(XmlUtil.nodeToString(incomingMessage)));
 
         ProcessorResult r = trogdor.undecorateMessage(new Message(incomingMessage),
+                                                      td.senderCert,
                                                                    td.recipientCert,
                                                                    td.recipientKey,
                                                                    makeSecurityContextFinder(td.secureConversationKey));

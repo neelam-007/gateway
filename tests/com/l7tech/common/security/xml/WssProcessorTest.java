@@ -52,9 +52,10 @@ public class WssProcessorTest extends TestCase {
         log.info("Testing document: " + testDocument.name);
         log.info("Original decorated message (reformatted): " + XmlUtil.nodeToFormattedString(request));
         ProcessorResult result = wssProcessor.undecorateMessage(new Message(request),
-                                                                             recipientCertificate,
-                                                                             recipientPrivateKey,
-                                                                             testDocument.securityContextFinder);
+                                                                testDocument.senderCeritifcate,
+                                                                recipientCertificate,
+                                                                recipientPrivateKey,
+                                                                testDocument.securityContextFinder);
         assertTrue(result != null);
 
         ParsedElement[] encrypted = result.getElementsThatWereEncrypted();
@@ -114,17 +115,19 @@ public class WssProcessorTest extends TestCase {
     private static class TestDocument {
         String name;
         Document document;
+        X509Certificate senderCeritifcate;
         PrivateKey recipientPrivateKey;
         X509Certificate recipientCertificate;
         SecurityContextFinder securityContextFinder = null;
         TestDocument(String n, Document d, PrivateKey rpk, X509Certificate rc,
-                     SecurityContextFinder securityContextFinder)
+                     SecurityContextFinder securityContextFinder, X509Certificate senderCert)
         {
             this.name = n;
             this.document = d;
             this.recipientPrivateKey = rpk;
             this.recipientCertificate = rc;
             this.securityContextFinder = securityContextFinder;
+            this.senderCeritifcate = senderCert;
         }
     }
 
@@ -210,6 +213,7 @@ public class WssProcessorTest extends TestCase {
             return new TestDocument(testname, d,
                                     TestDocuments.getEttkServerPrivateKey(),
                                     TestDocuments.getEttkServerCertificate(),
+                                    null,
                                     null);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -221,6 +225,7 @@ public class WssProcessorTest extends TestCase {
             return new TestDocument(testname, doc,
                                     TestDocuments.getEttkServerPrivateKey(),
                                     TestDocuments.getEttkServerCertificate(),
+                                    null,
                                     null);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -243,7 +248,8 @@ public class WssProcessorTest extends TestCase {
             return new TestDocument(testname, d,
                                     TestDocuments.getDotNetServerPrivateKey(),
                                     TestDocuments.getDotNetServerCertificate(),
-                                    dotNetSecurityContextFinder);
+                                    dotNetSecurityContextFinder,
+                                    null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

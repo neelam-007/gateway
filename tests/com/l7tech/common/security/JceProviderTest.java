@@ -177,7 +177,7 @@ public class JceProviderTest {
 
             log.info("pretest: checking XML message signature");
             ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(new Message(td.c.message),
-                    TestDocuments.getDotNetServerCertificate(),
+                                                                                       null, TestDocuments.getDotNetServerCertificate(),
                     TestDocuments.getDotNetServerPrivateKey(),
                     null);
             log.info("signature verified on " + processorResult.getElementsThatWereSigned().length + " elements");
@@ -241,7 +241,7 @@ public class JceProviderTest {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(encryptedXml);
                 new WssProcessorImpl().undecorateMessage(new Message(blah),
-                        TestDocuments.getDotNetServerCertificate(),
+                                                         null, TestDocuments.getDotNetServerCertificate(),
                         TestDocuments.getDotNetServerPrivateKey(),
                         null);
             }

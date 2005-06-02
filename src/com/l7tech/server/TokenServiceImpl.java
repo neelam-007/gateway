@@ -65,7 +65,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 6, 2004<br/>
- * $Id$<br/>
  */
 public class TokenServiceImpl implements TokenService {
 
@@ -105,7 +104,7 @@ public class TokenServiceImpl implements TokenService {
             X509Certificate serverSSLcert = getServerCert();
             PrivateKey sslPrivateKey = getServerKey();
             ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
-                                                                  serverSSLcert,
+                                                                  null, serverSSLcert,
                                                                   sslPrivateKey,
                                                                   SecureConversationContextManager.getInstance());
             reqXml.setProcessorResult(wssOutput);

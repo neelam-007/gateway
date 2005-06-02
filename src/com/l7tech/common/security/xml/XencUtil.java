@@ -18,6 +18,7 @@ import javax.crypto.Cipher;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Random;
@@ -29,6 +30,10 @@ import java.util.logging.Logger;
  */
 public class XencUtil {
     private static final Logger logger = Logger.getLogger(XencUtil.class.getName());
+    public static final String TRIPLE_DES_CBC = "http://www.w3.org/2001/04/xmlenc#tripledes-cbc";
+    public static final String AES_128_CBC = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
+    public static final String AES_192_CBC = "http://www.w3.org/2001/04/xmlenc#aes192-cbc";
+    public static final String AES_256_CBC = "http://www.w3.org/2001/04/xmlenc#aes256-cbc";
 
     /**
      * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
@@ -74,6 +79,23 @@ public class XencUtil {
         return output;
     }
 
+    public static class UnsupportedKeyInfoFormatException extends InvalidDocumentFormatException {
+        public UnsupportedKeyInfoFormatException(String message) {
+            super(message);
+        }
+
+        public UnsupportedKeyInfoFormatException() {
+        }
+
+        public UnsupportedKeyInfoFormatException(Throwable cause) {
+            super(cause);
+        }
+
+        public UnsupportedKeyInfoFormatException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     /**
      * Checks if the specified EncryptedType's KeyInfo is addressed to the specified recipient certificate.
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
@@ -96,14 +118,18 @@ public class XencUtil {
 
         Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedType, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
         if (kinfo == null) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
-        Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
+        assertKeyInfoMatchesCertificate(kinfo, recipientCert);
+    }
+
+    public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException {
+        Element str = XmlUtil.findOnlyOneChildElementByName(keyInfo,
                                                             SoapUtil.SECURITY_URIS_ARRAY,
                                                             SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-        if (str == null) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + "'s KeyInfo includes no SecurityTokenReference");
+        if (str == null) throw new UnsupportedKeyInfoFormatException("KeyInfo includes no SecurityTokenReference");
         Element ki = XmlUtil.findOnlyOneChildElementByName(str,
                                                            SoapUtil.SECURITY_URIS_ARRAY,
                                                            SoapUtil.KEYIDENTIFIER_EL_NAME);
-        if (ki == null) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + "'s KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
+        if (ki == null) throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
         String valueType = ki.getAttribute("ValueType");
         String keyIdentifierValue = XmlUtil.getTextValue(ki);
         byte[] keyIdValueBytes = new byte[0];
@@ -112,14 +138,14 @@ public class XencUtil {
         } catch (IOException e) {
             throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
         }
-        if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + "'s KeyIdentifier was empty");
+        if (keyIdValueBytes == null || keyIdValueBytes.length < 1) throw new InvalidDocumentFormatException("KeyIdentifier was empty");
         if (valueType == null || valueType.length() <= 0) {
             logger.fine("The KeyId Value Type is not specified. We will therefore assume it is a Subject Key Identifier.");
             valueType = SoapUtil.VALUETYPE_SKI;
         }
         if (valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
             // If not typed, assume it's a ski
-            byte[] ski = recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
+            byte[] ski = cert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
             if (ski == null) {
                 // TODO try making up both RFC 3280 SKIs and see if they match (Bug #1001)
                 //throw new CertificateException("Unable to verify that KeyInfo is addressed to us -- " +
@@ -139,7 +165,7 @@ public class XencUtil {
                     logger.fine("the Key SKI is recognized. This key is for us for sure!");
                     /* FALLTHROUGH */
                 } else {
-                    String msg = "This " + encryptedType.getLocalName() + " has a KeyInfo that declares a specific SKI, " +
+                    String msg = "This KeyInfo declares a specific SKI, " +
                             "but our certificate's SKI does not match.";
                     logger.fine(msg);
                     throw new UnexpectedKeyInfoException(msg);
@@ -148,12 +174,12 @@ public class XencUtil {
         } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_SUFFIX)) {
             // It seems to be a complete certificate
             X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
-            if (CertUtils.certsAreEqual(recipientCert, referencedCert)) {
+            if (CertUtils.certsAreEqual(cert, referencedCert)) {
                 logger.fine("The Key recipient cert is recognized");
                 /* FALLTHROUGH */
 
             } else {
-                String msg = "This " + encryptedType.getLocalName() + " has a KeyInfo that declares a specific cert, " +
+                String msg = "This KeyInfo declares a specific cert, " +
                         "but our certificate does not match.";
                 logger.warning(msg);
                 throw new UnexpectedKeyInfoException(msg);

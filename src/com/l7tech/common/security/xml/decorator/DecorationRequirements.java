@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security.xml.decorator;
@@ -100,6 +99,33 @@ public class DecorationRequirements {
      */
     public Set getElementsToEncrypt() {
         return elementsToEncrypt;
+    }
+
+    /**
+     * Returns the required encryption algorithm. The default is "http://www.w3.org/2001/04/xmlenc#aes128-cbc"
+     *
+     * @return the encryption algorithm requested
+     */
+    public String getEncryptionAlgorithm() {
+        return encryptionAlgorithm;
+    }
+
+    /**
+     * Set the required encryption algoirthm.
+     * Supported values are:
+     * <ul>
+     * <li> triple des - http://www.w3.org/2001/04/xmlenc#tripledes-cbc
+     * <li> aes 128    - http://www.w3.org/2001/04/xmlenc#aes128-cbc
+     * <li> aes 192    - http://www.w3.org/2001/04/xmlenc#aes192-cbc
+     * <li> aes 256    - http://www.w3.org/2001/04/xmlenc#aes256-cbc
+     * </ul>
+     * @param encryptionAlgorithm the required algorithm
+     */
+    public void setEncryptionAlgorithm(String encryptionAlgorithm) {
+        if (encryptionAlgorithm == null) {
+            throw new IllegalArgumentException();
+        }
+        this.encryptionAlgorithm = encryptionAlgorithm;
     }
 
     /**
@@ -243,6 +269,28 @@ public class DecorationRequirements {
         this.securityHeaderActor = securityHeaderActor;
     }
 
+    /**
+     * If a BinarySecurityToken would need to be generated to hold a sender signing certificate, enabling
+     * suppressBst causes it to emit no BST, and instead to refer to the sender cert via its SubjectKeyIdentifier
+     * in the Signature's KeyInfo.
+     *
+     * @return  false to allow normal BST addition, if needed.  True to never add a BST.
+     */
+    public boolean isSuppressBst() {
+        return suppressBst;
+    }
+
+    /**
+     * If a BinarySecurityToken would need to be generated to hold a sender signing certificate, enabling
+     * suppressBst causes it to emit no BST, and instead to refer to the sender cert via its SubjectKeyIdentifier
+     * in the Signature's KeyInfo.
+     *
+     * @param suppressBst  false to allow normal BST addition, if needed.  True to never add a BST.
+     */
+    public void setSuppressBst(boolean suppressBst) {
+        this.suppressBst = suppressBst;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -251,6 +299,8 @@ public class DecorationRequirements {
     private SecureConversationSession secureConversationSession = null;
     private boolean signTimestamp;
     private Set elementsToEncrypt = new LinkedHashSet();
+    private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
+    //private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#tripledes-cbc";
     private Set elementsToSign = new LinkedHashSet();
     private String preferredSecurityNamespace = SoapUtil.SECURITY_NAMESPACE;
     private String preferredWSUNamespace = SoapUtil.WSU_NAMESPACE;
@@ -258,4 +308,5 @@ public class DecorationRequirements {
     private int timestampTimeoutMillis = 0;
     private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
     private boolean includeSamlTokenInSignature = false;
+    private boolean suppressBst = false;
 }

@@ -131,7 +131,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -176,7 +176,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -221,7 +221,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -265,7 +265,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {

@@ -103,7 +103,7 @@ public class FimWorkshopTest extends TestCase {
 
         WssProcessor processor = new WssProcessorImpl();
 
-        ProcessorResult result = processor.undecorateMessage(reqMess, null, null, null);
+        ProcessorResult result = processor.undecorateMessage(reqMess, null, null, null, null);
 
         SecurityToken[] tokens = result.getSecurityTokens();
         assertNotNull(tokens);
