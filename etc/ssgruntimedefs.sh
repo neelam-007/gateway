@@ -35,7 +35,7 @@ multiplier="2/3"
 let java_ram="$system_ram*$multiplier" 
 let maxnewsize="$java_ram/2"
 
-default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server -Djava.awt.headless=true -XX:CompileThreshold=1500 "
+default_java_opts="-Dnetworkaddress.cache.ttl=30 -Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server -Djava.awt.headless=true -XX:CompileThreshold=1500 "
 default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
 default_java_opts="$default_java_opts -XX:NewSize=${maxnewsize}k -XX:MaxNewSize=${maxnewsize}k "
 
