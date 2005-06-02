@@ -8,7 +8,6 @@ package com.l7tech.server.policy.assertion.sla;
 
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.sla.CounterCache;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.sla.CounterManager;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -38,16 +37,11 @@ public class ServerThroughputQuota implements ServerAssertion {
     private final Auditor auditor;
     private ApplicationContext  applicationContext;
     private final String[] TIME_UNITS = {"second", "hour", "day", "month"};
-    private CounterManager counter;
-    private CounterIDManager counterIDManager;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
         this.assertion = assertion;
         this.applicationContext = ctx;
         auditor = new Auditor(this, applicationContext, logger);
-        //counter = (CounterManager)applicationContext.getBean("counterCache");
-        counter = (CounterManager)applicationContext.getBean("counterManager");
-        counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -69,6 +63,7 @@ public class ServerThroughputQuota implements ServerAssertion {
         long counterid = getCounterId(context);
         long now = System.currentTimeMillis();
         long val = -1;
+        CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
         if (requiresIncrement) {
             try {
                 val = counter.incrementOnlyWithinLimitAndReturnValue(counterid,
@@ -112,6 +107,7 @@ public class ServerThroughputQuota implements ServerAssertion {
     private AssertionStatus doDecrement(PolicyEnforcementContext context) throws IOException {
         if (alreadyIncrementedInThisContext(context)) {
             long counterid = getCounterId(context);
+            CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
             counter.decrement(counterid);
             logger.fine("counter decremented " + counterid);
         } else {
@@ -127,6 +123,7 @@ public class ServerThroughputQuota implements ServerAssertion {
         long counterid = getCounterId(context);
         long now = System.currentTimeMillis();
         long val = -1;
+        CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
         if (requiresIncrement) {
             val = counter.incrementAndReturnValue(counterid, now, assertion.getTimeUnit());
             // no sync issue here: this flag array belongs to the context which lives inside one thread only
@@ -160,6 +157,7 @@ public class ServerThroughputQuota implements ServerAssertion {
         }
 
         long counterid = 0;
+        CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
         try {
             counterid = counterIDManager.getCounterId(assertion.getCounterName(), user);
         } catch (ObjectModelException e) {
