@@ -188,12 +188,12 @@ sub make_tar_file {
 	    $run_command=<<EOF;
 
 # run under daemon mode if invoked as Bridge.sh -bd
-\$extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 ";
+extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 ";
 
-if ["\$1" eq "-bd"]; then
-	\$run="-classpath $file.jar com.l7tech.proxy.Main"
+if [ "\$1" = "-bd" ]; then
+	run="-classpath $file.jar com.l7tech.proxy.Main"
 else
-	\$run="-jar $file.jar"
+	run="-jar $file.jar"
 fi
 
 EOF
@@ -210,10 +210,9 @@ EOM
 # $file Startup script for UNIX systems
 # set l7 opts to java opts if empty
 
-
 if [ `expr "\$JAVA_OPTS" : ".*headless.*"` != 0 ]; then
 	echo "Headless mode java options for SSG found, disabling"
-	JAVA_OPTS="";
+	JAVA_OPTS=" -Dnetworkaddress.cache.ttl=10  -Xms96M -Xmx96M -Xss256k -server -XX:NewSize=48M -XX:MaxNewSize=48M ";
 fi
 
 if [ "\$L7_OPTS" = "" -a "\$JAVA_OPTS" != "" ]; then
@@ -239,7 +238,7 @@ getopts('bN', \%opt);
 
 foreach my $file (@FILES) {
 	my @jars = get_jarlist_from_manifest("$MANIFEST_PATH/$file$MANIFEST_EXT");
-  my @includes = get_include_filelist("$MANIFEST_PATH/$file$INCLUDES_EXT");
+        my @includes = get_include_filelist("$MANIFEST_PATH/$file$INCLUDES_EXT");
 
 	my $nsi = $nsis{$file};
 	die "No NSI path for $file" unless $nsi;
