@@ -34,8 +34,9 @@ public class AddXslTransformationAssertionAdvice implements Advice {
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
         // show the dialog
         dlg.pack();
+        dlg.setSize(600, 800);
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         // make sure a xslt was entered
         if (assertion.getXslSrc() != null && assertion.getXslSrc().length() > 0) {
             pc.proceed();
