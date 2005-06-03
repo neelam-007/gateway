@@ -46,8 +46,9 @@ public class XslTransformationPropertiesAction extends SecureAction {
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, false, node.getAssertion());
         dlg.addPolicyListener(listener);
         dlg.pack();
+        dlg.setSize(600, 800);
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {

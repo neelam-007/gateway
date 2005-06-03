@@ -14,10 +14,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-
-import org.dom4j.DocumentException;
-import org.xml.sax.SAXParseException;
 
 /**
  * Action for viewing or editing the properties of a Schema Validation Assertion node.
@@ -48,21 +44,13 @@ public class SchemaValidationPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        try {
-            Frame f = TopComponents.getInstance().getMainWindow();
-            SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
-            dlg.addPolicyListener(listener);
-            dlg.pack();
-            dlg.setSize(600, 800);
-            Utilities.centerOnScreen(dlg);
-            dlg.show();
-        } catch (DocumentException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (SAXParseException e) {
-            throw new RuntimeException(e);
-        }
+        Frame f = TopComponents.getInstance().getMainWindow();
+        SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
+        dlg.addPolicyListener(listener);
+        dlg.pack();
+        dlg.setSize(600, 800);
+        Utilities.centerOnScreen(dlg);
+        dlg.setVisible(true);
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {

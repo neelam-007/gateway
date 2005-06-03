@@ -1,5 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.editor.XMLEditor;
+import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
@@ -7,7 +12,6 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
-import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
@@ -35,24 +39,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-
 /**
  * A dialog to view / configure the properties of a schema validation assertion.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 6, 2004<br/>
- *
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
-
     /**
      * modless construction
      */
-    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service)
-      throws DocumentException, IOException, SAXParseException {
+    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service)    {
         super(owner, false);
+        if (node == null || node.getAssertion() == null) {
+            throw new IllegalArgumentException("Schema Validation Node == null");
+        }
         subject = node.getAssertion();
         this.service = service;
         initialize();
@@ -61,15 +64,17 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     /**
      * modal construction
      */
-    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service)
-      throws DocumentException, IOException, SAXParseException {
+    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service)      {
         super(owner, true);
+        if (assertion == null) {
+            throw new IllegalArgumentException("Schema Validation == null");
+        }
         subject = assertion;
         this.service = service;
         initialize();
     }
 
-    private void initialize() throws DocumentException, IOException, SAXParseException {
+    private void initialize() {
 
         initResources();
         setTitle(resources.getString("window.title"));
@@ -79,11 +84,11 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         // do layout stuff
         Container contents = getContentPane();
-        contents.setLayout(new BorderLayout(0,0));
+        contents.setLayout(new BorderLayout(0, 0));
         contents.add(constructCentralPanel(), BorderLayout.CENTER);
         contents.add(constructBottomButtonsPanel(), BorderLayout.SOUTH);
         Actions.setEscKeyStrokeDisposes(this);
-       
+
         // create callbacks
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -95,52 +100,28 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 cancel();
             }
         });
-        helpButton.addActionListener( new ActionListener() {
+        helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(SchemaValidationPropertiesDialog.this);
             }
         });
-        readFromWsdlButton.addActionListener( new ActionListener() {
+        readFromWsdlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                try {
-                    readFromWsdl();
-                } catch (DocumentException e1) {
-                    throw new RuntimeException(e1);
-                } catch (IOException e1) {
-                    throw new RuntimeException(e1);
-                } catch (SAXParseException e1) {
-                    throw new RuntimeException(e1);
-                }
+                readFromWsdl();
             }
         });
 
         readFromWsdlButton.setEnabled(wsdlExtractSupported());
         readFromWsdlButton.setToolTipText("Extract schema from WSDL; available for 'document/literal' style services");
-        resolveButton.addActionListener( new ActionListener() {
+        resolveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                try {
-                    readFromUrl();
-                } catch (DocumentException e1) {
-                    throw new RuntimeException(e1);
-                } catch (IOException e1) {
-                    throw new RuntimeException(e1);
-                } catch (SAXParseException e1) {
-                    throw new RuntimeException(e1);
-                }
+                readFromUrl();
             }
         });
 
-        loadFromFile.addActionListener( new ActionListener() {
+        loadFromFile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                try {
-                    readFromFile();
-                } catch (DocumentException e1) {
-                    throw new RuntimeException(e1);
-                } catch (IOException e1) {
-                    throw new RuntimeException(e1);
-                } catch (SAXParseException e1) {
-                    throw new RuntimeException(e1);
-                }
+                readFromFile();
             }
         });
     }
@@ -150,7 +131,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      * style services only.
      * Traverse all the soap bindings, and if all the bindings are of style 'document'
      * returns true.
-     * @return  true if 'document' stle supported, false otherwise
+     *
+     * @return true if 'document' stle supported, false otherwise
      */
     private boolean wsdlExtractSupported() {
         if (!service.isSoap()) return false;
@@ -166,7 +148,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
                 Binding binding = (Binding)iterator.next();
                 if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding))) {
-                     return false;
+                    return false;
                 }
             }
             return true;
@@ -176,9 +158,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         return false;
     }
 
+
     private void ok() {
         // validate the contents of the xml control
-        String contents = wsdlViewer.getContent();
+        String contents = uiAccessibility.getEditor().getText();
         if (!docIsSchema(contents)) {
             displayError(resources.getString("error.notschema"), null);
             return;
@@ -201,7 +184,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
               public void run() {
                   int[] indices = new int[a.getParent().getChildren().indexOf(a)];
                   PolicyEvent event = new
-                          PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                    PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
                   EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
                   for (int i = 0; i < listeners.length; i++) {
                       ((PolicyListener)listeners[i]).assertionsChanged(event);
@@ -243,12 +226,12 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         if (!SchemaValidation.TOP_SCHEMA_ELNAME.equals(rootEl.getLocalName())) {
             log.log(Level.WARNING, "document is not schema (top element " + rootEl.getLocalName() +
-                                   " is not " + SchemaValidation.TOP_SCHEMA_ELNAME + ")");
+              " is not " + SchemaValidation.TOP_SCHEMA_ELNAME + ")");
             return false;
         }
         if (!SchemaValidation.W3C_XML_SCHEMA.equals(rootEl.getNamespaceURI())) {
             log.log(Level.WARNING, "document is not schema (namespace is not + " +
-                                    SchemaValidation.W3C_XML_SCHEMA + ")");
+              SchemaValidation.W3C_XML_SCHEMA + ")");
             return false;
         }
         return true;
@@ -282,7 +265,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         SchemaValidationPropertiesDialog.this.dispose();
     }
 
-    private void readFromWsdl() throws DocumentException, IOException, SAXParseException {
+    private void readFromWsdl() {
         if (service == null) {
             displayError(resources.getString("error.noaccesstowsdl"), null);
             return;
@@ -308,15 +291,15 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         }
         schemafromwsdlchooser.pack();
         Utilities.centerOnScreen(schemafromwsdlchooser);
-        schemafromwsdlchooser.show();
+        schemafromwsdlchooser.setVisible(true);
         schemafromwsdlchooser.dispose();
         String result = schemafromwsdlchooser.getOkedSchema();
         if (result != null) {
-            wsdlViewer.setContent(result);
+            uiAccessibility.getEditor().setText(result);
         }
     }
 
-    private void readFromFile() throws DocumentException, IOException, SAXParseException {
+    private void readFromFile() {
         JFileChooser dlg = Utilities.createJFileChooser();
 
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
@@ -356,14 +339,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 log.log(Level.FINE, msg, e);
                 return;
             }
-            wsdlViewer.setContent(printedSchema);
+            uiAccessibility.getEditor().setText(printedSchema);
             //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + filename, null);
         }
     }
 
-    private void readFromUrl() throws DocumentException, IOException, SAXParseException {
+    private void readFromUrl() {
         // get url
         String urlstr = urlTxtFld.getText();
         if (urlstr == null || urlstr.length() < 1) {
@@ -412,7 +395,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 log.log(Level.FINE, msg, e);
                 return;
             }
-            wsdlViewer.setContent(printedSchema);
+            uiAccessibility.getEditor().setText(printedSchema);
             //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + urlstr, null);
@@ -439,7 +422,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      * the central panel contains the populate from schema button, the load from schema panel
      * and the schema xml display
      */
-    private JPanel constructCentralPanel() throws DocumentException, IOException, SAXParseException {
+    private JPanel constructCentralPanel() {
         // panel that contains the read from wsdl and the read from url
         JPanel toppanel = new JPanel();
         toppanel.setLayout(new BoxLayout(toppanel, BoxLayout.Y_AXIS));
@@ -479,19 +462,23 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         return bordered;
     }
 
-    private JPanel constructXmlDisplayPanel() throws DocumentException, IOException, SAXParseException {
+    private JPanel constructXmlDisplayPanel() {
         JPanel xmldisplayPanel = new JPanel();
         xmldisplayPanel.setLayout(new BorderLayout(0, CONTROL_SPACING));
         JLabel schemaTitle = new JLabel(resources.getString("xmldisplayPanel.name"));
         xmldisplayPanel.add(schemaTitle, BorderLayout.NORTH);
 
-        if (subject != null && subject != null && subject.getSchema() != null) {
-            wsdlViewer.setContent(reformatxml(subject.getSchema()));
-        } else {
-            //okButton.setEnabled(false);
-        }
+        xmldisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                if (subject.getSchema() != null) {
+                    XMLEditor editor = uiAccessibility.getEditor();
+                    editor.setText(reformatxml(subject.getSchema()));
+                    editor.setLineNumber(1);
+                }
+            }
+        });
 
-        xmldisplayPanel.add(wsdlViewer, BorderLayout.CENTER);
 
         // wrap this with border settings
         GridBagConstraints constraints = new GridBagConstraints();
@@ -568,7 +555,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         return output;
     }
 
-    private void allocControls() throws DocumentException, IOException, SAXParseException {
+    private void allocControls() {
         // construct buttons
         helpButton = new JButton();
         helpButton.setText(resources.getString("helpButton.name"));
@@ -581,7 +568,19 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         urlTxtFld = new JTextField();
         resolveButton = new JButton();
         resolveButton.setText(resources.getString("resolveButton.name"));
-        wsdlViewer = Viewer.createMessageViewer(null);
+        // configure xml editing widget
+        xmlContainer = new XMLContainer(true);
+        uiAccessibility = xmlContainer.getUIAccessibility();
+        uiAccessibility.setTreeAvailable(false);
+        uiAccessibility.setToolBarAvailable(false);
+        xmlContainer.setStatusBarAvailable(false);
+        PopupModel popupModel = xmlContainer.getPopupModel();
+        // remove the unwanted actions
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
+
         loadFromFile = new JButton();
         loadFromFile.setText(resources.getString("loadFromFile.name"));
     }
@@ -594,7 +593,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     public static void main(String[] args) throws DocumentException, IOException, SAXParseException {
         SchemaValidationPropertiesDialog me = new SchemaValidationPropertiesDialog(null, new SchemaValidation(), null);
         me.pack();
-        me.show();
+        me.setVisible(true);
         System.exit(0);
     }
 
@@ -605,7 +604,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private JButton resolveButton;
     private JButton loadFromFile;
     private JTextField urlTxtFld;
-    private Viewer wsdlViewer;
+
+    private XMLContainer xmlContainer;
+    private UIAccessibility uiAccessibility;
 
     private ResourceBundle resources;
 

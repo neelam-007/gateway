@@ -1,5 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.editor.XMLEditor;
+import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.action.Actions;
@@ -10,9 +15,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
-import org.syntax.jedit.JEditTextArea;
-import org.syntax.jedit.SyntaxDocument;
-import org.syntax.jedit.tokenmarker.XMLTokenMarker;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -22,8 +24,6 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -44,12 +44,15 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class XslTransformationPropertiesDialog extends JDialog {
-
     /**
      * modless construction
      */
     public XslTransformationPropertiesDialog(Frame owner, boolean modal, XslTransformation assertion) {
         super(owner, modal);
+        if (assertion == null) {
+            throw new IllegalArgumentException("Xslt Transformation == null");
+        }
+
         subject = assertion;
         initialize();
     }
@@ -68,7 +71,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         contents.add(constructCentralPanel(), BorderLayout.CENTER);
         contents.add(constructBottomButtonsPanel(), BorderLayout.SOUTH);
         Actions.setEscKeyStrokeDisposes(this);
-             
+
         // create callbacks
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -100,7 +103,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
     private void ok() {
         // validate the contents of the xml control
-        String contents = xmlTextArea.getText();
+        String contents = uiAccessibility.getEditor().getText();
         if (contents == null || contents.length() < 1 || !docIsXsl(contents)) {
             displayError(resources.getString("error.notxslt"), null);
             return;
@@ -185,7 +188,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
                 log.log(Level.FINE, msg, e);
                 return;
             }
-            xmlTextArea.setText(printedxml);
+            uiAccessibility.getEditor().setText(printedxml);
             //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoxslt") + " " + filename, null);
@@ -314,7 +317,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
                 log.log(Level.FINE, msg, e);
                 return;
             }
-            xmlTextArea.setText(printedxml);
+            uiAccessibility.getEditor().setText(printedxml);
             //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoxslt") + " " + urlstr, null);
@@ -406,14 +409,16 @@ public class XslTransformationPropertiesDialog extends JDialog {
         JLabel xmlTitle = new JLabel(resources.getString("xmldisplayPanel.name"));
         xmldisplayPanel.add(xmlTitle, BorderLayout.NORTH);
 
-        if (subject != null && subject.getXslSrc() != null) {
-            xmlTextArea.setText(reformatxml(subject.getXslSrc()));
-        } /*else {
-            okButton.setEnabled(false);
-        }*/
-        xmlTextArea.setCaretPosition(0);
-        xmlTextArea.setCaretVisible(false);
-        xmldisplayPanel.add(xmlTextArea, BorderLayout.CENTER);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                if (subject.getXslSrc() != null) {
+                    XMLEditor editor = uiAccessibility.getEditor();
+                    editor.setText(reformatxml(subject.getXslSrc()));
+                    editor.setLineNumber(1);
+                }
+            }
+        });
+        xmldisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
 
         // wrap this with border settings
         GridBagConstraints constraints = new GridBagConstraints();
@@ -507,88 +512,27 @@ public class XslTransformationPropertiesDialog extends JDialog {
         cancelButton = new JButton();
         cancelButton.setText(resources.getString("cancelButton.name"));
         directions = new String[]{resources.getString("directionCombo.request"),
-                                  resources.getString("directionCombo.response")};
+            resources.getString("directionCombo.response")};
         directionCombo = new JComboBox(directions);
         urlTxtFld = new JTextField();
         nameTxtFld = new JTextField();
         resolveButton = new JButton();
         resolveButton.setText(resources.getString("resolveButton.name"));
-        xmlTextArea = new JEditTextArea();
-        attachMouseWhellSupport(xmlTextArea);
-        xmlTextArea.setDocument(new SyntaxDocument());
-        xmlTextArea.setEditable(true);
-        xmlTextArea.setTokenMarker(new XMLTokenMarker());
+        // configure xml editing widget
+        xmlContainer = new XMLContainer(true);
+        uiAccessibility = xmlContainer.getUIAccessibility();
+        uiAccessibility.setTreeAvailable(false);
+        uiAccessibility.setToolBarAvailable(false);
+        xmlContainer.setStatusBarAvailable(false);
+        PopupModel popupModel = xmlContainer.getPopupModel();
+        // remove the unwanted actions
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
+
         loadFromFile = new JButton();
         loadFromFile.setText(resources.getString("loadFromFile.name"));
-    }
-
-    /**
-     * todo: Find some place for this. gui.Utilities is shared with ssb
-     * @param xmlTextArea
-     */
-    private void attachMouseWhellSupport(JEditTextArea xmlTextArea) {
-        xmlTextArea.addMouseWheelListener(new MouseWheelListener() {
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                JEditTextArea textArea = (JEditTextArea)e.getSource();
-                if (e.isAltDown()) {
-                    moveCaret(textArea, e.getWheelRotation(),
-                      e.isShiftDown() || e.isControlDown());
-                } else if (e.isShiftDown())
-                    scrollPage(textArea, e.getWheelRotation());
-                else if (e.isControlDown())
-                    scrollLine(textArea, e.getWheelRotation());
-                else if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL)
-                    scrollLine(textArea, e.getUnitsToScroll());
-                else
-                    scrollLine(textArea, 3 * e.getWheelRotation());
-            }
-
-            private void scrollLine(JEditTextArea textArea, int amt) {
-                final int line = textArea.getFirstLine() + amt;
-                if (line < 0 || line > textArea.getLineCount() - textArea.getVisibleLines()) return;
-                textArea.setFirstLine(line);
-            }
-
-            private void scrollPage(JEditTextArea textArea, int amt) {
-                if (amt > 0)
-                    scrollDownPage(textArea);
-                else
-                    scrollUpPage(textArea);
-            }
-
-            private void scrollUpPage(JEditTextArea textArea) {
-                final int line = textArea.getFirstLine() - textArea.getVisibleLines();
-                if (line < textArea.getFirstLine()) return;
-                textArea.setFirstLine(line);
-
-            }
-
-            private void scrollDownPage(JEditTextArea textArea) {
-                final int line = textArea.getFirstLine() + textArea.getVisibleLines();
-                if (line > textArea.getLineCount()) return;
-                textArea.setFirstLine(line);
-            }
-
-            private void moveCaret(JEditTextArea textArea, int amt, boolean select) {
-                if (amt < 0)
-                    goToPrevLine(textArea, select);
-                else
-                    goToNextLine(textArea, select);
-            }
-
-            private void goToNextLine(JEditTextArea textArea, boolean select) {
-                final int line = textArea.getFirstLine() + 1;
-                if (line > textArea.getLineCount()) return;
-                textArea.setFirstLine(line);
-
-            }
-
-            private void goToPrevLine(JEditTextArea textArea, boolean select) {
-                final int line = textArea.getFirstLine() - 1;
-                if (line < textArea.getFirstLine()) return;
-                textArea.setFirstLine(line);
-            }
-        });
     }
 
     private void initResources() {
@@ -599,7 +543,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     public static void main(String[] args) {
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(null, true, null);
         dlg.pack();
-        dlg.show();
+        dlg.setVisible(true);
         System.exit(0);
     }
 
@@ -613,7 +557,10 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JButton resolveButton;
     private JTextField urlTxtFld;
     private JTextField nameTxtFld;
-    private JEditTextArea xmlTextArea;
+
+    private XMLContainer xmlContainer;
+    private UIAccessibility uiAccessibility;
+
     private String[] directions;
 
     private ResourceBundle resources;
