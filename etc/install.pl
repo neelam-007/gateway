@@ -755,7 +755,7 @@ sub readconfig {
 sub writefile {
 	open (SV, ">$save_file");
 	# FIXME: upgrade this every version
-	print SV "# SSG_INSTALL V3.1\n"; 
+	print SV "# SSG_INSTALL V3.2\n"; 
  	my @fieldlist=@list;
 	{ my $i; @fieldlist= grep { ++$i % 2 } @fieldlist; }
 	foreach  my $f (@fieldlist) {
