@@ -75,7 +75,7 @@ fi
 %post
 # Check for existence of install crumbs left by install.pl
 if [ -e "/etc/SSG_INSTALL" ]; then 
-	version=`grep V3.1 /etc/SSG_INSTALL`
+	version=`grep V3.2 /etc/SSG_INSTALL`
 	if [ -z "$version" ]; then
 		echo "** Upgraded to 3.2 **"
 	else 
