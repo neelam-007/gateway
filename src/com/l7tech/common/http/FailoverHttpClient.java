@@ -122,7 +122,7 @@ public class FailoverHttpClient implements GenericHttpClient {
 
         public GenericHttpResponse getResponse() throws GenericHttpException {
             URL u = this.origParams.getTargetUrl();
-            GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(origParams);
+            GenericHttpRequestParams params = origParams;
             Throwable lastFailure = null;
 
             byte[] bodyBytes = null;

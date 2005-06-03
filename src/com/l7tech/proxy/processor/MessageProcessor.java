@@ -565,7 +565,7 @@ public class MessageProcessor {
         final Message response = context.getResponse();
 
         GenericHttpClient httpClient = ssg.getRuntime().getHttpClient();
-        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
 
         GenericHttpRequest httpRequest = null;
         GenericHttpResponse httpResponse = null;
@@ -890,7 +890,7 @@ public class MessageProcessor {
      * @param context  the Context containing the request that might require HTTP level authentication
      * @param params   the HTTP request parameters to configure
      */
-    private void setAuthenticationAndBufferingState(PolicyApplicationContext context, GenericHttpRequestParamsImpl params)
+    private void setAuthenticationAndBufferingState(PolicyApplicationContext context, GenericHttpRequestParams params)
             throws OperationCanceledException, IOException
     {
         // Turn off request buffering unless HTTP digest is required (Bug #1376)

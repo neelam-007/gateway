@@ -109,6 +109,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                 TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
                 if (tk != null) {
                     TarariMessageContext tmc = tk.getContext();
+                    // TODO move this static reference to TarariMessageContextImpl behind a classloader boundary
                     if (tmc instanceof TarariMessageContextImpl) {
                         TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
                         XMLDocument tdoc = tarariMessageContext.getTarariDoc();

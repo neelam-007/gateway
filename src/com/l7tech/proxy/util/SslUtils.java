@@ -7,7 +7,7 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -139,7 +139,7 @@ public class SslUtils {
         ssg.getClientCertificatePrivateKey();
         URL url = ssg.getServerPasswordChangeUrl();
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
-        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         params.setPreemptiveAuthentication(true);
         params.setPasswordAuthentication(new PasswordAuthentication(username, oldpassword));
         params.setExtraHeaders(new HttpHeader[] {
@@ -191,7 +191,7 @@ public class SslUtils {
     {
         URL url = ssg.getServerCertificateSigningRequestUrl();
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
-        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         params.setContentType(ContentTypeHeader.parseValue("application/pkcs10"));
         final byte[] csrBytes = csr.getEncoded();
         params.setContentLength(new Long(csrBytes.length));

@@ -136,7 +136,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
                                                                                assertion.getAppliesTo(),
                                                                                assertion.getIssuer());
 
-        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(tokenServiceUrl);
+        GenericHttpRequestParams params = new GenericHttpRequestParams(tokenServiceUrl);
         params.setContentType(ContentTypeHeader.XML_DEFAULT);
         params.setSslSocketFactory(sslContext.getSocketFactory());
         params.setExtraHeaders(new HttpHeader[] { new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\"") });

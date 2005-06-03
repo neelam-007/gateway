@@ -6,7 +6,10 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.common.http.*;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.io.IOException;
@@ -69,7 +72,7 @@ public class CertificateDownloader {
 
         URL remote = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), uri);
 
-        GenericHttpRequestParams params = new GenericHttpRequestParamsImpl(remote);
+        GenericHttpRequestParams params = new GenericHttpRequestParams(remote);
         SimpleHttpClient.SimpleHttpResponse result = httpClient.get(params);
 
         certBytes = result.getBytes();

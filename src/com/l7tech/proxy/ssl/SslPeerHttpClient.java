@@ -38,7 +38,7 @@ public class SslPeerHttpClient implements GenericHttpClient {
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
-        GenericHttpRequestParamsImpl p = new GenericHttpRequestParamsImpl(params);
+        GenericHttpRequestParams p = params;
 
         final String proto = params.getTargetUrl().getProtocol();
         if ("https".equalsIgnoreCase(proto)) {

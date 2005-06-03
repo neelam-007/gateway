@@ -338,7 +338,7 @@ public class TokenServiceClient {
             log.log(Level.INFO, "Applying for new Security Token for " + clientName +
                                 " with token server " + url.toString());
 
-            GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+            GenericHttpRequestParams params = new GenericHttpRequestParams(url);
             if (httpBasicCredentials != null)
                 params.setPasswordAuthentication(httpBasicCredentials);
             params.setContentType(ContentTypeHeader.XML_DEFAULT);

@@ -6,7 +6,7 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.ExceptionUtils;
@@ -138,7 +138,7 @@ class WsdlProxy {
         Exception error = null;
 
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
-        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         params.setPreemptiveAuthentication(true);
 
         // Password retries for WSDL download

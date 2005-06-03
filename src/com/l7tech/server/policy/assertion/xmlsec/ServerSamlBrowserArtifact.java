@@ -63,7 +63,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(loginUrl);
+        GenericHttpRequestParams params = new GenericHttpRequestParams(loginUrl);
         params.setSslSocketFactory(sslContext.getSocketFactory());
         params.setFollowRedirects(false);
 

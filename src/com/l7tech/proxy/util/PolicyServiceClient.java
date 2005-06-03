@@ -6,7 +6,7 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -338,7 +338,7 @@ public class PolicyServiceClient {
         log.log(Level.INFO, "Downloading policy from " + url.toString());
 
         final long millisBefore = System.currentTimeMillis();
-        final GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        final GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         params.setContentType(ContentTypeHeader.XML_DEFAULT);
         if (httpBasicCredentials != null)
             params.setPasswordAuthentication(httpBasicCredentials);
