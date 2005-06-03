@@ -1,6 +1,6 @@
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.1
+Version: 3.2
 Release: rc1
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2005
@@ -77,7 +77,7 @@ fi
 if [ -e "/etc/SSG_INSTALL" ]; then 
 	version=`grep V3.1 /etc/SSG_INSTALL`
 	if [ -z "$version" ]; then
-		echo "** Upgrading from 3.0 to 3.1: Run upgrade script: /ssg/bin/upgrade.sh doUpgrade **"
+		echo "** Upgraded to 3.2 **"
 	else 
 		echo -n ""
 	fi
