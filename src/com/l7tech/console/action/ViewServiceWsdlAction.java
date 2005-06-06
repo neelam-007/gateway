@@ -1,15 +1,17 @@
 package com.l7tech.console.action;
 
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.editor.XMLEditor;
+import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
-import org.dom4j.DocumentException;
-import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -30,6 +32,8 @@ import java.util.logging.Logger;
 public class ViewServiceWsdlAction extends NodeAction {
     static final Logger log = Logger.getLogger(ViewServiceWsdlAction.class.getName());
     private ServiceNode serviceNode;
+    private String description = "View the WSDL defined for the Web service";
+    private PublishedService publishedService;
 
     public ViewServiceWsdlAction(ServiceNode sn) {
         super(sn);
@@ -37,6 +41,22 @@ public class ViewServiceWsdlAction extends NodeAction {
             throw new IllegalArgumentException();
         }
         serviceNode = sn;
+        setEnabled(false);
+        try {
+            publishedService = serviceNode.getPublishedService();
+            String wsdlXml = publishedService.getWsdlXml();
+            if (wsdlXml != null && !"".equals(wsdlXml)) {
+                setEnabled(true);
+            } else {
+                description = "Thje service has no WSDL";
+            }
+        } catch (FindException e) {
+            description = "Error obtaining WSDL";
+            log.log(Level.WARNING, "error retrieving service wsdl", e);
+        } catch (IOException e) {
+            description = "Error obtaining WSDL";
+            log.log(Level.WARNING, "error retrieving service wsdl", e);
+        }
     }
 
     /**
@@ -50,7 +70,7 @@ public class ViewServiceWsdlAction extends NodeAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "View the WSDL defined for the Web service";
+        return description;
     }
 
     /**
@@ -71,25 +91,16 @@ public class ViewServiceWsdlAction extends NodeAction {
     protected void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                try {
-                    final PublishedService ps = serviceNode.getPublishedService();
-                    new WsdlViewDialog(ps).show();
-                } catch (FindException e) {
-                    log.log(Level.WARNING, "error retrieving service wsdl", e);
-                } catch (IOException e) {
-                    log.log(Level.WARNING, "error retrieving service wsdl", e);
-                } catch (DocumentException e) {
-                    log.log(Level.WARNING, "error retrieving service wsdl", e);
-                } catch (SAXParseException e) {
-                    log.log(Level.WARNING, "error retrieving service wsdl", e);
-                }
+                new WsdlViewDialog(publishedService).setVisible(true);
             }
         });
     }
 
     private class WsdlViewDialog extends JFrame {
+        private XMLContainer xmlContainer;
+        private UIAccessibility uiAccessibility;
 
-        private WsdlViewDialog(PublishedService ps) throws IOException, DocumentException, SAXParseException {
+        private WsdlViewDialog(final PublishedService ps) {
             setTitle(ps.getName());
             setIconImage(TopComponents.getInstance().getMainWindow().getIconImage());
             JPanel panel = new JPanel(new BorderLayout());
@@ -109,10 +120,37 @@ public class ViewServiceWsdlAction extends NodeAction {
 
             final CompoundBorder border =
               BorderFactory.createCompoundBorder(
-                BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5,5,5,5));
+                BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5, 5, 5, 5));
             wsdlPanel.setBorder(border);
-            Viewer messageViewer = Viewer.createMessageViewer(ps.getWsdlXml());
-            panel.add(messageViewer, BorderLayout.CENTER);
+            // configure xml editing widget
+            xmlContainer = new XMLContainer(true);
+            uiAccessibility = xmlContainer.getUIAccessibility();
+            uiAccessibility.getEditor().setText(ps.getWsdlXml());
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    XMLEditor editor = uiAccessibility.getEditor();
+                    editor.setText(ps.getWsdlXml());
+                    editor.setLineNumber(1);
+                }
+            });
+
+            uiAccessibility.setTreeAvailable(false);
+            uiAccessibility.setTreeToolBarAvailable(false);
+            xmlContainer.setEditable(false);
+            uiAccessibility.setToolBarAvailable(false);
+            xmlContainer.setStatusBarAvailable(false);
+            PopupModel popupModel = xmlContainer.getPopupModel();
+            // remove the unwanted actions
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.FORMAT_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
+            popupModel.removeAction(ActionModel.getActionByName(ActionModel.COMMENT_ACTION));
+
+            panel.add(xmlContainer.getView(), BorderLayout.CENTER);
 
             getContentPane().add(panel, BorderLayout.CENTER);
             Actions.setEscKeyStrokeDisposes(this);
