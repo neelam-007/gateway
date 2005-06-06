@@ -1545,7 +1545,8 @@ public class MainWindow extends JFrame {
                 return;
             }
         }
-        this.dispose();
+        this.setVisible(false);
+        System.exit(0);
     }
 
     /**
