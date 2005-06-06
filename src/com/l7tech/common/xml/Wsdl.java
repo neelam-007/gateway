@@ -62,10 +62,24 @@ public class Wsdl {
 
     private int showBindings = ALL_BINDINGS;
 
-    /** rpc style constaint */
+    /**
+     * rpc style constaint
+     */
     public static final String STYLE_RPC = "rpc";
-    /** document style constaint */
+    /**
+     * document style constaint
+     */
     public static final String STYLE_DOCUMENT = "document";
+
+    /**
+     * SOAP binding use literal - default
+     */
+    public static final String USE_LITERAL = "literal";
+
+    /**
+     * SOAP binding use encoded (deprecated but WS-I)
+     */
+    public static final String USE_ENCODED = "encoded";
 
     /**
      * bitmask that accepts all bindings
@@ -501,6 +515,91 @@ public class Wsdl {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns SOAP use (literal, encoded) for the <code>Binding</code>.  Examines each binding operation input and
+     * output message. Every input and output are expected to have the same use throughout the <code<Binding</code>,
+     * and if mixed uses are detected the IllegalArgumentException is raised.
+     * The default use if unspecified is 'literal'.
+     *
+     * @param binding the binding to examine
+     * @return
+     * @throws IllegalArgumentException
+     */
+    public String getSoapUse(Binding binding) throws IllegalArgumentException {
+        ExtensibilityElement ee = getBindingProtocol(binding);
+        if (!(ee instanceof SOAPBinding)) {
+            throw new IllegalArgumentException("Must be SOAP binding. +( " + binding.getQName().getLocalPart() + " )");
+        }
+        Set soapUseSet = new HashSet();
+        List bindingOperations = binding.getBindingOperations();
+        for (Iterator iterator = bindingOperations.iterator(); iterator.hasNext();) {
+            BindingOperation bindingOperation = (BindingOperation)iterator.next();
+            soapUseSet.add(getSoapUse(bindingOperation));
+        }
+        if (soapUseSet.size() > 1) {
+            throw new IllegalArgumentException("Mixed/unsupported uses in '" + binding.getQName().getLocalPart() + "' found in this WSDL.");
+        }
+
+        return soapUseSet.iterator().next().toString();
+    }
+
+    /**
+     * Returns SOAP use (literal, encoded) for the <code>BindingOperation</code>.  Examines both input and
+     * output messages. Both input and output are expected to have the same use, and if mixed the IllegalArgumentException
+     * is raised. The default use if unspecified is 'literal'.
+     *
+     * @param bindingOperation the binding operation
+     * @return the String indicating the
+     * @throws IllegalArgumentException if the <code>Binding</code> for the presented <code>BidningOperation</code>
+     *                                  could not be determined
+     *                                  if the input and putput message specify different use (mixed encoded and literal)
+     */
+    public String getSoapUse(BindingOperation bindingOperation) throws IllegalArgumentException {
+        Binding binding = getBinding(bindingOperation);
+        if (binding == null) {
+            throw new IllegalArgumentException("The binding for binding operation '" + bindingOperation.getName() + "' is not found in this WSDL.");
+        }
+        BindingInput bindingInput = bindingOperation.getBindingInput();
+
+        String use = USE_LITERAL;
+
+        if (bindingInput == null) {
+            use = USE_LITERAL;
+        }
+
+        List extensibilityElements = bindingInput.getExtensibilityElements();
+        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
+            Object o = (Object)iterator.next();
+            if (o instanceof SOAPBody) {
+                SOAPBody soapBody = (SOAPBody)o;
+                if (soapBody.getUse() != null) {
+                    use = soapBody.getUse();
+                }
+            }
+        }
+        Set useSet = new HashSet();
+        useSet.add(use);
+        // output
+        use = USE_LITERAL;
+        BindingOutput bindingOutput = bindingOperation.getBindingOutput();
+        extensibilityElements = bindingOutput.getExtensibilityElements();
+        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
+            Object o = (Object)iterator.next();
+            if (o instanceof SOAPBody) {
+                SOAPBody soapBody = (SOAPBody)o;
+                if (soapBody.getUse() != null) {
+                    use = soapBody.getUse();
+                }
+            }
+        }
+
+        if (useSet.size() > 1) {
+            throw new IllegalArgumentException("Mixed/unsupported uses for '" + bindingOperation.getName() + "' found in this WSDL.");
+        }
+
+        return useSet.iterator().next().toString();
     }
 
     /**

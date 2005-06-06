@@ -8,10 +8,13 @@ import junit.framework.TestSuite;
 
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
+import javax.wsdl.Binding;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Class WsdlTest tests the {@link com.l7tech.common.xml.Wsdl}
@@ -130,6 +133,58 @@ public class WsdlTest extends TestCase {
         url = new URL(wsdl.getUriFromPort(port));
         log.info("Read back port URL: " + url);
     }
+
+    /**
+     * Test determine the Soap Encoded binding
+     *
+     * @throws Exception on tesat errors
+     */
+    public void testDetermineSoapEncodedBinding() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(WSDL));
+        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+        Collection bindings = wsdl.getBindings();
+        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+            Binding binding = (Binding)iterator.next();
+            assertEquals(Wsdl.USE_ENCODED, wsdl.getSoapUse(binding));
+        }
+    }
+
+    /**
+     * Test determine the Soap Literal binding
+     *
+     * @throws Exception on tesat errors
+     */
+    public void testDetermineSoapLiteralBinding() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_DOC_LITERAL));
+        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+        Collection bindings = wsdl.getBindings();
+        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+            Binding binding = (Binding)iterator.next();
+            assertEquals(Wsdl.USE_LITERAL, wsdl.getSoapUse(binding));
+        }
+    }
+
+    /**
+     * Test non soap binding throws. Uses the .NET style wsdl that describes http
+     * get/post bindings and that is not supported.
+     *
+     * @throws Exception on tesat errors
+     */
+    public void testNonSoapBindingThrows() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_DOC_LITERAL));
+        wsdl.setShowBindings(Wsdl.HTTP_BINDINGS);
+        Collection bindings = wsdl.getBindings();
+        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+            Binding binding = (Binding)iterator.next();
+            try {
+                wsdl.getSoapUse(binding);
+                fail("IllegalArgumentException should have been thrown");
+            } catch (IllegalArgumentException e) {
+                //
+            }
+        }
+    }
+
 
     /**
      * Test <code>AbstractLocatorTest</code> main.
