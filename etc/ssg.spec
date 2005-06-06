@@ -67,7 +67,8 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 
 %pre
 if [ `grep ^gateway: /etc/passwd` ]; then
-  echo "user/group gateway already exists"
+	echo -n ""
+       #  echo "user/group gateway already exists"
 else
   adduser gateway
 fi
@@ -90,10 +91,17 @@ echo "Kernel \r on an \m" >>/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.1" >/etc/issue.net
 echo "Kernel \r on an \m" >>/etc/issue.net
 
-%postun
-
-if [ -e "/etc/SSG_INSTALL" ]; then 
-	rm -f /etc/SSG_INSTALL
+%preun
+# Modifications to handle upgrades properly
+if [ "$1" = "0" ] ; then # last uninstall
+        if [ -e "/etc/SSG_INSTALL" ]; then
+                rm -f /etc/SSG_INSTALL
+        fi
+        if [ `grep ^gateway: /etc/passwd` ]; then
+            userdel -r gateway
+        else
+            echo -n ""
+        fi
 fi
 
 %changelog 
