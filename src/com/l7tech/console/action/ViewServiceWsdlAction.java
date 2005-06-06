@@ -48,7 +48,7 @@ public class ViewServiceWsdlAction extends NodeAction {
             if (wsdlXml != null && !"".equals(wsdlXml)) {
                 setEnabled(true);
             } else {
-                description = "Thje service has no WSDL";
+                description = "The service has no WSDL";
             }
         } catch (FindException e) {
             description = "Error obtaining WSDL";
