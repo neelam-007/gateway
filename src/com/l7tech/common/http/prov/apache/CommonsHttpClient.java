@@ -10,6 +10,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -50,6 +51,7 @@ public class CommonsHttpClient implements GenericHttpClient {
 
         final HttpClient client = new HttpClient(cman);
         HttpState state = client.getState();
+        state.setCookiePolicy(CookiePolicy.COMPATIBILITY);
 
         final HttpMethod httpMethod = method == POST ? new PostMethod(targetUrl.toString())
                                                      : new GetMethod(targetUrl.toString());
@@ -79,6 +81,9 @@ public class CommonsHttpClient implements GenericHttpClient {
             HttpHeader header = headers[i];
             httpMethod.addRequestHeader(header.getName(), header.getFullValue());
         }
+
+        createCookiesFromHeaders(headers, state, targetUrl);
+
 
         final ContentTypeHeader rct = params.getContentType();
         if (rct != null)
@@ -172,6 +177,23 @@ public class CommonsHttpClient implements GenericHttpClient {
                 }
             }
         };
+    }
+
+    private void createCookiesFromHeaders(HttpHeader[] headers, HttpState state, URL targetUrl) {
+        for (int i = 0; i < headers.length; ++i) {
+            HttpHeader theHeader = headers[i];
+            if ("cookie".equalsIgnoreCase(theHeader.getName())) {
+                String headerVal = theHeader.getFullValue();
+                int indexOfEquals = headerVal.indexOf('=');
+                if (indexOfEquals >= 0) {
+                    String cookieName = headerVal.substring(0, indexOfEquals);
+                    String cookieVal = headerVal.substring(indexOfEquals + 1);
+                    Cookie aCookie = new Cookie(targetUrl.getHost(), cookieName, cookieVal,"",-1,false);
+                    state.addCookie(aCookie);
+                }
+            }
+        }
+
     }
 
     private static Map protoBySockFac = Collections.synchronizedMap(new WeakHashMap());

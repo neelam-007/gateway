@@ -845,14 +845,54 @@ public class MessageProcessor {
     }
 
     private void gatherCookies(HttpHeaders responseHeaders, Ssg ssg) {
-        List cookies = new ArrayList();
+        //get the existing cookies and update. If there are no
+        // "Set-Cookie" headers returned, then this will maintain the existing
+        // cookies
+        HttpCookie[] existingCookies = ssg.getRuntime().getSessionCookies();
         List values = responseHeaders.getValues("Set-Cookie");
+        List newCookies = addAndReplaceCookies(existingCookies, values);
+
+        ssg.getRuntime().setSessionCookies((HttpCookie[])newCookies.toArray(new HttpCookie[0]));
+    }
+
+    private List addAndReplaceCookies(HttpCookie[] existingCookies, List values) {
+
+        List newCookies = new ArrayList();
+        newCookies.addAll(Arrays.asList(existingCookies));
+        
         for (Iterator i = values.iterator(); i.hasNext();) {
             String s = (String)i.next();
-            HttpCookie cookie = new HttpCookie(s);
-            cookies.add(cookie);
+            try {
+                HttpCookie newCookieFromHeader = new HttpCookie(s);
+                HttpCookie existingCookie = existingCookieFound(newCookies, newCookieFromHeader);
+
+                //if there is already a cookie by this name, update it since this one is more recent,
+                // otherwise, add this one.
+                if (existingCookie != null) {
+                    existingCookie = newCookieFromHeader;
+                }
+                else {
+                    newCookies.add(newCookieFromHeader);
+                }
+
+            } catch (IOException ioex) {
+                log.info("Exception while setting cookie: " + ioex.getMessage());
+            }
         }
-        ssg.getRuntime().setSessionCookies((HttpCookie[])cookies.toArray(new HttpCookie[0]));
+        return newCookies;
+    }
+
+    private HttpCookie existingCookieFound(List existingCookies, HttpCookie newCookie) {
+        HttpCookie aCookie = null;
+        for (Iterator iterator = existingCookies.iterator(); iterator.hasNext();) {
+            HttpCookie tempCookie = (HttpCookie)iterator.next();
+            if (tempCookie.getCookieName().equalsIgnoreCase(newCookie.getCookieName())) {
+                aCookie = tempCookie;
+                break;
+            }
+        }
+
+        return aCookie;
     }
 
     /**
