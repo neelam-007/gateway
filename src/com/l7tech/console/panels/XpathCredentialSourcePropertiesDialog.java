@@ -1,13 +1,10 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 package com.l7tech.console.panels;
 
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
-import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 
 import javax.swing.*;
@@ -19,7 +16,6 @@ import java.awt.event.ActionListener;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class XpathCredentialSourcePropertiesDialog extends JDialog {
     private XpathCredentialSource xpathCredsAssertion;
@@ -90,14 +86,12 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
     }
 
     private void updateButtons() {
-        boolean ok = false;
-        ok = ok && loginXpathField.getText() != null && loginXpathField.getText().length() > 0;
-        ok = ok && passwordXpathField.getText() != null && passwordXpathField.getText().length() > 0;
+        boolean ok;
         try {
             new DOMXPath(loginXpathField.getText());
             new DOMXPath(passwordXpathField.getText());
             ok = true;
-        } catch (JaxenException e) {
+        } catch (Exception e) {
             ok = false;
         }
         okButton.setEnabled(ok);
