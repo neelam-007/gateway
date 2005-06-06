@@ -590,7 +590,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", locale);
     }
 
-    public static void main(String[] args) throws DocumentException, IOException, SAXParseException {
+    public static void main(String[] args) {
         SchemaValidationPropertiesDialog me = new SchemaValidationPropertiesDialog(null, new SchemaValidation(), null);
         me.pack();
         me.setVisible(true);
