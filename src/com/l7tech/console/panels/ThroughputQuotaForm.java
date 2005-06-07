@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.console.action.Actions;
-import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,9 +17,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.Iterator;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * A dialog for editing a ThroughputQuota dialog.
@@ -42,18 +39,19 @@ public class ThroughputQuotaForm extends JDialog {
 
     private ThroughputQuota subject;
     private boolean oked = false;
-    private PublishedService service;
+    //private PublishedService service;
+    private Assertion policyRoot;
     private final Logger logger = Logger.getLogger(ThroughputQuotaForm.class.getName());
     private JRadioButton alwaysIncrementRadio;
     private JRadioButton decrementRadio;
     private JRadioButton incrementOnSuccessRadio;
 
-    public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, PublishedService service) {
+    public ThroughputQuotaForm(Frame owner, ThroughputQuota subject, Assertion policyRoot) {
         super(owner, true);
         setTitle("Throughput Quota Assertion");
         if (subject == null) throw new IllegalArgumentException("subject cannot be null");
         this.subject = subject;
-        this.service = service;
+        this.policyRoot = policyRoot;
         initialize();
     }
 
@@ -72,12 +70,8 @@ public class ThroughputQuotaForm extends JDialog {
         // get counter names from other sla assertions here
         ArrayList listofexistingcounternames = new ArrayList();
         Assertion root = subject.getParent();
-        if (root == null && service != null) {
-            try {
-                root = service.rootAssertion();
-            } catch (IOException e) {
-                logger.log(Level.INFO, "cannot get service's root assertion", e);
-            }
+        if (root == null && policyRoot != null) {
+            root = policyRoot;
         } else {
             if (root != null){
                 while (root.getParent() != null) {

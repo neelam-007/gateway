@@ -29,7 +29,7 @@ public class AddThroughputQuotaAssertionAdvice implements Advice {
         }
         ThroughputQuota subject = (ThroughputQuota)assertions[0];
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        ThroughputQuotaForm dlg = new ThroughputQuotaForm(mw, subject, pc.getService());
+        ThroughputQuotaForm dlg = new ThroughputQuotaForm(mw, subject, pc.getPolicy());
 
         // show the dialog
         dlg.pack();
