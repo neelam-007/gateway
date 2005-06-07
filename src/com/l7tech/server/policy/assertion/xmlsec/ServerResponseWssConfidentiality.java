@@ -205,7 +205,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                         wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
                     }
                     wssReq.getElementsToEncrypt().addAll(selectedElements);
-
+                    wssReq.setEncryptionAlgorithm(responseWssConfidentiality.getXEncAlgorithm());
                     if (clientCert != null) {
                         wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
                         wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());

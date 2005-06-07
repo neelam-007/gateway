@@ -97,7 +97,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JButton namespaceButton;
     private JLabel hardwareAccelStatusLabel;
     private JPanel securityConfigPanel;
-    private JPanel encryptionResponseConfigPanel;
+    private JPanel encryptionConfigPanel;
     private JPanel signatureResponseConfigPanel;
     private JRadioButton aes128radioButton;
     private JRadioButton aes192radioButton;
@@ -112,7 +112,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @param sn    the ServiceNode
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener) {
+    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, ServiceNode sn, XpathBasedAssertionTreeNode n, ActionListener okListener)
+    {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
@@ -126,7 +127,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @param modal is this modal dialog or not
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener) {
+    public XpathBasedAssertionPropertiesDialog(JFrame owner, boolean modal, XpathBasedAssertionTreeNode n, ActionListener okListener)
+    {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
@@ -138,14 +140,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         node = n;
         okActionListener = okListener;
 
-        xmlSecAssertion = (XpathBasedAssertion) node.asAssertion();
+        xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
         if (xmlSecAssertion.getXpathExpression() != null) {
             namespaces = xmlSecAssertion.getXpathExpression().getNamespaces();
         } else {
             namespaces = new HashMap();
         }
         if (xmlSecAssertion instanceof RequestWssConfidentiality ||
-                xmlSecAssertion instanceof ResponseWssConfidentiality) {
+          xmlSecAssertion instanceof ResponseWssConfidentiality) {
             isEncryption = true;
         } else
             isEncryption = false;
@@ -194,15 +196,15 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private void initialize() {
         Actions.setEscKeyStrokeDisposes(this);
 
-        initializeResponseEncryptionConfig();
+        initializeEncryptionConfig();
         initializeResponseSignatureConfig();
 
         namespaceButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 java.util.List requiredNS = new ArrayList(requiredNamespaces.values());
                 NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this,
-                        namespaces,
-                        requiredNS);
+                                                                     namespaces,
+                                                                     requiredNS);
                 nseditor.pack();
                 Utilities.centerOnScreen(nseditor);
                 nseditor.show();
@@ -232,8 +234,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                         xpathmsg = "[empty]";
                     }
                     int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpathmsg + " is not valid (" +
-                            res.getShortMessage() + ").\nAre you sure " +
-                            "you want to save?");
+                      res.getShortMessage() + ").\nAre you sure " +
+                      "you want to save?");
                     if (rs2 != JOptionPane.YES_OPTION) {
                         return;
                     }
@@ -243,7 +245,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 } else {
                     xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
                 }
-                collectResponseEncryptionConfig();
+                collectEncryptionConfig();
                 collectResponseSignatureConfig();
                 XpathBasedAssertionPropertiesDialog.this.dispose();
                 if (okActionListener != null) okActionListener.actionPerformed(e);
@@ -287,7 +289,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         // initialize the test evaluator
         try {
             testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
-                    new HashMap());
+                                                        new HashMap());
         } catch (Exception e) {
             final String msg = "cannot setup test evaluator";
             log.log(Level.WARNING, msg, e);
@@ -325,7 +327,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             signatureResponseConfigPanel.setVisible(false);
             return;
         }
-        ResponseWssIntegrity rwssi = (ResponseWssIntegrity) xmlSecAssertion;
+        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)xmlSecAssertion;
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstReferenceRadioButton);
         bg.add(skiReferenceRadioButton);
@@ -336,36 +338,58 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
     }
 
-    private void initializeResponseEncryptionConfig() {
-        if (!(xmlSecAssertion instanceof ResponseWssConfidentiality)) {
-            encryptionResponseConfigPanel.setVisible(false);
+    private void initializeEncryptionConfig() {
+        if (!isEncryption) {
+            encryptionConfigPanel.setVisible(false);
             return;
         }
-        ResponseWssConfidentiality rwssc = (ResponseWssConfidentiality) xmlSecAssertion;
         ButtonGroup bg = new ButtonGroup();
         bg.add(aes128radioButton);
-        aes128radioButton.setSelected(XencAlgorithm.AES_128_CBC.getXencName().equals(rwssc.getXencAlgorithm()));
         bg.add(aes192radioButton);
-        aes192radioButton.setSelected(XencAlgorithm.AES_192_CBC.getXencName().equals(rwssc.getXencAlgorithm()));
         bg.add(aes256radioButton);
-        aes256radioButton.setSelected(XencAlgorithm.AES_256_CBC.getXencName().equals(rwssc.getXencAlgorithm()));
         bg.add(tripleDESradioButton);
-        tripleDESradioButton.setSelected(XencAlgorithm.TRIPLE_DES_CBC.getXencName().equals(rwssc.getXencAlgorithm()));
+
+        String xencAlgorithm = null;
+
+        if (xmlSecAssertion instanceof ResponseWssConfidentiality) {
+            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)xmlSecAssertion;
+            xencAlgorithm = responseWssConfidentiality.getXEncAlgorithm();
+        } else if (xmlSecAssertion instanceof RequestWssConfidentiality) {
+            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)xmlSecAssertion;
+            xencAlgorithm = requestWssConfidentiality.getXEncAlgorithm();
+        }
+        if (xencAlgorithm == null) {
+            xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
+        }
+        aes128radioButton.setSelected(XencAlgorithm.AES_128_CBC.getXEncName().equals(xencAlgorithm));
+        aes192radioButton.setSelected(XencAlgorithm.AES_192_CBC.getXEncName().equals(xencAlgorithm));
+        aes256radioButton.setSelected(XencAlgorithm.AES_256_CBC.getXEncName().equals(xencAlgorithm));
+        tripleDESradioButton.setSelected(XencAlgorithm.TRIPLE_DES_CBC.getXEncName().equals(xencAlgorithm));
     }
 
-    private void collectResponseEncryptionConfig() {
-        if (!(xmlSecAssertion instanceof ResponseWssConfidentiality)) {
+    private void collectEncryptionConfig() {
+        if (!isEncryption) {
             return;
         }
-        ResponseWssConfidentiality rwssc = (ResponseWssConfidentiality) xmlSecAssertion;
+        String xencAlgorithm = null;
         if (aes128radioButton.isSelected()) {
-            rwssc.setXencAlgorithm(XencAlgorithm.AES_128_CBC.getXencName());
+            xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
         } else if (aes192radioButton.isSelected()) {
-            rwssc.setXencAlgorithm(XencAlgorithm.AES_192_CBC.getXencName());
+            xencAlgorithm = XencAlgorithm.AES_192_CBC.getXEncName();
         } else if (aes256radioButton.isSelected()) {
-            rwssc.setXencAlgorithm(XencAlgorithm.AES_256_CBC.getXencName());
+            xencAlgorithm = XencAlgorithm.AES_256_CBC.getXEncName();
         } else if (tripleDESradioButton.isSelected()) {
-            rwssc.setXencAlgorithm(XencAlgorithm.TRIPLE_DES_CBC.getXencName());
+            xencAlgorithm = XencAlgorithm.TRIPLE_DES_CBC.getXEncName();
+        }
+        if (xencAlgorithm == null) {
+            xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
+        }
+        if (xmlSecAssertion instanceof ResponseWssConfidentiality) {
+            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)xmlSecAssertion;
+            responseWssConfidentiality.setXEncAlgorithm(xencAlgorithm);
+        } else if (xmlSecAssertion instanceof RequestWssConfidentiality) {
+            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)xmlSecAssertion;
+            requestWssConfidentiality.setXEncAlgorithm(xencAlgorithm);
         }
     }
 
@@ -373,10 +397,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         if (!(xmlSecAssertion instanceof ResponseWssIntegrity)) {
             return;
         }
-        ResponseWssIntegrity rwssi = (ResponseWssIntegrity) xmlSecAssertion;
-        if (bstReferenceRadioButton.isSelected()){
-           rwssi.setKeyReference(KeyReference.BST.getName());
-        } else if(skiReferenceRadioButton.isSelected()) {
+        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)xmlSecAssertion;
+        if (bstReferenceRadioButton.isSelected()) {
+            rwssi.setKeyReference(KeyReference.BST.getName());
+        } else if (skiReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.SKI.getName());
         }
     }
@@ -406,7 +430,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
         NodeList nl = body.getChildNodes();
         for (int i = 0; i < nl.getLength(); i++) {
-            Node item = (Node) nl.item(i);
+            Node item = (Node)nl.item(i);
             if (item == null) continue;
             if (item.getNodeType() == Element.ELEMENT_NODE) {
                 item.getParentNode().removeChild(item);
@@ -431,7 +455,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         MutableTreeNode parentNode = root;
         int bindingsCounter = 0;
         for (Iterator iterator = collection.iterator(); iterator.hasNext();) {
-            Binding b = (Binding) iterator.next();
+            Binding b = (Binding)iterator.next();
             if (showBindings) {
                 final BindingTreeNode bindingTreeNode = new BindingTreeNode(b, wo);
                 treeModel.insertNodeInto(bindingTreeNode, root, bindingsCounter++);
@@ -441,14 +465,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             java.util.List operations = b.getBindingOperations();
             int index = 0;
             for (Iterator itop = operations.iterator(); itop.hasNext();) {
-                BindingOperation bo = (BindingOperation) itop.next();
+                BindingOperation bo = (BindingOperation)itop.next();
                 treeModel.insertNodeInto(new BindingOperationTreeNode(bo, wo), parentNode, index++);
             }
         }
     }
 
     private void initializeSoapMessageViewer(String msg)
-            throws IOException, SAXParseException, DocumentException {
+      throws IOException, SAXParseException, DocumentException {
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument(msg);
         messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
@@ -460,7 +484,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     }
 
     private ExchangerDocument asExchangerDocument(String content)
-            throws IOException, DocumentException, SAXParseException {
+      throws IOException, DocumentException, SAXParseException {
 
         ExchangerDocument exchangerDocument = new ExchangerDocument(asTempFileURL(content), false);
         exchangerDocument.load();
@@ -468,7 +492,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     }
 
     private URL asTempFileURL(String content)
-            throws IOException, DocumentException {
+      throws IOException, DocumentException {
         final File file = File.createTempFile("Temp", ".xml");
         Document doc = DocumentUtilities.createReader(false).read(new StringReader(content));
         DocumentUtilities.writeDocument(doc, file.toURL());
@@ -481,16 +505,16 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      */
     private boolean isEditingRequest() {
         return (node instanceof RequestWssIntegrityTreeNode ||
-                node instanceof RequestWssConfidentialityTreeNode ||
-                node instanceof RequestXpathPolicyTreeNode);
+          node instanceof RequestWssConfidentialityTreeNode ||
+          node instanceof RequestXpathPolicyTreeNode);
     }
 
     private final
-            TreeCellRenderer wsdlTreeRenderer = new DefaultTreeCellRenderer() {
+    TreeCellRenderer wsdlTreeRenderer = new DefaultTreeCellRenderer() {
         /**
          * Sets the value of the current tree cell to <code>value</code>.
          *
-         * @return    the <code>Component</code> that the renderer uses to draw the value
+         * @return the <code>Component</code> that the renderer uses to draw the value
          */
         public Component getTreeCellRendererComponent(JTree tree, Object value,
                                                       boolean selected, boolean expanded,
@@ -500,7 +524,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             this.setBackgroundNonSelectionColor(tree.getBackground());
             if (!(value instanceof WsdlTreeNode)) return this;
 
-            WsdlTreeNode node = (WsdlTreeNode) value;
+            WsdlTreeNode node = (WsdlTreeNode)value;
             setText(node.toString());
             Image image = expanded ? node.getOpenedIcon() : node.getIcon();
             Icon icon = null;
@@ -518,7 +542,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     };
 
     private final TreeSelectionListener
-            operationsSelectionListener = new TreeSelectionListener() {
+      operationsSelectionListener = new TreeSelectionListener() {
         public void valueChanged(TreeSelectionEvent e) {
             TreePath path = e.getNewLeadSelectionPath();
             if (path == null) {
@@ -542,7 +566,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 }
                 final JTextField xpf = messageViewerToolBar.getxpathField();
 
-                BindingOperationTreeNode boperation = (BindingOperationTreeNode) lpc;
+                BindingOperationTreeNode boperation = (BindingOperationTreeNode)lpc;
                 Message sreq = forOperation(boperation.getOperation());
                 messageViewerToolBar.setToolbarEnabled(true);
                 if (sreq == null) {
@@ -569,7 +593,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @throws RuntimeException wrapping the originasl exception
      */
     private void displayMessage(SOAPMessage soapMessage)
-            throws RuntimeException {
+      throws RuntimeException {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             soapMessage.writeTo(bos);
@@ -588,7 +612,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @throws RuntimeException wrapping the originasl exception
      */
     private void displayMessage(String soapMessage)
-            throws RuntimeException {
+      throws RuntimeException {
         try {
             URL url = asTempFileURL(soapMessage);
             exchangerDocument.setProperties(url, null);
@@ -609,7 +633,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         for (int i = 0; i < soapMessages.length; i++) {
             Message soapRequest = soapMessages[i];
             if (opName.equals(soapRequest.getOperation()) &&
-                    bindingName.equals(soapRequest.getBinding())) {
+              bindingName.equals(soapRequest.getBinding())) {
                 return soapRequest;
             }
         }
@@ -619,7 +643,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
     final PauseListener xpathFieldPauseListener = new PauseListener() {
         public void textEntryPaused(JTextComponent component, long msecs) {
-            final JTextField xpathField = (JTextField) component;
+            final JTextField xpathField = (JTextField)component;
             XpathFeedBack feedBack = getFeedBackMessage(namespaces, xpathField);
             processFeedBack(feedBack, xpathField);
         }
@@ -659,12 +683,12 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 hardwareAccelStatusLabel.setToolTipText(null);
             } else {
                 hardwareAccelStatusLabel.setText("This expression cannot be hardware accelerated (tarari: \'" +
-                                                 hardwareFeedBack.getShortMessage() + "\'); it  will be " +
-                                                 "processed in the software layer instead.");
+                  hardwareFeedBack.getShortMessage() + "\'); it  will be " +
+                  "processed in the software layer instead.");
                 hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
 
                 if (xpathField instanceof SquigglyTextField) {
-                    SquigglyTextField squigglyTextField = (SquigglyTextField) xpathField;
+                    SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
                     int pos = hardwareFeedBack.errorPosition;
                     if (pos >= 0)
                         squigglyTextField.setRange(pos - 1, pos + 1);
@@ -681,7 +705,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
             if (feedBack.valid() || feedBack.isEmpty()) {
                 if (xpathField instanceof SquigglyTextField) {
-                    SquigglyTextField squigglyTextField = (SquigglyTextField) xpathField;
+                    SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
                     squigglyTextField.setNone();
                 }
                 xpathField.setToolTipText(null);
@@ -707,7 +731,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             xpathField.setToolTipText(tooltip.toString());
 
             if (xpathField instanceof SquigglyTextField) {
-                SquigglyTextField squigglyTextField = (SquigglyTextField) xpathField;
+                SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
                 final String expr = feedBack.getXpathExpression();
                 squigglyTextField.setAll();
                 squigglyTextField.setSquiggly();

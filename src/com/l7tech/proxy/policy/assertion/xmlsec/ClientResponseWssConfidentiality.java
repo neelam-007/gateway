@@ -3,6 +3,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
+import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -16,6 +17,8 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.ArrayList;
 
 /**
  * Verifies that a specific element in the response was encrypted by the ssg.
@@ -59,12 +62,25 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
 
         ProcessorResultUtil.SearchResult result = null;
         try {
+            EncryptedElement[] elementsThatWereEncrypted = wssRes.getElementsThatWereEncrypted();
+            String xEncAlgorithm = data.getXEncAlgorithm();
+
+            if (xEncAlgorithm !=null) {
+                Collection filteredElements = new ArrayList();
+                for (int i = elementsThatWereEncrypted.length - 1; i >= 0; i--) {
+                    EncryptedElement encryptedElement = elementsThatWereEncrypted[i];
+                    if (xEncAlgorithm.equals(encryptedElement.getAlgorithm())) {
+                        filteredElements.add(encryptedElement);
+                    }
+                }
+                elementsThatWereEncrypted = (EncryptedElement[])filteredElements.toArray(new EncryptedElement[] {});
+            }
             result = ProcessorResultUtil.searchInResult(log,
                                                         soapmsg,
                                                         data.getXpathExpression().getExpression(),
                                                         data.getXpathExpression().getNamespaces(),
                                                         true,
-                                                        wssRes.getElementsThatWereEncrypted(),
+                                                        elementsThatWereEncrypted,
                                                         "encrypted");
         } catch (ProcessorException e) {
             throw new PolicyAssertionException(e);

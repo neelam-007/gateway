@@ -86,6 +86,9 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
                         wssReqs = context.getAlternateWssRequirements(requestWssConfidentiality.getRecipientContext());
                     }
                     wssReqs.getElementsToEncrypt().addAll(elements);
+                    if (requestWssConfidentiality.getXEncAlgorithm() !=null) {
+                        wssReqs.setEncryptionAlgorithm(requestWssConfidentiality.getXEncAlgorithm());
+                    }
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {
                     throw new PolicyAssertionException("ClientRequestWssConfidentiality: " +

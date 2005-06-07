@@ -2,21 +2,16 @@ package com.l7tech.common.security.xml.processor;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.ibm.xml.enc.DecryptionContext;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.EncryptedData;
+import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
-import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
-import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.xml.UnexpectedKeyInfoException;
-import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.UnsupportedDocumentFormatException;
@@ -27,6 +22,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.*;
@@ -582,7 +578,16 @@ public class WssProcessorImpl implements WssProcessor {
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
         DecryptionContext dc = new DecryptionContext();
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        final Collection algorithm = new ArrayList();
+        // override getEncryptionEngine to collect the encryptionmethod algorithm
+        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn() {
+            public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
+              throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException  {
+                algorithm.add(encryptionMethod.getAlgorithm());
+                return super.getEncryptionEngine(encryptionMethod);
+            }
+        };
+
         af.setProvider(JceProvider.getSymmetricJceProvider().getName());
         dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
@@ -605,14 +610,18 @@ public class WssProcessorImpl implements WssProcessor {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
         }
-
+        // determine algorithm
+        String algorithmName = XencAlgorithm.AES_128_CBC.getXEncName();
+        if (!algorithm.isEmpty()) {
+            algorithmName = algorithm.iterator().next().toString();
+        }
         // Now record the fact that some data was encrypted.
         // Did the parent element contain any non-attribute content other than this EncryptedData
         // (and possibly some whitespace before and after)?
         if (onlyChild) {
             // All relevant content of the parent node was encrypted.
             logger.finer("All of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
-            cntx.elementsThatWereEncrypted.add(new EncryptedElementImpl(parentElement, null));
+            cntx.elementsThatWereEncrypted.add(new EncryptedElementImpl(parentElement, algorithmName));
         } else {
             // There was unencrypted stuff mixed in with the EncryptedData, so we can only record elements as
             // encrypted that were actually wholly inside the EncryptedData.
@@ -622,7 +631,7 @@ public class WssProcessorImpl implements WssProcessor {
             for (int i = 0; i < dataList.getLength(); i++) {
                 Node node = dataList.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    cntx.elementsThatWereEncrypted.add(new EncryptedElementImpl((Element)node, null));
+                    cntx.elementsThatWereEncrypted.add(new EncryptedElementImpl((Element)node, algorithmName));
                 }
             }
         }
@@ -1111,8 +1120,8 @@ public class WssProcessorImpl implements WssProcessor {
                 return (SignedElement[])cntx.elementsThatWereSigned.toArray(PROTOTYPE_SIGNEDELEMENT_ARRAY);
             }
 
-            public ParsedElement[] getElementsThatWereEncrypted() {
-                return (ParsedElement[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
+            public EncryptedElement[] getElementsThatWereEncrypted() {
+                return (EncryptedElement[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
             }
 
             public SecurityToken[] getSecurityTokens() {
@@ -1304,7 +1313,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new ParsedElement[0];
+    private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new EncryptedElement[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
     private static final SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new SecurityToken[0];
 

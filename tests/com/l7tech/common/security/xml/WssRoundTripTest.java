@@ -107,9 +107,24 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSignedEnvelopeTestDocument()));
     }
 
-    public void testEncryptionOnly() throws Exception {
-        runRoundTripTest(new NamedTestDocument("EncryptionOnly",
-                                               wssDecoratorTest.getEncryptionOnlyTestDocument()));
+    public void testEncryptionOnlyAES128() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES128",
+                                               wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_128_CBC.getXEncName())));
+    }
+
+    public void testEncryptionOnlyAES192() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES192",
+                                               wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_192_CBC.getXEncName())));
+    }
+
+    public void testEncryptionOnlyAES256() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES256",
+                                               wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_256_CBC.getXEncName())));
+    }
+
+    public void testEncryptionOnlyTripleDES() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptionOnlyTripleDES",
+                                               wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.TRIPLE_DES_CBC.getXEncName())));
     }
 
     public void testSigningOnly() throws Exception {
@@ -211,19 +226,25 @@ public class WssRoundTripTest extends TestCase {
         reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(null);
         reqs.setSuppressBst(td.suppressBst);
-        if (td.secureConversationKey != null)
+        if (td.secureConversationKey != null) {
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }
                 public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
             });
-        if (td.elementsToEncrypt != null)
+        }
+        if (td.elementsToEncrypt != null) {
             for (int i = 0; i < td.elementsToEncrypt.length; i++) {
                 reqs.getElementsToEncrypt().add(td.elementsToEncrypt[i]);
             }
-        if (td.elementsToSign != null)
+        }
+        if (td.encryptionAlgorithm !=null) {
+            reqs.setEncryptionAlgorithm(td.encryptionAlgorithm);
+        }
+        if (td.elementsToSign != null) {
             for (int i = 0; i < td.elementsToSign.length; i++) {
                 reqs.getElementsToSign().add(td.elementsToSign[i]);
             }
+        }
 
         martha.decorateMessage(message, reqs);
 

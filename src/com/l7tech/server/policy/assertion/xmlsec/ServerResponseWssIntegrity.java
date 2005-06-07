@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.KeystoreUtils;
@@ -124,7 +125,17 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
                 wssReq.getElementsToSign().addAll(selectedElements);
                 wssReq.setSignTimestamp();
-                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_SIGNED, new String[] {String.valueOf(selectedElements.size())});
+
+                // how was the keyreference requested?
+                String keyReference = responseWssIntegrity.getKeyReference();
+
+                if (keyReference == null || KeyReference.BST.getName().equals(keyReference)) {
+                    wssReq.setSuppressBst(false);
+                } else if (KeyReference.SKI.getName().equals(keyReference)) {
+                    wssReq.setSuppressBst(true);
+                }
+
+                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_SIGNED, new String[] {String.valueOf(selectedElements.size())});
 
                 return AssertionStatus.NONE;
             }

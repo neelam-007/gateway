@@ -44,7 +44,7 @@ public final class XencAlgorithm implements Serializable {
     /**
      * @return the xml encryption algorithm name such as http://www.w3.org/2001/04/xmlenc#tripledes-cbc
      */
-    public String getXencName() {
+    public String getXEncName() {
         return xencName;
     }
 

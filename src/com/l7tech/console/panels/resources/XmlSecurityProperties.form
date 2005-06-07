@@ -203,7 +203,7 @@
               <text value="Namespaces"/>
             </properties>
           </component>
-          <grid id="9dec5" binding="encryptionResponseConfigPanel" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="9dec5" binding="encryptionConfigPanel" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <xy x="0" y="34" width="194" height="73"/>

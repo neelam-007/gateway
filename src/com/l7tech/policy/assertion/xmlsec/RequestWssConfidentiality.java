@@ -22,7 +22,7 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
      * Get the requested xml encrytpion algorithm. Defaults to http://www.w3.org/2001/04/xmlenc#aes128-cbc
      * @return the encrytion algorithm requested
      */
-    public String getxEncAlgorithm() {
+    public String getXEncAlgorithm() {
         return xEncAlgorithm;
     }
 
@@ -30,7 +30,7 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
      * Set the xml encryption algorithm.
      * @param xEncAlgorithm
      */
-    public void setxEncAlgorithm(String xEncAlgorithm) {
+    public void setXEncAlgorithm(String xEncAlgorithm) {
         if (xEncAlgorithm == null) {
             throw new IllegalArgumentException();
         }

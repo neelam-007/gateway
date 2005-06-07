@@ -111,13 +111,13 @@ public class WssDecoratorTest extends TestCase {
         public Element[] elementsToSign;
         public boolean signSamlToken = false; // if true, SAML token should be signed
         public boolean suppressBst = false;
+        public String encryptionAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName(); //default
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
                             boolean signTimestamp,
                             Element[] elementsToEncrypt,
-                            Element[] elementsToSign)
-        {
+                            Element[] elementsToSign) {
             this(c, null, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
                  elementsToEncrypt, elementsToSign, null, false, false);
         }
@@ -129,8 +129,20 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToSign,
                             SecretKey secureConversationKey,
                             boolean signSamlToken,
-                            boolean suppressBst)
-        {
+                            boolean suppressBst) {
+            this(c, senderSamlAssertion, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
+                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst);
+        }
+
+        public TestDocument(Context c, Element senderSamlAssertion, X509Certificate senderCert, PrivateKey senderKey,
+                            X509Certificate recipientCert, PrivateKey recipientKey,
+                            boolean signTimestamp,
+                            Element[] elementsToEncrypt,
+                            String encryptionAlgorithm,
+                            Element[] elementsToSign,
+                            SecretKey secureConversationKey,
+                            boolean signSamlToken,
+                            boolean suppressBst) {
             this.c = c;
             this.senderSamlAssertion = senderSamlAssertion;
             this.senderCert = senderCert;
@@ -139,6 +151,9 @@ public class WssDecoratorTest extends TestCase {
             this.recipientKey = recipientKey;
             this.signTimestamp = signTimestamp;
             this.elementsToEncrypt = elementsToEncrypt;
+            if (this.encryptionAlgorithm != null) {
+                this.encryptionAlgorithm = encryptionAlgorithm;
+            }
             this.elementsToSign = elementsToSign;
             this.secureConversationKey = secureConversationKey;
             this.signSamlToken = signSamlToken;
@@ -151,7 +166,7 @@ public class WssDecoratorTest extends TestCase {
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
         DecorationRequirements reqs = makeDecorationRequirements(d);
 
-        decorator.decorateMessage(d.c.message,reqs);
+        decorator.decorateMessage(d.c.message, reqs);
 
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
     }
@@ -165,19 +180,26 @@ public class WssDecoratorTest extends TestCase {
         reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(null);
         reqs.setSuppressBst(d.suppressBst);
-        if (d.secureConversationKey != null)
+        if (d.secureConversationKey != null) {
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
+
                 public byte[] getSecretKey() { return d.secureConversationKey.getEncoded(); }
             });
-        if (d.elementsToEncrypt != null)
+        }
+        if (d.elementsToEncrypt != null) {
             for (int i = 0; i < d.elementsToEncrypt.length; i++) {
                 reqs.getElementsToEncrypt().add(d.elementsToEncrypt[i]);
             }
-        if (d.elementsToSign != null)
+        }
+        if (d.encryptionAlgorithm != null) {
+            reqs.setEncryptionAlgorithm(d.encryptionAlgorithm);
+        }
+        if (d.elementsToSign != null) {
             for (int i = 0; i < d.elementsToSign.length; i++) {
                 reqs.getElementsToSign().add(d.elementsToSign[i]);
             }
+        }
         return reqs;
     }
 
@@ -252,7 +274,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
-                                new Element[] { c.body }, new Element[0]);
+                                new Element[]{c.body}, new Element[0]);
     }
 
     public TestDocument getSigningOnlyTestDocument() throws Exception {
@@ -264,7 +286,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
                                 new Element[0],
-                                new Element[] { c.body });
+                                new Element[]{c.body});
     }
 
     public void testEncryptionOnly() throws Exception {
@@ -272,15 +294,21 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public TestDocument getEncryptionOnlyTestDocument() throws Exception {
+        return getEncryptionOnlyTestDocument(XencAlgorithm.AES_128_CBC.getXEncName());
+    }
+
+    public TestDocument getEncryptionOnlyTestDocument(String encryptionAlgorithm) throws Exception {
         Context c = new Context();
-        return new TestDocument(c,
-                                TestDocuments.getEttkClientCertificate(),
-                                TestDocuments.getEttkClientPrivateKey(),
-                                TestDocuments.getDotNetServerCertificate(),
-                                TestDocuments.getDotNetServerPrivateKey(),
-                                false,
-                                new Element[] { c.body },
-                                new Element[0]);
+        TestDocument testDocument = new TestDocument(c,
+                                                     TestDocuments.getEttkClientCertificate(),
+                                                     TestDocuments.getEttkClientPrivateKey(),
+                                                     TestDocuments.getDotNetServerCertificate(),
+                                                     TestDocuments.getDotNetServerPrivateKey(),
+                                                     false,
+                                                     new Element[]{c.body},
+                                                     new Element[0]);
+        testDocument.encryptionAlgorithm = encryptionAlgorithm;
+        return testDocument;
     }
 
     public void testSingleSignatureMultipleEncryption() throws Exception {
@@ -295,8 +323,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
-                                new Element[] { c.productid,  c.accountid },
-                                new Element[] { c.body });
+                                new Element[]{c.productid, c.accountid},
+                                new Element[]{c.body});
     }
 
     public void testEncryptedBodySignedEnvelope() throws Exception {
@@ -311,8 +339,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 false,
-                                new Element[] { c.body },
-                                new Element[] { c.message.getDocumentElement() });
+                                new Element[]{c.body},
+                                new Element[]{c.message.getDocumentElement()});
     }
 
     public TestDocument getSignedEnvelopeTestDocument() throws Exception {
@@ -324,7 +352,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 false,
                                 new Element[0],
-                                new Element[] { c.message.getDocumentElement() });
+                                new Element[]{c.message.getDocumentElement()});
     }
 
     public void testSkilessRecipientCert() throws Exception {
@@ -339,8 +367,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
                                 true,
-                                new Element[] { c.body },
-                                new Element[] { c.body });
+                                new Element[]{c.body},
+                                new Element[]{c.body});
     }
 
     public void testNonsensicalSignedBodyEncryptedEnvelope() throws Exception {
@@ -355,8 +383,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
                                 true,
-                                new Element[] { c.message.getDocumentElement() },
-                                new Element[] { c.body });
+                                new Element[]{c.message.getDocumentElement()},
+                                new Element[]{c.body});
     }
 
     public void testSigningOnlyWithSecureConversation() throws Exception {
@@ -372,7 +400,7 @@ public class WssDecoratorTest extends TestCase {
                                 null,
                                 true,
                                 new Element[0],
-                                new Element[] { c.body },
+                                new Element[]{c.body},
                                 TestDocuments.getDotNetSecureConversationSharedSecret(), false, false);
     }
 
@@ -388,8 +416,8 @@ public class WssDecoratorTest extends TestCase {
                                 null,
                                 null,
                                 true,
-                                new Element[] { c.productid,  c.accountid },
-                                new Element[] { c.body },
+                                new Element[]{c.productid, c.accountid},
+                                new Element[]{c.body},
                                 TestDocuments.getDotNetSecureConversationSharedSecret(), false, false);
     }
 
@@ -411,7 +439,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
                                 new Element[0],
-                                new Element[] { c.body },
+                                new Element[]{c.body},
                                 null, false, false);
     }
 
@@ -433,7 +461,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getEttkClientPrivateKey(),
                                 true,
                                 new Element[0],
-                                new Element[] { c.body },
+                                new Element[]{c.body},
                                 null,
                                 true, false);
     }
@@ -442,11 +470,10 @@ public class WssDecoratorTest extends TestCase {
                                           X509Certificate subjectCert,
                                           X509Certificate issuerCert,
                                           PrivateKey issuerPrivateKey)
-            throws Exception
-    {
+      throws Exception {
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
-        SignerInfo si = new SignerInfo(issuerPrivateKey, new X509Certificate[] { issuerCert });
+        SignerInfo si = new SignerInfo(issuerPrivateKey, new X509Certificate[]{issuerCert});
         LoginCredentials creds;
         SubjectStatement.Confirmation confirmationMethod;
         if (subjectCert != null) {
@@ -481,7 +508,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
                                 new Element[0],
-                                new Element[] { empty });
+                                new Element[]{empty});
 
     }
 
@@ -498,7 +525,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
-                                new Element[] { empty },
+                                new Element[]{empty},
                                 new Element[0]);
 
     }
@@ -518,7 +545,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
-                                new Element[] { ret },
+                                new Element[]{ret},
                                 new Element[0]);
     }
 
@@ -539,7 +566,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
                                 new Element[0],
-                                new Element[] { ret });
+                                new Element[]{ret});
     }
 
     public void testNonSoapRequest() throws Exception {
@@ -592,7 +619,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
                                 new Element[0],
-                                new Element[] { c.body });
+                                new Element[]{c.body});
     }
 
     public void testSoapWithSignedEncryptedAttachment() throws Exception {
@@ -607,8 +634,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
-                                new Element[] { c.payload },
-                                new Element[] { c.body });
+                                new Element[]{c.payload},
+                                new Element[]{c.body});
     }
 
     public void testSignedAndEncryptedBodyWithNoBst() throws Exception {
@@ -624,13 +651,12 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
                                 true,
-                                new Element[] { c.body },
-                                new Element[] { c.body },
+                                new Element[]{c.body},
+                                new Element[]{c.body},
                                 null,
                                 false,
                                 true);
     }
-
 
 
 }

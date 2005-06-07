@@ -6,10 +6,7 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import com.l7tech.common.security.token.ParsedElement;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SignedElement;
-import com.l7tech.common.security.token.SigningSecurityToken;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecurityActor;
 import org.w3c.dom.Element;
 
@@ -19,7 +16,7 @@ import org.w3c.dom.Element;
  */
 public interface ProcessorResult {
     SignedElement[] getElementsThatWereSigned();
-    ParsedElement[] getElementsThatWereEncrypted();
+    EncryptedElement[] getElementsThatWereEncrypted();
 
     /**
      * @param element the element to find the signing tokens for
