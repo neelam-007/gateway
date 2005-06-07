@@ -858,27 +858,35 @@ public class MessageProcessor {
     private List addAndReplaceCookies(HttpCookie[] existingCookies, List values) {
 
         List newCookies = new ArrayList();
-        newCookies.addAll(Arrays.asList(existingCookies));
-        
-        for (Iterator i = values.iterator(); i.hasNext();) {
-            String s = (String)i.next();
-            try {
-                HttpCookie newCookieFromHeader = new HttpCookie(s);
-                HttpCookie existingCookie = existingCookieFound(newCookies, newCookieFromHeader);
-
-                //if there is already a cookie by this name, update it since this one is more recent,
-                // otherwise, add this one.
-                if (existingCookie != null) {
-                    existingCookie = newCookieFromHeader;
-                }
-                else {
-                    newCookies.add(newCookieFromHeader);
-                }
-
-            } catch (IOException ioex) {
-                log.info("Exception while setting cookie: " + ioex.getMessage());
+        if (existingCookies != null) {
+            for (int i = 0; i < existingCookies.length; ++i) {
+                HttpCookie cookie = existingCookies[i];
+                newCookies.add(cookie);
             }
         }
+
+        if (values != null) {
+            for (Iterator i = values.iterator(); i.hasNext();) {
+                String s = (String)i.next();
+                try {
+                    HttpCookie newCookieFromHeader = new HttpCookie(s);
+                    HttpCookie existingCookie = existingCookieFound(newCookies, newCookieFromHeader);
+
+                    //if there is already a cookie by this name, update it since this one is more recent,
+                    // otherwise, add this one.
+                    if (existingCookie != null) {
+                        existingCookie = newCookieFromHeader;
+                    }
+                    else {
+                        newCookies.add(newCookieFromHeader);
+                    }
+
+                } catch (IOException ioex) {
+                    log.info("Exception while setting cookie: " + ioex.getMessage());
+                }
+            }
+        }
+
         return newCookies;
     }
 
