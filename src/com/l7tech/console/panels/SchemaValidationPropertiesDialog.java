@@ -145,11 +145,16 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             Collection bindings = wsdl.getBindings();
             if (bindings.isEmpty()) return false;
 
-            for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
-                Binding binding = (Binding)iterator.next();
-                if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding))) {
-                    return false;
+            try {
+                for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+                    Binding binding = (Binding)iterator.next();
+                    if (!Wsdl.USE_LITERAL.equals(wsdl.getSoapUse(binding))) {
+                        return false;
+                    }
                 }
+            } catch (WSDLException e) {
+                log.log(Level.WARNING, "Could not determine soap use", e);
+                return false;
             }
             return true;
         } catch (WSDLException e) {

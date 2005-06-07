@@ -6,7 +6,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
 /**
@@ -35,6 +34,31 @@ public class SchemaValidation extends Assertion {
      */
     public void setSchema(String schema) {
         this.schema = schema;
+    }
+
+    /**
+     * Return whether the schema validation has been configured for message/operation
+     * arguments (true) or for the whole content of the soap:body (false). The arguments
+     * are considered to be the child elements of the operation element, and the operation
+     * node is the  first element under the soap:body.
+     * This is used for example when configuring the schema validation from wsdl in cases
+     * where the schema in  wsdl/types element describes only the arguments (rpc/lit) and
+     * not the whole content of the soap:body.
+     *
+     * @return true if schema applies to arguments only, false otherwise
+     */
+    public boolean isApplyToArguments() {
+        return applyToArguments;
+    }
+
+    /**
+     * Set whether the schema validation applies to arguments o
+     * @param applyToArguments set true to apply to arguments, false to apply to whole body.
+     *                         The default is false.
+     * @see #isApplyToArguments()
+     */
+    public void setApplyToArguments(boolean applyToArguments) {
+        this.applyToArguments = applyToArguments;
     }
 
     /**
@@ -96,4 +120,5 @@ public class SchemaValidation extends Assertion {
     public static final String TOP_SCHEMA_ELNAME = "schema";
 
     private String schema;
+    private boolean applyToArguments;
 }

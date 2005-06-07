@@ -154,7 +154,7 @@ public class WsdlTest extends TestCase {
      *
      * @throws Exception on tesat errors
      */
-    public void testDetermineSoapLiteralBinding() throws Exception {
+    public void testDetermineSoapDocLiteralBinding() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_DOC_LITERAL));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
         Collection bindings = wsdl.getBindings();
@@ -163,6 +163,22 @@ public class WsdlTest extends TestCase {
             assertEquals(Wsdl.USE_LITERAL, wsdl.getSoapUse(binding));
         }
     }
+
+    /**
+     * Test determine the Soap Literal binding from rpc-literla service
+     *
+     * @throws Exception on tesat errors
+     */
+    public void testDetermineSoapRpcLiteralBinding() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_RPC_LITERAL));
+        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+        Collection bindings = wsdl.getBindings();
+        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+            Binding binding = (Binding)iterator.next();
+            assertEquals(Wsdl.USE_LITERAL, wsdl.getSoapUse(binding));
+        }
+    }
+
 
     /**
      * Test non soap binding throws. Uses the .NET style wsdl that describes http
@@ -180,6 +196,26 @@ public class WsdlTest extends TestCase {
                 wsdl.getSoapUse(binding);
                 fail("IllegalArgumentException should have been thrown");
             } catch (IllegalArgumentException e) {
+                //
+            }
+        }
+    }
+
+    /**
+     * Test unsupported wsdl with mixed use (encoded and literal).
+     *
+     * @throws Exception on tesat errors
+     */
+    public void testInvalidWsdlMixedSoapBindingUse() throws Exception {
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader(TestDocuments.WSDL_STOCK_QUOTE_INVALID_USE));
+        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+        Collection bindings = wsdl.getBindings();
+        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+            Binding binding = (Binding)iterator.next();
+            try {
+                wsdl.getSoapUse(binding);
+                fail("WSDLException should have been thrown");
+            } catch (WSDLException e) {
                 //
             }
         }

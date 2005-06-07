@@ -520,14 +520,16 @@ public class Wsdl {
     /**
      * Returns SOAP use (literal, encoded) for the <code>Binding</code>.  Examines each binding operation input and
      * output message. Every input and output are expected to have the same use throughout the <code<Binding</code>,
-     * and if mixed uses are detected the IllegalArgumentException is raised.
+     * and if mixed uses are detected the WSDLException is raised.
      * The default use if unspecified is 'literal'.
      *
      * @param binding the binding to examine
      * @return
      * @throws IllegalArgumentException
+     * @throws WSDLException            if the input and output for the bindfing operation messages specify different
+     *                                  use (mixed encoded and literal)
      */
-    public String getSoapUse(Binding binding) throws IllegalArgumentException {
+    public String getSoapUse(Binding binding) throws IllegalArgumentException, WSDLException {
         ExtensibilityElement ee = getBindingProtocol(binding);
         if (!(ee instanceof SOAPBinding)) {
             throw new IllegalArgumentException("Must be SOAP binding. +( " + binding.getQName().getLocalPart() + " )");
@@ -539,7 +541,7 @@ public class Wsdl {
             soapUseSet.add(getSoapUse(bindingOperation));
         }
         if (soapUseSet.size() > 1) {
-            throw new IllegalArgumentException("Mixed/unsupported uses in '" + binding.getQName().getLocalPart() + "' found in this WSDL.");
+            throw new WSDLException(WSDLException.INVALID_WSDL, "Mixed/unsupported uses in '" + binding.getQName().getLocalPart() + "' found in this WSDL.");
         }
 
         return soapUseSet.iterator().next().toString();
@@ -554,9 +556,9 @@ public class Wsdl {
      * @return the String indicating the
      * @throws IllegalArgumentException if the <code>Binding</code> for the presented <code>BidningOperation</code>
      *                                  could not be determined
-     *                                  if the input and putput message specify different use (mixed encoded and literal)
+     * @throws WSDLException            if the input and output message specify different use (mixed encoded and literal)
      */
-    public String getSoapUse(BindingOperation bindingOperation) throws IllegalArgumentException {
+    public String getSoapUse(BindingOperation bindingOperation) throws IllegalArgumentException, WSDLException {
         Binding binding = getBinding(bindingOperation);
         if (binding == null) {
             throw new IllegalArgumentException("The binding for binding operation '" + bindingOperation.getName() + "' is not found in this WSDL.");
@@ -576,6 +578,7 @@ public class Wsdl {
                 SOAPBody soapBody = (SOAPBody)o;
                 if (soapBody.getUse() != null) {
                     use = soapBody.getUse();
+                    break;
                 }
             }
         }
@@ -591,12 +594,13 @@ public class Wsdl {
                 SOAPBody soapBody = (SOAPBody)o;
                 if (soapBody.getUse() != null) {
                     use = soapBody.getUse();
+                    break;
                 }
             }
         }
-
+        useSet.add(use);
         if (useSet.size() > 1) {
-            throw new IllegalArgumentException("Mixed/unsupported uses for '" + bindingOperation.getName() + "' found in this WSDL.");
+            throw new WSDLException(WSDLException.INVALID_WSDL, "Mixed/unsupported uses for '" + bindingOperation.getName() + "' found in this WSDL.");
         }
 
         return useSet.iterator().next().toString();
