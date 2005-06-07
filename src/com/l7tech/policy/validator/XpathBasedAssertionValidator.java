@@ -39,14 +39,6 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
             return;
         }
 
-        if (assertion instanceof ResponseWssConfidentiality || assertion instanceof RequestWssConfidentiality) {
-            if (pattern.equals("/soapenv:Envelope")) {
-                result.addError(new PolicyValidatorResult.Error(assertion, path, "The path " + pattern + " is " +
-                  "not valid for XML encryption", null));
-
-            }
-        }
-
         try {
             new DOMXPath(pattern);
         } catch (Exception e) {
