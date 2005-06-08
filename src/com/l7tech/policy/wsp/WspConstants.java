@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -161,12 +162,15 @@ public class WspConstants {
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
         new AssertionMapping(new WsTrustCredentialExchange(), "WsTrustCredentialExchange"),
+        new AssertionMapping(new XpathCredentialSource(), "XpathCredentialSource"),
+        new AssertionMapping(new SamlBrowserArtifact(), "SamlBrowserArtifact"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new SnmpTrapAssertion(), "SnmpTrap"),
         new AssertionMapping(new ThroughputQuota(), "ThroughputQuota"),
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert"),
         new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
+        new AssertionMapping(new InverseHttpFormPost(), "InverseHttpFormPost"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),
@@ -186,6 +190,7 @@ public class WspConstants {
         new BeanTypeMapping(TimeOfDay.class, "timeOfDay"),
         new BeanTypeMapping(HttpFormPost.FieldInfo.class, "fieldInfo"),
         new ArrayTypeMapping(new HttpFormPost.FieldInfo[0], "fieldInfoArray"),
+        new ArrayTypeMapping(new String[0], "fieldNames"),
 
         // Backward compatibility with old policy documents
         WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,
