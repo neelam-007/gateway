@@ -3,24 +3,25 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.service.PublishedService;
 import org.jaxen.dom.DOMXPath;
 
 import java.util.logging.Logger;
 
 /**
- * Validates the <code>RequestWssConfidentiality</code> assertion internals. This validates
- * the XPath requirements and the the encryption method algorithm consistency. The processing
- * model requires that the same encryption method algorithm is used in the policy path.
+ * Validates the <code>ResponseWssIntegrity</code> assertion internals. This validates
+ * the XPath requirements and the the Key Reference for consistency if multiple
+ *  <code>ResponseWssIntegrity</code>  are present in the policy path. The processing
+ * model requires that the same Key Reference is used in the policy path.
  *
  * @author emil
  */
-public class WssRequestConfidentialityValidator implements AssertionValidator {
-    private static final Logger logger = Logger.getLogger(WssRequestConfidentialityValidator.class.getName());
-    private final RequestWssConfidentiality assertion;
+public class ResponseWssIntegrityValidator implements AssertionValidator {
+    private static final Logger logger = Logger.getLogger(ResponseWssIntegrityValidator.class.getName());
+    private final ResponseWssIntegrity assertion;
 
-    public WssRequestConfidentialityValidator(RequestWssConfidentiality ra) {
+    public ResponseWssIntegrityValidator(ResponseWssIntegrity ra) {
         assertion = ra;
     }
 
@@ -34,12 +35,6 @@ public class WssRequestConfidentialityValidator implements AssertionValidator {
             logger.info("XPath pattern is missing");
             return;
         }
-
-        if (pattern.equals("/soapenv:Envelope")) {
-            result.addError(new PolicyValidatorResult.Error(assertion, path, "The path " + pattern + " is " +
-              "not valid for XML encryption", null));
-
-        }
         try {
             new DOMXPath(pattern);
         } catch (Exception e) {
@@ -50,10 +45,10 @@ public class WssRequestConfidentialityValidator implements AssertionValidator {
         Assertion[] assertionPath = path.getPath();
         for (int i = assertionPath.length - 1; i >= 0; i--) {
             Assertion a = assertionPath[i];
-            if (a != assertion && a instanceof RequestWssConfidentiality) {
-                RequestWssConfidentiality ra = (RequestWssConfidentiality)a;
-                if (!ra.getXEncAlgorithm().equals(assertion.getXEncAlgorithm())) {
-                    String message = "Multiple confidentiality assertions present with different Encryption Method Algorithms";
+            if (a != assertion && a instanceof ResponseWssIntegrity) {
+                ResponseWssIntegrity ra = (ResponseWssIntegrity)a;
+                if (!ra.getKeyReference().equals(assertion.getKeyReference())) {
+                    String message = "Multiple integrity assertions present with different Key Reference requirements";
                     result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
                     logger.info(message);
                 }
