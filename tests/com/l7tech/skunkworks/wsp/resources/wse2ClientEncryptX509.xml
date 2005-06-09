@@ -1,0 +1,31 @@
+<!-- LYONSM: This is a policy expression that calls for encryption of a message.
+             This policy expression refers to a specific certificate, possibly that of the intended decryptor. -->
+<wsp:Policy wsu:Id="Encrypt-X.509"
+    xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+    xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"
+    xmlns:wssp="http://schemas.xmlsoap.org/ws/2002/12/secext"
+    xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing">
+    <!-- MS: The Confidentiality assertion is used to ensure that the SOAP Body is encrypted.-->
+    <wssp:Confidentiality wsp:Usage="wsp:Required">
+        <wssp:KeyInfo>
+            <!-- MS: The SecurityToken element within the KeyInfo element describes which token type must be used for Encryption.-->
+            <wssp:SecurityToken>
+                <wssp:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wssp:TokenType>
+                <wssp:TokenIssuer>CN=root.data.l7tech.com</wssp:TokenIssuer>
+                <wssp:Claims>
+                    <!-- MS: By specifying the SubjectName claim, the policy system can look for a certificate with this
+                             subject name in the certificate store indicated in the application's configuration,
+                             such as LocalMachine or CurrentUser. The WSE X.509 Certificate Tool is useful for finding
+                             the correct values for this field. -->
+                    <!-- LYONSM: In this context, encrypting a message, I'm assuming that this is
+                                 specifying who is to be the recipient of the encryption. If not, I have no idea
+                                 what it is for. -->
+                    <wssp:SubjectName MatchType="wssp:Exact">CN=mike</wssp:SubjectName>
+                    <wssp:X509Extension OID="2.5.29.14" MatchType="wssp:Exact">w10+mFSGarGpEoTubJyKk1pl5Js=</wssp:X509Extension>
+                </wssp:Claims>
+            </wssp:SecurityToken>
+        </wssp:KeyInfo>
+        <wssp:MessageParts Dialect="http://schemas.xmlsoap.org/2002/12/wsse#part">wsp:Body()</wssp:MessageParts>
+    </wssp:Confidentiality>
+</wsp:Policy>

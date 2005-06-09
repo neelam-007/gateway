@@ -1,0 +1,36 @@
+<wsp:Policy wsu:Id="Sign-X.509-Encrypt-X.509-REQUEST">
+    <!--MessagePredicate is used to require headers. This assertion should be used along with the Integrity assertion when the presence of the signed element is required. NOTE: this assertion does not do anything for enforcement (send-side) policy.-->
+    <wsp:MessagePredicate wsp:Usage="wsp:Required" Dialect="http://schemas.xmlsoap.org/2002/12/wsse#part">wsp:Body() wsp:Header(wsa:To) wsp:Header(wsa:Action) wsp:Header(wsa:MessageID) wse:Timestamp()</wsp:MessagePredicate>
+    <!--The Integrity assertion is used to ensure that the message is signed with X.509. Many Web services will also use the token for authorization, such as by using the <wse:Role> claim or specific X.509 claims.-->
+    <wssp:Integrity wsp:Usage="wsp:Required">
+        <wssp:TokenInfo>
+            <!--The SecurityToken element within the TokenInfo element describes which token type must be used for Signing.-->
+            <wssp:SecurityToken wse:IdentityToken="true">
+                <wssp:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wssp:TokenType>
+                <wssp:TokenIssuer>CN=root.data.l7tech.com</wssp:TokenIssuer>
+                <wssp:Claims>
+                    <!--By specifying the SubjectName claim, the policy system can look for a certificate with this subject name in the certificate store indicated in the application's configuration, such as LocalMachine or CurrentUser. The WSE X.509 Certificate Tool is useful for finding the correct values for this field.-->
+                    <wssp:SubjectName MatchType="wssp:Exact">CN=mike</wssp:SubjectName>
+                    <wssp:X509Extension OID="2.5.29.14" MatchType="wssp:Exact">BuNl1aS9uMPpqi8T9ExsX7sOwtE=</wssp:X509Extension>
+                </wssp:Claims>
+            </wssp:SecurityToken>
+        </wssp:TokenInfo>
+        <wssp:MessageParts Dialect="http://schemas.xmlsoap.org/2002/12/wsse#part">wsp:Body() wsp:Header(wsa:Action) wsp:Header(wsa:FaultTo) wsp:Header(wsa:From) wsp:Header(wsa:MessageID) wsp:Header(wsa:RelatesTo) wsp:Header(wsa:ReplyTo) wsp:Header(wsa:To) wse:Timestamp()</wssp:MessageParts>
+    </wssp:Integrity>
+    <!--The Confidentiality assertion is used to ensure that the SOAP Body is encrypted.-->
+    <wssp:Confidentiality wsp:Usage="wsp:Required">
+        <wssp:KeyInfo>
+            <!--The SecurityToken element within the KeyInfo element describes which token type must be used for Encryption.-->
+            <wssp:SecurityToken>
+                <wssp:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wssp:TokenType>
+                <wssp:TokenIssuer>CN=root.data.l7tech.com</wssp:TokenIssuer>
+                <wssp:Claims>
+                    <!--By specifying the SubjectName claim, the policy system can look for a certificate with this subject name in the certificate store indicated in the application's configuration, such as LocalMachine or CurrentUser. The WSE X.509 Certificate Tool is useful for finding the correct values for this field.-->
+                    <wssp:SubjectName MatchType="wssp:Exact">CN=mike</wssp:SubjectName>
+                    <wssp:X509Extension OID="2.5.29.14" MatchType="wssp:Exact">w10+mFSGarGpEoTubJyKk1pl5Js=</wssp:X509Extension>
+                </wssp:Claims>
+            </wssp:SecurityToken>
+        </wssp:KeyInfo>
+        <wssp:MessageParts Dialect="http://schemas.xmlsoap.org/2002/12/wsse#part">wsp:Body()</wssp:MessageParts>
+    </wssp:Confidentiality>
+</wsp:Policy>

@@ -1,0 +1,26 @@
+<!-- This is a playground message cobbled together by hand by lyonsm to see how we might express some of our policy
+     requirements using modern WS-SP and WS-PA assertions. -->
+<wsp:Policy wsu:Id="SAMPLE" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy"
+    xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+    xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+    xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+    xmlns:acme="http://acmewarehouse.example.com/ws/warehouse">
+    <wsse:SecurityToken wsp:Usage="wsp:Required">
+        <wsse:TokenType>wsse:X509v3</wsse:TokenType>
+    </wsse:SecurityToken>
+    <wsse:Integrity wsp:Usage="wsp:Required">
+        <wsse:Algorithm Type="wsse:AlgSignature" URI="http://www.w3.org/2000/09/xmlenc#aes"/>
+        <MessageParts>
+            /s:Envelope/s:Body
+            /s:Envelope/s:Header/wsse:Security/wsu:Timestamp
+        </MessageParts>
+    </wsse:Integrity>
+    <wsse:Confidentiality wsp:Usage="wsp:Required">
+        <MessageParts>
+            /s:Envelope/s:Body/acme:placeOrder/acme:accountid
+        </MessageParts>
+    </wsse:Confidentiality>
+    <wsp:MessagePredicate wsp:Usage="wsp:Required">
+       //acme:length > //acme:width
+    </wsp:MessagePredicate>
+</wsp:Policy>
