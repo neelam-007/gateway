@@ -812,7 +812,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     private static final int AUTOSCROLL_MARGIN = 12;
 
-// Ok, we�ve been told to scroll because the mouse cursor is in our
+// Ok, we've been told to scroll because the mouse cursor is in our
 // scroll zone.
 
     public void autoscroll(Point pt) {
