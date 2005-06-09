@@ -899,7 +899,7 @@
     -->
     <target name="compile13" depends="prepare, configure_properties.dev" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-               deprecation="on" depend="on" verbose="no" target="1.3" source="1.3" listfiles="yes">
+               deprecation="on" depend="on" verbose="no" target="1.3" source="1.3">
             <!--
                 This has to bee in sinch with layer7-api jar package.
                 todo: find some better way to manage this centrally (ant 'references' or similar)
