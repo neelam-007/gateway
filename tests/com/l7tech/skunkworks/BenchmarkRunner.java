@@ -36,6 +36,7 @@ public class BenchmarkRunner {
     private Runnable runnable;
     private int runCount;
     private boolean running;
+    private volatile boolean runnerDone = false;
 
     /**
      * Test constructor
@@ -98,12 +99,15 @@ public class BenchmarkRunner {
             // last rendezvois signals the release
             rendezvous.rendezvous(new Object());
             synchronized (this) {
-                try {
-                    this.wait();
-                    threadPool.close(10000);
-                } catch (InterruptedException e) {
-                    // swallow
+                while (!runnerDone) {
+                    try {
+                        this.wait(200);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
+                threadPool.close();
             }
         } finally {
             running = false;
@@ -198,6 +202,7 @@ public class BenchmarkRunner {
             log.info( name + ": total time = " + (end - start) + "ms");
             // notify done
             synchronized (this) {
+                runnerDone = true;
                 this.notify();
             }
         }
@@ -228,8 +233,6 @@ public class BenchmarkRunner {
         /** the request queue */
         private List runnables = new ArrayList();
 
-        private int requestsSize = 0;
-        private volatile int completed = 0;
         private long start;
         private long end;
         private Thread th; // thread on which requests are executing
@@ -261,14 +264,12 @@ public class BenchmarkRunner {
 
                 rzvs.rendezvous(new Object()); // join barrier
 
-                requestsSize = runnables.size();
                 start = System.currentTimeMillis();
 
                 Iterator it = runnables.iterator();
                 while (it.hasNext()) {
                     Runnable r = (Runnable)it.next();
                     r.run();
-                    completed++;
                 }
                 submitResults();
             } catch (InterruptedException e) {
