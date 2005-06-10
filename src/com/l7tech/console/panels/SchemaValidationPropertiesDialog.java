@@ -3,8 +3,8 @@ package com.l7tech.console.panels;
 import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.editor.XMLEditor;
 import com.japisoft.xmlpad.action.ActionModel;
+import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
@@ -48,15 +48,16 @@ import java.util.logging.Logger;
  * Date: Feb 6, 2004<br/>
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
+
     /**
      * modless construction
      */
-    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service)    {
+    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service) {
         super(owner, false);
         if (node == null || node.getAssertion() == null) {
             throw new IllegalArgumentException("Schema Validation Node == null");
         }
-        subject = node.getAssertion();
+        schemaValidationAssertion = node.getAssertion();
         this.service = service;
         initialize();
     }
@@ -64,12 +65,12 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     /**
      * modal construction
      */
-    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service)      {
+    public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service) {
         super(owner, true);
         if (assertion == null) {
             throw new IllegalArgumentException("Schema Validation == null");
         }
-        subject = assertion;
+        schemaValidationAssertion = assertion;
         this.service = service;
         initialize();
     }
@@ -138,31 +139,54 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (!service.isSoap()) return false;
         String wsdlXml = service.getWsdlXml();
         if (wsdlXml == null) return false;
+        analyzeWsdl(wsdlXml);
+        return wsdlBindingSoapUseIsLiteral;
+    }
 
+    private boolean wsdlSchemaAppliesToArguments() {
+        if (!service.isSoap()) return false;
+        String wsdlXml = service.getWsdlXml();
+        if (wsdlXml == null) return false;
+        analyzeWsdl(wsdlXml);
+        return wsdlBindingSoapUseIsLiteral && !wsdlBindingStyleIsDocument;
+    }
+
+    /**
+     * Determine what kind of service is defined in the wsdl (doc/literal, rpc/encoded, rpc/literal)
+     */
+    private void analyzeWsdl(String wsdlXml) {
         try {
             Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
             wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
             Collection bindings = wsdl.getBindings();
-            if (bindings.isEmpty()) return false;
+            if (bindings.isEmpty()) return;
 
             try {
+                wsdlBindingStyleIsDocument = true;
+                for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+                    Binding binding = (Binding)iterator.next();
+                    if (!Wsdl.STYLE_DOCUMENT.equals(wsdl.getBindingStyle(binding))) {
+                        wsdlBindingStyleIsDocument = false;
+                        break;
+                    }
+                }
+                wsdlBindingSoapUseIsLiteral = true;
                 for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
                     Binding binding = (Binding)iterator.next();
                     if (!Wsdl.USE_LITERAL.equals(wsdl.getSoapUse(binding))) {
-                        return false;
+                        wsdlBindingSoapUseIsLiteral = false;
+                        break;
                     }
                 }
             } catch (WSDLException e) {
                 log.log(Level.WARNING, "Could not determine soap use", e);
-                return false;
             }
-            return true;
+            return;
         } catch (WSDLException e) {
             log.log(Level.WARNING, "Wsdl parsing error", e);
         }
-        return false;
+        return ;
     }
-
 
     private void ok() {
         // validate the contents of the xml control
@@ -172,8 +196,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
         // save new schema
-        subject.setSchema(contents);
-        fireEventAssertionChanged(subject);
+        schemaValidationAssertion.setSchema(contents);
+        schemaValidationAssertion.setApplyToArguments(appliesToMessageArguments.isSelected());
+        fireEventAssertionChanged(schemaValidationAssertion);
         // exit
         SchemaValidationPropertiesDialog.this.dispose();
     }
@@ -300,7 +325,12 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         schemafromwsdlchooser.dispose();
         String result = schemafromwsdlchooser.getOkedSchema();
         if (result != null) {
-            uiAccessibility.getEditor().setText(result);
+            final XMLEditor editor = uiAccessibility.getEditor();
+            editor.setText(result);
+            editor.setLineNumber(1);
+        }
+        if (wsdlSchemaAppliesToArguments()) {
+            appliesToMessageArguments.setSelected(true);
         }
     }
 
@@ -450,19 +480,41 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private JPanel loadFromFilePanel() {
-        JPanel blah = new JPanel();
-        blah.setLayout(new BorderLayout());
-        blah.add(loadFromFile, BorderLayout.WEST);
 
         // wrap this with border settings
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
+        constraints.fill = GridBagConstraints.NONE;
         constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
+        constraints.anchor = GridBagConstraints.NORTHWEST;
+
         JPanel bordered = new JPanel();
         bordered.setLayout(new GridBagLayout());
-        bordered.add(blah, constraints);
+        bordered.add(loadFromFile, constraints);
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.VERTICAL;
+        constraints.weightx = 1.0;
+        constraints.gridx++;
+        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
+        bordered.add(Box.createGlue(), constraints);
+
+        constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.gridy++;
+        constraints.weighty = 1.0;
+        constraints.gridheight = 2;
+        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
+        JPanel radioPanel = new JPanel();
+        radioPanel.setBorder(BorderFactory.createTitledBorder("Schema Applies To:"));
+        radioPanel.setLayout(new GridLayout(2,1));
+        radioPanel.add(appliesToEntireMessageMessage);
+        radioPanel.add(appliesToMessageArguments);
+        if (schemaValidationAssertion.isApplyToArguments()) {
+            appliesToMessageArguments.setSelected(true);
+        } else {
+            appliesToEntireMessageMessage.setSelected(true);
+        }
+        bordered.add(radioPanel, constraints);
 
         return bordered;
     }
@@ -476,9 +528,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         xmldisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                if (subject.getSchema() != null) {
+                if (schemaValidationAssertion.getSchema() != null) {
                     XMLEditor editor = uiAccessibility.getEditor();
-                    editor.setText(reformatxml(subject.getSchema()));
+                    editor.setText(reformatxml(schemaValidationAssertion.getSchema()));
                     editor.setLineNumber(1);
                 }
             }
@@ -588,18 +640,16 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         loadFromFile = new JButton();
         loadFromFile.setText(resources.getString("loadFromFile.name"));
+        appliesToEntireMessageMessage = new JRadioButton("Entire Message Body");
+        appliesToMessageArguments = new JRadioButton("Message Arguments");
+        ButtonGroup bg = new ButtonGroup();
+        bg.add(appliesToEntireMessageMessage);
+        bg.add(appliesToMessageArguments);
     }
 
     private void initResources() {
         Locale locale = Locale.getDefault();
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", locale);
-    }
-
-    public static void main(String[] args) {
-        SchemaValidationPropertiesDialog me = new SchemaValidationPropertiesDialog(null, new SchemaValidation(), null);
-        me.pack();
-        me.setVisible(true);
-        System.exit(0);
     }
 
     private JButton helpButton;
@@ -608,6 +658,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private JButton readFromWsdlButton;
     private JButton resolveButton;
     private JButton loadFromFile;
+    private JRadioButton appliesToEntireMessageMessage;
+    private JRadioButton appliesToMessageArguments;
     private JTextField urlTxtFld;
 
     private XMLContainer xmlContainer;
@@ -615,11 +667,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private ResourceBundle resources;
 
-    private SchemaValidation subject;
+    private SchemaValidation schemaValidationAssertion;
     private PublishedService service;
 
     private final Logger log = Logger.getLogger(getClass().getName());
     private final EventListenerList listenerList = new EventListenerList();
+    // cached values
+    private boolean wsdlBindingStyleIsDocument;
+    private boolean wsdlBindingSoapUseIsLiteral;
 
     private static int BORDER_PADDING = 20;
     private static int CONTROL_SPACING = 5;

@@ -8,30 +8,27 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.policy.RequestXpathPolicyTreeNode;
-import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
+import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.registry.RegistryStub;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Collection;
 
 /**
  * @author mike
  */
-public class XpathBasedAssertionPropertiesDialogTest {
+public class SchemaValidationPropertiesDialogTest {
 
     public static void main(String[] args) {
         try {
-
-
             Registry.setDefault(new RegistryStub());
             realMain();
         } catch (Exception e) {
@@ -43,7 +40,6 @@ public class XpathBasedAssertionPropertiesDialogTest {
     private static void realMain() throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
-        RequestXpathAssertion ass = new RequestXpathAssertion();
         StubDataStore dataStore = StubDataStore.defaultStore();
         Collection services = dataStore.getPublishedServices().values();
         if (services.isEmpty()) {
@@ -54,18 +50,15 @@ public class XpathBasedAssertionPropertiesDialogTest {
         ServiceNode sn = new ServiceNode(eh);
 
         PublishedService ps = sn.getPublishedService();
-        ps.setWsdlXml(TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL));
+        ps.setWsdlXml(TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL));
+        SchemaValidation sass = new SchemaValidation();
+        AssertionTreeNode tn = AssertionTreeNodeFactory.asTreeNode(sass);
 
-        ActionListener okListener = new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-            }
-        };
-
-        XpathBasedAssertionTreeNode treeNode = new RequestXpathPolicyTreeNode(ass);
-        XpathBasedAssertionPropertiesDialog d = new XpathBasedAssertionPropertiesDialog(null, true, sn, treeNode, okListener);
+        SchemaValidationPropertiesDialog d = new SchemaValidationPropertiesDialog(null, (SchemaValidationTreeNode)tn, ps);
 
         d.setModal(true);
         d.pack();
+        d.setSize(600, 800);
         d.setVisible(true);
     }
 }
