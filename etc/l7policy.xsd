@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+		targetNamespace="http://www.layer7tech.com/ws/policy"
+		xmlns="http://www.layer7tech.com/ws/policy"
+		xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"
+		xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		attributeFormDefault="qualified"
+		elementFormDefault="qualified"
+		xmlns:tns="http://www.layer7tech.com/ws/policy">
+
+	<xs:element name="OneOrMore" type="tns:compositeassertiontype"/>
+	<xs:element name="All" type="tns:compositeassertiontype"/>
+
+	<xs:complexType name="xpathexpressiontype">
+      <xs:sequence>            
+        <xs:element name="Expression" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:attribute name="stringValue" type="xs:string" />
+          </xs:complexType>
+        </xs:element>	          
+        <xs:element name="Namespaces" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:attribute name="mapValue" type="xs:string" />
+            <xs:sequence>
+              <xs:element name="entry" minOccurs="0" maxOccurs="unbounded">
+	            <xs:complexType>
+  	              <xs:all>
+                    <xs:element name="key">
+                      <xs:complexType>
+                        <xs:attribute name="stringValue" type="xs:string" />
+                      </xs:complexType>
+	                </xs:element>	              
+    	            <xs:element name="value">
+                      <xs:complexType>
+                        <xs:attribute name="stringValue" type="xs:string" />
+                      </xs:complexType>
+	                </xs:element>
+	              </xs:all>
+    	        </xs:complexType>
+	          </xs:element>
+	        </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>	          
+      </xs:sequence>
+    </xs:complexType>
+	
+	<!-- a composite assertion contains one or more of each assertion type -->
+	<xs:complexType name="compositeassertiontype">
+	  <xs:choice minOccurs="0" maxOccurs="unbounded">
+	    
+	    <xs:element ref="tns:All"/>
+        
+        <xs:element ref="tns:OneOrMore"/>
+	    
+	    <!-- Schema Validation Assertion -->
+		<xs:element name="SchemaValidation">
+	      <xs:complexType>
+	        <xs:all>
+	          <xs:element name="Schema">
+	            <xs:complexType>
+	              <xs:attribute name="stringValue" type="xs:string" />
+	            </xs:complexType>
+	          </xs:element>
+	        </xs:all>
+	      </xs:complexType>
+		</xs:element>
+		
+		<!-- Member Of Group Assertion -->
+		<xs:element name="MemberOfGroup">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="GroupId" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="stringValue" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="GroupName" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="stringValue" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="IdentityProviderOid" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="longValue" type="xs:integer" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+		<xs:element name="SecureConversation" type="xs:string"/>
+        <xs:element name="RequestWssX509Cert" type="xs:string"/>
+        <xs:element name="WssBasic" type="xs:string"/>
+        <xs:element name="HttpDigest" type="xs:string"/>
+        <xs:element name="HttpBasic" type="xs:string"/>
+        <xs:element name="RequestWssReplayProtection" type="xs:string"/>
+        
+        <xs:element name="SslAssertion">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Option" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="optionValue" type="xs:string" />
+                </xs:complexType>
+	          </xs:element>
+	          <xs:element name="RequireClientAuthentication" minOccurs="0" maxOccurs="1">
+	            <xs:complexType>
+	              <xs:attribute name="booleanValue" type="xs:string" />
+	            </xs:complexType>
+	          </xs:element>
+	        </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="ThroughputQuota" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Quota" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="longValue" type="xs:integer" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="CounterName" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="stringValue" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="TimeUnit" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="intValue" type="xs:integer" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="CounterStrategy" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:attribute name="intValue" type="xs:integer" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="WsTrustCredentialExchange">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="TokenServiceUrl" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="stringValue" type="xs:string" />
+                </xs:complexType>
+	          </xs:element>
+	          <xs:element name="RequestType" minOccurs="0" maxOccurs="1">
+	            <xs:complexType>
+	              <xs:attribute name="requestType" type="xs:string" />
+	            </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="Issuer" minOccurs="0" maxOccurs="1">
+	            <xs:complexType>
+	              <xs:attribute name="stringValue" type="xs:string" />
+	            </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="AppliesTo" minOccurs="0" maxOccurs="1">
+	            <xs:complexType>
+	              <xs:attribute name="stringValue" type="xs:string" />
+	            </xs:complexType>
+	          </xs:element>	          
+	        </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="RequestWssSaml">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="AudienceRestriction" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="stringValue" type="xs:string" />
+                </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="SubjectConfirmations" minOccurs="0" maxOccurs="1">
+	            <xs:complexType>
+	              <xs:attribute name="stringArrayValue" type="xs:string" />
+	              <xs:sequence>
+  	                <xs:element name="item" minOccurs="0" maxOccurs="unbounded">
+	                  <xs:complexType>
+                        <xs:attribute name="stringValue" type="xs:string" />
+                      </xs:complexType>
+	                </xs:element>
+	              </xs:sequence>
+	            </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="RequireSenderVouchesWithMessageSignature" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="booleanValue" type="xs:string" />
+                </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="NameFormats" minOccurs="0" maxOccurs="1">
+	            <xs:complexType>
+	              <xs:attribute name="stringArrayValue" type="xs:string" />
+	              <xs:sequence>
+	                <xs:element name="item" minOccurs="0" maxOccurs="unbounded">
+	                  <xs:complexType>
+                        <xs:attribute name="stringValue" type="xs:string" />
+                      </xs:complexType>
+	                </xs:element>
+	              </xs:sequence>
+	            </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="RequireHolderOfKeyWithMessageSignature" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="booleanValue" type="xs:string" />
+                </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="AuthenticationStatement" minOccurs="0" maxOccurs="1">
+	            <xs:complexType>
+	              <xs:attribute name="samlAuthenticationInfo" type="xs:string" />
+	              <xs:sequence>
+	                <xs:element name="AuthenticationMethods" minOccurs="0" maxOccurs="1">
+	                  <xs:complexType>
+	                    <xs:attribute name="stringArrayValue" type="xs:string" />
+	                    <xs:sequence>
+	                      <xs:element name="item" minOccurs="0" maxOccurs="unbounded">
+    	                    <xs:complexType>
+                              <xs:attribute name="stringValue" type="xs:string" />
+                            </xs:complexType>
+	                      </xs:element>
+	                    </xs:sequence>
+    	              </xs:complexType>
+	                </xs:element>
+	              </xs:sequence>
+	            </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="NameQualifier" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="stringValue" type="xs:string" />
+                </xs:complexType>
+	          </xs:element>	          
+	          <xs:element name="NoSubjectConfirmation" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                  <xs:attribute name="booleanValue" type="xs:string" />
+                </xs:complexType>
+	          </xs:element>	          
+	        </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="RequestXpathAssertion">
+	      <xs:complexType>
+            <xs:sequence>
+              <xs:element name="XpathExpression" type="tns:xpathexpressiontype"/>
+            </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="ResponseXpathAssertion">
+	      <xs:complexType>
+            <xs:sequence>
+              <xs:element name="XpathExpression" type="tns:xpathexpressiontype"/>
+            </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="RequestWssIntegrity">
+	      <xs:complexType>
+            <xs:sequence>
+              <xs:element name="XpathExpression" type="tns:xpathexpressiontype"/>
+            </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="RequestWssConfidentiality">
+	      <xs:complexType>
+            <xs:sequence>
+              <xs:element name="XpathExpression" type="tns:xpathexpressiontype"/>
+            </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="ResponseWssIntegrity">
+	      <xs:complexType>
+            <xs:sequence>
+              <xs:element name="XpathExpression" type="tns:xpathexpressiontype"/>
+            </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+	    
+	    <xs:element name="ResponseWssConfidentiality">
+	      <xs:complexType>
+            <xs:sequence>
+              <xs:element name="XpathExpression" type="tns:xpathexpressiontype"/>
+            </xs:sequence>
+	      </xs:complexType>
+	    </xs:element>
+
+		
+              
+        <!-- todo, all other assertion types here
+             Missing:
+             HttpRoutingAssertion
+             SpecificUser
+             RemoteIpAddressRange
+             TimeRange
+        -->
+	    
+	  </xs:choice>
+	</xs:complexType>
+	
+</xs:schema>

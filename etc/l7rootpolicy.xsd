@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+	targetNamespace="http://schemas.xmlsoap.org/ws/2002/12/policy"
+	xmlns="http://schemas.xmlsoap.org/ws/2002/12/policy"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	attributeFormDefault="qualified"
+	elementFormDefault="qualified"
+	xmlns:l7policy="http://www.layer7tech.com/ws/policy">
+	
+  <xs:import namespace="http://www.layer7tech.com/ws/policy" schemaLocation="l7policy.xsd" />
+  
+  <xs:element name="Policy" msdata:IsDataSet="true" msdata:Prefix="wsp">
+    <xs:complexType>
+      <xs:all>
+        <xs:element ref="l7policy:All" />
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+  
+</xs:schema>
