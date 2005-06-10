@@ -15,7 +15,7 @@ import junit.framework.TestSuite;
  * @version 1.0
  */
 public class BenchmarkRunnerTest extends TestCase {
-    int runnableInvocationsCounter = 0;
+    volatile int runnableInvocationsCounter = 0;
 
     public BenchmarkRunnerTest(String name) {
         super(name);
