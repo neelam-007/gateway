@@ -72,6 +72,11 @@ public class EmailAlertPropertiesDialog extends JDialog {
         portField.setDocument(new NumberField(6));
         Utilities.constrainTextFieldToIntegerRange(portField, 1, 65535);
 
+        pack();
+        Utilities.centerOnScreen(this);
+        modelToView();
+
+        okButton.setEnabled(false);
         final DocumentListener dl = new DocumentListener() {
                     public void changedUpdate(DocumentEvent e) { updateEnableDisableState(); }
                     public void insertUpdate(DocumentEvent e) { updateEnableDisableState(); }
@@ -80,10 +85,9 @@ public class EmailAlertPropertiesDialog extends JDialog {
         hostField.getDocument().addDocumentListener(dl);
         addressField.getDocument().addDocumentListener(dl);
         portField.getDocument().addDocumentListener(dl);
-
-        pack();
-        Utilities.centerOnScreen(this);
-        modelToView();
+        fromAddressField.getDocument().addDocumentListener(dl);
+        subjectField.getDocument().addDocumentListener(dl);
+        messageField.getDocument().addDocumentListener(dl);
     }
 
     private void modelToView() {
