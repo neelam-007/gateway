@@ -169,7 +169,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 status = AssertionStatus.SERVICE_NOT_FOUND;
             } else if (service.isDisabled()) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
-                status = AssertionStatus.SERVICE_DISABLED;
+                status = AssertionStatus.SERVICE_NOT_FOUND;
             } else {
                 auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, new String[]{service.getName(), String.valueOf(service.getOid())});
                 context.setService(service);
