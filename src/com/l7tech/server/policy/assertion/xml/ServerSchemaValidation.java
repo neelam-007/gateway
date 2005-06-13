@@ -8,6 +8,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Validates the soap body's contents of a soap request or soap response against
@@ -138,7 +140,12 @@ public class ServerSchemaValidation implements ServerAssertion {
      */
     AssertionStatus checkRequest(Document soapmsg) throws IOException {
         String[] bodystr = null;
-        bodystr = getXMLElementsToValidate(soapmsg);
+        try {
+            bodystr = getXMLElementsToValidate(soapmsg);
+        } catch (InvalidDocumentFormatException e) {
+            logger.log(Level.INFO, "The document to validate does not respect the expected format", e);
+            return AssertionStatus.FAILED;
+        }
         if (bodystr == null || bodystr.length < 1) {
             auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
             return AssertionStatus.FAILED;
@@ -183,25 +190,58 @@ public class ServerSchemaValidation implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
-    private String[] getXMLElementsToValidate(Document doc) throws IOException {
+    private String[] getXMLElementsToValidate(Document doc) throws InvalidDocumentFormatException, IOException {
         if (SoapUtil.isSoapMessage(doc)) {
-            return getRequestBodyChild(doc);
+            if (data.isApplyToArguments()) {
+                logger.finest("validating against the body 'arguments'");
+                return getBodyArguments(doc);
+            } else {
+                logger.finest("validating against the whole body");
+                return getRequestBodyChild(doc);
+            }
         } else {
             return new String[] {XmlUtil.nodeToString(doc.getDocumentElement())};
         }
     }
 
-    private String[] getRequestBodyChild(Document soapenvelope) throws IOException {
-        NodeList bodylist = soapenvelope.getElementsByTagNameNS(soapenvelope.getDocumentElement().getNamespaceURI(),
-                                                                SoapUtil.BODY_EL_NAME);
-        Element bodyel = null;
-        switch (bodylist.getLength()) {
-            case 1:
-                bodyel = (Element)bodylist.item(0);
+    /**
+     * goes one level deeper than getRequestBodyChild
+     */
+    private String[] getBodyArguments(Document soapenvelope) throws InvalidDocumentFormatException, IOException {
+        // first, get the body
+        Element bodyel = SoapUtil.getBodyElement(soapenvelope);
+        // then, get the body's first child element
+        NodeList bodychildren = bodyel.getChildNodes();
+        Element bodyFirstElement = null;
+        for (int i = 0; i < bodychildren.getLength(); i++) {
+            Node child = bodychildren.item(i);
+            if (child instanceof Element) {
+                bodyFirstElement = (Element)child;
                 break;
-            default:
-                return null;
+            }
         }
+        if (bodyFirstElement == null) {
+            throw new InvalidDocumentFormatException("The soap body does not have a child element as expected");
+        }
+        // construct a return output for each element under the body first child
+        NodeList maybearguments = bodyel.getChildNodes();
+        ArrayList argumentList = new ArrayList();
+        for (int i = 0; i < maybearguments.getLength(); i++) {
+            Node child = maybearguments.item(i);
+            if (child instanceof Element) {
+                argumentList.add(child);
+            }
+        }
+        String[] output = new String[argumentList.size()];
+        int cnt = 0;
+        for (Iterator i = argumentList.iterator(); i.hasNext(); cnt++) {
+            output[cnt] = XmlUtil.elementToXml((Element)i.next());
+        }
+        return output;
+    }
+
+    private String[] getRequestBodyChild(Document soapenvelope) throws InvalidDocumentFormatException, IOException {
+        Element bodyel = SoapUtil.getBodyElement(soapenvelope);
         NodeList bodychildren = bodyel.getChildNodes();
         ArrayList children = new ArrayList();
         for (int i = 0; i < bodychildren.getLength(); i++) {
