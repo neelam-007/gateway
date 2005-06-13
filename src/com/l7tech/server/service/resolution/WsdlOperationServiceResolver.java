@@ -28,8 +28,8 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
         try {
             Wsdl wsdl = service.parsedWsdl();
             // fla bugfix for 1827 soap bindings only should be considered for soap web services
-            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
             if (wsdl == null) return new Object[0];
+            wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
             Iterator operations = wsdl.getBindingOperations().iterator();
             BindingOperation operation;
             while ( operations.hasNext() ) {
