@@ -8,6 +8,7 @@ import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -20,10 +21,10 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * Extracts fields from HTTP POSTed forms and replaces MIME parts in the current
- * message.
+ * Extracts fields from an HTML form submission and constructs MIME parts in the current
+ * request out of them.  The request must have been received via HTTP.
  * <p>
- * <b>NOTE</b>: This assertion destroys the current message and replaces it
+ * <b>NOTE</b>: This assertion destroys the current request and replaces it
  * with new content!
  */
 public class ServerHttpFormPost implements ServerAssertion {
@@ -41,14 +42,18 @@ public class ServerHttpFormPost implements ServerAssertion {
         MimeKnob reqMime = request.getMimeKnob();
         ContentTypeHeader ctype = reqMime.getOuterContentType();
         HttpRequestKnob reqHttp = (HttpRequestKnob) request.getKnob(HttpRequestKnob.class);
-        if ( !("application".equals(ctype.getType()) &&
-                "x-www-form-urlencoded".equals(ctype.getSubtype()))) {
-            auditor.logAndAudit(AssertionMessages.HTTPFORM_WRONG_TYPE, new String[] { ctype.getFullValue() });
-            return AssertionStatus.NOT_APPLICABLE;
-        }
 
         if (reqHttp == null) {
             auditor.logAndAudit(AssertionMessages.HTTPFORM_NON_HTTP);
+            return AssertionStatus.NOT_APPLICABLE;
+        } else if (GenericHttpClient.METHOD_POST.equalsIgnoreCase(reqHttp.getMethod()) &&
+                    ctype.isApplication() && HttpFormPost.X_WWW_FORM_URLENCODED.equals(ctype.getSubtype())) {
+            logger.fine("Received POST form");
+        } else if (GenericHttpClient.METHOD_GET.equalsIgnoreCase(reqHttp.getMethod()) &&
+                           reqHttp.getQueryString() != null && reqHttp.getQueryString().length() > 0) {
+            logger.fine("Received GET form");
+        } else {
+            auditor.logAndAudit(AssertionMessages.HTTPFORM_WRONG_TYPE, new String[] { "Content-Type was " + ctype.getFullValue() });
             return AssertionStatus.NOT_APPLICABLE;
         }
 
@@ -70,6 +75,12 @@ public class ServerHttpFormPost implements ServerAssertion {
             }
 
             String partValue = partValues[0];
+            if (partValue.length() >= 512 * 1024) {
+                // TODO do we care about bytes vs. chars?
+                auditor.logAndAudit(AssertionMessages.HTTPFORM_TOO_BIG, new String[] {partFieldname});
+                return AssertionStatus.FAILED;
+            }
+
             String encoding = partContentType.getEncoding();
             if (encoding == null) encoding = MimeUtil.DEFAULT_ENCODING;
             parts[i] = partValue.getBytes(encoding);

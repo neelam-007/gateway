@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.message;
@@ -89,4 +87,6 @@ public interface HttpRequestKnob extends TcpKnob {
     String[] getParameterValues(String s);
 
     Enumeration getParameterNames();
+
+    String getQueryString();
 }

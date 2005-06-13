@@ -52,9 +52,12 @@ public class TokenServiceClient {
     public static final String PROP_WSP_NS = "com.l7tech.common.security.wstrust.ns.wsp";
     public static final String PROP_WSA_NS = "com.l7tech.common.security.wstrust.ns.wsa";
     public static final String PROP_WST_NS = "com.l7tech.common.security.wstrust.ns.wst";
+    public static final String PROP_WST_REQUESTTYPEINDEX = "com.l7tech.common.security.wstrust.requestTypeIndex";
+
     private static String tscWspNs = System.getProperty(PROP_WSP_NS, SoapUtil.WSP_NAMESPACE2);
     private static String tscWsaNs = System.getProperty(PROP_WSA_NS, SoapUtil.WSA_NAMESPACE2);
     private static String tscWstNs = System.getProperty(PROP_WST_NS, SoapUtil.WST_NAMESPACE2);
+    private static int tscWstRequestTypeIndex = Integer.getInteger(PROP_WST_REQUESTTYPEINDEX, 0).intValue();
 
     /**
      * Create a signed SOAP message containing a WS-Trust RequestSecurityToken message asking for the
@@ -204,6 +207,7 @@ public class TokenServiceClient {
         {
             Element rt = XmlUtil.createAndAppendElementNS(rst, "RequestType", rst.getNamespaceURI(), "wst");
             rt.appendChild(XmlUtil.createTextNode(msg, requestType.getUri()));
+            rt.appendChild(XmlUtil.createTextNode(msg, (String)requestType.getUris().get(tscWstRequestTypeIndex)));
         }
 
         return msg;
@@ -482,7 +486,7 @@ public class TokenServiceClient {
             return processSecurityContextToken(scTokenEl, rstr, clientCertificate, clientPrivateKey);
         }
 
-        Element samlTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SamlConstants.NS_SAML, "Assertion");
+        Element samlTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SamlConstants.NS_SAML, SamlConstants.ELEMENT_ASSERTION);
         if (samlTokenEl != null) {
             // It's a signed SAML assertion
             try {
@@ -494,7 +498,7 @@ public class TokenServiceClient {
             }
         }
 
-        Element usernameTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.SECURITY_URIS_ARRAY, "UsernameToken");
+        Element usernameTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.SECURITY_URIS_ARRAY, SoapUtil.USERNAME_TOK_EL_NAME);
         if (usernameTokenEl != null) {
             // It's a... um... I dunno
             try {

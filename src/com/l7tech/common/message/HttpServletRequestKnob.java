@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.message;
@@ -71,6 +69,13 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         return values[0];
     }
 
+    public String getQueryString() {
+        return request.getQueryString();
+    }
+
+    /**
+     * @return the Map<String, String[]> of this request's parameters
+     */
     public Map getParameterMap() {
         return paramMap;
     }

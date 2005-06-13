@@ -62,7 +62,7 @@ public class HttpPostFormFieldInfoDialog extends JDialog {
         fieldNameField.getDocument().addDocumentListener(docListener);
         contentTypeField.getDocument().addDocumentListener(docListener);
 
-        add(mainPanel);
+        getContentPane().add(mainPanel);
     }
 
     private void enableButtons() {

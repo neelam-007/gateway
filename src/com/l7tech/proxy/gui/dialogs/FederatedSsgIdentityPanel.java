@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
  */
 
 package com.l7tech.proxy.gui.dialogs;
@@ -31,6 +30,8 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
     private JTextField wsTrustUrlTextField;
     private JButton wsTrustCertButton;
     private JTextField wspAppliesToField;
+    private JTextField wstIssuerField;
+    private JComboBox requestTypeCombo;
 
     private final ImageIcon imageIcon;
 
@@ -109,5 +110,13 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
 
     public JTextField getWspAppliesToField() {
         return wspAppliesToField;
+    }
+
+    public JTextField getWstIssuerField() {
+        return wstIssuerField;
+    }
+
+    public JComboBox getRequestTypeCombo() {
+        return requestTypeCombo;
     }
 }

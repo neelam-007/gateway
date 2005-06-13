@@ -54,6 +54,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
     private String appliesTo;
     private String wstIssuer;
     private String tokenServerCertB64;
+    private String requestType = WsTrustRequestType.ISSUE.getUri();
 
     private transient X509Certificate tokenServerCert = null;
 
@@ -107,7 +108,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
                                                    null, // not overriding timestamp created date
                                                    null, // no client cert (not signing message)
                                                    null, // no client private key (not signing message)
-                                                   WsTrustRequestType.ISSUE,
+                                                   WsTrustRequestType.fromString(getRequestType()),
                                                    null, // no token type (FIM doesn't like it)
                                                    usernameToken,
                                                    getAppliesTo(),
@@ -182,6 +183,14 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
 
     public void setTokenServerCertB64(String tokenServerCertB64) {
         this.tokenServerCertB64 = tokenServerCertB64;
+    }
+
+    public String getRequestType() {
+        return requestType;
+    }
+
+    public void setRequestType(String requestType) {
+        this.requestType = requestType;
     }
 
     /**

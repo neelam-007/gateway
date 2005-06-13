@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.HttpFormPost;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.InverseHttpFormPost;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -16,7 +15,7 @@ import java.util.ArrayList;
 /**
  * Used for editing the {@link com.l7tech.policy.assertion.HttpFormPost} assertion.
  */
-public class HttpFormPostDialog extends JDialog {
+public class InverseHttpFormPostDialog extends JDialog {
     private JList fieldList;
     private JButton removeButton;
     private JButton modifyButton;
@@ -25,22 +24,18 @@ public class HttpFormPostDialog extends JDialog {
     private JButton okButton;
     private JPanel mainPanel;
 
-    private final HttpFormPost assertion;
-    private final DefaultListModel fieldListModel;
+    private final InverseHttpFormPost assertion;
+    private final DefaultComboBoxModel fieldListModel;
     private boolean assertionModified = false;
     private JButton moveUpButton;
     private JButton moveDownButton;
     private Frame ownerFrame;
 
-    public HttpFormPostDialog(Frame owner, HttpFormPost ass) throws HeadlessException {
-        super(owner, "HTTP Form POST Properties", true);
+    public InverseHttpFormPostDialog(Frame owner, InverseHttpFormPost ass) throws HeadlessException {
+        super(owner, "Inverse HTTP Form POST Properties", true);
         this.ownerFrame = owner;
         this.assertion = ass;
-        fieldListModel = new DefaultListModel();
-        for (int i = 0; i < ass.getFieldInfos().length; i++) {
-            HttpFormPost.FieldInfo info = ass.getFieldInfos()[i];
-            fieldListModel.addElement(new FieldInfoListElement(info));
-        }
+        fieldListModel = new DefaultComboBoxModel(wrap(ass.getFieldNames()));
 
         fieldList.setModel(fieldListModel);
         enableButtons();
@@ -68,12 +63,12 @@ public class HttpFormPostDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                ArrayList infos = new ArrayList();
+                ArrayList names = new ArrayList();
                 for (int i = 0; i < fieldListModel.getSize(); i++) {
-                    FieldInfoListElement element = (FieldInfoListElement) fieldListModel.elementAt(i);
-                    infos.add(element.fieldInfo);
+                    FieldnameListElement name = (FieldnameListElement) fieldListModel.getElementAt(i);
+                    names.add(name.fieldname);
                 }
-                assertion.setFieldInfos((HttpFormPost.FieldInfo[])infos.toArray(new HttpFormPost.FieldInfo[0]));
+                assertion.setFieldNames((String[]) names.toArray(new String[0]));
                 assertionModified = true;
                 dispose();
             }
@@ -83,7 +78,7 @@ public class HttpFormPostDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 int pos = fieldList.getSelectedIndex();
                 if (pos < 1) return;
-                Object which = fieldListModel.elementAt(pos);
+                Object which = fieldListModel.getElementAt(pos);
                 fieldListModel.removeElementAt(pos);
                 fieldListModel.insertElementAt(which, pos-1);
                 fieldList.setSelectedValue(which, true);
@@ -95,7 +90,7 @@ public class HttpFormPostDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 int pos = fieldList.getSelectedIndex();
                 if (pos > fieldListModel.getSize() - 2) return;
-                Object which = fieldListModel.elementAt(pos);
+                Object which = fieldListModel.getElementAt(pos);
                 fieldListModel.removeElementAt(pos);
                 fieldListModel.insertElementAt(which, pos+1);
                 fieldList.setSelectedValue(which, true);
@@ -105,9 +100,9 @@ public class HttpFormPostDialog extends JDialog {
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                HttpFormPost.FieldInfo fi = edit(new HttpFormPost.FieldInfo());
-                if (fi != null) {
-                    fieldListModel.addElement(new FieldInfoListElement(fi));
+                String fieldname = edit("");
+                if (fieldname != null && fieldname.length() > 0) {
+                    fieldListModel.addElement(new FieldnameListElement(fieldname));
                 }
             }
         });
@@ -129,25 +124,22 @@ public class HttpFormPostDialog extends JDialog {
     }
 
     private void modify() {
-        FieldInfoListElement el = (FieldInfoListElement) fieldList.getSelectedValue();
+        FieldnameListElement el = (FieldnameListElement) fieldList.getSelectedValue();
         if (el == null) return;
-        HttpFormPost.FieldInfo fi = el.fieldInfo;
-        HttpFormPost.FieldInfo edited = edit(fi);
+        String edited = edit(el.fieldname);
         if (edited != null) {
-            el.fieldInfo = edited;
+            el.fieldname = edited;
             fieldList.repaint(); // TODO this seems dumb but validate() doesn't cut it
         }
     }
 
-    private HttpFormPost.FieldInfo edit(HttpFormPost.FieldInfo fi) {
-        HttpPostFormFieldInfoDialog dlg = new HttpPostFormFieldInfoDialog(ownerFrame, fi);
-        Utilities.centerOnScreen(dlg);
-        dlg.pack();
-        dlg.setVisible(true);
-        if (dlg.isChanged())
-            return dlg.getFieldInfo();
-        else
-            return null;
+    private String edit(String fieldname) {
+        Object result = JOptionPane.showInputDialog(this, "Enter the HTTP Form Field Name", fieldname);
+        if (result == null || result instanceof String) {
+            return (String) result;
+        } else {
+            throw new IllegalStateException();
+        }
     }
 
     private void enableButtons() {
@@ -158,24 +150,42 @@ public class HttpFormPostDialog extends JDialog {
         modifyButton.setEnabled(selected);
     }
 
-    private class FieldInfoListElement {
-        private HttpFormPost.FieldInfo fieldInfo;
+    private class FieldnameListElement {
+        private String fieldname;
 
-        public FieldInfoListElement(HttpFormPost.FieldInfo fieldInfo) {
-            this.fieldInfo = fieldInfo;
+        private FieldnameListElement(String fieldname) {
+            this.fieldname = fieldname;
         }
 
         public String toString() {
-            return (fieldListModel.indexOf(this) + 1) + ": " +
-                   fieldInfo.getFieldname() + " (" + fieldInfo.getContentType() + ")";
+            return (fieldListModel.getIndexOf(this) + 1) + ": " + fieldname;
         }
+
+    }
+
+    private FieldnameListElement[] wrap(String[] fieldnames) {
+        ArrayList elements = new ArrayList();
+        for (int i = 0; i < fieldnames.length; i++) {
+            String fieldname = fieldnames[i];
+            elements.add(new FieldnameListElement(fieldname));
+        }
+        return (FieldnameListElement[]) elements.toArray(new FieldnameListElement[0]);
+    }
+
+    private String[] unwrap(FieldnameListElement[] elements) {
+        ArrayList names = new ArrayList();
+        for (int i = 0; i < elements.length; i++) {
+            FieldnameListElement element = elements[i];
+            names.add(element.fieldname);
+        }
+        return (String[]) names.toArray(new String[0]);
     }
 
     public boolean isAssertionModified() {
         return assertionModified;
     }
 
-    public HttpFormPost getAssertion() {
+    public InverseHttpFormPost getAssertion() {
         return assertion;
     }
 }

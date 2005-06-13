@@ -7,6 +7,7 @@ import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgEvent;
@@ -165,6 +166,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         }
                     }
                 });
+
+                fp.getRequestTypeCombo().setModel(new DefaultComboBoxModel(WsTrustRequestType.getValues()));
 
                 fp.getWsTrustTestButton().addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent evt) {
@@ -562,6 +565,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 if (strat != null) {
                     // Federated ssg using third-party WS-Trust service
                     fp.getWspAppliesToField().setText(strat.getAppliesTo());
+                    fp.getWstIssuerField().setText(strat.getWstIssuer());
+                    if (strat.getRequestType() != null) fp.getRequestTypeCombo().setSelectedItem(WsTrustRequestType.fromString(strat.getRequestType()));
                     fp.getWstUsernameField().setText(strat.getUsername());
                     char[] pass = strat.getPassword();
                     if (pass == null) pass = new char[0];
@@ -665,6 +670,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         strat.setUsername(fp.getWstUsernameField().getText());
         strat.setWsTrustUrl(fp.getWsTrustUrlTextField().getText());
         strat.setAppliesTo(fp.getWspAppliesToField().getText());
+        strat.setWstIssuer(fp.getWstIssuerField().getText());
+        WsTrustRequestType requestType = (WsTrustRequestType) fp.getRequestTypeCombo().getSelectedItem();
+        if (requestType != null) 
+            strat.setRequestType(requestType.getUri());
         // TODO fp.getWstSavePasswordCheckBox();
     }
 

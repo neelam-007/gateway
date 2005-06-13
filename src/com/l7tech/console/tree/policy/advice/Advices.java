@@ -99,6 +99,7 @@ public class Advices {
         advicesMap.put(Regex.class, new Class[] {RegexAdvice.class});
         advicesMap.put(HttpFormPost.class, new Class[] {HttpFormPostAdvice.class});
         advicesMap.put(SnmpTrapAssertion.class, new Class[] {AddSnmpTrapAssertionAdvice.class});
+        advicesMap.put(InverseHttpFormPost.class, new Class[] {InverseHttpFormPostAdvice.class});
         advicesMap.put(EmailAlertAssertion.class, new Class[] {AddEmailAlertAssertionAdvice.class});
         advicesMap.put(ThroughputQuota.class, new Class[]{AddThroughputQuotaAssertionAdvice.class});
     }

@@ -1,23 +1,20 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HttpFormPost;
+import com.l7tech.policy.assertion.InverseHttpFormPost;
 
 import javax.swing.*;
 
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the HTTP Form POST node.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * It represents the Inverse HTTP Form POST node.
  */
-public class HttpFormPostNode extends AbstractTreeNode {
+public class InverseHttpFormPostNode extends AbstractTreeNode {
     /**
      * construct the <CODE>HttpFormPostNode</CODE> instance.
      */
-    public HttpFormPostNode() {
+    public InverseHttpFormPostNode() {
         super(null);
     }
 
@@ -38,7 +35,7 @@ public class HttpFormPostNode extends AbstractTreeNode {
      * @return the popup menu
      */
     public Assertion asAssertion() {
-        return new HttpFormPost();
+        return new InverseHttpFormPost();
     }
 
     /**
@@ -66,7 +63,7 @@ public class HttpFormPostNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Translate POSTed Form to Multipart Message";
+        return "Translate Multipart Message to POSTed Form";
     }
 
     /**

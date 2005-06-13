@@ -76,6 +76,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(Regex.class, RegexPolicyNode.class);
         assertionMap.put(ThroughputQuota.class, ThroughputQuotaTreeNode.class);
         assertionMap.put(HttpFormPost.class, HttpFormPostPolicyNode.class);
+        assertionMap.put(InverseHttpFormPost.class, InverseHttpFormPostPolicyNode.class);
     }
 
     /**

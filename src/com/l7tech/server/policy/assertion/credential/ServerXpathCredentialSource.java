@@ -65,7 +65,10 @@ public class ServerXpathCredentialSource implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        XmlKnob requestXml = (XmlKnob) context.getRequest().getKnob(XmlKnob.class);
+        XmlKnob requestXml = null;
+        if (context.getRequest().isXml())
+            requestXml = (XmlKnob) context.getRequest().getKnob(XmlKnob.class);
+
         if (requestXml == null) {
             auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML);
             return AssertionStatus.NOT_APPLICABLE;
