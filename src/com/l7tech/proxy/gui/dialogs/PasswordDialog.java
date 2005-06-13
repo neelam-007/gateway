@@ -186,8 +186,12 @@ public class PasswordDialog extends JDialog {
     }
 
     private void checkCapsLock() {
-        capsMessage.setText(Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK) ?
-                                    "(CAPS LOCK ON)" : " ");
+        try {
+            capsMessage.setText(Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK) ?
+                                        "(CAPS LOCK ON)" : " ");
+        } catch (UnsupportedOperationException e) {
+            capsMessage.setText(" "); // Work around JRE 1.5 bug 5100701
+        }
     }
 
     private char[] runPasswordPrompt() {
