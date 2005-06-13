@@ -330,7 +330,22 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             editor.setLineNumber(1);
         }
         if (wsdlSchemaAppliesToArguments()) {
-            appliesToMessageArguments.setSelected(true);
+            checkSetAppliesToArgs();
+        }
+    }
+
+    private void checkSetAppliesToArgs() {
+        if (!appliesToMessageArguments.isSelected()) {
+        String msg = "The WSDL style seems to indicate that the\n" +
+                     "schema validation should be applied to the body\n" +
+                     "'arguments' rather than the entire body. Would you\n" +
+                     "like to change the setting accordingly?";
+        int res = JOptionPane.showConfirmDialog(this, msg,
+                                                "Schema Applies To", JOptionPane.YES_NO_OPTION,
+                                                JOptionPane.QUESTION_MESSAGE);
+            if (res == JOptionPane.YES_OPTION) {
+                appliesToMessageArguments.setSelected(true);
+            }
         }
     }
 
