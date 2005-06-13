@@ -35,7 +35,7 @@ public final class WsTrustRequestType implements Serializable {
 
     private final String name;
     private final String[] uris;
-    private final List<String> cachedUriList;
+    private final List cachedUriList;
 
     private WsTrustRequestType(String name, String[] uris) {
         this.name = name;
