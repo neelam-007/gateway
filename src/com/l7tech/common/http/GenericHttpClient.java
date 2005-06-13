@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.http;
@@ -10,8 +8,10 @@ package com.l7tech.common.http;
  * A generic HTTP client interface.
  */
 public interface GenericHttpClient {
-    public static GenericHttpMethod GET = new GenericHttpMethod("GET", false);
-    public static GenericHttpMethod POST = new GenericHttpMethod("POST", true);
+    String METHOD_GET = "GET";
+    String METHOD_POST = "POST";
+    public static GenericHttpMethod GET = new GenericHttpMethod(METHOD_GET, false);
+    public static GenericHttpMethod POST = new GenericHttpMethod(METHOD_POST, true);
 
     public static class GenericHttpMethod {
         private final String name;
