@@ -8,28 +8,31 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.service.uddi.UddiAgentV3;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyManagementException;
 
 /**
  * Server side implementation of the ServiceAdmin admin api.
@@ -51,6 +54,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     private Properties uddiProps = null;
     private final AccessManager accessManager;
     private ServerConfig serverConfig;
+    private SSLContext sslContext;
 
     public ServiceAdminImpl(AccessManager accessManager) {
         this.accessManager = accessManager;
@@ -71,7 +75,13 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
                 state.setAuthenticationPreemptive(true);
                 state.setCredentials(null, null, new UsernamePasswordCredentials(login, passwd));
             }
-            int ret = client.executeMethod(get);
+            HostConfiguration hconf = getHostConfigurationWithTrustManager(urltarget);
+            int ret = -1;
+            if (hconf != null) {
+                ret = client.executeMethod(hconf, get);
+            } else {
+                ret = client.executeMethod(get);
+            }
             byte[] body = null;
             if (ret == 200) {
                 body = get.getResponseBody();
@@ -344,5 +354,45 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         if  (policyValidator == null) {
             throw new IllegalArgumentException("Policy Validator is required");
         }
+    }
+
+    private synchronized SSLContext getSSLContext() {
+        if (sslContext == null) {
+            try {
+                sslContext = SSLContext.getInstance("SSL");
+                final SslClientTrustManager trustManager = (SslClientTrustManager)serverConfig.getSpringContext().getBean("httpRoutingAssertionTrustManager");
+                sslContext.init(null, new TrustManager[]{trustManager}, null);
+            } catch (NoSuchAlgorithmException e) {
+                logger.log(Level.SEVERE, "Unable to get sslcontext", e);
+                throw new RuntimeException(e);
+            } catch (KeyManagementException e) {
+                logger.log(Level.SEVERE, "Unable to get sslcontext", e);
+                throw new RuntimeException(e);
+            }
+        }
+        return sslContext;
+    }
+
+    private HostConfiguration getHostConfigurationWithTrustManager(URL url) {
+        HostConfiguration hconf = null;
+        if ("https".equals(url.getProtocol())) {
+            final int port = url.getPort() == -1 ? 443 : url.getPort();
+            hconf = new HostConfiguration();
+            Protocol protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
+                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+                    return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
+                }
+
+                public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+                    return getSSLContext().getSocketFactory().createSocket(host, port, clientAddress, clientPort);
+                }
+
+                public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                    return getSSLContext().getSocketFactory().createSocket(host, port);
+                }
+            }, port);
+            hconf.setHost(url.getHost(), port, protocol);
+        }
+        return hconf;
     }
 }
