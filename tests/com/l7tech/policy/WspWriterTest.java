@@ -12,20 +12,21 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.skunkworks.schemavalidation.Validator;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import org.w3c.dom.Document;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Test serializing policy tree to XML.
@@ -33,8 +34,10 @@ import org.w3c.dom.Document;
 public class WspWriterTest extends TestCase {
     private static Logger log = Logger.getLogger(WspWriterTest.class.getName());
     private static final ClassLoader cl = WspReaderTest.class.getClassLoader();
-    private static String RESOURCE_PATH = "com/l7tech/policy/resources";
-    private static String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
+    public static final String RESOURCE_PATH = "com/l7tech/policy/resources";
+    public static final String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
+    public static final String SCHEMA_PATH = RESOURCE_PATH + "/ws_policy_2002.xsd";
+    public static final String UTILITY_SCHEMA = RESOURCE_PATH + "/ws_utility_2002.xsd";
 
     public WspWriterTest(String name) {
         super(name);
@@ -54,7 +57,7 @@ public class WspWriterTest extends TestCase {
         log.info("Null policy serialized to this XML:\n---<snip>---\n" + xml + "---<snip>---\n");
     }
 
-    public void testWritePolicy() throws IOException {
+    public void testWritePolicy() throws Exception {
         RequestXpathAssertion rxa = new RequestXpathAssertion();
         Map foo = new HashMap();
         foo.put("abc", "http://namespaces.somewhere.com/abc#bletch");
@@ -100,7 +103,7 @@ public class WspWriterTest extends TestCase {
         int len = knownStream.read(known);
         String knownStr = fixLines(new String(known, 0, len));
 
-        log.info("Expected XML: " + knownStr);
+        //log.info("Expected XML: " + knownStr);
         fos = new FileOutputStream("WspWriterTest_knownStr.xml");
         fos.write(knownStr.getBytes());
         fos.close();
@@ -108,8 +111,27 @@ public class WspWriterTest extends TestCase {
         assertEquals(gotXml, knownStr);
         log.info("Output matched expected XML.");
 
+        // Test validation with WS-Policy schema
+        log.info("Validating output against WS-Policy 2002 schema...");
+        InputStream schemaStream = cl.getResourceAsStream(SCHEMA_PATH);
+        assertNotNull(schemaStream);
+        Validator validator = new Validator();
+        validator.validate(schemaStream, new ByteArrayInputStream(gotXml.getBytes()), new EntityResolver() {
+            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+                if (systemId.endsWith("2002/07/utility"))
+                    return new InputSource(getStream(UTILITY_SCHEMA));
+                throw new RuntimeException("Unknown external resource:" + systemId);
+            }
+        });
+
         //Assertion tree = WspReader.parse(gotXml);
         //log.info("After parsing: " + tree);
+    }
+
+    private InputStream getStream(String path) {
+        final InputStream st = cl.getResourceAsStream(path);
+        if (st == null) throw new RuntimeException("Missing resource: " + path);
+        return st;
     }
 
     public static void testNestedMaps() throws Exception {
