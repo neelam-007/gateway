@@ -18,10 +18,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXParseException;
+import org.xml.sax.*;
 
 /**
  * A simple class that validates a document against a schema.
@@ -36,6 +33,11 @@ public class Validator {
      * Expect a SAXParseException if the document is not valid, no exception means it is valid.
      */
     public void validate(InputStream schemaStream, InputStream documentStream) throws SAXParseException, SAXException, ParserConfigurationException, IOException {
+        validate(schemaStream, documentStream, XmlUtil.getSafeEntityResolver());
+    }
+
+    public void validate(InputStream schemaStream, InputStream documentStream, EntityResolver entityResolver) throws SAXParseException, SAXException, ParserConfigurationException, IOException {
+        if (schemaStream == null || documentStream == null || entityResolver == null) throw new NullPointerException();
         final ArrayList errors = new ArrayList();
         ErrorHandler errorHandler = new ErrorHandler() {
             public void warning(SAXParseException e) {
@@ -61,7 +63,7 @@ public class Validator {
 	    dbf.setAttribute(XmlUtil.JAXP_SCHEMA_SOURCE, schemaStream);
         DocumentBuilder db = null;
         db = dbf.newDocumentBuilder();
-        db.setEntityResolver(XmlUtil.getSafeEntityResolver());
+        db.setEntityResolver(entityResolver);
         db.setErrorHandler(errorHandler);
 
         InputSource source = new InputSource(documentStream);
