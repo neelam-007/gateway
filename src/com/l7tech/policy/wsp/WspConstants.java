@@ -12,7 +12,6 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -25,10 +24,14 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import org.w3c.dom.Element;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Contains the registry of types we can serialize to a policy.
@@ -43,6 +46,7 @@ public class WspConstants {
         WSP_POLICY_NS,
         L7_POLICY_NS,
     };
+    public static final List POLICY_NAMESPACE_LIST = Arrays.asList(POLICY_NAMESPACES);
 
     static boolean isRecognizedPolicyNsUri(String nsUri) {
         for (int i = 0; i < POLICY_NAMESPACES.length; i++) {

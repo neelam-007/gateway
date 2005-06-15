@@ -7,7 +7,6 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -21,7 +20,10 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xmlsec.*;
+
+import java.util.Arrays;
 
 /**
  * @author alex
@@ -121,9 +123,9 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
-        new AllAssertion(),
-        new ExactlyOneAssertion(),
-        new OneOrMoreAssertion(),
+        new AllAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})),    // Empty composites are not valid
+        new ExactlyOneAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})), // Empty composites are not valid
+        new OneOrMoreAssertion(Arrays.asList(new Assertion[] {new FalseAssertion()})), // Empty composites are not valid
         new FalseAssertion(),
         new SslAssertion(),
         new HttpRoutingAssertion(),

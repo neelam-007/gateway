@@ -175,6 +175,10 @@ public class WspReaderTest extends TestCase {
         assertTrue(ass instanceof ExactlyOneAssertion);
     }
 
+    public void testSeamlessUpgradeFrom32() throws Exception {
+        // TODO after 32 policy format is frozen
+    }
+
     public void testUnknownElementGetsPreserved() throws Exception {
 
 

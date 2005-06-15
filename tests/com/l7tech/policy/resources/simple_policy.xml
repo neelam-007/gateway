@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsp:Policy xmlns="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
-    <ExactlyOne>
-        <All>
+    <wsp:ExactlyOne wsp:Usage="Required">
+        <wsp:All wsp:Usage="Required">
             <TrueAssertion/>
-            <OneOrMore>
+            <wsp:OneOrMore wsp:Usage="Required">
                 <HttpBasic/>
                 <HttpDigest/>
                 <WssBasic/>
-                <All/>
-                <ExactlyOne/>
-                <OneOrMore/>
+                <wsp:All wsp:Usage="Required">
+                    <FalseAssertion/>
+                </wsp:All>
+                <wsp:ExactlyOne wsp:Usage="Required">
+                    <FalseAssertion/>
+                </wsp:ExactlyOne>
+                <wsp:OneOrMore wsp:Usage="Required">
+                    <FalseAssertion/>
+                </wsp:OneOrMore>
                 <FalseAssertion/>
                 <SslAssertion/>
                 <HttpRoutingAssertion/>
@@ -42,9 +48,9 @@
                 <SnmpTrap/>
                 <ThroughputQuota/>
                 <EmailAlert/>
-            </OneOrMore>
-        </All>
-        <ExactlyOne>
+            </wsp:OneOrMore>
+        </wsp:All>
+        <wsp:ExactlyOne wsp:Usage="Required">
             <TrueAssertion/>
             <FalseAssertion/>
             <HttpRoutingAssertion>
@@ -69,7 +75,7 @@
                     </Namespaces>
                 </XpathExpression>
             </RequestXpathAssertion>
-            <All>
+            <wsp:All wsp:Usage="Required">
                 <RequestSwAAssertion>
                     <Bindings mapValue="included">
                         <entry>
@@ -99,12 +105,12 @@
                         </entry>
                     </Bindings>
                 </RequestSwAAssertion>
-            </All>
-        </ExactlyOne>
+            </wsp:All>
+        </wsp:ExactlyOne>
         <TrueAssertion/>
         <FalseAssertion/>
         <CustomAssertion>
             <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgAAeHBzcgAoY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLmV4dC5DYXRlZ29yeVqwnGWhRP41AgACSQAFbXlLZXlMAAZteU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZzt4cAAAAAB0AA1BY2Nlc3NDb250cm9sc3IAJWNvbS5sN3RlY2gucG9saWN5LlRlc3RDdXN0b21Bc3NlcnRpb26pNr8K+2gTGAIAA0kABGludDFMAAdTdHJpbmcxcQB+AAZMAARtYXAxdAAPTGphdmEvdXRpbC9NYXA7eHAAAAAWdAALZm9vIGJhciBiYXpzcgARamF2YS51dGlsLkhhc2hNYXAFB9rBwxZg0QMAAkYACmxvYWRGYWN0b3JJAAl0aHJlc2hvbGR4cD9AAAAAAAAMdwgAAAAQAAAAAHg=</base64SerializedValue>
         </CustomAssertion>
-    </ExactlyOne>
+    </wsp:ExactlyOne>
 </wsp:Policy>

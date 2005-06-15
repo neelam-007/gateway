@@ -160,6 +160,7 @@ class TypeMappingUtils {
         for (int i = 0; i < numAttr; ++i) {
             Node attr = attrs.item(i);
             if ("xmlns".equals(attr.getPrefix())) continue; // Ignore namespace decls
+            if (WspConstants.POLICY_NAMESPACE_LIST.contains(attr.getNamespaceURI())) continue; // Ignore WSP attributes
             String typeName = attr.getLocalName();
             if (typeName == null || typeName.length() < 1) typeName = attr.getNodeName();
             if (typeName == null || typeName.length() < 1) throw new RuntimeException("Policy contains an attribute with no LocalName or NodeName"); // can't happen

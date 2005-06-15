@@ -6,8 +6,12 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import org.w3c.dom.Element;
 
 import java.util.Iterator;
@@ -17,11 +21,15 @@ import java.util.List;
 /**
  * TypeMapping that knows how to serliaze a CompositeAssertion and its children into a policy XML document.
  */
-class CompositeAssertionMapping extends AssertionMapping {
-    CompositeAssertion source;
+class CompositeAssertionMapping implements TypeMapping {
+    private Class clazz;
+    private String externalName;
+    private CompositeAssertion source;
 
     CompositeAssertionMapping(CompositeAssertion a, String externalName) {
-        super(a, externalName);
+        this.clazz = a.getClass();
+        this.externalName = externalName;
+        makeAssertion(externalName); // consistency check
     }
 
     protected void populateElement(Element element, TypedReference object) throws InvalidPolicyTreeException {
@@ -42,11 +50,7 @@ class CompositeAssertionMapping extends AssertionMapping {
         }
     }
 
-    protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-        // Do not deserialize any properties of the CompositeAssertion itself: shouldn't be any, and it'll include kid list
-        // NO super.populateObject(object, source);
-        CompositeAssertion cass = (CompositeAssertion)object.target;
-
+    protected void populateObject(CompositeAssertion cass, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         // gather children
         List convertedKids = new LinkedList();
         List kids = TypeMappingUtils.getChildElements(source);
@@ -58,5 +62,36 @@ class CompositeAssertionMapping extends AssertionMapping {
             convertedKids.add(tr.target);
         }
         cass.setChildren(convertedKids);
+    }
+
+    public Class getMappedClass() { return clazz; }
+
+    public String getExternalName() { return externalName; }
+
+    public Element freeze(TypedReference object, Element container) {
+        Element element = XmlUtil.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
+        element.setAttributeNS(WspConstants.WSP_POLICY_NS, "wsp:Usage", "Required");
+        populateElement(element, object);
+        return element;
+    }
+
+    public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+        CompositeAssertion cass = makeAssertion(externalName);
+        populateObject(cass, source, visitor);
+        return new TypedReference(clazz, cass);
+    }
+
+    private CompositeAssertion makeAssertion(String externalName) throws IllegalArgumentException {
+        CompositeAssertion cass;
+        if ("OneOrMore".equals(externalName)) {
+            cass = new OneOrMoreAssertion();
+        } else if ("All".equals(externalName)) {
+            cass = new AllAssertion();
+        } else if (externalName.equals("ExactlyOne")) {
+            cass = new ExactlyOneAssertion();
+        } else {
+            throw new IllegalArgumentException("Unknown externalName");
+        }
+        return cass;
     }
 }
