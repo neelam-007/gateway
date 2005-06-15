@@ -265,6 +265,9 @@ public class ServicePanel extends WizardStepPanel {
                 Utilities.centerOnScreen(chooser);
                 chooser.show();
                 if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
+                    // todo, if previous url contained userinfo stuff but the wsil target does not, modify
+                    // new url so the userinfo is added
+                    // see FeedNewWSDLToPublishedServiceAction:111
                     wsdlUrlTextField.setText(chooser.selectedWSDLURL());
                     return onNextButton();
                 }
