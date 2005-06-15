@@ -6,7 +6,10 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.panels.WSILSelectorPanel;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.SaveException;
@@ -21,6 +24,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 /**
  * This action resets the wsdl of an already published web service (for example if the downstream
@@ -70,16 +77,50 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
                                                               JOptionPane.QUESTION_MESSAGE, null, null, existingURL);
         if (response == null) return;
         String newWSDL = null;
+        URL currentURL;
         try {
             try {
-                new URL(response);
+                currentURL = new URL(response);
             } catch (MalformedURLException e) {
                 logger.log(Level.WARNING, "bad url " + response, e);
                 JOptionPane.showMessageDialog(mw, response + " is not a valid url.");
                 return;
             }
             newWSDL = Registry.getDefault().getServiceManager().resolveWsdlTarget(response);
-            if (newWSDL != null && newWSDL.length() > 0) {
+            while (newWSDL != null && newWSDL.length() > 0) {
+                Document resolvedDoc = null;
+                try {
+                    resolvedDoc = XmlUtil.stringToDocument(newWSDL);
+                } catch (SAXException e) {
+                    logger.log(Level.WARNING, "invalid wsdl", e);
+                    throw new RuntimeException("Invalid WSDL. Consult log for more information.", e);
+                }
+
+                // is this a WSIL?
+                Element root = resolvedDoc.getDocumentElement();
+                if (root.getLocalName().equals("inspection") &&
+                    root.getNamespaceURI().equals("http://schemas.xmlsoap.org/ws/2001/10/inspection/")) {
+
+                    // parse wsil and choose the wsdl url
+                    WSILSelectorPanel chooser = new WSILSelectorPanel((JFrame)null, resolvedDoc);
+                    chooser.pack();
+                    Utilities.centerOnScreen(chooser);
+                    chooser.show();
+                    if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
+                        URL newUrl = new URL(chooser.selectedWSDLURL());
+                        // add userinfo if necessary
+                        if (newUrl.getUserInfo() == null && currentURL.getUserInfo() != null) {
+                            StringBuffer combinedurl = new StringBuffer(newUrl.toString());
+                            combinedurl.insert(newUrl.getProtocol().length()+3, currentURL.getUserInfo() + "@");
+                            newUrl = new URL(combinedurl.toString());
+                        }
+                        response = newUrl.toString();
+                        newWSDL = Registry.getDefault().getServiceManager().resolveWsdlTarget(newUrl.toString());
+                    } else {
+                        // operation cancelled
+                        return;
+                    }
+                }
                 Wsdl.newInstance(Wsdl.extractBaseURI(newWSDL), new StringReader(newWSDL));
             }
         } catch (WSDLException e) {
