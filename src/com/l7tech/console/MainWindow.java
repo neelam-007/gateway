@@ -1733,6 +1733,11 @@ public class MainWindow extends JFrame {
                         public void run() {
                             try {
                                 MainWindow.this.disconnectHandler(null);
+                                // add a top level dlg that indicates the connection was closed
+                                JOptionPane.showMessageDialog(MainWindow.this,
+                                                              "The SecureSpan Manager connection has been closed due\n" +
+                                                              "to timeout. Any unsaved work will be lost.",
+                                                              "Connection Timeout", JOptionPane.WARNING_MESSAGE);
                             } catch (ActionVetoException e1) {
                                 // swallow, cannot happen from here
                             }
