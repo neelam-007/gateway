@@ -46,7 +46,7 @@ public class SsgRuntime {
     // Maximum simultaneous outbound connections.  Throttled wide-open.
     public static final int MAX_CONNECTIONS = 60000;
 
-    private final MultiThreadedHttpConnectionManager httpConnectionManager = new MultiThreadedHttpConnectionManager();
+    private MultiThreadedHttpConnectionManager httpConnectionManager;
 
     private PolicyManager rootPolicyManager = null; // policy store that is not saved to disk
     private char[] password = null;
@@ -102,8 +102,7 @@ public class SsgRuntime {
         if (ssg == null) throw new NullPointerException();
         this.ssg = ssg;
         this.ssgKeyStoreManager = new Pkcs12SsgKeyStoreManager(ssg);
-        httpConnectionManager.setMaxConnectionsPerHost(MAX_CONNECTIONS);
-        httpConnectionManager.setMaxTotalConnections(MAX_CONNECTIONS);
+
     }
 
     /** Flush any cached data from the key store. */
@@ -441,6 +440,7 @@ public class SsgRuntime {
             serverCert = null;
             clientCert = null;
             simpleHttpClient = null;
+            httpConnectionManager = null; // bugzilla #1808
         }
     }
 
@@ -583,7 +583,14 @@ public class SsgRuntime {
     }
 
     public MultiThreadedHttpConnectionManager getHttpConnectionManager() {
-        return httpConnectionManager;
+        synchronized (ssg) {
+            if (httpConnectionManager == null) {
+                httpConnectionManager = new MultiThreadedHttpConnectionManager();
+                httpConnectionManager.setMaxConnectionsPerHost(MAX_CONNECTIONS);
+                httpConnectionManager.setMaxTotalConnections(MAX_CONNECTIONS);
+            }
+            return httpConnectionManager;
+        }
     }
 
     /**
