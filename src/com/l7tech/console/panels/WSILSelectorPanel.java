@@ -46,6 +46,12 @@ public class WSILSelectorPanel extends JDialog {
         initialize();
     }
 
+    public WSILSelectorPanel(JFrame parent, Document wsil) {
+        super(parent, true);
+        wsilXml = wsil;
+        initialize();
+    }
+
     public boolean wasCancelled() {
         return cancelled;
     }
