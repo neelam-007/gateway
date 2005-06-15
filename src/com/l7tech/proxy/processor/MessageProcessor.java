@@ -642,11 +642,7 @@ public class MessageProcessor {
                                               "tell us to destroy our Trusted client certificate; ignoring it");
                         throw new ConfigurationException("Federated Gateway rejected our client certificate");
                     }
-
                     ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getCredentialsForTrustedSsg());
-                    // todo, fix 1808
-                    // fla note, after we get new cert we still use old one (bugzilla #1808)
-
                     throw new PolicyRetryableException(); // try again with the new cert
                 } catch (GeneralSecurityException e) {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
