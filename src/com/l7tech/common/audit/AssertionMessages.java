@@ -259,6 +259,7 @@ public class AssertionMessages extends Messages {
     public static final M SAMLBROWSERARTIFACT_REDIRECT_BAD_QUERY      = m(6502, Level.WARNING, "Redirect query string could not be parsed");
     public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT    = m(6503, Level.WARNING, "Couldn't find SAML artifact in redirect query string");
     public static final M SAMLBROWSERARTIFACT_IOEXCEPTION             = m(6504, Level.WARNING, "Couldn't login");
+    public static final M SAMLBROWSERARTIFACT_NOCREDS                 = m(6505, Level.WARNING, "Request does not contain any credentials");
 
     // XPath Credential Source
     public static final M XPATHCREDENTIAL_REQUEST_NOT_XML          = m(6600, Level.WARNING, "Request not valid XML");
