@@ -68,6 +68,11 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
         params.setFollowRedirects(false);
 
         LoginCredentials creds = context.getCredentials();
+        if (creds == null) {
+            auditor.logAndAudit(AssertionMessages.SAMLBROWSERARTIFACT_NOCREDS);
+            return AssertionStatus.AUTH_REQUIRED;
+        }
+        
         if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
             params.setPasswordAuthentication(new PasswordAuthentication(creds.getLogin(), creds.getCredentials()));
         }
