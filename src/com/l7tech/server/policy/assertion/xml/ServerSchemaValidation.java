@@ -107,19 +107,24 @@ public class ServerSchemaValidation implements ServerAssertion {
 
         try {
             if (tarariNamespaceUri != null) {
-                msg.isSoap(); // Prime the pump
-                TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
-                if (tk != null) {
-                    TarariMessageContext tmc = tk.getContext();
-                    // TODO move this static reference to TarariMessageContextImpl behind a classloader boundary
-                    if (tmc instanceof TarariMessageContextImpl) {
-                        TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
-                        XMLDocument tdoc = tarariMessageContext.getTarariDoc();
-                        try {
-                            XMLStreamProcessor.tokenize(tdoc, true);
-                            return AssertionStatus.NONE;
-                        } catch (XMLTokenizerException e) {
-                            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
+                if (data.isApplyToArguments()) {
+                    logger.fine("Falling back to software validation because assertion requests " +
+                                "that only arguments be validated");
+                } else {
+                    msg.isSoap(); // Prime the pump
+                    TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
+                    if (tk != null) {
+                        TarariMessageContext tmc = tk.getContext();
+                        // TODO move this static reference to TarariMessageContextImpl behind a classloader boundary
+                        if (tmc instanceof TarariMessageContextImpl) {
+                            TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
+                            XMLDocument tdoc = tarariMessageContext.getTarariDoc();
+                            try {
+                                XMLStreamProcessor.tokenize(tdoc, true);
+                                return AssertionStatus.NONE;
+                            } catch (XMLTokenizerException e) {
+                                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
+                            }
                         }
                     }
                 }
