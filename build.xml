@@ -184,10 +184,6 @@
         </delete>
 
         <copy todir="${tomcat.home}/common/classpath">
-            <!-- Needed for PKCS#12 keystore -->
-            <fileset dir="${src.root}/lib/crypto/bc">
-                <include name="bcprov-*.jar"/>
-            </fileset>
             <fileset dir="${build.dir}">
                 <include name="rmiannotation.jar"/>
             </fileset>
@@ -777,11 +773,6 @@
                 <exclude name="**/**ant*"/>
                 <exclude name="**/optional.jar"/>
                 <exclude name="**/*junit.jar"/>
-            </fileset>
-
-            <!-- the default crypto provider -->
-            <fileset dir="${src.root}/lib/crypto/bc">
-                <include name="bcprov*.jar"/>
             </fileset>
 
             <fileset dir="${src.root}/lib/gateway/cluster">
