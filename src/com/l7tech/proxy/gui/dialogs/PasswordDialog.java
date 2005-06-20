@@ -196,6 +196,9 @@ public class PasswordDialog extends JDialog {
 
     private char[] runPasswordPrompt() {
         pack();
+        FontMetrics fm = getFontMetrics(getFont());
+        setSize(2* fm.stringWidth(getTitle()), (int)getSize().getHeight());
+        setResizable(false);
         Utilities.centerOnScreen(this);
         show();
         return passwordValid ? fieldPassword.getPassword() : null;

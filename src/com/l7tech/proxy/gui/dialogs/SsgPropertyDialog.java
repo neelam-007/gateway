@@ -9,10 +9,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgEvent;
-import com.l7tech.proxy.datamodel.SsgListener;
-import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
@@ -351,18 +348,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
-    private void importClientCertificate() {
+    private void importClientCertificate() throws NoSuchAlgorithmException, CertificateEncodingException {
         if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel))
             throw new IllegalStateException("Not supported for federated SSG");
         TrustedSsgIdentityPanel trustPane = (TrustedSsgIdentityPanel)ssgIdentityPane;
-        char[] ssgPass = trustPane.getUserPasswordField().getPassword();
-        if (ssgPass == null || ssgPass.length < 1) {
-            ssgPass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
-                                                 "Enter new password for Gateway " + ssgName());
-            if (ssgPass == null)
-                return;
-            trustPane.getUserPasswordField().setText(new String(ssgPass));
-        }
 
         JFileChooser fc = Utilities.createJFileChooser();
         fc.setDialogTitle("Select client certificate");
@@ -387,10 +376,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         char[] pass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
                                                  "Enter pass phrase for this PKCS#12 file",
                                                  true);
+
+        char[] ssgPass = trustPane.getUserPasswordField().getPassword();
+        if (ssgPass == null || ssgPass.length < 1) {
+            ssgPass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
+                                                 "Enter new password for Gateway " + ssgName());
+            if (ssgPass == null)
+                return;
+            trustPane.getUserPasswordField().setText(new String(ssgPass));
+        }
+
         if (pass == null)
             return;
         try {
-            ssg.getRuntime().getSsgKeyStoreManager().importClientCertificate(certFile, pass, null, ssgPass);
+            ssg.getRuntime().getSsgKeyStoreManager().importClientCertificate(certFile, pass, new CertAliasPicker(this), ssgPass);
         } catch (ClassCastException e) {
             // translate this one into a friendlier error message
             log.log(Level.WARNING, "Unable to import certificate", e);
@@ -407,8 +406,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             trustPane.getUsernameTextField().setText(clientCertUsername);
         updateIdentityEnableState();
 
-        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                      "Client certificate imported successfully.");
+        X509Certificate clientcert = ssg.getClientCertificate();
+        new CertDialog(clientcert, "Client Certificate Imported Successfully", "New Client Certificate").setVisible(true);
+        /*JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                      "Client certificate imported successfully.");*/
     }
 
     private void updateIdentityEnableState() {
@@ -525,6 +526,21 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             return cb;
         }
     }
+
+    class CertAliasPicker extends JDialog implements SsgKeyStoreManager.AliasPicker {
+
+        public CertAliasPicker(Dialog parent) {
+            super(parent);
+        }
+
+        public String selectAlias(String[] options) throws SsgKeyStoreManager.AliasNotFoundException {
+            Object selectedOption = JOptionPane.showInputDialog(this, "Select the alias for the certificate you want to import.",
+                    "Select an Alias.", JOptionPane.QUESTION_MESSAGE,
+				  null,options , null);
+            return (String)selectedOption;
+
+          }
+        }
 
     /** Enable or disable the Ok button, depending on whether all input is acceptable. */
     private void checkOk() {
