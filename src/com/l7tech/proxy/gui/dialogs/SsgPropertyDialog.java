@@ -23,6 +23,7 @@ import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
+import javax.crypto.BadPaddingException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -397,7 +398,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             return;
         } catch (Exception e) {
             log.log(Level.WARNING, "Unable to import certificate", e);
-            Gui.errorMessage("Unable to import certificate\n\n" + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()));
+            String msg = "Unable to import certificate";
+            if (e instanceof IOException) {
+                if (ExceptionUtils.causedBy(e, BadPaddingException.class)) {
+                    msg += " (likely due to an incorrect password)";
+                }
+            }
+            msg += "\n\n" + (e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+            Gui.errorMessage(msg);
             return;
         }
 

@@ -16,6 +16,7 @@ import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.util.SslUtils;
 
+import javax.crypto.BadPaddingException;
 import java.io.*;
 import java.net.PasswordAuthentication;
 import java.security.*;
@@ -50,7 +51,8 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
      */
     private static final char[] TRUSTSTORE_PASSWORD = "lwbnasudg".toCharArray();
     /** Keystore type.  JCEKS is more secure than the default JKS format. */
-    private static final String KEYSTORE_TYPE = "BCPKCS12";
+    private static final String IMPORT_KEYSTORE_TYPE = "PKCS12";
+    private static final String OUR_KEYSTORE_TYPE = "BCPKCS12";
     private static final String TRUSTSTORE_TYPE = "BCPKCS12";
     private static final Logger log = Logger.getLogger(SsgKeyStoreManager.class.getName());
 
@@ -253,7 +255,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         if (ssg.getRuntime().keyStore() == null) {
             KeyStore keyStore;
             try {
-                keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
+                keyStore = KeyStore.getInstance(OUR_KEYSTORE_TYPE);
             } catch (KeyStoreException e) {
                 log.log(Level.SEVERE, "Security provider configuration problem", e);
                 throw new RuntimeException(e); // can't happen unless VM misconfigured
@@ -546,7 +548,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             throw new IllegalArgumentException("Unable to import client certificate for Federated Gateway.");
         KeyStore ks;
         try {
-            ks = KeyStore.getInstance(KEYSTORE_TYPE);
+            ks = KeyStore.getInstance(IMPORT_KEYSTORE_TYPE);
         } catch (KeyStoreException e) {
             throw new RuntimeException(e); // shouldn't happen
         }
