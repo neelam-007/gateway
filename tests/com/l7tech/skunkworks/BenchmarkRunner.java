@@ -166,8 +166,7 @@ public class BenchmarkRunner {
             throw new IllegalArgumentException("number of Bridges " + requests);
         }
         int nThreads = MAX_THREAD_COUNT;
-        while ((requests / nThreads) < REQUESTS_PER_THREAD &&
-          nThreads > 0) {
+        while (nThreads > 1 && (requests / nThreads) < REQUESTS_PER_THREAD) {
             nThreads--;
         }
         return nThreads;
