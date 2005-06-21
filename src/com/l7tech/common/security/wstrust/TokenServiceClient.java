@@ -206,7 +206,7 @@ public class TokenServiceClient {
         // Add RequestType
         {
             Element rt = XmlUtil.createAndAppendElementNS(rst, "RequestType", rst.getNamespaceURI(), "wst");
-            rt.appendChild(XmlUtil.createTextNode(msg, requestType.getUri()));
+//            rt.appendChild(XmlUtil.createTextNode(msg, requestType.getUri()));
             rt.appendChild(XmlUtil.createTextNode(msg, (String)requestType.getUris().get(tscWstRequestTypeIndex)));
         }
 
