@@ -122,5 +122,16 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         throw new UnsupportedOperationException();
     }
 
+    public Set resolve(Message request, Set serviceSubset) throws ServiceResolutionException {
+        Object value = getRequestValue(request);
+        // special case: if the request does not follow pattern, then all services passed
+        // match, the next resolver will narrow it down
+        if (value == null) {
+            return serviceSubset;
+        } else {
+            return super.resolve(value, serviceSubset);
+        }
+    }
+
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }

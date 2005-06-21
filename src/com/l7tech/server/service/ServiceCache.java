@@ -136,14 +136,22 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             for (int i = 0; i < resolvers.length; i++) {
                 Set resolvedServices = resolvers[i].resolve(req, serviceSet);
 
-                if (resolvedServices.size() == 1) {
-                    logger.finest("service resolved by " + resolvers[i].getClass().getName());
-                    return (PublishedService)resolvedServices.iterator().next();
+                int newResolvedServicesSize = 0;
+                if (resolvedServices != null) {
+                    newResolvedServicesSize = resolvedServices.size();
                 }
 
-                if (resolvedServices != null && !resolvedServices.isEmpty()) {
-                    serviceSet = resolvedServices;
+                // if remaining services are 0 or 1, we are done
+                if (newResolvedServicesSize == 1) {
+                    logger.finest("service resolved by " + resolvers[i].getClass().getName());
+                    return (PublishedService)resolvedServices.iterator().next();
+                } else if (newResolvedServicesSize == 0) {
+                    logger.info("resolver " + resolvers[i].getClass().getName() + " eliminated all possible services");
+                    return null;
                 }
+
+                // otherwise, try to narrow down further using next resolver
+                serviceSet = resolvedServices;
             }
 
             if (serviceSet == null || serviceSet.isEmpty()) {
