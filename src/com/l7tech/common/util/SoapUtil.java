@@ -1058,7 +1058,7 @@ public class SoapUtil {
     }
 
     private static boolean bothNullOrEqual(String s1, String s2) {
-        return (s1 == null && s2 == null) || s1.equals(s2);
+        return (s1 == null && s2 == null) || (s1 != null && s1.equals(s2));
     }
 
     public static Operation getOperation(Wsdl wsdl, Message request)
