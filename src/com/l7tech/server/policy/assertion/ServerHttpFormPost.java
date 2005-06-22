@@ -68,7 +68,7 @@ public class ServerHttpFormPost implements ServerAssertion {
 
             if (partValues == null) {
                 auditor.logAndAudit(AssertionMessages.HTTPFORM_NO_SUCH_FIELD, new String[] { partFieldname });
-                continue;
+                return AssertionStatus.FAILED;
             } else if (partValues.length > 1) {
                 auditor.logAndAudit(AssertionMessages.HTTPFORM_MULTIVALUE, new String[] { partFieldname });
                 continue;
