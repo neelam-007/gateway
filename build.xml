@@ -775,6 +775,11 @@
                 <exclude name="**/*junit.jar"/>
             </fileset>
 
+            <!-- the default crypto provider -->
+            <fileset dir="${src.root}/lib/crypto/bc">
+                <include name="bcprov*.jar"/>
+            </fileset>
+
             <fileset dir="${src.root}/lib/gateway/cluster">
                 <include name="*.jar"/>
             </fileset>
