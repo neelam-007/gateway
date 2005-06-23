@@ -1,18 +1,19 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
+ * $Id$
  */
 
-package com.l7tech.policy.wsp;
+package com.l7tech.skunkworks.wsp.pre32;
 
 import org.w3c.dom.Element;
 
 import java.lang.reflect.Constructor;
 
 /**
- * TypeMapping to use for basic concrete types whose values are represented most naturally by simple strings.
+ * Pre32TypeMapping to use for basic concrete types whose values are represented most naturally by simple strings.
  */
-class BasicTypeMapping implements TypeMapping {
+class Pre32BasicTypeMapping implements Pre32TypeMapping {
     protected final String externalName;
     protected final Class clazz;
     protected final boolean isNullable;
@@ -20,10 +21,10 @@ class BasicTypeMapping implements TypeMapping {
     protected final String nsPrefix;
     protected final String nsUri;
 
-    BasicTypeMapping(Class clazz, String externalName, String nsUri, String prefix) {
+    Pre32BasicTypeMapping(Class clazz, String externalName, String nsUri, String prefix) {
         this.clazz = clazz;
         this.externalName = externalName;
-        this.isNullable = TypeMappingUtils.isNullableType(clazz);
+        this.isNullable = Pre32TypeMappingUtils.isNullableType(clazz);
         this.nsUri = nsUri;
         this.nsPrefix = prefix;
         Constructor stringCons;
@@ -35,22 +36,22 @@ class BasicTypeMapping implements TypeMapping {
         this.stringConstructor = stringCons;
     }
 
-    BasicTypeMapping(Class clazz, String externalName) {
-        this(clazz, externalName, WspConstants.L7_POLICY_NS, ""); // Default ot default NS with no NS prefix
+    Pre32BasicTypeMapping(Class clazz, String externalName) {
+        this(clazz, externalName, Pre32WspConstants.L7_POLICY_NS, ""); // Default ot default NS with no NS prefix
     }
 
     public Class getMappedClass() { return clazz; }
 
     public String getExternalName() { return externalName; }
 
-    public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
+    public Element freeze(Pre32TypedReference object, Element container) {
         if (object == null)
-            throw new IllegalArgumentException("a non-null TypedReference must be provided");
+            throw new IllegalArgumentException("a non-null Pre32TypedReference must be provided");
         if (container == null)
             throw new IllegalArgumentException("a non-null container must be provided");
         if (object.type != clazz)
             throw new IllegalArgumentException("this TypeMapper is only for " + clazz + "; can't use with " + object.type);
-        Element elm = object.name == null ? freezeAnonymous(wspWriter, object, container) : freezeNamed(wspWriter, object, container);
+        Element elm = object.name == null ? freezeAnonymous(object, container) : freezeNamed(object, container);
         container.appendChild(elm);
         return elm;
     }
@@ -58,23 +59,23 @@ class BasicTypeMapping implements TypeMapping {
     /**
      * Return the new element, without appending it to the container yet.
      */
-    protected Element freezeAnonymous(WspWriter wspWriter, TypedReference object, Element container) {
-        throw new IllegalArgumentException("BasicTypeMapping supports only Named format");
+    protected Element freezeAnonymous(Pre32TypedReference object, Element container) {
+        throw new IllegalArgumentException("Pre32BasicTypeMapping supports only Named format");
     }
 
     /**
      * Return the new element, without appending it to the container yet.
      */
-    protected Element freezeNamed(WspWriter wspWriter, TypedReference object, Element container) {
+    protected Element freezeNamed(Pre32TypedReference object, Element container) {
         Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + object.name);
         if (object.target == null) {
             if (!isNullable)  // sanity check
-                throw new InvalidPolicyTreeException("Assertion has property \"" + object.name + "\" which mustn't be null yet is");
+                throw new Pre32InvalidPolicyTreeException("Assertion has property \"" + object.name + "\" which mustn't be null yet is");
             elm.setAttribute(externalName + "Null", "null");
         } else {
             String stringValue = objectToString(object.target);
             elm.setAttribute(externalName, stringValue);
-            populateElement(new WspWriter(), elm, object); // hook for more complex types
+            populateElement(elm, object); // hook for more complex types
         }
         return elm;
     }
@@ -88,7 +89,7 @@ class BasicTypeMapping implements TypeMapping {
         return nsPrefix;
     }
 
-    /** @return the namespace URI to use for serialized elements created by this type mapping, ie WspConstants.L7_POLICY_NS_31. */
+    /** @return the namespace URI to use for serialized elements created by this type mapping, ie Pre32WspConstants.L7_POLICY_NS_31. */
     protected String getNsUri() {
         return nsUri;
     }
@@ -96,12 +97,11 @@ class BasicTypeMapping implements TypeMapping {
     /**
      * Do any extra work that might be requried by this element.
      *
-     * @param wspWriter
      * @param newElement the newly-created element that needs to have properties filled in from object, whose
      *                   target may not be null.
      * @param object
      */
-    protected void populateElement(WspWriter wspWriter, Element newElement, TypedReference object) throws InvalidPolicyTreeException {
+    protected void populateElement(Element newElement, Pre32TypedReference object) throws Pre32InvalidPolicyTreeException {
         // no action required for simple types
     }
 
@@ -115,48 +115,48 @@ class BasicTypeMapping implements TypeMapping {
         return target.toString();
     }
 
-    public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+    public Pre32TypedReference thaw(Element source, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException {
         try {
             return doThaw(source, visitor, false);
-        } catch (InvalidPolicyStreamException e) {
+        } catch (Pre32InvalidPolicyStreamException e) {
             return doThaw(visitor.invalidElement(source, e), visitor, true);
         }
     }
 
-    private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing)
-            throws InvalidPolicyStreamException
+    private Pre32TypedReference doThaw(Element source, Pre32WspVisitor visitor, boolean recursing)
+            throws Pre32InvalidPolicyStreamException
     {
-        if (TypeMappingUtils.findTypeName(source) == null)
+        if (Pre32TypeMappingUtils.findTypeName(source) == null)
             return thawAnonymous(source, visitor);
         return thawNamed(source, visitor);
     }
 
-    protected TypedReference thawNamed(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+    protected Pre32TypedReference thawNamed(Element source, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException {
         return doThawNamed(source, visitor, false);
     }
 
-    private TypedReference doThawNamed(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
-        String typeName = TypeMappingUtils.findTypeName(source);
+    private Pre32TypedReference doThawNamed(Element source, Pre32WspVisitor visitor, boolean recursing) throws Pre32InvalidPolicyStreamException {
+        String typeName = Pre32TypeMappingUtils.findTypeName(source);
         String value = source.getAttribute(typeName);        
 
         if (typeName.endsWith("Null") && typeName.length() > 4) {
             typeName = typeName.substring(0, typeName.length() - 4);
             value = null;
             if (!isNullable) {
-                final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Policy contains a null " + externalName);
+                final Pre32InvalidPolicyStreamException e = new Pre32InvalidPolicyStreamException("Policy contains a null " + externalName);
                 if (recursing) throw e;
                 return doThawNamed(visitor.invalidElement(source, e), visitor, true);
             }
         }
 
         if (!externalName.equals(typeName)) {
-            final InvalidPolicyStreamException e = new InvalidPolicyStreamException("TypeMapping for " + clazz + ": unrecognized attr " + typeName);
+            final Pre32InvalidPolicyStreamException e = new Pre32InvalidPolicyStreamException("Pre32TypeMapping for " + clazz + ": unrecognized attr " + typeName);
             if (recursing) throw e;
             return doThawNamed(visitor.invalidElement(source, e), visitor, true);
         }
 
         if (value == null)
-            return new TypedReference(clazz, null, source.getLocalName());
+            return new Pre32TypedReference(clazz, null, source.getLocalName());
 
         return createObject(source, value, visitor);
     }
@@ -167,14 +167,14 @@ class BasicTypeMapping implements TypeMapping {
      * out its fields.
      *
      * @param element The element being deserialized
-     * @param value   The simple string value represented by element, if meaningful for this TypeMapping; otherwise "included"
-     * @return A TypedReference to the newly deserialized object
-     * @throws InvalidPolicyStreamException if the element cannot be deserialized
+     * @param value   The simple string value represented by element, if meaningful for this Pre32TypeMapping; otherwise "included"
+     * @return A Pre32TypedReference to the newly deserialized object
+     * @throws Pre32InvalidPolicyStreamException if the element cannot be deserialized
      */
-    protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
+    protected Pre32TypedReference createObject(Element element, String value, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException {
         if (value == null)
-            throw new InvalidPolicyStreamException("Null values not supported"); // can't happen
-        TypedReference tr = new TypedReference(clazz, stringToObject(value), element.getLocalName());
+            throw new Pre32InvalidPolicyStreamException("Null values not supported"); // can't happen
+        Pre32TypedReference tr = new Pre32TypedReference(clazz, stringToObject(value), element.getLocalName());
         if (tr.target != null)
             populateObject(tr, element, visitor);
         return tr;
@@ -186,25 +186,25 @@ class BasicTypeMapping implements TypeMapping {
      * @param object the newly-created object that needs to have properties filled in from source. target may not be null
      * @param source the element from which object is being created
      */
-    protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+    protected void populateObject(Pre32TypedReference object, Element source, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException {
         // no action required for simple types
     }
 
-    protected TypedReference thawAnonymous(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-        throw new IllegalArgumentException("BasicTypeMapping supports only Named format");
+    protected Pre32TypedReference thawAnonymous(Element source, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException {
+        throw new IllegalArgumentException("Pre32BasicTypeMapping supports only Named format");
     }
 
     /**
      * This method is responsible for constructing the newly deserialized object, but doesn't populate its fields.
      * For simple types, perform the reverse of objectToString.
      */
-    protected Object stringToObject(String value) throws InvalidPolicyStreamException {
+    protected Object stringToObject(String value) throws Pre32InvalidPolicyStreamException {
         if (stringConstructor == null)
-            throw new InvalidPolicyStreamException("No stringToObject defined for TypeMapping for class " + clazz);
+            throw new Pre32InvalidPolicyStreamException("No stringToObject defined for Pre32TypeMapping for class " + clazz);
         try {
             return stringConstructor.newInstance(new Object[]{value});
         } catch (Exception e) {
-            throw new InvalidPolicyStreamException("Unable to convert string into " + clazz, e);
+            throw new Pre32InvalidPolicyStreamException("Unable to convert string into " + clazz, e);
         }
     };
 }

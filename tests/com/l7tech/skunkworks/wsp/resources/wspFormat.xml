@@ -10,13 +10,13 @@
     </wsse:SecurityToken>
     <wsse:Integrity wsp:Usage="wsp:Required">
         <wsse:Algorithm Type="wsse:AlgSignature" URI="http://www.w3.org/2000/09/xmlenc#aes"/>
-        <MessageParts>
+        <MessageParts xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
             /s:Envelope/s:Body
             /s:Envelope/s:Header/wsse:Security/wsu:Timestamp
         </MessageParts>
     </wsse:Integrity>
     <wsse:Confidentiality wsp:Usage="wsp:Required">
-        <MessageParts>
+        <MessageParts xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
             /s:Envelope/s:Body/acme:placeOrder/acme:accountid
         </MessageParts>
     </wsse:Confidentiality>

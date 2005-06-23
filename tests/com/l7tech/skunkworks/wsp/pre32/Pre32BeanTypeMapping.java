@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.policy.wsp;
+package com.l7tech.skunkworks.wsp.pre32;
 
 import org.w3c.dom.Element;
 
@@ -18,39 +18,39 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * A TypeMapping that supports a bean-like object with a default constructor and some getters and setters.
+ * A Pre32TypeMapping that supports a bean-like object with a default constructor and some getters and setters.
  */
-class BeanTypeMapping extends ComplexTypeMapping {
-    private static final Logger log = Logger.getLogger(BeanTypeMapping.class.getName());
+class Pre32BeanTypeMapping extends Pre32ComplexTypeMapping {
+    private static final Logger log = Logger.getLogger(Pre32BeanTypeMapping.class.getName());
 
-    BeanTypeMapping(Class clazz, String externalName) {
+    Pre32BeanTypeMapping(Class clazz, String externalName) {
         super(clazz, externalName);
     }
 
-    public BeanTypeMapping(Class clazz, String externalName, String nsUri, String nsPrefix) {
+    public Pre32BeanTypeMapping(Class clazz, String externalName, String nsUri, String nsPrefix) {
         super(clazz, externalName, nsUri, nsPrefix);
     }
 
-    protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
+    protected void populateElement(Element element, Pre32TypedReference object) {
         try {
-            emitBeanProperties(wspWriter, object.target, element);
+            emitBeanProperties(object.target, element);
         } catch (InvocationTargetException e) {
-            throw new InvalidPolicyTreeException(e);
+            throw new Pre32InvalidPolicyTreeException(e);
         } catch (IllegalAccessException e) {
-            throw new InvalidPolicyTreeException(e);
+            throw new Pre32InvalidPolicyTreeException(e);
         }
     }
 
-    protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+    protected void populateObject(Pre32TypedReference object, Element source, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException {
         Object target = object.target;
 
         // gather properties
-        List properties = TypeMappingUtils.getChildElements(source);
+        List properties = Pre32TypeMappingUtils.getChildElements(source);
         for (Iterator i = properties.iterator(); i.hasNext();) {
             Element kid = (Element)i.next();
             String parm = kid.getLocalName();
 
-            TypedReference thawedReference = WspConstants.typeMappingObject.thaw(kid, visitor);
+            Pre32TypedReference thawedReference = Pre32WspConstants.typeMappingObject.thaw(kid, visitor);
             callSetMethod(source, kid, target, parm, thawedReference, visitor);
         }
     }
@@ -59,9 +59,9 @@ class BeanTypeMapping extends ComplexTypeMapping {
                                Element propertySource,
                                Object target,
                                String parm,
-                               TypedReference value,
-                               WspVisitor visitor)
-            throws InvalidPolicyStreamException
+                               Pre32TypedReference value,
+                               Pre32WspVisitor visitor)
+            throws Pre32InvalidPolicyStreamException
     {
         Object[] parameter = new Object[] { value.target };
         Class tryType = value.type;
@@ -82,7 +82,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
                     }
                 }
             } while (setter == null);
-            TypeMappingUtils.invokeMethod(setter, target, parameter);
+            Pre32TypeMappingUtils.invokeMethod(setter, target, parameter);
         } catch (SecurityException e) {
             visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
         } catch (IllegalAccessException e) {
@@ -95,13 +95,12 @@ class BeanTypeMapping extends ComplexTypeMapping {
     /**
      * Add the properties of a Bean style object to its already-created node in a document.
      *
-     * @param wspWriter
      * @param bean    The bean to serialize
      * @param element The assertion's already-created node, to which we will appendChild() each property we find.
      * @throws java.lang.reflect.InvocationTargetException
      * @throws IllegalAccessException
      */
-    private void emitBeanProperties(WspWriter wspWriter, Object bean, Element element) throws InvocationTargetException, IllegalAccessException
+    private void emitBeanProperties(Object bean, Element element) throws InvocationTargetException, IllegalAccessException
     {
         // Create a template object if we can, so we can avoid saving properties that are just defaulted anyway
         Object defaultTemplate = null;
@@ -133,11 +132,11 @@ class BeanTypeMapping extends ComplexTypeMapping {
         }
         for (Iterator i = getters.keySet().iterator(); i.hasNext();) {
             String parm = (String)i.next();
-            if (TypeMappingUtils.isIgnorableProperty(parm))
+            if (Pre32TypeMappingUtils.isIgnorableProperty(parm))
                 continue;
             Method getter = (Method)getters.get(parm);
             if (getter == null)
-                throw new InvalidPolicyTreeException("Internal error"); // can't happen
+                throw new Pre32InvalidPolicyTreeException("Internal error"); // can't happen
 
             if (Modifier.isStatic(getter.getModifiers())) { // ignore statics
                 continue;
@@ -145,27 +144,27 @@ class BeanTypeMapping extends ComplexTypeMapping {
 
             Method setter = (Method)setters.get(parm + ":" + getter.getReturnType());
             if (setter == null)
-                throw new InvalidPolicyTreeException("WspWriter: Warning: class " + bean.getClass() + ": no setter found for parameter " + parm);
+                throw new Pre32InvalidPolicyTreeException("WspWriter: Warning: class " + bean.getClass() + ": no setter found for parameter " + parm);
             Class returnType = getter.getReturnType();
             if (!setter.getParameterTypes()[0].equals(returnType))
-                throw new InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree about its type");
-            TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(returnType);
+                throw new Pre32InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree about its type");
+            Pre32TypeMapping tm = Pre32TypeMappingUtils.findTypeMappingByClass(returnType);
             if (tm == null)
-                throw new InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
+                throw new Pre32InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
             final Object[] noArgs = new Object[0];
-            Object value = TypeMappingUtils.invokeMethod(getter, bean, noArgs);
+            Object value = Pre32TypeMappingUtils.invokeMethod(getter, bean, noArgs);
 
             if (defaultTemplate != null) {
                 // See if we can skip saving this property.  We'll skip it if the default object has the same value.
-                Object defaultValue = TypeMappingUtils.invokeMethod(getter, defaultTemplate, noArgs);
+                Object defaultValue = Pre32TypeMappingUtils.invokeMethod(getter, defaultTemplate, noArgs);
                 if (value == defaultValue)
                     continue;
                 if (value != null && defaultValue != null && value.equals(defaultValue))
                     continue;
             }
 
-            TypedReference tr = new TypedReference(returnType, value, parm);
-            tm.freeze(wspWriter, tr, element);
+            Pre32TypedReference tr = new Pre32TypedReference(returnType, value, parm);
+            tm.freeze(tr, element);
         }
     }
 }

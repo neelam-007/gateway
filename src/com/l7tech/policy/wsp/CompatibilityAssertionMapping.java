@@ -25,7 +25,7 @@ abstract class CompatibilityAssertionMapping extends AssertionMapping {
         super(a, externalName);
     }
 
-    public final Element freeze(TypedReference object, Element container) {
+    public final Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         // Shouldn't be possible for this to ever happen
         throw new InvalidPolicyTreeException("Unable to create new policies containing " + externalName + "; can only read them for backward-compatibility purposes");
     }

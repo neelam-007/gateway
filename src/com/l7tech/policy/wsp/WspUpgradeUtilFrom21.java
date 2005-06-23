@@ -42,7 +42,7 @@ class WspUpgradeUtilFrom21 {
             return externalName;
         }
 
-        public Element freeze(TypedReference object, Element container) {
+        public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
             // This can't actually happen
             throw new InvalidPolicyTreeException("Can only read old XmlRequestSecurity and XmlResponseSecurity assertions -- unable to create them");
         }

@@ -27,11 +27,11 @@ class ArrayTypeMapping extends ComplexTypeMapping {
         this.prototype = prototype;
     }
 
-    protected void populateElement(Element newElement, TypedReference object) throws InvalidPolicyTreeException {
+    protected void populateElement(WspWriter wspWriter, Element newElement, TypedReference object) throws InvalidPolicyTreeException {
         Object[] array = (Object[])object.target;
         for (int i = 0; i < array.length; i++) {
             Object o = array[i];
-            WspConstants.typeMappingObject.freeze(new TypedReference(Object.class, o, "item"), newElement);
+            WspConstants.typeMappingObject.freeze(wspWriter, new TypedReference(Object.class, o, "item"), newElement);
         }
     }
 

@@ -4,19 +4,19 @@
  * $Id$
  */
 
-package com.l7tech.policy.wsp;
+package com.l7tech.skunkworks.wsp.pre32;
 
 import org.w3c.dom.Element;
 
 /**
  * Interface for something that knows how to convert an object of a given type into an XML element and vice versa.
  */
-interface TypeMapping {
+interface Pre32TypeMapping {
     /**
-     * Get the concrete class that this TypeMapping recognizes.  A {@link TypedReference} passed to {@link #freeze}
+     * Get the concrete class that this Pre32TypeMapping recognizes.  A {@link Pre32TypedReference} passed to {@link #freeze}
      * must be of this type, and TypeReferences returned by {@link #thaw} will be of this type.
      *
-     * @return the class that this TypeMapping supports, ie AllAssertion.class.  Never null.
+     * @return the class that this Pre32TypeMapping supports, ie AllAssertion.class.  Never null.
      */
     Class getMappedClass();
 
@@ -39,19 +39,18 @@ interface TypeMapping {
      * If object has a null name field, then "Anonymous" format will be used for the returned Element:
      * the object may not be null, and the returned element will look like <code>&lt;Type&gt;...&lt;/Type&gt;</code>
      *
-     * @param wspWriter the {@link WspWriter} context that is doing the serializing
      * @param object    the object to serialize
      * @param container the container to receive it
      * @return the newly created Element, which has also been appended underneath container
      */
-    Element freeze(WspWriter wspWriter, TypedReference object, Element container);
+    Element freeze(Pre32TypedReference object, Element container);
 
     /**
-     * De-serialize the specified XML element into an Object and return a TypedReference the new Object.
-     * The returned TypedReference will have a name if one is known.
+     * De-serialize the specified XML element into an Object and return a Pre32TypedReference the new Object.
+     * The returned Pre32TypedReference will have a name if one is known.
      *
      * @param source
      * @return
      */
-    TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException;
+    Pre32TypedReference thaw(Element source, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException;
 }

@@ -18,7 +18,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
         super(clazz, externalName);
     }
 
-    public Element freeze(TypedReference object, Element container) {
+    public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         // Before delegating to generic Bean serialize, check if there's a serializer
         // specific to this concrete type.
         if (object.target != null) {
@@ -26,14 +26,14 @@ class ObjectTypeMapping extends BasicTypeMapping {
             if (c != Object.class) {
                 TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(c);
                 if (tm != null)
-                    return tm.freeze(new TypedReference(c, object.target, object.name), container);
+                    return tm.freeze(wspWriter, new TypedReference(c, object.target, object.name), container);
 
                 throw new InvalidPolicyTreeException("Don't know how to safely serialize instance of class " + c);
             }
         }
 
         // The target is either null or a concrete instance of Object (and not some subclass), so this is safe
-        return super.freeze(object, container);
+        return super.freeze(wspWriter, object, container);
     }
 
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {

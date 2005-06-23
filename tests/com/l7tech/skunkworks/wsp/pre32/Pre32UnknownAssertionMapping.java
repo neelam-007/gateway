@@ -3,7 +3,7 @@
  *
  */
 
-package com.l7tech.policy.wsp;
+package com.l7tech.skunkworks.wsp.pre32;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TooManyChildElementsException;
@@ -20,12 +20,12 @@ import java.io.IOException;
  * into a policy, however, first attempts to preserve the original XML if there was any and it consisted
  * of a well-formed XML snippet consisting of a single element.
  */
-class UnknownAssertionMapping extends AssertionMapping {
-    public UnknownAssertionMapping() {
+class Pre32UnknownAssertionMapping extends Pre32AssertionMapping {
+    public Pre32UnknownAssertionMapping() {
         super(new UnknownAssertion(), "UnknownAssertion");
     }
 
-    public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
+    public Element freeze(Pre32TypedReference object, Element container) {
         // First try to preserve the original XML, if there is some and it's a well-formed fragment
         // consisting of a single element.
         UnknownAssertion ua = (UnknownAssertion)object.target;
@@ -46,6 +46,6 @@ class UnknownAssertionMapping extends AssertionMapping {
         } catch (TooManyChildElementsException e) {
             // fall through and just serialized the UA
         }
-        return super.freeze(wspWriter, object, container);
+        return super.freeze(object, container);
     }
 }

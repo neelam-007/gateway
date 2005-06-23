@@ -32,7 +32,7 @@ class MapTypeMapping extends ComplexTypeMapping {
         super(Map.class, "mapValue", mapConstructor);
     }
 
-    protected void populateElement(Element newElement, TypedReference object) {
+    protected void populateElement(WspWriter wspWriter, Element newElement, TypedReference object) {
         Map map = (Map)object.target;
         Set entries = map.entrySet();
         for (Iterator i = entries.iterator(); i.hasNext();) {
@@ -47,9 +47,8 @@ class MapTypeMapping extends ComplexTypeMapping {
             //    throw new InvalidPolicyTreeException("Maps with non-string values are not currently permitted within a policy");
             Element entryElement = newElement.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + "entry");
             newElement.appendChild(entryElement);
-            WspConstants.typeMappingString.freeze(new TypedReference(String.class, key, "key"), entryElement);
-            WspConstants.typeMappingObject.freeze(new TypedReference(value.getClass(), value, "value"), entryElement);
-            //typeMappingString.freeze(new TypedReference(String.class, value, "value"), entryElement);
+            WspConstants.typeMappingString.freeze(wspWriter, new TypedReference(String.class, key, "key"), entryElement);
+            WspConstants.typeMappingObject.freeze(wspWriter, new TypedReference(value.getClass(), value, "value"), entryElement);
         }
     }
 

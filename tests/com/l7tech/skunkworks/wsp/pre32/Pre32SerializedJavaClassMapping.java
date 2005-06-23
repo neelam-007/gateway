@@ -1,4 +1,4 @@
-package com.l7tech.policy.wsp;
+package com.l7tech.skunkworks.wsp.pre32;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.UnknownAssertion;
@@ -17,14 +17,14 @@ import java.util.List;
  * @author emil
  * @version 16-Feb-2004
  */
-class SerializedJavaClassMapping extends BeanTypeMapping {
+class Pre32SerializedJavaClassMapping extends Pre32BeanTypeMapping {
     static final String ELEMENT_NAME = "base64SerializedValue";
 
-    public SerializedJavaClassMapping(Class clazz, String externalName) {
+    public Pre32SerializedJavaClassMapping(Class clazz, String externalName) {
         super(clazz, externalName);
     }
 
-    protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
+    protected void populateElement(Element element, Pre32TypedReference object) {
         if (!(object.target instanceof Serializable)) {
             throw new IllegalArgumentException("target not serializable");
         }
@@ -44,39 +44,39 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
      * out its fields.
      *
      * @param element The element being deserialized
-     * @param value   The simple string value represented by element, if meaningful for this TypeMapping; otherwise "included"
-     * @return A TypedReference to the newly deserialized object
-     * @throws InvalidPolicyStreamException if the element cannot be deserialized
+     * @param value   The simple string value represented by element, if meaningful for this Pre32TypeMapping; otherwise "included"
+     * @return A Pre32TypedReference to the newly deserialized object
+     * @throws Pre32InvalidPolicyStreamException if the element cannot be deserialized
      */
-    protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
+    protected Pre32TypedReference createObject(Element element, String value, Pre32WspVisitor visitor) throws Pre32InvalidPolicyStreamException {
         if (value == null)
-            throw new InvalidPolicyStreamException("Null values not supported");
+            throw new Pre32InvalidPolicyStreamException("Null values not supported");
 
-        List entryElements = TypeMappingUtils.getChildElements(element, ELEMENT_NAME);
+        List entryElements = Pre32TypeMappingUtils.getChildElements(element, ELEMENT_NAME);
         if (entryElements.size() != 1) {
-            throw new InvalidPolicyStreamException("Single child element expected with serialized Java mapping");
+            throw new Pre32InvalidPolicyStreamException("Single child element expected with serialized Java mapping");
         }
         Element valueElement = (Element)entryElements.get(0);
         NodeList nl = valueElement.getChildNodes();
         if (nl.getLength() != 1) {
-            throw new InvalidPolicyStreamException("Single text element expected with " + ELEMENT_NAME);
+            throw new Pre32InvalidPolicyStreamException("Single text element expected with " + ELEMENT_NAME);
         }
         Node node = nl.item(0);
         if (node.getNodeType() != Node.TEXT_NODE) {
-            throw new InvalidPolicyStreamException("Child text element expected with " + ELEMENT_NAME);
+            throw new Pre32InvalidPolicyStreamException("Child text element expected with " + ELEMENT_NAME);
         }
         Text textNode = (Text)node;
         try {
             try {
-                return new TypedReference(clazz, base64ToObject(textNode.getData()), element.getLocalName());
+                return new Pre32TypedReference(clazz, base64ToObject(textNode.getData()), element.getLocalName());
             } catch (ClassNotFoundException e) {
                 UnknownAssertion ua = UnknownAssertion.create(element.getLocalName(),
                                                               XmlUtil.nodeToString(element),
                                                               e);
-                return new TypedReference(UnknownAssertion.class, ua, element.getLocalName());
+                return new Pre32TypedReference(UnknownAssertion.class, ua, element.getLocalName());
             }
         } catch (IOException e) {
-            throw new InvalidPolicyStreamException(e);
+            throw new Pre32InvalidPolicyStreamException(e);
         }
     }
 

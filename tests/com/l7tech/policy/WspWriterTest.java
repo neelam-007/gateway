@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.skunkworks.schemavalidation.Validator;
+import com.l7tech.skunkworks.wsp.pre32.Pre32WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -57,31 +58,7 @@ public class WspWriterTest extends TestCase {
     }
 
     public void testWritePolicy() throws Exception {
-        RequestXpathAssertion rxa = new RequestXpathAssertion();
-        Map foo = new HashMap();
-        foo.put("abc", "http://namespaces.somewhere.com/abc#bletch");
-        foo.put("blee", "http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2");
-        rxa.setXpathExpression(new XpathExpression("//blee:blaz", foo));
-
-        final CustomAssertionHolder custom = new CustomAssertionHolder();
-        custom.setCategory(Category.ACCESS_CONTROL);
-        custom.setCustomAssertion(new TestCustomAssertion(22, "foo bar baz", new HashMap()));
-        Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
-            new AllAssertion(Arrays.asList(new Assertion[]{
-                new TrueAssertion(),
-                new OneOrMoreAssertion(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING)),
-            })),
-            new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
-                new TrueAssertion(),
-                new FalseAssertion(),
-                new HttpRoutingAssertion("http://floomp.boomp.foomp/", "bob&joe", "james;bloo=foo&goo\"poo\"\\sss\\", "", -5),
-                rxa,
-                createSoapWithAttachmentsPolicy(),
-            })),
-            new TrueAssertion(),
-            new FalseAssertion(),
-            custom
-        }));
+        Assertion policy = makeTestPolicy();
 
         log.info("Created policy tree: " + policy);
 
@@ -125,6 +102,35 @@ public class WspWriterTest extends TestCase {
 
         //Assertion tree = WspReader.parse(gotXml);
         //log.info("After parsing: " + tree);
+    }
+
+    private Assertion makeTestPolicy() {
+        RequestXpathAssertion rxa = new RequestXpathAssertion();
+        Map foo = new HashMap();
+        foo.put("abc", "http://namespaces.somewhere.com/abc#bletch");
+        foo.put("blee", "http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2");
+        rxa.setXpathExpression(new XpathExpression("//blee:blaz", foo));
+
+        final CustomAssertionHolder custom = new CustomAssertionHolder();
+        custom.setCategory(Category.ACCESS_CONTROL);
+        custom.setCustomAssertion(new TestCustomAssertion(22, "foo bar baz", new HashMap()));
+        Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
+            new AllAssertion(Arrays.asList(new Assertion[]{
+                new TrueAssertion(),
+                new OneOrMoreAssertion(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING)),
+            })),
+            new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
+                new TrueAssertion(),
+                new FalseAssertion(),
+                new HttpRoutingAssertion("http://floomp.boomp.foomp/", "bob&joe", "james;bloo=foo&goo\"poo\"\\sss\\", "", -5),
+                rxa,
+                createSoapWithAttachmentsPolicy(),
+            })),
+            new TrueAssertion(),
+            new FalseAssertion(),
+            custom
+        }));
+        return policy;
     }
 
     private InputStream getStream(String path) {
@@ -245,6 +251,24 @@ public class WspWriterTest extends TestCase {
         if (!"foo bar baz".equals(tca.getString1()))
             throw new IllegalArgumentException("TestCustomAssertion has invalid string1");
         return tca.getMap1();
+    }
+
+    /** Verify that WspWriter can, when so directed, produce a policy comprehensible to a 3.1 WspReader. */
+    public void testWspWriterCompatibilityMode() throws IOException {
+        // Create our usual complex test policy
+        Assertion policy = makeTestPolicy();
+
+        // Serialize in compatibility mode
+        WspWriter cww = new WspWriter();
+        cww.setPre32Compat(true);
+        cww.setPolicy(policy);
+        String written = cww.getPolicyXmlAsString();
+
+        // Feed it to the old parser
+        Assertion out = Pre32WspReader.parsePermissively(written);
+        log.info("Old policy reader returned the following: " + out);
+        assertNotNull(out);
+        assertEquals(policy.getClass(), out.getClass());
     }
 }
 

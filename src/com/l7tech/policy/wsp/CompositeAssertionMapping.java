@@ -32,7 +32,7 @@ class CompositeAssertionMapping implements TypeMapping {
         makeAssertion(externalName); // consistency check
     }
 
-    protected void populateElement(Element element, TypedReference object) throws InvalidPolicyTreeException {
+    protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) throws InvalidPolicyTreeException {
         // Do not serialize any properties of the CompositeAssertion itself: shouldn't be any, and it'll include kid list
         // NO super.populateElement(element, object);
         CompositeAssertion cass = (CompositeAssertion)object.target;
@@ -46,7 +46,7 @@ class CompositeAssertionMapping implements TypeMapping {
             TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(kidClass);
             if (tm == null)
                 throw new InvalidPolicyTreeException("No TypeMapping found for class " + kidClass);
-            tm.freeze(new TypedReference(kidClass, kid), element);
+            tm.freeze(wspWriter, new TypedReference(kidClass, kid), element);
         }
     }
 
@@ -68,10 +68,15 @@ class CompositeAssertionMapping implements TypeMapping {
 
     public String getExternalName() { return externalName; }
 
-    public Element freeze(TypedReference object, Element container) {
-        Element element = XmlUtil.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
-        element.setAttributeNS(WspConstants.WSP_POLICY_NS, "wsp:Usage", "Required");
-        populateElement(element, object);
+    public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
+        Element element;
+        if (wspWriter.isPre32Compat()) {
+            element = XmlUtil.createAndAppendElementNS(container, externalName, WspConstants.L7_POLICY_NS, "wsp");
+        } else {
+            element = XmlUtil.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
+            element.setAttributeNS(WspConstants.WSP_POLICY_NS, "wsp:Usage", "Required");
+        }
+        populateElement(wspWriter, element, object);
         return element;
     }
 

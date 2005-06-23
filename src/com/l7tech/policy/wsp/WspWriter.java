@@ -8,17 +8,13 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringWriter;
 
 /**
  * Given a policy tree, emit an XML version of it.
- * User: mike
- * Date: Jun 11, 2003
- * Time: 4:06:17 PM
  */
 public class WspWriter {
-    private OutputStream output;
-    Document document;
+    private Document document = null;
+    private boolean pre32Compat = false;
 
     /**
      * Create a skeleton of a policy DOM tree.
@@ -38,11 +34,21 @@ public class WspWriter {
         }
     }
 
-    private WspWriter(OutputStream output) {
-        this.output = output;
-        this.document = createSkeleton();
+    /**
+     * Create a new WspWriter prepared to emit a policy XML in the current (post-3.2, more WS-Policy-compliant) format.
+     */
+    public WspWriter() {
     }
 
+    /**
+     * Convert the specified assertion into a DOM Element using the default serialization format.
+     * This should not be used normally; it is only here for the benefit of the PermissiveWspVisitor, to help
+     * it produce UnknownAssertion elements wrapping fragments of unrecognized XML.
+     *
+     * @param assertion the assertion to convert into an element.
+     * @return
+     * @throws InvalidPolicyTreeException
+     */
     static Element toElement(Assertion assertion) throws InvalidPolicyTreeException {
         if (assertion == null)
             return null;
@@ -52,7 +58,7 @@ public class WspWriter {
             throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
         TypedReference ref = new TypedReference(assertion.getClass(), assertion);
         try {
-            Element policyElement = tm.freeze(ref, dom.getDocumentElement());
+            Element policyElement = tm.freeze(new WspWriter(), ref, dom.getDocumentElement());
             if (policyElement == null)
                 throw new InvalidPolicyTreeException("Assertion did not serialize to an element"); // can't happen
             return policyElement;
@@ -65,51 +71,83 @@ public class WspWriter {
 
     /**
      * Write the policy tree rooted at assertion to the given output stream
-     * as XML.
+     * as XML, using a default WspWriter.
      * @param assertion     the policy tree to write as XML
      * @param output        the OutputStream to send it to
      * @throws IOException  if there was a problem writing to the output stream
      * @throws InvalidPolicyTreeException if there was a problem with the policy being serialized
      */
     public static void writePolicy(Assertion assertion, OutputStream output) throws IOException {
-        WspWriter writer = new WspWriter(output);
+        WspWriter writer = new WspWriter();
+        writer.setPolicy(assertion);
+        writer.writePolicyXmlToOutputStream(output);
+    }
+
+    /**
+     * Set the policy tree that we will be serializing.
+     * @param assertion  the assertion to serialize.  May be null, in which case the appropriate XML will be created to reflect this.
+     * @throws InvalidPolicyTreeException if this policy cannot be serialized.
+     */
+    public void setPolicy(Assertion assertion) {
         try {
+            document = createSkeleton();
             if (assertion != null) {
                 TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(assertion.getClass());
                 if (tm == null)
                     throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
                 TypedReference ref = new TypedReference(assertion.getClass(), assertion);
-                tm.freeze(ref, writer.document.getDocumentElement());
+                tm.freeze(this, ref, document.getDocumentElement());
             }
         } catch (StackOverflowError e) {
             throw new InvalidPolicyTreeException("Policy is too deeply nested to be processed");
         } catch (Exception e) {
             throw new InvalidPolicyTreeException("Unable to serialize this policy tree", e);
         }
-        writer.writeToOutputStream();
     }
 
-    private void writeToOutputStream() throws IOException {
+    /**
+     * Write the current policy out to the specific OutputStream as XML.
+     * @param output the outputstream to which the policy should be writted.  Must not be null.
+     * @throws IOException if there is an IOException writing to the output stream or traversing the DOM Document
+     * @throws IllegalStateException if {@link #setPolicy} has not yet been called
+     */
+    public void writePolicyXmlToOutputStream(OutputStream output) throws IOException {
+        if (document == null) throw new IllegalStateException("No policy has been set yet");
         XmlUtil.nodeToFormattedOutputStream(document, output);
     }
 
     /**
-     * Obtain the XML representation of the given policy tree.
+     * Return the current policy XML as a string.
+     * @return a String containing the policy.  Never null.
+     * @throws IOException if there is an IOException traversing the DOM Document
+     * @throws IllegalStateException if {@link #setPolicy} has not yet been called
+     */
+    public String getPolicyXmlAsString() throws IOException {
+        if (document == null) throw new IllegalStateException("No policy has been set yet");
+        return XmlUtil.nodeToFormattedString(document);
+    }
+
+    /**
+     * Obtain the XML representation of the given policy tree, using the default policy format, and using UTF-8
+     * as the character encoding format.
      * @param assertion     the policy tree to examine
      * @return              a string containing XML
      */
     public static String getPolicyXml(Assertion assertion) {
-        final StringWriter sw = new StringWriter();
-        OutputStream swo = new OutputStream() {
-            public void write(int b) throws IOException {
-                sw.write(b);
-            }
-        };
+        WspWriter writer = new WspWriter();
+        writer.setPolicy(assertion);
         try {
-            writePolicy(assertion, swo);
+            return writer.getPolicyXmlAsString();
         } catch (IOException e) {
-            throw new RuntimeException("Unexpected IOException writing to StringWriter", e); // shouldn't ever happen
+            throw new RuntimeException("Unexpected IOException while serializing policy XML", e); // shouldn't ever happen
         }
-        return sw.toString();
+    }
+
+    public boolean isPre32Compat() {
+        return pre32Compat;
+    }
+
+    public void setPre32Compat(boolean pre32Compat) {
+        this.pre32Compat = pre32Compat;
     }
 }
