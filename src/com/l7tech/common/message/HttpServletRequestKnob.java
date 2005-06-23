@@ -26,7 +26,8 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         Enumeration names = request.getParameterNames();
         Map params = new HashMap();
         while (names.hasMoreElements()) {
-            params.put(names.nextElement(), request.getParameterValues((String)request.getParameterNames().nextElement()));
+            String name = (String) names.nextElement();
+            params.put(name, request.getParameterValues(name));
         }
         this.paramMap = Collections.unmodifiableMap(params);
         this.request = request;
