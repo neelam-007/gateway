@@ -174,13 +174,7 @@ public class SamlAssertionValidate {
                     return;
                 }
             } else {
-                if (credentials == null || credentials.getClientCert() == null) {
-                    Error result = new Error("No SSL Client Certificate Proof Of Posession found", soapMessageDoc, null, null);
-                    validationResults.add(result);
-                    logger.finer(result.toString());
-                    return;
-                }
-                X509Certificate sslCert = credentials.getClientCert();
+                X509Certificate sslCert = credentials == null ? null : credentials.getClientCert();
                 if (assertion.isHolderOfKey()) {
                     X509Certificate subjectCertificate = assertion.getSubjectCertificate();
                     if (subjectCertificate == null) {
@@ -189,7 +183,7 @@ public class SamlAssertionValidate {
                         logger.finer(result.toString());
                         return;
                     }
-                    if (!sslCert.equals(subjectCertificate)) {
+                    if (!subjectCertificate.equals(sslCert)) {
                         Error result = new Error("SSL Certificate and Holder-Of-Key Subject Certificate mismatch", soapMessageDoc, null, null);
                         validationResults.add(result);
                         logger.finer(result.toString());
