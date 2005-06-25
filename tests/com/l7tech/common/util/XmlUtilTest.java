@@ -10,6 +10,7 @@ import org.w3c.dom.Element;
 
 import javax.xml.soap.SOAPConstants;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -207,10 +208,25 @@ public class XmlUtilTest extends TestCase {
         }
     }
 
+    public void testGetNamespaceMap() throws Exception {
+        Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
+        Element header = XmlUtil.findFirstChildElement(d.getDocumentElement());
+        assertNotNull(header);
+        Element sec2 = XmlUtil.findFirstChildElementByName(header, "http://schemas.xmlsoap.org/ws/2002/12/secext", "Security");
+        assertNotNull(sec2);
+        Element t = XmlUtil.findFirstChildElement(sec2);
+        assertNotNull(t);
+        Map nsmap = XmlUtil.getNamespaceMap(t);
+        assertEquals(nsmap.size(), 3);
+        assertTrue(nsmap.containsKey("s"));
+        assertTrue(nsmap.containsValue("urn:testblah"));
+        assertEquals(nsmap.get("sec2"), "http://schemas.xmlsoap.org/ws/2002/12/secext");
+    }
+
     public static final String DOC_WITH_SEC_HEADERS = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                                                   "    <s:Header>\n" +
                                                   "        <sec1:Security xmlns:sec1=\"http://schemas.xmlsoap.org/ws/2002/xx/secext\"/>\n" +
-                                                  "        <sec2:Security xmlns:sec2=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"/>\n" +
+                                                  "        <sec2:Security xmlns:sec2=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"><t:testEl xmlns:t=\"urn:testblah\"/></sec2:Security>\n" +
                                                   "        <sec3:Security xmlns:sec3=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"/>\n" +
                                                   "        <sec4:Security xmlns:sec4=\"http://docs.oasis-open.org/asdfhalsfhasldkhf\"/>\n" +
                                                   "    </s:Header>\n" +

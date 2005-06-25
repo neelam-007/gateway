@@ -722,4 +722,34 @@ public class XmlUtil {
     static {
         dbfAllowingDoctype.setNamespaceAware(true);
     }
+
+    /**
+     * Get the map of all namespace declrations in scope for the current element.  If there is a default
+     * namespace in scope, it will have the empty string "" as its key.
+     *
+     * @param element the element whose in-scope namespace declrations will be extracted.  Must not be null.
+     * @return The map of namespace declarations in scope for this elements immediate children.
+     */
+    public static Map getNamespaceMap(Element element) {
+        Map nsmap = new HashMap();
+
+        while (element != null) {
+            NamedNodeMap attrs = element.getAttributes();
+            int numAttr = attrs.getLength();
+            for (int i = 0; i < numAttr; ++i) {
+                Attr attr = (Attr)attrs.item(i);
+                if ("xmlns".equals(attr.getName()))
+                    nsmap.put("", attr.getValue()); // new default namespace
+                else if ("xmlns".equals(attr.getPrefix())) // new namespace decl for prefix
+                    nsmap.put(attr.getLocalName(), attr.getValue());
+            }
+
+            if (element == element.getOwnerDocument().getDocumentElement())
+                break;
+
+            element = (Element)element.getParentNode();
+        }
+
+        return nsmap;
+    }
 }
