@@ -24,13 +24,17 @@
                 <TrueAssertion/>
                 <MemberOfGroup/>
                 <SpecificUser/>
-                <RequestWssX509Cert/>
+                <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                    <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#X509v3</wsse:TokenType>
+                </wsse:SecurityToken>
                 <SecureConversation/>
                 <RequestWssIntegrity/>
                 <RequestWssConfidentiality/>
                 <ResponseWssIntegrity/>
                 <ResponseWssConfidentiality/>
-                <RequestXpathAssertion/>
+                <wsp:MessagePredicate
+                    Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+                    wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
                 <ResponseXpathAssertion/>
                 <RequestWssReplayProtection/>
                 <RequestSwAAssertion/>
@@ -60,21 +64,10 @@
                 <Realm stringValue=""/>
                 <MaxConnections intValue="-5"/>
             </HttpRoutingAssertion>
-            <RequestXpathAssertion>
-                <XpathExpression xpathExpressionValue="included">
-                    <Expression stringValue="//blee:blaz"/>
-                    <Namespaces mapValue="included">
-                        <entry>
-                            <key stringValue="blee"/>
-                            <value stringValue="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2"/>
-                        </entry>
-                        <entry>
-                            <key stringValue="abc"/>
-                            <value stringValue="http://namespaces.somewhere.com/abc#bletch"/>
-                        </entry>
-                    </Namespaces>
-                </XpathExpression>
-            </RequestXpathAssertion>
+            <wsp:MessagePredicate
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+                wsp:Usage="wsp:Required"
+                xmlns:abc="http://namespaces.somewhere.com/abc#bletch" xmlns:blee="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2">//blee:blaz</wsp:MessagePredicate>
             <wsp:All wsp:Usage="Required">
                 <RequestSwAAssertion>
                     <Bindings mapValue="included">

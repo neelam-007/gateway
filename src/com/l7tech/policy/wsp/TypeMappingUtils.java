@@ -154,6 +154,10 @@ class TypeMappingUtils {
      *         if no type name was found and hence the attribute should be assumed to be an anonymous reference.
      */
     static String findTypeName(Element source) throws InvalidPolicyStreamException {
+        // Only L7 elements can be named references
+        if (!WspConstants.L7_POLICY_NAMESPACE_LIST.contains(source.getNamespaceURI()))
+            return source.getLocalName();
+
         NamedNodeMap attrs = source.getAttributes();
         int numAttr = attrs.getLength();
         String foundTypeName = null;

@@ -48,6 +48,11 @@ public class WspConstants {
     };
     public static final List POLICY_NAMESPACE_LIST = Arrays.asList(POLICY_NAMESPACES);
 
+    public static final String[] L7_POLICY_NAMESPACES = {
+        L7_POLICY_NS,
+    };
+    public static final List L7_POLICY_NAMESPACE_LIST = Arrays.asList(L7_POLICY_NAMESPACES);
+
     static boolean isRecognizedPolicyNsUri(String nsUri) {
         for (int i = 0; i < POLICY_NAMESPACES.length; i++) {
             String policyNamespace = POLICY_NAMESPACES[i];
@@ -148,11 +153,13 @@ public class WspConstants {
         new AssertionMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"),
         new AssertionMapping(new ResponseWssIntegrity(), "ResponseWssIntegrity"),
         new AssertionMapping(new ResponseWssConfidentiality(), "ResponseWssConfidentiality"),
+        new WssX509Mapping(new RequestWssX509Cert(), "SecurityToken"),
         new AssertionMapping(new RequestWssX509Cert(), "RequestWssX509Cert"),
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),
         new AssertionMapping(new SecureConversation(), "SecureConversation"),
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new RequestWssSaml(), "RequestWssSaml"),
+        new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") {
             // Compatibility with old 2.1 instances of this assertion
             protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
