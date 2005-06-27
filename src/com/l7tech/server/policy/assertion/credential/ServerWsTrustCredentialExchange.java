@@ -153,19 +153,18 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
             Document rstrDoc = response.getDocument();
             Object rstrObj = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
 
+            Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
             if (originalTokenElement == null) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_ORIGINAL_TOKEN_NOT_XML);
-                return AssertionStatus.NONE;
-            }
-
-            Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
-            Node securityEl = originalTokenElement.getParentNode();
-            securityEl.removeChild(originalTokenElement);
-            // Check for empty Security header, remove
-            // TODO make this optional?
-            // TODO what if Security header isn't empty?
-            if (securityEl.getFirstChild() == null) {
-                securityEl.getParentNode().removeChild(securityEl);
+            } else {
+                Node securityEl = originalTokenElement.getParentNode();
+                securityEl.removeChild(originalTokenElement);
+                // Check for empty Security header, remove
+                // TODO make this optional?
+                // TODO what if Security header isn't empty?
+                if (securityEl.getFirstChild() == null) {
+                    securityEl.getParentNode().removeChild(securityEl);
+                }
             }
 
             DecorationRequirements decoReq = new DecorationRequirements();
