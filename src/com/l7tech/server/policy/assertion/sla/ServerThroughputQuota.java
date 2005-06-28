@@ -110,9 +110,10 @@ public class ServerThroughputQuota implements ServerAssertion {
             CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
             counter.decrement(counterid);
             logger.fine("counter decremented " + counterid);
+            forgetIncrementInThisContext(context); // to prevent double decrement and enable re-increment
         } else {
-            logger.info("assertion was asked to decrement a counter but this same " +
-                        "counter was not incremented in this countext.");
+            logger.info("assertion was asked to decrement a counter but the " +
+                        "counter was not previously recorded as incremented in this countext.");
             // one could argue that this should result in error
         }
         return AssertionStatus.NONE;
@@ -173,5 +174,14 @@ public class ServerThroughputQuota implements ServerAssertion {
             return true;
         }
         return false;
+    }
+
+    private void forgetIncrementInThisContext(PolicyEnforcementContext context) {
+        int res = context.getIncrementedCounters().indexOf(assertion.getCounterName());
+        if (res >= 0) {
+            context.getIncrementedCounters().remove(res);
+        } else {
+            logger.fine("the counter was not already incremented in this context");
+        }
     }
 }
