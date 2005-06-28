@@ -49,6 +49,6 @@ public class XpathCredentialSourceTreeNode extends LeafAssertionTreeNode {
 
     public String getName() {
         return "XPath credentials: login = '" + _assertion.getXpathExpression().getExpression() +
-                       "', password = '" + _assertion.getPasswordExpression().getExpression();
+                       "', password = '" + _assertion.getPasswordExpression().getExpression() + "'";
     }
 }
