@@ -56,7 +56,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         try {
             LoginCredentials pc = context.getCredentials();
             // bugzilla #1884
-            if (pc != null && !pc.getCredentialSourceAssertion().equals(this.getClass())) {
+            if (pc != null && !pc.getCredentialSourceAssertion().equals(_data.getClass())) {
                 pc = null;
             }
             if ( pc == null ) {
