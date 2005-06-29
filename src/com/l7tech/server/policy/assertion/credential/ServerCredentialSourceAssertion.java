@@ -55,6 +55,10 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         final HashMap authParams = new HashMap();
         try {
             LoginCredentials pc = context.getCredentials();
+            // bugzilla #1884
+            if (pc != null && !pc.getCredentialSourceAssertion().equals(this.getClass())) {
+                pc = null;
+            }
             if ( pc == null ) {
                 // No finder has been run yet!
                 pc = findCredentials( context.getRequest(), authParams );
