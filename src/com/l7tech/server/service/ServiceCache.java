@@ -381,14 +381,14 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 // is it already in cache?
                 Integer cacheversion = (Integer)cacheversions.get(dbid);
                 if (cacheversion == null) {
-                    logger.fine("service " + dbid + " to be added to cache.");
+                    logger.info("service " + dbid + " to be added to cache.");
                     updatesAndAdditions.add(dbid);
                 } else {
                     // check actual version
                     Integer dbversion = (Integer)dbversions.get(dbid);
                     if (!dbversion.equals(cacheversion)) {
                         updatesAndAdditions.add(dbid);
-                        logger.fine("service " + dbid + " to be updated in cache because outdated.");
+                        logger.info("service " + dbid + " to be updated in cache because outdated.");
                     }
 
                 }
@@ -398,7 +398,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                 Long cacheid = (Long)i.next();
                 if (dbversions.get(cacheid) == null) {
                     deletions.add(cacheid);
-                    logger.fine("service " + cacheid + " to be deleted from cache because no longer in database.");
+                    logger.info("service " + cacheid + " to be deleted from cache because no longer in database.");
                 }
             }
 

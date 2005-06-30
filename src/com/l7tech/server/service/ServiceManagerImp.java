@@ -309,12 +309,12 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     private void initializeServiceCache() throws ObjectModelException {
-// build the cache if necessary
+        // build the cache if necessary
         try {
             if (serviceCache.size() > 0) {
                 logger.finest("cache already built (?)");
             } else {
-                logger.finest("building service cache");
+                logger.info("building service cache");
                 Collection services = findAll();
                 PublishedService service;
                 for (Iterator i = services.iterator(); i.hasNext();) {
@@ -324,6 +324,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 TarariLoader.compile();
             }
             // make sure the integrity check is running
+            logger.info("initiate service cache version check process");
             serviceCache.initiateIntegrityCheckProcess();
         } catch (InterruptedException e) {
             throw new ObjectModelException("Exception building cache", e);
