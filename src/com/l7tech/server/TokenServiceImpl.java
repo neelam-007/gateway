@@ -3,7 +3,6 @@ package com.l7tech.server;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
-import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
@@ -53,9 +52,9 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Handles WS Trust RequestSecurityToken requests as well as SAML token requests.
@@ -460,6 +459,9 @@ public class TokenServiceImpl implements TokenService {
         return true;
     }
 
+    /** Regexp that recognizes all known SAML token type URIs and qnames. */
+    private final Pattern PSAML = Pattern.compile("[:#]Assertion$|^SAML$");
+
      /**
      * checks if this request is for a saml assertion
      * does not check things like whether the body is signed since this is the
@@ -511,20 +513,10 @@ public class TokenServiceImpl implements TokenService {
             return false;
         }
 
-        // validate <wst:TokenType>saml:Assertion</wst:TokenType>
-        String qname = XmlUtil.getTextValue(tokenTypeEl);
-        Map namespaces = XmlUtil.getAncestorNamespaces(tokenTypeEl);
-        String samlPrefix = (String)namespaces.get(SamlConstants.NS_SAML);
-        int cpos = qname.indexOf(":");
-        if (cpos > 0) {
-            String qprefix = qname.substring(0,cpos);
-            String qlpart = qname.substring(cpos+1);
-            if (qprefix.equals(samlPrefix) && SamlConstants.ELEMENT_ASSERTION.equals(qlpart)) {
-                return true;
-            }
-        }
-
-        logger.warning("TokenType '" + qname + "' is not a valid saml:Assertion QName");
+        final String tokenType = XmlUtil.getTextValue(tokenTypeEl);
+        if (PSAML.matcher(tokenType).find())
+            return true;
+        logger.warning("TokenType '" + tokenType + "' is not recognized as calling for a saml:Assertion");
         return false;
     }
 

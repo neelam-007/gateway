@@ -239,6 +239,7 @@ public class XmlUtil {
      * Generates a Map of the namespace URIs and prefixes of the specified Node and all of its ancestor Elements.
      * <p>
      * URIs that were default namespaces will get a prefix starting with "default".
+     * TODO this needs to be merged with getNamespaceMap()
      * @param n the node from which to gather namespaces
      * @return a Map of namespace URIs to prefixes.
      */
@@ -729,7 +730,7 @@ public class XmlUtil {
     /**
      * Get the map of all namespace declrations in scope for the current element.  If there is a default
      * namespace in scope, it will have the empty string "" as its key.
-     *
+     * TODO this needs to be merged with getAncestorNamespaces()
      * @param element the element whose in-scope namespace declrations will be extracted.  Must not be null.
      * @return The map of namespace declarations in scope for this elements immediate children.
      */
