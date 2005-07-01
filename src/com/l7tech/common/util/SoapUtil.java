@@ -1019,7 +1019,7 @@ public class SoapUtil {
         } else {
             // do normal handling
             String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, wsuNs, "wsu");
-            element.setAttributeNS(wsuNs, wsuPrefix + ":Id", id);
+            element.setAttributeNS(wsuNs, wsuPrefix == null ? "Id" : wsuPrefix + ":Id", id);
         }
     }
 

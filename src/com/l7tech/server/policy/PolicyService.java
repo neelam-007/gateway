@@ -154,10 +154,16 @@ public class PolicyService extends ApplicationObjectSupport {
      */
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
-                                                   PolicyGetter policyGetter) throws FilteringException,
+                                                   PolicyGetter policyGetter,
+                                                   boolean pre32PolicyCompat) throws FilteringException,
       IOException,
-      SAXException {
-        Assertion targetPolicy = policyGetter.getPolicy(policyId).getPolicy();
+      SAXException 
+    {
+        WspWriter wspWriter = new WspWriter();
+        wspWriter.setPre32Compat(pre32PolicyCompat);
+
+        final ServiceInfo gotPolicy = policyGetter.getPolicy(policyId);
+        Assertion targetPolicy = gotPolicy != null ? gotPolicy.getPolicy() : null;
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
             return null;
@@ -169,12 +175,14 @@ public class PolicyService extends ApplicationObjectSupport {
         Assertion filteredAssertion = filterManager.applyAllFilters(preAuthenticatedUser, targetPolicy);
         if (filteredAssertion == null) {
             if (isanonymous) {
-                return XmlUtil.stringToDocument(WspWriter.getPolicyXml(null));
+                wspWriter.setPolicy(null);
+                return XmlUtil.stringToDocument(wspWriter.getPolicyXmlAsString());
             } else {
                 return null;
             }
         }
-        return XmlUtil.stringToDocument(WspWriter.getPolicyXml(filteredAssertion));
+        wspWriter.setPolicy(filteredAssertion);
+        return XmlUtil.stringToDocument(wspWriter.getPolicyXmlAsString());
     }
 
 
@@ -183,7 +191,8 @@ public class PolicyService extends ApplicationObjectSupport {
      */
     public void respondToPolicyDownloadRequest(PolicyEnforcementContext context,
                                                boolean signResponse,
-                                               PolicyGetter policyGetter)
+                                               PolicyGetter policyGetter,
+                                               boolean pre32PolicyCompat)
       throws IOException, SAXException
     {
         final XmlKnob reqXml = context.getRequest().getXmlKnob();
@@ -267,7 +276,7 @@ public class PolicyService extends ApplicationObjectSupport {
         Document policyDoc = null;
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
-                policyDoc = respondToPolicyDownloadRequest(policyId, context.getAuthenticatedUser(), policyGetter);
+                policyDoc = respondToPolicyDownloadRequest(policyId, context.getAuthenticatedUser(), policyGetter, pre32PolicyCompat);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(e));
                 return;

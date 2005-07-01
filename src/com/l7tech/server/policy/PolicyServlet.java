@@ -31,9 +31,9 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.ByteArrayOutputStream;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
@@ -51,7 +51,7 @@ import java.util.logging.Level;
  * soapaction : the soapaction of the PublishedService
  * <br/>
  * Pass the parameters as part of the url as in the samples below
- * http://localhost:8080/ssg/policy/disco.modulator?serviceoid=666
+ * http://localhost:8080/ssg/policy/disco?serviceoid=666
  * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
@@ -60,6 +60,9 @@ import java.util.logging.Level;
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
     private byte[] serverCertificate;
+
+    /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
+    private static final String PRE32_DISCO_URI = "disco.modulator";
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -84,6 +87,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 return;
             }
 
+            boolean pre32PolicyCompat = false;
+            if (servletRequest.getRequestURI().contains(PRE32_DISCO_URI)) {
+                // Emit policies in pre-3.2 compatibility mode
+                pre32PolicyCompat = true;
+            }
+
             // Build a processing context including request and response messages
             //boolean signResponse = !req.isSecure(); // TODO figure out why this is failing to sign when SSL not used
             boolean signResponse = true;
@@ -103,7 +112,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             PolicyService service = null;
             service = getPolicyService();
 
-            service.respondToPolicyDownloadRequest(context, signResponse, normalPolicyGetter());
+            service.respondToPolicyDownloadRequest(context, signResponse, normalPolicyGetter(), pre32PolicyCompat);
 
             Document responseDoc = null;
             try {
@@ -185,6 +194,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             return;
         }
 
+        boolean pre32PolicyCompat = false;
+        if (req.getRequestURI().contains(PRE32_DISCO_URI)) {
+            // Emit policies in pre-3.2 compatibility mode
+            pre32PolicyCompat = true;
+        }
+
         // get credentials and check that they are valid for this policy
         List users;
         try {
@@ -201,10 +216,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             switch (users.size()) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter());
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(), pre32PolicyCompat);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.get(0)), this.normalPolicyGetter());
+                    response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.get(0)), this.normalPolicyGetter(), pre32PolicyCompat);
                     break;
                 default:
                     // todo use the best response (?)

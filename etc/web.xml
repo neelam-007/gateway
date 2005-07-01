@@ -77,7 +77,7 @@
 
         <init-param>
             <param-name>PolicyServletUri</param-name>
-            <param-value>/ssg/policy/disco.modulator?serviceoid=</param-value>
+            <param-value>/ssg/policy/disco?serviceoid=</param-value>
         </init-param>
     </servlet>
 
@@ -158,6 +158,12 @@
         NB: Update the PolicyServletUri <init-param> in the SoapMessageProcessingServlet
         above when you change this <url-pattern>!
         -->
+        <url-pattern>/ssg/policy/disco/*</url-pattern>
+    </servlet-mapping>
+
+    <!-- A PolicyServlet bound to disco.modulator for server cert disco and pre-3.2 SSB policy disco. -->
+    <servlet-mapping>
+        <servlet-name>PolicyServlet</servlet-name>
         <url-pattern>/ssg/policy/disco.modulator/*</url-pattern>
     </servlet-mapping>
 

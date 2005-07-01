@@ -33,23 +33,11 @@ class ComplexTypeMapping extends BasicTypeMapping {
         this.constructor = constructor;
     }
 
-    ComplexTypeMapping(Class clazz, String externalName, String nsUri, String nsPrefix) {
-        super(clazz, externalName, nsUri, nsPrefix);
-        Constructor ctor;
-        try {
-            // Try to find the default constructor
-            ctor = clazz.getConstructor(new Class[0]);
-        } catch (Exception e) {
-            ctor = null;
-        }
-        constructor = ctor;
-    }
-
     protected Element freezeAnonymous(WspWriter wspWriter, TypedReference object, Element container) {
-        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + externalName);
+        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix(wspWriter) + externalName);
         if (object.target == null)
             throw new InvalidPolicyTreeException("Null objects may not be serialized in Anonymous format");
-        populateElement(new WspWriter(), elm, object);
+        populateElement(wspWriter, elm, object);
         return elm;
     }
 

@@ -1,109 +1,117 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<wsp:Policy xmlns="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
     <wsp:ExactlyOne wsp:Usage="Required">
         <wsp:All wsp:Usage="Required">
-            <TrueAssertion/>
+            <L7p:TrueAssertion/>
             <wsp:OneOrMore wsp:Usage="Required">
-                <HttpBasic/>
-                <HttpDigest/>
-                <WssBasic/>
+                <L7p:HttpBasic/>
+                <L7p:HttpDigest/>
+                <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                    <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#UsernameToken</wsse:TokenType>
+                </wsse:SecurityToken>
                 <wsp:All wsp:Usage="Required">
-                    <FalseAssertion/>
+                    <L7p:FalseAssertion/>
                 </wsp:All>
                 <wsp:ExactlyOne wsp:Usage="Required">
-                    <FalseAssertion/>
+                    <L7p:FalseAssertion/>
                 </wsp:ExactlyOne>
                 <wsp:OneOrMore wsp:Usage="Required">
-                    <FalseAssertion/>
+                    <L7p:FalseAssertion/>
                 </wsp:OneOrMore>
-                <FalseAssertion/>
-                <SslAssertion/>
-                <HttpRoutingAssertion/>
-                <BridgeRoutingAssertion/>
-                <JmsRoutingAssertion/>
-                <TrueAssertion/>
-                <MemberOfGroup/>
-                <SpecificUser/>
+                <L7p:FalseAssertion/>
+                <L7p:SslAssertion/>
+                <L7p:HttpRoutingAssertion/>
+                <L7p:BridgeRoutingAssertion/>
+                <L7p:JmsRoutingAssertion/>
+                <L7p:TrueAssertion/>
+                <L7p:MemberOfGroup/>
+                <L7p:SpecificUser/>
                 <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
-                    <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#X509v3</wsse:TokenType>
+                    <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
                 </wsse:SecurityToken>
-                <SecureConversation/>
-                <RequestWssIntegrity/>
-                <RequestWssConfidentiality/>
-                <ResponseWssIntegrity/>
-                <ResponseWssConfidentiality/>
+                <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                    <wsse:TokenType>http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct</wsse:TokenType>
+                </wsse:SecurityToken>
+                <L7p:RequestWssIntegrity/>
+                <L7p:RequestWssConfidentiality/>
+                <L7p:ResponseWssIntegrity/>
+                <L7p:ResponseWssConfidentiality/>
                 <wsp:MessagePredicate
                     Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
                     wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
-                <ResponseXpathAssertion/>
-                <RequestWssReplayProtection/>
-                <RequestSwAAssertion/>
-                <RequestWssSaml>
-                    <SubjectConfirmations stringArrayValue="included"/>
-                    <NameFormats stringArrayValue="included"/>
-                </RequestWssSaml>
-                <AuditAssertion/>
-                <CustomAssertion>
-                    <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgAAeHBwcA==</base64SerializedValue>
-                </CustomAssertion>
-                <WsTrustCredentialExchange/>
-                <Regex/>
-                <UnknownAssertion/>
-                <SnmpTrap/>
-                <ThroughputQuota/>
-                <EmailAlert/>
+                <L7p:ResponseXpathAssertion/>
+                <L7p:RequestWssReplayProtection/>
+                <L7p:RequestSwAAssertion/>
+                <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                    <wsse:TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion</wsse:TokenType>
+                    <L7p:SamlParams>
+                        <L7p:SubjectConfirmations stringArrayValue="included"/>
+                        <L7p:NameFormats stringArrayValue="included"/>
+                    </L7p:SamlParams>
+                </wsse:SecurityToken>
+                <L7p:AuditAssertion/>
+                <L7p:CustomAssertion>
+                    <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgAAeHBwcA==</L7p:base64SerializedValue>
+                </L7p:CustomAssertion>
+                <L7p:WsTrustCredentialExchange/>
+                <L7p:Regex/>
+                <L7p:UnknownAssertion/>
+                <L7p:SnmpTrap/>
+                <L7p:ThroughputQuota/>
+                <L7p:EmailAlert/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">
-            <TrueAssertion/>
-            <FalseAssertion/>
-            <HttpRoutingAssertion>
-                <ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
-                <Login stringValue="bob&amp;joe"/>
-                <Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
-                <Realm stringValue=""/>
-                <MaxConnections intValue="-5"/>
-            </HttpRoutingAssertion>
+            <L7p:TrueAssertion/>
+            <L7p:FalseAssertion/>
+            <L7p:HttpRoutingAssertion>
+                <L7p:ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
+                <L7p:Login stringValue="bob&amp;joe"/>
+                <L7p:Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
+                <L7p:Realm stringValue=""/>
+                <L7p:MaxConnections intValue="-5"/>
+            </L7p:HttpRoutingAssertion>
             <wsp:MessagePredicate
                 Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
                 wsp:Usage="wsp:Required"
                 xmlns:abc="http://namespaces.somewhere.com/abc#bletch" xmlns:blee="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2">//blee:blaz</wsp:MessagePredicate>
             <wsp:All wsp:Usage="Required">
-                <RequestSwAAssertion>
-                    <Bindings mapValue="included">
-                        <entry>
-                            <key stringValue="serviceBinding1"/>
-                            <value wsdlBindingInfo="included">
-                                <BindingName stringValue="serviceBinding1"/>
-                                <BindingOperations mapValue="included">
-                                    <entry>
-                                    <key stringValue="getQuote"/>
-                                    <value wsdlBindingOperationInfo="included">
-                                    <Multipart mapValue="included">
-                                    <entry>
-                                    <key stringValue="portfolioData"/>
-                                    <value wsdlMimePartInfo="included">
-                                    <ContentTypes stringArrayValue="included">
-                                    <item stringValue="application/x-zip-compressed"/>
-                                    </ContentTypes>
-                                    <Name stringValue="portfolioData"/>
-                                    </value>
-                                    </entry>
-                                    </Multipart>
-                                    <Name stringValue="getQuote"/>
-                                    </value>
-                                    </entry>
-                                </BindingOperations>
-                            </value>
-                        </entry>
-                    </Bindings>
-                </RequestSwAAssertion>
+                <L7p:RequestSwAAssertion>
+                    <L7p:Bindings mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="serviceBinding1"/>
+                            <L7p:value wsdlBindingInfo="included">
+                                <L7p:BindingName stringValue="serviceBinding1"/>
+                                <L7p:BindingOperations mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="getQuote"/>
+                                    <L7p:value wsdlBindingOperationInfo="included">
+                                    <L7p:Multipart mapValue="included">
+                                    <L7p:entry>
+                                    <L7p:key stringValue="portfolioData"/>
+                                    <L7p:value wsdlMimePartInfo="included">
+
+                                    <L7p:ContentTypes stringArrayValue="included">
+                                    <L7p:item stringValue="application/x-zip-compressed"/>
+                                    </L7p:ContentTypes>
+                                    <L7p:Name stringValue="portfolioData"/>
+                                    </L7p:value>
+                                    </L7p:entry>
+                                    </L7p:Multipart>
+                                    <L7p:Name stringValue="getQuote"/>
+                                    </L7p:value>
+                                    </L7p:entry>
+                                </L7p:BindingOperations>
+                            </L7p:value>
+                        </L7p:entry>
+                    </L7p:Bindings>
+                </L7p:RequestSwAAssertion>
             </wsp:All>
         </wsp:ExactlyOne>
-        <TrueAssertion/>
-        <FalseAssertion/>
-        <CustomAssertion>
-            <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgAAeHBzcgAoY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLmV4dC5DYXRlZ29yeVqwnGWhRP41AgACSQAFbXlLZXlMAAZteU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZzt4cAAAAAB0AA1BY2Nlc3NDb250cm9sc3IAJWNvbS5sN3RlY2gucG9saWN5LlRlc3RDdXN0b21Bc3NlcnRpb26pNr8K+2gTGAIAA0kABGludDFMAAdTdHJpbmcxcQB+AAZMAARtYXAxdAAPTGphdmEvdXRpbC9NYXA7eHAAAAAWdAALZm9vIGJhciBiYXpzcgARamF2YS51dGlsLkhhc2hNYXAFB9rBwxZg0QMAAkYACmxvYWRGYWN0b3JJAAl0aHJlc2hvbGR4cD9AAAAAAAAMdwgAAAAQAAAAAHg=</base64SerializedValue>
-        </CustomAssertion>
+        <L7p:TrueAssertion/>
+        <L7p:FalseAssertion/>
+        <L7p:CustomAssertion>
+            <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgAAeHBzcgAoY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLmV4dC5DYXRlZ29yeVqwnGWhRP41AgACSQAFbXlLZXlMAAZteU5hbWV0ABJMamF2YS9sYW5nL1N0cmluZzt4cAAAAAB0AA1BY2Nlc3NDb250cm9sc3IAJWNvbS5sN3RlY2gucG9saWN5LlRlc3RDdXN0b21Bc3NlcnRpb26pNr8K+2gTGAIAA0kABGludDFMAAdTdHJpbmcxcQB+AAZMAARtYXAxdAAPTGphdmEvdXRpbC9NYXA7eHAAAAAWdAALZm9vIGJhciBiYXpzcgARamF2YS51dGlsLkhhc2hNYXAFB9rBwxZg0QMAAkYACmxvYWRGYWN0b3JJAAl0aHJlc2hvbGR4cD9AAAAAAAAMdwgAAAAQAAAAAHg=</L7p:base64SerializedValue>
+        </L7p:CustomAssertion>
     </wsp:ExactlyOne>
 </wsp:Policy>

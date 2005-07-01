@@ -16,28 +16,42 @@ public class WspWriter {
     private Document document = null;
     private boolean pre32Compat = false;
 
-    /**
-     * Create a skeleton of a policy DOM tree.
-     *
-     * @return a new Document containing an empty Policy node.
-     */
-    static Document createSkeleton() {
-        try {
-            return XmlUtil.stringToDocument("<wsp:Policy " +
-                                            "xmlns:wsp=\"" + WspConstants.WSP_POLICY_NS + "\" " +
-                                            "xmlns=\"" + WspConstants.L7_POLICY_NS + "\" " +
-                                            "/>");
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (SAXException e) {
-            throw new RuntimeException(e); // can't happen
-        }
+    private static ThreadLocal currentWspWriter = new ThreadLocal();
+    static void setCurrent(WspWriter wspWriter) {
+        currentWspWriter.set(wspWriter);
+    }
+    static WspWriter getCurrent() {
+        WspWriter cur = (WspWriter)currentWspWriter.get();
+        if (cur == null)
+            throw new IllegalStateException("No WspWriter currently defined for this thread");
+        return cur;
     }
 
     /**
      * Create a new WspWriter prepared to emit a policy XML in the current (post-3.2, more WS-Policy-compliant) format.
      */
     public WspWriter() {
+    }
+
+    /**
+     * Create a skeleton of a policy DOM tree.
+     *
+     * @return a new Document containing an empty Policy node.
+     */
+    Document createSkeleton() {
+        try {
+            String l7p = ":L7p";
+            if (isPre32Compat())
+                l7p = "";
+            return XmlUtil.stringToDocument("<wsp:Policy " +
+                                            "xmlns:wsp=\"" + WspConstants.WSP_POLICY_NS + "\" " +
+                                            "xmlns" + l7p + "=\"" + WspConstants.L7_POLICY_NS + "\" " +
+                                            "/>");
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (SAXException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     /**
@@ -49,7 +63,7 @@ public class WspWriter {
      * @return
      * @throws InvalidPolicyTreeException
      */
-    static Element toElement(Assertion assertion) throws InvalidPolicyTreeException {
+    Element toElement(Assertion assertion) throws InvalidPolicyTreeException {
         if (assertion == null)
             return null;
         Document dom = createSkeleton();
@@ -58,7 +72,7 @@ public class WspWriter {
             throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
         TypedReference ref = new TypedReference(assertion.getClass(), assertion);
         try {
-            Element policyElement = tm.freeze(new WspWriter(), ref, dom.getDocumentElement());
+            Element policyElement = tm.freeze(this, ref, dom.getDocumentElement());
             if (policyElement == null)
                 throw new InvalidPolicyTreeException("Assertion did not serialize to an element"); // can't happen
             return policyElement;
@@ -92,6 +106,7 @@ public class WspWriter {
         try {
             document = createSkeleton();
             if (assertion != null) {
+                setCurrent(this);
                 TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(assertion.getClass());
                 if (tm == null)
                     throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
@@ -102,6 +117,8 @@ public class WspWriter {
             throw new InvalidPolicyTreeException("Policy is too deeply nested to be processed");
         } catch (Exception e) {
             throw new InvalidPolicyTreeException("Unable to serialize this policy tree", e);
+        } finally {
+            setCurrent(null);
         }
     }
 

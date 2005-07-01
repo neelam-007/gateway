@@ -70,13 +70,23 @@ public class WspReader {
 
         if (childElements.size() != 1)
             throw new InvalidPolicyStreamException("Policy does not have exactly zero or one immediate child");
-        Object target = TypeMappingUtils.thawElement((Element) childElements.get(0), visitor).target;
-        if (!(target instanceof Assertion))
-            throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
-        Assertion root = (Assertion) target;
-        if (root != null)
-            root.treeChanged();        
-        return root;
+        final WspWriter wspWriter = new WspWriter();
+        if (WspConstants.L7_POLICY_NS.equals(XmlUtil.getNamespaceMap(policyElement).get(""))) {
+            // L7 is default namespace -- we'll treat this as a hint to wrap UnknownAssertions using pre32 format
+            wspWriter.setPre32Compat(true);
+        };
+        WspWriter.setCurrent(wspWriter);
+        try {
+            Object target = TypeMappingUtils.thawElement((Element) childElements.get(0), visitor).target;
+            if (!(target instanceof Assertion))
+                throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
+            Assertion root = (Assertion) target;
+            if (root != null)
+                root.treeChanged();
+            return root;
+        } finally {
+            WspWriter.setCurrent(null);
+        }
     }
 
     static Assertion parse(InputStream wspStream, WspVisitor visitor) throws IOException {
@@ -88,9 +98,17 @@ public class WspReader {
             String rootNs = root.getNamespaceURI();
             if (!WspConstants.isRecognizedPolicyNsUri(rootNs))
                 throw new InvalidPolicyStreamException("Document element is not in a recognized namespace");
+            final WspWriter wspWriter = new WspWriter();
+            if (WspConstants.L7_POLICY_NS.equals(XmlUtil.getNamespaceMap(root).get(""))) {
+                // L7 is default namespace -- we'll treat this as a hint to wrap UnknownAssertions using pre32 format
+                wspWriter.setPre32Compat(true);
+            };
+            WspWriter.setCurrent(wspWriter);
             return parse(root, visitor);
         } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to parse policy", e);
+        } finally {
+            WspWriter.setCurrent(null);
         }
     }
 

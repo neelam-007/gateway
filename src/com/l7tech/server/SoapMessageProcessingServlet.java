@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
-    public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
+    public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
     private WebApplicationContext applicationContext;
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;

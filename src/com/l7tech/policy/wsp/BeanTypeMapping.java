@@ -27,10 +27,6 @@ class BeanTypeMapping extends ComplexTypeMapping {
         super(clazz, externalName);
     }
 
-    public BeanTypeMapping(Class clazz, String externalName, String nsUri, String nsPrefix) {
-        super(clazz, externalName, nsUri, nsPrefix);
-    }
-
     protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
         try {
             emitBeanProperties(wspWriter, object.target, element);

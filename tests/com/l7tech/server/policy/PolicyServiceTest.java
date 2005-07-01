@@ -10,6 +10,7 @@ import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
@@ -25,15 +26,16 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.filter.FilterManager;
-import com.l7tech.server.audit.AuditContextStub;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -42,6 +44,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -119,7 +122,7 @@ public class PolicyServiceTest extends TestCase {
         return context;
     }
 
-    private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context) throws Exception {
+    private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context, boolean pre32PolicyCompat) throws Exception {
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
                                              TestDocuments.getDotNetServerCertificate(),
                                              (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
@@ -140,7 +143,7 @@ public class PolicyServiceTest extends TestCase {
             }
         };
 
-        ps.respondToPolicyDownloadRequest(context, true, policyGetter);
+        ps.respondToPolicyDownloadRequest(context, true, policyGetter, pre32PolicyCompat);
         Document response = context.getResponse().getXmlKnob().getDocumentReadOnly();
         assertNotNull(response);
         log.info("Response (pretty-printed):" + XmlUtil.nodeToFormattedString(response));
@@ -150,7 +153,7 @@ public class PolicyServiceTest extends TestCase {
     private void testPolicy(final Assertion policyToTest, LoginCredentials loginCredentials) throws Exception {
         final PolicyEnforcementContext context = getPolicyRequestContext(loginCredentials);
         Message request = context.getRequest();
-        Document response = getPolicyResponse(policyToTest, context);
+        Document response = getPolicyResponse(policyToTest, context, false);
         Policy policy = parsePolicyResponse(request.getXmlKnob().getDocumentReadOnly(), response);
         log.info("Returned policy version: " + policy.getVersion());
         log.info("Returned policy: " + policy.getAssertion());
@@ -187,6 +190,21 @@ public class PolicyServiceTest extends TestCase {
 
     public void testSimplePolicyService() throws Exception {
         testPolicy(new TrueAssertion(), null);
+    }
+
+    /** Make sure pre-3.2 policy compatibility mode works. */
+    public void testPre32PolicyCompat() throws Exception {
+        final PolicyEnforcementContext context = getPolicyRequestContext(null);
+        Message request = context.getRequest();
+        Document response = getPolicyResponse(new WssBasic(), context, true);
+        Element payload = SoapUtil.getPayloadElement(response);
+        Element policyEl = XmlUtil.findFirstChildElement(payload);
+        assertEquals(policyEl.getLocalName(), "Policy");
+        Element kid = XmlUtil.findFirstChildElement(policyEl);
+        assertEquals(kid.getLocalName(), "WssBasic");
+        Policy policy = parsePolicyResponse(request.getXmlKnob().getDocumentReadOnly(), response);
+        log.info("Returned policy version: " + policy.getVersion());
+        log.info("Returned policy: " + policy.getAssertion());
     }
 
     public void testWithIdentities() throws Exception {
@@ -300,7 +318,7 @@ public class PolicyServiceTest extends TestCase {
 
     public void testReplayedPolicyResponse() throws Exception {
         final PolicyEnforcementContext context = getPolicyRequestContext(null);
-        Document firstResponse = getPolicyResponse(new TrueAssertion(), context);
+        Document firstResponse = getPolicyResponse(new TrueAssertion(), context, false);
         Policy firstPolicy = parsePolicyResponse(context.getRequest().getXmlKnob().getDocumentReadOnly(), firstResponse);
         assertNotNull(firstPolicy);
 

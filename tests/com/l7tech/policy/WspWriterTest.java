@@ -179,8 +179,9 @@ public class WspWriterTest extends TestCase {
         }));
 
         String got = WspWriter.getPolicyXml(aa);
+        log.info("Got result: " + got);
         Document doc = XmlUtil.stringToDocument(got);
-        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("UnknownAssertion"));
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getLocalName().equals("UnknownAssertion"));
         log.info("Serialized: " + got);
     }
 
@@ -194,7 +195,7 @@ public class WspWriterTest extends TestCase {
 
         String got = WspWriter.getPolicyXml(aa);
         Document doc = XmlUtil.stringToDocument(got);
-        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("UnknownAssertion"));
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getLocalName().equals("UnknownAssertion"));
         log.info("Serialized: " + got);
     }
 
@@ -208,7 +209,7 @@ public class WspWriterTest extends TestCase {
 
         String got = WspWriter.getPolicyXml(aa);
         Document doc = XmlUtil.stringToDocument(got);
-        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("UnknownAssertion"));
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getLocalName().equals("UnknownAssertion"));
         log.info("Serialized: " + got);
     }
 
@@ -263,6 +264,8 @@ public class WspWriterTest extends TestCase {
         cww.setPre32Compat(true);
         cww.setPolicy(policy);
         String written = cww.getPolicyXmlAsString();
+
+        log.info("Produced compatibility policy: " + written);
 
         // Feed it to the old parser
         Assertion out = Pre32WspReader.parsePermissively(written);

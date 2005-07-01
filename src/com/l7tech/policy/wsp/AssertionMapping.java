@@ -11,15 +11,11 @@ import com.l7tech.policy.assertion.Assertion;
  * Superclass for TypeMappings that know how to serialize policy assertions into a policy XML document.
  */
 class AssertionMapping extends BeanTypeMapping {
-    Assertion source;
-
     AssertionMapping(Assertion a, String externalName) {
         super(a.getClass(), externalName);
-        this.source = a;
     }
 
-    public AssertionMapping(Assertion a, String externalName, String nsUri, String nsPrefix) {
-        super(a.getClass(), externalName, nsUri, nsPrefix);
-        this.source = a;
+    AssertionMapping(Class c, String externalName) {
+        super(c, externalName);
     }
 }

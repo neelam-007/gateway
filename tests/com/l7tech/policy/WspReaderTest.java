@@ -51,6 +51,7 @@ public class WspReaderTest extends TestCase {
 
         // Do a round trip policyA -> xmlA -> policyB -> xmlB and verify that both XMLs match
         String xmlA = WspWriter.getPolicyXml(policy);
+        log.info("Parsing policy: " + xmlA);
         Assertion policyB = WspReader.parseStrictly(xmlA);
         String xmlB = WspWriter.getPolicyXml(policyB);
         assertEquals(xmlA, xmlB);

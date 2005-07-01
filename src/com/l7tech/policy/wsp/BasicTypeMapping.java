@@ -20,12 +20,12 @@ class BasicTypeMapping implements TypeMapping {
     protected final String nsPrefix;
     protected final String nsUri;
 
-    BasicTypeMapping(Class clazz, String externalName, String nsUri, String prefix) {
+    BasicTypeMapping(Class clazz, String externalName) {
         this.clazz = clazz;
         this.externalName = externalName;
         this.isNullable = TypeMappingUtils.isNullableType(clazz);
-        this.nsUri = nsUri;
-        this.nsPrefix = prefix;
+        this.nsUri = WspConstants.L7_POLICY_NS;
+        this.nsPrefix = "L7p:";
         Constructor stringCons;
         try {
             stringCons = clazz.getConstructor(new Class[]{String.class});
@@ -33,10 +33,6 @@ class BasicTypeMapping implements TypeMapping {
             stringCons = null;
         }
         this.stringConstructor = stringCons;
-    }
-
-    BasicTypeMapping(Class clazz, String externalName) {
-        this(clazz, externalName, WspConstants.L7_POLICY_NS, ""); // Default ot default NS with no NS prefix
     }
 
     public Class getMappedClass() { return clazz; }
@@ -66,7 +62,7 @@ class BasicTypeMapping implements TypeMapping {
      * Return the new element, without appending it to the container yet.
      */
     protected Element freezeNamed(WspWriter wspWriter, TypedReference object, Element container) {
-        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + object.name);
+        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix(wspWriter) + object.name);
         if (object.target == null) {
             if (!isNullable)  // sanity check
                 throw new InvalidPolicyTreeException("Assertion has property \"" + object.name + "\" which mustn't be null yet is");
@@ -74,7 +70,7 @@ class BasicTypeMapping implements TypeMapping {
         } else {
             String stringValue = objectToString(object.target);
             elm.setAttribute(externalName, stringValue);
-            populateElement(new WspWriter(), elm, object); // hook for more complex types
+            populateElement(wspWriter, elm, object); // hook for more complex types
         }
         return elm;
     }
@@ -86,6 +82,10 @@ class BasicTypeMapping implements TypeMapping {
      */
     protected String getNsPrefix() {
         return nsPrefix;
+    }
+
+    protected String getNsPrefix(WspWriter wspWriter) {
+        return wspWriter.isPre32Compat() && WspConstants.L7_POLICY_NS.equals(getNsUri()) ? "" : getNsPrefix();
     }
 
     /** @return the namespace URI to use for serialized elements created by this type mapping, ie WspConstants.L7_POLICY_NS_31. */

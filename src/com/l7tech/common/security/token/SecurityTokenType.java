@@ -47,13 +47,13 @@ public class SecurityTokenType implements Serializable {
 
     // TODO look up proper token type URIs for RequestSecurityToken messages
     public static final SecurityTokenType SAML_ASSERTION =
-            new SecurityTokenType(n++, "SAML Assertion", "saml:Assertion", SAML_NS, SAML_ELEMENT, SamlSecurityToken.class);
+            new SecurityTokenType(n++, "SAML Assertion", SecurityTokenType.SAML_NS + "#Assertion", SAML_NS, SAML_ELEMENT, SamlSecurityToken.class);
     public static final SecurityTokenType WSSC_CONTEXT =
             new SecurityTokenType(n++, "WS-SC SecurityContextToken", SECURECONVESATIONTOKEN_URI, SoapUtil.WSSC_NAMESPACE, SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME, SecurityContextToken.class);
     public static final SecurityTokenType WSSC_DERIVED_KEY =
             new SecurityTokenType(n++, "WS-SC DerivedKeyToken", null, SoapUtil.WSSC_NAMESPACE, SoapUtil.WSSC_DK_EL_NAME, DerivedKeyToken.class);
     public static final SecurityTokenType USERNAME =
-            new SecurityTokenType(n++, "WS-S UsernameToken", null, SoapUtil.SECURITY_NAMESPACE, "UsernameToken", UsernameToken.class); // TODO look up proper token type URI
+            new SecurityTokenType(n++, "WS-S UsernameToken", SoapUtil.SECURITY_NAMESPACE + "#UsernameToken", SoapUtil.SECURITY_NAMESPACE, "UsernameToken", UsernameToken.class);
     public static final SecurityTokenType X509 =
             new SecurityTokenType(n++, "WS-S X.509 BinarySecurityToken", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3", SoapUtil.SECURITY_NAMESPACE, "BinarySecurityToken", X509SecurityToken.class);// TODO look up proper token type URI
 

@@ -463,6 +463,7 @@ public class XmlUtil {
 
     /**
      * Gets the child text node value for an element.
+     * @return a String consisting of all text nodes trimmed and glued together.  May be empty but never null.
      */
     public static String getTextValue(Element node) {
         StringBuffer output = new StringBuffer();
@@ -566,17 +567,19 @@ public class XmlUtil {
      * @param element
      * @param namespace
      * @param desiredPrefix
-     * @return
+     * @return the prefix to use for this namespace.  May be null if it's the default prefix, but never empty.
      */
     public static String getOrCreatePrefixForNamespace(Element element, String namespace, String desiredPrefix) {
         String existingPrefix = findActivePrefixForNamespace(element, namespace);
         if (existingPrefix != null)
             return existingPrefix;
         String prefix = findUnusedNamespacePrefix(element, desiredPrefix);
-        Attr decl = element.getOwnerDocument().createAttributeNS(XMLNS_NS, "xmlns:" + prefix);
-        decl.setValue(namespace);
-        element.setAttributeNodeNS(decl);
-        return prefix;
+        if (prefix != null && prefix.length() > 0) {
+            Attr decl = element.getOwnerDocument().createAttributeNS(XMLNS_NS, "xmlns:" + prefix);
+            decl.setValue(namespace);
+            element.setAttributeNodeNS(decl);
+        }
+        return prefix == null || prefix.length() < 1 ? null : prefix;
     }
     
     /**

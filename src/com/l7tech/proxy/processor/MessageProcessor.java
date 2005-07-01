@@ -79,6 +79,7 @@ public class MessageProcessor {
     public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
     private static Pattern findServiceid = Pattern.compile("^.*\\&?serviceoid=(.+?)(\\&.*|)", Pattern.DOTALL);
+    private static Pattern findPolicyServiceFile = Pattern.compile("(/[^?#]*)");
 
     private static final int MAX_TRIES = 8;
     private WssProcessor wssProcessor = new WssProcessorImpl();
@@ -678,6 +679,9 @@ public class MessageProcessor {
                 String serviceid = null;
                 try {
                     URL policyUrl = new URL(policyUrlStr);
+                    Matcher psfm = findPolicyServiceFile.matcher(policyUrl.getFile());
+                    if (psfm.find())
+                        ssg.getRuntime().setPolicyServiceFile(psfm.group(1));
                     // force the policy URL to point at the SSG hostname the user typed
                     policyUrl = new URL(policyUrl.getProtocol(), ssg.getSsgAddress(), policyUrl.getPort(), policyUrl.getFile());
                     String query = policyUrl.getQuery();

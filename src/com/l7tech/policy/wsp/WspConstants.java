@@ -5,6 +5,7 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
@@ -34,7 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Contains the registry of types we can serialize to a policy.
+ * Contains the registry of types we can freeze to a policy.
  */
 public class WspConstants {
     public static final String WSP_POLICY_NS = SoapUtil.WSP_NAMESPACE;
@@ -63,13 +64,13 @@ public class WspConstants {
     }
 
     static String[] ignoreAssertionProperties = {
-        "Parent", // Parent links will be reconstructed when tree is deserialized
+        "Parent", // Parent links will be reconstructed when tree is thawed
         "Copy", // getCopy() is a utility method of Assertion; not a property
         "Class", // getClass() is a method of Object; not a property
         "Instance", // getInstance() is used by singleton assertions; not a property
         "Path", // getPath() is a utility method of Assertion; not a property
         "AssertionWithOrdinal", // getAssertionWithOrdinal() is a utility lookup method of Assertion; not a property
-        "Ordinal", // ordinal is transient and is recomputed when policy is deserialized
+        "Ordinal", // ordinal is transient and is recomputed when policy is thawed
         "CredentialSource", // computed by an assertion to signal that is a credential source
         "RequireProofOfPosession", // computed by an saml assertion to indicate that the proof of posesions has been required
     };
@@ -80,7 +81,7 @@ public class WspConstants {
     /**
      * This is our master list of supported type mappings.
      */
-    static TypeMapping[] typeMappings = new TypeMapping[]{
+    final static TypeMapping[] typeMappings = new TypeMapping[]{
         // Generic mapper, will look up the real type
         typeMappingObject,
 
@@ -136,10 +137,29 @@ public class WspConstants {
         new CompositeAssertionMapping(new AllAssertion(), "All"),
         new CompositeAssertionMapping(new ExactlyOneAssertion(), "ExactlyOne"),
 
+        // Standard WS-Policy vocabulary
+        new SecurityTokenTypeMapping(), // freeze SecurityTokenType object to wsse:TokenType element; thaw wsse:TokenType element
+        new SecurityTokenAssertionMapping(), // freeze nothing; thaw all wssu:SecurityToken elements
+
+        // Leaf assertions expressible using standard WS-Policy vocabulary
+        new SecurityTokenAssertionMapping(new WssBasic(), "WssBasic",
+                                          SecurityTokenType.USERNAME), // freeze WssBasic as SecurityToken or pre32 form; thaw pre32 form
+        new SecurityTokenAssertionMapping(new RequestWssX509Cert(), "RequestWssX509Cert",
+                                          SecurityTokenType.X509), // freeze RequestWssX509Cert as SecurityToken or pre32 form; thaw pre32 form
+        new SecurityTokenAssertionMapping(new SecureConversation(), "SecureConversation",
+                                          SecurityTokenType.WSSC_CONTEXT), // freeze SecureConversation as SecurityToken or pre32 form; thaw pre32 form
+        new SamlSecurityTokenAssertionMapping(), // freeze RequestWssSaml as SecurityToken or pre32 form; thaw pre32 form
+        new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate", "RequestXpathAssertion"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
+        new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
+            // Compatibility with old 2.1 instances of this assertion
+            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
+            }
+        },
+
         // Leaf assertions
         new AssertionMapping(new HttpBasic(), "HttpBasic"),
         new AssertionMapping(new HttpDigest(), "HttpDigest"),
-        new AssertionMapping(new WssBasic(), "WssBasic"),
         new AssertionMapping(new FalseAssertion(), "FalseAssertion"),
         new AssertionMapping(new SslAssertion(), "SslAssertion"),
         new AssertionMapping(new JmsRoutingAssertion(), "JmsRoutingAssertion"),
@@ -153,19 +173,8 @@ public class WspConstants {
         new AssertionMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"),
         new AssertionMapping(new ResponseWssIntegrity(), "ResponseWssIntegrity"),
         new AssertionMapping(new ResponseWssConfidentiality(), "ResponseWssConfidentiality"),
-        new WssX509Mapping(new RequestWssX509Cert(), "SecurityToken"),
-        new AssertionMapping(new RequestWssX509Cert(), "RequestWssX509Cert"),
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),
-        new AssertionMapping(new SecureConversation(), "SecureConversation"),
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
-        new AssertionMapping(new RequestWssSaml(), "RequestWssSaml"),
-        new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate"),
-        new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") {
-            // Compatibility with old 2.1 instances of this assertion
-            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-                super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
-            }
-        },
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
         new AssertionMapping(new XslTransformation(), "XslTransformation"),

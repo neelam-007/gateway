@@ -13,6 +13,7 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -71,6 +72,7 @@ public class SsgRuntime {
     private SimpleHttpClient simpleHttpClient = null;
     private CredentialManager credentialManager = Managers.getCredentialManager();
     private SsgKeyStoreManager ssgKeyStoreManager;
+    private String policyServiceFile = SecureSpanConstants.POLICY_SERVICE_FILE;
 
     private DateTranslator fromSsgDateTranslator = new DateTranslator() {
         public Date translate(Date source) {
@@ -638,6 +640,31 @@ public class SsgRuntime {
      */
     public void setHttpClient(SimpleHttpClient httpClient) {
         simpleHttpClient = httpClient;
+    }
+
+    /**
+     * @param policyServiceFile the new policy service file for this SSG, ie "/ssg/policy/disco".
+     */
+    public void setPolicyServiceFile(String policyServiceFile) {
+        if (policyServiceFile == null) throw new NullPointerException();
+        this.policyServiceFile = policyServiceFile;
+    }
+
+    /**
+     * @return the policy service file for this SSG, either "/ssg/policy/disco" or "/ssg/policy/disco.modulator"
+     *         if this SSG has been reported to be pre-3.2.
+     */
+    public String getPolicyServiceFile() {
+        return policyServiceFile;
+    }
+
+    /**
+     * Report a sighting of a Policy-URL: header sent by this SSG.  It can be used to determine whether the
+     * SSG will expect a pre-3.2 disco.modulator.
+     * @param policyUrl
+     */
+    public void reportPolicyUrl(String policyUrl) {
+
     }
 
     // Hack to allow lazy initialization of SSL stuff

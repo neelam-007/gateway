@@ -21,18 +21,16 @@ import java.util.Map;
  */
 public class MessagePredicateMapping extends AssertionMapping {
     private static final String DIALECT_XPATH = "http://www.w3.org/TR/1999/REC-xpath-19991116";
+    private final AssertionMapping oldMapper;
 
-    MessagePredicateMapping(Assertion a, String externalName) {
+    MessagePredicateMapping(Assertion a, String externalName, String oldExternalName) {
         super(a, externalName);
-    }
-
-    public MessagePredicateMapping(Assertion a, String externalName, String nsUri, String nsPrefix) {
-        super(a, externalName, nsUri, nsPrefix);
+        this.oldMapper = new AssertionMapping(a, oldExternalName);
     }
 
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         if (wspWriter.isPre32Compat())
-            return super.freeze(wspWriter, object, container);
+            return oldMapper.freeze(wspWriter, object, container);
 
         // Build a wsp:MessagePredicate
 
@@ -47,6 +45,9 @@ public class MessagePredicateMapping extends AssertionMapping {
         while (nsMap.keySet().contains(wspPfx) && !wspUri.equals(nsMap.get(wspPfx)))
             wspPfx = "wsp" + i++;
 
+        // Find the namespace declarations already in scope
+        Map nsAlready = XmlUtil.getNamespaceMap(container);
+
         // Create the MessagePredicate element
         // TODO: There is no way to prevent some "extra" decls from being in scope (ie, wsp: and l7p:)
         //       Extra decls change the meaning of the xpath.  This is bad!  For now we will ignore the problem
@@ -54,17 +55,30 @@ public class MessagePredicateMapping extends AssertionMapping {
         Element messagePredicate = XmlUtil.createAndAppendElementNS(container, "MessagePredicate", wspUri, wspPfx);
         messagePredicate.setAttributeNS(wspUri, wspPfx + ":" + "Usage", wspPfx + ":Required");
         messagePredicate.setAttribute("Dialect", DIALECT_XPATH);
-        addNsDeclsToElement(messagePredicate, nsMap);
+        addNsDeclsToElement(messagePredicate, nsMap, nsAlready);
         messagePredicate.appendChild(XmlUtil.createTextNode(messagePredicate, ass.getXpathExpression().getExpression()));
         return messagePredicate;
     }
 
-    private void addNsDeclsToElement(final Element element, final Map nsMap) {
+    /**
+     * Add xmlns:blah="urn:foo" delcarations to the specified element for each declration in nsMap, except those
+     * which already have identical declarations present in nsAlready.
+     *
+     * @param element  the element the decorate
+     * @param nsMap    the namespace declarations that must be valid inside element
+     * @param nsAlready the namespace declarations that are already in-scope for element
+     */
+    private void addNsDeclsToElement(final Element element, final Map nsMap, Map nsAlready) {
         Collection nsDecls = nsMap.entrySet();
         for (Iterator i = nsDecls.iterator(); i.hasNext();) {
             Map.Entry entry = (Map.Entry)i.next();
-            if (entry.getKey() != null && entry.getKey().toString().length() > 0)
-                element.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:" + entry.getKey(), entry.getValue().toString());
+            String key = entry.getKey().toString();
+            String value = entry.getValue().toString();
+            if (key == null || value == null || key.length() < 1)
+                continue; // not a valid prefixed namespace decl
+            if (value.equals(nsAlready.get(key)))
+                continue; // this exactly declaration is already in scope; no need to duplicate it
+            element.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:" + entry.getKey(), entry.getValue().toString());
         }
     }
 

@@ -43,7 +43,7 @@ class PermissiveWspVisitor implements WspVisitor {
         if (elName == null || elName.length() < 1) elName = problematicElement.getNodeName();
         UnknownAssertion ua;
         ua = UnknownAssertion.create(elName, null);
-        Element node = WspWriter.toElement(ua);
+        Element node = WspWriter.getCurrent().toElement(ua);
         try {
             // Preserve original XML, if possible, but only after encapsulating it
             final String originalXml = XmlUtil.nodeToString(problematicElement);

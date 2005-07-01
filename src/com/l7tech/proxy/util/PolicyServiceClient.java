@@ -10,7 +10,6 @@ import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.ParsedElement;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SignedElement;
@@ -423,7 +422,7 @@ public class PolicyServiceClient {
         URL url = new URL(useSsl ? "https" : "http",
                           ssg.getSsgAddress(),
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
-                          SecureSpanConstants.POLICY_SERVICE_FILE);
+                          ssg.getRuntime().getPolicyServiceFile());
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createDecoratedGetPolicyRequest(serviceId, null, clientCert, clientKey, timestampCreatedDate);
         return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
@@ -451,7 +450,7 @@ public class PolicyServiceClient {
                                                             PasswordAuthentication basicCredentials)
             throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
     {
-        URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), ssg.getRuntime().getPolicyServiceFile());
         Document requestDoc = createGetPolicyRequest(serviceId);
         return obtainResponse(httpClient, url, ssg, requestDoc, basicCredentials, serverCertificate, null, null);
     }
@@ -488,7 +487,7 @@ public class PolicyServiceClient {
         URL url = new URL(useSsl ? "https" : "http",
                           ssg.getSsgAddress(),
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
-                          SecureSpanConstants.POLICY_SERVICE_FILE);
+                          ssg.getRuntime().getPolicyServiceFile());
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createDecoratedGetPolicyRequest(serviceId, samlAss, null, subjectPrivateKey, timestampCreatedDate);
         return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
@@ -520,7 +519,7 @@ public class PolicyServiceClient {
         URL url = new URL(useSsl ? "https" : "http",
                           ssg.getSsgAddress(),
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
-                          SecureSpanConstants.POLICY_SERVICE_FILE);
+                          ssg.getRuntime().getPolicyServiceFile());
         Document requestDoc = createGetPolicyRequest(serviceId);
         return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, null, null);
     }

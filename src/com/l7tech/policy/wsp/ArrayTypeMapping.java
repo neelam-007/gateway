@@ -22,11 +22,6 @@ class ArrayTypeMapping extends ComplexTypeMapping {
         this.prototype = prototype;
     }
 
-    public ArrayTypeMapping(Object[] prototype, String externalName, String nsUri, String nsPrefix) {
-        super(prototype.getClass(), externalName, nsUri, nsPrefix);
-        this.prototype = prototype;
-    }
-
     protected void populateElement(WspWriter wspWriter, Element newElement, TypedReference object) throws InvalidPolicyTreeException {
         Object[] array = (Object[])object.target;
         for (int i = 0; i < array.length; i++) {

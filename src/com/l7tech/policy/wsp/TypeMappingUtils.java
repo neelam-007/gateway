@@ -45,8 +45,9 @@ class TypeMappingUtils {
      * @return The TypeMapping for this class, or null if not found.
      */
     static TypeMapping findTypeMappingByClass(Class clazz) {
-        for (int i = 0; i < WspConstants.typeMappings.length; i++) {
-            TypeMapping typeMapping = WspConstants.typeMappings[i];
+        final TypeMapping[] tms = WspConstants.typeMappings;
+        for (int i = 0; i < tms.length; i++) {
+            TypeMapping typeMapping = tms[i];
             if (typeMapping.getMappedClass().equals(clazz))
                 return typeMapping;
         }
