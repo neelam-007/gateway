@@ -30,7 +30,9 @@ class SwaTestcaseFactory {
         this.numParts = num;
         this.partSize = partSize;
         this.random = new Random(seed);
+        logger.info("SwaTestcaseFactory: Using random number seed: " + seed);
         this.boundary = MimeUtil.randomBoundary();
+        logger.info("SwaTestcaseFactory: Using random MIME boundary: " + boundary);        
     }
 
     /**
