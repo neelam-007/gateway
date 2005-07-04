@@ -152,6 +152,7 @@ public class ServerSchemaValidation implements ServerAssertion {
             return AssertionStatus.FAILED;
         }
         if (bodystr == null || bodystr.length < 1) {
+            // fla -- maybe nothing to validate should be considered success (?)
             auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
             return AssertionStatus.FAILED;
         }
