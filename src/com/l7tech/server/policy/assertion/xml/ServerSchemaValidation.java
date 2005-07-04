@@ -152,9 +152,15 @@ public class ServerSchemaValidation implements ServerAssertion {
             return AssertionStatus.FAILED;
         }
         if (bodystr == null || bodystr.length < 1) {
-            // fla -- maybe nothing to validate should be considered success (?)
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
-            return AssertionStatus.FAILED;
+            if (data.isApplyToArguments()) {
+                logger.fine("There is nothing to validate. This is legal because setting is set " +
+                            "to validate arguments only and certain rpc operations do not have any " +
+                            "argument elements.");
+                return AssertionStatus.NONE;
+            } else {
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
+                return AssertionStatus.FAILED;
+            }
         }
         ByteArrayInputStream schemaIS = new ByteArrayInputStream(data.getSchema().getBytes());
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
