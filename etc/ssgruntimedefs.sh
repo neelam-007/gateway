@@ -25,11 +25,11 @@ fi
 #                                      |                  -Xss256k   
 #
 
-cpucount=`cat /proc/cpuinfo  |grep "cpu MHz" |wc -l| tr -d \ `
+cpucount=`grep "cpu MHz" /proc/cpuinfo  |wc -l| tr -d \ `
 
 let cpucount="$cpucount*1"; # sanitize
 
-system_ram=`cat /proc/meminfo |grep MemTotal |cut -c 15-23`
+system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
 
 multiplier="2/3"
 let java_ram="$system_ram*$multiplier" 
