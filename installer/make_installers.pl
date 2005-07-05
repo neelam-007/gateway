@@ -188,7 +188,7 @@ sub make_tar_file {
 	    $run_command=<<EOF;
 
 # run under daemon mode if invoked as Bridge.sh -bd
-extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 ";
+extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 -Dfile.encoding=UTF-8 ";
 
 if [ "\$1" = "-bd" ]; then
 	run="-classpath $file.jar com.l7tech.proxy.Main"
@@ -200,6 +200,7 @@ EOF
 	} else {
 	    $run_command=<<EOM;
 
+extra="-Dfile.encoding=UTF-8 ";
 run="-jar $file.jar";
 
 EOM
