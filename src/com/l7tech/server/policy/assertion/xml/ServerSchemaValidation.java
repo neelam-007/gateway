@@ -236,7 +236,7 @@ public class ServerSchemaValidation implements ServerAssertion {
             throw new InvalidDocumentFormatException("The soap body does not have a child element as expected");
         }
         // construct a return output for each element under the body first child
-        NodeList maybearguments = bodyel.getChildNodes();
+        NodeList maybearguments = bodyFirstElement.getChildNodes();
         ArrayList argumentList = new ArrayList();
         for (int i = 0; i < maybearguments.getLength(); i++) {
             Node child = maybearguments.item(i);
