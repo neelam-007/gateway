@@ -156,6 +156,10 @@ public class WspConstants {
                 super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
             }
         },
+        new IntegrityMapping(new RequestWssIntegrity(), "Integrity"), // freeze RequestWssIntegrity as wsse:Integrity or pre32 form; thaw wsse:Integrity form
+        new IntegrityMapping(new RequestWssIntegrity(), "RequestWssIntegrity"), // thaw pre32 form
+        new ConfidentialityMapping(new RequestWssConfidentiality(), "Confidentiality"), // freeze RequestWssConfidentiality as wsse:Confidentiality or pre32 form; thaw wsse:Confidentiality
+        new ConfidentialityMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"), // thaw pre32 form
 
         // Leaf assertions
         new AssertionMapping(new HttpBasic(), "HttpBasic"),
@@ -169,8 +173,6 @@ public class WspConstants {
         new AssertionMapping(new TrueAssertion(), "TrueAssertion"),
         new AssertionMapping(new MemberOfGroup(), "MemberOfGroup"),
         new AssertionMapping(new SpecificUser(), "SpecificUser"),
-        new AssertionMapping(new RequestWssIntegrity(), "RequestWssIntegrity"),
-        new AssertionMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"),
         new AssertionMapping(new ResponseWssIntegrity(), "ResponseWssIntegrity"),
         new AssertionMapping(new ResponseWssConfidentiality(), "ResponseWssConfidentiality"),
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),

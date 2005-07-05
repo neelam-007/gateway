@@ -331,20 +331,20 @@ public class XmlUtil {
      * and the name must be undecorated.
      *
      * @param parent the {@link Element} in which to search for children. Must be non-null.
-     * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  Must be non-null.
+     * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  Use null to match localName in any namespace.
      * @param name the name of the element to find. Must be non-null.
      * @return First matching child {@link Element} or null if the specified parent contains no matching elements
      * @throws com.l7tech.common.xml.TooManyChildElementsException if multiple matching child nodes are found
      */
     public static Element findOnlyOneChildElementByName( Element parent, String nsuri, String name ) throws TooManyChildElementsException {
-        if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
+        if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
         NodeList children = parent.getChildNodes();
         Element result = null;
         for ( int i = 0; i < children.getLength(); i++ ) {
             Node n = children.item(i);
             if ( n.getNodeType() == Node.ELEMENT_NODE &&
                  name.equals( n.getLocalName()) &&
-                 nsuri.equals( n.getNamespaceURI() ) ) {
+                 (nsuri == null || nsuri.equals( n.getNamespaceURI() )) ) {
                 if ( result != null ) throw new TooManyChildElementsException( nsuri, name );
                 result = (Element)n;
             }

@@ -22,7 +22,7 @@ import org.w3c.dom.Element;
  * <p/>
  * When parsing, delegates any wsse:SecurityToken elements to the general SecurityToken parser, {@link SecurityTokenTypeMapping}.
  */
-public class SecurityTokenAssertionMapping extends AssertionMapping {
+class SecurityTokenAssertionMapping extends AssertionMapping {
 
     protected final SecurityTokenType tokenType;
     private static final SecurityTokenTypeMapping securityTokenTypeMapping = new SecurityTokenTypeMapping(); // delegate: general wsse:SecurityToken parser

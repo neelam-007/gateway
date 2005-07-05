@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * and deserialize arbitrary wsse:TokenType
  * elements into the appropriate SecurityTokenType instance.
  */
-public class SecurityTokenTypeMapping implements TypeMapping {
+class SecurityTokenTypeMapping implements TypeMapping {
     public Class getMappedClass() {
         return SecurityTokenType.class;
     }

@@ -16,7 +16,7 @@ import org.w3c.dom.Element;
  * The generic wsse:SecurityToken parser, {@link SecurityTokenTypeMapping}, delegates population of newly-deserialized
  * RequestWssSaml object back to this class.
  */
-public class SamlSecurityTokenAssertionMapping extends SecurityTokenAssertionMapping {
+class SamlSecurityTokenAssertionMapping extends SecurityTokenAssertionMapping {
     public SamlSecurityTokenAssertionMapping() {
         super(new RequestWssSaml(), "RequestWssSaml", SecurityTokenType.SAML_ASSERTION);
     }
