@@ -283,7 +283,7 @@ public class NewInternalUserDialog extends JDialog {
 
         idTextField.
                 setDocument(
-                        new FilterDocument(24,
+                        new FilterDocument(128,
                                 new FilterDocument.Filter() {
                                     public boolean accept(String str) {
                                         if (str == null) return false;
