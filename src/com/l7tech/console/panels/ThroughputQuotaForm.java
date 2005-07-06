@@ -41,6 +41,7 @@ public class ThroughputQuotaForm extends JDialog {
     private JRadioButton globalRadio;
 
     private static final String[] TIME_UNITS = {"second", "hour", "day", "month"};
+    private static final ArrayList counterNameInSessionOnly = new ArrayList();
 
     private ThroughputQuota subject;
     private boolean oked = false;
@@ -85,6 +86,12 @@ public class ThroughputQuotaForm extends JDialog {
             logger.log(Level.WARNING, "cannot get counters from gateway", e);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get counters from gateway", e);
+        }
+        // add session counternames
+        for (Iterator iterator = counterNameInSessionOnly.iterator(); iterator.hasNext();) {
+            String s = (String) iterator.next();
+            if (!listofexistingcounternames.contains(s)) listofexistingcounternames.add(s);
+
         }
         // add the counters that are not on gateway but are in the policy
         Assertion root = subject.getParent();
@@ -222,6 +229,7 @@ public class ThroughputQuotaForm extends JDialog {
                                           "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        boolean newCounterName = counterNameCombo.getSelectedIndex() == -1;
         subject.setCounterName(tmp);
         subject.setQuota(qval);
         subject.setGlobal(globalRadio.isSelected());
@@ -235,6 +243,10 @@ public class ThroughputQuotaForm extends JDialog {
         }
         subject.setCounterStrategy(counterStrategy);
         oked = true;
+        if (newCounterName) {
+            // remember this as part of this admin session
+            counterNameInSessionOnly.add(tmp);
+        }
         dispose();
     }
 
