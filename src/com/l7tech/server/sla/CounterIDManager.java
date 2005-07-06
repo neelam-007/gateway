@@ -9,9 +9,11 @@ package com.l7tech.server.sla;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.FindException;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Iterator;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -58,6 +60,25 @@ public class CounterIDManager extends HibernateDaoSupport {
                 idCache.put(key, res);
             }
             return res.longValue();
+        }
+    }
+
+    public String[] getDistinctCounterNames() throws FindException {
+        String query = "SELECT DISTINCT " + TABLE_NAME + ".counterName FROM " +
+                       TABLE_NAME + " in class " + CounterIDRecord.class.getName();
+        try {
+            List res = getHibernateTemplate().find(query);
+            String[] output = new String[res.size()];
+            int i = 0;
+            for (Iterator iterator = res.iterator(); iterator.hasNext();) {
+                output[i] = (String) iterator.next();
+                i++;
+            }
+            return output;
+        } catch (DataAccessException e) {
+            String msg = "problem getting distinct counter names";
+            logger.log(Level.WARNING, msg, e);
+            throw new FindException(msg, e);
         }
     }
 

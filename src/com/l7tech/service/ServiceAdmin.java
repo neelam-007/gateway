@@ -111,4 +111,11 @@ public interface ServiceAdmin {
     WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException ;
 
     String[] findUDDIRegistryURLs() throws RemoteException, FindException;
+
+    /**
+     * Gets the ThroughputQuota counter names already defined on this gateway. This is used by the ThroughputQuota assertion
+     * properties dialog to populate a combo box to choose the counters from.
+     * @return a string array with one item for each different counter name for this gateway
+     */
+    String[] listExistingCounterNames() throws RemoteException, FindException;
 }

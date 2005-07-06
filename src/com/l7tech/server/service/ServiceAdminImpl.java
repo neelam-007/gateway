@@ -8,6 +8,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.service.uddi.UddiAgentV3;
 import com.l7tech.service.PublishedService;
@@ -276,6 +277,12 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         UddiAgentV3 uddiAgent = new UddiAgentV3(uddiURL, uddiProps);
 
         return uddiAgent.getWsdlByServiceName(namePattern, caseSensitive);
+    }
+
+    public String[] listExistingCounterNames() throws RemoteException, FindException {
+        // get all the names for the counters
+        CounterIDManager counterIDManager = (CounterIDManager)serverConfig.getSpringContext().getBean("counterIDManager");
+        return counterIDManager.getDistinctCounterNames();
     }
 
     private int getInt(Object o) {

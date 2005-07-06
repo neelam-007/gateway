@@ -10,6 +10,9 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.Registry;
+import com.l7tech.service.ServiceAdmin;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,6 +21,8 @@ import java.awt.event.ActionEvent;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * A dialog for editing a ThroughputQuota dialog.
@@ -69,6 +74,19 @@ public class ThroughputQuotaForm extends JDialog {
 
         // get counter names from other sla assertions here
         ArrayList listofexistingcounternames = new ArrayList();
+        // start by the counters that are already defined on gateway
+        ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+        try {
+            String[] gatewayCounter = serviceAdmin.listExistingCounterNames();
+            for (int i = 0; i < gatewayCounter.length; i++) {
+                listofexistingcounternames.add(gatewayCounter[i]);
+            }
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "cannot get counters from gateway", e);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "cannot get counters from gateway", e);
+        }
+        // add the counters that are not on gateway but are in the policy
         Assertion root = subject.getParent();
         if (root == null && policyRoot != null) {
             root = policyRoot;
@@ -79,7 +97,7 @@ public class ThroughputQuotaForm extends JDialog {
                 }
             }
         }
-        populateExistingCounterNames(root, listofexistingcounternames);
+        populateExistingCounterNamesFromPolicy(root, listofexistingcounternames);
         String thisValue = subject.getCounterName();
         if (thisValue != null && !listofexistingcounternames.contains(thisValue)) {
             listofexistingcounternames.add(thisValue);
@@ -156,14 +174,14 @@ public class ThroughputQuotaForm extends JDialog {
         });
     }
 
-    private void populateExistingCounterNames(Assertion toInspect, java.util.List container) {
+    private void populateExistingCounterNamesFromPolicy(Assertion toInspect, java.util.List container) {
         if (toInspect == subject) {
             return; // skip us
         } else if (toInspect instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)toInspect;
             for (Iterator i = ca.children(); i.hasNext();) {
                 Assertion a = (Assertion)i.next();
-                populateExistingCounterNames(a, container);
+                populateExistingCounterNamesFromPolicy(a, container);
             }
         } else if (toInspect instanceof ThroughputQuota) {
             ThroughputQuota tq = (ThroughputQuota)toInspect;

@@ -144,6 +144,10 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return urlList;
     }
 
+    public String[] listExistingCounterNames() throws RemoteException, FindException {
+        return new String[0];
+    }
+
     private EntityHeader fromService(PublishedService s) {
         return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);
     }
