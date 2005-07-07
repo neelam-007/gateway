@@ -183,13 +183,16 @@ sub make_tar_file {
 		docopy("$BUILD_PATH/$include", "./$dir");
 	}
 
-	my $run_command="";
+        # default options for both manager and bridge.
+	my $start_options=<<EOF;
+extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
+
+EOF
 	if ($file eq "Bridge") {
-	    $run_command=<<EOF;
-
-# run under daemon mode if invoked as Bridge.sh -bd
-extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 -Dfile.encoding=UTF-8 ";
-
+	    # if we're making a bridge.sh then we need to make a section to allow
+	    # "Bridge.sh -bd" to start the bridge with no gui 
+	    # un under daemon mode if invoked as Bridge.sh -bd
+	    $start_options.=<<EOF
 if [ "\$1" = "-bd" ]; then
 	run="-classpath $file.jar com.l7tech.proxy.Main"
 else
@@ -198,33 +201,37 @@ fi
 
 EOF
 	} else {
-	    $run_command=<<EOM;
-
-extra="-Dfile.encoding=UTF-8 ";
+	    # if not, we're doing a Manager.sh file.
+	    $start_options.=<<EOM;
 run="-jar $file.jar";
 
 EOM
-    }
-
+        }
 	create_file("./$dir/$file.sh", <<"EOM", 0755);
 #!/bin/sh
-# $file Startup script for UNIX systems
-# set l7 opts to java opts if empty
+# $file Startup script for *nix systems
 
 if [ `expr "\$JAVA_OPTS" : ".*headless.*"` != 0 ]; then
-	echo "Headless mode java options for SSG found, disabling"
-	JAVA_OPTS=" -Dnetworkaddress.cache.ttl=10  -Xms96M -Xmx96M -Xss256k -server -XX:NewSize=48M -XX:MaxNewSize=48M ";
+	# We look in \$JAVA_OPTS ... if we've done java.awt.headless mode 
+        # then we've likely got the default options for SSG and it would prevent a gui
+        # from coming up. So we over-write them with the following
+	JAVA_OPTS=" -Xms96M -Xmx96M -Xss256k -server -XX:NewSize=48M -XX:MaxNewSize=48M ";
 fi
+
+# if we don't have an L7_OPTS and we DO have a java opts, 
+# e.g. from above code or from the user's environment
+# we set the l7opts to be equal to java opts
 
 if [ "\$L7_OPTS" = "" -a "\$JAVA_OPTS" != "" ]; then
 	L7_OPTS=\$JAVA_OPTS
 fi
 
-# 
+# set current dir to where this script is
 
 cd `dirname \$0`
 
-$run_command
+# include startup options 
+$start_options
 
 \$JAVA_HOME/bin/java \$L7_OPTS \$extra \$run
 EOM
