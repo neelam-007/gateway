@@ -802,7 +802,7 @@ public class MessageProcessor {
                 final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
                 final ProcessorResult processorResultRaw =
                   wssProcessor.undecorateMessage(response,
-                                                 null, haveKey ? ssg.getClientCertificate() : null,
+                                                 ssg.getServerCertificate(), haveKey ? ssg.getClientCertificate() : null,
                     haveKey ? ssg.getClientCertificatePrivateKey() : null,
                     scf);
                 // Translate timestamp in result from SSG time to local time
