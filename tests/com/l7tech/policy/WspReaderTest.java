@@ -177,7 +177,12 @@ public class WspReaderTest extends TestCase {
     }
 
     public void testSeamlessUpgradeFrom32() throws Exception {
-        // TODO after 32 policy format is frozen
+        InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_32.xml");
+        Document doc = XmlUtil.parse(is);
+        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
+        log.info("Policy tree constructed after reading 3.2 policy XML:\n" + ass);
+        assertTrue(ass != null);
+        assertTrue(ass instanceof ExactlyOneAssertion);
     }
 
     public void testUnknownElementGetsPreserved() throws Exception {
