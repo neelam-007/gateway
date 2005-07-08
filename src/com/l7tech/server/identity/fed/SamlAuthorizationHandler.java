@@ -7,6 +7,7 @@ package com.l7tech.server.identity.fed;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -28,12 +29,12 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
-    SamlAuthorizationHandler( FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, Set certOidSet ) {
+    SamlAuthorizationHandler(FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, Set certOidSet) {
         super(provider, trustedCertManager, clientCertManager, certOidSet);
     }
 
     User authorize(LoginCredentials pc) throws AuthenticationException {
-        if ( !providerConfig.isSamlSupported() )
+        if (!providerConfig.isSamlSupported())
             throw new BadCredentialsException("This identity provider is not configured to support SAML credentials");
         Object maybeAssertion = pc.getPayload();
 
@@ -55,40 +56,38 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             final String assertionUnsigned = "SAML assertion for '" + certSubjectDn + "' was not signed by any issuer.";
             throw new BadCredentialsException(assertionUnsigned);
         }
+
         String samlSignerDn = signerCertificate.getSubjectDN().getName();
 
-        // TODO decide what to do if there is no subject cert
-        // TODO decide what to do if there is no subject cert
-        // TODO decide what to do if there is no subject cert
-        // TODO decide what to do if there is no subject cert
-        if (subjectCertificate != null && certSubjectDn != null) {
+        // check if the SAML Assertion signer is trusted
+        try {
             TrustedCert samlSignerTrust = null;
-            try {
-                samlSignerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
-                final String untrusted = "SAML assertion for '" + certSubjectDn + "' was signed by '" +
-                        samlSignerDn + "', which is not trusted";
-                if (samlSignerTrust == null) {
-                    throw new BadCredentialsException(untrusted);
-                } else if (!samlSignerTrust.isTrustedAsSamlIssuer()) {
-                    throw new BadCredentialsException(untrusted + " for signing SAML tokens");
-                } else if (!certOidSet.contains(new Long(samlSignerTrust.getOid()))) {
-                    throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
-                }
-            } catch ( FindException e ) {
-                final String msg = "Couldn't find TrustedCert entry for assertion signer";
-                logger.log( Level.SEVERE, msg, e );
-                throw new AuthenticationException(msg, e);
-            } catch ( Exception e ) {
-                final String msg = "Couldn't decode signing certificate";
-                logger.log( Level.WARNING, msg, e );
-                throw new AuthenticationException(msg, e);
+            samlSignerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
+            final String untrusted = "SAML assertion  was signed by '" + samlSignerDn + "', which is not trusted";
+            if (samlSignerTrust == null) {
+                throw new BadCredentialsException(untrusted);
+            } else if (!CertUtils.certsAreEqual(signerCertificate, samlSignerTrust.getCertificate())) {
+                throw new BadCredentialsException(untrusted + " because the cert has changed");
+            } else if (!samlSignerTrust.isTrustedAsSamlIssuer()) {
+                throw new BadCredentialsException(untrusted + " for signing SAML tokens");
+            } else if (!certOidSet.contains(new Long(samlSignerTrust.getOid()))) {
+                throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
             }
+        } catch (FindException e) {
+            final String msg = "Couldn't find TrustedCert entry for assertion signer";
+            logger.log(Level.SEVERE, msg, e);
+            throw new AuthenticationException(msg, e);
+        } catch (CertificateException e) {
+            final String msg = "Couldn't decode signing certificate";
+            logger.log(Level.WARNING, msg, e);
+            throw new AuthenticationException(msg, e);
+        } catch (IOException e) {
+            final String msg = "Couldn't decode signing certificate";
+            logger.log(Level.WARNING, msg, e);
+            throw new AuthenticationException(msg, e);
         }
 
-        // TODO decide what to do if there is no subject cert (and hence no issuer cert)
-        // TODO decide what to do if there is no subject cert (and hence no issuer cert)
-        // TODO decide what to do if there is no subject cert (and hence no issuer cert)
-        // TODO decide what to do if there is no subject cert (and hence no issuer cert)
+        // if there is a subject cert, check if the CA (cert issuer) is trusted
         if (subjectCertificate != null && certIssuerDn != null) {
             TrustedCert certIssuerTrust = null;
             try {
@@ -98,27 +97,27 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                     if (certOidSet.contains(new Long(certIssuerTrust.getOid()))) {
                         if (!certIssuerTrust.isTrustedForSigningClientCerts())
                             throw new BadCredentialsException("Subject certificate '" + certSubjectDn + "' was signed by '" +
-                                                              certIssuerDn + "', which is not trusted for signing client certificates");
+                              certIssuerDn + "', which is not trusted for signing client certificates");
                         X509Certificate certIssuerCert = null;
                         try {
                             certIssuerCert = certIssuerTrust.getCertificate();
                             subjectCertificate.verify(certIssuerCert.getPublicKey());
-                        } catch ( CertificateException e ) {
+                        } catch (CertificateException e) {
                             throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
-                        } catch ( IOException e ) {
+                        } catch (IOException e) {
                             throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
-                        } catch ( GeneralSecurityException e ) {
+                        } catch (GeneralSecurityException e) {
                             throw new AuthenticationException("Couldn't verify subject certificate '" + certSubjectDn + "': " + e.getMessage(), e);
                         }
                     }
                 }
-            } catch ( FindException e ) {
+            } catch (FindException e) {
                 final String msg = "Couldn't find TrustedCert entry for subject certificate signer";
-                logger.log( Level.SEVERE, msg, e );
+                logger.log(Level.SEVERE, msg, e);
                 throw new AuthenticationException(msg, e);
-            } catch ( Exception e ) {
+            } catch (Exception e) {
                 final String msg = "Couldn't decode signing certificate";
-                logger.log( Level.WARNING, msg, e );
+                logger.log(Level.WARNING, msg, e);
                 throw new AuthenticationException(msg, e);
             }
         }
@@ -134,13 +133,15 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
 
         try {
             FederatedUser u = null;
-            if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
+            if (SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat) || niFormat == null) {
+                u = (FederatedUser)getUserManager().findBySubjectDN(niValue);
+                if (u == null) u = (FederatedUser)getUserManager().findByEmail(niValue);
+                if (u == null) u = (FederatedUser)getUserManager().findByLogin(niValue);
+            } else if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
                 u = (FederatedUser)getUserManager().findByEmail(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
                 u = (FederatedUser)getUserManager().findBySubjectDN(niValue);
-            } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat) ||
-                       SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat) ||
-                       niFormat == null) {
+            } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)) {
                 u = (FederatedUser)getUserManager().findByLogin(niValue);
             }
             if (u == null) {
@@ -154,8 +155,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
     }
 
     private User lookupSubjectByCert(SamlAssertion assertion, String certSubjectDn, final X509Certificate subjectCertificate)
-            throws AuthenticationException
-    {
+      throws AuthenticationException {
         final String niFormat = assertion.getNameIdentifierFormat();
         final String niValue = assertion.getNameIdentifierValue();
         try {
@@ -170,7 +170,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             }
 
             return u;
-        } catch ( FindException e ) {
+        } catch (FindException e) {
             throw new AuthenticationException("Couldn't find user");
         }
     }
@@ -188,16 +188,16 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
             u.setEmail(niValue);
         } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)
-                || SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat)) {
+          || SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat)) {
             u.setLogin(niValue);
         } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
             if (certSubjectDn == null) {
-                  throw new BadCredentialsException("Name Identifier Format is "+SamlConstants.NAMEIDENTIFIER_X509_SUBJECT+" but the value is null");
-              }
-              if (!niValue.equals(certSubjectDn)) {
+                throw new BadCredentialsException("Name Identifier Format is " + SamlConstants.NAMEIDENTIFIER_X509_SUBJECT + " but the value is null");
+            }
+            if (!niValue.equals(certSubjectDn)) {
                 throw new BadCredentialsException("NameIdentifier '" + niValue +
-                                                  "' was an X.509 SubjectName but did not match certificate's DN '" +
-                                                  certSubjectDn + "'");
+                  "' was an X.509 SubjectName but did not match certificate's DN '" +
+                  certSubjectDn + "'");
             }
         }
         return u;

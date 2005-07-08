@@ -59,7 +59,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
         }
 
         // uid only needs to match if it's set as part of the assertion
-        if (requiredUid != null) {
+        if (requiredUid != null && !"".equals(requiredUid)) {
             if (!requiredUid.equals(requestUid)) {
                 logger.fine("Authentication failed because the uid does not match.");
                 return AssertionStatus.AUTH_FAILED;
@@ -67,7 +67,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
         }
 
         // login only needs to match if it's set as part of the assertion
-        if (requiredLogin != null) {
+        if (requiredLogin != null && !"".equals(requiredLogin)) {
             if (!requiredLogin.equals(requestLogin)) {
                 logger.fine("Authentication failed because the login does not match.");
                 return AssertionStatus.AUTH_FAILED;
