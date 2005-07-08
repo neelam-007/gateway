@@ -130,6 +130,8 @@ public class ViewServiceWsdlAction extends NodeAction {
                 public void run() {
                     XMLEditor editor = uiAccessibility.getEditor();
                     editor.setText(ps.getWsdlXml());
+                    Action reformatAction = ActionModel.getActionByName(ActionModel.FORMAT_ACTION);
+                    reformatAction.actionPerformed(null);
                     editor.setLineNumber(1);
                 }
             });
