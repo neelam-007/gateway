@@ -2,7 +2,6 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -14,6 +13,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -41,6 +41,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
+        assertionMap.put(TrueAssertion.class, TruePolicyNode.class);
 
         assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
         assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
@@ -53,7 +54,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpRoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionTreeNode.class);
         assertionMap.put(JmsRoutingAssertion.class, JmsRoutingAssertionTreeNode.class);
-        assertionMap.put(TrueAssertion.class, AnonymousAssertionTreeNode.class);
         assertionMap.put(RequestWssIntegrity.class, RequestWssIntegrityTreeNode.class);
         assertionMap.put(ResponseWssIntegrity.class, ResponseWssIntegrityTreeNode.class);
         assertionMap.put(RequestWssConfidentiality.class, RequestWssConfidentialityTreeNode.class);
