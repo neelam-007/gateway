@@ -87,7 +87,7 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
                 return;
             }
             newWSDL = Registry.getDefault().getServiceManager().resolveWsdlTarget(response);
-            while (newWSDL != null && newWSDL.length() > 0) {
+            if (newWSDL != null && newWSDL.length() > 0) {
                 Document resolvedDoc = null;
                 try {
                     resolvedDoc = XmlUtil.stringToDocument(newWSDL);
@@ -121,9 +121,9 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
                         // operation cancelled
                         return;
                     }
-                } else break;
+                }
                 Wsdl.newInstance(Wsdl.extractBaseURI(newWSDL), new StringReader(newWSDL));
-            }
+            } else return;
         } catch (WSDLException e) {
             logger.log(Level.WARNING, "invalid wsdl", e);
             JOptionPane.showMessageDialog(mw, "Invalid WSDL. Consult log for more information.");
