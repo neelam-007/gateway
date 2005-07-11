@@ -93,7 +93,8 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
                     resolvedDoc = XmlUtil.stringToDocument(newWSDL);
                 } catch (SAXException e) {
                     logger.log(Level.WARNING, "invalid wsdl", e);
-                    throw new RuntimeException("Invalid WSDL. Consult log for more information.", e);
+                    JOptionPane.showMessageDialog(mw, "Invalid WSDL. Consult log for more information.");
+                    return;
                 }
 
                 // is this a WSIL?
@@ -120,15 +121,17 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
                         // operation cancelled
                         return;
                     }
-                }
+                } else break;
                 Wsdl.newInstance(Wsdl.extractBaseURI(newWSDL), new StringReader(newWSDL));
             }
         } catch (WSDLException e) {
             logger.log(Level.WARNING, "invalid wsdl", e);
-            throw new RuntimeException("Invalid WSDL. Consult log for more information.", e);
+            JOptionPane.showMessageDialog(mw, "Invalid WSDL. Consult log for more information.");
+            return;
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "cannot resolve wsdl", e);
-            throw new RuntimeException("Error resolving WSDL. Consult log for more information.", e);
+            JOptionPane.showMessageDialog(mw, "Cannot resolve WSDL. Consult log for more information.");
+            return;
         } catch (MalformedURLException e) {
             logger.log(Level.WARNING, "Malformed URL, cannot resolve wsdl", e);
             JOptionPane.showMessageDialog(mw, response + " is not a valid url.");
