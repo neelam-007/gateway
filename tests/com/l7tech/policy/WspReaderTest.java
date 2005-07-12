@@ -19,6 +19,7 @@ import org.w3c.dom.Document;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
@@ -224,13 +225,22 @@ public class WspReaderTest extends TestCase {
 
     public void testPreserveRequestXpathExpressionBug1894() throws Exception {
         final String xp = "//asdfasdf/foo/bar/zort";
-        RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression(xp));
+        final String ns1 = "urn:fasdfasdfasdaqqthf";
+        final String ns2 = "urn:kjhakjshdfaksqgergqergqegrd";
+        Map nsmap = new HashMap();
+        nsmap.put("ns1", ns1);
+        nsmap.put("ns2", ns2);
+        RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression(xp, nsmap));
         String policyXml = WspWriter.getPolicyXml(ass);
         log.info("Serialized policy XML: " + policyXml);
         RequestXpathAssertion got = (RequestXpathAssertion)WspReader.parsePermissively(policyXml);
         final String gotXpath = got.getXpathExpression().getExpression();
         log.info("Parsed xpath: " + gotXpath);
+        final Map gotNsmap = got.getXpathExpression().getNamespaces();
+        log.info("Parsed nsmap: " + gotNsmap);
         assertEquals(xp, gotXpath);
+        assertEquals(ns1, gotNsmap.get("ns1"));
+        assertEquals(ns2, gotNsmap.get("ns2"));
     }
 
     public static void main(String[] args) {
