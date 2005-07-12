@@ -12,6 +12,8 @@ import org.bouncycastle.asn1.x509.X509Name;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.Principal;
 import java.security.PublicKey;
 import java.security.MessageDigest;
@@ -69,6 +71,30 @@ public class CertUtils {
             throw new RuntimeException(e);
         }
     }
+
+    /**
+     * Get the PEM (aka base64) encoded X.509 certificate.
+     * @param cert the certificate to encode
+     * @return  the PEM encoded certificate as a byte array
+     */
+    public static byte[] encodeAsPEM(X509Certificate cert) throws IOException, CertificateEncodingException {
+        return encodeAsPEM(cert.getEncoded());
+    }
+
+    /**
+     * Get the PEM (aka base64) encoded X.509 certificate from the byte array
+     * containing the X.509 certificate encoded as ASN.1 DER.
+     * @param cert the byte array with the certificate encoded as ASN.1 and DER
+     * @return  the PEM encoded certificate as a byte array
+     */
+    public static byte[] encodeAsPEM(byte[] cert) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write("-----BEGIN CERTIFICATE-----\n".getBytes());
+        bos.write(HexUtils.encodeBase64(cert).getBytes("UTF-8"));
+        bos.write("\n-----END CERTIFICATE-----\n".getBytes());
+        return bos.toByteArray();
+    }
+
 
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     private static final String[] KEY_USAGES = {
