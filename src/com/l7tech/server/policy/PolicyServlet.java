@@ -31,7 +31,6 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
@@ -281,11 +280,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         logger.finest("Request for root cert");
         // Find our certificate
         //byte[] cert = KeystoreUtils.getInstance().readRootCert();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        bos.write("-----BEGIN CERTIFICATE-----\n".getBytes());
-        bos.write(HexUtils.encodeBase64(serverCertificate).getBytes("UTF-8"));
-        bos.write("\n-----END CERTIFICATE-----\n".getBytes());
-        byte[] pemEncodedServerCertificate = bos.toByteArray();
+        byte[] pemEncodedServerCertificate = CertUtils.encodeAsPEM(serverCertificate);
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null && nonce != null) {
@@ -305,6 +300,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         response.getOutputStream().write(pemEncodedServerCertificate);
         response.flushBuffer();
     }
+
 
     private void generateFaultAndSendAsResponse(HttpServletResponse res, String msg, String details) throws IOException {
         Document fault = null;
