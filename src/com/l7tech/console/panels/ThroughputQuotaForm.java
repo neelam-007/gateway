@@ -140,6 +140,8 @@ public class ThroughputQuotaForm extends JDialog {
                 break;
             case ThroughputQuota.DECREMENT:
                 decrementRadio.setSelected(true);
+                quotaValueField.setEnabled(false);
+                quotaUnitCombo.setEnabled(false);
                 break;
         }
 
