@@ -858,16 +858,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                             serviceNode.getPublishedService().setPolicyXml(newPolicy);
                             rootAssertion = null;
                             renderPolicy(false);
+                            policyEditorToolbar.buttonSave.setEnabled(true);
+                            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                            validatePolicy();
                         }
                     } catch (FindException e) {
                         log.log(Level.WARNING, "problem getting service", e);
                     } catch (RemoteException e) {
                         log.log(Level.WARNING, "problem getting service", e);
                     }
-
-                    policyEditorToolbar.buttonSave.setEnabled(true);
-                    policyEditorToolbar.buttonSave.getAction().setEnabled(true);
-                    validatePolicy();
                 }
             };
         }
