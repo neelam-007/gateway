@@ -29,7 +29,6 @@ import java.util.ArrayList;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 16, 2004<br/>
- * $Id$<br/>
  */
 public class PolicyExporter {
 
