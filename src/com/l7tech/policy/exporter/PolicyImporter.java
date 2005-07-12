@@ -91,7 +91,7 @@ public class PolicyImporter {
         } else {
             logger.warning("The document " + name + " did not contain a policy at all.");
         }
-        return null;
+        throw new InvalidPolicyStreamException("Document does not seem to include a policy.");
     }
 
     static final Logger logger = Logger.getLogger(PolicyImporter.class.getName());

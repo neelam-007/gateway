@@ -16,7 +16,7 @@ public class InvalidPolicyStreamException extends IOException {
     InvalidPolicyStreamException() {
     }
 
-    InvalidPolicyStreamException(String s) {
+    public InvalidPolicyStreamException(String s) {
         super(s);
     }
 
