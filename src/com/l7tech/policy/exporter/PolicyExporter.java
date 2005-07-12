@@ -116,6 +116,7 @@ public class PolicyExporter {
 
     public static boolean isExportedPolicy(Document doc) {
         Element rootel = doc.getDocumentElement();
+        if (rootel == null || rootel.getNamespaceURI() == null) return false;
         if (!rootel.getNamespaceURI().equals(ExporterConstants.EXPORTED_POL_NS)) return false;
         if (!rootel.getLocalName().equals(ExporterConstants.EXPORTED_DOCROOT_ELNAME)) return false;
         return true;
