@@ -3,8 +3,10 @@ package com.l7tech.policy;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -218,6 +220,17 @@ public class WspReaderTest extends TestCase {
 
         assertEquals(parsed1, parsed2);
 
+    }
+
+    public void testPreserveRequestXpathExpressionBug1894() throws Exception {
+        final String xp = "//asdfasdf/foo/bar/zort";
+        RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression(xp));
+        String policyXml = WspWriter.getPolicyXml(ass);
+        log.info("Serialized policy XML: " + policyXml);
+        RequestXpathAssertion got = (RequestXpathAssertion)WspReader.parsePermissively(policyXml);
+        final String gotXpath = got.getXpathExpression().getExpression();
+        log.info("Parsed xpath: " + gotXpath);
+        assertEquals(xp, gotXpath);
     }
 
     public static void main(String[] args) {
