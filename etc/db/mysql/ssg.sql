@@ -272,6 +272,7 @@ CREATE TABLE trusted_cert (
   trusted_for_client tinyint(1) default '0',
   trusted_for_server tinyint(1) default '0',
   trusted_for_saml tinyint(1) default '0',
+  trusted_as_saml_attesting_entity tinyint(1) default '0',
   primary key(objectid),
   unique (subject_dn),
   unique (name)

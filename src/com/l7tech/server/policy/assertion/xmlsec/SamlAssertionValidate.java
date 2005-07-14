@@ -149,7 +149,6 @@ public class SamlAssertionValidate {
                 }
             }
 
-            SigningSecurityToken senderVouchesSigningToken = signingTokens[0];
             if (assertion.isHolderOfKey() && requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
                 X509Certificate subjectCertificate = assertion.getSubjectCertificate();
                 if (subjectCertificate == null) {
@@ -158,20 +157,25 @@ public class SamlAssertionValidate {
                     logger.finer(result.toString());
                     return;
                 }
-
+                // validate that the assertion is the soap:Body signer
                 if (!isBodySigned(assertion.getSignedElements())) {
-                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed with Subject Certificate", soapMessageDoc, null, null);
+                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed with the Subject Confirmation Certificate", soapMessageDoc, null, null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                     return;
                 }
 
             } else if (assertion.isSenderVouches() && requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
-                if (!isBodySigned(senderVouchesSigningToken.getSignedElements())) {
+                // make sure ther soap:Body is signed. The actual trust verification is in FIP SamlAuthorizationHandler
+                X509Certificate bodySigner = getBodySigner(wssResults);
+
+                if (bodySigner == null) {
                     Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed", soapMessageDoc, null, null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                     return;
+                } else {
+                    assertion.setAttestingEntity(bodySigner);
                 }
             } else {
                 X509Certificate sslCert = credentials == null ? null : credentials.getClientCert();
@@ -189,16 +193,15 @@ public class SamlAssertionValidate {
                         logger.finer(result.toString());
                         return;
                     }
+                    assertion.setAttestingEntity(subjectCertificate); // for HOK the attesting entity is subject cert
                 } else if (assertion.isSenderVouches()) {
-                    if (senderVouchesSigningToken instanceof X509SecurityToken) {
-                        X509SecurityToken x509SecurityToken = (X509SecurityToken)senderVouchesSigningToken;
-                        if (!x509SecurityToken.asX509Certificate().equals(sslCert)) {
-                            Error result = new Error("SSL Certificate and Sender-Vouches Issuer ertificate mismatch", soapMessageDoc, null, null);
-                            validationResults.add(result);
-                            logger.finer(result.toString());
-                            return;
-                        }
-                    }
+                    if (sslCert == null) {
+                         Error result = new Error("SSL Client Certificate is required for Sender-Vouches Assertion and unsigned message", soapMessageDoc, null, null);
+                         validationResults.add(result);
+                         logger.finer(result.toString());
+                         return;
+                     }
+                     assertion.setAttestingEntity(sslCert); // for SV the attesting entity is SSL cert and the trust is verified in FIP
                 }
             }
         } catch (InvalidDocumentFormatException e) {
@@ -218,6 +221,31 @@ public class SamlAssertionValidate {
         }
         return false;
     }
+
+    /**
+     * Get the X509Certificate that signed the soap:Body or <code>null</code> if Body
+     * has not been signed.
+     *
+     * @param wssResult
+     * @return
+     * @throws InvalidDocumentFormatException
+     */
+    private X509Certificate getBodySigner(ProcessorResult wssResult)
+      throws InvalidDocumentFormatException {
+        SignedElement[] signedElements = wssResult.getElementsThatWereSigned();
+        for (int i = 0; i < signedElements.length; i++) {
+            SignedElement signedElement = signedElements[i];
+            if (SoapUtil.isBody(signedElement.asElement())) {
+                SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
+                if (!(signingSecurityToken instanceof X509SecurityToken)) {
+                    throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
+                }
+                return ((X509SecurityToken)signingSecurityToken).asX509Certificate();
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Validate the SAML assertion conditions

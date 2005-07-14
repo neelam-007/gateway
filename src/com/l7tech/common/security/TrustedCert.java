@@ -35,6 +35,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         this.trustedForSigningClientCerts = cert.trustedForSigningClientCerts;
         this.trustedForSigningServerCerts = cert.trustedForSigningServerCerts;
         this.trustedAsSamlIssuer = cert.trustedAsSamlIssuer;
+        this.trustedAsSamlAttestingEntity = cert.trustedAsSamlAttestingEntity;
     }
 
     public static final String CERT_FACTORY_ALGORITHM = "X.509";
@@ -52,6 +53,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
             if (trustedForSigningServerCerts) add(buf, "Sign Server");
             if (trustedForSigningClientCerts) add(buf, "Sign Client");
             if (trustedAsSamlIssuer) add(buf, "Sign SAML");
+            if (trustedAsSamlAttestingEntity) add(buf, "SAML Attesting Entity");
             if (buf.length() == 0) buf.append("None");
         }
         return buf.toString();
@@ -190,6 +192,21 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
     }
 
     /**
+     * Is this cert trusted as a SAML attesting entity? This applies to sender-vouches only.
+     * @return <code>true</code> if this cert is trusted as SAML attesting entity, <code>false</code> otherwise.
+     */
+    public boolean isTrustedAsSamlAttestingEntity() {
+        return trustedAsSamlAttestingEntity;
+    }
+
+    /**
+     * @see #isTrustedAsSamlAttestingEntity()
+     */
+    public void setTrustedAsSamlAttestingEntity(boolean trustedAsSamlAttestingEntity) {
+        this.trustedAsSamlAttestingEntity = trustedAsSamlAttestingEntity;
+    }
+
+    /**
      * Gets the cert subject's DN (distinguished name)
      * @return the cert subject's DN (distinguished name)
      */
@@ -213,6 +230,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
 
         if ( trustedForSigningClientCerts != trustedCert.trustedForSigningClientCerts ) return false;
         if ( trustedAsSamlIssuer != trustedCert.trustedAsSamlIssuer ) return false;
+        if ( trustedAsSamlAttestingEntity != trustedCert.trustedAsSamlAttestingEntity ) return false;
         if ( trustedForSigningServerCerts != trustedCert.trustedForSigningServerCerts ) return false;
         if ( trustedForSsl != trustedCert.trustedForSsl ) return false;
         if ( certBase64 != null ? !certBase64.equals( trustedCert.certBase64 ) : trustedCert.certBase64 != null ) return false;
@@ -229,6 +247,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         result = 29 * result + (trustedForSigningClientCerts ? 1 : 0);
         result = 29 * result + (trustedForSigningServerCerts ? 1 : 0);
         result = 29 * result + (trustedAsSamlIssuer ? 1 : 0);
+        result = 29 * result + (trustedAsSamlAttestingEntity ? 1 : 0);
         return result;
     }
 
@@ -240,4 +259,5 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
     private boolean trustedForSigningClientCerts;
     private boolean trustedForSigningServerCerts;
     private boolean trustedAsSamlIssuer;
+    private boolean trustedAsSamlAttestingEntity;
 }

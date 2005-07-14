@@ -1,8 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
@@ -41,7 +38,6 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class CertPropertiesWindow extends JDialog {
-
     private JPanel mainPanel;
     private JPanel certMainPanel;
     private JPanel certPanel;
@@ -53,6 +49,7 @@ public class CertPropertiesWindow extends JDialog {
     private JCheckBox signingSAMLTokenCheckBox;
     private JCheckBox signingClientCertCheckBox;
     private JCheckBox outboundSSLConnCheckBox;
+    private JCheckBox samlAttestingEntityCheckBox;
 
     private JButton saveButton;
     private JButton cancelButton;
@@ -60,6 +57,7 @@ public class CertPropertiesWindow extends JDialog {
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
+    private JScrollPane descriptionPane;
 
 
     /**
@@ -122,8 +120,8 @@ public class CertPropertiesWindow extends JDialog {
                     String errmsg = "Internal error! Unable to clone the trusted certificate.";
                     logger.severe(errmsg);
                     JOptionPane.showMessageDialog(mainPanel, errmsg + " \n" + "The certificate has not been updated",
-                      resources.getString("save.error.title"),
-                      JOptionPane.ERROR_MESSAGE);
+                                                  resources.getString("save.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
@@ -137,24 +135,24 @@ public class CertPropertiesWindow extends JDialog {
                 } catch (SaveException e) {
                     logger.warning("Unable to save the trusted certificate in server");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.save.error"),
-                      resources.getString("save.error.title"),
-                      JOptionPane.ERROR_MESSAGE);
+                                                  resources.getString("save.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
 
                 } catch (RemoteException e) {
                     logger.severe("Unable to execute remote call due to remote exception");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.remote.exception"),
-                      resources.getString("save.error.title"),
-                      JOptionPane.ERROR_MESSAGE);
+                                                  resources.getString("save.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
                 } catch (VersionException e) {
                     logger.warning("Unable to save the trusted certificate: " + trustedCert.getName() + "; version exception.");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.version.error"),
-                      resources.getString("save.error.title"),
-                      JOptionPane.ERROR_MESSAGE);
+                                                  resources.getString("save.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
                 } catch (UpdateException e) {
                     logger.warning("Unable to update the trusted certificate in server");
                     JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.update.error"),
-                      resources.getString("save.error.title"),
-                      JOptionPane.ERROR_MESSAGE);
+                                                  resources.getString("save.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
                 }
 
                 // suceeded, update the original trusted cert
@@ -189,7 +187,7 @@ public class CertPropertiesWindow extends JDialog {
         signingSAMLTokenCheckBox.setEnabled(false);
         signingClientCertCheckBox.setEnabled(false);
         outboundSSLConnCheckBox.setEnabled(false);
-
+        samlAttestingEntityCheckBox.setEnabled(false);
         // all buttons except the Cancel button
         saveButton.setEnabled(false);
     }
@@ -208,13 +206,13 @@ public class CertPropertiesWindow extends JDialog {
         } catch (CertificateException e) {
             logger.warning(resources.getString("cert.decode.error"));
             JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-              resources.getString("save.error.title"),
-              JOptionPane.ERROR_MESSAGE);
+                                          resources.getString("save.error.title"),
+                                          JOptionPane.ERROR_MESSAGE);
         } catch (IOException e) {
             logger.warning(resources.getString("cert.decode.error"));
             JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
-              resources.getString("save.error.title"),
-              JOptionPane.ERROR_MESSAGE);
+                                          resources.getString("save.error.title"),
+                                          JOptionPane.ERROR_MESSAGE);
         }
 
         // populate the general data
@@ -245,21 +243,15 @@ public class CertPropertiesWindow extends JDialog {
         certPanel.add(certView);
 
         // populate the usage
-        if (trustedCert.isTrustedForSigningClientCerts()) {
-            signingClientCertCheckBox.setSelected(true);
-        }
+        signingClientCertCheckBox.setSelected(trustedCert.isTrustedForSigningClientCerts());
 
-        if (trustedCert.isTrustedAsSamlIssuer()) {
-            signingSAMLTokenCheckBox.setSelected(true);
-        }
+        signingSAMLTokenCheckBox.setSelected(trustedCert.isTrustedAsSamlIssuer());
 
-        if (trustedCert.isTrustedForSigningServerCerts()) {
-            signingServerCertCheckBox.setSelected(true);
-        }
+        signingServerCertCheckBox.setSelected(trustedCert.isTrustedForSigningServerCerts());
 
-        if (trustedCert.isTrustedForSsl()) {
-            outboundSSLConnCheckBox.setSelected(true);
-        }
+        outboundSSLConnCheckBox.setSelected(trustedCert.isTrustedForSsl());
+
+        samlAttestingEntityCheckBox.setSelected(trustedCert.isTrustedAsSamlAttestingEntity());
     }
 
     /**
@@ -292,6 +284,7 @@ public class CertPropertiesWindow extends JDialog {
             tc.setTrustedAsSamlIssuer(signingSAMLTokenCheckBox.isSelected());
             tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
             tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
+            tc.setTrustedAsSamlAttestingEntity(samlAttestingEntityCheckBox.isSelected());
         }
     }
 
@@ -308,107 +301,5 @@ public class CertPropertiesWindow extends JDialog {
 
 
     private JTextPane descriptionText;
-    private JScrollPane descriptionPane;
 
-    {
-// GUI initializer generated by IntelliJ IDEA GUI Designer
-// !!! IMPORTANT !!!
-// DO NOT EDIT OR ADD ANY CODE HERE!
-        $$$setupUI$$$();
-    }
-
-    /**
-     * Method generated by IntelliJ IDEA GUI Designer
-     * !!! IMPORTANT !!!
-     * DO NOT edit this method OR call it in your code!
-     */
-    private void $$$setupUI$$$() {
-        mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
-        final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        mainPanel.add(panel1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null));
-        saveButton = new JButton();
-        saveButton.setText("Save");
-        panel1.add(saveButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        cancelButton = new JButton();
-        cancelButton.setText("Cancel");
-        panel1.add(cancelButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final Spacer spacer1 = new Spacer();
-        panel1.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null));
-        final JTabbedPane tabbedPane1 = new JTabbedPane();
-        mainPanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null));
-        final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(5, 2, new Insets(20, 10, 10, 10), -1, -1));
-        tabbedPane1.addTab("General", panel2);
-        final JLabel label1 = new JLabel();
-        label1.setText("Certificate Name:");
-        panel2.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        certNameTextField = new JTextField();
-        panel2.add(certNameTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
-        final JLabel label2 = new JLabel();
-        label2.setText("Expired On:");
-        panel2.add(label2, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final JLabel label3 = new JLabel();
-        label3.setText("Issued By:");
-        panel2.add(label3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final JLabel label4 = new JLabel();
-        label4.setText("Issued To:");
-        panel2.add(label4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final Spacer spacer2 = new Spacer();
-        panel2.add(spacer2, new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
-        certIssuedToTextField = new JTextField();
-        certIssuedToTextField.setEditable(false);
-        panel2.add(certIssuedToTextField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
-        certIssuedByTextField = new JTextField();
-        certIssuedByTextField.setEditable(false);
-        panel2.add(certIssuedByTextField, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
-        certExpiredOnTextField = new JTextField();
-        certExpiredOnTextField.setEditable(false);
-        certExpiredOnTextField.setText("");
-        panel2.add(certExpiredOnTextField, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
-        final JScrollPane scrollPane1 = new JScrollPane();
-        tabbedPane1.addTab("Details", scrollPane1);
-        certMainPanel = new JPanel();
-        certMainPanel.setLayout(new GridLayoutManager(1, 2, new Insets(5, 5, 5, 5), -1, -1));
-        scrollPane1.setViewportView(certMainPanel);
-        certPanel = new JPanel();
-        certPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        certMainPanel.add(certPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final Spacer spacer3 = new Spacer();
-        certMainPanel.add(spacer3, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 10, 10, 10), -1, -1));
-        tabbedPane1.addTab("Options", panel3);
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(5, 1, new Insets(10, 10, 10, 10), -1, -1));
-        panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        outboundSSLConnCheckBox = new JCheckBox();
-        outboundSSLConnCheckBox.setText("Outbound SSL Connections ");
-        panel4.add(outboundSSLConnCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
-        panel4.add(panel5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final JLabel label5 = new JLabel();
-        label5.setText("Certificate usage options:");
-        panel5.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        signingServerCertCheckBox = new JCheckBox();
-        signingServerCertCheckBox.setText("Signing Certificates for Outbound SSL Connections");
-        panel4.add(signingServerCertCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        signingSAMLTokenCheckBox = new JCheckBox();
-        signingSAMLTokenCheckBox.setText("Signing SAML Tokens");
-        panel4.add(signingSAMLTokenCheckBox, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        signingClientCertCheckBox = new JCheckBox();
-        signingClientCertCheckBox.setText("Signing Client Certificates");
-        panel4.add(signingClientCertCheckBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        descriptionPane = new JScrollPane();
-        descriptionPane.setAutoscrolls(false);
-        descriptionPane.setHorizontalScrollBarPolicy(31);
-        panel3.add(descriptionPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
-        descriptionText = new JTextPane();
-        descriptionText.setContentType("text/html");
-        descriptionText.setEditable(false);
-        descriptionText.setOpaque(false);
-        descriptionPane.setViewportView(descriptionText);
-    }
 }

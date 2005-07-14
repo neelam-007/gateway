@@ -49,6 +49,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
     private ConfirmationMethod confirmationMethod = null;
     private X509Certificate subjectCertificate = null;
     private X509Certificate issuerCertificate = null;
+    private X509Certificate attestingEntity = null;
     private String assertionId = null;
     private Calendar expires = null;
     private String nameIdentifierFormat;
@@ -98,7 +99,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
             statementList.addAll(Arrays.asList(assertion.getAuthorizationDecisionStatementArray()));
             statementList.addAll(Arrays.asList(assertion.getAttributeStatementArray()));
             SubjectStatementAbstractType[] subjectStatements =
-              (SubjectStatementAbstractType[])statementList.toArray(new SubjectStatementAbstractType[] {});
+              (SubjectStatementAbstractType[])statementList.toArray(new SubjectStatementAbstractType[]{});
 
             SubjectType subject = null;
             // all the statements must have the same subject (L7 requirement).
@@ -151,9 +152,9 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
                 }
 
                 KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
-                if (keyInfo !=null) {
+                if (keyInfo != null) {
                     X509DataType[] x509datas = keyInfo.getX509DataArray();
-                    if (x509datas !=null && x509datas.length > 0) {
+                    if (x509datas != null && x509datas.length > 0) {
                         X509DataType x509data = x509datas[0];
                         subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
                     }
@@ -179,9 +180,9 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
 
         } catch (XmlException e) {
             throw new SAXException(e);
-        } catch ( CertificateException e ) {
+        } catch (CertificateException e) {
             final String msg = "Certificate in SAML assertion could not be parsed";
-            logger.log(Level.WARNING, msg, e );
+            logger.log(Level.WARNING, msg, e);
             throw new SAXException(e);
         } catch (TooManyChildElementsException e) {
             throw new SAXException(e);
@@ -204,7 +205,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
 
     /**
      * @return true if the subject described by this assertion has proven possession of the private key
-     *              corresponding to the subject certificate here. Only meaningful if {@link #isHolderOfKey()}.
+     *         corresponding to the subject certificate here. Only meaningful if {@link #isHolderOfKey()}.
      */
     public boolean isPossessionProved() {
         return possessionProved;
@@ -235,6 +236,25 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
         this.issuerCertificate = issuerCertificate;
     }
 
+    public X509Certificate getAttestingEntity() {
+        return attestingEntity;
+    }
+
+    /**
+     * Set the attesting entity certificate. This models
+     * @param attestingEntity
+     */
+    public void setAttestingEntity(X509Certificate attestingEntity) {
+        if (isHolderOfKey()) {
+            if (!CertUtils.certsAreEqual(attestingEntity, subjectCertificate)) {
+                throw new IllegalStateException("Can't set the attesting entity cert to different cert then subject cert for Holder-Of-Key assertion");
+            }
+        } else if (!isSenderVouches()) {
+            throw new IllegalStateException("Can't set the attesting entity for non Sender-Vouches assertion");
+        }
+        this.attestingEntity = attestingEntity;
+    }
+
     public Element asElement() {
         return assertionElement;
     }
@@ -248,14 +268,28 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
     }
 
     static class CausedSignatureException extends SignatureException {
-        public CausedSignatureException() {}
-        public CausedSignatureException(String msg) { super(msg); }
-        public CausedSignatureException(String msg, Throwable t) { super(msg); initCause(t); }
-        public CausedSignatureException(Throwable t) { super(); initCause(t); }
+        public CausedSignatureException() {
+        }
+
+        public CausedSignatureException(String msg) {
+            super(msg);
+        }
+
+        public CausedSignatureException(String msg, Throwable t) {
+            super(msg);
+            initCause(t);
+        }
+
+        public CausedSignatureException(Throwable t) {
+            super();
+            initCause(t);
+        }
     }
 
     static class ResolveIdException extends RuntimeException {
-        public ResolveIdException(String s) { super(s); }
+        public ResolveIdException(String s) {
+            super(s);
+        }
     }
 
     public void verifyEmbeddedIssuerSignature() throws SignatureException {
@@ -327,7 +361,9 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
         return !expires.after(nowUtc);
     }
 
-    /** @return the Xml Beans assertion type.  Never null. */
+    /**
+     * @return the Xml Beans assertion type.  Never null.
+     */
     public AssertionType getXmlBeansAssertionType() {
         return assertion;
     }

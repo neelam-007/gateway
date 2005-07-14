@@ -87,6 +87,44 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             throw new AuthenticationException(msg, e);
         }
 
+        // attesting entity in Sender-Vouches
+        if (assertion.isSenderVouches()) {
+            final X509Certificate attestingEntityCertificate = assertion.getAttestingEntity();
+            if (attestingEntityCertificate == null) {
+                throw new AuthenticationException("The Attesting Entity Certificate is required, but not presented");
+            }
+            try {
+                // Check only if attesting entity cert and the SAML authority differ
+                // SAML authorities are trusted as attesting entities
+                if (!CertUtils.certsAreEqual(attestingEntityCertificate, signerCertificate)) {
+                    String attestingEntityDN = attestingEntityCertificate.getSubjectDN().getName();
+                    TrustedCert attestingEntityCertificateTrust = trustedCertManager.getCachedCertBySubjectDn(attestingEntityDN, MAX_CACHE_AGE);
+                    if (attestingEntityCertificateTrust == null) {
+                        String msg = "The certificate '" + attestingEntityDN + "', is not trusted as Attesting Entity";
+                        logger.log(Level.WARNING, msg);
+                        throw new BadCredentialsException(msg);
+                    }
+                    if (!CertUtils.certsAreEqual(attestingEntityCertificate, attestingEntityCertificateTrust.getCertificate())) {
+                        String msg = "Attesting Entity '" + attestingEntityDN + "' is not trusted  because the cert has changed";
+                        logger.log(Level.WARNING, msg);
+                        throw new BadCredentialsException(msg);
+                    }
+                }
+            } catch (FindException e) {
+                final String msg = "Couldn't find TrustedCert entry for Attesting Entity Certificate";
+                logger.log(Level.SEVERE, msg, e);
+                throw new AuthenticationException(msg, e);
+            } catch (IOException e) {
+                final String msg = "Couldn't decode signing Attesting Entity Certificate";
+                logger.log(Level.WARNING, msg, e);
+                throw new AuthenticationException(msg, e);
+            } catch (CertificateException e) {
+                final String msg = "Couldn't decode signing Attesting Entity Certificate";
+                logger.log(Level.WARNING, msg, e);
+                throw new AuthenticationException(msg, e);
+            }
+        }
+
         // if there is a subject cert, check if the CA (cert issuer) is trusted
         if (subjectCertificate != null && certIssuerDn != null) {
             TrustedCert certIssuerTrust = null;
@@ -121,7 +159,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                 throw new AuthenticationException(msg, e);
             }
         }
-
 
         // Look up by cert if there is one
         if (subjectCertificate != null && certSubjectDn != null)
