@@ -127,5 +127,34 @@ public class Validator {
 
         Validator me = new Validator();
         me.validate(new ByteArrayInputStream(schema.getBytes()), new ByteArrayInputStream(docToValidate.getBytes()));
+
+        schema = "<s:schema elementFormDefault=\"qualified\" targetNamespace=\"http://www.layer7.com/schemas/blah\" xmlns:s=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                "        <s:element name=\"foo\">\n" +
+                "                <s:complexType>\n" +
+                "                        <s:sequence>\n" +
+                "                                <s:element name=\"foochild1\" type=\"s:int\" maxOccurs=\"1\" minOccurs=\"1\"/>\n" +
+                "                                <s:element name=\"foochild2\" maxOccurs=\"1\" minOccurs=\"1\">\n" +
+                "                                        <s:complexType>\n" +
+                "                                                <s:sequence>\n" +
+                "                                                        <s:any maxOccurs=\"unbounded\" minOccurs=\"0\" namespace=\"##other\" processContents=\"lax\"/>\n" +
+                "                                                </s:sequence>\n" +
+                "                                        </s:complexType>\n" +
+                "                                </s:element>\n" +
+                "                        </s:sequence>\n" +
+                "                </s:complexType>\n" +
+                "        </s:element>\n" +
+                "</s:schema>";
+        docToValidate = "<grr:foo xmlns:grr=\"http://www.layer7.com/schemas/blah\">\n" +
+                "  <grr:foochild1>666</grr:foochild1>\n" +
+                "  <grr:foochild2/>\n" +
+                "</grr:foo>";
+        docToValidate = "<grr:foo xmlns:grr=\"http://www.layer7.com/schemas/blah\">\n" +
+                "  <grr:foochild1>666</grr:foochild1>\n" +
+                "  <grr:foochild2>\n" +
+                "<beep:blah xmlns:beep=\"http://john.com\"/>" +
+                "  </grr:foochild2>\n" +
+                "</grr:foo>";
+
+        me.validate(new ByteArrayInputStream(schema.getBytes()), new ByteArrayInputStream(docToValidate.getBytes()));
     }
 }
