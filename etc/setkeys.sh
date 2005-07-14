@@ -82,10 +82,10 @@ read MENU_CHOICE
 if [ $MENU_CHOICE = "1" ]
 then
     ANSWER_CAKEYS_CREATION="y"
-    ANSWER_SSLKEYS_CREATION=y
+    ANSWER_SSLKEYS_CREATION="y"
 elif [ $MENU_CHOICE = "2" ]
 then
-    ANSWER_SSLKEYS_CREATION=y
+    ANSWER_SSLKEYS_CREATION="y"
 else
     echo "invalid choice"
     exit
@@ -103,7 +103,7 @@ if [ -e $HOST_NAME ]; then
 fi
 
 # IF WE START FROM SCRATCH, GET A BRAND NEW PASSWD
-if [ $ANSWER_CAKEYS_CREATION = "y" ]
+if [ "$ANSWER_CAKEYS_CREATION" = "y" ]
 then
     # GET A NEW KEYSTORE PASSWORD FROM CALLER
     echo "Please choose a CA keystore password"
@@ -174,7 +174,7 @@ fi
 # -----------------------------------------------------------------------------
 # DO THE THING
 # -----------------------------------------------------------------------------
-if [ $ANSWER_CAKEYS_CREATION = "y" ]; then
+if [ "$ANSWER_CAKEYS_CREATION" = "y" ]; then
     setKeysClassname='com.l7tech.server.util.SetKeys$NewCa'
 else
     setKeysClassname='com.l7tech.server.util.SetKeys$ExistingCa'
