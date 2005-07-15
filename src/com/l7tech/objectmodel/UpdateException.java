@@ -21,4 +21,8 @@ public class UpdateException extends ObjectModelException {
     public UpdateException( String message, Throwable cause ) {
         super( message, cause );
     }
+
+    public UpdateException(Throwable cause) {
+        super(cause);
+    }
 }

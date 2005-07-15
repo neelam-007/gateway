@@ -9,6 +9,11 @@ package com.l7tech.server.communityschemas;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.util.Collection;
+import java.util.logging.Logger;
+
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 /**
  * This manager gives access to the community schemas included in the
@@ -22,16 +27,19 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
     public CommunitySchemaManager() {
     }
 
-    public Collection findAll() {
-        // todo
-        return null;
+    public Collection findAll() throws FindException {
+        String queryall = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName();
+        return getHibernateTemplate().find(queryall);
     }
 
-    public void save(CommunitySchemaEntry newSchema) {
-        // todo
+    public long save(CommunitySchemaEntry newSchema) throws SaveException {
+        return ((Long)getHibernateTemplate().save(newSchema)).longValue();
     }
 
-    public void update(CommunitySchemaEntry existingSchema) {
-        // todo
+    public void update(CommunitySchemaEntry existingSchema) throws UpdateException {
+        getHibernateTemplate().update(existingSchema);
     }
+
+    private static final String TABLE_NAME = "community_schema";
+    private final Logger logger = Logger.getLogger(CommunitySchemaManager.class.getName());
 }

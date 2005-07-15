@@ -488,4 +488,10 @@
 
     <bean id="counterCache" class="com.l7tech.server.sla.CounterCache" />
 
+    <bean id="communitySchemaManager" class="com.l7tech.server.communityschemas.CommunitySchemaManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
 </beans>

@@ -21,4 +21,8 @@ public class SaveException extends ObjectModelException {
     public SaveException( String message, Throwable cause ) {
         super( message, cause );
     }
+
+    public SaveException(Throwable cause) {
+        super(cause);
+    }
 }

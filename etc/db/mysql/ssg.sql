@@ -457,4 +457,15 @@ CREATE TABLE counters (
   PRIMARY KEY (counterid)
 ) TYPE=InnoDB;
 
+--
+-- Table structure for table 'community_schemas'
+--
+
+DROP TABLE IF EXISTS community_schemas;
+CREATE TABLE community_schemas (
+  objectid bigint(20) NOT NULL,
+  schema mediumtext default '',
+  PRIMARY KEY (objectid)
+) TYPE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -66,6 +66,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         tarariContext = TarariLoader.getGlobalContext();
         if (tarariContext != null) {
             try {
+                // alex todo, use community schemas through the CommunitySchemaManager
                 SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
                 tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
                 tarariContext.addSchema(tarariNamespaceUri, data.getSchema());

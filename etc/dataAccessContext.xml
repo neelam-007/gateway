@@ -143,6 +143,7 @@
              <idref bean="auditExporter"/>
              <idref bean="counterIDManager"/>
              <idref bean="countedHitsManager"/>
+             <idref bean="communitySchemaManager"/>
          </list>
      </property>
  </bean>

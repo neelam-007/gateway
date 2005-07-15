@@ -203,7 +203,7 @@
         <property name="trustedAsSamlIssuer" column="trusted_for_saml" type="boolean"/>
         <property name="trustedAsSamlAttestingEntity" column="trusted_as_saml_attesting_entity" type="boolean"/>
     </class>
-    
+
     <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"
               extends="com.l7tech.identity.IdentityProviderConfig"
               discriminator-value="3"/>
@@ -216,7 +216,7 @@
         <version name="version" column="version" type="integer"/>
 
         <property name="providerId" type="long" column="provider_oid"/>
-        
+
         <property name="name" type="string" column="name" />
         <property name="login" type="string" column="login" />
         <property name="email" type="string"/>
@@ -270,6 +270,13 @@
         <property name="userId" column="userid" type="string"/>
         <property name="providerId" column="providerid" type="long"/>
         <property name="counterName" column="countername" type="string"/>
+    </class>
+
+    <class name="com.l7tech.server.communityschemas.CommunitySchemaEntry" table="community_schemas">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <property name="schema" column="schema" type="string"/>
     </class>
 
 </hibernate-mapping>
