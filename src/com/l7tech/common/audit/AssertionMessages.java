@@ -176,8 +176,9 @@ public class AssertionMessages extends Messages {
     public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.FINE, "Assertion failure: {0}");
     public static final M SCHEMA_VALIDATION_SUCCEEDED                       = m(5605, Level.FINEST, "Schema validation success");
     public static final M SCHEMA_VALIDATION_EMPTY_BODY                      = m(5606, Level.FINE, "Empty body. Nothing to validate");
-    public static final M SCHEMA_VALIDATION_NO_ACCEL                        = m(5607, Level.WARNING, "Schema can not be hardware-accelerated");
-    public static final M SCHEMA_VALIDATION_FALLBACK                        = m(5608, Level.WARNING, "Hardware-accelerated schema validation failed; falling back to software");
+    public static final M SCHEMA_VALIDATION_NO_ACCEL                        = m(5607, Level.INFO, "Schema can not be hardware-accelerated");
+    public static final M SCHEMA_VALIDATION_FALLBACK                        = m(5608, Level.INFO, "Hardware-accelerated schema validation failed; falling back to software");
+    public static final M SCHEMA_VALIDATION_VALID_BUT_WRONG_NS              = m(5609, Level.INFO, "Message was valid but payload was in an unexpected namespace");
 
     // ServerTimeRange
     public static final M TIME_RANGE_NOTHING_TO_CHECK                       = m(5700, Level.FINEST, "Nothing to check.");
@@ -260,6 +261,7 @@ public class AssertionMessages extends Messages {
     public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT    = m(6503, Level.WARNING, "Couldn't find SAML artifact in redirect query string");
     public static final M SAMLBROWSERARTIFACT_IOEXCEPTION             = m(6504, Level.WARNING, "Couldn't login");
     public static final M SAMLBROWSERARTIFACT_NOCREDS                 = m(6505, Level.WARNING, "Request does not contain any credentials");
+    public static final M SAMLBROWSERARTIFACT_CREDS_NOT_PASSWORD      = m(6506, Level.WARNING, "Request credentials do not include a password");
 
     // XPath Credential Source
     public static final M XPATHCREDENTIAL_REQUEST_NOT_XML          = m(6600, Level.WARNING, "Request not valid XML");
