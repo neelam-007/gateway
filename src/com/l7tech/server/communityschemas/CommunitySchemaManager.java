@@ -29,7 +29,8 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
 
     public Collection findAll() throws FindException {
         String queryall = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName();
-        return getHibernateTemplate().find(queryall);
+        Collection output = getHibernateTemplate().find(queryall);
+        return output;
     }
 
     public long save(CommunitySchemaEntry newSchema) throws SaveException {
