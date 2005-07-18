@@ -109,6 +109,9 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                         logger.log(Level.WARNING, msg);
                         throw new BadCredentialsException(msg);
                     }
+                    if (!certOidSet.contains(new Long(attestingEntityCertificateTrust.getOid()))) {
+                        throw new BadCredentialsException("The certificate '" + attestingEntityDN + " is not trusted as Attesting Entity" + " for this Federated Identity Provider");
+                    }
                 }
             } catch (FindException e) {
                 final String msg = "Couldn't find TrustedCert entry for Attesting Entity Certificate";
