@@ -7,6 +7,7 @@ package com.l7tech.common.xml.tarari;
 
 /**
  * A handle for an XML Schema document.
+ * @deprecated this should not be used
  */
 public class SchemaHandle {
     private int refCount = 0;

@@ -6,10 +6,8 @@
 package com.l7tech.server.tarari;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.InvalidSchemaException;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.common.xml.tarari.SchemaHandle;
 import com.l7tech.common.xml.tarari.TarariUtil;
 import com.tarari.xml.schema.SchemaLoader;
 import com.tarari.xml.schema.SchemaLoadingException;
@@ -17,19 +15,20 @@ import com.tarari.xml.xpath.XPathCompiler;
 import com.tarari.xml.xpath.XPathCompilerException;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Holds the server-side Tarari state
  */
 public class GlobalTarariContextImpl implements GlobalTarariContext {
+    private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
-    private Map schemaHandlesByUri = new HashMap();
+    // you can't categorize schema by target ns since it's not unique
+    //private Map schemaHandlesByUri = new HashMap();
 
     public void compile() {
         while (true) {
@@ -63,7 +62,17 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         currentXpaths.remove(expression);
     }
 
-    public void addSchema(String nsUri, String schema) throws InvalidSchemaException, IOException {
+    public void addSchema(String schema) throws UnsupportedEncodingException, SchemaLoadingException {
+        logger.info("loading schema to card: " + schema);
+        SchemaLoader.loadSchema(new ByteArrayInputStream(schema.getBytes("UTF-8")), "");
+    }
+
+    public void removeAllSchemasFromCard() {
+        logger.info("removing all schemas from the card");
+        SchemaLoader.unloadAllSchemas();
+    }
+
+    /*public void addSchema(String nsUri, String schema) throws InvalidSchemaException, IOException {
         SchemaHandle handle = null;
         try {
             synchronized (this) {
@@ -98,7 +107,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                 SchemaLoader.unloadSchema(nsUri);
             }
         }
-    }
+    }*/
 
     public int getXpathIndex(String expression, long targetCompilerGeneration) {
         if (expression == null) return -1;

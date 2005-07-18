@@ -18,11 +18,13 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.communityschemas.CommunitySchemaManager;
+import com.l7tech.server.communityschemas.CommunitySchemaEntry;
+import com.l7tech.server.service.ServiceCache;
 import com.tarari.xml.XMLDocument;
 import com.tarari.xml.XMLStreamProcessor;
 import com.tarari.xml.tokenizer.XMLTokenizerException;
 import org.springframework.context.ApplicationContext;
-import org.w3.x2001.xmlSchema.SchemaDocument;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,7 +39,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -66,10 +67,28 @@ public class ServerSchemaValidation implements ServerAssertion {
         tarariContext = TarariLoader.getGlobalContext();
         if (tarariContext != null) {
             try {
-                // alex todo, use community schemas through the CommunitySchemaManager
-                SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
-                tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
-                tarariContext.addSchema(tarariNamespaceUri, data.getSchema());
+                // RELOAD ALL SCHEMAS FROM COMMUNITY SCHEMAS AS WELL AS THE POLICY ONES
+                tarariContext.removeAllSchemasFromCard();
+                // the community schemas
+                CommunitySchemaManager manager =
+                        (CommunitySchemaManager)springContext.getBean("communitySchemaManager");
+                Collection allCommunitySchemas = manager.findAll();
+                for (Iterator iterator = allCommunitySchemas.iterator(); iterator.hasNext();) {
+                    CommunitySchemaEntry communitySchemaEntry = (CommunitySchemaEntry) iterator.next();
+                    tarariContext.addSchema(communitySchemaEntry.getSchema());
+                }
+                // the policy schemas
+                ServiceCache servicesCache = (ServiceCache)springContext.getBean("serviceCache");
+                Collection policySchemas = servicesCache.getAllPolicySchemas();
+                for (Iterator iterator = policySchemas.iterator(); iterator.hasNext();) {
+                    String schem = (String) iterator.next();
+                    tarariContext.addSchema(schem);
+
+                }
+                // fla -- you can't just do this
+                // SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
+                // tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
+                // tarariContext.addSchema(tarariNamespaceUri, data.getSchema());
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, null, e);
             }
@@ -297,7 +316,9 @@ public class ServerSchemaValidation implements ServerAssertion {
         }
         private final ArrayList errors = new ArrayList();
     }
-
+    /*
+    this makes no sense, you can't expect the finalizer to run before the new version of the object is created
+    this mechanism would not allow such assertions to be updated
     protected void finalize() throws Throwable {
         if (tarariNamespaceUri != null) {
             // Decrement the reference count for this Xpath with the Tarari hardware
@@ -306,7 +327,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                 tarariContext.removeSchema(tarariNamespaceUri);
         }
         super.finalize();
-    }
+    }*/
 
     private SchemaValidation data;
     private final Logger logger = Logger.getLogger(getClass().getName());

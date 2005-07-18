@@ -11,6 +11,9 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -212,10 +215,10 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
         }
         ServerAssertion serverPolicy = null;
         try {
-            serverPolicy = policyFactory.makeServerPolicy(service.rootAssertion());
             // cache the service
             services.put(key, service);
             // cache the server policy for this service
+            serverPolicy = policyFactory.makeServerPolicy(service.rootAssertion());
             serverPolicies.put(key, serverPolicy);
         } catch (IOException e) {
             // Note, this exception does not passthrough on purpose. Please see bugzilla 958 if you have any issue
@@ -454,6 +457,42 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     public void setPolicyFactory(ServerPolicyFactory policyFactory) {
         this.policyFactory = policyFactory;
     }
+
+    /**
+     * assumes you already have a lock through new policy contruction
+     * @return
+     */
+    public Collection getAllPolicySchemas() {
+        ArrayList output = new ArrayList();
+        for (Iterator iterator = services.values().iterator(); iterator.hasNext();) {
+            PublishedService publishedService = (PublishedService) iterator.next();
+            try {
+                Assertion root = publishedService.rootAssertion();
+                slurpSchemas(root, output);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "cannot parse policy(?!)", e);
+                return output;
+            }
+        }
+        return output;
+    }
+
+    private void slurpSchemas(Assertion toInspect, ArrayList container) {
+        if (toInspect instanceof CompositeAssertion) {
+            CompositeAssertion ca = (CompositeAssertion)toInspect;
+            for (Iterator i = ca.children(); i.hasNext();) {
+                Assertion a = (Assertion)i.next();
+                slurpSchemas(a, container);
+            }
+        } else if (toInspect instanceof SchemaValidation) {
+            SchemaValidation tq = (SchemaValidation)toInspect;
+            String value = tq.getSchema();
+            if (value != null) {
+                container.add(value);
+            }
+        }
+    }
+
 
     // the cache data itself
     private final Map services = new HashMap();

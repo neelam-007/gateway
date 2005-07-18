@@ -7,8 +7,10 @@ package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.xml.InvalidSchemaException;
 import com.l7tech.common.xml.InvalidXpathException;
+import com.tarari.xml.schema.SchemaLoadingException;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Implementations manage the server-wide state of the RAX API
@@ -31,19 +33,14 @@ public interface GlobalTarariContext {
     void removeXpath(String expression);
 
     /**
-     * Adds a new XML Schema to the context.
-     *
-     * @param nsUri the Namespace URI for the schema
-     * @param schemaDoc the contents of the schema document
-     * @throws IOException
+     * remove all schemas from the card. this is necessary before each schema updates and addition
      */
-    void addSchema(String nsUri, String schemaDoc) throws IOException, InvalidSchemaException;
+    void removeAllSchemasFromCard();
 
     /**
-     * Indicates that the caller is no longer interested in the schema with the specified Namespace URI.
-     * @param nsUri the Namespace URI of the schema.
+     * add a schema to the card
      */
-    void removeSchema(String nsUri);
+    void addSchema(String schema) throws UnsupportedEncodingException, SchemaLoadingException;
 
     /**
      * @return the indices corresponding to the xpath expressions that match namespace URIs for isSoap
