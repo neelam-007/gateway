@@ -27,8 +27,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
-    // you can't categorize schema by target ns since it's not unique
-    //private Map schemaHandlesByUri = new HashMap();
 
     public void compile() {
         while (true) {
@@ -71,43 +69,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         logger.info("removing all schemas from the card");
         SchemaLoader.unloadAllSchemas();
     }
-
-    /*public void addSchema(String nsUri, String schema) throws InvalidSchemaException, IOException {
-        SchemaHandle handle = null;
-        try {
-            synchronized (this) {
-                handle = (SchemaHandle)schemaHandlesByUri.get(nsUri);
-                if (handle == null) {
-                    handle = new SchemaHandle(nsUri, schema);
-                    schemaHandlesByUri.put(nsUri, handle);
-                } else if (handle.inUse() && !schema.equals(handle.getSchemaDoc())) {
-                    throw new InvalidSchemaException("A different schema with Namespace URI " + nsUri + " is currently in use!");
-                }
-            }
-            handle.ref();
-            SchemaLoader.loadSchema(new ByteArrayInputStream(schema.getBytes("UTF-8")), "");
-            handle = null; // Prevent unref() in finally
-        } catch (SchemaLoadingException e) {
-            throw new InvalidSchemaException(e);
-        } finally {
-            if (handle != null) handle.unref();
-        }
-    }
-
-    public void removeSchema(String nsUri) {
-        SchemaHandle handle = null;
-
-        synchronized (this) {
-            handle = (SchemaHandle) schemaHandlesByUri.get(nsUri);
-        }
-
-        if (handle != null) {
-            handle.unref();
-            if (!handle.inUse()) {
-                SchemaLoader.unloadSchema(nsUri);
-            }
-        }
-    }*/
 
     public int getXpathIndex(String expression, long targetCompilerGeneration) {
         if (expression == null) return -1;
