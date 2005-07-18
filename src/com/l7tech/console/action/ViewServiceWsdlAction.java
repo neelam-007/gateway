@@ -125,14 +125,12 @@ public class ViewServiceWsdlAction extends NodeAction {
             // configure xml editing widget
             xmlContainer = new XMLContainer(true);
             uiAccessibility = xmlContainer.getUIAccessibility();
-            uiAccessibility.getEditor().setText(ps.getWsdlXml());
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     XMLEditor editor = uiAccessibility.getEditor();
                     editor.setText(ps.getWsdlXml());
                     Action reformatAction = ActionModel.getActionByName(ActionModel.FORMAT_ACTION);
                     reformatAction.actionPerformed(null);
-                    editor.setLineNumber(1);
                 }
             });
 
