@@ -141,6 +141,8 @@ public class ServerSchemaValidation implements ServerAssertion {
                             XMLDocument tdoc = tarariMessageContext.getTarariDoc();
                             try {
                                 XMLStreamProcessor.tokenize(tdoc, true);
+                                // IMPORTANT TODO, make sure that we dont validate against another schema defined
+                                // in another assertion here
                                 return AssertionStatus.NONE;
                             } catch (XMLTokenizerException e) {
                                 auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
