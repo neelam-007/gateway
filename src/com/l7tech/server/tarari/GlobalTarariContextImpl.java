@@ -67,7 +67,17 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
 
     public void removeAllSchemasFromCard() {
         logger.info("removing all schemas from the card");
-        SchemaLoader.unloadAllSchemas();
+        // this seems to cause problems when card has nothing in it
+        // SchemaLoader.unloadAllSchemas();
+        logger.finest("querying SchemaLoader.listSchemas");
+        String[] schemas = SchemaLoader.listSchemas();
+        if (schemas == null || schemas.length < 1) {
+            logger.finest("card already empty");
+            return;
+        } else {
+            logger.finest("card not empty, trying to unload all schemas");
+            SchemaLoader.unloadAllSchemas();
+        }
     }
 
     public int getXpathIndex(String expression, long targetCompilerGeneration) {
