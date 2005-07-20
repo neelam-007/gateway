@@ -296,7 +296,13 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         if (transactionManager == null) {
             throw new IllegalArgumentException("Transaction Manager is required");
         }
+    }
 
+    /**
+     * this should be called within the boot process to initiate the service cache which in turn will
+     * create server side policies
+     */
+    public void initiateServiceCache() {
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             protected void doInTransactionWithoutResult(TransactionStatus status) {
                 try {

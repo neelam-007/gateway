@@ -14,6 +14,7 @@ import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.server.event.system.*;
+import com.l7tech.server.service.ServiceManagerImp;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -215,6 +216,11 @@ public class BootProcess extends ApplicationObjectSupport
             }
 
             getApplicationContext().publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
+
+            // initialize service cache after all this
+            ServiceManagerImp serviceManager = (ServiceManagerImp)springContext.getBean("serviceManagerTarget");
+            logger.info("initializing the service cache");
+            serviceManager.initiateServiceCache();
 
             logger.info("Initialized server");
         } catch (IOException e) {
