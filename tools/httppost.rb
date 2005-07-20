@@ -18,7 +18,11 @@ require 'pp'
 # SSL private key and the certificate will be used if the files
 # HttpPost.options.ssl.pkey and the HttpPost.options.ssl.cert (PEM format) are
 # present.
+# The server certificate is not verified by this client.
+#
 # Basic Auth:
+# The progrtam support HTTP Basic Authentication with -u and -p arguments (user, password)
+#
 # httppost.rb -h for help
 
 #The default url endpoint. Override with the command line argument
@@ -57,7 +61,7 @@ class HttpPost
         case response
           when Net::HTTPSuccess
               response.each_header() { |key, value|
-                puts "#{key}, #{value}" if @options.verbose
+                puts "#{key}, #{value}"
               } if @options.verbose
           when Net::HTTPRedirection
               @options.uri = URI.parse(response['location'])
