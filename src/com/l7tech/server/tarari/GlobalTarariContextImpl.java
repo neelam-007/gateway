@@ -27,13 +27,21 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
     private Xpaths currentXpaths = buildDefaultXpaths();
     private long compilerGeneration = 1;
+    boolean xpathChangedSinceLastCompilation = true;
 
     public void compile() {
+        // fla added 20-07-05 to avoid compiling xpath all the time for no reason
+        if (!xpathChangedSinceLastCompilation) {
+            logger.fine("skipping compilation since no changes to xpath expressions were detected");
+            return;
+        }
+        logger.fine("compiling xpath expressions");
         while (true) {
             try {
                 String[] expressions = currentXpaths.getExpressions();
                 XPathCompiler.compile(expressions, 0);
                 currentXpaths.installed(expressions, nextCompilerGeneration());
+                xpathChangedSinceLastCompilation = false;
                 return; // No exception, we're done
             } catch (XPathCompilerException e) {
                 int badIndex = e.getCompilerErrorLine() - 1; // Silly Tarari, 1-based arrays are for kids!
@@ -54,10 +62,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
 
     public void addXpath(String expression) throws InvalidXpathException {
         currentXpaths.add(expression);
+        xpathChangedSinceLastCompilation = true;
     }
 
     public void removeXpath(String expression) {
         currentXpaths.remove(expression);
+        xpathChangedSinceLastCompilation = true;
     }
 
     public void addSchema(String schema) throws UnsupportedEncodingException, SchemaLoadingException {
