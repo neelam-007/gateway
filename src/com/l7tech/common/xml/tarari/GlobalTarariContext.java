@@ -5,12 +5,14 @@
  */
 package com.l7tech.common.xml.tarari;
 
-import com.l7tech.common.xml.InvalidSchemaException;
 import com.l7tech.common.xml.InvalidXpathException;
+import com.l7tech.objectmodel.FindException;
 import com.tarari.xml.schema.SchemaLoadingException;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+
+import org.springframework.beans.factory.BeanFactory;
+import org.apache.xmlbeans.XmlException;
 
 /**
  * Implementations manage the server-wide state of the RAX API
@@ -33,14 +35,16 @@ public interface GlobalTarariContext {
     void removeXpath(String expression);
 
     /**
-     * remove all schemas from the card. this is necessary before each schema updates and addition
+     * this makes a list of all community schema in the table as well as all the schemas defined in
+     * policies and makes sure the schemas loaded on the tarari card are the same. this should typically
+     * be called whenever a published service is updated or saved
      */
-    void removeAllSchemasFromCard();
+    public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, SchemaLoadingException, XmlException;
 
     /**
-     * add a schema to the card
+     * returns the number of schemas loaded on the card that refers to a targetnamespace
      */
-    void addSchema(String schema) throws UnsupportedEncodingException, SchemaLoadingException;
+    public int targetNamespaceLoadedMoreThanOnce(String targetNamespace);
 
     /**
      * @return the indices corresponding to the xpath expressions that match namespace URIs for isSoap

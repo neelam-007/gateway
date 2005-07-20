@@ -9,11 +9,17 @@ package com.l7tech.common.xml;
 import com.l7tech.common.message.SoapInfoFactory;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.objectmodel.FindException;
+import com.tarari.xml.schema.SchemaLoadingException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
+
+import org.springframework.beans.factory.BeanFactory;
+import org.apache.xmlbeans.XmlException;
 
 /**
  * Probe presence of Tarari without introducing any static classloader dependencies on Tarari.
@@ -106,5 +112,11 @@ public class TarariLoader {
         GlobalTarariContext context = getGlobalContext();
         if (context != null)
             context.compile();
+    }
+
+    public static void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, SchemaLoadingException, XmlException {
+        GlobalTarariContext context = getGlobalContext();
+        if (context != null)
+            context.updateSchemasToCard(managerResolver);
     }
 }

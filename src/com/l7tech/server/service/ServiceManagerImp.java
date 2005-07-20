@@ -19,6 +19,9 @@ import net.sf.hibernate.Session;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.beans.BeansException;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -29,9 +32,10 @@ import java.util.logging.Logger;
 /**
  * Manages PublishedService instances.
  */
-public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager {
+public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager, ApplicationContextAware {
     private ServiceCache serviceCache;
     private Class[] visitorClasses;
+    private ApplicationContext applicationContext;
 
     public void setVisitorClassnames(String visitorClassnames) {
         String[] names = visitorClassnames.split(",\\s*");
@@ -46,6 +50,10 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             }
             visitorClasses = (Class[])classes.toArray(new Class[0]);
         }
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     public String resolveWsdlTarget(String url) throws RemoteException {
@@ -91,7 +99,8 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         try {
                             serviceCache.cache(svcnow);
                             TarariLoader.compile();
-                        } catch (InterruptedException e) {
+                            TarariLoader.updateSchemasToCard(applicationContext);
+                        } catch (Exception e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
                     }
@@ -173,7 +182,8 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         try {
                             serviceCache.cache(svcnow);
                             TarariLoader.compile();
-                        } catch (InterruptedException e) {
+                            TarariLoader.updateSchemasToCard(applicationContext);
+                        } catch (Exception e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
                     }
@@ -328,11 +338,12 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     serviceCache.cache(service);
                 }
                 TarariLoader.compile();
+                TarariLoader.updateSchemasToCard(applicationContext);
             }
             // make sure the integrity check is running
             logger.info("initiate service cache version check process");
             serviceCache.initiateIntegrityCheckProcess();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new ObjectModelException("Exception building cache", e);
         }
     }

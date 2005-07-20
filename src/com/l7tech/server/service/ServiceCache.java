@@ -439,6 +439,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                     }
                     // TODO can we skip this step if no xpath assertions have changed?
                     TarariLoader.compile();
+                    // todo, need to check for right schemas there as well
                     for (Iterator i = deletions.iterator(); i.hasNext();) {
                         Long key = (Long)i.next();
                         PublishedService serviceToDelete = (PublishedService)services.get(key);

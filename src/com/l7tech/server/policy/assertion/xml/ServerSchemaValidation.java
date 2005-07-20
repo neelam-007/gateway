@@ -18,9 +18,6 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.communityschemas.CommunitySchemaManager;
-import com.l7tech.server.communityschemas.CommunitySchemaEntry;
-import com.l7tech.server.service.ServiceCache;
 import com.tarari.xml.XMLDocument;
 import com.tarari.xml.XMLStreamProcessor;
 import com.tarari.xml.tokenizer.XMLTokenizerException;
@@ -62,7 +59,6 @@ public class ServerSchemaValidation implements ServerAssertion {
     private final Auditor auditor;
     private final GlobalTarariContext tarariContext;
     private String tarariNamespaceUri = null;
-    private boolean anotherSchemaHasSameTargetNamespace = false;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
         this.data = data;
@@ -71,52 +67,8 @@ public class ServerSchemaValidation implements ServerAssertion {
 
         if (tarariContext != null) {
             try {
-                // check whether or not another schema uses the same targetNamespace
                 SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
                 tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
-
-                // RELOAD ALL SCHEMAS TO TARARI CARD
-                tarariContext.removeAllSchemasFromCard();
-                // the community schemas
-                CommunitySchemaManager manager =
-                        (CommunitySchemaManager)springContext.getBean("communitySchemaManager");
-                Collection allCommunitySchemas = manager.findAll();
-                for (Iterator iterator = allCommunitySchemas.iterator(); iterator.hasNext();) {
-                    CommunitySchemaEntry communitySchemaEntry = (CommunitySchemaEntry) iterator.next();
-                    String schem = communitySchemaEntry.getSchema();
-                    tarariContext.addSchema(schem);
-                    sdoc = SchemaDocument.Factory.parse(new StringReader(schem));
-                    if (tarariNamespaceUri.equals(sdoc.getSchema().getTargetNamespace())) {
-                        if (!schem.equals(data.getSchema())) {
-                            logger.info("hardware schema validation will be skipped for this assertion because " +
-                                        "a different schema uses the same namespace");
-                            anotherSchemaHasSameTargetNamespace = true;
-                        } else {
-                            logger.fine("another schema uses the same namespace but the schema is the same");
-                        }
-                    }
-                }
-                // the policy schemas
-                ServiceCache servicesCache = (ServiceCache)springContext.getBean("serviceCache");
-                Collection policySchemas = servicesCache.getAllPolicySchemas();
-                for (Iterator iterator = policySchemas.iterator(); iterator.hasNext();) {
-                    String schem = (String) iterator.next();
-                    tarariContext.addSchema(schem);
-                    sdoc = SchemaDocument.Factory.parse(new StringReader(schem));
-                    if (tarariNamespaceUri.equals(sdoc.getSchema().getTargetNamespace())) {
-                        if (!schem.equals(data.getSchema())) {
-                            logger.info("hardware schema validation will be skipped for this assertion because " +
-                                        "a different schema uses the same namespace");
-                            anotherSchemaHasSameTargetNamespace = true;
-                        } else {
-                            logger.fine("another schema uses the same namespace but the schema is the same");
-                        }
-                    }
-                }
-                // fla -- you can't just do this
-                // SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
-                // tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
-                // tarariContext.addSchema(tarariNamespaceUri, data.getSchema());
             } catch (Exception e) {
                 // fla note -- this message is totally irrelevent
                 //auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, null, e);
@@ -159,9 +111,8 @@ public class ServerSchemaValidation implements ServerAssertion {
 
         try {
             if (tarariNamespaceUri != null) {
-                if (anotherSchemaHasSameTargetNamespace) {
-                    logger.fine("Falling back to software validation because two different schemas use the " +
-                                "same namespace");
+                if (TarariLoader.getGlobalContext().targetNamespaceLoadedMoreThanOnce(tarariNamespaceUri) != 1) {
+                    logger.fine("Falling back to software validation because the tns is not used by exactly one schema");
                 } else if (data.isApplyToArguments()) {
                     logger.fine("Falling back to software validation because assertion requests " +
                                 "that only arguments be validated");
