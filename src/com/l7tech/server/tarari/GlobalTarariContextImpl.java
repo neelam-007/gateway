@@ -165,6 +165,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
             // todo, for each schema, we also need to maintain xpath expressions to be loaded on the card. these
             // xpath expressions are there so verify that the children elements under the body match a target namespace
             // we need to be able to verify these for each of the tns
+
+            // todo, we need to implement a SchemaResolver for import statements and register SchemaLoader.setSchemaResolver
         }
     }
 
