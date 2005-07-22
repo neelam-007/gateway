@@ -148,8 +148,8 @@ if $0 == __FILE__
             URI.parse($default_url)
           end
 
-    headers = {'Content-Type' => 'text/xml'}
-#               'SOAPAction' => options.soapaction }
+    headers = {'Content-Type' => 'text/xml',
+               'SOAPAction' => options.soapaction }
     options.headers = headers
     HttpPost.new(options) {
         puts send(IO.read(@options.postfile))
