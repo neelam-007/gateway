@@ -42,13 +42,28 @@ class HttpPost
         h = Net::HTTP.new(@options.uri.host, @options.uri.port)
         h.use_ssl = true if @options.uri.scheme == "https" # enable SSL/TLS
         if h.use_ssl
-            h.key = OpenSSL::PKey::DSA.new(File.read(@options.ssl_pkey_file)) if FileTest.exist?(@options.ssl_pkey_file)
+            pkey_file = File.read(@options.ssl_pkey_file) if FileTest.exist?(@options.ssl_pkey_file)
+            #try both DSA and RSA
+            if pkey_file
+                pkey = OpenSSL::PKey::DSA
+                begin
+                    h.key = pkey.new(pkey_file)
+                rescue OpenSSL::PKey::DSAError
+                    if pkey == OpenSSL::PKey::DSA
+                        pkey = OpenSSL::PKey::RSA
+                        retry
+                    else    
+                        raise
+                    end    
+                end
+            end
+             
             h.cert = cert = OpenSSL::X509::Certificate.new(File.read(@options.ssl_cert_file)) if FileTest.exist?(@options.ssl_cert_file)
 
             puts "Certificate Subject : #{cert !=nil ? cert.subject : ''}" if @options.verbose
         end
-
-        puts "SOAPAction : '#{@options.soapaction}'" if @options.verbose
+        
+        @options.headers.each { |k,v| puts "#{k}: #{v}" } if @options.verbose 
         puts content if @options.verbose
 
         response = nil
@@ -60,9 +75,7 @@ class HttpPost
         }
         case response
           when Net::HTTPSuccess
-              response.each_header() { |key, value|
-                puts "#{key}, #{value}"
-              } if @options.verbose
+              response.each_header() { |k, v|puts "#{k}: #{v}"} if @options.verbose
           when Net::HTTPRedirection
               @options.uri = URI.parse(response['location'])
               puts "HTTP Redirection to : '#{@options.uri}'" if @options.verbose
@@ -77,7 +90,7 @@ class HttpPost
     def HttpPost.default_options()
         opts = OpenStruct.new
         opts.debugmode = false
-        opts.soapaction = ""
+        opts.soapaction = ''
         opts.outputfile = nil
         opts.postfile = nil
         opts.verbose = false
@@ -135,8 +148,8 @@ if $0 == __FILE__
             URI.parse($default_url)
           end
 
-    headers = {'Content-Type' => 'text/xml',
-               'SOAPAction' => options.soapaction }
+    headers = {'Content-Type' => 'text/xml'}
+#               'SOAPAction' => options.soapaction }
     options.headers = headers
     HttpPost.new(options) {
         puts send(IO.read(@options.postfile))
