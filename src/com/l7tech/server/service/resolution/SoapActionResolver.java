@@ -13,6 +13,7 @@ import com.l7tech.common.util.SoapUtil;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * @author alex
@@ -34,7 +35,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
     protected Object getRequestValue( Message request ) throws ServiceResolutionException {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null)
-            return null; // TODO SOAPAction with JMS?
+            return null;
         String soapAction = null;
         try {
             soapAction = httpReqKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
@@ -47,4 +48,13 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
 
     }
 
+    public Set resolve(Message request, Set serviceSubset) throws ServiceResolutionException {
+        // since this only applies to http messages, we dont want to narrow down subset if msg is not http
+        boolean notHttp = (request.getKnob(HttpRequestKnob.class) == null);
+        if (notHttp) {
+            return serviceSubset;
+        } else {
+            return super.resolve(request, serviceSubset);
+        }
+    }
 }
