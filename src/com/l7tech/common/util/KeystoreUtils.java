@@ -3,6 +3,7 @@ package com.l7tech.common.util;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.server.ServerConfig;
 
+import javax.net.ssl.KeyManagerFactory;
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -157,6 +158,20 @@ public class KeystoreUtils {
         return output;
     }
 
+    /**
+     * Returns the <code>KeyManagerFactory</code> based on SSG SSL Private Key as a source of key material.
+     * @return
+     * @throws NoSuchAlgorithmException if the algorithm (X.509) is not available in the default provider
+     * @throws UnrecoverableKeyException if the key cannot be recovered (e.g. the given password is wrong).
+     * @throws KeyStoreException if keystore operaiton fails
+     */
+    public KeyManagerFactory getSSLKeyManagerFactory()
+      throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException {
+        // uses SunX509
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(getSSLKeyStore(), getSslKeystorePasswd().toCharArray());
+        return kmf;
+    }
     /**
      * Load the <code>KeyStore</code> from a given keystore file that is protected with a specified
      * password.

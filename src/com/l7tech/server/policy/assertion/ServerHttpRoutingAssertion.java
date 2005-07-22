@@ -83,10 +83,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
-            sslContext.init(null, new TrustManager[]{trustManager}, null);
+            final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
+            sslContext.init(ku.getSSLKeyManagerFactory().getKeyManagers(), new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
-            final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
             senderVouchesSignerInfo = ku.getSslSignerInfo();
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
