@@ -169,7 +169,7 @@ public class AssertionMessages extends Messages {
     public static final M RESPONSE_WSS_INT_RESPONSE_SIGNED                  = m(5503, Level.FINE, "Designated {0} response elements for signing");
 
     // ServerSchemaValidation                                            
-    public static final M SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating response document");
+    public static final M SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating request document");
     public static final M SCHEMA_VALIDATION_RESPONSE_NOT_XML                = m(5601, Level.INFO, "Response not XML; cannot validate schema");
     public static final M SCHEMA_VALIDATION_VALIDATE_RESPONSE               = m(5602, Level.FINEST, "Validating request document");
     public static final M SCHEMA_VALIDATION_REQUEST_NOT_XML                 = m(5603, Level.INFO, "Request not XML; cannot validate schema");
