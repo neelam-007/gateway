@@ -7,6 +7,7 @@
 package com.l7tech.common.xml.tarari;
 
 import com.tarari.xml.XMLDocument;
+import com.tarari.xml.XMLStreamContext;
 import com.tarari.xml.xpath.RAXContext;
 
 /**
@@ -16,12 +17,14 @@ import com.tarari.xml.xpath.RAXContext;
 public class TarariMessageContextImpl implements TarariMessageContext {
     private final XMLDocument tarariDoc;
     private final RAXContext raxContext;
+    private final XMLStreamContext streamContext;
     private final long compilerGeneration;
 
-    TarariMessageContextImpl(XMLDocument doc, RAXContext context, long compilerGeneration) {
-        if (doc == null || context == null) throw new IllegalArgumentException();
+    TarariMessageContextImpl(XMLDocument doc, RAXContext raxContext, XMLStreamContext streamContext, long compilerGeneration) {
+        if (streamContext == null || raxContext == null) throw new IllegalArgumentException();
         this.tarariDoc = doc;
-        this.raxContext = context;
+        this.raxContext = raxContext;
+        this.streamContext = streamContext;
         this.compilerGeneration = compilerGeneration;
     }
 
@@ -38,13 +41,6 @@ public class TarariMessageContextImpl implements TarariMessageContext {
     }
 
     /**
-     * @return the XMLDocument. Never null.
-     */
-    public XMLDocument getTarariDoc() {
-        return tarariDoc;
-    }
-
-    /**
      * @return the RAXContext. Never null.
      */
     public RAXContext getRaxContext() {
@@ -57,5 +53,9 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         } finally {
             close();
         }
+    }
+
+    public XMLStreamContext getStreamContext() {
+        return streamContext;
     }
 }

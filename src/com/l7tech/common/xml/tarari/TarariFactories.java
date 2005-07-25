@@ -12,10 +12,8 @@ import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
-import com.tarari.xml.Node;
-import com.tarari.xml.NodeSet;
-import com.tarari.xml.XMLDocument;
-import com.tarari.xml.XMLDocumentException;
+import com.tarari.xml.*;
+import com.tarari.xml.tokenizer.XMLTokenizerException;
 import com.tarari.xml.xpath.RAXContext;
 import com.tarari.xml.xpath.XPathProcessor;
 import com.tarari.xml.xpath.XPathProcessorException;
@@ -115,12 +113,18 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
             XMLDocument tarariDoc = null;
             tarariDoc = new XMLDocument(inputStream);
             XPathProcessor tproc = new XPathProcessor(tarariDoc);
-            RAXContext context = tproc.processXPaths(false);
-            return new TarariMessageContextImpl(tarariDoc, context, TarariLoader.getGlobalContext().getCompilerGeneration());
+            XMLStreamContext streamContext = XMLStreamProcessor.tokenize(tarariDoc, false, true);
+            RAXContext raxContext = tproc.processXPaths(false);
+            return new TarariMessageContextImpl(tarariDoc,
+                                                raxContext,
+                                                streamContext,
+                                                TarariLoader.getGlobalContext().getCompilerGeneration());
         } catch (XPathProcessorException e) {
             TarariUtil.translateException(e);
         } catch (XMLDocumentException e) {
             TarariUtil.translateException(e);
+        } catch (XMLTokenizerException e) {
+            throw new SoftwareFallbackException(e);
         }
         throw new RuntimeException(); // unreachable
     }

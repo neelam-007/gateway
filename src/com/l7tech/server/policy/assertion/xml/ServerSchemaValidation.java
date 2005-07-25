@@ -18,9 +18,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.tarari.xml.XMLDocument;
-import com.tarari.xml.XMLStreamProcessor;
-import com.tarari.xml.tokenizer.XMLTokenizerException;
+import com.tarari.xml.validation.ValidationException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -31,6 +29,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.w3.x2001.xmlSchema.SchemaDocument;
+import org.apache.xmlbeans.XmlException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -69,12 +68,10 @@ public class ServerSchemaValidation implements ServerAssertion {
             try {
                 SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
                 tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
-            } catch (Exception e) {
-                // fla note -- this message is totally irrelevent
-                //auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, null, e);
-                logger.log(Level.SEVERE,
-                           "Exception when preparing Tarari context for accelerated schema validation",
-                           e);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "Error getting tns from schema", e);
+            } catch (XmlException e) {
+                logger.log(Level.SEVERE, "Error getting tns from schema", e);
             }
         }
     }
@@ -121,23 +118,22 @@ public class ServerSchemaValidation implements ServerAssertion {
                     TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
                     if (tk != null) {
                         TarariMessageContext tmc = tk.getContext();
-                        // TODO move this static reference to TarariMessageContextImpl behind a classloader boundary
                         if (tmc instanceof TarariMessageContextImpl) {
                             TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
-                            XMLDocument tdoc = tarariMessageContext.getTarariDoc();
                             try {
-                                XMLStreamProcessor.tokenize(tdoc, true);
-                                // IMPORTANT TODO, make sure that we dont validate against another schema defined
-                                // in another assertion here
-                                return AssertionStatus.NONE;
-                            } catch (XMLTokenizerException e) {
+                                if (tarariMessageContext.getStreamContext().isValid()) {
+                                    // IMPORTANT TODO, make sure that we dont validate against another schema defined
+                                    // in another assertion here
+                                    logger.fine("Hardware schema validation success");
+                                    return AssertionStatus.NONE;
+                                }
+                            } catch (ValidationException e) {
                                 auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
                             }
                         }
                     }
                 }
             }
-
             return checkRequest(msg.getXmlKnob().getDocumentReadOnly());
         } catch (SAXException e) {
             throw new PolicyAssertionException("could not parse request or response document", e);
