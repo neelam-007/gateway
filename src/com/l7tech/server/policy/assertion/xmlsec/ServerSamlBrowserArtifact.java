@@ -4,6 +4,7 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
+import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -14,6 +15,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.springframework.context.ApplicationContext;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -36,7 +38,9 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
     private final Auditor auditor;
     private final SamlBrowserArtifact assertion;
     private final URL loginUrl;
-    private final GenericHttpClient httpClient = new UrlConnectionHttpClient();
+
+    private MultiThreadedHttpConnectionManager cman;
+    private final GenericHttpClient httpClient;
     private final SSLContext sslContext;
 
     public ServerSamlBrowserArtifact(SamlBrowserArtifact assertion, ApplicationContext springContext) {
@@ -48,6 +52,12 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
             throw (IllegalArgumentException)new IllegalArgumentException("Invalid SAML browser profile URL: " +
                     assertion.getSsoEndpointUrl()).initCause(e);
         }
+        cman = new MultiThreadedHttpConnectionManager();
+        cman.setMaxConnectionsPerHost(200);
+        cman.setMaxTotalConnections(2000);
+
+        httpClient = new CommonsHttpClient(cman);
+
 
         try {
             sslContext = SSLContext.getInstance("SSL");
