@@ -762,6 +762,7 @@ sub writefile {
 		print SV "$f=$Conf{$f}\n";
 	}
 	close SV;
+	chmod 0600, $save_file;
 }
 
 sub usage {
