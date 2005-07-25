@@ -253,6 +253,7 @@ public class AssertionMessages extends Messages {
     public static final M SAMLBROWSERPOST_LOGINFORM_MULTIPLE_FIELDS   = m(6405, Level.WARNING, "Login form contained multiple username or password fields");
     public static final M SAMLBROWSERPOST_LOGINFORM_MULTIPLE_FORMS    = m(6406, Level.WARNING, "Multiple login forms found");
     public static final M SAMLBROWSERPOST_LOGINFORM_NO_FORM           = m(6407, Level.WARNING, "No matching login form found");
+    public static final M SAMLBROWSERPOST_LOGINFORM_BAD_METHOD        = m(6408, Level.WARNING, "Login form method was not POST");
 
     // SAML Browser/Artifact
     public static final M SAMLBROWSERARTIFACT_RESPONSE_NON_302        = m(6500, Level.WARNING, "HTTP GET for login resulted in non-302 status");
