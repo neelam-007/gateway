@@ -126,6 +126,9 @@ public class ServerSchemaValidation implements ServerAssertion {
                                     // in another assertion here
                                     logger.fine("Hardware schema validation success");
                                     return AssertionStatus.NONE;
+                                } else {
+                                    logger.info("Hardware schema validation failed. The assertion will " +
+                                                "fallback on software schema validation");
                                 }
                             } catch (ValidationException e) {
                                 auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
