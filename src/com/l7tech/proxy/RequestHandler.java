@@ -8,6 +8,9 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.*;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -450,7 +453,31 @@ public class RequestHandler extends AbstractHttpHandler {
             log.log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
             interceptor.onReplyError(e);
             log.info("Returning fault");
-            context.getResponse().initialize(exceptionToFault(e, null, context.getOriginalUrl()));
+            boolean haveFault = false;
+            try {
+                if (context.getResponse().isXml()) {
+                    SoapFaultDetail sfd = SoapFaultUtils.gatherSoapFaultDetail(context.getResponse().getXmlKnob().getDocumentReadOnly());
+                    if (sfd != null) {
+                        String ourMess = ExceptionUtils.getMessage(e);
+                        String ssgMess = sfd.getFaultString();
+                        final String actor = context.getOriginalUrl().toExternalForm();
+                        sfd = new SoapFaultDetailImpl(sfd.getFaultCode(),
+                                                      ourMess + "\n    Gateway error message: " + ssgMess,
+                                                      sfd.getFaultDetail(),
+                                                      actor);
+                        context.getResponse().initialize(SoapFaultUtils.generateSoapFaultDocument(sfd, actor));
+                        haveFault = true;
+                    }
+                }
+            } catch (IOException e1) {
+                // Fallthrough and generate a new fault from our own exception, ignoring the SSG response
+            } catch (InvalidDocumentFormatException e1) {
+                // Fallthrough and generate a new fault from our own exception, ignoring the SSG response
+            } catch (SAXException e1) {
+                // Fallthrough and generate a new fault from our own exception, ignoring the SSG response
+            }
+            if (!haveFault)
+                context.getResponse().initialize(exceptionToFault(e, null, context.getOriginalUrl()));
         } finally {
             CurrentSslPeer.clear();
         }

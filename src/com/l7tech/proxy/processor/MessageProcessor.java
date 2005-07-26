@@ -639,9 +639,10 @@ public class MessageProcessor {
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
                     if (context.getSsg().isFederatedGateway()) {
-                        log.log(Level.SEVERE, "Federated Gateway " + context.getSsg() + " is trying to " +
-                                              "tell us to destroy our Trusted client certificate; ignoring it");
-                        throw new ConfigurationException("Federated Gateway rejected our client certificate");
+                        final String msg = "Federated Gateway " + context.getSsg() + " is trying to " +
+                                           "tell us to destroy our Trusted client certificate; ignoring it";
+                        logResponseError(msg, httpResponse, context);
+                        throw new ConfigurationException(msg);
                     }
                     ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getCredentialsForTrustedSsg());
                     throw new PolicyRetryableException(); // try again with the new cert
@@ -665,15 +666,10 @@ public class MessageProcessor {
             if (policyUrlStr != null) {
                 log.info("Gateway response contained a PolicyUrl header: " + policyUrlStr);
                 // Have we already updated a policy while processing this request?
-                if (context.isPolicyUpdated()) {
-                    InputStream responseBodyAsStream = httpResponse.getInputStream();
-                    String content = "";
-                    if (responseBodyAsStream != null && LogFlags.logResponse) {
-                        byte[] output = HexUtils.slurpStream(responseBodyAsStream);
-                        content = "  Response body:\n" + new String(output);
-                    }
-                    final String msg = "Policy was updated, but Gateway says it's still out-of-date.";
-                    log.warning(msg + content);
+                if (context.isPolicyUpdated() || true ) {
+                    final String msg = "Gateway rejected message for non-compliance with policy.  " +
+                                       "Updating the policy did not help.";
+                    logResponseError(msg, httpResponse, context);
                     throw new ConfigurationException(msg);
                 }
                 String serviceid = null;
@@ -688,11 +684,16 @@ public class MessageProcessor {
                     Matcher m = findServiceid.matcher(query);
                     if (m.matches())
                         serviceid = m.group(1);
-                    if (serviceid == null || serviceid.length() < 1)
-                        throw new ConfigurationException("Gateway sent us a Policy URL from which we were unable to extract the service ID.");
+                    if (serviceid == null || serviceid.length() < 1) {
+                        final String msg = "Gateway sent us a Policy URL from which we were unable to extract the service ID.";
+                        logResponseError(msg, httpResponse, context);
+                        throw new ConfigurationException(msg);
+                    }
 
                 } catch (MalformedURLException e) {
-                    throw new ConfigurationException("Gateway sent us an invalid Policy URL.");
+                    final String msg = "Gateway sent us an invalid Policy URL.";
+                    logResponseError(msg, httpResponse, context);
+                    throw new ConfigurationException(msg);
                 }
 
                 context.downloadPolicy(serviceid);
@@ -707,9 +708,10 @@ public class MessageProcessor {
             String contentTypeStr = responseHeaders.getOnlyOneValue(MimeUtil.CONTENT_TYPE);
             log.info("Response Content-Type: " + contentTypeStr);
             if (contentTypeStr == null || contentTypeStr.length() < 1) {
-                log.warning("Server did not return a Content-Type");
+                final String msg = "Response from Gateway did not include a Content-Type";
+                logResponseError(msg, httpResponse, context);
                 checkStatus(status, responseHeaders, url, ssg);
-                throw new IOException("Response from Gateway did not include a Content-Type");
+                throw new IOException(msg);
             }
             final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentTypeStr);
             InputStream responseBodyAsStream = httpResponse.getInputStream();
@@ -718,15 +720,11 @@ public class MessageProcessor {
                 responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
 
             if (!(outerContentType.isXml() || outerContentType.isMultipart())) {
-                byte[] output = null;
-                String content = "";
-                if (responseBodyAsStream != null && LogFlags.logResponse) {
-                    output = HexUtils.slurpStream(responseBodyAsStream);
-                    content = " with content:\n" + new String(output);
-                }
-                log.warning("Server returned unsupported Content-Type (" + outerContentType.getFullValue() + ")" + content);
+                final String msg = "Server returned unsupported Content-Type (" + outerContentType.getFullValue() + ")";
+                log.warning(msg);
+                logResponseError(msg, httpResponse, context);
                 checkStatus(status, responseHeaders, url, ssg);
-                throw new IOException("Response from Gateway was unsupported Content-Type " + outerContentType.getFullValue());
+                throw new IOException(msg);
             }
 
             response.initialize(Managers.createStashManager(),
@@ -847,6 +845,53 @@ public class MessageProcessor {
                 }
             }
         }
+    }
+
+    /**
+     * Log the reponse error, logging the response body if so configured, and attempting to preserve any fault
+     * document that the response might contain.
+     *
+     * @param msg           the error message to log.  The response body will be appended if response logging is enabled.
+     * @param httpResponse  the raw HTTP response.  Must not be null.  Its InputStream may be null however.
+     * @param context       the current request context.
+     * @throws IOException  if there was a problem reading from the response InputStream.
+     */
+    private void logResponseError(final String msg, GenericHttpResponse httpResponse, final PolicyApplicationContext context)
+            throws IOException
+    {
+        String responseStr = readResponseAndSaveFault(httpResponse, context.getResponse());
+        log.warning(msg + (LogFlags.logResponse ? "  Response body:\n" + responseStr : ""));
+    }
+
+    /**
+     * Consume any response InputStream and attempt to preserve any fault information.
+     * @param httpResponse   the response to save.  Must not be null.  Its InputStream might be null however.
+     * @param response       the Message in which to save the response if it is a fault document.  Must not be null.
+     * @return the response as a string, regardless of whether any fault was saved.  May be empty but never null.
+     * @throws IOException  if there was a problem reading from the response InputStream.
+     */
+    private static String readResponseAndSaveFault(GenericHttpResponse httpResponse,
+                                                   final Message response)
+            throws IOException
+    {
+        String responseStr = "";
+        InputStream responseBodyAsStream = httpResponse.getInputStream();
+        if (responseBodyAsStream != null) {
+            byte[] output = HexUtils.slurpStream(responseBodyAsStream);
+            responseStr = new String(output);
+            try {
+                Document respDoc = XmlUtil.stringToDocument(responseStr);
+                if (SoapFaultUtils.gatherSoapFaultDetail(respDoc) != null)
+                    response.initialize(respDoc);
+            } catch (IOException e) {
+                // couldn't parse a fault, fallthrough without one
+            } catch (SAXException e) {
+                // couldn't parse a fault, fallthrough without one
+            } catch (InvalidDocumentFormatException e) {
+                // couldn't parse a fault, fallthrough without one
+            }
+        }
+        return responseStr;
     }
 
     private void gatherCookies(HttpHeaders responseHeaders, Ssg ssg) {
