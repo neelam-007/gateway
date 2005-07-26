@@ -60,11 +60,14 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
+        /*
+        fla bugfix 1914
         if (wssResults == null) {
             auditor.logAndAudit(AssertionMessages.NO_WSS_LEVEL_SECURITY);
             context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
         }
+        */
 
         // get the document
         Document soapmsg = null;
@@ -76,13 +79,19 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         }
 
         ProcessorResultUtil.SearchResult result = null;
+        ParsedElement[] parsedElements;
+        if (wssResults != null) {
+            parsedElements = getElementsFoundByProcessor(wssResults);
+        } else {
+            parsedElements = new ParsedElement[0];
+        }
         try {
             result = ProcessorResultUtil.searchInResult(logger,
                                                         soapmsg,
                                                         data.getXpathExpression().getExpression(),
                                                         data.getXpathExpression().getNamespaces(),
                                                         isAllowIfEmpty(),
-                                                        getElementsFoundByProcessor(wssResults),
+                                                        parsedElements,
                                                         getPastTenseOperationName());
         } catch (ProcessorException e) {
             throw new PolicyAssertionException(e);
