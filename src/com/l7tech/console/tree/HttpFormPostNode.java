@@ -66,7 +66,7 @@ public class HttpFormPostNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Translate POSTed Form to Multipart Message";
+        return "Translate HTTP Form to MIME";
     }
 
     /**

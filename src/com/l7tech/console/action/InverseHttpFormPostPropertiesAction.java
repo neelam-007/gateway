@@ -28,7 +28,7 @@ public class InverseHttpFormPostPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "HTTP Form Submission Properties";
+        return "MIME to HTTP Form Translation Properties";
     }
 
     /**

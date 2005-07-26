@@ -63,7 +63,7 @@ public class InverseHttpFormPostNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Translate Multipart Message to POSTed Form";
+        return "Translate MIME to HTTP Form";
     }
 
     /**

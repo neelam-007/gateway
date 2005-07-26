@@ -28,14 +28,14 @@ public class HttpFormPostPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "HTTP Form POST Properties";
+        return "HTTP Form to MIME Translation Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/Edit HTTP Form POST";
+        return "View/Edit HTTP Form POST to MIME Translation Properties";
     }
 
     /**

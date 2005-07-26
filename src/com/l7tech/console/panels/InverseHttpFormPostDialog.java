@@ -32,7 +32,7 @@ public class InverseHttpFormPostDialog extends JDialog {
     private Frame ownerFrame;
 
     public InverseHttpFormPostDialog(Frame owner, InverseHttpFormPost ass) throws HeadlessException {
-        super(owner, "Inverse HTTP Form POST Properties", true);
+        super(owner, "MIME to HTTP Form Translation Properties", true);
         this.ownerFrame = owner;
         this.assertion = ass;
         fieldListModel = new DefaultComboBoxModel(wrap(ass.getFieldNames()));

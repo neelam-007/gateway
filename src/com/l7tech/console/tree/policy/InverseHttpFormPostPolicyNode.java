@@ -22,7 +22,7 @@ public class InverseHttpFormPostPolicyNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Translate Multipart Message to HTTP Form Submission";
+        return "MIME to HTTP Form Translation";
     }
 
     /**

@@ -33,7 +33,7 @@ public class HttpFormPostDialog extends JDialog {
     private Frame ownerFrame;
 
     public HttpFormPostDialog(Frame owner, HttpFormPost ass) throws HeadlessException {
-        super(owner, "HTTP Form POST Properties", true);
+        super(owner, "HTTP Form to MIME Translation Properties", true);
         this.ownerFrame = owner;
         this.assertion = ass;
         fieldListModel = new DefaultListModel();
