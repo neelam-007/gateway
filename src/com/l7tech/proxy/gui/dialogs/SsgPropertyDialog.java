@@ -17,13 +17,13 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 
+import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
-import javax.crypto.BadPaddingException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -175,6 +175,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             SecurityToken token = null;
                             for (;;) {
                                 try {
+                                    stratCopy.clearCachedToken();
                                     token = stratCopy.getOrCreate();
                                     if (token == null) throw new NullPointerException("No token was returned by the server"); // can't happen
                                     break;

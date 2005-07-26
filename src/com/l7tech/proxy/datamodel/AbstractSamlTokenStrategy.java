@@ -75,6 +75,12 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
         }
     }
 
+    public void clearCachedToken() {
+        synchronized (lock) {
+            cachedAssertion = null;
+        }
+    }
+
     public void onTokenRejected() {
         synchronized (lock) {
             cachedAssertion = null;
