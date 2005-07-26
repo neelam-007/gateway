@@ -24,7 +24,7 @@ public class HttpPostFormFieldInfoDialog extends JDialog {
     private boolean changed;
 
     public HttpPostFormFieldInfoDialog(Frame owner, HttpFormPost.FieldInfo fi) throws HeadlessException {
-        super(owner, "Edit Field Information", true);
+        super(owner, "Configure Field Information", true);
         this.fieldInfo = fi;
         fieldNameField.setText(fi.getFieldname());
         contentTypeField.setText(fi.getContentType());

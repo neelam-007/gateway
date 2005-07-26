@@ -135,8 +135,8 @@ public class InverseHttpFormPostDialog extends JDialog {
 
     private String edit(String fieldname) {
         Object result = JOptionPane.showInputDialog(this,
-                                                    "Enter the HTTP Form Field Name",
-                                                    "Edit Field Name",
+                                                    "Enter the HTTP form field name that will\nbe matched to an incoming MIME part:",
+                                                    "Configure Field Name",
                 JOptionPane.PLAIN_MESSAGE, null, null,
                                                     fieldname);
         if (result == null || result instanceof String) {
