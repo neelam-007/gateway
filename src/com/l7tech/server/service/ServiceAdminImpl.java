@@ -67,9 +67,12 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
             HttpClient client = new HttpClient();
             GetMethod get = new GetMethod(url);
             // bugfix for 1857 (next 3 lines)
-            //get.setHttp11(true);
-            //String hostval = urltarget.getHost() + ":" + urltarget.getPort();
-            //get.setRequestHeader("HOST", hostval);
+            get.setHttp11(true);
+            String hostval = urltarget.getHost();
+            if (urltarget.getPort() > 0) {
+                hostval = hostval + ":" + urltarget.getPort();
+            }
+            get.setRequestHeader("HOST", hostval);
 
             // support for passing username and password in the url from the ssm
             String userinfo = urltarget.getUserInfo();
@@ -95,6 +98,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
             } else {
                 String msg = "The URL " + url + " is returning code " + ret;
                 logger.info(msg);
+                logger.info("error detail: " + get.getResponseBodyAsString());
                 throw new RemoteException(msg);
             }
         } catch (MalformedURLException e) {
