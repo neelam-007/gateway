@@ -46,7 +46,6 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         final Ssg ssg = context.getSsg();
         final PrivateKey userPrivateKey = ssg.getClientCertificatePrivateKey();
         final X509Certificate userCert = ssg.getClientCertificate();
-        final X509Certificate ssgCert = ssg.getServerCertificateAlways();
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {
@@ -56,7 +55,6 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
                     DecorationRequirements wssReqs;
                     if (subject.getRecipientContext().localRecipient()) {
                         wssReqs = context.getDefaultWssRequirements();
-                        wssReqs.setRecipientCertificate(ssgCert);
                     } else {
                         wssReqs = context.getAlternateWssRequirements(subject.getRecipientContext());
                     }
