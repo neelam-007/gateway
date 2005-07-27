@@ -87,7 +87,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
 
             boolean pre32PolicyCompat = false;
-            if (servletRequest.getRequestURI().contains(PRE32_DISCO_URI)) {
+            if (servletRequest.getRequestURI().indexOf(PRE32_DISCO_URI) >= 0) {
                 // Emit policies in pre-3.2 compatibility mode
                 pre32PolicyCompat = true;
             }
@@ -194,7 +194,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
 
         boolean pre32PolicyCompat = false;
-        if (req.getRequestURI().contains(PRE32_DISCO_URI)) {
+        if (req.getRequestURI().indexOf(PRE32_DISCO_URI) >= 0) {
             // Emit policies in pre-3.2 compatibility mode
             pre32PolicyCompat = true;
         }
