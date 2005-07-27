@@ -666,7 +666,7 @@ public class MessageProcessor {
             if (policyUrlStr != null) {
                 log.info("Gateway response contained a PolicyUrl header: " + policyUrlStr);
                 // Have we already updated a policy while processing this request?
-                if (context.isPolicyUpdated() || true ) {
+                if (context.isPolicyUpdated()) {
                     final String msg = "Gateway rejected message for non-compliance with policy.  " +
                                        "Updating the policy did not help.";
                     logResponseError(msg, httpResponse, context);
