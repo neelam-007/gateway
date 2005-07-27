@@ -263,7 +263,7 @@ public class TokenServiceImpl implements TokenService {
                                                                 throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession = null;
         try {
-            newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor);
+            newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor, context.getCredentials());
         } catch (DuplicateSessionException e) {
             throw new TokenServiceException(e);
         }

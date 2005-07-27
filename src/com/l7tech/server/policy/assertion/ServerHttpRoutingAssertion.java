@@ -293,12 +293,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                     LoginCredentials svInputCredentials = context.getCredentials();
                     if (svInputCredentials == null) {
-                        User user = context.getAuthenticatedUser();
-                        if (user != null && user.getLogin() !=null) {
-                            svInputCredentials = new LoginCredentials(user.getLogin(), null, null, null);
-                        }
-                    }
-                    if (svInputCredentials == null) {
                         auditor.logAndAudit(AssertionMessages.SAML_SV_REQUEST_NOT_AUTHENTICATED);
                     } else {
                         Document document = context.getRequest().getXmlKnob().getDocumentWritable();

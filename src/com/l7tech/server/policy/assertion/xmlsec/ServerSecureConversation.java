@@ -78,6 +78,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 User authenticatedUser = session.getUsedBy();
                 context.setAuthenticated(true);
                 context.setAuthenticatedUser(authenticatedUser);
+                context.setCredentials(session.getCredentials());
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, new String[] {authenticatedUser.getLogin()});
                 return AssertionStatus.NONE;

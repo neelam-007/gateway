@@ -2,6 +2,7 @@ package com.l7tech.server.secureconversation;
 
 import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import javax.crypto.SecretKey;
 
@@ -55,9 +56,30 @@ public class SecureConversationSession implements SecurityContext {
         this.usedBy = usedBy;
     }
 
+    /**
+     * The <code>LoginCredentials</code> are the credentials that the <code>User</code>
+     * {@link com.l7tech.server.secureconversation.SecureConversationSession#getUsedBy()}
+     * authenticated with.
+     *
+     * @return the <code>LoginCredentials</code> that thee
+     */
+    public LoginCredentials getCredentials() {
+        return credentials;
+    }
+
+    /**
+     * Set the credentials that the <code>User</code> authenticated with.
+     *
+     * @param credentials
+     */
+    public void setCredentials(LoginCredentials credentials) {
+        this.credentials = credentials;
+    }
+
     private String identifier;
     private SecretKey sharedSecret;
     private long expiration;
     private long creation;
     private User usedBy;
+    private LoginCredentials credentials;
 }

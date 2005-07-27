@@ -7,6 +7,7 @@ import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.common.security.xml.processor.SecurityContextFinder;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import javax.crypto.SecretKey;
 import java.security.SecureRandom;
@@ -78,9 +79,10 @@ public class SecureConversationContextManager implements SecurityContextFinder {
     /**
      * Creates a new session and saves it
      * @param sessionOwner
+     * @param credentials
      * @return the newly created session
      */
-    public SecureConversationSession createContextForUser(User sessionOwner) throws DuplicateSessionException {
+    public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials) throws DuplicateSessionException {
         final byte[] sharedSecret = generateNewSecret();
         String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomuuid();
         // make up a new session identifier and shared secret (using some random generator)
@@ -88,6 +90,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         session.setCreation(System.currentTimeMillis());
         session.setExpiration(System.currentTimeMillis() + DEFAULT_SESSION_DURATION);
         session.setIdentifier(newSessionIdentifier);
+        session.setCredentials(credentials);
         session.setSharedSecret(new SecretKey() {
             public byte[] getEncoded() {
                 return sharedSecret;
