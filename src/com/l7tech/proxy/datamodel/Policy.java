@@ -20,6 +20,7 @@ public class Policy implements Serializable, Cloneable {
     private String version;
     private ClientAssertion clientAssertion;
     private boolean valid = true;
+    private boolean alwaysValid = false;
 
     public Policy() {
     }
@@ -53,7 +54,7 @@ public class Policy implements Serializable, Cloneable {
      * @return false if this policy has ever caused a PolicyAssertionException; otherwise true.
      */
     public boolean isValid() {
-        return valid;
+        return alwaysValid || valid;
     }
 
     /**
@@ -64,6 +65,14 @@ public class Policy implements Serializable, Cloneable {
      */
     public void setValid(boolean valid) {
         this.valid = valid;
+    }
+
+    public boolean isAlwaysValid() {
+        return alwaysValid;
+    }
+
+    public void setAlwaysValid(boolean alwaysValid) {
+        this.alwaysValid = alwaysValid;
     }
 
     /** assertion mutator for xml bean deserializer.  Do not call this method. */

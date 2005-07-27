@@ -109,6 +109,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             try {
                 Assertion a = WspReader.parsePermissively(policyXml);
                 hardcodedPolicy = new Policy(a, null);
+                hardcodedPolicy.setAlwaysValid(true);
             } catch (IOException e) {
                 logger.log(Level.WARNING,
                            "BridgeRoutingAssertion: hardcoded policy is invalid; assertion is therefore nonfunctional.",

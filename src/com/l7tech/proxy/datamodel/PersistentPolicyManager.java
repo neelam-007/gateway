@@ -23,7 +23,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
     public void setPolicy(PolicyAttachmentKey key, Policy policy ) throws PolicyLockedException {
         key.setPersistent(true);
         policy.setVersion(null);
-        policy.setValid(true); // statically-configured policies must never be ignored
+        policy.setAlwaysValid(true); // statically-configured policies must never be ignored
         super.setPolicy(key, policy);
     }
 
@@ -34,7 +34,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
         if (policy != null) {
             policyAttachmentKey.setPersistent(true);
             policy.setVersion(null);
-            policy.setValid(true); // statically-configured policies must never be ignored
+            policy.setAlwaysValid(true); // statically-configured policies must never be ignored
         }
 
         return policy;
@@ -47,7 +47,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
         if (policy != null) {
             pak.setPersistent(true);
             policy.setVersion(null);
-            policy.setValid(true); // statically-configured policies must never be ignored
+            policy.setAlwaysValid(true); // statically-configured policies must never be ignored
         }
 
         return policy;
