@@ -67,9 +67,9 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
             HttpClient client = new HttpClient();
             GetMethod get = new GetMethod(url);
             // bugfix for 1857 (next 3 lines)
-            get.setHttp11(true);
-            String hostval = urltarget.getHost() + ":" + urltarget.getPort();
-            get.setRequestHeader("HOST", hostval);
+            //get.setHttp11(true);
+            //String hostval = urltarget.getHost() + ":" + urltarget.getPort();
+            //get.setRequestHeader("HOST", hostval);
 
             // support for passing username and password in the url from the ssm
             String userinfo = urltarget.getUserInfo();
