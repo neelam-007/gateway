@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion.credential.http;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -101,7 +102,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         logger.fine("cert found for user " + certCN);
 
         // TODO where's the chain?
-        return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, _data.getClass(), null, clientCert );
+        return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, SslAssertion.class, null, clientCert );
     }
 
     protected AssertionStatus checkCredentials(LoginCredentials pc, Map authParams) throws CredentialFinderException {
