@@ -13,13 +13,12 @@ import com.l7tech.common.audit.SystemAuditRecord;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.server.event.EntityChangeSet;
-import com.l7tech.server.event.GroupMembershipEvent;
-import com.l7tech.server.event.GroupMembershipEventInfo;
+import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
+import com.l7tech.server.identity.cert.CertEntryRow;
 import com.l7tech.server.service.resolution.ResolutionParameters;
 import net.sf.hibernate.CallbackException;
 import net.sf.hibernate.Interceptor;
@@ -56,7 +55,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     private final Set ignoredClassNames;
 
     private boolean ignored(Object entity) {
-        if (!(entity instanceof Entity || entity instanceof GroupMembership)) return true;
+        if (!(entity instanceof Entity || entity instanceof GroupMembership || entity instanceof CertEntryRow)) return true;
         return ignoredClassNames.contains(entity.getClass().getName());
     }
 
@@ -98,6 +97,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
             return new Deleted((Entity)obj);
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "removed", getApplicationContext()));
+        } else if (obj instanceof CertEntryRow) {
+            return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "removed", null, getApplicationContext()));
         } else
             throw new IllegalStateException("Can't make a Deleted event for a " + obj.getClass().getName());
     }
@@ -107,6 +108,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
             return new Created((Entity)obj);
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "added", getApplicationContext()));
+        } else if (obj instanceof CertEntryRow) {
+            return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "added", null, getApplicationContext()));
         } else
             throw new IllegalStateException("Can't make a Created event for a " + obj.getClass().getName());
     }
@@ -116,6 +119,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
             return new Updated((Entity)obj, changes);
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "updated", getApplicationContext()));
+        } else if (obj instanceof CertEntryRow) {
+            return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "updated", changes, getApplicationContext()));
         } else
             throw new IllegalStateException("Can't make an Updated event for a " + obj.getClass().getName());
     }

@@ -132,7 +132,7 @@ public class MessageSummaryAuditFactory {
             Operation op = context.getOperation();
             if (op != null) operationName = op.getName();
         } catch (Exception e) {
-            logger.log(Level.INFO, "Couldn't determine operation name", e);
+            logger.log(Level.INFO, "Couldn't determine operation name: " + e.toString());
         }
 
         return new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,

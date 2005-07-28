@@ -13,13 +13,31 @@ import java.io.Serializable;
  * @version $Revision$
  */
 public class DeletedEntity implements NamedEntity, Serializable {
+    public DeletedEntity(Class entityClass, String uniqueId) {
+        this.entityClass = entityClass;
+        this.uniqueId = uniqueId;
+        try {
+            this.oid = Long.valueOf(uniqueId).longValue();
+        } catch (NumberFormatException e) {
+        }
+    }
+
     public DeletedEntity(Class entityClass, long oid) {
         this.entityClass = entityClass;
         this.oid = oid;
+        this.uniqueId = Long.toString(oid);
     }
 
     public Class getEntityClass() {
         return entityClass;
+    }
+
+    public String getUniqueId() {
+        return uniqueId;
+    }
+
+    public void setUniqueId(String uniqueId) {
+        this.uniqueId = uniqueId;
     }
 
     public long getOid() {
@@ -54,5 +72,6 @@ public class DeletedEntity implements NamedEntity, Serializable {
     }
 
     private final Class entityClass;
-    private final long oid;
+    private String uniqueId;
+    private long oid;
 }
