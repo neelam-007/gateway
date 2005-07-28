@@ -9,6 +9,7 @@ import x0Assertion.oasisNamesTcSAML1.AuthenticationStatementType;
 import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
 import java.util.Collection;
+import java.util.Arrays;
 
 /**
  * @author emil
@@ -63,8 +64,10 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
             }
         }
         if (!methodMatches) {
-            final String msg = "Authentication method " + authenticationMethod + " not matched";
-            validationResults.add(new SamlAssertionValidate.Error(msg, authenticationStatementType.toString(), methods, null));
+            final String msg = "Authentication method not matched expected/received: {0}/{1}";
+            validationResults.add(new SamlAssertionValidate.Error(msg, authenticationStatementType.toString(),
+                                                                  new Object[] {methods.length == 1 ? methods[0].toString()
+                                                                                : Arrays.asList(methods).toString(), authenticationMethod}, null));
             logger.finer(msg);
         }
     }
