@@ -93,13 +93,14 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
 
         for (int i = 0; i < actionArray.length; i++) {
             ActionType actionType = actionArray[i];
-            if (constraintsActionNameSpace != null && !"".equals(constraintsActionNameSpace)) {
-                if (!constraintsActionNameSpace.equals(actionType.getNamespace())) {
-                    continue;
-                }
-            }
             if (constraintsAction.equals(actionType.getStringValue())) {
                 logger.finer("Matched Action " + constraintsAction);
+                if (constraintsActionNameSpace != null && !"".equals(constraintsActionNameSpace)) {
+                    if (!constraintsActionNameSpace.equals(actionType.getNamespace())) {
+                        continue;
+                    }
+                    logger.finer("Matched Action Namespace" + constraintsActionNameSpace);
+                }
                 return;
             }
         }
