@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.rmi.RemoteException;
@@ -309,6 +310,13 @@ public class IdProviderReference extends ExternalReference {
                         logger.info("Changing " + su.getUserLogin() + "'s id from " +
                                     su.getUserUid() + " to " + userFromLogin.getUniqueIdentifier());
                         su.setUserUid(userFromLogin.getUniqueIdentifier());
+                    } else {
+                        // the user is not found with the id nor the login
+                        String msg = "The user whose id equals " + su.getUserUid() +
+                                     " and login equals " + su.getUserLogin() +
+                                     " cannot be found on the local system.";
+                        logger.warning(msg);
+                        JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
                     }
                 }
             } else if (a instanceof MemberOfGroup) {
