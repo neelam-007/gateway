@@ -6,7 +6,6 @@
 
 package com.l7tech.server.event;
 
-import com.l7tech.identity.BrowseableIdentityProvider;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
@@ -28,10 +27,7 @@ public class UserCertEventInfo {
             NamedEntity u = null;
             IdentityProviderFactory ipf = (IdentityProviderFactory)springContext.getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(cer.getProvider());
-            if (provider instanceof BrowseableIdentityProvider) {
-                BrowseableIdentityProvider bprov = (BrowseableIdentityProvider) provider;
-                u = (PersistentUser)bprov.getUserManager().findByPrimaryKey(cer.getUserId());
-            }
+            u = (PersistentUser)provider.getUserManager().findByPrimaryKey(cer.getUserId());
 
             if (u == null) u = new DeletedEntity(User.class, cer.getUserId());
             this.user = u;
