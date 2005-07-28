@@ -240,7 +240,7 @@
             -->
             <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no" fork="yes"/>
 <!--
-            ** TODO: make sure -security flag is added to the 'nightly' build/test
+
             ** Tomcat config. When done enable the tests below.
             **
            <test name="com.l7tech.logging.LogCLientTest" haltonfailure="no"/>
@@ -1323,7 +1323,6 @@
                 <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="tarari.sh"/>
-                <include name="clean_db.pl"/>
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="tarari-initd"/>
