@@ -44,6 +44,7 @@ mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
+rm -f %{buildroot}/ssg/dist/*
 
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
