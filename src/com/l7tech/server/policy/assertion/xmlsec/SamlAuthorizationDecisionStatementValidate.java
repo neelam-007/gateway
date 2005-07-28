@@ -10,7 +10,6 @@ import x0Assertion.oasisNamesTcSAML1.AuthorizationDecisionStatementType;
 import x0Assertion.oasisNamesTcSAML1.DecisionType;
 import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
-import java.text.MessageFormat;
 import java.util.Collection;
 
 /**
@@ -95,7 +94,7 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
             ActionType actionType = actionArray[i];
             if (constraintsAction.equals(actionType.getStringValue())) {
                 logger.finer("Matched Action " + constraintsAction);
-                if (constraintsActionNameSpace != null && !"".equals(constraintsActionNameSpace)) {
+                if (isNullOrEmpty(constraintsActionNameSpace)) {
                     if (!constraintsActionNameSpace.equals(actionType.getNamespace())) {
                         continue;
                     }
@@ -104,7 +103,15 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
                 return;
             }
         }
-        validationResults.add(new SamlAssertionValidate.Error(MessageFormat.format("Could not match action/namespace {0}/{1}",
-                                                                                   new Object[]{constraintsAction, constraintsActionNameSpace}), authorizationDecisionStatementType.toString(), null, null));
+        if (isNullOrEmpty(constraintsActionNameSpace)) {
+            validationResults.add(new SamlAssertionValidate.Error("No match action/namespace: {0}/{1}", authorizationDecisionStatementType.toString(),
+                                                                                       new Object[]{constraintsAction, constraintsActionNameSpace}, null));
+        } else {
+            validationResults.add(new SamlAssertionValidate.Error("No match action: {0}", authorizationDecisionStatementType.toString(), constraintsAction, null));
+        }
+    }
+
+    private boolean isNullOrEmpty(String s) {
+        return s != null && !"".equals(s);
     }
 }
