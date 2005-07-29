@@ -13,19 +13,24 @@
 
 
  <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Configure/Edit XML Security Assertions">
 <meta name=generator-major-version content=0.1>
 <meta name=generator-minor-version content=1>
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=8600>
-<meta name=layout-width content=773>
-<meta name=x-ignored-words content="XPath;SAML;NotOnOrAfter;saml;requestor;WS;soapenv">
+<meta name=layout-height content=10004>
+<meta name=layout-width content=762>
+<meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -47,40 +52,40 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
- Multiple XML Security assertions can be used in a single security policy. 
- The XML Security assertions can only be used in a Web service security 
- policy.</p>
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Multiple XML Security assertions can be used in a single policy. The XML 
+ Security assertions can only be used in a Web service policy.</p>
 </div>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
  assertions are available in the XML Security category of the [Assertions] 
  tab:</p>
 
-<h6>&nbsp;</h6>
+<p class="space">&nbsp;</p>
 
-<p><img src="XMLSAssens.gif" x-maintain-ratio="TRUE" style="border: none;
+<p><img src="3.gif" x-maintain-ratio="TRUE" style="border: none;
 				margin-left: 0px;
 				margin-right: 0px;
-				margin-top: 4px;
-				margin-bottom: 10px;
-				width: 254px;
-				height: 288px;
-				float: none;
+				margin-top: 10px;
+				margin-bottom: 2px;
 				border-style: none;
-				border-style: none;" width="254" height="288" border="0"></p>
+				width: 306px;
+				height: 385px;
+				float: none;
+				border-style: none;" width="306" height="385" border="0"></p>
 
-<h6 style="color: #7c7c7c;
-			margin-top: 2pt;
-			margin-bottom: 10pt;">The XML Security Category of the [Assertions] 
+<h6 style="margin-top: 2pt;
+			margin-bottom: 10pt;
+			color: #c0c0c0;">The XML Security Category of the [Assertions] 
  Tab</h6>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <h4>Quick Links:</h4>
 
@@ -96,6 +101,8 @@
 
 <p class="quicklinks"><a href="#WSS_Replay_Protection">WSS Replay Protection</a></p>
 
+<p class="quicklinks">&nbsp;</p>
+
 <h2 style="color: #000000;"><a name=Sign_Request_Element
 								style="color: #000000;">Sign Request Element</a></h2>
 
@@ -107,19 +114,19 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The Sign Request Element assertion supports the W3C XML Signature 1.0 
- standard. The assertion can only be used in a Web service security policy. 
- The Sign Request Element assertion must be placed anywhere before the 
- routing assertion in a security policy. For information about routing 
- assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
- and Edit Message Routing Assertions</a>. You can add a Sign Request Element 
- assertion for each element of the request message that you want signed.</p>
+ standard. The assertion can only be used in a Web service policy. The 
+ Sign Request Element assertion must be placed anywhere before the routing 
+ assertion in a policy. For information about routing assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure and Edit 
+ Message Routing Assertions</a>. You can add a Sign Request Element assertion 
+ for each element of the request message that you want signed.</p>
 </div>
 
 <p>The Sign Request Element assertion allows you to require that the Web 
@@ -132,7 +139,7 @@
  element including opening and closing tags, attributes, and all child 
  content.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -142,19 +149,22 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
- In a security policy, the Sign Request Element assertion must be placed 
- anywhere before the routing assertion. For information about routing assertions, 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ In a policy, the Sign Request Element assertion must be placed anywhere 
+ before the routing assertion. For information about routing assertions, 
  see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
  and Edit Message Routing Assertions</a>. For information on the policy 
- and assertion rules used in the SecureSpan™ Manager, see <a href="Security_Policy_Organization_and_Rules.htm">Security 
- Policy Organization and Rules</a>.</p>
+ and assertion rules used in the SecureSpan™ Manager, see <a href="Policy_Organization_and_Rules.htm">Policy 
+ Organization and Rules</a>.</p>
 </div>
+
+<p>&nbsp;</p>
 
 <h3 style="color: #000000;"><a name=Add_and_Configure_the_Sign_Request_Element_Assertion
 								style="color: #000000;">Add and Configure 
@@ -167,7 +177,7 @@
  by one of two methods:</p></li>
 </ol>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -190,7 +200,7 @@
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -201,24 +211,6 @@
  A drop-down menu appears. Select <span style="font-weight: bold;"><B>Sign 
  Request Element Properties</B></span>.</p></li>
 </ol>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Sign Request Element Properties form. &nbsp;&nbsp;</p>
-</div>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -237,12 +229,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The operations are loaded from the Web service WSDL code. For information 
  about the WSDL that defines a Web service, see <a HREF="Manage_SOAP_Web_Services.htm">Manage 
  SOAP Web Services</a>.</p>
@@ -264,12 +257,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  Clicking, or highlighting, an element selects it (and any child code) 
  for the assertion signature requirement. To collapse the expanded nodes, 
  click &nbsp;<img src="CollapseNode.gif" x-maintain-ratio="TRUE" style="border: none;
@@ -303,7 +297,7 @@
  to configure the signature of additional elements. </p></li>
 </ol>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -313,17 +307,23 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
- A WSS Signature, WS Secure Conversation, or SAML Security authentication 
- assertion must be added for each Sign Request Element assertion in a security 
- policy. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
- and Edit Authentication Assertions</a> for more information.</p>
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ A WSS Signature assertion, WS Secure Conversation assertion, or SAML Assertion 
+ must be added for each Sign Request Element assertion in a policy. See 
+ <a href="Configure_Edit_Access_Control_Assertions.htm">Configure and Edit 
+ Access Control Assertions</a> for more information. Option: The recipient 
+ of the Sign Request Element assertion can be changed using the Change 
+ WSS Recipient form. See <a href="Change_WSS_Assertion_Recipient.htm">Change 
+ the WSS Assertion Recipient</a> for more information.</p>
 </div>
+
+<p>&nbsp;</p>
 
 <h3>Edit the Sign Request Element Assertion</h3>
 
@@ -335,24 +335,6 @@
  Select <span style="font-weight: bold;"><B>Sign Request Element Properties</B></span></p></li>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Sign Request Element Properties form. &nbsp;&nbsp;</p>
-</div>
-
 <ul style="list-style: disc;"
 	type=disc>
 	
@@ -361,6 +343,8 @@
  See Steps #3-5 in <a href="#Add_and_Configure_the_Sign_Request_Element_Assertion">Add 
  and Configure the Sign Request Element Assertion</a> for instructions.</p></li>
 </ul>
+
+<p style="font-weight: normal;">&nbsp;</p>
 
 <h2 style="color: #000000;"><a name=Encrypt_Request_Element
 								style="color: #000000;">Encrypt Request 
@@ -374,17 +358,18 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The Encrypt Request Element assertion supports the W3C XML Encryption 
- 1.0 standard. The assertion can only be used in a Web service security 
- policy. The Encrypt Request Element assertion must be placed anywhere 
- before the routing assertion in a security policy. For information about 
- routing assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ 1.0 standard. The assertion can only be used in a Web service policy. 
+ The Encrypt Request Element assertion must be placed anywhere before the 
+ routing assertion in a policy. For information about routing assertions, 
+ see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
  and Edit Message Routing Assertions</a>. You can add an Encrypt Request 
  Element assertion for each element of the request message that you want 
  encrypted.</p>
@@ -401,7 +386,7 @@
  are empty or contain only white space can be left un-encrypted in the 
  request message.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -411,17 +396,20 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  A matching element's own opening and closing tags and tag attributes do 
  not have to be encrypted. To force the encryption of an entire element 
  — including opening and closing tags, attributes, and white space content 
  — match the XPath expression to the parent element of the message. </p>
 </div>
+
+<p>&nbsp;</p>
 
 <h3 style="color: #000000;"><a name=Add_and_Configure_the_Encrypt_Request_Element_Assertion
 								style="color: #000000;">Add and Configure 
@@ -435,21 +423,22 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
- In a security policy, the Encrypt Request Element assertion must be placed 
- anywhere before the routing assertion. For information about routing assertions, 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ In a policy, the Encrypt Request Element assertion must be placed anywhere 
+ before the routing assertion. For information about routing assertions, 
  see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
  and Edit Message Routing Assertions</a>. For information on the policy 
- and assertion rules used in the SecureSpan™ Manager, see <a href="Security_Policy_Organization_and_Rules.htm">Security 
- Policy Organization and Rules</a>.</p>
+ and assertion rules used in the SecureSpan™ Manager, see <a href="Policy_Organization_and_Rules.htm">Policy 
+ Organization and Rules</a>.</p>
 </div>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <ol style="list-style: decimal;"
 	type=1>
@@ -458,7 +447,7 @@
  by one of two methods:</p></li>
 </ol>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -481,7 +470,7 @@
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -492,24 +481,6 @@
  A drop-down menu appears. Select <span style="font-weight: bold;"><B>Encrypt 
  Request Element Properties</B></span>.</p></li>
 </ol>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Encrypt Request Element Properties form. &nbsp;&nbsp;</p>
-</div>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -528,12 +499,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The operations are loaded from the Web service WSDL code. For information 
  about the WSDL that defines a Web service, see <a href="Manage_SOAP_Web_Services.htm">Manage 
  SOAP Web Services</a>. The SecureSpan™ Manager will not allow you to encrypt 
@@ -559,12 +531,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  Clicking, or highlighting, an element selects it (and any child code) 
  for the assertion encryption requirement. To collapse the expanded nodes, 
  click &nbsp;<img src="CollapseNode.gif" x-maintain-ratio="TRUE" style="border: none;
@@ -587,6 +560,30 @@
  to configure the encryption of additional elements. </p></li>
 </ol>
 
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Option: The recipient of the Encrypt Request Element assertion can be 
+ changed using the Change WSS Recipient form. See <a href="Change_WSS_Assertion_Recipient.htm">Change 
+ the WSS Assertion Recipient</a> for more information.</p>
+</div>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
 <h3>Edit the Encrypt Request Element Assertion</h3>
 
 <ul style="list-style: disc;"
@@ -597,24 +594,6 @@
  Select <span style="font-weight: bold;"><B>Encrypt Request Element Properties</B></span></p></li>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Encrypt Request Element Properties form. &nbsp;&nbsp;</p>
-</div>
-
 <ul style="list-style: disc;"
 	type=disc>
 	
@@ -623,6 +602,8 @@
  See Steps #3-5 in <a href="#Add_and_Configure_the_Encrypt_Request_Element_Assertion">Add 
  and Configure the Encrypt Request Element Assertion</a> for instructions.</p></li>
 </ul>
+
+<p style="font-weight: normal;">&nbsp;</p>
 
 <h2 style="color: #000000;"><a name=Sign_Response_Element
 								style="color: #000000;">Sign Response Element</a></h2>
@@ -635,29 +616,32 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The Sign Response Element assertion supports the W3C XML Signature 1.0 
- standard. The assertion can only be used in a Web service security policy. 
- You can add a Sign Response Element assertion for each element of the 
- response message that you want signed.</p>
+ standard. The assertion can only be used in a Web service policy. You 
+ can add a Sign Response Element assertion for each element of the response 
+ message that you want signed.</p>
 </div>
 
 <p>The Sign Response Element assertion allows you to require that the SecureSpan™ 
  Gateway sign a specific element whenever it appears in the response message 
  before sending it back to the Web service requestor. The assertion checks 
  if a selected XPath expression matches the corresponding element in the 
- response message. A match is signed by the SecureSpan™ Gateway as long 
+ response message. A match is signed by the SecureSpan Gateway as long 
  as a SOAP response is available and the assertion XPath is valid. In the 
  SecureSpan™ Bridge, the assertion only succeeds if the corresponding response 
- elements were signed by the Gateway. Unsigned XPath matches fail while 
- signed matches pass. A matching element is considered to be signed if 
- the signature covers at least the entire element including opening and 
- closing tags, attributes, and all child content.</p>
+ elements were signed by the SecureSpan Gateway. Unsigned XPath matches 
+ fail while signed matches pass. A matching element is considered to be 
+ signed if the signature covers at least the entire element including opening 
+ and closing tags, attributes, and all child content.</p>
+
+<p>&nbsp;</p>
 
 <h3 style="color: #000000;"><a name=Add_and_Configure_the_Sign_Response_Element_Assertion
 								style="color: #000000;">Add and Configure 
@@ -670,7 +654,7 @@
  by one of two methods:</p></li>
 </ol>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -693,7 +677,7 @@
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -704,24 +688,6 @@
  A drop-down menu appears. Select <span style="font-weight: bold;"><B>Sign 
  Response Element Properties</B></span>.</p></li>
 </ol>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Sign Response Element Properties form. &nbsp;&nbsp;</p>
-</div>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -740,12 +706,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The operations are loaded from the Web service WSDL code. For information 
  about the WSDL that defines a Web service, see <a href="Manage_SOAP_Web_Services.htm">Manage 
  SOAP Web Services</a>.</p>
@@ -768,12 +735,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  Clicking, or highlighting, an element selects it (and any child code) 
  for the assertion signature requirement. To collapse the expanded nodes, 
  click &nbsp;<img src="CollapseNode.gif" x-maintain-ratio="TRUE" style="border: none;
@@ -796,6 +764,30 @@
  to configure the signature of additional elements. </p></li>
 </ol>
 
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Option: The recipient of the Sign Response Element assertion can be changed 
+ using the Change WSS Recipient form. See <a href="Change_WSS_Assertion_Recipient.htm">Change 
+ the WSS Assertion Recipient</a> for more information.</p>
+</div>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
 <h3>Edit the Sign Response Element Assertion</h3>
 
 <ul style="list-style: disc;"
@@ -806,24 +798,6 @@
  Select <span style="font-weight: bold;"><B>Sign Response Element Properties</B></span></p></li>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Sign Response Element Properties form. &nbsp;&nbsp;</p>
-</div>
-
 <ul style="list-style: disc;"
 	type=disc>
 	
@@ -832,6 +806,8 @@
  See Steps #3-5 in <a href="#Add_and_Configure_the_Sign_Response_Element_Assertion">Add 
  and Configure the Sign Response Element Assertion</a> for instructions.</p></li>
 </ul>
+
+<p style="font-weight: normal;">&nbsp;</p>
 
 <h2 style="color: #000000;"><a name=Encrypy_Response_Element
 								style="color: #000000;">Encrypt Response 
@@ -845,16 +821,17 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The Encrypt Response Element assertion supports the W3C XML Encryption 
- 1.0 standard. The assertion can only be used in a Web service security 
- policy. You can add an Encrypt Response Element assertion for each element 
- of the response message that you want encrypted.</p>
+ 1.0 standard. The assertion can only be used in a Web service policy. 
+ You can add an Encrypt Response Element assertion for each element of 
+ the response message that you want encrypted.</p>
 </div>
 
 <p>The Encrypt Response Element assertion allows you to require that the 
@@ -862,12 +839,12 @@
  the response message before sending it back to the Web service requestor. 
  The assertion checks if a selected XPath expression matches the corresponding 
  element in the response message. If any non-empty matches exist, their 
- child content will be encrypted by the SecureSpan™ Gateway as long as 
- a SOAP response is available and the XPath is valid. In the SecureSpan™ 
+ child content will be encrypted by the SecureSpan Gateway as long as a 
+ SOAP response is available and the XPath is valid. In the SecureSpan™ 
  Bridge, the assertion only succeeds if the corresponding response element's 
- child content was encrypted by the Gateway.</p>
+ child content was encrypted by the SecureSpan Gateway.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -877,17 +854,20 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  A matching element's own opening and closing tags and tag attributes do 
  not have to be encrypted. To force the encryption of an entire element 
  — including opening and closing tags, attributes, and white space content 
  — match the XPath expression to the parent element of the message. </p>
 </div>
+
+<p>&nbsp;</p>
 
 <h3 style="color: #000000;"><a name=Add_and_Configure_the_Encrypt_Response_Element_Assertion
 								style="color: #000000;">Add and Configure 
@@ -900,7 +880,7 @@
  by one of two methods:</p></li>
 </ol>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -923,7 +903,7 @@
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -934,24 +914,6 @@
  A drop-down menu appears. Select <span style="font-weight: bold;"><B>Encrypt 
  Response Element Properties</B></span>.</p></li>
 </ol>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Encrypt Response Element Properties form. &nbsp;&nbsp;</p>
-</div>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -970,12 +932,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The operations are loaded from the Web service WSDL code. For information 
  about the WSDL that defines a Web service, see <a href="Manage_SOAP_Web_Services.htm">Manage 
  SOAP Web Services</a>. The SecureSpan™ Manager will not allow you to encrypt 
@@ -1001,12 +964,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  Clicking, or highlighting, an element selects it (and any child code) 
  for the assertion encryption requirement. To collapse the expanded nodes, 
  click &nbsp;<img src="CollapseNode.gif" x-maintain-ratio="TRUE" style="border: none;
@@ -1029,7 +993,7 @@
  to configure the encryption of additional elements. </p></li>
 </ol>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -1039,17 +1003,23 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
- A WSS Signature, WS Secure Conversation, or SAML Security authentication 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ A WSS Signature, WS Secure Conversation, or SAML Assertion authentication 
  assertion must be added for each Encrypt Response Element assertion in 
- a security policy. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
- and Edit Authentication Assertions</a> for more information.</p>
+ a policy. See <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a> for more information. Option: The 
+ recipient of the Encrypt Response Element assertion can be changed using 
+ the Change WSS Recipient form. See <a href="Change_WSS_Assertion_Recipient.htm">Change 
+ the WSS Assertion Recipient</a> for more information. </p>
 </div>
+
+<p>&nbsp;</p>
 
 <h3>Edit the Encrypt Response Element Assertion</h3>
 
@@ -1061,24 +1031,6 @@
  Select <span style="font-weight: bold;"><B>Encrypt Response Element Properties</B></span></p></li>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the Encrypt Response Element Properties form. &nbsp;&nbsp;</p>
-</div>
-
 <ul style="list-style: disc;"
 	type=disc>
 	
@@ -1087,6 +1039,8 @@
  See Steps #3-5 in <a href="#Add_and_Configure_the_Encrypt_Response_Element_Assertion">Add 
  and Configure the Encrypt Response Element Assertion</a> for instructions.</p></li>
 </ul>
+
+<p style="font-weight: normal;">&nbsp;</p>
 
 <h2 style="color: #000000;"><a name=WSS_Replay_Protection
 								style="color: #000000;">WSS Replay Protection</a></h2>
@@ -1098,7 +1052,7 @@
  if the creation timestamp is more than 30 days old, then the message will 
  be rejected as a possible replay. </p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -1121,11 +1075,11 @@
  to Users/Groups assertion to help confine the protection to successfully 
  authenticated messages, thereby reducing system processing and memory 
  requirements. For more information about the Grant Access to Users/Groups 
- assertion, see <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
- and Edit Authentication Assertions</a>.</p>
+ assertion, see <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a>.</p>
 </div>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -1158,7 +1112,7 @@
  window.</p></li>
 </ul>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -1168,25 +1122,26 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  You cannot edit the WSS Replay Protection assertion. To remove the assertion, 
  right-click the assertion name in the Policy Development window. A drop-down 
  menu appears. Select [Delete Assertion].</p>
 </div>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <h4>Next Topic: </h4>
 
 <p><a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
  and Edit Message Validation/Transformation Assertions</a></p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 </body>
 

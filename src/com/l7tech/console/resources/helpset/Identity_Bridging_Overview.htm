@@ -13,19 +13,24 @@
 
 
  <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Identity Bridging Overview">
 <meta name=generator-major-version content=0.1>
 <meta name=generator-minor-version content=1>
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=3737>
-<meta name=layout-width content=741>
+<meta name=layout-height content=4148>
+<meta name=layout-width content=762>
 <meta name=x-ignored-words content="SAML;requestor;workflows;CN=*;Workflow;SSL;A(s;requestor-side;FIPs">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -47,13 +52,20 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- See www.layer7tech.com for more information about identity bridging. </p>
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Identity bridging requires configuration in the SecureSpan™ Bridge and 
+ SecureSpan™ Manager. This section discusses both SecureSpan Bridge and 
+ SecureSpan Manager instructions. You will need the “SecureSpan™ Bridge 
+ User Manual” to complete some of the configuration requirements. See <a 
+ href="http://www.layer7tech.com"
+	target=_blank>www.layer7tech.com</a> for more information about identity 
+ bridging. </p>
 </div>
 
 <h2>The Identity Silo Problem</h2>
@@ -72,7 +84,7 @@
  problem for enterprises wanting to integrate applications residing in 
  different security domains.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <p>If a legitimate requestor authenticates against a corresponding identity 
  provider in one identity silo, its identity or any evidence of the authentication 
@@ -93,13 +105,13 @@
  scenario, for example, Enterprise A merges with Enterprise B. Each enterprise 
  has its own identity provider, but would like to share identities with 
  minimum resources and no interruption to their existing security architectures. 
- Using the SecureSpan™ Solution, identity bridging is configured between 
- Enterprise A and Enterprise B using one of two credential source types: 
- a SAML (Security Assertion Markup Language) Security assertion (see <a href="Identity_Bridging_Workflow.htm">Identity Bridging Workflow Using 
- SAML</a>) or an X.509 certificate (see <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Using SecureSpan™, identity bridging is configured between Enterprise 
+ A and Enterprise B using one of two credential source types: a SAML (Security 
+ Assertion Markup Language) Security assertion (see <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a>) or an X.509 certificate (see <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
  Bridging Workflow Using an X.509 Certificate</a>).</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -109,12 +121,13 @@
 			margin-bottom: 4px;
 			float: none;
 			width: 550px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 20px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="20" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  For brevity, the generic &quot;Trusted Gateway A&quot; and &quot;Federated 
  Gateway B&quot; references are used in all identity bridging examples, 
  workflows, and instructions. The Trusted Gateway A is the certificate 
@@ -125,7 +138,7 @@
  requestor.</p>
 </div>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <h4 style="margin-bottom: 10pt;">Identity Bridging Using the SAML Credential 
  Source</h4>
@@ -141,12 +154,12 @@
 				border-style: none;
 				border-style: none;" width="577" height="375" border="0"></p>
 
-<h6 style="color: #7c7c7c;
-			margin-top: 2pt;
-			margin-bottom: 10pt;">An Identity Bridging Configuration Using 
- a SAML Token</h6>
+<h6 style="margin-top: 2pt;
+			margin-bottom: 10pt;
+			color: #c0c0c0;">An Identity Bridging Configuration Using a 
+ SAML Token</h6>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <h4 style="margin-bottom: 10pt;">Identity Bridging Using the X.509 Certificate 
  Credential Source</h4>
@@ -162,28 +175,18 @@
 										border-style: none;
 										border-style: none;" width="578" height="378" border="0"></h6>
 
-<h6 style="color: #7c7c7c;
-			margin-top: 2pt;
-			margin-bottom: 10pt;">An Identity Bridging Configuration Using 
- an X.509 Certificate</h6>
+<h6 style="margin-top: 2pt;
+			margin-bottom: 10pt;
+			color: #c0c0c0;">An Identity Bridging Configuration Using an 
+ X.509 Certificate</h6>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
-<h2>Identity Bridging with the SecureSpan™ Solution</h2>
+<h2>Identity Bridging with SecureSpan™</h2>
 
-<p>All three SecureSpan™ Solution products work in tandem to enable identity 
- bridging:</p>
+<p>All three SecureSpan™ products work in tandem to enable identity bridging:</p>
 
 <h3>SecureSpan™ Gateway</h3>
-
-<p>The required provider-side SecureSpan™ Gateway, known as the &quot;Federated 
- Gateway B,&quot; is used for authorization in an identity bridging configuration. 
- The Federated Gateway B establishes a certificate-based trust relationship 
- with the authentication source by importing trusted certificates into 
- its trust store. The authentication source can be any certificate authority 
- (CA) or another Gateway that acts as a CA. </p>
-
-<h6>&nbsp;</h6>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -193,12 +196,42 @@
 			margin-bottom: 4px;
 			float: none;
 			width: 550px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 20px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	border-style: none;" width="20" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Any of the SecureSpan™ Gateway products can be used for identity bridging.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>The required provider-side SecureSpan™ Gateway, known as the &quot;Federated 
+ Gateway B,&quot; is used for authorization in an identity bridging configuration. 
+ The Federated Gateway B establishes a certificate-based trust relationship 
+ with the authentication source by importing trusted certificates into 
+ its trust store. The authentication source can be any certificate authority 
+ (CA) or another SecureSpan Gateway that acts as a CA. </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 20px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="20" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  When SAML is used as a credential source in an identity bridging configuration, 
  the authentication source must be able to issue a SAML token. If another 
  SecureSpan™ Gateway is used as the credential source, then it is already 
@@ -206,34 +239,35 @@
  Bridging Workflow Using SAML</a> for more information.</p>
 </div>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <p>The Federated Gateway B uses three types of federated identities for 
  mediating requestor credentials: federated users, federated groups, and 
- virtual groups (see <a HREF="FIP_Overview.htm">Federated Identity Provider 
- Overview</a>). It delegates authentication to one or more Trusted Gateway 
- A(s) while preserving authorization for the Federated Gateway B.</p>
+ virtual groups (see <a HREF="Federated_Identity_Provider_Overview.htm">Federated 
+ Identity Provider Overview</a>). It delegates authentication to one or 
+ more Trusted Gateway A(s) while preserving authorization for the Federated 
+ Gateway B.</p>
 
 <h3>SecureSpan™ Bridge</h3>
 
 <p>The requestor-side SecureSpan™ Bridge is responsible for decorating 
- request messages based on the Web service security policy assertions defined 
- in the Federated Gateway B. Decorated messages are sent from the Bridge 
- to the Federated Gateway B for Web service authorization. If a security 
- policy contains a SAML Security assertion, then part of the Bridge’s decorating 
- task may involve getting a SAML token from the Trusted Gateway A during 
- the initial connection or if the original SAML token has expired.</p>
+ request messages based on the Web service policy assertions defined in 
+ the Federated Gateway B. Decorated messages are sent from the SecureSpan 
+ Bridge to the Federated Gateway B for Web service authorization. If a 
+ policy contains a SAML Assertion, then part of the SecureSpan Bridge’s 
+ decorating task may involve getting a SAML token from the Trusted Gateway 
+ A during the initial connection or if the original SAML token has expired.</p>
 
 <h3>SecureSpan™ Manager</h3>
 
 <p>The SecureSpan™ Manager provides the interface for importing trusted 
  certificates (CA certificates and/or server certificates extracted from 
- the Trusted Gateway A) into the Federated Gateway B trust store. The Manager 
- also provides the interface to configure and manage one or more Federated 
- Identity Providers (FIPs), link trust store certificate(s) to FIPs, and 
- configure the Federated Gateway B SAML security policy.</p>
+ the Trusted Gateway A) into the Federated Gateway B trust store. The SecureSpan 
+ Manager also provides the interface to configure and manage one or more 
+ Federated Identity Providers (FIPs), link trust store certificate(s) to 
+ FIPs, and configure the Federated Gateway B SAML policy.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <p>See <a href="Identity_Bridging_Requirements.htm">Identity Bridging Requirements</a> 
  for the specific items required to configure identity bridging. See the 
@@ -244,13 +278,13 @@
  see <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
  Bridging Workflow Using an X.509 Certificate</a>.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <h4>Next Topic:</h4>
 
 <p><a HREF="Identity_Bridging_Requirements.htm">Identity Bridging Requirements</a></p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 </body>
 

@@ -1,0 +1,486 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Configure/Edit Logging, Auditing, and Alerts Assertions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Configure/Edit Logging and Auditing Assertions">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=4576>
+<meta name=layout-width content=770>
+<meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID">
+
+
+
+
+ <link rel="StyleSheet" href="SecureSpan.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Configure and Edit the Logging, Auditing, and Alerts Assertions</h1>
+
+<p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
+ assertions are available in the Logging, Auditing, and Alerts category 
+ of the [Assertions] tab:</p>
+
+<p class="space">&nbsp;</p>
+
+<p><img src="7.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 10px;
+				margin-bottom: 2px;
+				width: 306px;
+				height: 385px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="306" height="385" border="0"></p>
+
+<h6 style="margin-top: 2pt;
+			margin-bottom: 10pt;
+			color: #c0c0c0;">The Logging, Auditing, and Alerts Category 
+ of the [Assertions] Tab</h6>
+
+<p>&nbsp;</p>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#Audit_Assertion">Audit Assertion</a></p>
+
+<p class="quicklinks"><a href="#Send_SNMP_Trap">Send SNMP Trap</a></p>
+
+<p class="quicklinks"><a href="#Send_Email_Message">Send Email Message</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Audit_Assertion
+								style="color: #000000;">Audit Assertion</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The Audit Assertion is used in conjunction with the Gateway Audit Events 
+ window. See <a HREF="View_Gateway_Audit_Events.htm">View Gateway Audit 
+ Events</a> for more information.</p>
+</div>
+
+<p style="color: #000000;">The Audit Assertion allows you to set the threshold 
+ at which audit records are viewed in the Gateway Audit Events window. 
+ Auditing events are typically assertion, message processing, or boot messages 
+ and administrative events, such as object changes. See <a href="View_Gateway_Audit_Events.htm">View 
+ Gateway Audit Events</a> for more information. </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE: </B></span>The 
+ default &quot;warning&quot; level of events logged by the SecureSpan™ 
+ Gateway cannot be changed in the SecureSpan™ Manager. To override the 
+ default &quot;warning&quot; audit message threshold, you must change the 
+ applicable property in the SecureSpan Gateway's &quot;/ssg/etc/conf/serverconfig_override.properties&quot; 
+ file. See the &quot;SecureSpan Gateway Installation and Configuration 
+ Manual&quot; for more information. Changing the default log level below 
+ the &quot;warning&quot; level, such as to &quot;info&quot; or &quot;finer,&quot; 
+ will yield a large number of audit messages. See <a href="Technical_Support_and_Contact_Information.htm">Technical 
+ Support and Contact Information</a> to consult Layer 7 Technologies before 
+ changing the audit message threshold in the SecureSpan Gateway.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The &quot;Audit Assertion&quot; assertion is added 
+ to the Policy Development window. Right-click the assertion. A drop-down 
+ menu appears. Select <span style="font-weight: bold;"><B>Audit Assertion 
+ Properties</B></span>.</p></li>
+</ol>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">The Audit Assertion Properties 
+ form appears with a default severity level of <span style="margin-left: 0px; font-weight: bold;"><B>Warning</B></span><span 
+ style="margin-left: 0px;"> that will include all audit alerts that may 
+ or may not require follow-up.</span><span style="margin-left: 0px; font-weight: bold;"> 
+ <B></B></span></p></li>
+</ol>
+
+<ol start=4
+	style="list-style: disc;"
+	type=disc>
+	
+	<li style="list-style: decimal;" type="1" class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window. </p></li>
+</ol>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ To remove the auditing of requests, you must delete the Audit Assertion. 
+ To do so, right-click the assertion name in the Policy Development window. 
+ A drop-down menu appears. Select [Delete Assertion].</p>
+</div>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Send_SNMP_Trap
+								style="color: #000000;">Send SNMP Trap</a></h2>
+
+<p>The Send SNMP Trap assertion allows you to instruct the SecureSpan™ 
+ Gateway to broadcast a Simple Network Management Protocol (SNMP) trap. 
+ When the Send SNMP Trap assertion is encountered in a policy execution 
+ path, an SNMP trap event will be broadcasted to a predefined network address. 
+ The assertion is typically used to trigger an alert based on the result 
+ of a previous assertion. For example, two assertions can be combined into 
+ a logical &quot;One or More&quot; folder, the first assertion requiring 
+ validation, the later being the Send SNMP Trap assertion. If the assertion 
+ requiring validation fails, then the Send SNMP Trap assertion will execute, 
+ hence broadcasting the alert. For information about policy folders, see 
+ <a href="Policy_Organization_and_Rules.htm">Policy Organization and Rules</a>.</p>
+
+<p>&nbsp;</p>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_SNMP_Trap_Assertion
+								style="color: #000000;">Add and Configure 
+ the SNMP Trap Assertion</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Add the assertion to the 
+ Policy Development window by one of two methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Drag and drop the 
+ assertion from the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab into the Policy Development window, or &nbsp;</p></li>
+		
+		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Highlight the assertion 
+ in the [<span style="font-weight: bold;"><B>Assertions</B></span>] tab and click 
+ the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+					width: 22px;
+					height: 18px;
+					margin-left: 0px;
+					margin-right: 0px;
+					margin-top: 0px;
+					margin-bottom: -2.5px;
+					float: none;
+					border-style: none;
+					border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar.</p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">The SNMP Properties form 
+ appears. Enter the network address that should receive the SNMP alert 
+ into the <span style="font-weight: bold;"><B>SNMP Hostname</B></span> field. 
+ </p></li>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">The default SNMP trap 
+ destination port is set to &quot;162.&quot; To configure a different port, 
+ select the <span style="font-weight: bold;"><B>Custom</B></span> option and enter 
+ an alternate port number into the field.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Port 162 is the IANA (Internet Assigned Numbers Authority) standard SNMP 
+ trap port. </p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>SNMP 
+ Community</B></span> field, enter the SNMP community that should be used by 
+ the SNMP trap.</p></li>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>Text 
+ to Send</B></span> field, configure the contents of the SNMP trap.</p></li>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>OID 
+ to Send</B></span> field, complete the SNMP trap OID.</p></li>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h3>Edit the SNMP Trap Assertion</h3>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Send SNMP Trap&quot; assertion. A drop-down menu appears. Select 
+ <span style="font-weight: bold;"><B>SNMP Trap Properties</B></span></p></li>
+</ul>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The SNMP Properties form appears. Edit the assertion 
+ as outlined in <a href="#Add_and_Configure_the_SNMP_Trap_Assertion">Add 
+ and Configure the SNMP Trap Assertion</a>. </p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Send_Email_Message
+								style="color: #000000;">Send Email Message</a></h2>
+
+<p>The Send Email Message assertion allows you to instruct the SecureSpan™ 
+ Gateway to deliver a pre-configured email message whenever the assertion 
+ is encountered in a policy. </p>
+
+<p>&nbsp;</p>
+
+<p>The placement of the assertion in the policy path determines when and 
+ why an email is sent. For example, the assertion could be placed in an 
+ &quot;At least one assertion must evaluate to true&quot; assertion folder 
+ after an Evaluate XPath Response assertion. If the required response message 
+ element is not found and the Evaluate XPath Response assertion fails, 
+ then the Send Email Message assertion will execute. </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ If the outgoing email account is improperly configured, then the Send 
+ Email Message assertion will fail. To configure the policy so that a failure 
+ of the Send Email Message assertion does not cause a total policy failure, 
+ place the assertion in an &quot;At least one assertion must evaluate to 
+ true&quot; folder with a Continue Processing assertion. For information 
+ on the assertion folders and the Continue Processing assertion, see <a href="Policy_Logic_Assertions.htm">Configure and Edit the Policy Logic 
+ Assertions</a>. Since the pass or failure of the Send Email Message assertion 
+ is determined by the ability of the SecureSpan™ Gateway to generate and 
+ send an email message, destination server problems that prevent the receipt 
+ of the outgoing email will not cause the Send Email Message assertion 
+ to fail. </p>
+</div>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_Send_Email_Message_Assertion
+								style="color: #000000;">Add and Configure 
+ the Send Email Message Assertion</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Add the assertion to the 
+ Policy Development window by one of two methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Drag and drop the 
+ assertion from the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab into the Policy Development window, or &nbsp;</p></li>
+		
+		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Highlight the assertion 
+ in the [<span style="font-weight: bold;"><B>Assertions</B></span>] tab and click 
+ the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+					width: 22px;
+					height: 18px;
+					margin-left: 0px;
+					margin-right: 0px;
+					margin-top: 0px;
+					margin-bottom: -2.5px;
+					float: none;
+					border-style: none;
+					border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar.</p></li>
+	</ul>
+</ul>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">The Email Alert Properties 
+ form appears. If necessary, replace the default outgoing mail server name 
+ and port in the respective <span style="font-weight: bold;"><B>SMTP Server</B></span> 
+ and <span style="font-weight: bold;"><B>Port</B></span> fields with alternate 
+ values. &nbsp;</p></li>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>To</B></span> 
+ field, enter the destination email address in the following format &quot;mail@server.com.&quot; 
+ </p></li>
+	
+	<li style="color: #0000ff; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>From</B></span> 
+ field, optionally enter a response email address. </p></li>
+	
+	<li style="color: #000000; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>Subject</B></span> 
+ field, enter a descriptive name for the alert email.</p></li>
+	
+	<li style="color: #000000; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>Message 
+ Body</B></span> field, enter the content for the alert email.</p></li>
+	
+	<li style="color: #000000; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The assertion is added to the Policy Development window. </p></li>
+</ol>
+
+<h3>Edit the Send Email Message Assertion</h3>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Send Email Alert&quot; assertion. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Email Alert Properties</B></span></p></li>
+</ul>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The Email Alert Properties form appears. Edit 
+ the assertion as outlined in <a href="#Add_and_Configure_the_Send_Email_Message_Assertion">Add 
+ and Configure the Send Email Message Assertion</a>. </p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Policy_Logic_Assertions.htm">Configure and Edit the Policy 
+ Logic Assertions</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

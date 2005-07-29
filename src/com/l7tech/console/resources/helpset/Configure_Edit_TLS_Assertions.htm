@@ -13,19 +13,24 @@
 
 
  <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Configure/Edit TLS Assertions">
 <meta name=generator-major-version content=0.1>
 <meta name=generator-minor-version content=1>
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=2025>
-<meta name=layout-width content=773>
-<meta name=x-ignored-words content="TLS;SSL">
+<meta name=layout-height content=2334>
+<meta name=layout-width content=762>
+<meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -43,61 +48,87 @@
  assertion is available in the Transport Layer Security (TLS) category 
  of the [Assertions] tab:</p>
 
-<h6>&nbsp;</h6>
+<p class="space">&nbsp;</p>
 
-<p><img src="TLSAssens.gif" x-maintain-ratio="TRUE" style="border: none;
-				width: 254px;
-				height: 288px;
+<p><img src="2.gif" x-maintain-ratio="TRUE" style="border: none;
 				margin-left: 0px;
 				margin-right: 0px;
 				margin-top: 10px;
 				margin-bottom: 2px;
-				float: none;
 				border-style: none;
-				border-style: none;" width="254" height="288" border="0"></p>
+				width: 306px;
+				height: 385px;
+				float: none;
+				border-style: none;" width="306" height="385" border="0"></p>
 
 <h6 style="margin-top: 2pt;
 			margin-bottom: 10pt;
-			color: #7c7c7c;">The Transport Layer Security (TLS) Category 
+			color: #c0c0c0;">The Transport Layer Security (TLS) Category 
  of the [Assertions] Tab</h6>
 
-<h2>SSL Transport</h2>
+<p>&nbsp;</p>
 
-<p>The SSL Transport assertion uses the Transport Layer Security (TLS) 
- protocol to ensure message confidentiality and security. SSL is an industry-standardized 
- method of encryption that relies on PKI (public key infrastructure) to 
- create a secure communication pipe between the service requestor and the 
- SecureSpan™ Gateway. The SecureSpan™ Manager allows you to set one of 
- three SSL security requirements for a security policy:</p>
+<h2>SSL or TLS Transport</h2>
 
-<h4>Optional</h4>
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The SSL or TLS Transport assertion is the same as the SSL with Client 
+ Certificate Authentication assertion from the Access Control category 
+ in the [Assertions] tab. See <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit the Access Control Assertions</a> for information. </p>
+</div>
 
-<p>The optional setting of the SSL Transport assertion will match the behavior 
- of the incoming request. Requests are not required to arrive over an SSL-secured 
- connection, but will be processed anyway if they happen to do so.</p>
+<p style="color: #000000;">The SSL or TLS Transport assertion uses the 
+ Transport Layer Security (TLS) protocol to ensure transport-level confidentiality 
+ and integrity. The SecureSpan™ Manager allows you to set one of three 
+ SSL or TLS requirements for a policy:</p>
 
-<h4>Required</h4>
+<h4 style="color: #000000;">Required</h4>
 
-<p>The required setting of the SSL Transport assertion disallows requests 
- that do not arrive over an SSL-secured connection. This is the default 
- setting for the SSL Transport assertion.</p>
+<p style="color: #000000;">Select the Required option to require that incoming 
+ requests arrive over an SSL-secured connection. This is the default setting 
+ for the assertion. When selected, the client certificate authentication 
+ option is enabled. To require client certificate authentication of request 
+ messages in the policy, check the Require Client Certificate Authentication 
+ check box.</p>
 
-<h4>Disallowed</h4>
+<h4 style="color: #000000;">Optional</h4>
 
-<p>The disallowed setting of the SSL Transport assertion disallows requests 
- that arrive over an SSL-secured connection. The assertion setting could 
- be used to discourage users of a free service from consuming server SSL 
- resources without paying for an upgraded account.</p>
+<p style="color: #000000;">Select the Optional option to configure the 
+ SecureSpan™ Gateway to match the behavior of the incoming request. Requests 
+ are not required to arrive over an SSL-secured connection, but will be 
+ processed anyway if they happen to do so.</p>
 
-<h3 style="color: #000000;"><a name=Add_and_Configure_the_SSL_Security_Assertion
+<h4 style="color: #000000;">Forbidden</h4>
+
+<p style="color: #0000ff;"><span style="color: #000000;"><font color=black >Select the Forbidden 
+ option to disallow requests that arrive over an SSL-secured connection.</font></span> 
+ </p>
+
+<p style="color: #0000ff;">&nbsp;</p>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_SSL_or_TLS_Transport_Assertion
 								style="color: #000000;">Add and Configure 
- the SSL Security Assertion</a></h3>
+ the SSL or TLS Transport &nbsp;Assertion</a></h3>
 
 <ol style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
- by one of two methods:</p></li>
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Add the assertion to the 
+ Policy Development window by one of two methods:</p></li>
 </ol>
 
 <ol style="list-style: disc;"
@@ -106,22 +137,23 @@
 	<ul style="list-style: disc;"
 		type=disc>
 		
-		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
- style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
- window, or &nbsp;</p></li>
+		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Drag and drop the 
+ assertion from the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab into the Policy Development window, or &nbsp;</p></li>
 		
-		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
- tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
-								width: 22px;
-								height: 18px;
-								margin-left: 0px;
-								margin-right: 0px;
-								margin-top: 0px;
-								margin-bottom: -2.5px;
-								float: none;
-								border-style: none;
-								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
- Assertion) button in the Assertion Tool Bar. </p></li>
+		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Highlight the assertion 
+ in the [<span style="font-weight: bold;"><B>Assertions</B></span>] tab and click 
+ the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+					width: 22px;
+					height: 18px;
+					margin-left: 0px;
+					margin-right: 0px;
+					margin-top: 0px;
+					margin-bottom: -2.5px;
+					float: none;
+					border-style: none;
+					border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar.</p></li>
 	</ul>
 </ol>
 
@@ -131,48 +163,17 @@
 	
 	<li class="kadov-p"><p>The assertion appears in the Policy Development 
  window with a default setting of &quot;required.&quot; To optionally change 
- the assertion setting, right-click the &quot;Require SSL Transport&quot; 
+ the assertion setting, right-click the &quot;Require SSL or TLS Transport&quot; 
  assertion. A drop-down menu appears. Select <span style="font-weight: bold;"><B>SSL 
  Properties</B></span>. </p></li>
 </ol>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the SSL Transport Properties form. &nbsp;</p>
-</div>
 
 <ol start=3
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>The SSL Transport Properties form appears. Select 
- a setting option from the drop-down list. Click [<span style="font-weight: bold;"><B>OK</B></span>].</p></li>
-	
-	<li class="kadov-p"><p>The modified assertion is added to the Policy 
- Development window.</p></li>
-</ol>
-
-<h3>Edit the SSL Security Assertion</h3>
-
-<ol style="list-style: decimal;"
-	type=1>
-	
-	<li class="kadov-p"><p>In the Policy Development window, right-click 
- the &quot;SSL Transport&quot; assertion. A drop-down menu appears. Select 
- <span style="font-weight: bold;"><B>SSL Properties</B></span>.</p></li>
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">The SSL or TLS Options 
+ form appears. Select one of the SSL or TLS requirement options.</p></li>
 </ol>
 
 <div style="padding: 5px;
@@ -183,35 +184,76 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- You can also double-click the assertion in the Policy Development window 
- to open the SSL Transport Properties form. &nbsp;&nbsp;</p>
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ If you select the Required option, then you can also opt to require the 
+ client certificate authentication of request messages in the policy. To 
+ do so, check the Require Client Certificate Authentication check box.<span 
+ style="color: #0000ff;"> <font color=blue ></font></span></p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h3>Edit the SSL or TLS Transport Assertion</h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;SSL or TLS Transport&quot; assertion. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>SSL Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The actual name of the assertion in the Policy Development window will 
+ depend on the configuration setting of the assertion.</p>
 </div>
 
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>The SSL Transport Properties form appears. Change 
- the assertion setting in the drop-down list as required. </p></li>
+	<li class="kadov-p"><p>The SSL or TLS Options form appears. Edit the 
+ assertion as outlined in <a href="#Add_and_Configure_the_SSL_Security_Assertion">Add 
+ and Configure the SSL or TLS Transport Assertion</a>. </p></li>
 	
 	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
  The modified assertion is added to the Policy Development window.</p></li>
 </ol>
 
-<h6>&nbsp;</h6>
+<p>&nbsp; </p>
 
 <h4>Next Topic: </h4>
 
 <p><a href="Configure_Edit_XML_Security_Assertions.htm">Configure and Edit 
  XML Security Assertions</a></p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 </body>
 

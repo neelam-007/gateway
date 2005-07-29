@@ -22,5 +22,12 @@
     <data>SecureSpan_Manager_Help_System_ndx.xml</data>
   </view>
 
+  <view>
+    <name>Search</name>
+    <label>Search</label>
+    <type>javax.help.SearchView</type>
+    <data engine="com.sun.java.help.search.DefaultSearchEngine">SecureSpan_Manager_Help_System_JavaHelpSearch</data>
+  </view>
+
 
 </helpset>

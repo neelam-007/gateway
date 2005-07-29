@@ -13,19 +13,24 @@
 
 
  <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Identity Bridging Workflow">
 <meta name=generator-major-version content=0.1>
 <meta name=generator-minor-version content=1>
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=2120>
-<meta name=layout-width content=773>
+<meta name=layout-height content=1282>
+<meta name=layout-width content=802>
 <meta name=x-ignored-words content="SAML;Workflow;workflows;requestor;SSL;FIP">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -47,12 +52,38 @@
 			margin-bottom: 4px;
 			float: none;
 			width: 550px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
-	float: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	width: 18px;
+	height: 18px;
+	float: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE: </B></span>You 
+ will need the “SecureSpan™ Bridge User Manual” to complete the following 
+ instructions. The instructions are not complete to the referenced forms. 
+ To fully utilize the guidance that this workflow provides, reference this 
+ topic when configuring each requirement in the SecureSpan™ Manager and 
+ SecureSpan™ Bridge.</p>
+</div>
+
+<p>Configure identity bridging using the SAML credential source as follows: 
+ </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
  B&quot; references are used in the identity bridging examples, workflows, 
  and instructions. The Trusted Gateway A is the certificate authority (CA) 
@@ -64,39 +95,7 @@
  Gateways residing in the respective authentication and authorization domains.</p>
 </div>
 
-<h6>&nbsp;</h6>
-
-<p>Configure identity bridging using the SAML credential source as follows: 
- </p>
-
-<h6>&nbsp;</h6>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-left: 4px;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
- </B></span>The following workflow highlights the required SAML-specific instructions 
- for configuring identity bridging between the Trusted Gateway A and the 
- Federated Gateway B domains. The instructions are not complete to the 
- referenced forms. To fully utilize the guidance that this workflow provides, 
- follow the printing instructions in <a href="SecureSpan_Manager_Documentation.htm">SecureSpan™ 
- Manager Documentation</a> to print this topic. Use the hard-copy of the 
- workflow as a reference with the referenced program-based Help System 
- topics when configuring each element in the SecureSpan™ Manager and SecureSpan™ 
- Bridge. </p>
-</div>
-
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <ol style="list-style: decimal;"
 	type=1>
@@ -141,7 +140,9 @@
  for the <span style="font-weight: bold;"><B>Credential Source Type Allowed</B></span> 
  item</p></li>
 		
-		<li style="list-style: disc;" type="disc" class="kadov-p"><p>In the Configure SAML Credential Source screen:</p></li>
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>In the Select the Trusted Certificates screen, 
+ click [<span style="font-weight: bold;"><B>Add</B></span>] to attach the Trusted 
+ Gateway A server certificate imported in Step #5 above</p></li>
 	</ul>
 </ol>
 
@@ -150,21 +151,6 @@
 	type=1>
 	
 	<ul>
-		
-		<ol>
-			
-			<li style="list-style: decimal;" type="1" class="kadov-p"><p>Check the <span style="font-weight: bold;"><B>X.509 
- Subject Name</B></span> check box for the <span style="font-weight: bold;"><B>Format</B></span> 
- item</p></li>
-			
-			<li style="list-style: decimal;" type="1" class="kadov-p"><p>Check the <span style="font-weight: bold;"><B>Holder 
- of Key</B></span> check box for the <span style="font-weight: bold;"><B>Confirmation 
- Methods</B></span> item.</p></li>
-		</ol>
-		
-		<li style="list-style: disc;" type="disc" class="kadov-p"><p>In the Select the Trusted Certificates screen, 
- click [<span style="font-weight: bold;"><B>Add</B></span>] to attach the Trusted 
- Gateway A server certificate imported in Step #5 above</p></li>
 		
 		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Complete the configuration process as outlined 
  in <a href="Add_Edit_Federated_Identity_Providers.htm">Add and Edit Federated 
@@ -205,12 +191,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 124px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
-	float: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	width: 18px;
+	height: 18px;
+	float: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  In the Create Federated User form, the X509 Subject DN must match the 
  &quot;Issued to&quot; value in an imported certificate. </p>
 </div>
@@ -241,20 +227,20 @@
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>Configure a SAML security policy for the shared 
- Web service as outlined in <a HREF="Identity_Bridging_Policy_Overview.htm">Configure 
- SAML Security Policies</a>.</p></li>
-	
-	<li class="kadov-p"><p>Use the Full Identity Bridging method to add two 
- proxies in the SecureSpan™ Bridge as outlined in <a HREF="Add_SecureSpan_Gateway_Proxies.htm">Add 
- SecureSpan™ Gateway Proxies</a>. </p></li>
-	
-	<li class="kadov-p"><p>When completed, consume the shared Web service 
- as outlined in <a HREF="Consume_Shared_Web_Service.htm">Consume Shared 
- Web Services</a>.</p></li>
+	<li class="kadov-p"><p>Configure a policy with the SAML Assertion for 
+ the shared Web service as outlined in <a HREF="Configure_SAML_Policies.htm">Configure 
+ SAML Policies</a>. </p></li>
 </ol>
 
-<h6>&nbsp;</h6>
+<ol start=9
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Bridge, use the Full Identity 
+ Bridging method to add two SecureSpan™ Gateway Accounts as outlined in 
+ <a href="Configure_SecureSpan_Gateway_Accounts.htm">Configure SecureSpan™ 
+ Gateway Accounts</a>. </p></li>
+</ol>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -264,25 +250,34 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 15px;
+	height: 14px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
- Before a Web service can be consumed, the Web service must be published 
- and enabled with a completed SAML security policy. See <a href="Identity_Bridging_Policy_Overview.htm">Configure 
- SAML Security Policies</a> for more information.</p>
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ For in-depth information about SecureSpan™ Gateway Accounts in the SecureSpan™ 
+ Bridge, see <span style="font-style: italic;"><I>Manage SecureSpan™ Gateway 
+ Accounts</I></span> in the &quot;SecureSpan™ Bridge User Manual.&quot;</p>
 </div>
 
-<h6>&nbsp;</h6>
+<ol start=10
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>When completed, consume the shared Web service 
+ as outlined in <a HREF="Consume_Shared_Web_Service.htm">Consume Shared 
+ Web Services</a>.</p></li>
+</ol>
+
+<p>&nbsp;</p>
 
 <h4>Next Topic: </h4>
 
 <p><a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
  Bridging Workflow Using an X.509 Certificate</a></p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 </body>
 

@@ -1,0 +1,500 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Change WSS Assertion Recipient</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=3674>
+<meta name=layout-width content=859>
+<meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM">
+
+
+
+
+ <link rel="StyleSheet" href="SecureSpan.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1 style="color: #000000;">Change the WSS Assertion Recipient</h1>
+
+<p>The default recipient for the following message-level or WS-Security 
+ (WSS) assertions can be changed in the SecureSpan™ Manager:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">The WSS UsernameToken 
+ Basic assertion, WSS Signature assertion, and SAML Assertion from the 
+ Access Control category of the [Policy Assertions] tab</p></li>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">The Sign Request Element, 
+ Encrypt Request Element, Sign Response Element, and Encrypt Response Element 
+ assertions from the XML Security category of the [Policy Assertions] tab.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>When a WSS assertion is added to a policy, the associated WSS decoration 
+ will be written in the Security header, intended by default for the &quot;next-in-line&quot; 
+ recipient (the SecureSpan™ Gateway) in the SOAP message. Changing the 
+ recipient of a WSS assertion configures a different downstream recipient, 
+ with a unique Actor attribute value, for the WSS decoration, essentially 
+ by-passing the SecureSpan Gateway. A policy can contain multiple alternate 
+ recipients, each resulting in a separate Security SOAP header with its 
+ associated unique Actor attribute. </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ If the intended recipient does not accept or recognize Security headers 
+ that contain Actor attributes, then you must configure the HTTP(S) Routing 
+ assertion in the policy to instruct the SecureSpan Gateway to promote 
+ one of the downstream WSS recipients as the next default WSS header. To 
+ do so, select the &quot;Promote other Security header as default before 
+ routing&quot; option in the WSS Header Handling section of the HTTP(S) 
+ Routing Properties form. For further HTTP(S) Routing assertion instructions, 
+ see <a HREF="Configure_Edit_Message_Routing_Assertions.htm">Message Routing 
+ Assertions</a>.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>Access and configure the Change WSS Recipient form for an individual 
+ WSS assertion as follows: </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ This section discusses how to access and configure the Change WSS Recipient 
+ form that is common for all of the WSS assertions mentioned above. See 
+ the category topic pages for configuration instructions for each of the 
+ individual WSS assertions. For the WSS UsernameToken Basic, WSS Signature, 
+ and SAML Assertion assertions, see <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit the Access Control Assertions</a>. For the Sign Request Element, 
+ Encrypt Request Element, Sign Response Element, and Encrypt Response Element 
+ assertions, see <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit the XML Security Assertions</a>.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Right-click a WSS assertion 
+ in the Policy Development window. Select <span style="font-weight: bold;"><B>WSS 
+ Recipient</B></span> from the drop-down menu.</p></li>
+	
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">The Change WSS Recipient 
+ form appears. The current SecureSpan Gateway is selected as the default 
+ target recipient for the WSS decoration. To change the recipient, select 
+ the <span style="font-weight: bold;"><B>Specific Recipient</B></span> option.</p></li>
+	
+	<li style="color: #000000;
+				/*begin!kadov{{*/ color: #000000;
+				color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;"><span style="color: #000000;"><font color=black >Do 
+ one of the following:</font></span></p></li>
+</ol>
+
+<h2 style="margin-left: 40px;">Choose Existing Recipient</h2>
+
+<p style="margin-left: 40px;">If the intended downstream recipient was 
+ already defined for another WSS assertion in the policy, then:</p>
+
+<p style="margin-left: 40px;">&nbsp;</p>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select the corresponding 
+ recipient's Actor attribute value from the <span style="font-weight: bold;"><B>Security 
+ Header &quot;Actor&quot; Attribute</B></span> drop-down list. &nbsp;</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">The certificate 
+ subject information for the previously configured target appears in the 
+ <span style="font-weight: bold;"><B>Recipient Certificate Subject</B></span> 
+ field.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The recipient's Actor attribute value appears as an extension of the WSS 
+ assertion's name in the Policy Development window. </p></li>
+	</ol>
+</ul>
+
+<p style="margin-left: 40px;">&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE: </B></span>To 
+ view or edit the recipient for a WSS assertion, right-click the assertion, 
+ select WSS Recipient from the drop-down menu, and view or edit the target 
+ recipient in the Change WSS Recipient form. </p>
+</div>
+
+<p style="margin-left: 40px;">&nbsp;</p>
+
+<h2 style="margin-left: 40px;">Add New Recipient</h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ To create a new downstream recipient, you will need access to the recipient's 
+ certificate.</p>
+</div>
+
+<p style="margin-left: 40px;">Configure a new recipient for use by the 
+ WSS assertions as follows:</p>
+
+<p style="margin-left: 40px;">&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add 
+ Recipient</B></span>]. The Add WSS Recipient Wizard appears. Add the certificate 
+ for the new recipient by one of the following methods:</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ An error message will appear if you attempt to add an expired or duplicate 
+ certificate to the SecureSpan™ Gateway.</p>
+</div>
+
+<h3 style="margin-left: 80px;">Load the Certificate from a URL</h3>
+
+<p style="margin-left: 80px;">The <span style="font-weight: bold;"><B>Retrieve 
+ via SSL Connection (HTTPS URL)</B></span> option is selected by default. Do 
+ the following:</p>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Enter the URL 
+ into the field</p></li>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Click [<span 
+ style="font-weight: bold;"><B>Next</B></span>]. Proceed to Step #2 below.</p></li>
+		</ul>
+	</ul>
+</ol>
+
+<h3 style="margin-left: 80px;">Import the Certificate from a File</h3>
+
+<p style="margin-left: 80px;">To import the certificate from a local file:</p>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Select the <span 
+ style="font-weight: bold;"><B>Import from a File</B></span> option, then either:</p></li>
+			
+			<ul style="list-style: disc;"
+				type=disc>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">Enter the 
+ file path into the field, or </p></li>
+				
+				<li class="kadov-p"><p style="margin-left: 0px;">Click [<span 
+ style="font-weight: bold;"><B>Browse</B></span>] to navigate to the file location. 
+ The Open form appears. Navigate to the location of the certificate. Select 
+ the file, and then click [<span style="font-weight: bold;"><B>Open</B></span>].</p></li>
+			</ul>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Click [<span 
+ style="font-weight: bold;"><B>Next</B></span>]. Proceed to Step #2 below.</p></li>
+		</ul>
+	</ul>
+</ol>
+
+<h3 style="margin-left: 80px;">Copy and Paste the Certificate</h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ You can only cut and paste a certificate that is in Base 64 PEM format. 
+ In the Code window, the SecureSpan™ Manager will only add a pasted certificate 
+ that begins with &quot;BEGIN TRUSTED CERTIFICATE.&quot;</p>
+</div>
+
+<p style="margin-left: 80px;">To copy and paste the certificate from a 
+ file into the Code window:</p>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ol start=3
+		style="list-style: decimal;"
+		type=1>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Select the <span 
+ style="font-weight: bold;"><B>Copy and Paste (Base 64 PEM)</B></span> option</p></li>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Copy and then 
+ paste the entire certificate from the originating file into the Code window</p></li>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Click [<span 
+ style="font-weight: bold;"><B>Next</B></span>]. Proceed to Step #2 below.</p></li>
+		</ul>
+	</ol>
+	
+	<ol start=2
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p">
+		<p style="margin-left: 0px;">One of the following will occur:</p>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p-cnotenumbered"><p class="notenumbered">A pop-up 
+ error message notifies you that the certificate could not be added:</p></li>
+		</ul>
+		</li>
+		
+		<ol style="list-style: decimal;"
+			type=1>
+			
+			<ol style="list-style: decimal;"
+				type=1>
+				
+				<li class="kadov-p-cnotenumbered"><p class="notenumbered">Note 
+ the error.</p></li>
+				
+				<li class="kadov-p-cnotenumbered"><p class="notenumbered">Click 
+ [<span style="font-weight: bold;"><B>OK</B></span>] to close the dialog box.</p></li>
+				
+				<li class="kadov-p-cnotenumbered"><p class="notenumbered">Return 
+ to the Enter Certificate Info screen. Repeat the addition method as outlined 
+ in Step #2.</p></li>
+				
+				<li class="kadov-p-cnotenumbered"><p class="notenumbered">Click 
+ [<span style="font-weight: bold;"><B>Next</B></span>]. </p></li>
+				
+				<li class="kadov-p-cnotenumbered"><p class="notenumbered">If 
+ the View Certificate Details screen of the Add Certificate Wizard appears, 
+ proceed to Step #3. If the error message appears, continue to fix the 
+ error until the Enter Certificate Info screen appears. If necessary, see 
+ <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
+ and Contact Information</a> to contact a Technical Support Representative.</p></li>
+			</ol>
+		</ol>
+		
+		<ul>
+			
+			<li style="list-style: disc;" type="disc" class="kadov-p-cnotenumbered"><p class="notenumbered">The View 
+ Certificate Details screen of the Add Certificate Wizard appears. Proceed 
+ to Step #3.</p></li>
+		</ul>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">In the View Certificate 
+ Details screen of the Add Certificate Wizard appears, enter an optional 
+ name into the <span style="font-weight: bold;"><B>Certificate Name</B></span> 
+ field. View certificate details as required.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;"><span style="margin-left: 0px;">Click 
+ [</span><span style="margin-left: 0px; font-weight: bold;"><B>Next</B></span><span 
+ style="margin-left: 0px;">]. The Associate Actor Attribute screen appears. 
+ Enter a unique Actor attribute for the recipient certificate into the 
+ </span><span style="margin-left: 0px; font-weight: bold;"><B>Actor Attribute 
+ Value</B></span><span style="margin-left: 0px;"> field. </span></p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Since a recipient is identified in the Change WSS Recipient form by its 
+ associated Actor attribute, ensure that the Actor attribute that you enter 
+ is unique. In the SecureSpan™ Manager, the certificate and Actor attribute 
+ are a locked combination that can be used multiple times by multiple WSS 
+ assertions. </p>
+</div>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ol start=5
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>Finish</B></span>]. 
+ The Change WSS Recipient form appears with the Actor attribute and certificate 
+ subject information in the respective <span style="font-weight: bold;"><B>Security 
+ Header &quot;Actor&quot; Attribute</B></span> drop-down list and <span style="font-weight: bold;"><B>Recipient 
+ Certificate Subject</B></span> field. </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The recipient's Actor attribute value appears as an extension of the WSS 
+ assertion's name in the Policy Development window. </p></li>
+	</ol>
+</ul>
+
+<p style="margin-left: 40px;">&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	border-style: none;
+	width: 18px;
+	height: 18px;
+	float: none;
+	border-style: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE: </B></span>To 
+ view or edit the recipient for a WSS assertion, right-click the assertion, 
+ select WSS Recipient from the drop-down menu, and view or edit the target 
+ recipient in the Change WSS Recipient form.</p>
+</div>
+
+<p style="margin-left: 40px;">&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p class="quicklinks"><a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit the Access Control Assertions</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

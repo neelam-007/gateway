@@ -13,18 +13,24 @@
 
 
  <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Optional Add-On Assertion Overview">
 <meta name=generator-major-version content=0.1>
 <meta name=generator-minor-version content=1>
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=1236>
-<meta name=layout-width content=773>
+<meta name=layout-height content=1035>
+<meta name=layout-width content=802>
+<meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -46,19 +52,22 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
-	float: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
- For information on purchasing an add-on assertion, contact Layer 7 Technologies 
- as outlined in <a href="Technical_Support_and_Contact_Information.htm">Technical 
- Support and Contact Information</a>.</p>
+	width: 18px;
+	height: 18px;
+	float: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ For information about purchasing an add-on assertion, contact Layer 7 
+ Technologies as outlined in <a href="Technical_Support_and_Contact_Information.htm">Technical 
+ Support and Contact Information</a>. In the SecureSpan™ Manager, the term 
+ &quot;identity&quot; includes both users and groups, the term &quot;user&quot; 
+ can represent an individual human or machine, and the term &quot;SecureSpan™ 
+ Gateway&quot; includes all of the SecureSpan Gateway products.</p>
 </div>
 
-<p>Three assertions are available as optional add-ons to the basic SecureSpan™ 
- Solution functionality:</p>
+<p>Four assertions are available as optional add-ons to the basic SecureSpan™ 
+ functionality:</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -68,27 +77,41 @@
 </ul>
 
 <p style="margin-left: 40px;">The SiteMinder™ authentication assertion 
- — called “SiteMinder Protected Resource” — appears in the Authentication 
- category of the [Assertions] tab. The assertion instructs the SecureSpan™ 
- Gateway to delegate the authentication and authorization tasks required 
- to gain access to a protected service to the Netegrity SiteMinder™ Policy 
- Server. See <a href="SiteMinder_Authentication_Assertion.htm">Using the 
- SiteMinder™ Authentication Assertion</a> for more information</p>
+ — called “SiteMinder Protected Resource” in the Policy Development window 
+ — appears in the Access Control category of the [Assertions] tab. The 
+ assertion instructs the SecureSpan™ Gateway to delegate the authentication 
+ and authorization tasks required to gain access to a protected service 
+ to the Netegrity SiteMinder™ Policy Server. See <a href="SiteMinder_Authentication_Assertion.htm">Using 
+ the SiteMinder™ Authentication Assertion</a> for more information</p>
 
 <ul style="list-style: disc;"
 	type=disc>
 	
-	<li class="kadov-p"><p style="font-weight: bold;">Tivoli Access Manager 
+	<li class="kadov-p"><p style="font-weight: bold;">Tivoli® Access Manager 
  (TAM) Authentication</p></li>
 </ul>
 
-<p style="margin-left: 40px;">The Tivoli Access Manager (TAM) authentication 
- assertion — called “Tivoli Access Manager Assertion” — appears in the 
- Authentication category of the [Assertions] tab. The assertion instructs 
- the Gateway to delegate the authentication and authorization tasks required 
- to gain access to a protected service to the IBM® Tivoli Access Manager 
- solution. See <a href="TAM_Authentication_Assertion.htm">Using the TAM 
- Authentication Assertion</a> for more information</p>
+<p style="margin-left: 40px;">The Tivoli® Access Manager (TAM) authentication 
+ assertion — called “Tivoli Access Manager Assertion” in the Policy Development 
+ window — appears in the Access Control category of the [Assertions] tab. 
+ The assertion instructs the SecureSpan Gateway to delegate the authentication 
+ and authorization tasks required to gain access to a protected service 
+ to the IBM® Tivoli® Access Manager solution. See <a href="TAM_Authentication_Assertion.htm">Using 
+ the TAM Authentication Assertion</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">Symantec™ Anti-Virus 
+ </p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Symantec™ anti-virus assertion — called 
+ &quot;Symantec Virus Scanning&quot; in the Policy Development window — 
+ appears in the Message Validation/Transformation category of the [Assertions] 
+ tab. The assertion instructs the SecureSpan Gateway to send messages and 
+ attachments to an existing Symantec™ Virus Scanning engine. See <a href="Using_the_Symantec_Anti-Virus_Assertion.htm">Using 
+ the Symantec™ Anti-Virus Assertion</a> for more information</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -97,22 +120,23 @@
 </ul>
 
 <p style="margin-left: 40px;">The JMS routing assertion — called &quot;JMS 
- Routing&quot; — appears in the Message Routing category of the [Assertions] 
- tab. The JMS assertion instructs the Gateway to route service request 
- messages to a selected outbound queue. See <a href="JMS_Message_Routing_Assertion.htm">Using 
+ Routing&quot; in the Policy Development window — appears in the Message 
+ Routing category of the [Assertions] tab. The JMS assertion instructs 
+ the SecureSpan Gateway to route service request messages to a selected 
+ outbound queue. See <a href="JMS_Message_Routing_Assertion.htm">Using 
  the JMS Message Routing Assertion</a> for more information.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <p>Each assertion requires special configuration and installation procedures 
- in the Gateway before it is installed and/or enabled for use in the SecureSpan™ 
- Manager. For SiteMinder™ and TAM assertion installation and configuration 
- information and instructions, see the <span style="font-style: italic;"><I>SecureSpan™ 
- Solution Add-On Assertion Installation Guide</I></span> or contact your Administrator. 
+ in the SecureSpan Gateway before it is installed and/or enabled for use 
+ in the SecureSpan™ Manager. For SiteMinder,TAM, and Symantec assertion 
+ installation and configuration information and instructions, see the &quot;SecureSpan™ 
+ Add-On Assertion Installation Manual&quot; or contact your Administrator. 
  For JMS assertion installation and configuration information and instructions, 
  contact your Administrator.</p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -122,28 +146,28 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 15px;
-	float: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	border-style: none;
-	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+	width: 18px;
+	height: 18px;
+	float: none;" width="18" height="18" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
  The Administrator is responsible for installing and configuring the add-on 
  assertions in the SecureSpan™ Gateway. You will require specific configuration-related 
  information from the Administrator to use the individual add-on assertions. 
  Read through the information requirements before using the assertions. 
- If you encounter errors during the execution of a security policy that 
- contains one or more add-on assertions, contact your Administrator.</p>
+ If you encounter errors during the execution of a policy that contains 
+ one or more add-on assertions, contact your Administrator.</p>
 </div>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 <h4>Next Topic:</h4>
 
 <p><a href="SiteMinder_Authentication_Assertion.htm">Using the SiteMinder™ 
  Authentication Assertion</a></p>
 
-<h6>&nbsp;</h6>
+<p>&nbsp;</p>
 
 </body>
 
