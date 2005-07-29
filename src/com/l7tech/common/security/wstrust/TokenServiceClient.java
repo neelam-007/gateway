@@ -57,7 +57,7 @@ public class TokenServiceClient {
     private static String tscWspNs = System.getProperty(PROP_WSP_NS, SoapUtil.WSP_NAMESPACE2);
     private static String tscWsaNs = System.getProperty(PROP_WSA_NS, SoapUtil.WSA_NAMESPACE2);
     private static String tscWstNs = System.getProperty(PROP_WST_NS, SoapUtil.WST_NAMESPACE2);
-    private static int tscWstRequestTypeIndex = Integer.getInteger(PROP_WST_REQUESTTYPEINDEX, 0).intValue();
+    private static int tscWstRequestTypeIndex = Integer.getInteger(PROP_WST_REQUESTTYPEINDEX, 1).intValue();
 
     /**
      * Create a signed SOAP message containing a WS-Trust RequestSecurityToken message asking for the
