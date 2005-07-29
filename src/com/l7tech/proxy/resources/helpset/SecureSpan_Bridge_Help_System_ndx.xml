@@ -32,8 +32,7 @@
  <indexitem text="Configure Gateway Accounts" target="configure_securespan_gateway_accounts_htm" />
  <indexitem text="Configure Policy Attachment Key:Import/Export Policies" target="import_export_policies_htm" />
  <indexitem text="Configure Policy Attachment Key:Manage Stored Policies" target="manage_stored_policies_htm" />
- <indexitem text="Configure SAML Policies:Configure SAML Policies" target="configure_saml_policies_htm" />
- <indexitem text="Configure SAML Policies:Identity Bridging Policy Overview" target="identity_bridging_policy_overview_htm" />
+ <indexitem text="Configure SAML Policies" target="configure_saml_policies_htm" />
  <indexitem text="Consume Shared Web Service" target="consume_shared_web_service_htm" />
  <indexitem text="Contact Information" target="technical_support_and_contact_information_htm" />
  <indexitem text="Content-Type" target="configure_client_applications_htm" />
@@ -117,13 +116,10 @@
  <indexitem text="Request Message Does Not Conform" target="about_message_routing_htm" />
  <indexitem text="Routed Messages" target="configure_client_applications_htm" />
  <indexitem text="SAML" target="configure_saml_policies_htm" />
- <indexitem text="SAML Assertion:Configure SAML Policies" target="configure_saml_policies_htm" />
- <indexitem text="SAML Assertion:Identity Bridging Policy Overview" target="identity_bridging_policy_overview_htm" />
+ <indexitem text="SAML Assertion" target="configure_saml_policies_htm" />
  <indexitem text="SAML Constraints Wizard" target="configure_saml_policies_htm" />
- <indexitem text="SAML Policy:Configure SAML Policies" target="configure_saml_policies_htm" />
- <indexitem text="SAML Policy:Identity Bridging Policy Overview" target="identity_bridging_policy_overview_htm" />
+ <indexitem text="SAML Policy" target="configure_saml_policies_htm" />
  <indexitem text="SAML Statement Type" target="configure_saml_policies_htm" />
- <indexitem text="SAML workflow" target="identity_bridging_policy_overview_htm" />
  <indexitem text="Saved SSL Certificate" target="about_ssl_tls_security_sessions_htm" />
  <indexitem text="SecureSpan Bridge" target="securespan_overview_htm" />
  <indexitem text="SecureSpan Bridge GUI" target="daemon_mode_htm" />
