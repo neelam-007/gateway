@@ -122,9 +122,13 @@ public class ServerSchemaValidation implements ServerAssertion {
                             TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
                             try {
                                 if (tarariMessageContext.getStreamContext().isValid()) {
-                                    // IMPORTANT TODO, make sure that we dont validate against another schema defined
-                                    // in another assertion here
-                                    logger.fine("Hardware schema validation success");
+                                    logger.fine("Hardware schema validation success. Checking for right namespace.");
+                                    // todo, there could be more than one element under the body, we need to check all of their ns
+                                    if (!tk.getSoapInfo().getPayloadNsUri().equals(tarariNamespaceUri)) {
+                                        logger.info("Hardware schema validation succeeded but the tns " +
+                                                    "did not match the assertion at hand.");
+                                        return AssertionStatus.FAILED;
+                                    }
                                     return AssertionStatus.NONE;
                                 } else {
                                     logger.info("Hardware schema validation failed. The assertion will " +
