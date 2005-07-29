@@ -126,10 +126,12 @@ public class ServerSchemaValidation implements ServerAssertion {
                                     // todo, there could be more than one element under the body, we need to check all of their ns
                                     if (!tk.getSoapInfo().getPayloadNsUri().equals(tarariNamespaceUri)) {
                                         logger.info("Hardware schema validation succeeded but the tns " +
-                                                    "did not match the assertion at hand.");
+                                                    "did not match the assertion at hand. Returning failure.");
                                         return AssertionStatus.FAILED;
+                                    } else {
+                                        logger.fine("Tns match. Returning success.");
+                                        return AssertionStatus.NONE;
                                     }
-                                    return AssertionStatus.NONE;
                                 } else {
                                     logger.info("Hardware schema validation failed. The assertion will " +
                                                 "fallback on software schema validation");
