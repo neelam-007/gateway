@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<po:PurchaseOrder xmlns:po="http://www.acme.com/schemas/purchaseOrder">
+  <po:Quantity>10</po:Quantity>
+  <po:ItemId>sdfdslkhs6</po:ItemId>
+  <id:Account xmlns:id="http://www.acme.com/schemas/account">
+    <id:CustomerId>sdkfjsd89fsj</id:CustomerId>
+    <id:Rep>John Doe</id:Rep>
+  </id:Account>
+</po:PurchaseOrder>

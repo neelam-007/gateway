@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:schema elementFormDefault="qualified"
+          targetNamespace="http://www.acme.com/schemas/purchaseOrder"
+          xmlns:accnt="http://www.acme.com/schemas/account"
+          xmlns:s="http://www.w3.org/2001/XMLSchema">
+  
+  <s:import namespace="http://www.acme.com/schemas/account" schemaLocation="account.xsd" />
+  
+  <s:element name="PurchaseOrder">
+    <s:complexType>
+      <s:sequence>
+        <s:element minOccurs="1" maxOccurs="1" name="Quantity" type="s:int" />
+        <s:element minOccurs="1" maxOccurs="1" name="ItemId" type="s:string" />
+        <s:element ref="accnt:Account" />
+      </s:sequence>
+    </s:complexType>
+  </s:element>
+</s:schema>
