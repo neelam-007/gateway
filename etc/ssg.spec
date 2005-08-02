@@ -73,6 +73,14 @@ if [ `grep ^gateway: /etc/passwd` ]; then
 else
   adduser gateway
 fi
+if [ `grep ^s0:2345:respawn:/sbin/agetty /etc/inittab` ]; then
+	echo -n ""
+	# gettys exist
+else
+	echo 	's0:2345:respawn:/sbin/agetty -L 115200 ttyS0 vt100' >> /etc/inittab
+	echo 	's1:2345:respawn:/sbin/agetty -L 38400 ttyS1 vt100' >> /etc/inittab
+fi
+
 
 %post
 # Check for existence of install crumbs left by install.pl
