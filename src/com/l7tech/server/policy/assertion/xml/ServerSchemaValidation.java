@@ -186,6 +186,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         DocumentBuilder db = null;
         try {
             db = dbf.newDocumentBuilder();
+            // todo, implement real entity resolver here so that we support schemas with import statements
             db.setEntityResolver(XmlUtil.getSafeEntityResolver());
         } catch (ParserConfigurationException e) {
             String msg = "parser configuration exception";
