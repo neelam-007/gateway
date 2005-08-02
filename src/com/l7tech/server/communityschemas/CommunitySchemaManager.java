@@ -7,20 +7,26 @@
 package com.l7tech.server.communityschemas;
 
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.io.IOException;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.tarari.xml.schema.SchemaResolver;
 
 /**
  * This manager gives access to the community schemas included in the
  * schema table. This is meant to be used by the server schema validation
- * implementation using tarari
+ * implementation using tarari as well as for schema import resolution support
+ * in the case of software schema validation.
  *
  * @author flascelles@layer7-tech.com
  */
@@ -53,6 +59,54 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
 
     public void update(CommunitySchemaEntry existingSchema) throws UpdateException {
         getHibernateTemplate().update(existingSchema);
+    }
+
+    /**
+     * To get an EntityResolver based on the community schema table. This is meant to be used in conjunction with
+     * javax.xml.parsers.DocumentBuilder.setEntityResolver.
+     *
+     * @return an EntityResolver that can be used to resolve schema import statements as part of the
+     * software implementation of schema validation. this resolver assumes that the external schemas
+     * are already populated in the community schema table and that they are identified the same way
+     * as the import statements' schemaLocation attribute value.
+     */
+    public EntityResolver communityEntityResolver() {
+        final CommunitySchemaManager manager = this;
+        return new EntityResolver () {
+            private final String HOMEDIR = System.getProperty("user.dir");
+            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+                // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
+                String schemaId = systemId;
+                if (systemId != null && HOMEDIR != null) {
+                    int pos = systemId.indexOf(HOMEDIR);
+                    if (pos > -1) {
+                        schemaId = systemId.substring(pos+HOMEDIR.length()+1);
+                    }
+                }
+                logger.info("asking for resource " + schemaId);
+                // todo, get schema based on the schemaId from the table instead of throwing
+                //return new InputSource(get schema based on schemId);
+                throw new SAXException("schema imports based on community table are not yet supported.");
+            }
+        };
+    }
+
+    /**
+     * Equivalent to communityEntityResolver but for tarari based hardware schema validation.
+     * This is expected to be used by the GlobalTarariContextImpl
+     */
+    public SchemaResolver communitySchemaResolver() {
+        final CommunitySchemaManager manager = this;
+        return new SchemaResolver() {
+            public byte[] resolveSchema(String tns, String location, String baseURI) {
+                // todo, get schema based on information provided (from table).
+                logger.info("tarari asking for resource. tns: " + tns +
+                            ", location: " + location +
+                            ", baseURI: " + baseURI);
+                return new byte[0];
+            }
+        };
+
     }
 
     private static final String TABLE_NAME = "community_schema";
