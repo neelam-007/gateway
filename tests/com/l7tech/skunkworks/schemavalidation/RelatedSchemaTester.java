@@ -43,9 +43,18 @@ public class RelatedSchemaTester {
 
     protected EntityResolver getRealEntityResolver() {
         return new EntityResolver () {
+            private final String HOMEDIR = System.getProperty("user.dir");
             public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-                // todo, somehow, we need to relate the systemId with the real schema
-                logger.info("asking for resource " + publicId + ", " + systemId);
+                // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
+                String schemaId = systemId;
+                if (systemId != null && HOMEDIR != null) {
+                    int pos = systemId.indexOf(HOMEDIR);
+                    if (pos > -1) {
+                        schemaId = systemId.substring(pos+HOMEDIR.length()+1);
+                    }
+                }
+                logger.info("asking for resource " + schemaId);
+                // todo, get schema based on the schemaId instead of the hardcoded example below
                 return new InputSource(getRes(ACCNTXSD));
             }
         };
