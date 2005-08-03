@@ -7,10 +7,11 @@ package com.l7tech.server.tarari;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidXpathException;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariUtil;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
-import com.l7tech.server.communityschemas.CommunitySchemaEntry;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.objectmodel.FindException;
 import com.tarari.xml.schema.SchemaLoader;
@@ -105,8 +106,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
             CommunitySchemaManager manager = (CommunitySchemaManager)managerResolver.getBean("communitySchemaManager");
             Collection allCommunitySchemas = manager.findAll();
             for (Iterator iterator = allCommunitySchemas.iterator(); iterator.hasNext();) {
-                CommunitySchemaEntry communitySchemaEntry = (CommunitySchemaEntry) iterator.next();
-                schemasInPolicyAndTable.add(communitySchemaEntry.getSchema());
+                SchemaEntry schemaEntry = (SchemaEntry) iterator.next();
+                schemasInPolicyAndTable.add(schemaEntry.getSchema());
             }
             ServiceCache servicesCache = (ServiceCache)managerResolver.getBean("serviceCache");
             schemasInPolicyAndTable.addAll(servicesCache.getAllPolicySchemas());

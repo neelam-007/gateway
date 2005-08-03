@@ -4,7 +4,7 @@
  * User: flascell<br/>
  * Date: Jul 14, 2005<br/>
  */
-package com.l7tech.server.communityschemas;
+package com.l7tech.common.xml.schema;
 
 import java.io.Serializable;
 
@@ -15,7 +15,7 @@ import java.io.Serializable;
  *
  * @author flascelles@layer7-tech.com
  */
-public class CommunitySchemaEntry implements Serializable {
+public class SchemaEntry implements Serializable {
     public long getOid() {
         return oid;
     }
@@ -49,7 +49,7 @@ public class CommunitySchemaEntry implements Serializable {
     }
 
     public String toString() {
-        return "CommunitySchemaEntry oid:" + oid + " schema: " + schema;
+        return "SchemaEntry oid:" + oid + " schema: " + schema;
     }
 
     private long oid = -1;

@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.tarari.xml.schema.SchemaResolver;
 
 /**
@@ -37,11 +38,11 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
     }
 
     public Collection findAll() throws FindException {
-        String queryall = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName();
+        String queryall = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName();
         Collection output = getHibernateTemplate().find(queryall);
         // make sure the soapenv schema is always there
         if (output.isEmpty()) {
-            CommunitySchemaEntry defaultEntry = newDefaultEntry();
+            SchemaEntry defaultEntry = newDefaultEntry();
             try {
                 save(defaultEntry);
             } catch (SaveException e) {
@@ -58,7 +59,7 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
      * Find a schema from it's name (name column in community schema table)
      */
     public Collection findByName(String schemaName) throws FindException {
-        String queryname = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName() +
+        String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".name = \"" + schemaName + "\"";
         Collection output = getHibernateTemplate().find(queryname);
         return output;
@@ -68,17 +69,17 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
      * Find a schema from it's target namespace (tns column in community schema table)
      */
     public Collection findByTNS(String tns) throws FindException {
-        String querytns = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName() +
+        String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".tns = \"" + tns + "\"";
         Collection output = getHibernateTemplate().find(querytns);
         return output;
     }
 
-    public long save(CommunitySchemaEntry newSchema) throws SaveException {
+    public long save(SchemaEntry newSchema) throws SaveException {
         return ((Long)getHibernateTemplate().save(newSchema)).longValue();
     }
 
-    public void update(CommunitySchemaEntry existingSchema) throws UpdateException {
+    public void update(SchemaEntry existingSchema) throws UpdateException {
         getHibernateTemplate().update(existingSchema);
     }
 
@@ -116,7 +117,7 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                     // this is supposed to let sax parser resolve his own way if possible
                     return null;
                 }
-                CommunitySchemaEntry resolved = (CommunitySchemaEntry)matchingSchemas.iterator().next();
+                SchemaEntry resolved = (SchemaEntry)matchingSchemas.iterator().next();
                 return new InputSource(new ByteArrayInputStream(resolved.getSchema().getBytes()));
             }
         };
@@ -159,7 +160,7 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                     logger.warning("could not resolve external schema either by name or tns");
                     return new byte[0];
                 } else {
-                    CommunitySchemaEntry resolved = (CommunitySchemaEntry)matchingSchemas.iterator().next();
+                    SchemaEntry resolved = (SchemaEntry)matchingSchemas.iterator().next();
                     return resolved.getSchema().getBytes();
                 }
             }
@@ -167,8 +168,8 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
 
     }
 
-    private CommunitySchemaEntry newDefaultEntry() {
-        CommunitySchemaEntry defaultEntry = new CommunitySchemaEntry();
+    private SchemaEntry newDefaultEntry() {
+        SchemaEntry defaultEntry = new SchemaEntry();
         defaultEntry.setSchema(SOAP_SCHEMA);
         defaultEntry.setName("soapenv");
         defaultEntry.setTns("http://schemas.xmlsoap.org/soap/envelope/");

@@ -272,7 +272,7 @@
         <property name="counterName" column="countername" type="string"/>
     </class>
 
-    <class name="com.l7tech.server.communityschemas.CommunitySchemaEntry" table="community_schemas">
+    <class name="com.l7tech.common.xml.schema.SchemaEntry" table="community_schemas">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
