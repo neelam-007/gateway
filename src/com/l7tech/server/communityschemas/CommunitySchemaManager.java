@@ -134,7 +134,34 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                 logger.info("tarari asking for resource. tns: " + tns +
                             ", location: " + location +
                             ", baseURI: " + baseURI);
-                return new byte[0];
+                Collection matchingSchemas = null;
+                // first, try to resolve by name
+                if (location != null && location.length() > 0) {
+                    logger.info("asking for schema with systemId " + location);
+                    try {
+                        matchingSchemas = manager.findByName(location);
+                    } catch (FindException e) {
+                        logger.log(Level.INFO, "error getting community schema with systemid " + location, e);
+                    }
+                }
+                // then, try to resolve by tns
+                if (matchingSchemas == null || matchingSchemas.isEmpty()) {
+                   if (tns != null && tns.length() > 0) {
+                        logger.info("asking for schema with tns " + tns);
+                        try {
+                            matchingSchemas = manager.findByTNS(tns);
+                        } catch (FindException e) {
+                            logger.log(Level.INFO, "error getting community schema with systemid " + tns, e);
+                        }
+                   }
+                }
+                if (matchingSchemas == null || matchingSchemas.isEmpty()) {
+                    logger.warning("could not resolve external schema either by name or tns");
+                    return new byte[0];
+                } else {
+                    CommunitySchemaEntry resolved = (CommunitySchemaEntry)matchingSchemas.iterator().next();
+                    return resolved.getSchema().getBytes();
+                }
             }
         };
 
