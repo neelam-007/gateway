@@ -117,7 +117,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                     logger.fine("Falling back to software validation because assertion requests " +
                                 "that only arguments be validated");
                 } else {
-                    msg.isSoap(); // Prime the pump
+                    boolean msgisSoap = msg.isSoap(); // Prime the pump
                     TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
                     if (tk != null) {
                         TarariMessageContext tmc = tk.getContext();
@@ -126,13 +126,20 @@ public class ServerSchemaValidation implements ServerAssertion {
                             try {
                                 if (tarariMessageContext.getStreamContext().isValid()) {
                                     logger.fine("Hardware schema validation success. Checking for right namespace.");
-                                    // todo, there could be more than one element under the body, we need to check all of their ns
-                                    if (!tk.getSoapInfo().getPayloadNsUri().equals(tarariNamespaceUri)) {
-                                        logger.info("Hardware schema validation succeeded but the tns " +
-                                                    "did not match the assertion at hand. Returning failure.");
-                                        return AssertionStatus.FAILED;
+                                    // this only applies to soap messages
+                                    if (msgisSoap) {
+                                        // todo, there could be more than one element under the body, we need to check all of their ns
+                                        if (!tk.getSoapInfo().getPayloadNsUri().equals(tarariNamespaceUri)) {
+                                            logger.info("Hardware schema validation succeeded but the tns " +
+                                                        "did not match the assertion at hand. Returning failure.");
+                                            return AssertionStatus.FAILED;
+                                        } else {
+                                            logger.fine("Tns match. Returning success.");
+                                            return AssertionStatus.NONE;
+                                        }
                                     } else {
-                                        logger.fine("Tns match. Returning success.");
+                                        // todo, need to check the ns of first element without parsing the document (?)
+                                        logger.fine("Skipping tns check because not soap. Returning success.");
                                         return AssertionStatus.NONE;
                                     }
                                 } else {
