@@ -40,6 +40,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private long compilerGeneration = 1;
     boolean xpathChangedSinceLastCompilation = true;
     private String[] tnss;
+    private static boolean communitySchemaResolverSet = false;
 
     public void compile() {
         // fla added 20-07-05 to avoid compiling xpath all the time for no reason
@@ -145,6 +146,8 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                     logger.fine("loading schema to card " + s);
                     SchemaLoader.loadSchema(new ByteArrayInputStream(s.getBytes("UTF-8")), "");
                 }
+                // everytime we load schemas, we check that the resolver is set.
+                checkSchemaResolver(manager);
             } else {
                 logger.fine("schemas loaded on card are already correct");
             }
@@ -161,8 +164,14 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                 tnss[i] = tns;
                 i++;
             }
+        }
+    }
 
-            // todo, we need to implement a SchemaResolver for import statements and register SchemaLoader.setSchemaResolver
+    private synchronized void checkSchemaResolver(CommunitySchemaManager manager) {
+        if (!communitySchemaResolverSet) {
+            logger.finest("setting the community schema resolver");
+            SchemaLoader.setSchemaResolver(manager.communitySchemaResolver());
+            communitySchemaResolverSet = true;
         }
     }
 
@@ -180,32 +189,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         }
         return output;
     }
-
-    /*
-    public void addSchema(String schema) throws UnsupportedEncodingException, SchemaLoadingException {
-        synchronized (GlobalTarariContextImpl.class) {
-            logger.info("loading schema to card: " + schema);
-            SchemaLoader.loadSchema(new ByteArrayInputStream(schema.getBytes("UTF-8")), "");
-        }
-    }
-
-    public void removeAllSchemasFromCard() {
-        synchronized (GlobalTarariContextImpl.class) {
-            logger.info("removing all schemas from the card");
-            // this seems to cause problems when card has nothing in it
-            // SchemaLoader.unloadAllSchemas();
-            logger.finest("querying SchemaLoader.listSchemas");
-            String[] schemas = SchemaLoader.listSchemas();
-            if (schemas == null || schemas.length < 1) {
-                logger.finest("card already empty");
-                return;
-            } else {
-                logger.finest("card not empty, trying to unload all schemas");
-                SchemaLoader.unloadAllSchemas();
-            }
-        }
-    }
-    */
 
     public int getXpathIndex(String expression, long targetCompilerGeneration) {
         if (expression == null) return -1;
