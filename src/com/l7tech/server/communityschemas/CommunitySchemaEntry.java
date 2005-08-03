@@ -32,10 +32,28 @@ public class CommunitySchemaEntry implements Serializable {
         this.schema = schema;
     }
 
+    public String getTns() {
+        return tns;
+    }
+
+    public void setTns(String tns) {
+        this.tns = tns;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String toString() {
         return "CommunitySchemaEntry oid:" + oid + " schema: " + schema;
     }
 
     private long oid = -1;
     private String schema;
+    private String tns;
+    private String name;
 }

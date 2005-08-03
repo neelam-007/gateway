@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -38,9 +39,9 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
     public Collection findAll() throws FindException {
         String queryall = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName();
         Collection output = getHibernateTemplate().find(queryall);
+        // make sure the soapenv schema is always there
         if (output.isEmpty()) {
-            CommunitySchemaEntry defaultEntry = new CommunitySchemaEntry();
-            defaultEntry.setSchema(SOAP_SCHEMA);
+            CommunitySchemaEntry defaultEntry = newDefaultEntry();
             try {
                 save(defaultEntry);
             } catch (SaveException e) {
@@ -50,6 +51,26 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
             output.add(defaultEntry);
         }
 
+        return output;
+    }
+
+    /**
+     * Find a schema from it's name (name column in community schema table)
+     */
+    public Collection findByName(String schemaName) throws FindException {
+        String queryname = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName() +
+                          " where " + TABLE_NAME + ".name = \"" + schemaName + "\"";
+        Collection output = getHibernateTemplate().find(queryname);
+        return output;
+    }
+
+    /**
+     * Find a schema from it's target namespace (tns column in community schema table)
+     */
+    public Collection findByTNS(String tns) throws FindException {
+        String querytns = "from " + TABLE_NAME + " in class " + CommunitySchemaEntry.class.getName() +
+                          " where " + TABLE_NAME + ".tns = \"" + tns + "\"";
+        Collection output = getHibernateTemplate().find(querytns);
         return output;
     }
 
@@ -83,10 +104,20 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                         schemaId = systemId.substring(pos+HOMEDIR.length()+1);
                     }
                 }
-                logger.info("asking for resource " + schemaId);
-                // todo, get schema based on the schemaId from the table instead of throwing
-                //return new InputSource(get schema based on schemId);
-                throw new SAXException("schema imports based on community table are not yet supported.");
+                logger.info("asking for schema with systemId " + schemaId);
+                Collection matchingSchemas = null;
+                try {
+                    matchingSchemas = manager.findByName(schemaId);
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "error getting community schema with systemid " + schemaId, e);
+                }
+                if (matchingSchemas.isEmpty()) {
+                    logger.warning("there were no community schema that would resolve with the systemid " + schemaId);
+                    // this is supposed to let sax parser resolve his own way if possible
+                    return null;
+                }
+                CommunitySchemaEntry resolved = (CommunitySchemaEntry)matchingSchemas.iterator().next();
+                return new InputSource(new ByteArrayInputStream(resolved.getSchema().getBytes()));
             }
         };
     }
@@ -107,6 +138,14 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
             }
         };
 
+    }
+
+    private CommunitySchemaEntry newDefaultEntry() {
+        CommunitySchemaEntry defaultEntry = new CommunitySchemaEntry();
+        defaultEntry.setSchema(SOAP_SCHEMA);
+        defaultEntry.setName("soapenv");
+        defaultEntry.setTns("http://schemas.xmlsoap.org/soap/envelope/");
+        return defaultEntry;
     }
 
     private static final String TABLE_NAME = "community_schema";

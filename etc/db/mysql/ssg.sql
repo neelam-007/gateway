@@ -464,6 +464,8 @@ CREATE TABLE counters (
 DROP TABLE IF EXISTS community_schemas;
 CREATE TABLE community_schemas (
   objectid bigint(20) NOT NULL,
+  name varchar(128) default '',
+  tns varchar(128) default '',
   schema mediumtext default '',
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB;

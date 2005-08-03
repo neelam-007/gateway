@@ -277,6 +277,8 @@
             <generator class="hilo"/>
         </id>
         <property name="schema" column="schema" type="string"/>
+        <property name="name" column="name" type="string"/>
+        <property name="tns" column="tns" type="string"/>
     </class>
 
 </hibernate-mapping>

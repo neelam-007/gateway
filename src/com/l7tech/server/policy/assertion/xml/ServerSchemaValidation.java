@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.tarari.xml.validation.ValidationException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -58,11 +59,13 @@ public class ServerSchemaValidation implements ServerAssertion {
     private final Auditor auditor;
     private final GlobalTarariContext tarariContext;
     private String tarariNamespaceUri = null;
+    private ApplicationContext springContext;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
         this.data = data;
         auditor = new Auditor(this, springContext, logger);
         tarariContext = TarariLoader.getGlobalContext();
+        this.springContext = springContext;
 
         if (tarariContext != null) {
             try {
@@ -186,8 +189,10 @@ public class ServerSchemaValidation implements ServerAssertion {
         DocumentBuilder db = null;
         try {
             db = dbf.newDocumentBuilder();
-            // todo, implement real entity resolver here so that we support schemas with import statements
-            db.setEntityResolver(XmlUtil.getSafeEntityResolver());
+            // this bogus entity resolver does not allow for related schema support
+            // db.setEntityResolver(XmlUtil.getSafeEntityResolver());
+            CommunitySchemaManager manager = (CommunitySchemaManager)springContext.getBean("communitySchemaManager");
+            db.setEntityResolver(manager.communityEntityResolver());
         } catch (ParserConfigurationException e) {
             String msg = "parser configuration exception";
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
