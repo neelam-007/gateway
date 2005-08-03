@@ -135,6 +135,9 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
 
             // are there any discrepencies?
             if (!schemasOnCardThatShouldNotBeThere.isEmpty() || !schemasMissingFromCard.isEmpty()) {
+                // everytime we load schemas, we check that the resolver is set.
+                checkSchemaResolver(manager);
+
                 // asper note above, we need to remove everything for now
                 if (!schemasOnCard.isEmpty()) {
                     logger.fine("removing schemas from card");
@@ -146,8 +149,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                     logger.fine("loading schema to card " + s);
                     SchemaLoader.loadSchema(new ByteArrayInputStream(s.getBytes("UTF-8")), "");
                 }
-                // everytime we load schemas, we check that the resolver is set.
-                checkSchemaResolver(manager);
             } else {
                 logger.fine("schemas loaded on card are already correct");
             }
