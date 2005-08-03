@@ -8,6 +8,7 @@ package com.l7tech.admin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
@@ -63,6 +64,9 @@ public interface AdminContext {
      * @throws RemoteException   on remote communication error
      */
     TrustedCertAdmin getTrustedCertAdmin() throws RemoteException, SecurityException;;
+
+    SchemaAdmin getSchemaAdmin() throws RemoteException, SecurityException;
+
     /**
      * @return the custome assertions registrar
      * @throws SecurityException on security error accessing the interface

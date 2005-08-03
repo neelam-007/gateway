@@ -86,6 +86,7 @@ public class MainWindow extends JFrame {
     private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
+    private JMenuItem manageGlobalSchemasMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     // actions
@@ -113,6 +114,7 @@ public class MainWindow extends JFrame {
     private NewLdapProviderAction newLDAPProviderAction;
     private NewFederatedIdentityProviderAction newPKIProviderAction;
     private ManageCertificatesAction manageCertificatesAction = null;
+    private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
     private NewInternalUserAction newInernalUserAction;
 
 
@@ -447,6 +449,7 @@ public class MainWindow extends JFrame {
             editMenu.addSeparator();
 
             editMenu.add(getManageCertificatesMenuItem());
+            editMenu.add(getManageGlobalSchemasMenuItem());
             editMenu.add(getManageJmsEndpointsMenuItem());
 
             int mnemonic = editMenu.getText().toCharArray()[0];
@@ -1183,6 +1186,14 @@ public class MainWindow extends JFrame {
         return manageCertificatesAction;
     }
 
+    private Action getManageGlobalSchemasAction() {
+        if (manageGlobalSchemasAction != null) return manageGlobalSchemasAction;
+        manageGlobalSchemasAction = new ManageGlobalSchemasAction();
+        manageGlobalSchemasAction.setEnabled(false);
+        this.addLogonListener(manageGlobalSchemasAction);
+        return manageGlobalSchemasAction;
+    }
+
     private Action getGatewayAuditWindowAction() {
         if (viewGatewayAuditsWindowAction != null) return viewGatewayAuditsWindowAction;
         viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction();
@@ -1852,6 +1863,12 @@ public class MainWindow extends JFrame {
         manageCertificatesMenuItem = new JMenuItem(getManageCertificatesAction());
 
         return manageCertificatesMenuItem;
+    }
+
+    public JMenuItem getManageGlobalSchemasMenuItem(){
+        if (manageGlobalSchemasMenuItem != null) return manageGlobalSchemasMenuItem;
+        manageGlobalSchemasMenuItem = new JMenuItem(getManageGlobalSchemasAction());
+        return manageGlobalSchemasMenuItem;
     }
 
     public JMenuItem getStatMenuItem() {

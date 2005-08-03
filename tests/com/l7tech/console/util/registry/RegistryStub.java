@@ -4,6 +4,7 @@ import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.*;
@@ -80,6 +81,10 @@ public class RegistryStub extends Registry {
 
     public SecurityProvider getSecurityProvider() {
         return null; //todo: stub implementation!
+    }
+
+    public SchemaAdmin getSchemaAdmin() {
+        return null;
     }
 
     StubDataStore dataStore = StubDataStore.defaultStore();

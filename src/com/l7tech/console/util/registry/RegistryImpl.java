@@ -7,6 +7,7 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -42,6 +43,7 @@ public final class RegistryImpl extends Registry
     private ServiceAdmin serviceAdmin;
     private JmsAdmin jmsAdmin;
     private TrustedCertAdmin trustedCertAdmin;
+    private SchemaAdmin schemaAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AuditAdmin auditAdmin;
     private ClusterStatusAdmin clusterStatusAdmin;
@@ -118,6 +120,19 @@ public final class RegistryImpl extends Registry
         try {
             trustedCertAdmin = adminContext.getTrustedCertAdmin();
             return trustedCertAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public synchronized SchemaAdmin getSchemaAdmin() {
+        checkAdminContext();
+        if (schemaAdmin != null) {
+            return schemaAdmin;
+        }
+        try {
+            schemaAdmin = adminContext.getSchemaAdmin();
+            return schemaAdmin;
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }

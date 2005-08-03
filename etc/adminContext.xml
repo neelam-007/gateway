@@ -176,6 +176,9 @@
         <constructor-arg>
             <ref bean="clusterStatusAdminRemote"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="schemaAdminRemote"/>
+        </constructor-arg>
     </bean>
 
     <!--    identity admin exporter -->
@@ -263,6 +266,28 @@
         </property>
         <property name="serverConfig">
             <ref bean="serverConfig"/>
+        </property>
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
+    <bean id="schemaAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
+          parent="sharedExportProperties">
+        <property name="service">
+            <ref bean="schemaAdmin"/>
+        </property>
+        <property name="serviceInterface">
+            <value>com.l7tech.common.xml.schema.SchemaAdmin</value>
+        </property>
+    </bean>
+
+    <bean id="schemaAdmin" class="com.l7tech.server.communityschemas.SchemaAdminImpl">
+        <constructor-arg>
+            <ref bean="accessManager"/>
+        </constructor-arg>
+        <property name="communitySchemaManager">
+            <ref bean="communitySchemaManager"/>
         </property>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>

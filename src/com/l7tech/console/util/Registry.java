@@ -4,6 +4,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -75,6 +76,8 @@ public abstract class Registry {
     abstract public JmsAdmin getJmsManager();
 
     abstract public TrustedCertAdmin getTrustedCertManager();
+
+    abstract public SchemaAdmin getSchemaAdmin();
     /**
      * @return the custome assertions registrar
      */
@@ -122,6 +125,10 @@ public abstract class Registry {
         }
 
         public TrustedCertAdmin getTrustedCertManager() {
+            return null;
+        }
+
+        public SchemaAdmin getSchemaAdmin() {
             return null;
         }
 

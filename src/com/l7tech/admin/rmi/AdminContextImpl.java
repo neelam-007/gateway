@@ -11,6 +11,7 @@ import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -34,12 +35,13 @@ public class AdminContextImpl
     private ServiceAdmin serviceAdmin;
     private JmsAdmin jmsAdmin;
     private TrustedCertAdmin trustedCertAdmin;
+    private SchemaAdmin schemaAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private ClusterStatusAdmin clusterStatusAdmin;
     
     public AdminContextImpl(IdentityAdmin identityAdmin, AuditAdmin auditAdmin, ServiceAdmin serviceAdmin,
                             JmsAdmin jmsAdmin, TrustedCertAdmin trustedCertAdmin, CustomAssertionsRegistrar customAssertionsRegistrar,
-                            ClusterStatusAdmin clusterStatusAdmin) {
+                            ClusterStatusAdmin clusterStatusAdmin, SchemaAdmin schemaAdmin) {
         this.identityAdmin = identityAdmin;
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
@@ -47,6 +49,7 @@ public class AdminContextImpl
         this.trustedCertAdmin = trustedCertAdmin;
         this.customAssertionsRegistrar = customAssertionsRegistrar;
         this.clusterStatusAdmin = clusterStatusAdmin;
+        this.schemaAdmin = schemaAdmin;
     }
 
     public String getVersion() {
@@ -75,6 +78,10 @@ public class AdminContextImpl
 
     public TrustedCertAdmin getTrustedCertAdmin() throws RemoteException, SecurityException {
         return trustedCertAdmin;
+    }
+
+    public SchemaAdmin getSchemaAdmin() throws RemoteException, SecurityException {
+        return schemaAdmin;
     }
 
     public CustomAssertionsRegistrar getCustomAssertionsRegistrar() throws RemoteException, SecurityException {
