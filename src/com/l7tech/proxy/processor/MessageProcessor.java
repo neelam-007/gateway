@@ -155,7 +155,7 @@ public class MessageProcessor {
                                     // We were talking to something else, probably a token provider.
                                     handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
                                 else
-                                    throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
+                                    throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.", e);
                             } else
                                 ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
                             // FALLTHROUGH allow policy to reset and retry

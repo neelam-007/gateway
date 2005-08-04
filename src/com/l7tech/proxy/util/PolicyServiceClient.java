@@ -20,6 +20,7 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -34,6 +35,7 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -45,7 +47,6 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -188,9 +189,9 @@ public class PolicyServiceClient {
                     if (signingCert != null)
                         throw new InvalidDocumentFormatException("Policy server response contained multiple proved X509 security tokens.");
                     signingCert = x509Token.asX509Certificate();
-                    if (!Arrays.equals(signingCert.getEncoded(),
-                                      serverCertificate.getEncoded()))
+                    if (!CertUtils.certsAreEqual(signingCert, serverCertificate)) {
                         throw new ServerCertificateUntrustedException("Policy server response was signed, but not by the server certificate we expected.");
+                    }
                 }
             }
         }
@@ -343,6 +344,7 @@ public class PolicyServiceClient {
             params.setPasswordAuthentication(httpBasicCredentials);
 
         boolean usingSsl = "https".equalsIgnoreCase(url.getProtocol());
+        CurrentSslPeer.set(ssg);
 
         SimpleHttpClient client = new SimpleHttpClient(httpClient);
         try {
@@ -384,6 +386,7 @@ public class PolicyServiceClient {
                 ssg.getRuntime().setTimeOffset(ssgDiff);
             }
 
+            CurrentSslPeer.clear();
             return result;
         } catch (SAXException e) {
             throw new InvalidDocumentFormatException(e);
