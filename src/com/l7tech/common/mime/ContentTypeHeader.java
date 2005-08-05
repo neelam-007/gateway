@@ -25,6 +25,7 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
+    public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
 
@@ -35,6 +36,7 @@ public class ContentTypeHeader extends MimeHeader {
             TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
             XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
             XML_DEFAULT.getEncoding();
+            APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
         } catch (Throwable e) {
             throw new Error(e);
         }
