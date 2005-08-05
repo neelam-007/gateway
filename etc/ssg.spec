@@ -14,9 +14,7 @@ provides: ssg
 %undefine       __check_files
 
 %description
-SSG software distribution on standard system
-Does: ssg, network config, profiles
-Modifies startup config to run only expected services
+Secure Span Gateway software package
 
 %clean 
 rm -fr %{buildroot}
@@ -75,10 +73,10 @@ else
 fi
 if [ `grep ^s0:2345:respawn:/sbin/agetty /etc/inittab` ]; then
 	echo -n ""
-	# gettys exist
+	# serial line agetty exists
 else
 	echo 	's0:2345:respawn:/sbin/agetty -L 115200 ttyS0 vt100' >> /etc/inittab
-	echo 	's1:2345:respawn:/sbin/agetty -L 38400 ttyS1 vt100' >> /etc/inittab
+	echo 	'ttyS0' >> /etc/securetty
 fi
 
 
@@ -102,7 +100,8 @@ echo "Kernel \r on an \m" >>/etc/issue.net
 
 %preun
 # Modifications to handle upgrades properly
-if [ "$1" = "0" ] ; then # last uninstall
+if [ "$1" = "0" ] ; then 
+	# last uninstall
         if [ -e "/etc/SSG_INSTALL" ]; then
                 rm -f /etc/SSG_INSTALL
         fi
@@ -111,11 +110,18 @@ if [ "$1" = "0" ] ; then # last uninstall
         else
             echo -n ""
         fi
+	if [ `grep ^s0:2345:respawn:/sbin/agetty /etc/inittab` ]; then
+		perl -pi.bak -e 's/^s0.*agetty.*//' /etc/inittab
+		perl -pi.bak -e 's/ttyS0//' /etc/securetty
+	fi
+
 fi
 
 %changelog 
 
+* Tue Aug 04 2005 JWT
+- Build 3200 Serial line console modifications
 * Mon May 02 2005 JWT
-- Build 3133. Modifies Issue files to show SSG id 
+- Build 3133 Modifies Issue files to show SSG id 
 * Thu Oct 28 2004 JWT 
-- Build 3079. Does not yet overwrite mysql configuration files. Provides relatively small version of install.pl
+- Build 3028 First version
