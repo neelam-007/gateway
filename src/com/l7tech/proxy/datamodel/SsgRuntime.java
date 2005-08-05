@@ -587,9 +587,7 @@ public class SsgRuntime {
     public MultiThreadedHttpConnectionManager getHttpConnectionManager() {
         synchronized (ssg) {
             if (httpConnectionManager == null) {
-                httpConnectionManager = new MultiThreadedHttpConnectionManager();
-                httpConnectionManager.setMaxConnectionsPerHost(MAX_CONNECTIONS);
-                httpConnectionManager.setMaxTotalConnections(MAX_CONNECTIONS);
+                httpConnectionManager = CommonsHttpClient.newConnectionManager();
             }
             return httpConnectionManager;
         }

@@ -29,9 +29,24 @@ import java.util.logging.Logger;
 public class CommonsHttpClient implements GenericHttpClient {
     private static final Logger logger = Logger.getLogger(CommonsHttpClient.class.getName());
     final HttpConnectionManager cman;
+    public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
+    public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
 
     public CommonsHttpClient(HttpConnectionManager cman) {
         this.cman = cman;
+    }
+
+    public static MultiThreadedHttpConnectionManager newConnectionManager(int maxConnectionsPerHost, int maxTotalConnections) {
+        MultiThreadedHttpConnectionManager hcm = new MultiThreadedHttpConnectionManager();
+        hcm.setMaxConnectionsPerHost(maxConnectionsPerHost);
+        hcm.setMaxTotalConnections(maxTotalConnections);
+        return hcm;
+    }
+
+    public static MultiThreadedHttpConnectionManager newConnectionManager() {
+        int maxConnPerHost = Integer.getInteger(PROP_MAX_CONN_PER_HOST, 200).intValue();
+        int maxTotalConnections = Integer.getInteger(PROP_MAX_TOTAL_CONN, 2000).intValue();
+        return newConnectionManager(maxConnPerHost, maxTotalConnections);
     }
 
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)
