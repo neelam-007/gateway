@@ -10,6 +10,9 @@
                       <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">passw0rd</wsse:Password>
                </wsse:UsernameToken>
          </wst:Base>
+         <wst:Issuer>
+             <wsa:Address>http://myemployer.example.com/</wsa:Address>
+         </wst:Issuer>
          <wsp:AppliesTo xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
             <wsa:EndpointReference>
                <wsa:Address>http://samlpart.com/sso</wsa:Address>
