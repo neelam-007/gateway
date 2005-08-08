@@ -102,7 +102,6 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
      * get pre-parsed root server assertion for cached service
      *
      * @param serviceOid id of the service of which we want the parsed server side root assertion
-     * @return
      */
     public ServerAssertion getServerPolicy(long serviceOid) throws InterruptedException {
         Sync read = rwlock.readLock();
@@ -466,7 +465,6 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
 
     /**
      * assumes you already have a lock through new policy contruction
-     * @return
      */
     public Collection getAllPolicySchemas() {
         ArrayList output = new ArrayList();
