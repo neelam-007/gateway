@@ -16,6 +16,6 @@ import java.rmi.RemoteException;
  */
 public interface SchemaAdmin {
     Collection findAllSchemas() throws RemoteException, FindException;
-    void deleteSchemaEntry(long entryOid) throws RemoteException, DeleteException;
+    void deleteSchemaEntry(SchemaEntry existingSchema) throws RemoteException, DeleteException;
     long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException;
 }

@@ -41,9 +41,9 @@ public class SchemaAdminImpl extends HibernateDaoSupport implements SchemaAdmin 
         return communitySchemaManager.findAll();
     }
 
-    public void deleteSchemaEntry(long entryOid) throws RemoteException, DeleteException {
+    public void deleteSchemaEntry(SchemaEntry existingSchema) throws RemoteException, DeleteException {
         accessManager.enforceAdminRole();
-        // todo
+        communitySchemaManager.delete(existingSchema);
     }
 
     public long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException {

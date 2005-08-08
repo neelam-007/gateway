@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.tarari.xml.schema.SchemaResolver;
 
@@ -81,6 +82,10 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
 
     public void update(SchemaEntry existingSchema) throws UpdateException {
         getHibernateTemplate().update(existingSchema);
+    }
+
+    public void delete(SchemaEntry existingSchema) throws DeleteException {
+        getHibernateTemplate().delete(existingSchema);
     }
 
     /**

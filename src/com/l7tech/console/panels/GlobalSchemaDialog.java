@@ -11,6 +11,7 @@ import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -38,9 +39,8 @@ public class GlobalSchemaDialog extends JDialog {
     private JButton addbutton;
     private ArrayList globalSchemas = new ArrayList();
     private JButton helpbutton;
-    private JButton cancelbutton;
-    private JButton okbutton;
     private JPanel mainPanel;
+    private JButton closebutton;
 
     public GlobalSchemaDialog(Frame owner) {
         super(owner, true);
@@ -76,7 +76,17 @@ public class GlobalSchemaDialog extends JDialog {
         };
         schemaTable.setModel(model);
         setListeners();
+
+        // support Enter and Esc keys
+        Actions.setEscKeyStrokeDisposes(this);
+        Actions.setEnterAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                close();
+            }
+        });
+
         populate();
+        enableRemoveBasedOnSelection();
     }
 
     private void populate() {
@@ -109,21 +119,15 @@ public class GlobalSchemaDialog extends JDialog {
             }
         });
 
-        okbutton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                ok();
-            }
-        });
-
         helpbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 help();
             }
         });
 
-        cancelbutton.addActionListener(new ActionListener() {
+        closebutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                cancel();
+                close();
             }
         });
 
@@ -150,14 +154,23 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void remove() {
-        // todo
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getSchemaAdmin() == null) {
+            logger.warning("No access to registry. Cannot remove entry.");
+            return;
+        }
+        SchemaEntry todelete = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
+        try {
+            reg.getSchemaAdmin().deleteSchemaEntry(todelete);
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "Cannot remove global schema from gateway", e);
+        } catch (DeleteException e) {
+            logger.log(Level.WARNING, "Cannot remove global schema from gateway", e);
+        }
+        populate();
     }
 
-    private void ok() {
-        GlobalSchemaDialog.this.dispose();
-    }
-
-    private void cancel() {
+    private void close() {
         GlobalSchemaDialog.this.dispose();
     }
 
