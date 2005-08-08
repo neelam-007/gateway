@@ -11,10 +11,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
@@ -30,7 +29,7 @@ public class ServerAllAssertion extends ServerCompositeAssertion implements Serv
         mustHaveChildren(data);
         ServerAssertion[] kids = getChildren();
         ServerAssertion child;
-        AssertionStatus result = null;
+        AssertionStatus result = AssertionStatus.FALSIFIED;
         for (int i = 0; i < kids.length; i++) {
             child = kids[i];
             result = child.checkRequest(context);
