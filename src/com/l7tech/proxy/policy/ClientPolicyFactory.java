@@ -57,6 +57,9 @@ public class ClientPolicyFactory extends PolicyFactory {
             if (genericAssertion instanceof ResponseXpathAssertion)
                 return new ClientResponseAcceleratedXpathAssertion((ResponseXpathAssertion)genericAssertion);
         }
+
+        if (genericAssertion instanceof CommentAssertion) return null;
+
         return super.makeSpecificPolicy(genericAssertion);
     }
 

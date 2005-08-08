@@ -219,7 +219,12 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             services.put(key, service);
             // cache the server policy for this service
             serverPolicy = policyFactory.makeServerPolicy(service.rootAssertion());
-            serverPolicies.put(key, serverPolicy);
+            if (serverPolicy != null) {
+                serverPolicies.put(key, serverPolicy);
+            } else {
+                logger.log(Level.SEVERE, "Service '" + service.getName() + "' (#" + service.getOid() + ") will be disabled; it has an unsupported policy format.");
+                service.setDisabled(true);
+            }
         } catch (IOException e) {
             // Note, this exception does not passthrough on purpose. Please see bugzilla 958 if you have any issue
             // with this.

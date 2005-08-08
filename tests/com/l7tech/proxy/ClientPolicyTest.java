@@ -130,21 +130,23 @@ public class ClientPolicyTest extends TestCase {
 
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
-            // Test empty username
-            ssg.setUsername("");
-            ssg.getRuntime().setCachedPassword("".toCharArray());
-            result = clientPolicy.decorateRequest(makeContext(ssg, env));
-            assertTrue(AssertionStatus.NONE != result);
+            if (clientPolicy != null) {
+                // Test empty username
+                ssg.setUsername("");
+                ssg.getRuntime().setCachedPassword("".toCharArray());
+                result = clientPolicy.decorateRequest(makeContext(ssg, env));
+                assertTrue(AssertionStatus.NONE != result);
 
-            final String USER = "fbunky";
-            final String PASS = "asdfjkal";
-            ssg.setUsername(USER);
-            ssg.getRuntime().setCachedPassword(PASS.toCharArray());
-            result = clientPolicy.decorateRequest(makeContext(ssg, env));
-            assertTrue(AssertionStatus.NONE.equals(result));
-            assertTrue(context.isSslRequired());
-            assertFalse(context.isDigestAuthRequired());
-            assertTrue(context.isBasicAuthRequired());
+                final String USER = "fbunky";
+                final String PASS = "asdfjkal";
+                ssg.setUsername(USER);
+                ssg.getRuntime().setCachedPassword(PASS.toCharArray());
+                result = clientPolicy.decorateRequest(makeContext(ssg, env));
+                assertTrue(AssertionStatus.NONE.equals(result));
+                assertTrue(context.isSslRequired());
+                assertFalse(context.isDigestAuthRequired());
+                assertTrue(context.isBasicAuthRequired());
+            }
         }
 
         {
@@ -158,22 +160,23 @@ public class ClientPolicyTest extends TestCase {
             }));
 
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
+            if (clientPolicy != null) {
+                // Test empty username
+                ssg.setUsername("");
+                ssg.getRuntime().setCachedPassword("".toCharArray());
+                result = clientPolicy.decorateRequest(makeContext(ssg, env));
+                assertTrue(AssertionStatus.NONE != result);
 
-            // Test empty username
-            ssg.setUsername("");
-            ssg.getRuntime().setCachedPassword("".toCharArray());
-            result = clientPolicy.decorateRequest(makeContext(ssg, env));
-            assertTrue(AssertionStatus.NONE != result);
-
-            final String USER = "fbunky";
-            final String PASS = "asdfjkal";
-            ssg.setUsername(USER);
-            ssg.getRuntime().setCachedPassword(PASS.toCharArray());
-            result = clientPolicy.decorateRequest(makeContext(ssg, env));
-            assertTrue(AssertionStatus.NONE.equals(result));
-            assertFalse(context.isSslRequired());
-            assertFalse(context.isBasicAuthRequired());
-            assertTrue(context.isDigestAuthRequired());
+                final String USER = "fbunky";
+                final String PASS = "asdfjkal";
+                ssg.setUsername(USER);
+                ssg.getRuntime().setCachedPassword(PASS.toCharArray());
+                result = clientPolicy.decorateRequest(makeContext(ssg, env));
+                assertTrue(AssertionStatus.NONE.equals(result));
+                assertFalse(context.isSslRequired());
+                assertFalse(context.isBasicAuthRequired());
+                assertTrue(context.isDigestAuthRequired());
+            }
         }
     }
 }

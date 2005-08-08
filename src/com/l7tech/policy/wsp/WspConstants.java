@@ -93,12 +93,21 @@ public class WspConstants {
             }
         },
         new BasicTypeMapping(Long.class, "boxedLongValue"),
+
+        new BasicTypeMapping(double.class, "doubleValue") {
+            protected Object stringToObject(String in) {
+                return new Double(in);
+            }
+        },
+        new BasicTypeMapping(Double.class, "boxedDoubleValue"),
+
         new BasicTypeMapping(int.class, "intValue") {
             protected Object stringToObject(String in) {
                 return new Integer(in);
             }
         },
         new BasicTypeMapping(Integer.class, "boxedIntegerValue"),
+            
         new BasicTypeMapping(boolean.class, "booleanValue") {
             protected Object stringToObject(String in) {
                 return new Boolean(in);
@@ -193,6 +202,7 @@ public class WspConstants {
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert"),
         new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
         new AssertionMapping(new InverseHttpFormPost(), "InverseHttpFormPost"),
+        new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

@@ -153,6 +153,7 @@ public class AllAssertions {
         new SnmpTrapAssertion(),
         new ThroughputQuota(),
         new EmailAlertAssertion(),
+        new CommentAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),

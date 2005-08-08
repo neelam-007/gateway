@@ -12,6 +12,7 @@ import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
+import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerRequestAcceleratedXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerResponseAcceleratedXpathAssertion;
@@ -53,6 +54,8 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
                 if (genericAssertion instanceof ResponseXpathAssertion)
                     return new ServerResponseAcceleratedXpathAssertion((ResponseXpathAssertion)genericAssertion, applicationContext);
             }
+
+            if (genericAssertion instanceof CommentAssertion) return null;
 
             Class genericAssertionClass = genericAssertion.getClass();
             Class specificAssertionClass = resolveProductClass(genericAssertionClass);
