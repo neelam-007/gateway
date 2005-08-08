@@ -12,6 +12,8 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -150,23 +152,64 @@ public class GlobalSchemaDialog extends JDialog {
         // decide whether or not the remove button should be enabled
         if (selectedRow < 0) {
             removebutton.setEnabled(false);
+            editbutton.setEnabled(false);
         } else {
             removebutton.setEnabled(true);
+            editbutton.setEnabled(true);
         }
     }
 
     private void add() {
-        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this);
+        SchemaEntry newEntry = new SchemaEntry();
+        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry);
         dlg.pack();
         dlg.show();
-        // todo
+        if (dlg.success) {
+            // save changes to gateway
+            Registry reg = Registry.getDefault();
+            if (reg == null || reg.getSchemaAdmin() == null) {
+                logger.warning("No access to registry. Cannot populate the table.");
+                return;
+            }
+            try {
+                reg.getSchemaAdmin().saveSchemaEntry(newEntry);
+                // pickup all changes from gateway
+                populate();
+                TableUtil.adjustColumnWidth(schemaTable, 1);
+            } catch (RemoteException e) {
+                logger.log(Level.WARNING, "error saving schema entry", e);
+            } catch (SaveException e) {
+                logger.log(Level.WARNING, "error saving schema entry", e);
+            } catch (UpdateException e) {
+                logger.log(Level.WARNING, "error saving schema entry", e);
+            }
+        }
     }
 
     private void edit() {
-        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this);
+        SchemaEntry toedit = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
+        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit);
         dlg.pack();
         dlg.show();
-        // todo
+        if (dlg.success) {
+            // save changes to gateway
+            Registry reg = Registry.getDefault();
+            if (reg == null || reg.getSchemaAdmin() == null) {
+                logger.warning("No access to registry. Cannot populate the table.");
+                return;
+            }
+            try {
+                reg.getSchemaAdmin().saveSchemaEntry(toedit);
+                ((AbstractTableModel)schemaTable.getModel()).fireTableDataChanged();
+                TableUtil.adjustColumnWidth(schemaTable, 1);
+            } catch (RemoteException e) {
+                logger.log(Level.WARNING, "error saving schema entry", e);
+            } catch (SaveException e) {
+                logger.log(Level.WARNING, "error saving schema entry", e);
+            } catch (UpdateException e) {
+                logger.log(Level.WARNING, "error saving schema entry", e);
+            }
+        }
     }
 
     private void remove() {
@@ -205,7 +248,7 @@ public class GlobalSchemaDialog extends JDialog {
         sample.setName("sampleSchema.xsd");
         sample.setOid(654);
         sample.setTns("http://blah.com/tns/brrpt");
-        sample.setSchema("<schema/>");
+        sample.setSchema("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<schema>blah</schema>");
         me.globalSchemas.add(sample);
         me.pack();
         me.show();
