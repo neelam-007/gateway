@@ -9,6 +9,8 @@ package com.l7tech.console.panels;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -19,6 +21,9 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * A dialog for the SSM administrator to manage the global schemas loaded on a gateway.
@@ -26,6 +31,7 @@ import java.util.ArrayList;
  * @author flascelles@layer7-tech.com
  */
 public class GlobalSchemaDialog extends JDialog {
+    private final Logger logger = Logger.getLogger(GlobalSchemaDialog.class.getName());
     private JTable schemaTable;
     private JButton removebutton;
     private JButton editbutton;
@@ -70,6 +76,24 @@ public class GlobalSchemaDialog extends JDialog {
         };
         schemaTable.setModel(model);
         setListeners();
+        populate();
+    }
+
+    private void populate() {
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getSchemaAdmin() == null) {
+            logger.warning("No access to registry. Cannot populate the table.");
+            return;
+        }
+        globalSchemas.clear();
+        try {
+            globalSchemas.addAll(reg.getSchemaAdmin().findAllSchemas());
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "cannot get schemas from gateway", e);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "cannot get schemas from gateway", e);
+        }
+        ((AbstractTableModel)schemaTable.getModel()).fireTableDataChanged();
     }
 
     private void setListeners() {
