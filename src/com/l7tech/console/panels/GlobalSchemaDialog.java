@@ -113,6 +113,12 @@ public class GlobalSchemaDialog extends JDialog {
             }
         });
 
+        editbutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                edit();
+            }
+        });
+
         removebutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 remove();
@@ -150,6 +156,16 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void add() {
+        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this);
+        dlg.pack();
+        dlg.show();
+        // todo
+    }
+
+    private void edit() {
+        GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this);
+        dlg.pack();
+        dlg.show();
         // todo
     }
 
