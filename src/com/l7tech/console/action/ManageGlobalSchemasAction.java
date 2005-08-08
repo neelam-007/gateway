@@ -6,6 +6,9 @@
  */
 package com.l7tech.console.action;
 
+import com.l7tech.console.panels.GlobalSchemaDialog;
+import com.l7tech.console.util.TopComponents;
+
 /**
  * Action to manage global schemas
  *
@@ -21,19 +24,12 @@ public class ManageGlobalSchemasAction extends SecureAction {
     }
 
     protected String iconResource() {
-        return "com/l7tech/console/resources/cert16.gif";
+        return "com/l7tech/console/resources/xmlObject16.gif";
     }
 
     protected void performAction() {
-        // todo, the real thing
-        /*try {
-            Collection blah = Registry.getDefault().getSchemaAdmin().findAllSchemas();
-            for (Iterator iterator = blah.iterator(); iterator.hasNext();) {
-                SchemaEntry o = (SchemaEntry)iterator.next();
-                System.out.println("Entry: " + o);
-            }
-        } catch (Exception e) {
-            System.out.println("blah");
-        }*/
+        GlobalSchemaDialog dlg = new GlobalSchemaDialog(TopComponents.getInstance().getMainWindow());
+        dlg.pack();
+        dlg.show();
     }
 }
