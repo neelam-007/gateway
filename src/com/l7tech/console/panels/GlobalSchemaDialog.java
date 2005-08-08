@@ -8,6 +8,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.gui.util.TableUtil;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -163,6 +164,10 @@ public class GlobalSchemaDialog extends JDialog {
         SchemaEntry newEntry = new SchemaEntry();
         GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, newEntry);
         dlg.pack();
+        Dimension dim = dlg.getSize();
+        dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
+        dlg.setSize(dim);
+        Utilities.centerOnScreen(dlg);
         dlg.show();
         if (dlg.success) {
             // save changes to gateway
@@ -190,6 +195,10 @@ public class GlobalSchemaDialog extends JDialog {
         SchemaEntry toedit = (SchemaEntry)globalSchemas.get(schemaTable.getSelectedRow());
         GlobalSchemaEntryEditor dlg = new GlobalSchemaEntryEditor(this, toedit);
         dlg.pack();
+        Dimension dim = dlg.getSize();
+        dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
+        dlg.setSize(dim);
+        Utilities.centerOnScreen(dlg);
         dlg.show();
         if (dlg.success) {
             // save changes to gateway

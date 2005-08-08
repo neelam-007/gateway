@@ -8,6 +8,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.GlobalSchemaDialog;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.gui.util.Utilities;
 
 /**
  * Action to manage global schemas
@@ -30,6 +31,7 @@ public class ManageGlobalSchemasAction extends SecureAction {
     protected void performAction() {
         GlobalSchemaDialog dlg = new GlobalSchemaDialog(TopComponents.getInstance().getMainWindow());
         dlg.pack();
+        Utilities.centerOnScreen(dlg);
         dlg.show();
     }
 }
