@@ -46,6 +46,14 @@ public class SchemaAdminImpl extends HibernateDaoSupport implements SchemaAdmin 
         communitySchemaManager.delete(existingSchema);
     }
 
+    public Collection findByName(String schemaName) throws RemoteException, FindException {
+        return communitySchemaManager.findByName(schemaName);
+    }
+
+    public Collection findByTNS(String tns) throws RemoteException, FindException {
+        return communitySchemaManager.findByTNS(tns);
+    }
+
     public long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException {
         accessManager.enforceAdminRole();
         if (entry.getOid() != -1) {

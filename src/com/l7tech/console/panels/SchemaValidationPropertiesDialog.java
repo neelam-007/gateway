@@ -12,10 +12,12 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.dom4j.DocumentException;
@@ -35,8 +37,10 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 
 /**
@@ -188,13 +192,79 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         return ;
     }
 
+    /**
+     * return true if somethign is unresolved
+     */
+    private boolean checkForUnresolvedImports(Document schemaDoc) {
+        Element schemael = schemaDoc.getDocumentElement();
+        List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
+        if (listofimports.isEmpty()) return false;
+        ArrayList unresolvedImportsList = new ArrayList();
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getSchemaAdmin() == null) {
+            throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
+        }
+        for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
+            Element importEl = (Element) iterator.next();
+            String importns = importEl.getAttribute("namespace");
+            String importloc = importEl.getAttribute("schemaLocation");
+            try {
+                if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
+                    if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
+                        if (importloc != null) {
+                            unresolvedImportsList.add(importloc);
+                        } else {
+                            unresolvedImportsList.add(importns);
+                        }
+                    }
+                }
+            } catch (ObjectModelException e) {
+                throw new RuntimeException("Error trying to look for import schema in global schema");
+            }  catch (RemoteException e) {
+                throw new RuntimeException("Error trying to look for import schema in global schema");
+            }
+        }
+        if (!unresolvedImportsList.isEmpty()) {
+            StringBuffer msg = new StringBuffer("The schema contains the following unresolved imported schemas:\n");
+            for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
+                msg.append(iterator.next());
+                msg.append("\n");
+            }
+            msg.append("Would you like to import those unresolved schemas now?");
+            if (JOptionPane.showConfirmDialog(this, msg, "Unresolved Imports", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                GlobalSchemaDialog globalSchemaManager = new GlobalSchemaDialog(this);
+                globalSchemaManager.pack();
+                Utilities.centerOnScreen(globalSchemaManager);
+                globalSchemaManager.show();
+            }
+            return true;
+        }
+        return false;
+    }
+
     private void ok() {
-        // validate the contents of the xml control
+        // check that whatever is captured is an xml document and a schema
         String contents = uiAccessibility.getEditor().getText();
-        if (!docIsSchema(contents)) {
+        if (contents == null || contents.length() < 1) {
+            log.warning("empty doc");
             displayError(resources.getString("error.notschema"), null);
             return;
         }
+        Document doc = stringToDoc(contents);
+        if (doc == null) {
+            displayError(resources.getString("error.notschema"), null);
+            return;
+        }
+        if (!docIsSchema(doc)) {
+            displayError(resources.getString("error.notschema"), null);
+            return;
+        }
+
+        // before saving, make sure all imports are resolveable
+        if (checkForUnresolvedImports(doc)) {
+            return;
+        }
+
         // save new schema
         schemaValidationAssertion.setSchema(contents);
         schemaValidationAssertion.setApplyToArguments(appliesToMessageArguments.isSelected());
@@ -239,16 +309,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      */
     public void removePolicyListener(PolicyListener listener) {
         listenerList.remove(PolicyListener.class, listener);
-    }
-
-    private boolean docIsSchema(String str) {
-        if (str == null || str.length() < 1) {
-            log.warning("empty doc");
-            return false;
-        }
-        Document doc = stringToDoc(str);
-        if (doc == null) return false;
-        return docIsSchema(doc);
     }
 
     private boolean docIsSchema(Document doc) {

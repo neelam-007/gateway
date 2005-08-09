@@ -18,4 +18,6 @@ public interface SchemaAdmin {
     Collection findAllSchemas() throws RemoteException, FindException;
     void deleteSchemaEntry(SchemaEntry existingSchema) throws RemoteException, DeleteException;
     long saveSchemaEntry(SchemaEntry entry) throws RemoteException, SaveException, UpdateException;
+    Collection findByName(String schemaName) throws RemoteException, FindException;
+    Collection findByTNS(String tns) throws RemoteException, FindException;
 }
