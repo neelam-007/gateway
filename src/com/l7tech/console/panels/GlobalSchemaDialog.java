@@ -50,6 +50,11 @@ public class GlobalSchemaDialog extends JDialog {
         initialize();
     }
 
+    public GlobalSchemaDialog(Dialog owner) {
+        super(owner, true);
+        initialize();
+    }
+
     private void initialize() {
         setContentPane(mainPanel);
         setTitle("Manage Global Schemas");
@@ -252,7 +257,7 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     public static void main(String[] args) {
-        GlobalSchemaDialog me = new GlobalSchemaDialog(null);
+        GlobalSchemaDialog me = new GlobalSchemaDialog((Frame)null);
         SchemaEntry sample = new SchemaEntry();
         sample.setName("sampleSchema.xsd");
         sample.setOid(654);
