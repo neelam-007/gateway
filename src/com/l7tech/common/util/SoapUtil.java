@@ -275,6 +275,7 @@ public class SoapUtil {
      * The SOAP payload is the first and only child element of the mandatory SOAP Body element.
      *
      * @param request the Document to examine.  May not be null.
+     * @deprecated until we fix it
      * @return the SOAP payload namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
      */
     public static String getPayloadNamespaceUri(Document request) {
@@ -293,6 +294,7 @@ public class SoapUtil {
         try {
             body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), BODY_EL_NAME);
         } catch (TooManyChildElementsException e) {
+            // fla note, this is incorrent as a soap body is allowed to contain more than one element
             log.finer("Request is not a valid SOAP message (too many " + e.getName() + " elements); assuming non-SOAP request");
             return null;
         }
