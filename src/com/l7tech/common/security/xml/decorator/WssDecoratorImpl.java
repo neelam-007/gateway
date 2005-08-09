@@ -15,6 +15,7 @@ import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.DesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameToken;
@@ -34,16 +35,14 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.DESedeKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -57,14 +56,8 @@ public class WssDecoratorImpl implements WssDecorator {
 
     public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
     private static final int DERIVED_KEY_LENGTH = 16;
-    private SecretKeyFactory tripleDESKeyFactory;
 
     public WssDecoratorImpl() {
-        try {
-            tripleDESKeyFactory = SecretKeyFactory.getInstance("DESede", JceProvider.getSymmetricJceProvider());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private static class Context {
@@ -921,7 +914,7 @@ public class WssDecoratorImpl implements WssDecorator {
         byte[] keyBytes = new byte[32]; // (max for aes 256)
         if (XencUtil.TRIPLE_DES_CBC.equals(xEncAlgorithm)) {
             c.rand.nextBytes(keyBytes);
-            return new XmlEncKey(xEncAlgorithm, tripleDESKeyFactory.generateSecret(new DESedeKeySpec(keyBytes)));
+            return new XmlEncKey(xEncAlgorithm, new DesKey(keyBytes, 192));
         } else if (XencUtil.AES_128_CBC.equals(xEncAlgorithm)) {
             c.rand.nextBytes(keyBytes);
             return new XmlEncKey(xEncAlgorithm, new AesKey(keyBytes, 128));

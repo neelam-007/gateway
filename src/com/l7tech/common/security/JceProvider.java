@@ -25,6 +25,7 @@ public abstract class JceProvider {
     public static final String NCIPHER_ENGINE = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
     public static final String ENTRUST_ENGINE = "com.l7tech.common.security.prov.entrust.EntrustJceProviderEngine";
     public static final String SUN_ENGINE = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
+    public static final String LUNA_ENGINE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
 
     // Default driver
     private static final String DEFAULT_ENGINE = BC_ENGINE;
