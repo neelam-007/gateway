@@ -272,7 +272,7 @@ public class SoapUtil {
 
     /**
      * If the specified document is a valid SOAP message, this finds it's payload element's namespace URI.
-     * If the body has more than one child, than this will return the namespace of the first child that has
+     * If the body has more than one child, this will return the namespace of the first child that has
      * a namespace URI.
      * @param request the Document to examine.  May not be null.
      * @return the SOAP payload namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
