@@ -238,8 +238,8 @@ public class SoapUtil {
 
     /**
      * Get the payload element, or null if it's not present.  The payload is the first child element of the Body
-     * element.  The Body is not permitted to have more than one child element, although this method
-     * does not currently enforce this.
+     * element. In this method, the payload is considered to be the first element under the body.
+     * Todo look at usage of this method carefully. the abovementioned assumption may cause problems
      *
      * @param message the SOAP message to examine
      * @return the payload element, or null if there isn't one
@@ -272,10 +272,9 @@ public class SoapUtil {
 
     /**
      * If the specified document is a valid SOAP message, this finds it's payload element's namespace URI.
-     * The SOAP payload is the first and only child element of the mandatory SOAP Body element.
-     *
+     * If the body has more than one child, than this will return the namespace of the first child that has
+     * a namespace URI.
      * @param request the Document to examine.  May not be null.
-     * @deprecated until we fix it
      * @return the SOAP payload namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
      */
     public static String getPayloadNamespaceUri(Document request) {
@@ -304,16 +303,27 @@ public class SoapUtil {
             return null;
         }
 
-        try {
-            Element payload = XmlUtil.findOnlyOneChildElement(body);
-            if (payload == null) {
-                log.finer("Request is not a valid SOAP message (no payload element); assuming non-SOAP request");
-                return null;
+        NodeList children = body.getChildNodes();
+        ArrayList payloadNamespaces = new ArrayList();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node n = children.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                String ns = ((Element)n).getNamespaceURI();
+                if (ns != null && !payloadNamespaces.contains(ns)) {
+                    payloadNamespaces.add(ns);
+                }
             }
-            return payload.getNamespaceURI();
-        } catch (TooManyChildElementsException e) {
-            log.finer("Request is not a valid SOAP message (too many payload " + e.getName() + " elements); assuming non-SOAP request");
+        }
+        if (payloadNamespaces.isEmpty()) {
+            log.warning("There is no payload namespace");
             return null;
+        } else if (payloadNamespaces.size() > 1) {
+            String valtoreturn = (String)payloadNamespaces.get(0);
+            log.warning("More than one body child element have a namespace. Returning the first one: " +
+                           valtoreturn);
+            return valtoreturn;
+        } else {
+            return (String)payloadNamespaces.get(0);
         }
     }
 
