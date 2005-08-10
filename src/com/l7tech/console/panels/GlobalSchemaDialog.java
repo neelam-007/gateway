@@ -20,10 +20,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableModel;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -161,6 +158,19 @@ public class GlobalSchemaDialog extends JDialog {
             public void valueChanged(ListSelectionEvent e) {
                 enableRemoveBasedOnSelection();
             }
+        });
+        schemaTable.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2)
+                    edit();
+            }
+        });
+        schemaTable.addKeyListener(new KeyListener () {
+            public void keyPressed(KeyEvent e) {
+                edit();
+            }
+            public void keyTyped(KeyEvent e) {}
+            public void keyReleased(KeyEvent e) {}
         });
     }
 
