@@ -1,18 +1,21 @@
 package com.l7tech.server.policy.validator;
 
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.User;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -22,12 +25,17 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
+import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.service.PublishedService;
 import org.springframework.beans.factory.InitializingBean;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * Performs server side policy validation.
@@ -51,6 +59,7 @@ import java.util.logging.Logger;
 public class ServerPolicyValidator extends PolicyValidator implements InitializingBean {
     private JmsEndpointManager jmsEndpointManager;
     private IdentityProviderFactory identityProviderFactory;
+    private CommunitySchemaManager communitySchemaManager;
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         Assertion[] ass = ap.getPath();
@@ -162,6 +171,63 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                       null));
                 }
             }
+        } else if (a instanceof SchemaValidation) {
+            // check for unresolved imports
+            SchemaValidation svass = (SchemaValidation)a;
+            Document schemaDoc = null;
+            try {
+                schemaDoc = XmlUtil.stringToDocument(svass.getSchema());
+            } catch (IOException e) {
+                logger.log(Level.INFO, "cannot parse xml from schema validation assertion", e);
+                r.addError(new PolicyValidatorResult.Error(a,
+                                                          ap,
+                                                          "This schema validation assertion does not appear " +
+                                                          "to contain a well-formed xml schema.",
+                                                          null));
+                return;
+            } catch (SAXException e) {
+                logger.log(Level.INFO, "cannot parse xml from schema validation assertion", e);
+                r.addError(new PolicyValidatorResult.Error(a,
+                                                          ap,
+                                                          "This schema validation assertion does not appear " +
+                                                          "to contain a well-formed xml schema.",
+                                                          null));
+                return;
+            }
+            Element schemael = schemaDoc.getDocumentElement();
+            List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
+            if (listofimports.isEmpty()) return;
+            ArrayList unresolvedImportsList = new ArrayList();
+
+
+            for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
+                Element importEl = (Element) iterator.next();
+                String importns = importEl.getAttribute("namespace");
+                String importloc = importEl.getAttribute("schemaLocation");
+                try {
+                    if (importloc == null || communitySchemaManager.findByName(importloc).isEmpty()) {
+                        if (importns == null || communitySchemaManager.findByTNS(importns).isEmpty()) {
+                            if (importloc != null) {
+                                unresolvedImportsList.add(importloc);
+                            } else {
+                                unresolvedImportsList.add(importns);
+                            }
+                        }
+                    }
+                } catch (ObjectModelException e) {
+                    logger.log(Level.SEVERE, "cannot get schema", e);
+                }
+            }
+            if (!unresolvedImportsList.isEmpty()) {
+                StringBuffer msg = new StringBuffer("The schema validation assertion contains unresolved imported " +
+                                                   "schemas: ");
+                for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
+                    msg.append(iterator.next());
+                    if (iterator.hasNext()) msg.append(", ");
+                }
+                msg.append(".");
+                r.addError(new PolicyValidatorResult.Error(a, ap, msg.toString(), null));
+            }
         }
     }
 
@@ -266,6 +332,10 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
+    }
+
+    public void setCommunitySchemaManager(CommunitySchemaManager communitySchemaManager) {
+        this.communitySchemaManager = communitySchemaManager;
     }
 
     public void afterPropertiesSet() throws Exception {

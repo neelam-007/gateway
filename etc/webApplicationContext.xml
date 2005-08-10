@@ -224,6 +224,9 @@
         <property name="identityProviderFactory">
             <ref bean='identityProviderFactory'/>
         </property>
+        <property name="communitySchemaManager">
+            <ref bean='communitySchemaManager'/>
+        </property>
     </bean>
 
     <!-- server side policy filter manager  -->
