@@ -9,12 +9,10 @@ package com.l7tech.console.panels;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -24,10 +22,15 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.io.IOException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 /**
  * A dialog for the SSM administrator to manage the global schemas loaded on a gateway.
@@ -178,10 +181,11 @@ public class GlobalSchemaDialog extends JDialog {
             // save changes to gateway
             Registry reg = Registry.getDefault();
             if (reg == null || reg.getSchemaAdmin() == null) {
-                logger.warning("No access to registry. Cannot populate the table.");
+                logger.warning("No access to registry. Cannot save.");
                 return;
             }
             try {
+                checkEntryForUnresolvedImports(newEntry);
                 reg.getSchemaAdmin().saveSchemaEntry(newEntry);
                 // pickup all changes from gateway
                 populate();
@@ -193,6 +197,62 @@ public class GlobalSchemaDialog extends JDialog {
             } catch (UpdateException e) {
                 logger.log(Level.WARNING, "error saving schema entry", e);
             }
+        }
+    }
+
+    private void checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved) {
+        Document schemaDoc = null;
+        try {
+            schemaDoc = XmlUtil.stringToDocument(schemaTobeSaved.getSchema());
+        } catch (IOException e) {
+            String msg = "cannot get xml doc from schema property";
+            logger.log(Level.SEVERE, msg, e);
+            throw new RuntimeException(msg);
+        } catch (SAXException e) {
+            String msg = "cannot get xml doc from schema property";
+            logger.log(Level.SEVERE, msg, e);
+            throw new RuntimeException(msg);
+        }
+        Element schemael = schemaDoc.getDocumentElement();
+        java.util.List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
+        if (listofimports.isEmpty()) return;
+        ArrayList unresolvedImportsList = new ArrayList();
+        Registry reg = Registry.getDefault();
+        if (reg == null || reg.getSchemaAdmin() == null) {
+            throw new RuntimeException("No access to registry. Cannot check for unresolved imports.");
+        }
+        for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
+            Element importEl = (Element) iterator.next();
+            String importns = importEl.getAttribute("namespace");
+            String importloc = importEl.getAttribute("schemaLocation");
+            try {
+                if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
+                    if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
+                        if (importloc != null) {
+                            unresolvedImportsList.add(importloc);
+                        } else {
+                            unresolvedImportsList.add(importns);
+                        }
+                    }
+                }
+            } catch (ObjectModelException e) {
+                String msg = "Error trying to look for import schema in global schema";
+                logger.log(Level.SEVERE, msg, e);
+                throw new RuntimeException(msg);
+            }  catch (RemoteException e) {
+                String msg = "Error trying to look for import schema in global schema";
+                logger.log(Level.SEVERE, msg, e);
+                throw new RuntimeException(msg);
+            }
+        }
+        if (!unresolvedImportsList.isEmpty()) {
+            StringBuffer msg = new StringBuffer("This schema contains the following unresolved imported schemas:\n");
+            for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
+                msg.append(iterator.next());
+                msg.append("\n");
+            }
+            msg.append("You must add those unresolved schemas now.");
+            JOptionPane.showMessageDialog(this, msg, "Unresolved Imports", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -209,10 +269,11 @@ public class GlobalSchemaDialog extends JDialog {
             // save changes to gateway
             Registry reg = Registry.getDefault();
             if (reg == null || reg.getSchemaAdmin() == null) {
-                logger.warning("No access to registry. Cannot populate the table.");
+                logger.warning("No access to registry. Cannot save.");
                 return;
             }
             try {
+                checkEntryForUnresolvedImports(toedit);
                 reg.getSchemaAdmin().saveSchemaEntry(toedit);
                 ((AbstractTableModel)schemaTable.getModel()).fireTableDataChanged();
                 TableUtil.adjustColumnWidth(schemaTable, 1);
