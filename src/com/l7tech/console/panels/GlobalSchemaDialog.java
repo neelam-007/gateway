@@ -22,6 +22,8 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -95,6 +97,13 @@ public class GlobalSchemaDialog extends JDialog {
                 close();
             }
         });
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                close();
+
+            }
+        });
+        setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
         populate();
         enableRemoveBasedOnSelection();
@@ -200,7 +209,10 @@ public class GlobalSchemaDialog extends JDialog {
         }
     }
 
-    private void checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved) {
+    /**
+     * returns true if there was at least one unresolved import
+     */
+    private boolean checkEntryForUnresolvedImports(SchemaEntry schemaTobeSaved) {
         Document schemaDoc = null;
         try {
             schemaDoc = XmlUtil.stringToDocument(schemaTobeSaved.getSchema());
@@ -215,7 +227,7 @@ public class GlobalSchemaDialog extends JDialog {
         }
         Element schemael = schemaDoc.getDocumentElement();
         java.util.List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
-        if (listofimports.isEmpty()) return;
+        if (listofimports.isEmpty()) return false;
         ArrayList unresolvedImportsList = new ArrayList();
         Registry reg = Registry.getDefault();
         if (reg == null || reg.getSchemaAdmin() == null) {
@@ -253,7 +265,9 @@ public class GlobalSchemaDialog extends JDialog {
             }
             msg.append("You must add those unresolved schemas now.");
             JOptionPane.showMessageDialog(this, msg, "Unresolved Imports", JOptionPane.WARNING_MESSAGE);
+            return true;
         }
+        return false;
     }
 
     private void edit() {
@@ -305,6 +319,32 @@ public class GlobalSchemaDialog extends JDialog {
     }
 
     private void close() {
+        // check the state of all schemas. make sure none of them contain unresolved exports
+        Registry reg = Registry.getDefault();
+        if (reg != null && reg.getSchemaAdmin() != null) {
+            Collection allschemas = null;
+            try {
+                allschemas = reg.getSchemaAdmin().findAllSchemas();
+            } catch (RemoteException e) {
+                logger.log(Level.WARNING, "could not get schemas", e);
+                GlobalSchemaDialog.this.dispose();
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "could not get schemas", e);
+                GlobalSchemaDialog.this.dispose();
+            }
+            boolean okToClose = true;
+            for (Iterator iterator = allschemas.iterator(); iterator.hasNext();) {
+                SchemaEntry schemaEntry = (SchemaEntry) iterator.next();
+                if (checkEntryForUnresolvedImports(schemaEntry)) {
+                    okToClose = false;
+                    break;
+                }
+            }
+            // prevent closing this dialog if the state is dirty
+            if (!okToClose) return;
+        } else {
+            logger.warning("No access to registry. Cannot check for unresolved exports.");
+        }
         GlobalSchemaDialog.this.dispose();
     }
 
