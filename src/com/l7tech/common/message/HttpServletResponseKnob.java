@@ -69,7 +69,13 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
         }
     }
 
-    /** @return the raw HttpServletResponse */
+    /**
+     * Think twice before using this. The HttpServletResponse should be restricted for the usage of the http transport.
+     * Other uses may interfeer with the stealth mode implementation. See ResponseKillerValve for more information.
+     * todo, remove this completly?
+     * @deprecated dont touch this unless you really need it.
+     * @return the raw HttpServletResponse
+     * */
     public HttpServletResponse getHttpServletResponse() {
         return response;
     }
