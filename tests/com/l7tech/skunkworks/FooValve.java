@@ -14,6 +14,11 @@ import java.io.IOException;
  * Valve classes have to be in $TOMCAT_HOME/server/classes or $TOMCAT_HOME/server/lib.
  * <p>
  * Install by adding &lt;Valve className="com.l7tech.skunkworks.FooValve"/&gt; as a child of //Host in $TOMCAT_HOME/conf/server.xml.
+ *
+ * Servlet tell this valve to kill the response connection by adding a special attribute to teh request object:
+ * HttpServletRequest.setAttribute("killmenow", "please");
+ *
+ * In order for this to work properly, the HttpServletResponse object should be left untouched by the servlet.
  */
 public class FooValve extends ValveBase {
     public void invoke(Request req, Response res) throws IOException, ServletException {
