@@ -4,7 +4,7 @@
  * User: flascell<br/>
  * Date: Aug 11, 2005<br/>
  */
-package com.l7tech.server.tomcat.valve;
+package com.l7tech.server.tomcat;
 
 import org.apache.catalina.valves.ValveBase;
 import org.apache.catalina.connector.Request;
@@ -26,7 +26,7 @@ import java.util.logging.Level;
  * <p>
  * This package should be jared and dropped in $TOMCAT_HOME/server/lib
  * Server.xml should refer to this valve by adding the following element as a child of Host:
- * &lt;Valve className="com.l7tech.server.tomcat.valve.ResponseKillerValve"/&gt;
+ * &lt;Valve className="com.l7tech.server.tomcat.ResponseKillerValve"/&gt;
  *
  * @author flascelles@layer7-tech.com, acruise@layer7-tech.com
  */
