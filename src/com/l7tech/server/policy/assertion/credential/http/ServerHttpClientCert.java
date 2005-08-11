@@ -67,8 +67,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         if ( certChain == null || certChain.length < 1 ) {
             String err = "No Client Certificate was present in the request.";
             logger.log(Level.INFO, err);
-            // fla, i think we should just return null here instead. there is no cert, nothing exceptional here
-            throw new CredentialFinderException(err, AssertionStatus.AUTH_REQUIRED);
+            return null;
         }
 
         X509Certificate clientCert = certChain[0];
