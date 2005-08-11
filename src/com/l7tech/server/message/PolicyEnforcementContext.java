@@ -56,6 +56,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private final Map variables = new HashMap();
     private long routingStartTime;
     private long routingEndTime;
+    private boolean isStealthResponseMode = false;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -267,6 +268,22 @@ public class PolicyEnforcementContext extends ProcessingContext {
         Wsdl wsdl = service.parsedWsdl();
         cachedOperation = SoapUtil.getOperation(wsdl, getRequest());
         return cachedOperation;
+    }
+
+    /**
+     * Whether or not the transport layer should send back a response at all.
+     * @return true means the requestor's connection should be dropped completly
+     */
+    public boolean isStealthResponseMode() {
+        return isStealthResponseMode;
+    }
+
+    /**
+     * This tells the transport layer to not send back a response at all even if a response has been constructed.
+     * @param stealthResponseMode true means the requestor's connection should be dropped completly
+     */
+    public void setStealthResponseMode(boolean stealthResponseMode) {
+        isStealthResponseMode = stealthResponseMode;
     }
 
     private boolean operationAttempted = false;
