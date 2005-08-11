@@ -16,8 +16,14 @@ import java.io.IOException;
  * Install by adding &lt;Valve className="com.l7tech.skunkworks.FooValve"/&gt; as a child of //Host in $TOMCAT_HOME/conf/server.xml.
  */
 public class FooValve extends ValveBase {
-    public void invoke(Request request, Response response) throws IOException, ServletException {
-        InternalOutputBuffer iob = (InternalOutputBuffer)response.getCoyoteResponse().getOutputBuffer();
-        iob.getOutputStream().close();
+    public void invoke(Request req, Response res) throws IOException, ServletException {
+        InternalOutputBuffer iob = (InternalOutputBuffer)res.getCoyoteResponse().getOutputBuffer();
+        // Passing to next valve
+        getNext().invoke(req, res);
+        // Checking for killmenow special attribute
+        if (req.getAttribute("killmenow") != null) {
+            System.out.println("Killing response");
+            iob.getOutputStream().close();
+        }
     }
 }
