@@ -34,7 +34,6 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class TrustedCertManagerImp extends HibernateEntityManager implements TrustedCertManager {
-
     public TrustedCert findByPrimaryKey(long oid) throws FindException {
         TrustedCert cert = (TrustedCert)findByPrimaryKey(getImpClass(), oid);
         return cert;
@@ -54,6 +53,24 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
                 default:
                     throw new FindException("Found multiple TrustedCerts with the same DN");
             }
+        } catch (DataAccessException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new FindException("Couldn't retrieve cert", e);
+        }
+    }
+
+    public List findByThumbprint(String thumbprint) throws FindException {
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
+        hql.append(" WHERE ").append(getTableName()).append(".thumbprintSha1 ");
+        try {
+            if (thumbprint == null) {
+                hql.append("is null");
+                return getHibernateTemplate().find(hql.toString());
+            }
+
+            hql.append(" = ?");
+            return getHibernateTemplate().find(hql.toString(), thumbprint.trim());
         } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);

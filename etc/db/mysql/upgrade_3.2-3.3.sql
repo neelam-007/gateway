@@ -12,3 +12,10 @@ CREATE TABLE community_schemas (
   schema mediumtext default '',
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB;
+
+ALTER TABLE client_cert ADD COLUMN thumbprint_sha1 VARCHAR(64);
+ALTER TABLE client_cert ADD INDEX i_thumb (thumbprint_sha1);
+
+ALTER TABLE trusted_cert ADD COLUMN thumbprint_sha1 VARCHAR(64);
+ALTER TABLE trusted_cert ADD INDEX i_thumb (thumbprint_sha1);
+

@@ -1,0 +1,109 @@
+package com.l7tech.common.security;
+
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
+
+/**
+ * Abstract superclass of entities that have certs, like {@link com.l7tech.server.identity.cert.CertEntryRow}
+ * and {@link TrustedCert}
+ */
+public abstract class CertEntity extends NamedEntityImp {
+    protected transient X509Certificate cachedCert;
+    protected String certBase64;
+    protected String thumbprintSha1;
+
+    /**
+     * Gets the {@link java.security.cert.X509Certificate} based on the saved {@link #certBase64}
+     * @return an {@link java.security.cert.X509Certificate}
+     * @throws java.security.cert.CertificateException if the certificate cannot be deserialized
+     * @throws java.io.IOException
+     */
+    public synchronized X509Certificate getCertificate() throws CertificateException, IOException {
+        if ( cachedCert == null ) {
+            if (certBase64 == null) return null;
+            cachedCert = CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
+        }
+        return cachedCert;
+    }
+
+    /**
+     * Sets the {@link java.security.cert.X509Certificate}
+     * @param cert the {@link java.security.cert.X509Certificate}
+     * @throws java.security.cert.CertificateEncodingException if the certificate cannot be serialized
+     */
+    public synchronized void setCertificate(X509Certificate cert) throws CertificateEncodingException {
+        this.cachedCert = cert;
+        if (cert == null) {
+            this.certBase64 = null;
+        } else {
+            this.certBase64 = HexUtils.encodeBase64( cert.getEncoded() );
+        }
+    }
+
+    /**
+     * @return the SHA-1 thumbprint of the certificate (base64-encoded), or null if there is no cert.
+     * @see #getCertificate()
+     * @see #getCertBase64()
+     * @throws java.io.IOException
+     * @throws java.security.cert.CertificateException
+     */
+    public String getThumbprintSha1() throws IOException, CertificateException {
+        if (thumbprintSha1 == null) {
+            X509Certificate cert = getCertificate();
+            if (cert == null) return null;
+            try {
+                thumbprintSha1 = CertUtils.getCertificateFingerprint(cert, CertUtils.ALG_SHA1, CertUtils.FINGERPRINT_BASE64);
+            } catch (NoSuchAlgorithmException e) {
+                throw new CertificateException("Unable to find SHA-1 algorithm", e);
+            }
+        }
+        return thumbprintSha1;
+    }
+
+    /**
+     * @param thumbprintSha1 the thumbprint of the certificate, base64-encoded.
+     * @deprecated for use only by serialization & persistence layers
+     */
+    public void setThumbprintSha1(String thumbprintSha1) {
+        this.thumbprintSha1 = thumbprintSha1;
+    }
+
+    /**
+     * Gets the Base64 DER-encoded certificate
+     * @return the Base64 DER-encoded certificate
+     */
+    public synchronized String getCertBase64() {
+        return certBase64;
+    }
+
+    /**
+     * Sets the Base64 DER-encoded certificate
+     * @param certBase64 the Base64 DER-encoded certificate
+     */
+    public synchronized void setCertBase64( String certBase64 ) {
+        this.certBase64 = certBase64;
+        this.cachedCert = null;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final CertEntity that = (CertEntity)o;
+
+        if (certBase64 != null ? !certBase64.equals(that.certBase64) : that.certBase64 != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        return (certBase64 != null ? certBase64.hashCode() : 0);
+    }
+}

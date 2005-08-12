@@ -1,6 +1,4 @@
 --
--- $Id$
---
 -- MySQL version of SSG database creation script.
 --
 -- NOTE: all changes to this script must also be made to ../postgres/ssg.sql as well!
@@ -153,7 +151,9 @@ CREATE TABLE client_cert (
   login varchar(255),
   cert mediumtext DEFAULT NULL,
   reset_counter int NOT NULL,
-  PRIMARY KEY  (objectid)
+  thumbprint_sha1 varchar(64),
+  PRIMARY KEY  (objectid),
+  INDEX i_thumb (thumbprint_sha1),
 ) TYPE=InnoDB;
 
 --
@@ -273,9 +273,11 @@ CREATE TABLE trusted_cert (
   trusted_for_server tinyint(1) default '0',
   trusted_for_saml tinyint(1) default '0',
   trusted_as_saml_attesting_entity tinyint(1) default '0',
+  thumbprint_sha1 varchar(64),
   primary key(objectid),
   unique (subject_dn),
-  unique (name)
+  unique (name),
+  INDEX i_thumb (thumbprint_sha1),
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS fed_user;

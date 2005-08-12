@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 
 import java.security.cert.Certificate;
+import java.util.List;
 
 /**
  * This is our internal CA. It manages the client_cert data.
@@ -56,6 +57,12 @@ public interface ClientCertManager {
      */
     void forbidCertReset(User user) throws UpdateException;
 
+    /**
+     * @return {@link com.l7tech.common.security.TrustedCert}s with the matching base64'd SHA-1 thumbprint. Never null, but may be empty.
+     * @param thumbprint the base64'd SHA-1 thumbprint value to search for. May be null.
+     */
+    List findByThumbprint(String thumbprint) throws FindException;
+    
     /**
      * Thrown by a {@link com.l7tech.identity.UserManager} if it doesn't like the cert
      */

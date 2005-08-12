@@ -15,6 +15,8 @@ import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.server.event.system.*;
 import com.l7tech.server.service.ServiceManagerImp;
+import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.identity.cert.ClientCertManager;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -221,6 +223,15 @@ public class BootProcess extends ApplicationObjectSupport
             ServiceManagerImp serviceManager = (ServiceManagerImp)springContext.getBean("serviceManagerTarget");
             logger.info("initializing the service cache");
             serviceManager.initiateServiceCache();
+
+            // Make sure certs without thumbprints get them
+            TrustedCertManager tcm = (TrustedCertManager)getApplicationContext().getBean("trustedCertManager");
+            tcm.findByThumbprint(null);
+            tcm.findByThumbprint("");
+
+            ClientCertManager ccm = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
+            ccm.findByThumbprint(null);
+            ccm.findByThumbprint("");
 
             logger.info("Initialized server");
         } catch (IOException e) {

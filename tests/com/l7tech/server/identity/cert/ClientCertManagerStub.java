@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import java.security.cert.Certificate;
+import java.util.List;
 
 /**
  * @author emil
@@ -27,6 +28,10 @@ public class ClientCertManagerStub implements ClientCertManager {
      *
      */
     public void forbidCertReset(User user) throws UpdateException {
+        throw new RuntimeException("Not implemented");
+    }
+
+    public List findByThumbprint(String thumbprint) throws FindException {
         throw new RuntimeException("Not implemented");
     }
 

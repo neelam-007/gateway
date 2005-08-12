@@ -1,19 +1,10 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.security;
 
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-
-import java.io.IOException;
 import java.io.Serializable;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -23,19 +14,18 @@ import java.security.cert.X509Certificate;
  * which the cert is trusted.
  *
  * @author alex
- * @version $Revision$
  */
-public class TrustedCert extends NamedEntityImp implements Serializable, Cloneable {
+public class TrustedCert extends CertEntity implements Serializable, Cloneable {
     public void copyFrom(TrustedCert cert) {
-        this._oid = cert._oid;
-        this._name = cert._name;
-        this.subjectDn = cert.subjectDn;
         this.certBase64 = cert.certBase64;
+        this.cachedCert = cert.cachedCert;
+        this.subjectDn = cert.subjectDn;
         this.trustedForSsl = cert.trustedForSsl;
         this.trustedForSigningClientCerts = cert.trustedForSigningClientCerts;
         this.trustedForSigningServerCerts = cert.trustedForSigningServerCerts;
         this.trustedAsSamlIssuer = cert.trustedAsSamlIssuer;
         this.trustedAsSamlAttestingEntity = cert.trustedAsSamlAttestingEntity;
+        this.thumbprintSha1 = cert.thumbprintSha1;
     }
 
     public static final String CERT_FACTORY_ALGORITHM = "X.509";
@@ -46,7 +36,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
      */
     public String getUsageDescription() {
         StringBuffer buf = new StringBuffer();
-        if (trustedForSsl && trustedForSigningClientCerts && trustedForSigningServerCerts && trustedAsSamlIssuer ) {
+        if (trustedForSsl && trustedForSigningClientCerts && trustedForSigningServerCerts && trustedAsSamlIssuer) {
             buf.append("All");
         } else {
             if (trustedForSsl) add(buf, "SSL");
@@ -78,51 +68,6 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         return tc;
     }
 
-
-    /**
-     * Gets the {@link X509Certificate} based on the saved {@link #certBase64}
-     * @return an {@link X509Certificate}
-     * @throws CertificateException if the certificate cannot be deserialized
-     * @throws IOException
-     */
-    public synchronized X509Certificate getCertificate() throws CertificateException, IOException {
-        if ( cachedCert == null ) {
-            if (certBase64 == null) return null;
-            cachedCert = (X509Certificate)CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
-        }
-        return cachedCert;
-    }
-
-    /**
-     * Sets the {@link X509Certificate}
-     * @param cert the {@link X509Certificate}
-     * @throws CertificateEncodingException if the certificate cannot be serialized
-     */
-    public synchronized void setCertificate(X509Certificate cert) throws CertificateEncodingException {
-        this.cachedCert = cert;
-        if (cert == null) {
-            this.certBase64 = null;
-        } else {
-            this.certBase64 = HexUtils.encodeBase64( cert.getEncoded() );
-        }
-    }
-
-    /**
-     * Gets the Base64 DER-encoded certificate
-     * @return the Base64 DER-encoded certificate
-     */
-    public synchronized String getCertBase64() {
-        return certBase64;
-    }
-
-    /**
-     * Sets the Base64 DER-encoded certificate
-     * @param certBase64 the Base64 DER-encoded certificate
-     */
-    public synchronized void setCertBase64( String certBase64 ) {
-        this.certBase64 = certBase64;
-        this.cachedCert = null;
-    }
 
     /**
      * Is this cert is trusted as an SSL server cert? (probably self-signed)
@@ -228,12 +173,12 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
 
         final TrustedCert trustedCert = (TrustedCert) o;
 
+        if (!super.equals(o)) return false;
         if ( trustedForSigningClientCerts != trustedCert.trustedForSigningClientCerts ) return false;
         if ( trustedAsSamlIssuer != trustedCert.trustedAsSamlIssuer ) return false;
         if ( trustedAsSamlAttestingEntity != trustedCert.trustedAsSamlAttestingEntity ) return false;
         if ( trustedForSigningServerCerts != trustedCert.trustedForSigningServerCerts ) return false;
         if ( trustedForSsl != trustedCert.trustedForSsl ) return false;
-        if ( certBase64 != null ? !certBase64.equals( trustedCert.certBase64 ) : trustedCert.certBase64 != null ) return false;
         if ( subjectDn != null ? !subjectDn.equals( trustedCert.subjectDn ) : trustedCert.subjectDn != null ) return false;
 
         return true;
@@ -241,7 +186,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
 
     public int hashCode() {
         int result;
-        result = (certBase64 != null ? certBase64.hashCode() : 0);
+        result = super.hashCode();
         result = 29 * result + (subjectDn != null ? subjectDn.hashCode() : 0);
         result = 29 * result + (trustedForSsl ? 1 : 0);
         result = 29 * result + (trustedForSigningClientCerts ? 1 : 0);
@@ -251,9 +196,6 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         return result;
     }
 
-    private transient X509Certificate cachedCert;
-
-    private String certBase64;
     private String subjectDn;
     private boolean trustedForSsl;
     private boolean trustedForSigningClientCerts;

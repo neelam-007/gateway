@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.*;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * Provides access to CRUD functionality for {@link TrustedCert} objects.
@@ -106,4 +107,10 @@ public interface TrustedCertManager extends EntityManager {
      * @throws CertificateException
      */
     void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException;
+
+    /**
+     * @return {@link TrustedCert}s with the matching base64'd SHA-1 thumbprint. Never null, but may be empty.
+     * @param thumbprint the base64'd SHA-1 thumbprint value to search for. May be null.
+     */
+    List findByThumbprint(String thumbprint) throws FindException;
 }

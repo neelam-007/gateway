@@ -10,6 +10,7 @@ import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.dao.DataAccessException;
 
 import java.io.IOException;
 import java.security.cert.Certificate;
@@ -40,7 +41,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         // if this user has no data at all, then he is allowed to generate a cert
         if (userData == null) return true;
         // if user has a cert he is only allowed is his counter is below 10
-        if (userData.getCert() != null) {
+        if (userData.getCertBase64() != null) {
             if (userData.getResetCounter() >= 10) return false;
             else return true;
         } else return true;
@@ -96,7 +97,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
 
         try {
             String encodedcert = HexUtils.encodeBase64(cert.getEncoded());
-            userData.setCert(encodedcert);
+            userData.setCertBase64(encodedcert);
         } catch (CertificateEncodingException e) {
             String msg = "Certificate encoding exception recording cert";
             logger.log(Level.WARNING, msg, e);
@@ -125,7 +126,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         logger.finest("getUserCert for " + getName(user));
         CertEntryRow userData = getFromTable(user);
         if (userData != null) {
-            String dbcert = userData.getCert();
+            String dbcert = userData.getCertBase64();
             if (dbcert == null) {
                 logger.finest("no cert recorded for user " + getName(user));
                 return null;
@@ -161,7 +162,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         logger.finest("revokeUserCert for " + getName(user));
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
-            currentdata.setCert(null);
+            currentdata.setCertBase64(null);
             currentdata.setResetCounter(0);
             try {
                 Session session = getSession();
@@ -199,6 +200,26 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             throw new UpdateException(msg);
         }
     }
+
+    public List findByThumbprint(String thumbprint) throws FindException {
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append("cc").append(" IN CLASS ").append(CertEntryRow.class.getName());
+        hql.append(" WHERE ").append("cc").append(".thumbprintSha1 ");
+        try {
+            if (thumbprint == null) {
+                hql.append("is null");
+                return getHibernateTemplate().find(hql.toString());
+            }
+
+            hql.append(" = ?");
+            return getHibernateTemplate().find(hql.toString(), thumbprint.trim());
+        } catch (DataAccessException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new FindException("Couldn't retrieve cert", e);
+        }
+    }
+
+
 
     /**
      * retrieves the table data for a specific user

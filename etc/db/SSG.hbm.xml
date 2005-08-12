@@ -108,8 +108,9 @@
         <property name="provider" column="provider" type="long"/>
         <property name="userId" column="user_id" type="string"/>
         <property name="login" column="login" type="string"/>
-        <property name="cert" column="cert" type="string"/>
+        <property name="certBase64" column="cert" type="string"/>
         <property name="resetCounter" column="reset_counter" type="int"/>
+        <property name="thumbprintSha1" column="thumbprint_sha1" type="string"/>
     </class>
 
     <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution">
@@ -202,6 +203,7 @@
         <property name="trustedForSigningServerCerts" column="trusted_for_server" type="boolean"/>
         <property name="trustedAsSamlIssuer" column="trusted_for_saml" type="boolean"/>
         <property name="trustedAsSamlAttestingEntity" column="trusted_as_saml_attesting_entity" type="boolean"/>
+        <property name="thumbprintSha1" column="thumbprint_sha1" type="string"/>
     </class>
 
     <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"

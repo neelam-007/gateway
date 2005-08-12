@@ -1,5 +1,7 @@
 package com.l7tech.server.identity.cert;
 
+import com.l7tech.common.security.CertEntity;
+
 /**
  * Bean representation of a row in the client_cert table. This bean class is meant to be used by hibernate only.
  *
@@ -10,7 +12,7 @@ package com.l7tech.server.identity.cert;
  * Date: Oct 23, 2003<br/>
  * $Id$
  */
-public class CertEntryRow {
+public class CertEntryRow extends CertEntity {
     public long getProvider() {
         return provider;
     }
@@ -27,28 +29,12 @@ public class CertEntryRow {
         this.login = userLogin;
     }
 
-    public String getCert() {
-        return cert;
-    }
-
-    public void setCert(String cert) {
-        this.cert = cert;
-    }
-
     public int getResetCounter() {
         return resetCounter;
     }
 
     public void setResetCounter(int resetCounter) {
         this.resetCounter = resetCounter;
-    }
-
-    public long getOid() {
-        return oid;
-    }
-
-    public void setOid(long oid) {
-        this.oid = oid;
     }
 
     public String getUserId() {
@@ -62,7 +48,5 @@ public class CertEntryRow {
     private long provider;
     private String login;
     private String userId;
-    private String cert;
     private int resetCounter;
-    private long oid = -1;
 }

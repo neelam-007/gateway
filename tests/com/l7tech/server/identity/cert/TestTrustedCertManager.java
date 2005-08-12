@@ -15,6 +15,7 @@ import java.security.cert.CertificateException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.List;
 
 /**
  * @author emil
@@ -55,6 +56,11 @@ public class TestTrustedCertManager implements TrustedCertManager {
     }
 
     public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
+        throw new RuntimeException("Not implemented");
+    }
+
+    public List findByThumbprint(String thumbprint) throws FindException {
+        throw new RuntimeException("Not implemented");
     }
 
     public Collection findAllHeaders() throws FindException {

@@ -236,7 +236,7 @@ public class CertUtils {
             String[] s = (String[]) i.next();
             String label = s[0];
             String value = s[1];
-            sb.append(label + ": " + value + "\n");
+            sb.append(label).append(": ").append(value).append("\n");
         }
         return sb.toString();
     }
@@ -347,7 +347,7 @@ public class CertUtils {
             throw new IllegalArgumentException("Unknown cert fingerprint format: " + format);
 
         // the algorithm
-        buff.append(algorithm + ":");
+        buff.append(algorithm).append(":");
 
         for (int i = 0; i < digest.length; i++) {
             if (i != 0) buff.append(":");
