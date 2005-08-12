@@ -17,4 +17,8 @@ public class ServerRequestAcceleratedXpathAssertion extends ServerAcceleratedXpa
     public ServerRequestAcceleratedXpathAssertion(RequestXpathAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext, new ServerRequestXpathAssertion(assertion, applicationContext));
     }
+
+    protected String getDefaultVariablePrefix() {
+        return RequestXpathAssertion.DEFAULT_VAR_PREFIX;
+    }
 }

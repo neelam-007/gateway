@@ -36,10 +36,20 @@ import java.util.logging.Logger;
  */
 public class ServerResponseXpathAssertion implements ServerAssertion {
     private final Auditor auditor;
+    private final String varFound;
+    private final String varResult;
+    private final String varCount;
 
-    public ServerResponseXpathAssertion( ResponseXpathAssertion data, ApplicationContext springContext ) {
+    public ServerResponseXpathAssertion(ResponseXpathAssertion data, ApplicationContext springContext) {
         _data = data;
         auditor = new Auditor(this, springContext, _logger);
+        String prefix = data.getVariablePrefix();
+        if (prefix == null || prefix.length() == 0) {
+            prefix = ResponseXpathAssertion.DEFAULT_VAR_PREFIX;
+        }
+        varFound = prefix + ".found";
+        varResult = prefix + ".result";
+        varCount = prefix + ".count";
     }
 
     private synchronized DOMXPath getDOMXpath() throws JaxenException {
@@ -64,6 +74,9 @@ public class ServerResponseXpathAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        context.setVariable(varFound, "false");
+        context.setVariable(varCount, "0");
+        context.setVariable(varResult, null);
 
         if (!context.getResponse().isXml()) {
             auditor.logAndAudit(AssertionMessages.XPATH_RESPONSE_NOT_XML);
@@ -93,18 +106,24 @@ public class ServerResponseXpathAssertion implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE);
                 return AssertionStatus.FALSIFIED;
             } else {
+                context.setVariable(varFound, "true");
+                context.setVariable(varCount, new Integer(result.size()).toString());
                 Object o = result.get(0);
                 if ( o instanceof Boolean ) {
                     if ( ((Boolean)o).booleanValue() ) {
                         auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE);
+                        context.setVariable(varResult, "true");
                         return AssertionStatus.NONE;
                     } else {
                         auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
+                        context.setVariable(varResult, "false");
+                        context.setVariable(varFound, "false");
                         return AssertionStatus.FALSIFIED;
                     }
                 } else if ( o instanceof Node ) {
                     Node n = (Node)o;
                     int type = n.getNodeType();
+                    context.setVariable(varResult, n.getTextContent());
                     switch( type ) {
                         case Node.TEXT_NODE:
                             auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
@@ -118,6 +137,7 @@ public class ServerResponseXpathAssertion implements ServerAssertion {
                     }
                 } else {
                     auditor.logAndAudit(AssertionMessages.XPATH_SUCCEED_RESPONSE);
+                    context.setVariable(varResult, o.toString());
                     return AssertionStatus.NONE;
                 }
             }

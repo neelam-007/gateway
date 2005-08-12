@@ -19,7 +19,9 @@ import com.l7tech.common.xml.XpathExpression;
  *
  * @version $Revision$
  */
-public class RequestXpathAssertion extends XpathBasedAssertion {
+public class RequestXpathAssertion extends SimpleXpathAssertion {
+    public static final String DEFAULT_VAR_PREFIX = "requestXpath";
+
     public RequestXpathAssertion() {
         super();
         initDefaultXpath();
@@ -33,4 +35,5 @@ public class RequestXpathAssertion extends XpathBasedAssertion {
     private void initDefaultXpath() {
         setXpathExpression(new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, createDefaultNamespaceMap()));
     }
+
 }

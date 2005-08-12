@@ -26,6 +26,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.SimpleXpathAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
@@ -80,7 +81,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JButton helpButton;
     private JLabel descriptionLabel;
     private XpathBasedAssertionTreeNode node;
-    private XpathBasedAssertion xmlSecAssertion;
+    private XpathBasedAssertion assertion;
     private ServiceNode serviceNode;
     private Wsdl serviceWsdl;
     private JScrollPane treeScrollPane;
@@ -105,6 +106,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JRadioButton tripleDESradioButton;
     private JRadioButton bstReferenceRadioButton;
     private JRadioButton skiReferenceRadioButton;
+    private JTextField varPrefixField;
+    private JLabel varPrefixLabel;
 
     /**
      * @param owner this panel owner
@@ -140,14 +143,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         node = n;
         okActionListener = okListener;
 
-        xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
-        if (xmlSecAssertion.getXpathExpression() != null) {
-            namespaces = xmlSecAssertion.getXpathExpression().getNamespaces();
+        assertion = (XpathBasedAssertion)node.asAssertion();
+        if (assertion.getXpathExpression() != null) {
+            namespaces = assertion.getXpathExpression().getNamespaces();
         } else {
             namespaces = new HashMap();
         }
-        if (xmlSecAssertion instanceof RequestWssConfidentiality ||
-          xmlSecAssertion instanceof ResponseWssConfidentiality) {
+        if (assertion instanceof RequestWssConfidentiality ||
+          assertion instanceof ResponseWssConfidentiality) {
             isEncryption = true;
         } else
             isEncryption = false;
@@ -156,10 +159,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         else
             serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
-            throw new IllegalStateException("Unable to determine the service node for " + xmlSecAssertion);
+            throw new IllegalStateException("Unable to determine the service node for " + assertion);
         }
 
-        signatureResponseConfigPanel.setVisible(xmlSecAssertion instanceof ResponseWssIntegrity);
+        signatureResponseConfigPanel.setVisible(assertion instanceof ResponseWssIntegrity);
         try {
             serviceWsdl = serviceNode.getPublishedService().parsedWsdl();
             serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
@@ -186,8 +189,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         // display the existing xpath expression
         String initialvalue = null;
-        if (xmlSecAssertion.getXpathExpression() != null) {
-            initialvalue = xmlSecAssertion.getXpathExpression().getExpression();
+        if (assertion.getXpathExpression() != null) {
+            initialvalue = assertion.getXpathExpression().getExpression();
         }
         messageViewerToolBar.getxpathField().setText(initialvalue);
     }
@@ -241,10 +244,15 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     }
                 }
                 if (xpath == null || "".equals(xpath.trim())) {
-                    xmlSecAssertion.setXpathExpression(null);
+                    assertion.setXpathExpression(null);
                 } else {
-                    xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
+                    assertion.setXpathExpression(new XpathExpression(xpath, namespaces));
                 }
+
+                if (assertion instanceof SimpleXpathAssertion) {
+                    ((SimpleXpathAssertion)assertion).setVariablePrefix(varPrefixField.getText());
+                }
+
                 collectEncryptionConfig();
                 collectResponseSignatureConfig();
                 XpathBasedAssertionPropertiesDialog.this.dispose();
@@ -299,35 +307,46 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         String description = null;
         String title = null;
-        if (xmlSecAssertion instanceof RequestWssConfidentiality) {
+        if (assertion instanceof RequestWssConfidentiality) {
             description = "Select a request element to encrypt:";
             title = "Encrypt Request Element Properties";
-        } else if (xmlSecAssertion instanceof ResponseWssConfidentiality) {
+        } else if (assertion instanceof ResponseWssConfidentiality) {
             description = "Select a response element to encrypt:";
             title = "Encrypt Response Element Properties";
-        } else if (xmlSecAssertion instanceof RequestWssIntegrity) {
+        } else if (assertion instanceof RequestWssIntegrity) {
             description = "Select a request element to sign:";
             title = "Sign Request Element Properties";
-        } else if (xmlSecAssertion instanceof ResponseWssIntegrity) {
+        } else if (assertion instanceof ResponseWssIntegrity) {
             description = "Select a response element to sign:";
             title = "Sign Response Element Properties";
-        } else if (xmlSecAssertion instanceof ResponseXpathAssertion) {
+        } else if (assertion instanceof ResponseXpathAssertion) {
             description = "Select the response path to evaluate:";
             title = "Evaluate Response XPath Properties";
-        } else if (xmlSecAssertion instanceof RequestXpathAssertion) {
+        } else if (assertion instanceof RequestXpathAssertion) {
             description = "Select the request path to evaluate:";
             title = "Evaluate Request XPath Properties";
         }
+
+        if (assertion instanceof SimpleXpathAssertion) {
+            SimpleXpathAssertion sxa = (SimpleXpathAssertion)assertion;
+            varPrefixField.setText(sxa.getVariablePrefix());
+            varPrefixField.setVisible(true);
+            varPrefixLabel.setVisible(true);
+        } else {
+            varPrefixField.setVisible(false);
+            varPrefixLabel.setVisible(false);
+        }
+
         descriptionLabel.setText(description);
         setTitle(title);
     }
 
     private void initializeResponseSignatureConfig() {
-        if (!(xmlSecAssertion instanceof ResponseWssIntegrity)) {
+        if (!(assertion instanceof ResponseWssIntegrity)) {
             signatureResponseConfigPanel.setVisible(false);
             return;
         }
-        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)xmlSecAssertion;
+        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)assertion;
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstReferenceRadioButton);
         bg.add(skiReferenceRadioButton);
@@ -351,11 +370,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         String xencAlgorithm = null;
 
-        if (xmlSecAssertion instanceof ResponseWssConfidentiality) {
-            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)xmlSecAssertion;
+        if (assertion instanceof ResponseWssConfidentiality) {
+            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)assertion;
             xencAlgorithm = responseWssConfidentiality.getXEncAlgorithm();
-        } else if (xmlSecAssertion instanceof RequestWssConfidentiality) {
-            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)xmlSecAssertion;
+        } else if (assertion instanceof RequestWssConfidentiality) {
+            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)assertion;
             xencAlgorithm = requestWssConfidentiality.getXEncAlgorithm();
         }
         if (xencAlgorithm == null) {
@@ -384,20 +403,20 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         if (xencAlgorithm == null) {
             xencAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName();
         }
-        if (xmlSecAssertion instanceof ResponseWssConfidentiality) {
-            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)xmlSecAssertion;
+        if (assertion instanceof ResponseWssConfidentiality) {
+            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)assertion;
             responseWssConfidentiality.setXEncAlgorithm(xencAlgorithm);
-        } else if (xmlSecAssertion instanceof RequestWssConfidentiality) {
-            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)xmlSecAssertion;
+        } else if (assertion instanceof RequestWssConfidentiality) {
+            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)assertion;
             requestWssConfidentiality.setXEncAlgorithm(xencAlgorithm);
         }
     }
 
     private void collectResponseSignatureConfig() {
-        if (!(xmlSecAssertion instanceof ResponseWssIntegrity)) {
+        if (!(assertion instanceof ResponseWssIntegrity)) {
             return;
         }
-        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)xmlSecAssertion;
+        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)assertion;
         if (bstReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.BST.getName());
         } else if (skiReferenceRadioButton.isSelected()) {

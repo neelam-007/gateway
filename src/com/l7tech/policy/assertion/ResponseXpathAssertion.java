@@ -19,7 +19,9 @@ import com.l7tech.common.xml.XpathExpression;
  *
  * @version $Revision$
  */
-public class ResponseXpathAssertion extends XpathBasedAssertion {
+public class ResponseXpathAssertion extends SimpleXpathAssertion {
+    public static final String DEFAULT_VAR_PREFIX = "responseXpath";
+
     public ResponseXpathAssertion() {
         super();
         initDefaultXpath();

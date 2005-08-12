@@ -66,6 +66,7 @@
                 <L7p:SnmpTrap/>
                 <L7p:ThroughputQuota/>
                 <L7p:EmailAlert/>
+                <L7p:CommentAssertion/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

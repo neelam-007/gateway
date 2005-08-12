@@ -9,15 +9,15 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.XmlKnob;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -37,10 +37,20 @@ import java.util.logging.Logger;
  */
 public class ServerRequestXpathAssertion implements ServerAssertion {
     private final Auditor auditor;
+    private final String varFound;
+    private final String varResult;
+    private final String varCount;
 
     public ServerRequestXpathAssertion(RequestXpathAssertion data, ApplicationContext springContext) {
         _data = data;
         auditor = new Auditor(this, springContext, _logger);
+        String prefix = data.getVariablePrefix();
+        if (prefix == null || prefix.length() == 0) {
+            prefix = RequestXpathAssertion.DEFAULT_VAR_PREFIX;
+        }
+        varFound = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_FOUND;
+        varResult = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_RESULT;
+        varCount = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_COUNT;
     }
 
     private synchronized DOMXPath getDOMXpath() throws JaxenException {
@@ -65,6 +75,10 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        context.setVariable(varFound, SimpleXpathAssertion.FALSE);
+        context.setVariable(varCount, "0");
+        context.setVariable(varResult, null);
+
         if (context.getRequest().getKnob(XmlKnob.class) == null) {
             auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
@@ -94,31 +108,42 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST);
                 return AssertionStatus.FALSIFIED;
             } else {
+                context.setVariable(varFound, SimpleXpathAssertion.TRUE);
+                context.setVariable(varCount, new Integer(result.size()).toString());
                 Object o = result.get(0);
                 if (o instanceof Boolean) {
                     if (((Boolean) o).booleanValue()) {
                         auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE);
+                        context.setVariable(varResult, SimpleXpathAssertion.TRUE);
                         return AssertionStatus.NONE;
                     } else {
                         auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
+                        context.setVariable(varResult, SimpleXpathAssertion.FALSE);
+                        context.setVariable(varFound, SimpleXpathAssertion.FALSE);
                         return AssertionStatus.FALSIFIED;
                     }
                 } else if (o instanceof Node) {
                     Node n = (Node) o;
                     int type = n.getNodeType();
+                    String nodeValue = n.getNodeValue();
+                    if (nodeValue == null) nodeValue = "";
                     switch (type) {
                         case Node.TEXT_NODE:
                             auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
+                            context.setVariable(varResult, nodeValue);
                             return AssertionStatus.NONE;
                         case Node.ELEMENT_NODE:
                             auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND);
+                            context.setVariable(varResult, XmlUtil.getTextValue((Element)n));
                             return AssertionStatus.NONE;
                         default:
                             auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND);
+                            context.setVariable(varResult, nodeValue);
                             return AssertionStatus.NONE;
                     }
                 } else {
                     auditor.logAndAudit(AssertionMessages.XPATH_SUCCEED_REQUEST);
+                    context.setVariable(varResult, o.toString());
                     return AssertionStatus.NONE;
                 }
             }

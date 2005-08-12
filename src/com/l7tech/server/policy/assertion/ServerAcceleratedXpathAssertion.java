@@ -21,6 +21,8 @@ import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.tarari.xml.xpath.RAXContext;
+import com.tarari.xml.NodeSet;
+import com.tarari.xml.Node;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -43,6 +45,9 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
     protected final String expr;
     protected final boolean isReq;
     protected final ServerAssertion softwareDelegate;
+    private final String varFound;
+    private final String varResult;
+    private final String varCount;
     private final Auditor auditor;
 
     /**
@@ -53,8 +58,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
      * @param softwareDelegate a ServerAssertion to which checkRequest() should be delegated if hardware acceleration can't be performed.
      */
     protected ServerAcceleratedXpathAssertion(XpathBasedAssertion assertion, ApplicationContext applicationContext, ServerAssertion softwareDelegate) {
-        if (!(assertion instanceof RequestXpathAssertion) &&
-            !(assertion instanceof ResponseXpathAssertion))
+        if (!(assertion instanceof SimpleXpathAssertion))
                 throw new IllegalArgumentException(); // can't happen
         this.applicationContext = applicationContext;
         this.softwareDelegate = softwareDelegate;
@@ -77,10 +81,24 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             logger.log(Level.INFO, "Assertion not supported by hardware -- will fallback to software: " + expr, e);
         }
         this.expr = expr;
+
+        String prefix = ((SimpleXpathAssertion)assertion).getVariablePrefix();
+
+        if (prefix == null || prefix.length() == 0) {
+            prefix = getDefaultVariablePrefix();
+        }
+
+        varFound = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_FOUND;
+        varResult = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_RESULT;
+        varCount = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_COUNT;
         auditor = new Auditor(this, applicationContext, logger);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        context.setVariable(varFound, SimpleXpathAssertion.FALSE);
+        context.setVariable(varCount, "0");
+        context.setVariable(varResult, null);
+
         if (expr == null ) {
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.SERVER_ERROR;
@@ -120,10 +138,23 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
 
             RAXContext raxContext = tmContext.getRaxContext();
             int numMatches = raxContext.getCount(index);
+            context.setVariable(varCount, new Integer(numMatches).toString());
             if (numMatches > 0) {
+                context.setVariable(varFound, SimpleXpathAssertion.TRUE);
                 auditor.logAndAudit(isReq ? AssertionMessages.XPATH_SUCCEED_REQUEST : AssertionMessages.XPATH_SUCCEED_RESPONSE);
+
+                StringBuffer resultBuf = new StringBuffer();
+                NodeSet ns = raxContext.getNodeSet(index);
+                Node n = ns.getFirstNode();
+                while (n != null) {
+                    resultBuf.append(n.getStringValue());
+                    n = ns.getNextNode();
+                }
+                context.setVariable(varResult, resultBuf.toString());
+
                 return AssertionStatus.NONE;
             } else {
+                context.setVariable(varFound, SimpleXpathAssertion.FALSE);
                 return AssertionStatus.FALSIFIED;
             }
         } catch (SAXException e) {
@@ -144,4 +175,6 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
         }
         super.finalize();
     }
+
+    protected abstract String getDefaultVariablePrefix();
 }
