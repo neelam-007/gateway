@@ -103,5 +103,6 @@ public class Advices {
         advicesMap.put(EmailAlertAssertion.class, new Class[] {AddEmailAlertAssertionAdvice.class});
         advicesMap.put(ThroughputQuota.class, new Class[]{AddThroughputQuotaAssertionAdvice.class});
         advicesMap.put(CommentAssertion.class, new Class[]{CommentAssertionAdvice.class});
+        advicesMap.put(EqualityAssertion.class, new Class[]{EqualityAssertionAdvice.class});
     }
 }

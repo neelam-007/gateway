@@ -300,4 +300,9 @@ public class AssertionMessages extends Messages {
     // HTTP Form POST
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
+
+    // EqualityAssertion
+    public static final M EQUALITY_EQ          = m(7100, Level.INFO, "Values were equal");
+    public static final M EQUALITY_NE          = m(7101, Level.INFO, "Values were not equal");
+    public static final M EQUALITY_NO_SUCH_VAR = m(7102, Level.WARNING, "No such variable: {0}"); 
 }

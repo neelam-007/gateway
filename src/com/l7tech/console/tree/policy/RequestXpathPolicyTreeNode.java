@@ -19,8 +19,19 @@ public class RequestXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
     }
 
     public String getBaseName() {
-        if (_assertion.getXpathExpression() == null) return "Request must match XPath " + "[XPath expression not set]";
-        return "Request must match XPath " + _assertion.getXpathExpression().getExpression();
+        StringBuffer sb = new StringBuffer("Request must match XPath ");
+        if (_assertion.getXpathExpression() == null) {
+            sb.append("[XPath expression not set]");
+        } else {
+            sb.append(_assertion.getXpathExpression().getExpression());
+            String vp = _assertion.getVariablePrefix();
+            if (vp != null && vp.length() > 0) {
+                sb.append(" (setting variables starting with '");
+                sb.append(vp);
+                sb.append("')");
+            }
+        }
+        return sb.toString();
     }
 
     protected String iconResource(boolean open) {

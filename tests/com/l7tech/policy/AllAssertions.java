@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -109,6 +110,8 @@ public class AllAssertions {
         new SnmpTrapAssertion(),
         new ThroughputQuota(),
         new EmailAlertAssertion(),
+        new CommentAssertion(),
+        new EqualityAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -154,6 +157,7 @@ public class AllAssertions {
         new ThroughputQuota(),
         new EmailAlertAssertion(),
         new CommentAssertion(),
+        new EqualityAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -168,6 +172,7 @@ public class AllAssertions {
         new SecureConversation(),
         new RequestWssSaml(),
         new WsTrustCredentialExchange(),
+        new XpathCredentialSource(),
     };
 
 }
