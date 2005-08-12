@@ -69,11 +69,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 23, 2004<br/>
-<<<<<<< PolicyService.java
- * $Id$<br/>
-=======
- * $Id$<br/>
->>>>>>> 1.61.6.1.2.1
  */
 public class PolicyService extends ApplicationObjectSupport {
     /**
