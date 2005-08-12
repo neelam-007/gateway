@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.util;
@@ -14,10 +12,10 @@ import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.Principal;
-import java.security.PublicKey;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PublicKey;
 import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
@@ -34,6 +32,11 @@ import java.util.logging.Logger;
 public class CertUtils {
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static CertificateFactory certFactory;
+
+    public static final String ALG_MD5 = "MD5";
+    public static final String ALG_SHA1 = "SHA1";
+    public static final String FINGERPRINT_HEX = "hex";
+    public static final String FINGERPRINT_BASE64 = "b64";
 
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
         return (X509Certificate)getFactory().generateCertificate(new ByteArrayInputStream(bytes));
@@ -308,19 +311,27 @@ public class CertUtils {
         return kus.length() < 1 ? "<None permitted>" : kus;
     }
 
+    public static String getCertificateFingerprint(X509Certificate cert, String algorithm)
+            throws CertificateEncodingException, NoSuchAlgorithmException
+    {
+        return getCertificateFingerprint(cert, algorithm, FINGERPRINT_HEX);
+    }
+
     /**
      * The method creates the fingerprint and returns it in a
      * String to the caller.
      *
      * @param cert      the certificate
      * @param algorithm the alghorithm (MD5 or SHA1)
+     * @param format    the format to return, either hex ("SHA1:00:22:ff:et:ce:te:ra") or b64 ("abndwlaksj==")
      * @return the certificate fingerprint as a String
      * @exception CertificateEncodingException
      *                      thrown whenever an error occurs while attempting to
      *                      encode a certificate.
      */
-    public static String getCertificateFingerprint(X509Certificate cert, String algorithm)
-            throws CertificateEncodingException, NoSuchAlgorithmException {
+    public static String getCertificateFingerprint(X509Certificate cert, String algorithm, String format)
+            throws CertificateEncodingException, NoSuchAlgorithmException
+    {
         if (cert == null) {
             throw new NullPointerException("cert");
         }
@@ -329,6 +340,12 @@ public class CertUtils {
 
         MessageDigest md = MessageDigest.getInstance(algorithm);
         byte[] digest = md.digest(fingers);
+
+        if (FINGERPRINT_BASE64.equals(format))
+            return HexUtils.encodeBase64(digest, true);
+        else if (!(FINGERPRINT_HEX.equals(format)))
+            throw new IllegalArgumentException("Unknown cert fingerprint format: " + format);
+
         // the algorithm
         buff.append(algorithm + ":");
 
