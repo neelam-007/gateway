@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.policy.PolicyInterruptedException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
@@ -130,7 +131,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             try {
                 request.initialize(stashManager, ctype, hrequest.getInputStream());
                 AssertionStatus status = AssertionStatus.UNDEFINED;
-                status = messageProcessor.processMessage(context);
+                try {
+                    status = messageProcessor.processMessage(context);
+                } catch (PolicyInterruptedException e) {
+                    logger.log(Level.INFO, "Policy interrupted", e);
+                }
 
                 if (context.isStealthResponseMode()) {
                     logger.info("Stealth mode set for response, instructing valve to drop connection completly");

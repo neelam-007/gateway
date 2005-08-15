@@ -204,6 +204,7 @@ public class WspConstants {
         new AssertionMapping(new InverseHttpFormPost(), "InverseHttpFormPost"),
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new EqualityAssertion(), "EqualityAssertion"),
+        new AssertionMapping(new DropConnection(), "DropConnection"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

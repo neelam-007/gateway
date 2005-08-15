@@ -79,6 +79,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(InverseHttpFormPost.class, InverseHttpFormPostPolicyNode.class);
         assertionMap.put(CommentAssertion.class, CommentAssertionPolicyNode.class);
         assertionMap.put(EqualityAssertion.class, EqualityAssertionPolicyNode.class);
+        assertionMap.put(DropConnection.class, DropConnectionTreeNode.class);
     }
 
     /**

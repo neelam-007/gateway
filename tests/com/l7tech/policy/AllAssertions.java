@@ -57,11 +57,7 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
-        new WsTrustCredentialExchange(),
-        // TODO new TimeOfDayAssertion(),
-        // TODO new DateRangeAssertion(),
-        // TODO new DayOfWeekAssertion(),
-        // TODO new InetAddressAssertion(),
+        new WsTrustCredentialExchange()
     };
 
     private static CustomAssertionHolder CUSTOM_ASSERTION_HOLDER = new CustomAssertionHolder();
@@ -112,10 +108,7 @@ public class AllAssertions {
         new EmailAlertAssertion(),
         new CommentAssertion(),
         new EqualityAssertion(),
-        // TODO new TimeOfDayAssertion(),
-        // TODO new DateRangeAssertion(),
-        // TODO new DayOfWeekAssertion(),
-        // TODO new InetAddressAssertion(),
+        new DropConnection()
     };
 
 
@@ -158,10 +151,7 @@ public class AllAssertions {
         new EmailAlertAssertion(),
         new CommentAssertion(),
         new EqualityAssertion(),
-        // TODO new TimeOfDayAssertion(),
-        // TODO new DateRangeAssertion(),
-        // TODO new DayOfWeekAssertion(),
-        // TODO new InetAddressAssertion(),
+        new DropConnection()
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
