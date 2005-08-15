@@ -56,6 +56,8 @@ public class SecurityTokenType implements Serializable {
             new SecurityTokenType(n++, "WS-S UsernameToken", SoapUtil.SECURITY_NAMESPACE + "#UsernameToken", SoapUtil.SECURITY_NAMESPACE, "UsernameToken", UsernameToken.class);
     public static final SecurityTokenType X509 =
             new SecurityTokenType(n++, "WS-S X.509 BinarySecurityToken", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3", SoapUtil.SECURITY_NAMESPACE, "BinarySecurityToken", X509SecurityToken.class);// TODO look up proper token type URI
+    public static final SecurityTokenType ENCRYPTEDKEY =
+            new SecurityTokenType(n++, "WS-S EncryptedKey", SoapUtil.XMLENC_NS + "EncryptedKey", SoapUtil.XMLENC_NS,  "EncryptedKey", EncryptedKey.class);
 
     private static final SecurityTokenType[] VALUES = { SAML_ASSERTION, WSSC_CONTEXT, USERNAME, X509 };
 

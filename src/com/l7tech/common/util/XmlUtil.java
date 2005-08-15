@@ -756,4 +756,19 @@ public class XmlUtil {
 
         return nsmap;
     }
+
+    /** Replace all descendants of the specified Element with the specified text content. */
+    public static void setTextContent(Element e, String text) {
+        removeAllChildren(e);
+        e.appendChild(createTextNode(e, text));
+    }
+
+    /** Remove all descendants from the specified element, rendering it empty. */
+    public static void removeAllChildren(Element e) {
+        NodeList kids = e.getChildNodes();
+        for (int i = 0; i < kids.getLength(); ++i) {
+            Node kid = kids.item(i);
+            e.removeChild(kid);
+        }
+    }
 }

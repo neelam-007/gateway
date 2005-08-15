@@ -9,5 +9,5 @@ package com.l7tech.common.security.token;
 /**
  * Represents a WS-SecureConversation DerivedKeyToken.  Usually not needed outside of WssProcessorImpl.
  */
-public interface DerivedKeyToken extends SecurityToken {
+public interface DerivedKeyToken extends SecretKeyToken {
 }

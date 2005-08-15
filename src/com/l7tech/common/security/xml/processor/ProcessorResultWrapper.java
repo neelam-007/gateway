@@ -6,7 +6,10 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import com.l7tech.common.security.token.*;
+import com.l7tech.common.security.token.EncryptedElement;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.SignedElement;
+import com.l7tech.common.security.token.SigningSecurityToken;
 import com.l7tech.common.security.xml.SecurityActor;
 import org.w3c.dom.Element;
 
@@ -47,6 +50,19 @@ public class ProcessorResultWrapper implements ProcessorResult {
 
     public SecurityActor getProcessedActor() {
         return delegate.getProcessedActor();
+    }
+
+    public String getLastSignatureValue() {
+        return delegate.getLastSignatureValue();
+    }
+
+    public String getLastSignatureConfirmation()
+    {
+        return delegate.getLastSignatureConfirmation();
+    }
+
+    public boolean isWsse11Seen() {
+        return delegate.isWsse11Seen();
     }
 
     /**

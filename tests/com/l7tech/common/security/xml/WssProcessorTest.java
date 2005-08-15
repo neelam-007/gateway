@@ -1,7 +1,10 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
+<<<<<<< WssProcessorTest.java
+=======
  *
  * $Id$
+>>>>>>> 1.37.4.3
  */
 
 package com.l7tech.common.security.xml;
@@ -205,6 +208,54 @@ public class WssProcessorTest extends TestCase {
         } catch (MessageNotSoapException e) {
             // Ok
         }
+    }
+
+    public void testWssInterop2005JulyRequest() throws Exception {
+        TestDocument result;
+        try {
+            Document d = TestDocuments.getTestDocument(TestDocuments.WSS2005JUL_REQUEST);
+
+            result = new TestDocument("WssInterop2005JulyRequest", d,
+                                                TestDocuments.getWssInteropBobKey(),
+                                                TestDocuments.getWssInteropBobCert(),
+                                                null,
+                                                TestDocuments.getWssInteropAliceCert());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        doTest(result);
+    }
+
+    public void D_testWssInterop2005MsRequest() throws Exception {
+        TestDocument result;
+        try {
+            Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "wssInterop/msRequest.xml");
+
+            result = new TestDocument("WssInterop2005MsRequest", d,
+                                                TestDocuments.getWssInteropBobKey(),
+                                                TestDocuments.getWssInteropBobCert(),
+                                                null,
+                                                null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        doTest(result);
+    }
+
+    public void testWssInterop2005JulyResponse() throws Exception {
+        TestDocument result;
+        try {
+            Document d = TestDocuments.getTestDocument(TestDocuments.WSS2005JUL_RESPONSE);
+
+            result = new TestDocument("WssInterop2005JulyResponse", d,
+                                                TestDocuments.getWssInteropAliceKey(),
+                                                TestDocuments.getWssInteropAliceCert(),
+                                                null,
+                                                TestDocuments.getWssInteropBobCert());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        doTest(result);
     }
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {

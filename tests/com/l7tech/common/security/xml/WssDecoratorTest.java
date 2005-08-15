@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.UsernameTokenImpl;
@@ -41,6 +42,8 @@ import java.util.logging.Logger;
  */
 public class WssDecoratorTest extends TestCase {
     private static Logger log = Logger.getLogger(WssDecoratorTest.class.getName());
+    private static final String ACTOR_DEFAULT = null;
+    private static final String ACTOR_NONE = "";
 
     static {
         JceProvider.init();
@@ -112,6 +115,9 @@ public class WssDecoratorTest extends TestCase {
         public boolean signSamlToken = false; // if true, SAML token should be signed
         public boolean suppressBst = false;
         public String encryptionAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName(); //default
+        public String encryptedKeySha1 = null;
+        public String signatureConfirmation = null;
+        public String actor = null;
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
@@ -131,18 +137,23 @@ public class WssDecoratorTest extends TestCase {
                             boolean signSamlToken,
                             boolean suppressBst) {
             this(c, senderSamlAssertion, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
-                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst);
+                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst, null, null, null);
         }
 
-        public TestDocument(Context c, Element senderSamlAssertion, X509Certificate senderCert, PrivateKey senderKey,
+        public TestDocument(Context c,
+                            Element senderSamlAssertion,
+                            X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
                             boolean signTimestamp,
-                            Element[] elementsToEncrypt,
-                            String encryptionAlgorithm,
+                            Element[] elementsToEncrypt, String encryptionAlgorithm,
                             Element[] elementsToSign,
                             SecretKey secureConversationKey,
                             boolean signSamlToken,
-                            boolean suppressBst) {
+                            boolean suppressBst,
+                            String encryptedKeySha1,
+                            String signatureConfirmation,
+                            String actor)
+        {
             this.c = c;
             this.senderSamlAssertion = senderSamlAssertion;
             this.senderCert = senderCert;
@@ -158,6 +169,9 @@ public class WssDecoratorTest extends TestCase {
             this.secureConversationKey = secureConversationKey;
             this.signSamlToken = signSamlToken;
             this.suppressBst = suppressBst;
+            this.encryptedKeySha1 = encryptedKeySha1;
+            this.signatureConfirmation = signatureConfirmation;
+            this.actor = actor;
         }
     }
 
@@ -180,12 +194,23 @@ public class WssDecoratorTest extends TestCase {
         reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(null);
         reqs.setSuppressBst(d.suppressBst);
+        reqs.setSignatureConfirmation(d.signatureConfirmation);
+        if (d.actor != null)
+            reqs.setSecurityHeaderActor(d.actor.length() < 1 ? null : d.actor);
         if (d.secureConversationKey != null) {
-            reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
-                public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
+            if (d.encryptedKeySha1 == null) {
+                // Use WS-SecureConversation derived key token
+                reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
+                    public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
 
-                public byte[] getSecretKey() { return d.secureConversationKey.getEncoded(); }
-            });
+                    public byte[] getSecretKey() { return d.secureConversationKey.getEncoded(); }
+                });
+            } else {
+                // Use KeyInfo #EncryptedKeySHA1, referencing implicit EncryptedKey which recipient is expected
+                // to already possess.
+                reqs.setEncryptedKey(d.secureConversationKey);
+                reqs.setEncryptedKeySha1(d.encryptedKeySha1);
+            }
         }
         if (d.elementsToEncrypt != null) {
             for (int i = 0; i < d.elementsToEncrypt.length; i++) {
@@ -658,5 +683,37 @@ public class WssDecoratorTest extends TestCase {
                                 true);
     }
 
+    public void testWssInteropResponse() throws Exception {
+        runTest(getWssInteropResponseTestDocument());
+    }
 
+    public TestDocument getWssInteropResponseTestDocument() throws Exception {
+        final Context c = new Context();
+
+        byte[] keyBytes =  new byte[] {5,2,4,5,
+                                       8,7,9,6,
+                                       32,4,1,55,
+                                       8,7,77,7,
+                                       4,55,33,22,
+                                       28,55,-25,33,
+                                       -120,55,66,33,
+                                       83,22,44,55};
+
+        return new TestDocument(c,
+                                (Element)null,
+                                (X509Certificate)null,
+                                (PrivateKey)null,
+                                (X509Certificate)null,
+                                (PrivateKey)null,
+                                true,
+                                new Element[]{ c.body },
+                                (String)null,
+                                new Element[]{ c.body },
+                                new AesKey(keyBytes, 256),
+                                false,
+                                false,
+                                "abc11EncryptedKeySHA1Value11blahblahblah11==",
+                                "abc11SignatureConfirmationValue11blahblahblah11==",
+                                ACTOR_NONE);
+    }
 }

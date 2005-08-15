@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.*;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
@@ -104,5 +105,16 @@ public class DsigUtil {
         });
         Element signedSig = sigContext.sign(sigElement, senderSigningKey);
         return signedSig;
+    }
+
+    /**
+     * Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList.
+     */
+    public static void addInclusiveNamespacesToElement(Element element) {
+        Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
+            "InclusiveNamespaces",
+            Transform.C14N_EXCLUSIVE,
+            "c14n");
+        inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 }

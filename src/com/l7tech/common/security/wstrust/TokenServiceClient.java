@@ -3,8 +3,11 @@
  *
 <<<<<<< TokenServiceClient.java
 =======
+<<<<<<< TokenServiceClient.java
+=======
  * $Id$
 >>>>>>> 1.1.10.1
+>>>>>>> 1.11.4.1
  */
 
 package com.l7tech.common.security.wstrust;
@@ -612,7 +615,7 @@ public class TokenServiceClient {
             // Extract the encrypted key
             if (clientPrivateKey == null)
                 throw new InvalidDocumentFormatException("Was not expecting to receive an encrypted token: client private key not available");
-            sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey);
+            sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey).getDecryptedKeyBytes();
         } else if (binarySecretEl != null && clientPrivateKey == null) {
             String base64edsecret = XmlUtil.getTextValue(binarySecretEl);
             try {

@@ -7,6 +7,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 
 import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -21,7 +22,6 @@ import java.security.NoSuchAlgorithmException;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 3, 2004<br/>
- * $Id$<br/>
  */
 public class SecureConversationKeyDeriver {
     /**
@@ -33,7 +33,7 @@ public class SecureConversationKeyDeriver {
      * @param secret the secret associated with the session
      * @return the resulting derived key
      */
-    public Key derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret)
+    public SecretKey derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret)
                                     throws NoSuchAlgorithmException, InvalidDocumentFormatException {
 
         String namespaceURI = derivedKeyToken.getNamespaceURI();
@@ -114,7 +114,7 @@ public class SecureConversationKeyDeriver {
         } catch (IOException e) {
             throw new InvalidDocumentFormatException(e);
         }
-        
+
         byte[] seed = new byte[label.length() + nonceA.length];
         System.arraycopy(label.getBytes(), 0, seed, 0, label.length());
         System.arraycopy(nonceA, 0, seed, label.length(), nonceA.length);
@@ -128,7 +128,7 @@ public class SecureConversationKeyDeriver {
             byte[] generated = pSHA1(secret, seed, offset+length);
             byte[] key = new byte[length];
             System.arraycopy(generated, offset, key, 0, length);
-            Key dk = new SecretKeySpec(key, "SHA1");
+            SecretKey dk = new SecretKeySpec(key, "SHA1");
             return dk;
         } catch (InvalidKeyException e) {
             throw new InvalidDocumentFormatException(e);

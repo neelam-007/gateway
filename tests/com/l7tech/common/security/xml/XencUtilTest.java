@@ -1,26 +1,28 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
+<<<<<<< XencUtilTest.java
+=======
  *
  * $Id$
+>>>>>>> 1.8.18.1
  */
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.logging.Logger;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Random;
-import java.security.cert.X509Certificate;
-import java.security.SecureRandom;
-import java.security.PrivateKey;
-import java.security.interfaces.RSAPublicKey;
-
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.security.JceProvider;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -80,7 +82,7 @@ public class XencUtilTest extends TestCase {
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
         SecureRandom rand = new SecureRandom();
         String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand);
-        byte[] decrypted = XencUtil.decryptKey(paddedB64, pkey);
+        byte[] decrypted = XencUtil.decryptKey(paddedB64, pkey).getDecryptedKeyBytes();
         assertTrue(Arrays.equals(keyBytes, decrypted));
     }
 
@@ -92,7 +94,7 @@ public class XencUtilTest extends TestCase {
         }
         PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
         String keypaddedandencryptedwithsunjce = "TK0T2LPWmCYDUtE32P7s7aVvjnfJ9flQm+GOiriGyY677g2/RgDbWncSJcPipm1zRmYRkmvKbNYFpReVl1SrVqsCbYudX/y8WQyI3LVInoc3TNfBPryphoVrxtjLDeAhfxxdsxYSq12Ze62RvLr3Y3k9vxaKotJcOejMtyHj9T4=";
-        byte[] decrypted = XencUtil.decryptKey(keypaddedandencryptedwithsunjce, pkey);
+        byte[] decrypted = XencUtil.decryptKey(keypaddedandencryptedwithsunjce, pkey).getDecryptedKeyBytes();
         byte[] originalBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
         assertTrue(Arrays.equals(originalBytes, decrypted));
     }

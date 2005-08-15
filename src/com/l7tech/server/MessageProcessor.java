@@ -258,7 +258,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                               reqXml.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
                             // go find the l7 decoreq and adjust the actor
                             for (int i = 0; i < allrequirements.length; i++) {
-                                if (SecurityActor.L7ACTOR.equals(allrequirements[i].getSecurityHeaderActor())) {
+                                if (SecurityActor.L7ACTOR.getValue().equals(allrequirements[i].getSecurityHeaderActor())) {
                                     allrequirements[i].setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
                                 }
                             }

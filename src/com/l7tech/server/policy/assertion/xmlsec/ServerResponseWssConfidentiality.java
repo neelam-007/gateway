@@ -2,10 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.token.SamlSecurityToken;
-import com.l7tech.common.security.token.SecurityContextToken;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.X509SecurityToken;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -30,8 +27,8 @@ import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * XML encryption on the soap response sent from the ssg server to the requestor (probably proxy).
@@ -93,8 +90,11 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                 throw new PolicyAssertionException(msg);
             }
             clientCert = recipientContextCert;
-            context.addDeferredAssertion(this, deferredDecoration(clientCert, null,
-                                         responseWssConfidentiality.getRecipientContext()));
+            context.addDeferredAssertion(this,
+                                         deferredDecoration(clientCert,
+                                                            null,
+                                                            null,
+                                                            responseWssConfidentiality.getRecipientContext()));
             return AssertionStatus.NONE;
         } else {
             ProcessorResult wssResult;
@@ -115,6 +115,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
 
             X509Certificate clientCert = null;
             SecurityContextToken secConvContext = null;
+            EncryptedKey encryptedKey = null;
             SecurityToken[] tokens = wssResult.getSecurityTokens();
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken token = tokens[i];
@@ -141,29 +142,42 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     if (secConvTok.isPossessionProved()) {
                         secConvContext = secConvTok;
                     }
+                } else if (token instanceof EncryptedKey && wssResult.isWsse11Seen()) {
+                    if (encryptedKey != null) {
+                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
+                        return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
+                    }
+                    encryptedKey = (EncryptedKey)token;
                 }
             }
 
-            if (clientCert == null && secConvContext == null) {
+            if (clientCert == null && secConvContext == null && encryptedKey == null) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN);
                 context.setAuthenticationMissing(); // todo is it really, though?
                 context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
             }
 
-            context.addDeferredAssertion(this, deferredDecoration(clientCert, secConvContext, null));
+            context.addDeferredAssertion(this, deferredDecoration(clientCert, secConvContext, encryptedKey, null));
             return AssertionStatus.NONE;
         }
     }
 
+    /**
+     *
+     * @param clientCert client cert to encrypt to, or null to use alternate means
+     * @param secConvTok WS-SecureConversation session to encrypt to, or null to use alternate means
+     *                   for when the policy uses a secure conversation so that the response
+     *                   can be encrypted using that context instead of a client cert.
+     *                   this should be plugged in, no idea why it is no longer there
+     * @param encryptedKey encrypted key already known to recipient, to use with #EncryptedKeySHA1 reference,
+     *                     or null.  This will only be used if no other encryption source is available.
+     * @param recipient the intended recipient for the Security header to create
+     */
     private ServerAssertion deferredDecoration(final X509Certificate clientCert,
-                                               final SecurityContextToken secConvTok, // todo what is secConvTok for?
+                                               final SecurityContextToken secConvTok,
+                                               final EncryptedKey encryptedKey,
                                                final XmlSecurityRecipientContext recipient) {
-                                                                                        // answer fla -> it is for when the
-                                                                                        // policy uses a secure conversation so that the
-                                                                                        // response can be encrypted using that context
-                                                                                        // instead of a client cert. this should be plugged in
-                                                                                        // no idea why it is no longer there
         return new ServerAssertion() {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
@@ -207,9 +221,18 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     wssReq.getElementsToEncrypt().addAll(selectedElements);
                     wssReq.setEncryptionAlgorithm(responseWssConfidentiality.getXEncAlgorithm());
                     if (clientCert != null) {
-                        wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
-                        wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
                         wssReq.setRecipientCertificate(clientCert);
+                        // LYONSM: need to rethink configuring a signature and assuming a signature source here
+                        //wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+                        //wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+                        //wssReq.setSignTimestamp();
+                    } else if (secConvTok != null) {
+                        // We'll rely on the ServerSecureConversation assertion to (have) configure(d) the WS-SC session.
+                        wssReq.setSignTimestamp();
+                    } else if (encryptedKey != null) {
+                        // As a last resort, we'll use an EncryptedKeySHA1 reference if we have nothing else to go on.
+                        wssReq.setEncryptedKey(encryptedKey.getSecretKey());
+                        wssReq.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
                         wssReq.setSignTimestamp();
                     }
 

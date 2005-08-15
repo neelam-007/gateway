@@ -1,7 +1,10 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+<<<<<<< ApplicationContexts.java
+=======
  *
  * $Id$
+>>>>>>> 1.5.14.1
  */
 package com.l7tech.common;
 
@@ -26,7 +29,7 @@ public class ApplicationContexts {
         return testApplicationContext;
     }
 
-    public static ApplicationContext getProdApplicaitonContext() {
+    public static ApplicationContext getProdApplicationContext() {
             if (prodApplicationContext !=null) {
             return prodApplicationContext;
         }

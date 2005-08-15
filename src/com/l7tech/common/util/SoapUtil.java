@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.util;
@@ -34,7 +32,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class SoapUtil {
     public static final Logger log = Logger.getLogger(SoapUtil.class.getName());
@@ -58,6 +55,7 @@ public class SoapUtil {
     public static final String SECURITY_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2002/07/secext";
     public static final String SECURITY_NAMESPACE4 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE5 = "http://schemas.xmlsoap.org/ws/2003/06/secext";
+    public static final String SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd";
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
@@ -160,6 +158,16 @@ public class SoapUtil {
     public static final String VALUETYPE_X509_SUFFIX = "X509v3";
     public static final String VALUETYPE_X509 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#" + VALUETYPE_X509_SUFFIX;
     public static final String VALUETYPE_X509_2 = SECURITY_NAMESPACE_PREFIX + ":" + VALUETYPE_X509_SUFFIX;
+    public static final String VALUETYPE_X509_THUMB_SHA1_SUFFIX = "X509ThumbprintSHA1";
+    public static final String VALUETYPE_X509_THUMB_SHA1_MS =     "http://docs.oasis-open.org/wss/2004/xx/oasis-2004xx-wss-x509-token-profile-1.1#X509ThumbprintSHA1";
+    public static final String VALUETYPE_X509_THUMB_SHA1_ORACLE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-soap-message-security-1.1#ThumbprintSHA1";
+    public static final String VALUETYPE_X509_THUMB_SHA1_IBM =    "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-soap-message-security-1.1#ThumbprintSHA1";
+    public static final String VALUETYPE_X509_THUMB_SHA1_KIRILL = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-soap-message-security-1.1#ThumbprintSHA1";
+    public static final String VALUETYPE_X509_THUMB_SHA1 =        VALUETYPE_X509_THUMB_SHA1_KIRILL;
+    public static final String VALUETYPE_THUMB_SHA1_SUFFIX = "ThumbprintSHA1";
+    public static final String VALUETYPE_THUMB_SHA1 = "http://docs.oasis-open.org/wss/2004/xx/oasis-2004xx-wss-x509-token-profile-1.1#ThumbprintSHA1";
+    public static final String VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX = "EncryptedKeySHA1";
+    public static final String VALUETYPE_ENCRYPTED_KEY_SHA1 = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-soap-message-security-1.1#EncryptedKeySHA1";
     public static final String VALUETYPE_SAML = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertion-1.0"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
     public static final String VALUETYPE_SAML_ASSERTIONID = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
     public static final String VALUETYPE_SAML_ASSERTION1_1 = "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-saml-token-profile-1.0#SAMLAssertion-1.1"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
@@ -238,8 +246,8 @@ public class SoapUtil {
 
     /**
      * Get the payload element, or null if it's not present.  The payload is the first child element of the Body
-     * element. In this method, the payload is considered to be the first element under the body.
-     * Todo look at usage of this method carefully. the abovementioned assumption may cause problems
+     * element.  The Body is not permitted to have more than one child element, although this method
+     * does not currently enforce this.
      *
      * @param message the SOAP message to examine
      * @return the payload element, or null if there isn't one
@@ -272,13 +280,13 @@ public class SoapUtil {
 
     /**
      * If the specified document is a valid SOAP message, this finds it's payload element's namespace URI.
-     * If the body has more than one child, this will return the namespace of the first child that has
-     * a namespace URI.
+     * The SOAP payload is the first and only child element of the mandatory SOAP Body element.
+     *
      * @param request the Document to examine.  May not be null.
      * @return the SOAP payload namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
      */
     public static String getPayloadNamespaceUri(Document request) {
-        
+
         Element env = request.getDocumentElement();
         if (!ENVELOPE_EL_NAME.equals(env.getLocalName())) {
             log.finer("Request document element not " + ENVELOPE_EL_NAME + "; assuming non-SOAP request");
@@ -394,7 +402,6 @@ public class SoapUtil {
      * Existing Security elements, if any, are ignored.
      *
      * @param soapMsg
-     * @return
      */
     public static Element makeSecurityElement(Document soapMsg) {
         return makeSecurityElement(soapMsg, SECURITY_NAMESPACE);
@@ -423,7 +430,7 @@ public class SoapUtil {
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
-        // DONT SET MUST UNDERSTAND ON THIS SECURITY HEADER!
+        setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
         if (actor != null) {
             // todo, should we create this actor with a ns ?
             securityEl.setAttribute(SoapUtil.ACTOR_ATTR_NAME, actor);
@@ -947,13 +954,13 @@ public class SoapUtil {
         //Create a documentFragment of the replacingDocument
         DocumentFragment docFrag = importedDocument.createDocumentFragment();
         Element rootElement = importedDocument.getDocumentElement();
-        docFrag.appendChild(rootElement);    
-  
+        docFrag.appendChild(rootElement);
+
 
         //Import docFrag under the ownership of replacedDocument
         Node importNode = importingDocument.importNode(docFrag, true);
 
-    
+
         //In order to replace the node need to retrieve replacedNode's parent
         parentNode.insertBefore(importNode, null);
         return importingDocument;
@@ -988,7 +995,6 @@ public class SoapUtil {
      * @param wsuUri      which wsu: namespace URI to use
      * @param timestamp   time that should be marked in this timestamp.  if null, uses current time
      * @param timeoutSec  after how many seconds this timestamp should expirel.  If zero, uses 5 min.
-     * @return
      */
     public static Element addTimestamp(Element parent, String wsuUri, Date timestamp, int timeoutSec) {
         Document message = parent.getOwnerDocument();

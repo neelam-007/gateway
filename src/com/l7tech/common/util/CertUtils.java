@@ -8,7 +8,6 @@ import com.l7tech.common.security.CertificateExpiry;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Name;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,7 +20,6 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -458,41 +456,20 @@ public class CertUtils {
      * Extract the value of the CN attribute from the DN in the Principal.
      * @param principal
      * @return String  The value of CN attribute in the DN.  Might be null.
-     * // TODO use a proper DN parser for this rather than doing an incomplete version by hand
+     * @throws IllegalArgumentException if the DN contains multiple CN values.
      */
     private static String extractCommonName(Principal principal) {
-        X500Principal certName = new X500Principal(principal.toString());
-        String certNameString = certName.getName(X500Principal.RFC2253);
-        if (certNameString == null) {
-            logger.log(Level.FINE, "Certificate name string is null.");
-            return null;
+        String dn = principal.getName();
+        Map dnParts = CertUtils.dnToAttributeMap(dn);
+        List cns = (List)dnParts.get("CN");
+        switch(cns.size()) {
+            case 0:
+                return null;
+            case 1:
+                return (String)cns.get(0);
+            default:
+                throw new IllegalArgumentException("DN '" + dn + "' has more than one CN value");
         }
-
-        String cn = "";
-        int index1 = certNameString.indexOf("cn=");
-        int index2 = certNameString.indexOf("CN=");
-        int startIndex = -1;
-        int endIndex = -1;
-
-        if (index1 >= 0) {
-            startIndex = index1 + 3;
-        } else if (index2 >= 0) {
-            startIndex = index2 + 3;
-        } else {
-            logger.log(Level.FINE, "Certificate subject DN is not in the format CN=username; unable to extract a username.");
-            return null;
-        }
-
-        if (startIndex >= 0) {
-            endIndex = certNameString.indexOf(",", startIndex);
-            if (endIndex > 0) {
-                cn = certNameString.substring(startIndex, endIndex);
-            } else {
-                cn = certNameString.substring(startIndex, certNameString.length());
-            }
-        }
-
-        return cn;
     }
 
     private static final String FACTORY_ALGORITHM = "X.509";

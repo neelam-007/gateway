@@ -58,6 +58,8 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
                 wssReqs.setSignTimestamp();
 
                 // If we still haven't yet seen a signature method, assume a WSS signature.
+                // LYONSM: This behavior is controversial -- it has been suggested that we should simply have
+                //         the policy validator should flag this instead. I'm coming around to this point of view.
                 if (!wssReqs.hasSignatureSource()) {
                     // We'll need a signature source to sign the timestamp.  We'll assume WSS, which may require
                     // getting a client cert.

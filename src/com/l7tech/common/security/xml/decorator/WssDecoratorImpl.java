@@ -7,18 +7,11 @@ package com.l7tech.common.security.xml.decorator;
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.ibm.xml.enc.EncryptionContext;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-import com.ibm.xml.enc.StructureException;
-import com.ibm.xml.enc.type.CipherData;
-import com.ibm.xml.enc.type.CipherValue;
-import com.ibm.xml.enc.type.EncryptedData;
-import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.DesKey;
-import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameToken;
+import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.CertUtils;
@@ -42,7 +35,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -69,44 +61,38 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     /**
-     * Holds the secret key and the xml enc algorithm name
-     */
-    private static class XmlEncKey {
-        final SecretKey secretKey;
-        final String algorithm;
-
-        public XmlEncKey(String encryptionAlgorithm, SecretKey secretKey) {
-            this.algorithm = encryptionAlgorithm;
-            this.secretKey = secretKey;
-        }
-    }
-
-    /**
      * Decorate a soap message with WSS style security.
      *
      * @param message the soap message to decorate
      */
-    public void decorateMessage(Document message, DecorationRequirements decorationRequirements)
+    public void decorateMessage(Document message, DecorationRequirements dreq)
       throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
         Context c = new Context();
 
-        c.wsseNS = decorationRequirements.getPreferredSecurityNamespace();
-        c.wsuNS = decorationRequirements.getPreferredWSUNamespace();
+        c.wsseNS = dreq.getPreferredSecurityNamespace();
+        c.wsuNS = dreq.getPreferredWSUNamespace();
 
         Element securityHeader = createSecurityHeader(message, c.wsseNS, c.wsuNS,
-            decorationRequirements.getSecurityHeaderActor());
-        Set signList = decorationRequirements.getElementsToSign();
+            dreq.getSecurityHeaderActor());
+        Set signList = dreq.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
-        if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
-            int timeoutMillis = decorationRequirements.getTimestampTimeoutMillis();
+        if (dreq.isSignTimestamp() || !signList.isEmpty()) {
+            int timeoutMillis = dreq.getTimestampTimeoutMillis();
             if (timeoutMillis < 1)
                 timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
             Element timestamp = SoapUtil.addTimestamp(securityHeader,
                 c.wsuNS,
-                decorationRequirements.getTimestampCreatedDate(), // null ok
+                dreq.getTimestampCreatedDate(), // null ok
                 timeoutMillis);
             signList.add(timestamp);
+        }
+
+        Element xencDesiredNextSibling = null;
+        if (dreq.getSignatureConfirmation() != null) {
+            Element sc = addSignatureConfirmation(securityHeader, dreq.getSignatureConfirmation());
+            signList.add(sc);
+            xencDesiredNextSibling = sc;
         }
 
         // If there are any WSA headers in the message, and we are signing anything else, then sign them too
@@ -117,15 +103,15 @@ public class WssDecoratorImpl implements WssDecorator {
         if (relatesTo != null && !signList.isEmpty())
             signList.add(relatesTo);
 
-        if (decorationRequirements.getUsernameTokenCredentials() != null)
-            createUsernameToken(securityHeader, decorationRequirements.getUsernameTokenCredentials());
+        if (dreq.getUsernameTokenCredentials() != null)
+            createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
 
         byte[] senderSki = null;
         Element bst = null;
-        if (decorationRequirements.getSenderMessageSigningCertificate() != null && !signList.isEmpty()) {
-            if (decorationRequirements.isSuppressBst()) {
+        if (dreq.getSenderMessageSigningCertificate() != null && !signList.isEmpty()) {
+            if (dreq.isSuppressBst()) {
                 // Use keyinfo reference target of a SKI
-                X509Certificate senderCert = decorationRequirements.getSenderMessageSigningCertificate();
+                X509Certificate senderCert = dreq.getSenderMessageSigningCertificate();
                 senderSki = senderCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
                 if (senderSki != null && senderSki.length > 4) {
                     byte[] goodSki = new byte[senderSki.length - 4];
@@ -137,14 +123,14 @@ public class WssDecoratorImpl implements WssDecorator {
                 }
             } else {
                 // Use keyinfo reference target of a BinarySecurityToken
-                bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderMessageSigningCertificate(), c);
+                bst = addX509BinarySecurityToken(securityHeader, dreq.getSenderMessageSigningCertificate(), c);
             }
         }
         // At this point, if we are signing using a sender cert, we have either recipSki or bst but not both
 
         Element sct = null;
         DecorationRequirements.SecureConversationSession session =
-          decorationRequirements.getSecureConversationSession();
+          dreq.getSecureConversationSession();
         if (session != null) {
             if (session.getId() == null)
                 throw new DecoratorException("SeureConversation Session ID must not be null");
@@ -152,17 +138,20 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element saml = null;
-        if (decorationRequirements.getSenderSamlToken() != null) {
-            saml = addSamlSecurityToken(securityHeader, decorationRequirements.getSenderSamlToken());
-            if (decorationRequirements.isIncludeSamlTokenInSignature()) {
+        if (dreq.getSenderSamlToken() != null) {
+            saml = addSamlSecurityToken(securityHeader, dreq.getSenderSamlToken());
+            if (dreq.isIncludeSamlTokenInSignature()) {
                 signList.add(saml);
             }
         }
 
         Element signature = null;
-        if (decorationRequirements.getElementsToSign().size() > 0) {
+        Element addedEncKey = null;
+        XencUtil.XmlEncKey addedEncKeyXmlEncKey = null;
+        if (dreq.getElementsToSign().size() > 0) {
             Key senderSigningKey = null;
             Element keyInfoReferenceTarget = null;
+            String keyInfoKeyIdValue = null;
             String keyInfoValueTypeURI = null;
             if (sct != null) {
                 // No BST; must be WS-SecureConversation
@@ -172,8 +161,16 @@ public class WssDecoratorImpl implements WssDecorator {
                 DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, null, session);
                 keyInfoReferenceTarget = derivedKeyToken.dkt;
                 senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
+            } else if (dreq.getEncryptedKey() != null &&
+                       dreq.getEncryptedKeySha1() != null)
+            {
+                // Use a reference to an implicit EncryptedKey that the recipient is assumed to already possess
+                // (possibly because we got it from them originally)
+                keyInfoValueTypeURI = SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1;
+                keyInfoKeyIdValue = dreq.getEncryptedKeySha1();
+                senderSigningKey = dreq.getEncryptedKey();
             } else if (senderSki != null) {
-                senderSigningKey = decorationRequirements.getSenderMessageSigningPrivateKey();
+                senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
             } else if (bst != null) {
@@ -184,54 +181,107 @@ public class WssDecoratorImpl implements WssDecorator {
                 } else {
                     keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509_2;
                 }
-                senderSigningKey = decorationRequirements.getSenderMessageSigningPrivateKey();
+                senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
             } else if (saml != null) {
                 // sign with SAML token
                 keyInfoReferenceTarget = saml;
                 keyInfoValueTypeURI = SoapUtil.VALUETYPE_SAML;
-                senderSigningKey = decorationRequirements.getSenderMessageSigningPrivateKey();
+                senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
+            } else if (dreq.getRecipientCertificate() != null) {
+                // create a new EncryptedKey and sign with that
+                String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
+
+                addedEncKeyXmlEncKey = generate(encryptionAlgorithm, c);
+                addedEncKey = addEncryptedKey(c,
+                                              securityHeader,
+                                              dreq.getRecipientCertificate(),
+                                              new Element[0],
+                                              addedEncKeyXmlEncKey,
+                                              null);
+                keyInfoReferenceTarget = addedEncKey;
+                keyInfoValueTypeURI = null;
+                senderSigningKey = addedEncKeyXmlEncKey.getSecretKey();
             } else
                 throw new IllegalArgumentException("Signing is requested, but there is no senderCertificate or WS-SecureConversation session");
 
             signature = addSignature(c,
                 senderSigningKey,
-                (Element[])(decorationRequirements.getElementsToSign().toArray(new Element[0])),
+                (Element[])(dreq.getElementsToSign().toArray(new Element[0])),
                 securityHeader,
                 senderSki,
                 keyInfoReferenceTarget,
+                keyInfoKeyIdValue,
                 keyInfoValueTypeURI);
+            if (xencDesiredNextSibling == null)
+                xencDesiredNextSibling = signature;
         }
 
-        if (decorationRequirements.getElementsToEncrypt().size() > 0) {
-            if (sct != null) {
+        if (dreq.getElementsToEncrypt().size() > 0) {
+            if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
+                // Encrypt using the EncryptedKey we already added
+                Element keyInfoReferenceTarget = addedEncKey;
+                addEncryptedReferenceList(c,
+                                          securityHeader,
+                                          addedEncKeyXmlEncKey,
+                                          (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
+                                          xencDesiredNextSibling,
+                                          keyInfoReferenceTarget,
+                                          null,
+                                          null);
+            } else if (sct != null) {
                 // Encrypt using Secure Conversation session
                 if (session == null)
                     throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
-                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, signature, session);
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session);
                 Element keyInfoReferenceTarget = derivedKeyToken.dkt;
                 String keyInfoValueTypeURI = SoapUtil.VALUETYPE_DERIVEDKEY;
-                XmlEncKey encKey = new XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
+                XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
                 addEncryptedReferenceList(c,
                   securityHeader,
                   encKey,
-                  (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
-                  signature,
+                  (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
+                  xencDesiredNextSibling,
                   keyInfoReferenceTarget,
+                  null,
                   keyInfoValueTypeURI);
-            } else if (decorationRequirements.getRecipientCertificate() != null) {
+            } else if (dreq.getEncryptedKeySha1() != null &&
+                       dreq.getEncryptedKey() != null)
+            {
+                // Encrypt using a reference to an implicit EncryptedKey that the recipient is assumed
+                // already to possess (perhaps because we got it from them originally)
+                String keyInfoKeyIdValue = dreq.getEncryptedKeySha1();
+                String keyInfoValueTypeURI = SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1;
+                final SecretKey key = dreq.getEncryptedKey();
+                final String alg;
+                switch (key.getEncoded().length) {
+                    case 256 / 8: alg = XencUtil.AES_256_CBC; break;
+                    case 192 / 8: alg = XencUtil.AES_192_CBC; break;
+                    case 128 / 8: alg = XencUtil.AES_128_CBC; break;
+                    default: throw new DecoratorException("Unsupported AES key length: " + key.getEncoded().length);
+                }
+                XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(alg, key);
+                addEncryptedReferenceList(c,
+                                          securityHeader,
+                                          encKey,
+                                          (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
+                                          xencDesiredNextSibling,
+                                          null,
+                                          keyInfoKeyIdValue,
+                                          keyInfoValueTypeURI);
+            } else if (dreq.getRecipientCertificate() != null) {
                 // Encrypt to recipient's certificate
-                String encryptionAlgorithm = decorationRequirements.getEncryptionAlgorithm();
+                String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
 
-                XmlEncKey encKey = generate(encryptionAlgorithm, c);
+                XencUtil.XmlEncKey encKey = generate(encryptionAlgorithm, c);
                 addEncryptedKey(c,
                   securityHeader,
-                  decorationRequirements.getRecipientCertificate(),
-                  (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
-                  encKey, signature);
+                  dreq.getRecipientCertificate(),
+                  (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
+                  encKey, xencDesiredNextSibling);
             } else
                 throw new IllegalArgumentException("Encryption is requested, but there is no recipientCertificate or SecureConversation session.");
 
@@ -249,6 +299,13 @@ public class WssDecoratorImpl implements WssDecorator {
                 soapHeader.getParentNode().removeChild(soapHeader);
         }
 
+    }
+
+    private Element addSignatureConfirmation(Element securityHeader, String signatureConfirmation) {
+        String wsse11Ns = SoapUtil.SECURITY11_NAMESPACE;
+        Element sc = XmlUtil.createAndAppendElementNS(securityHeader, "SignatureConfirmation", wsse11Ns, "wsse11");
+        sc.setAttribute("Value", signatureConfirmation);
+        return sc;
     }
 
     private Element addSamlSecurityToken(Element securityHeader, Element senderSamlToken) {
@@ -357,6 +414,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param keyInfoReferenceTarget the Element to which the KeyInfo should refer, or null if senderSki is provided instead.  Ignored if senderSki is provided.
      *                               senderSki and keyInfoReferenceTarget must not both be null.
      *                               If this is provided and no senderSki is provided, keyInfoValueTypeURI must be provided as well.
+     * @param keyInfoKeyIdValue  to content of a KeyInfo/SecurityTokenReference/KeyIdentifier element, or null if keyInfoReferenceTarget is provided.
      * @param keyInfoValueTypeURI    the value type URL to use for the KeyInfo reference to keyInfoReferenceTarget.  Must not be null if keyInfoReferenceTarget != null.
      * @return the ds:Signature element, which has already been appended to the Security header.
      * @throws DecoratorException             if the signature could not be created with this message and these decoration requirements.
@@ -364,8 +422,11 @@ public class WssDecoratorImpl implements WssDecorator {
      */
     private Element addSignature(final Context c, Key senderSigningKey,
                                  Element[] elementsToSign, Element securityHeader,
-                                 byte[] senderSki, Element keyInfoReferenceTarget,
-                                 String keyInfoValueTypeURI) throws DecoratorException, InvalidDocumentFormatException {
+                                 byte[] senderSki,
+                                 Element keyInfoReferenceTarget,
+                                 String keyInfoKeyIdValue,
+                                 String keyInfoValueTypeURI) throws DecoratorException, InvalidDocumentFormatException
+    {
 
         if (elementsToSign == null || elementsToSign.length < 1) return null;
 
@@ -425,12 +486,12 @@ public class WssDecoratorImpl implements WssDecorator {
         Element c14nMethod = XmlUtil.findFirstChildElementByName(signedInfoElement,
             SoapUtil.DIGSIG_URI,
             "CanonicalizationMethod");
-        addInclusiveNamespacesToElement(c14nMethod);
+        DsigUtil.addInclusiveNamespacesToElement(c14nMethod);
 
         NodeList transforms = signedInfoElement.getElementsByTagNameNS(signedInfoElement.getNamespaceURI(), "Transform");
         for (int i = 0; i < transforms.getLength(); ++i)
             if (Transform.C14N_EXCLUSIVE.equals(((Element)transforms.item(i)).getAttribute("Algorithm")))
-                addInclusiveNamespacesToElement((Element)transforms.item(i));
+                DsigUtil.addInclusiveNamespacesToElement((Element)transforms.item(i));
 
         // Before signing, ensure that wsu:Id is present on keyinfo reference target, if there is one
         if (keyInfoReferenceTarget != null)
@@ -504,7 +565,6 @@ public class WssDecoratorImpl implements WssDecorator {
             //                      ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" />
             //      </wsse:SecurityTokenReference>
             // </KeyInfo>
-            String bstId = getOrCreateWsuId(c, keyInfoReferenceTarget, null);
             String wssePrefix = securityHeader.getPrefix();
             Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(emptySignatureElement.getNamespaceURI(),
                 "KeyInfo");
@@ -512,14 +572,29 @@ public class WssDecoratorImpl implements WssDecorator {
             Element secTokRefEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
                 SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
             secTokRefEl.setPrefix(wssePrefix);
-            Element refEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                "Reference");
-            refEl.setPrefix(wssePrefix);
-            secTokRefEl.appendChild(refEl);
             keyInfoEl.appendChild(secTokRefEl);
-            refEl.setAttribute("URI", "#" + bstId);
-            refEl.setAttribute("ValueType", keyInfoValueTypeURI);
-            signatureElement.appendChild(keyInfoEl);
+
+            if (keyInfoReferenceTarget != null) {
+                // Create <KeyInfo><SecurityTokenReference><Reference URI="#Blah" ValueType="ValueTypeURI"></></></>
+                Element refEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
+                    "Reference");
+                refEl.setPrefix(wssePrefix);
+                secTokRefEl.appendChild(refEl);
+                refEl.setAttribute("URI", "#" + getOrCreateWsuId(c, keyInfoReferenceTarget, null));
+                refEl.setAttribute("ValueType", keyInfoValueTypeURI);
+                signatureElement.appendChild(keyInfoEl);
+            } else if (keyInfoKeyIdValue != null) {
+                // Create <KeyInfo><SecurityTokenReference><KeyIdentifier ValueType="ValueTypeURI">b64blah==</></></>
+                Element kidEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
+                                                                                  "KeyIdentifier");
+                kidEl.setPrefix(wssePrefix);
+                secTokRefEl.appendChild(kidEl);
+                kidEl.setAttribute("ValueType", keyInfoValueTypeURI);
+                kidEl.appendChild(XmlUtil.createTextNode(kidEl, keyInfoKeyIdValue));
+                signatureElement.appendChild(keyInfoEl);
+            } else {
+                throw new DecoratorException("Signing requested, but theres no sender SKI, KeyInfo Reference target, or KeyIdentifier value");
+            }
         }
 
         return signatureElement;
@@ -533,17 +608,6 @@ public class WssDecoratorImpl implements WssDecorator {
         keyid.setAttribute("ValueType", SoapUtil.VALUETYPE_SAML_ASSERTIONID);
         keyid.appendChild(XmlUtil.createTextNode(keyid, assertionId));
         return str;
-    }
-
-    /**
-     * Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList.
-     */
-    private void addInclusiveNamespacesToElement(Element element) {
-        Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
-            "InclusiveNamespaces",
-            Transform.C14N_EXCLUSIVE,
-            "c14n");
-        inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 
     private static Element createUsernameToken(Element securityHeader, UsernameToken ut) {
@@ -568,22 +632,36 @@ public class WssDecoratorImpl implements WssDecorator {
                                Element securityHeader,
                                Element parent,
                                Element keyInfoReferenceTarget,
-                               String keyInfoValueTypeURI) {
-        Element keyInfo = XmlUtil.createAndAppendElementNS(parent,
-            "KeyInfo",
-            SoapUtil.DIGSIG_URI,
-            "dsig");
+                               String keyInfoKeyIdValue,
+                               String keyInfoValueTypeURI) throws DecoratorException
+    {
+        Element cipherData = XmlUtil.findFirstChildElementByName(parent, SoapUtil.XMLENC_NS, "CipherData");
+        final Element keyInfo;
+        if (cipherData == null)
+            keyInfo = XmlUtil.createAndAppendElementNS(parent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
+        else
+            keyInfo = XmlUtil.createAndInsertBeforeElementNS(cipherData, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
+        final String wsseNs = securityHeader.getNamespaceURI();
+        final String wsse = "wsse";
         Element str = XmlUtil.createAndAppendElementNS(keyInfo,
             SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-            securityHeader.getNamespaceURI(),
-            "wsse");
-        Element ref = XmlUtil.createAndAppendElementNS(str,
-            "Reference",
-            securityHeader.getNamespaceURI(),
-            "wsse");
-        String uri = getOrCreateWsuId(c, keyInfoReferenceTarget, null);
-        ref.setAttribute("URI", uri);
-        ref.setAttribute("ValueType", keyInfoValueTypeURI);
+            wsseNs,
+            wsse);
+        if (keyInfoReferenceTarget != null) {
+            Element ref = XmlUtil.createAndAppendElementNS(str,
+                "Reference",
+                wsseNs,
+                wsse);
+            String uri = getOrCreateWsuId(c, keyInfoReferenceTarget, null);
+            ref.setAttribute("URI", uri);
+            ref.setAttribute("ValueType", keyInfoValueTypeURI);
+        } else if (keyInfoKeyIdValue != null) {
+            Element kid = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, wsse);
+            kid.setAttribute("ValueType", keyInfoValueTypeURI);
+            kid.appendChild(XmlUtil.createTextNode(kid, keyInfoKeyIdValue));
+        } else {
+            throw new DecoratorException("Encryption requested, but theres no KeyInfo Reference target or KeyIdentifier value");
+        }
         return keyInfo;
     }
 
@@ -594,10 +672,11 @@ public class WssDecoratorImpl implements WssDecorator {
      */
     private Element addEncryptedReferenceList(Context c,
                                               Element securityHeader,
-                                              XmlEncKey encKey,
+                                              XencUtil.XmlEncKey encKey,
                                               Element[] elementsToEncrypt,
                                               Element desiredNextSibling,
                                               Element keyInfoReferenceTarget,
+                                              String keyInfoKeyIdValue,
                                               String keyInfoValueTypeURI)
       throws GeneralSecurityException, DecoratorException {
         String xencNs = SoapUtil.XMLENC_NS;
@@ -624,12 +703,12 @@ public class WssDecoratorImpl implements WssDecorator {
                 continue;
             }
 
-            Element encryptedElement = encryptElement(element, encKey);
+            Element encryptedElement = XencUtil.encryptElement(element, encKey);
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
 
-            addKeyInfo(c, securityHeader, encryptedElement, keyInfoReferenceTarget, keyInfoValueTypeURI);
+            addKeyInfo(c, securityHeader, encryptedElement, keyInfoReferenceTarget, keyInfoKeyIdValue, keyInfoValueTypeURI);
             numElementsEncrypted++;
         }
 
@@ -653,7 +732,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                     Element securityHeader,
                                     X509Certificate recipientCertificate,
                                     Element[] elementsToEncrypt,
-                                    XmlEncKey encKey, Element desiredNextSibling)
+                                    XencUtil.XmlEncKey encKey, Element desiredNextSibling)
       throws GeneralSecurityException, DecoratorException {
 
         Document soapMsg = securityHeader.getOwnerDocument();
@@ -694,7 +773,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
-        final String base64 = XencUtil.encryptKeyWithRsaAndPad(encKey.secretKey.getEncoded(), recipientCertificate.getPublicKey(), c.rand);
+        final String base64 = XencUtil.encryptKeyWithRsaAndPad(encKey.getSecretKey().getEncoded(), recipientCertificate.getPublicKey(), c.rand);
         cipherValue.appendChild(XmlUtil.createTextNode(soapMsg, base64));
         Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, SoapUtil.REFLIST_EL_NAME, xencNs, xenc);
 
@@ -705,78 +784,19 @@ public class WssDecoratorImpl implements WssDecorator {
                 logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
             }
-            Element encryptedElement = encryptElement(element, encKey);
+            Element encryptedElement = XencUtil.encryptElement(element, encKey);
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
             numElementsEncrypted++;
         }
 
-        if (numElementsEncrypted < 1) {
-            // None of the elements needed to be encrypted.  Abort the addition of the EncryptedKey.
-            Node parent = encryptedKey.getParentNode();
-            if (parent != null)
-                parent.removeChild(encryptedKey);
-            return null;
+        if (numElementsEncrypted < 1 && referenceList != null) {
+            // Remove the empty reference list, but leave the EncryptedKey in place since it might be needed
+            referenceList.getParentNode().removeChild(referenceList);
         }
 
         return encryptedKey;
-    }
-
-    /**
-     * Encrypt the specified element.  Returns the new EncryptedData element.
-     *
-     * @param element
-     * @param encKey  with the algorithm and the key
-     *                The encryption algorithm is one of (http://www.w3.org/2001/04/xmlenc#aes128-cbc,
-     *                http://www.w3.org/2001/04/xmlenc#tripledes-cbc, etc)
-     * @return the EncryptedData element that replaces the specified element.
-     */
-    private Element encryptElement(Element element, XmlEncKey encKey)
-      throws DecoratorException, GeneralSecurityException {
-
-        Document soapMsg = element.getOwnerDocument();
-
-        CipherData cipherData = new CipherData();
-        cipherData.setCipherValue(new CipherValue());
-
-        EncryptionMethod encMethod = new EncryptionMethod();
-        encMethod.setAlgorithm(encKey.algorithm);
-        EncryptedData encData = new EncryptedData();
-        encData.setCipherData(cipherData);
-        encData.setEncryptionMethod(encMethod);
-        encData.setType(EncryptedData.CONTENT);
-        Element encDataElement = null;
-        try {
-            encDataElement = encData.createElement(soapMsg, true);
-        } catch (StructureException e) {
-            throw new DecoratorException(e);
-        }
-
-        // Create encryption context and encrypt the header subtree
-        EncryptionContext ec = new EncryptionContext();
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        af.setProvider(JceProvider.getSymmetricJceProvider().getName());
-        ec.setAlgorithmFactory(af);
-        ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
-
-        ec.setData(element);
-
-        ec.setKey(encKey.secretKey);
-
-        try {
-            ec.encrypt();
-            ec.replace();
-        } catch (KeyInfoResolvingException e) {
-            throw new DecoratorException(e); // can't happen
-        } catch (StructureException e) {
-            throw new DecoratorException(e); // shouldn't happen
-        } catch (IOException e) {
-            throw new DecoratorException(e); // shouldn't happen
-        }
-
-        Element encryptedData = ec.getEncryptedTypeAsElement();
-        return encryptedData;
     }
 
     /**
@@ -786,7 +806,6 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param c
      * @param element
      * @param basename Optional.  If non-null, will be used as the start of the Id string
-     * @return
      */
     private String getOrCreateWsuId(Context c, Element element, String basename) {
         String id = SoapUtil.getElementWsuId(element);
@@ -812,7 +831,13 @@ public class WssDecoratorImpl implements WssDecorator {
     private void addKeyInfoToElement(Element keyInfoParent, String wsseNs, String wssePrefix, String valueType, byte[] idBytes, Context c) {
         Document soapMsg = keyInfoParent.getOwnerDocument();
 
-        Element keyInfo = XmlUtil.createAndAppendElementNS(keyInfoParent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
+        Element cipherData = XmlUtil.findFirstChildElementByName(keyInfoParent, SoapUtil.XMLENC_NS, "CipherData");
+        // If there's a cipherdata, but keyinfo before it
+        final Element keyInfo;
+        if (cipherData == null)
+            keyInfo = XmlUtil.createAndAppendElementNS(keyInfoParent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
+        else
+            keyInfo = XmlUtil.createAndInsertBeforeElementNS(cipherData, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
         Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
             wsseNs, wssePrefix);
         Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
@@ -835,7 +860,6 @@ public class WssDecoratorImpl implements WssDecorator {
      *
      * @param c
      * @param element
-     * @return
      */
     private String createWsuId(Context c, Element element, String basename) {
         byte[] randbytes = new byte[16];
@@ -906,24 +930,22 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param xEncAlgorithm the algorithm name such as http://www.w3.org/2001/04/xmlenc#tripledes-cbc
      * @param c             the context fro random generatir source
      * @return the encription key instance holding the secret key and the algorithm name
-     * @throws InvalidKeySpecException  thrown on invalid key spec
-     * @throws InvalidKeyException      thrown for invalid key
      * @throws IllegalArgumentException thrown for unknown algorithm
      */
-    private XmlEncKey generate(String xEncAlgorithm, Context c) throws InvalidKeySpecException, InvalidKeyException {
+    private XencUtil.XmlEncKey generate(String xEncAlgorithm, Context c) {
         byte[] keyBytes = new byte[32]; // (max for aes 256)
         if (XencUtil.TRIPLE_DES_CBC.equals(xEncAlgorithm)) {
             c.rand.nextBytes(keyBytes);
-            return new XmlEncKey(xEncAlgorithm, new DesKey(keyBytes, 192));
+            return new XencUtil.XmlEncKey(xEncAlgorithm, new DesKey(keyBytes, 192));
         } else if (XencUtil.AES_128_CBC.equals(xEncAlgorithm)) {
             c.rand.nextBytes(keyBytes);
-            return new XmlEncKey(xEncAlgorithm, new AesKey(keyBytes, 128));
+            return new XencUtil.XmlEncKey(xEncAlgorithm, new AesKey(keyBytes, 128));
         } else if (XencUtil.AES_192_CBC.equals(xEncAlgorithm)) {
             c.rand.nextBytes(keyBytes);
-            return new XmlEncKey(xEncAlgorithm, new AesKey(keyBytes, 192));
+            return new XencUtil.XmlEncKey(xEncAlgorithm, new AesKey(keyBytes, 192));
         } else if (XencUtil.AES_256_CBC.equals(xEncAlgorithm)) {
             c.rand.nextBytes(keyBytes);
-            return new XmlEncKey(xEncAlgorithm, new AesKey(keyBytes, 256));
+            return new XencUtil.XmlEncKey(xEncAlgorithm, new AesKey(keyBytes, 256));
         }
         throw new IllegalArgumentException("Unknown algorithm " + xEncAlgorithm);
     }

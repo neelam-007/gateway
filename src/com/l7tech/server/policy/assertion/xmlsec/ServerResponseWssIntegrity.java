@@ -2,9 +2,13 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.security.token.EncryptedKey;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.KeyReference;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
@@ -56,11 +60,13 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
+        final ProcessorResult wssResult;
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
+            wssResult = context.getRequest().getXmlKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -83,8 +89,10 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
 
                 // GET THE DOCUMENT
                 Document soapmsg = null;
+                final XmlKnob resXml;
                 try {
-                    soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    resXml = context.getResponse().getXmlKnob();
+                    soapmsg = resXml.getDocumentReadOnly();
                 } catch (SAXException e) {
                     String msg = "cannot get an xml document from the response to sign";
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
@@ -110,19 +118,45 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 DecorationRequirements wssReq = null;
                 try {
                     if (!recipient.localRecipient()) {
-                        wssReq = context.getResponse().getXmlKnob().getAlternateDecorationRequirements(recipient);
+                        wssReq = resXml.getAlternateDecorationRequirements(recipient);
                     } else {
-                        wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
+                        wssReq = resXml.getOrMakeDecorationRequirements();
                     }
-                } catch (SAXException e) {
-                    throw new RuntimeException(e); // can't happen, we did this before successfully
                 } catch (CertificateException e) {
                     String msg = "cannot set the recipient cert.";
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
                     return AssertionStatus.SERVER_ERROR;
                 }
-                wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
-                wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+
+                // TODO need some way to guess whether sender would prefer we sign with our cert or with his
+                //      EncryptedKey.  For now, we'll cheat, and use EncryptedKey if the request used any wse11
+                //      elements that we noticed.
+                if (wssResult != null && wssResult.isWsse11Seen()) {
+                    // Try to sign response using an existing EncryptedKey already known to the requestor,
+                    // using #EncryptedKeySHA1 KeyInfo reference, instead of making an RSA signature,
+                    // which is expensive.
+                    if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
+                        // No EncryptedKeySHA1 reference on response yet; create one
+                        SecurityToken[] tokens = wssResult.getSecurityTokens();
+                        for (int i = 0; i < tokens.length; i++) {
+                            SecurityToken token = tokens[i];
+                            if (token instanceof EncryptedKey) {
+                                // We'll just use the first one we see
+                                EncryptedKey ek = (EncryptedKey)token;
+                                wssReq.setEncryptedKey(ek.getSecretKey());
+                                wssReq.setEncryptedKeySha1(ek.getEncryptedKeySHA1());
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
+                    // No luck with #EncryptedKeySHA1, so we'll have to do a full RSA signature using our own cert.
+                    wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+                    wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
+                }
+
                 wssReq.getElementsToSign().addAll(selectedElements);
                 wssReq.setSignTimestamp();
 

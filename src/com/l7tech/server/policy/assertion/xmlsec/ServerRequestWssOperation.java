@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion.xmlsec;
@@ -31,7 +29,7 @@ import java.util.logging.Logger;
  */
 public abstract class ServerRequestWssOperation implements ServerAssertion {
     private Logger logger;
-    private final Auditor auditor;
+    protected final Auditor auditor;
 
     protected ServerRequestWssOperation(Logger logger, XpathBasedAssertion data, ApplicationContext springContext) {
         this.logger = logger;
@@ -79,19 +77,13 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         }
 
         ProcessorResultUtil.SearchResult result = null;
-        ParsedElement[] parsedElements;
-        if (wssResults != null) {
-            parsedElements = getElementsFoundByProcessor(wssResults);
-        } else {
-            parsedElements = new ParsedElement[0];
-        }
         try {
             result = ProcessorResultUtil.searchInResult(logger,
                                                         soapmsg,
                                                         data.getXpathExpression().getExpression(),
                                                         data.getXpathExpression().getNamespaces(),
                                                         isAllowIfEmpty(),
-                                                        parsedElements,
+                                                        getElementsFoundByProcessor(wssResults),
                                                         getPastTenseOperationName());
         } catch (ProcessorException e) {
             throw new PolicyAssertionException(e);

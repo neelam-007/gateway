@@ -6,19 +6,30 @@
 
 package com.l7tech.common.security.xml;
 
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.ibm.xml.enc.EncryptionContext;
+import com.ibm.xml.enc.KeyInfoResolvingException;
+import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.type.CipherData;
+import com.ibm.xml.enc.type.CipherValue;
+import com.ibm.xml.enc.type.EncryptedData;
+import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.security.*;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Random;
@@ -77,6 +88,63 @@ public class XencUtil {
         byte[] output = new byte[keylength];
         System.arraycopy(paddedKey, pos+1, output, 0, keylength);
         return output;
+    }
+
+    /**
+     * Encrypt the specified element.  Returns the new EncryptedData element.
+     *
+     * @param element
+     * @param encKey  with the algorithm and the key
+     *                The encryption algorithm is one of (http://www.w3.org/2001/04/xmlenc#aes128-cbc,
+     *                http://www.w3.org/2001/04/xmlenc#tripledes-cbc, etc)
+     * @return the EncryptedData element that replaces the specified element.
+     */
+    public static Element encryptElement(Element element, XmlEncKey encKey)
+      throws DecoratorException, GeneralSecurityException
+    {
+
+        Document soapMsg = element.getOwnerDocument();
+
+        CipherData cipherData = new CipherData();
+        cipherData.setCipherValue(new CipherValue());
+
+        EncryptionMethod encMethod = new EncryptionMethod();
+        encMethod.setAlgorithm(encKey.algorithm);
+        EncryptedData encData = new EncryptedData();
+        encData.setCipherData(cipherData);
+        encData.setEncryptionMethod(encMethod);
+        encData.setType(EncryptedData.CONTENT);
+        Element encDataElement = null;
+        try {
+            encDataElement = encData.createElement(soapMsg, true);
+        } catch (StructureException e) {
+            throw new DecoratorException(e);
+        }
+
+        // Create encryption context and encrypt the header subtree
+        EncryptionContext ec = new EncryptionContext();
+        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        af.setProvider(JceProvider.getSymmetricJceProvider().getName());
+        ec.setAlgorithmFactory(af);
+        ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
+
+        ec.setData(element);
+
+        ec.setKey(encKey.secretKey);
+
+        try {
+            ec.encrypt();
+            ec.replace();
+        } catch (KeyInfoResolvingException e) {
+            throw new DecoratorException(e); // can't happen
+        } catch (StructureException e) {
+            throw new DecoratorException(e); // shouldn't happen
+        } catch (IOException e) {
+            throw new DecoratorException(e); // shouldn't happen
+        }
+
+        Element encryptedData = ec.getEncryptedTypeAsElement();
+        return encryptedData;
     }
 
     public static class UnsupportedKeyInfoFormatException extends InvalidDocumentFormatException {
@@ -184,8 +252,29 @@ public class XencUtil {
                 logger.warning(msg);
                 throw new UnexpectedKeyInfoException(msg);
             }
+        } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX) ||
+                   valueType.endsWith(SoapUtil.VALUETYPE_THUMB_SHA1_SUFFIX))
+        {
+            // TODO replace this with a cert cache lookup by SHA1 thumbprint
+            byte[] certBytes = cert.getEncoded();
+            MessageDigest sha1 = HexUtils.getSha1();
+            sha1.reset();
+            byte[] certSha1 = sha1.digest(certBytes);
+            if (Arrays.equals(certSha1, keyIdValueBytes)) {
+                logger.fine("The cert SHA1 thumbprint was recognized.  The cert is ours for sure.");
+                /* FALLTHROUGH */
+            } else {
+                String msg = "This KeyInfo declares a specific cert SHA1 thumbprint, " +
+                        "but our certificate's thumbprint does not match.";
+                logger.fine(msg);
+                throw new UnexpectedKeyInfoException(msg);
+            }
+        } else if (valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
+            // TODO - to support this, need to be able to look up a (long-)previously-processed EncryptedKey by its hash
+            throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
+                                                     "ValueType: " + valueType);
         } else
-            throw new InvalidDocumentFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
+            throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
                                                      "ValueType: " + valueType);
     }
 
@@ -208,6 +297,24 @@ public class XencUtil {
         }
     }
 
+    public static class EncryptedKeyValue {
+        private final byte[] encryptedKeyBytes;
+        private final byte[] decryptedKeyBytes;
+
+        public EncryptedKeyValue(byte[] encryptedKeyBytes, byte[] decryptedKeyBytes) {
+            this.encryptedKeyBytes = encryptedKeyBytes;
+            this.decryptedKeyBytes = decryptedKeyBytes;
+        }
+
+        public byte[] getEncryptedKeyBytes() {
+            return encryptedKeyBytes;
+        }
+
+        public byte[] getDecryptedKeyBytes() {
+            return decryptedKeyBytes;
+        }
+    }
+
     /**
      * Extract the encrypted key from the specified EncryptedKey element.  Caller is responsible for ensuring that
      * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
@@ -218,7 +325,7 @@ public class XencUtil {
      * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
-    public static byte[] decryptKey(Element encryptedKeyElement, PrivateKey recipientKey)
+    public static EncryptedKeyValue decryptKey(Element encryptedKeyElement, PrivateKey recipientKey)
             throws InvalidDocumentFormatException, GeneralSecurityException
     {
         // get the xenc:CipherValue
@@ -245,7 +352,7 @@ public class XencUtil {
      * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
-    public static byte[] decryptKey(String b64edEncryptedKey, PrivateKey recipientKey)
+    public static EncryptedKeyValue decryptKey(String b64edEncryptedKey, PrivateKey recipientKey)
             throws InvalidDocumentFormatException, GeneralSecurityException
     {
         byte[] encryptedKeyBytes = new byte[0];
@@ -266,7 +373,7 @@ public class XencUtil {
             logger.log(Level.WARNING, "The key could not be unpadded", e);
             throw new InvalidDocumentFormatException(e);
         }
-        return unencryptedKey;
+        return new EncryptedKeyValue(encryptedKeyBytes, unencryptedKey);
     }
 
     /**
@@ -332,4 +439,24 @@ public class XencUtil {
         return HexUtils.encodeBase64(encrypted, true);
     }
 
+    /**
+     * Holds the secret key and the xml enc algorithm name
+     */
+    public static class XmlEncKey {
+        final SecretKey secretKey;
+        final String algorithm;
+
+        public XmlEncKey(String encryptionAlgorithm, SecretKey secretKey) {
+            this.algorithm = encryptionAlgorithm;
+            this.secretKey = secretKey;
+        }
+
+        public SecretKey getSecretKey() {
+            return secretKey;
+        }
+
+        public String getAlgorithm() {
+            return algorithm;
+        }
+    }
 }

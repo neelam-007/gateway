@@ -10,6 +10,7 @@ import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Element;
 
+import javax.crypto.SecretKey;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -192,6 +193,77 @@ public class DecorationRequirements {
         preferredWSUNamespace = ns;
     }
 
+    /**
+     * If this is set along with EncryptedKey, then signing and encryption will use a KeyInfo that uses
+     * a KeyInfo of #EncryptedKeySHA1 containing this string, which must be the Base64-encoded
+     * SHA1 hash of the raw octets of the key (that is, the the pre-Base64-encoding octets of the
+     * CipherValue in the EncryptedKey token being referenced).
+     * <p/>
+     * The EncryptedKey will be assumed already to be known to the recipient.  It is the callers
+     * responsibility to ensure that the recipient will recognize this encryptedKeySha1 hash.
+     * <p/>
+     * This value will not be used unless both it and {@link #setEncryptedKey} are set to non-null values.
+     * EncryptedKey should return the actual key to use for the signing and encryption.
+     *
+     * @param encryptedKeySha1 the base64-encoded SHA1 hash of the key octets from an EncryptedKey, or null
+     *                         to disable use of #EncryptedKeySHA1 KeyInfo for signature and encryption blocks.
+     */
+    public void setEncryptedKeySha1(String encryptedKeySha1) {
+        this.encryptedKeySha1 = encryptedKeySha1;
+    }
+
+    /**
+     * @return  the base64-encoded SHA1 hash of the key octets from an EncryptedKey, or null
+     *          to disable use of #EncryptedKeySHA1 KeyInfo for signature and encryption blocks.
+     * @see #setEncryptedKeySha1
+     */
+    public String getEncryptedKeySha1() {
+        return encryptedKeySha1;
+    }
+
+    /**
+     * Set the actual secret key bytes to use for signing and encryption when using #EncryptedKeySHA1 style
+     * KeyInfos inside signature and encryption blocks.  See {@link #setEncryptedKey} for more information.
+     * See {@link com.l7tech.common.security.AesKey} for a possible implementation.
+     *
+     * @param encryptedKey  symmetric key for signing and encryption, or null to disable use of #EncryptedKeySHA1.
+     */
+    public void setEncryptedKey(SecretKey encryptedKey) {
+        this.encryptedKey = encryptedKey;
+    }
+
+    /**
+     * @return symmetric key for signing and encryption, or null to disable use of #EncryptedKeySHA1.
+     * @see #setEncryptedKey
+     * @see #setEncryptedKeySha1
+     */
+    public SecretKey getEncryptedKey() {
+        return encryptedKey;
+    }
+
+    /**
+     * Set the wsse11:SignatureConfirmation value to use for this reply, if any.  This must be the still-base64-encoded
+     * content of the dsig:SignatureValue whose value is being confirmed.  A SignatureConfirmation value will
+     * only be included in the decorated message if the rest of the decoration requirements are sufficient to
+     * allow the SignatureConfirmation to be signed.  That is, a signature source of some kind must also be supplied
+     * or else the signatureConfirmation will not be added to the decorated message.  Valid signature sources include
+     * a sender cert with private key, a sender SAML holder-of-key token with subject private key,
+     * a secure conversation session, or an EncryptedKeySHA1 reference plus associated EncryptedKey shared secret.
+     *
+     * @param signatureConfirmation the base64 SignatureValue of the signature that is to be confirmed, or null.
+     */
+    public void setSignatureConfirmation(String signatureConfirmation) {
+        this.signatureConfirmation = signatureConfirmation;
+    }
+
+    /**
+     * @return the base64 SignatureValue of the signature that is to be confirmed, or null.
+     * @see #setSignatureConfirmation
+     */
+    public String getSignatureConfirmation() {
+        return signatureConfirmation;
+    }
+
     public interface SecureConversationSession {
         String getId();
 
@@ -309,4 +381,7 @@ public class DecorationRequirements {
     private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
     private boolean includeSamlTokenInSignature = false;
     private boolean suppressBst = false;
+    private SecretKey encryptedKey = null;
+    private String encryptedKeySha1 = null;
+    private String signatureConfirmation = null;
 }

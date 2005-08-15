@@ -17,6 +17,7 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Properties;
 
@@ -71,6 +72,11 @@ public final class TestDocuments {
     public static final String FIM2005APR_SERVER_RST = DIR + "fim/fim2005apr_server_rst.xml";
     public static final String FIM2005APR_SERVER_RSTR = DIR + "fim/fim2005apr_server_rstr.xml";
 
+    public static final String WSS2005JUL_REQUEST = DIR + "wssInterop/regeneratedRequest.xml";
+    public static final String WSS2005JUL_REQUEST_ORIG = DIR + "wssInterop2005July_request.xml";
+    public static final String WSS2005JUL_RESPONSE = DIR + "wssInterop2005July_response.xml";
+    public static final String WSSKEYSTORE_ALICE = DIR + "wssInterop/alice.pfx";
+    public static final String WSSKEYSTORE_BOB   = DIR + "wssInterop/bob.pfx";
 
     private static final String ETTK_KS = DIR + "ibmEttkKeystore.db";
     private static final String ETTK_KS_PROPERTIES = DIR + "ibmEttkKeystore.properties";
@@ -117,6 +123,62 @@ public final class TestDocuments {
             throw new FileNotFoundException(resourcetoread);
         }
         return i;
+    }
+
+    private static X509Certificate wssInteropAliceCert = null;
+    private static PrivateKey wssInteropAliceKey = null;
+    private static X509Certificate wssInteropBobCert = null;
+    private static PrivateKey wssInteropBobKey = null;
+    private static Certificate[] wssInteropBobChain = null;
+    private static synchronized void initWssInteropCerts() throws Exception {
+        if (wssInteropAliceCert != null &&
+            wssInteropAliceKey != null &&
+            wssInteropBobCert != null &&
+            wssInteropBobKey != null)
+            return;
+
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(getInputStream(WSSKEYSTORE_ALICE), "password".toCharArray());
+        final String aliceAlias = ks.aliases().nextElement().toString();
+        wssInteropAliceCert = (X509Certificate)ks.getCertificate(aliceAlias);
+        wssInteropAliceKey = (PrivateKey)ks.getKey(aliceAlias, "password".toCharArray());
+
+        ks.load(getInputStream(WSSKEYSTORE_BOB), "password".toCharArray());
+        final String bobAlias = ks.aliases().nextElement().toString();
+        wssInteropBobCert = (X509Certificate)ks.getCertificate(bobAlias);
+        wssInteropBobKey = (PrivateKey)ks.getKey(bobAlias, "password".toCharArray());
+        wssInteropBobChain = ks.getCertificateChain(bobAlias);
+
+        if (wssInteropAliceCert == null ||
+            wssInteropAliceKey == null ||
+            wssInteropBobCert == null ||
+            wssInteropBobKey == null)
+            throw new IOException("Unable to find all keys and certs in the wss interop keystores");
+    }
+
+    public static X509Certificate getWssInteropAliceCert() throws Exception {
+        initWssInteropCerts();
+        return wssInteropAliceCert;
+    }
+
+    public static PrivateKey getWssInteropAliceKey() throws Exception {
+        initWssInteropCerts();
+        return wssInteropAliceKey;
+    }
+
+    public static X509Certificate getWssInteropBobCert() throws Exception {
+        initWssInteropCerts();
+        return wssInteropBobCert;
+    }
+
+    public static PrivateKey getWssInteropBobKey() throws Exception {
+        initWssInteropCerts();
+        return wssInteropBobKey;
+    }
+
+    public static Certificate[] getWssInteropBobChain() throws Exception {
+        initWssInteropCerts();
+        return wssInteropBobChain;
     }
 
     private static Properties ettkKeystoreProperties = null;
