@@ -189,6 +189,12 @@
             </fileset>
         </copy>
 
+        <copy todir="${tomcat.home}/server/lib">
+            <fileset dir="${build.dir}">
+                <include name="l7valve.jar"/>
+            </fileset>
+        </copy>
+
 <!--
           ** Java 1.4 changed the rules as to to how packages beginning in java.* and javax.*
           **  get loaded. Specifically, they only get loaded from endorsed directories.
@@ -462,6 +468,12 @@
             </fileset>
             <zipfileset dir="${src.root}/src/com/l7tech/spring/remoting/rmi/codebase/"
                         includes="java.rmi.server.RMIClassLoaderSpi" prefix="META-INF/services"/>
+        </jar>
+
+        <jar jarfile="${build.dir}/l7valve.jar">
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/server/tomcat/*.class"/>
+            </fileset>
         </jar>
     </target>
 
