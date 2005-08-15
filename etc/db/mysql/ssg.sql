@@ -1,8 +1,6 @@
 --
 -- MySQL version of SSG database creation script.
 --
--- NOTE: all changes to this script must also be made to ../postgres/ssg.sql as well!
---
 
 -- MySQL dump 8.22
 --
