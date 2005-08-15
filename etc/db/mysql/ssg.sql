@@ -153,7 +153,7 @@ CREATE TABLE client_cert (
   reset_counter int NOT NULL,
   thumbprint_sha1 varchar(64),
   PRIMARY KEY  (objectid),
-  INDEX i_thumb (thumbprint_sha1),
+  INDEX i_thumb (thumbprint_sha1)
 ) TYPE=InnoDB;
 
 --
@@ -277,7 +277,7 @@ CREATE TABLE trusted_cert (
   primary key(objectid),
   unique (subject_dn),
   unique (name),
-  INDEX i_thumb (thumbprint_sha1),
+  INDEX i_thumb (thumbprint_sha1)
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS fed_user;
