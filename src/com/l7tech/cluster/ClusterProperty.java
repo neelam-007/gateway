@@ -6,13 +6,15 @@
  */
 package com.l7tech.cluster;
 
+import java.io.Serializable;
+
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
  * the ClusterPropertyManager, and on the client side, through the ClusterStatusAdmin interface.
  *
  * @author flascelles@layer7-tech.com
  */
-public class ClusterProperty {
+public class ClusterProperty implements Serializable {
     private String key;
     private String value;
 
