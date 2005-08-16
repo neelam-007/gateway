@@ -9,6 +9,7 @@ package com.l7tech.console.panels;
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
+import com.l7tech.common.gui.util.TableUtil;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -175,6 +176,11 @@ public class ClusterPropertyDialog extends JDialog {
     private void populate() {
         Registry reg = Registry.getDefault();
         // todo
+    }
+
+    public void show() {
+        TableUtil.adjustColumnWidth(propsTable, 1);
+        super.show();
     }
 
     public static void main(String[] args) {
