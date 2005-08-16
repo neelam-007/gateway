@@ -383,6 +383,9 @@
             <ref bean="serviceUsageManager"/>
         </constructor-arg>
         <constructor-arg>
+            <ref bean="clusterPropertyManager"/>
+        </constructor-arg>
+        <constructor-arg>
             <ref bean="accessManager"/>
         </constructor-arg>
         <property name="sessionFactory">

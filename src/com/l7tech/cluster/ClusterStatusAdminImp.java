@@ -4,11 +4,13 @@ import com.l7tech.admin.AccessManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.SaveException;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -29,10 +31,14 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
      * @param clusterInfoManager
      * @param serviceUsageManager
      */
-    public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager, ServiceUsageManager serviceUsageManager, AccessManager accessManager) {
+    public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager,
+                                 ServiceUsageManager serviceUsageManager,
+                                 ClusterPropertyManager clusterPropertyManager,
+                                 AccessManager accessManager) {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
         this.accessManager = accessManager;
+        this.clusterPropertyManager = clusterPropertyManager;
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info manager is required");
         }
@@ -122,9 +128,21 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
         return clusterInfoManager.getSelfNodeInf().getName();
     }
 
+    public List getAllProperties() throws RemoteException, FindException {
+        return clusterPropertyManager.getAllProperties();
+    }
+
+    public String getProperty(String key) throws RemoteException, FindException {
+        return clusterPropertyManager.getProperty(key);
+    }
+
+    public void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException {
+        clusterPropertyManager.setProperty(key, value);
+    }
 
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
+    private final ClusterPropertyManager clusterPropertyManager;
     private final AccessManager accessManager;
     private final Logger logger = Logger.getLogger(getClass().getName());
 

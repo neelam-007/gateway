@@ -2,9 +2,12 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
+import java.util.List;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -99,5 +102,17 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
 
     public String getSelfNodeName() throws RemoteException {
         return "No name from test stub";
+    }
+
+    public List getAllProperties() throws RemoteException, FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public String getProperty(String key) throws RemoteException, FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException {
+        throw new UnsupportedOperationException();
     }
 }

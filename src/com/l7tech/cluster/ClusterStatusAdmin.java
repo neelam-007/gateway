@@ -3,9 +3,10 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.SaveException;
 
-import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.List;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
@@ -67,4 +68,21 @@ public interface ClusterStatusAdmin {
      * @throws RemoteException on remote communication error
      */
      String getSelfNodeName() throws RemoteException;
+
+    /**
+     * get cluster wide properties
+     * @return a list containing ClusterProperty objects (never null)
+     */
+    List getAllProperties() throws RemoteException, FindException;
+
+    /**
+     * get cluster wide property
+     * @return may return null if the property is not set. will return the property value otherwise
+     */
+    String getProperty(String key) throws RemoteException, FindException;
+
+    /**
+     * set new value for the cluster-wide property. value set to null will delete the property from the table
+     */
+    void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException;
 }

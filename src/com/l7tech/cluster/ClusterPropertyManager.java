@@ -21,7 +21,6 @@ import net.sf.hibernate.HibernateException;
 /**
  * Hibernate manager for read/write access to the cluster_properties table.
  *
- * todo, plug into admin layer
  * @author flascelles@layer7-tech.com
  */
 public class ClusterPropertyManager extends HibernateDaoSupport {
