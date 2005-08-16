@@ -87,6 +87,7 @@ public class MainWindow extends JFrame {
     private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem manageGlobalSchemasMenuItem = null;
+    private JMenuItem manageClusterPropertiesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     // actions
@@ -115,6 +116,7 @@ public class MainWindow extends JFrame {
     private NewFederatedIdentityProviderAction newPKIProviderAction;
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
+    private ManageClusterPropertiesAction manageClusterPropertiesAction = null;
     private NewInternalUserAction newInernalUserAction;
 
 
@@ -450,6 +452,7 @@ public class MainWindow extends JFrame {
 
             editMenu.add(getManageCertificatesMenuItem());
             editMenu.add(getManageGlobalSchemasMenuItem());
+            editMenu.add(getManageClusterPropertiesActionMenuItem());
             editMenu.add(getManageJmsEndpointsMenuItem());
 
             int mnemonic = editMenu.getText().toCharArray()[0];
@@ -1194,6 +1197,14 @@ public class MainWindow extends JFrame {
         return manageGlobalSchemasAction;
     }
 
+    private Action getManageClusterPropertiesAction() {
+        if (manageClusterPropertiesAction != null) return manageClusterPropertiesAction;
+        manageClusterPropertiesAction = new ManageClusterPropertiesAction();
+        manageClusterPropertiesAction.setEnabled(false);
+        this.addLogonListener(manageClusterPropertiesAction);
+        return manageClusterPropertiesAction;
+    }
+
     private Action getGatewayAuditWindowAction() {
         if (viewGatewayAuditsWindowAction != null) return viewGatewayAuditsWindowAction;
         viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction();
@@ -1869,6 +1880,12 @@ public class MainWindow extends JFrame {
         if (manageGlobalSchemasMenuItem != null) return manageGlobalSchemasMenuItem;
         manageGlobalSchemasMenuItem = new JMenuItem(getManageGlobalSchemasAction());
         return manageGlobalSchemasMenuItem;
+    }
+
+    public JMenuItem getManageClusterPropertiesActionMenuItem(){
+        if (manageClusterPropertiesMenuItem != null) return manageClusterPropertiesMenuItem;
+        manageClusterPropertiesMenuItem = new JMenuItem(getManageClusterPropertiesAction());
+        return manageClusterPropertiesMenuItem;
     }
 
     public JMenuItem getStatMenuItem() {

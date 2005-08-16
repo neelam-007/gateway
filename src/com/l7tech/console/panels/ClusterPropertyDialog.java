@@ -10,6 +10,10 @@ import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.TableUtil;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -19,6 +23,9 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * A dialog to view/edit/add/remove cluster-wide properties
@@ -34,6 +41,7 @@ public class ClusterPropertyDialog extends JDialog {
     private JButton helpButton;
     private JButton closeButton;
     private final ArrayList properties = new ArrayList();
+    private final Logger logger = Logger.getLogger(ClusterPropertyDialog.class.getName());
 
     public ClusterPropertyDialog(Frame owner) {
         super(owner, true);
@@ -145,15 +153,66 @@ public class ClusterPropertyDialog extends JDialog {
     }
 
     private void add() {
-        // todo
+        Registry reg = Registry.getDefault();
+        if (reg != null && reg.getClusterStatusAdmin() != null) {
+
+            // todo, capture a real property instead
+            ClusterProperty dummy = new ClusterProperty();
+            dummy.setKey("key" + System.currentTimeMillis());
+            dummy.setValue("val" + System.currentTimeMillis());
+
+
+            try {
+                reg.getClusterStatusAdmin().setProperty(dummy.getKey(), dummy.getValue());
+            } catch (RemoteException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (SaveException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (UpdateException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (DeleteException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            }
+
+            populate();
+            TableUtil.adjustColumnWidth(propsTable, 1);
+        } else {
+            logger.severe("cannot get cluster status admin for removing property");
+        }
     }
 
     private void edit() {
-        // todo
+        ClusterProperty prop = (ClusterProperty)properties.get(propsTable.getSelectedRow());
+        Registry reg = Registry.getDefault();
+        if (reg != null && reg.getClusterStatusAdmin() != null) {
+            // todo
+
+            ((AbstractTableModel)propsTable.getModel()).fireTableDataChanged();
+            TableUtil.adjustColumnWidth(propsTable, 1);
+        } else {
+            logger.severe("cannot get cluster status admin for editing property");
+        }
     }
 
     private void remove() {
-        // todo
+        ClusterProperty prop = (ClusterProperty)properties.get(propsTable.getSelectedRow());
+        Registry reg = Registry.getDefault();
+        if (reg != null && reg.getClusterStatusAdmin() != null) {
+            try {
+                reg.getClusterStatusAdmin().setProperty(prop.getKey(), null);
+            } catch (RemoteException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (SaveException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (UpdateException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (DeleteException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            }
+            populate();
+        } else {
+            logger.severe("cannot get cluster status admin for removing property");
+        }
     }
 
     private void help() {
@@ -175,7 +234,19 @@ public class ClusterPropertyDialog extends JDialog {
 
     private void populate() {
         Registry reg = Registry.getDefault();
-        // todo
+        if (reg != null && reg.getClusterStatusAdmin() != null) {
+            properties.clear();
+            try {
+                properties.addAll(reg.getClusterStatusAdmin().getAllProperties());
+            } catch (RemoteException e) {
+                logger.log(Level.SEVERE, "exception getting properties", e);
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "exception getting properties", e);
+            }
+        } else {
+            logger.severe("cannot get cluster status admin for populating dlg");
+        }
+        ((AbstractTableModel)propsTable.getModel()).fireTableDataChanged();
     }
 
     public void show() {
