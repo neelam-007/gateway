@@ -19,3 +19,7 @@ ALTER TABLE client_cert ADD INDEX i_thumb (thumbprint_sha1);
 ALTER TABLE trusted_cert ADD COLUMN thumbprint_sha1 VARCHAR(64);
 ALTER TABLE trusted_cert ADD INDEX i_thumb (thumbprint_sha1);
 
+CREATE TABLE cluster_properties (
+  propkey varchar(128) NOT NULL PRIMARY KEY,
+  propvalue varchar(255) NOT NULL
+) TYPE=InnoDB;
