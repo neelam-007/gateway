@@ -413,10 +413,16 @@ class PathValidator {
     }
 
     private void processComposite(CompositeAssertion a) {
-        if (a.getChildren().isEmpty()) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "This composite assertion does not contain any elements.", null));
+        List children = a.getChildren();
+        for (Iterator iterator = children.iterator(); iterator.hasNext();) {
+            Assertion ass = (Assertion)iterator.next();
+            if (!(ass instanceof CommentAssertion)) {
+                return;
+            }
         }
+        result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                          "This composite assertion does not contain any children and will always fail.",
+                          null));
     }
 
 
