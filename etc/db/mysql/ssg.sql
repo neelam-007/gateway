@@ -475,7 +475,7 @@ CREATE TABLE community_schemas (
 -- note that 'key' is unfortunately not a valid column name
 --
 
-DROP TABLE IF EXIST cluster_properties;
+DROP TABLE IF EXISTS cluster_properties;
 CREATE TABLE cluster_properties (
   propkey varchar(128) NOT NULL PRIMARY KEY,
   propvalue varchar(255) NOT NULL
