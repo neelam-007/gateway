@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.TableUtil;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -156,14 +157,16 @@ public class ClusterPropertyDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
-            // todo, capture a real property instead
-            ClusterProperty dummy = new ClusterProperty();
-            dummy.setKey("key" + System.currentTimeMillis());
-            dummy.setValue("val" + System.currentTimeMillis());
-
+            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, null);
+            dlg.pack();
+            Utilities.centerOnScreen(dlg);
+            dlg.show();
+            if (!dlg.wasOked()) {
+                return;
+            }
 
             try {
-                reg.getClusterStatusAdmin().setProperty(dummy.getKey(), dummy.getValue());
+                reg.getClusterStatusAdmin().setProperty(dlg.newKey(), dlg.newValue());
             } catch (RemoteException e) {
                 logger.log(Level.SEVERE, "exception setting property", e);
             } catch (SaveException e) {
@@ -185,9 +188,33 @@ public class ClusterPropertyDialog extends JDialog {
         ClusterProperty prop = (ClusterProperty)properties.get(propsTable.getSelectedRow());
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
-            // todo
 
-            ((AbstractTableModel)propsTable.getModel()).fireTableDataChanged();
+            CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property", prop.getKey(), prop.getValue());
+            dlg.pack();
+            Utilities.centerOnScreen(dlg);
+            dlg.show();
+            if (!dlg.wasOked()) {
+                return;
+            }
+
+            try {
+                if (dlg.newKey().equals(prop.getKey())) {
+                    reg.getClusterStatusAdmin().setProperty(dlg.newKey(), dlg.newValue());
+                } else {
+                    reg.getClusterStatusAdmin().setProperty(prop.getKey(), null);
+                    reg.getClusterStatusAdmin().setProperty(dlg.newKey(), dlg.newValue());
+                }
+            }  catch (RemoteException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (SaveException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (UpdateException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            } catch (DeleteException e) {
+                logger.log(Level.SEVERE, "exception setting property", e);
+            }
+
+            populate();
             TableUtil.adjustColumnWidth(propsTable, 1);
         } else {
             logger.severe("cannot get cluster status admin for editing property");
