@@ -85,6 +85,13 @@ public class GlobalSchemaDialog extends JDialog {
             }
         };
         schemaTable.setModel(model);
+        schemaTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        /*
+
+        schemaTable.getColumnModel().getColumn(0).setResizable(true);
+        schemaTable.getColumnModel().getColumn(1).setResizable(true);
+        schemaTable.getTableHeader().setResizingAllowed(true);
+        */
         setListeners();
 
         // support Enter and Esc keys
@@ -167,7 +174,9 @@ public class GlobalSchemaDialog extends JDialog {
         });
         schemaTable.addKeyListener(new KeyListener () {
             public void keyPressed(KeyEvent e) {
-                edit();
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    edit();
+                }
             }
             public void keyTyped(KeyEvent e) {}
             public void keyReleased(KeyEvent e) {}
