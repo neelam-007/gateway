@@ -283,4 +283,11 @@
         <property name="tns" column="tns" type="string"/>
     </class>
 
+    <class name="com.l7tech.cluster.ClusterProperty" table="cluster_properties">
+        <id name="key" column="propkey" type="string">
+            <generator class="assigned"/>
+        </id>
+        <property name="value" column="propvalue" type="string"/>
+    </class>
+
 </hibernate-mapping>

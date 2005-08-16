@@ -15,7 +15,6 @@ package com.l7tech.cluster;
 public class ClusterProperty {
     private String key;
     private String value;
-    private long oid;
 
     public String getKey() {
         return key;
@@ -31,13 +30,5 @@ public class ClusterProperty {
 
     public void setValue(String value) {
         this.value = value;
-    }
-
-    public long getOid() {
-        return oid;
-    }
-
-    public void setOid(long oid) {
-        this.oid = oid;
     }
 }

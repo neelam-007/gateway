@@ -470,4 +470,15 @@ CREATE TABLE community_schemas (
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB;
 
+--
+-- Table structure for table 'cluster_properties'
+-- note that 'key' is unfortunately not a valid column name
+--
+
+DROP TABLE IF EXIST cluster_properties;
+CREATE TABLE cluster_properties (
+  propkey varchar(128) NOT NULL PRIMARY KEY,
+  propvalue varchar(255) NOT NULL
+) TYPE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS = 1;

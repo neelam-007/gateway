@@ -17,7 +17,7 @@ import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 /**
  * Hibernate manager for read/write access to the cluster_properties table.
  *
- * todo, register the manager (spring), create table, implement
+ * todo, register the manager (spring), implement
  * @author flascelles@layer7-tech.com
  */
 public class ClusterPropertyManager extends HibernateDaoSupport {
