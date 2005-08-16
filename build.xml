@@ -489,6 +489,7 @@
                 <exclude name="com/l7tech/common/security/prov/tarari/**/*"/>
                 <!-- goes in lib/ext -->
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
+                <exclude name="com/l7tech/common/security/CertEntity**"/>
 
                 <!-- Tarari drivers not available in standalone Agent -->
                 <exclude name="com/l7tech/common/xml/tarari/TarariUtil.class"/>
