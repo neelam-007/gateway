@@ -21,6 +21,7 @@ import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.DsigUtil;
+import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -110,7 +111,7 @@ public class WssInteropTestMessage extends TestCase {
         Element ekkid = XmlUtil.findFirstChildElementByName(ekstr, (String)null, "KeyIdentifier");
         ekkid.setTextContent(recipCertPrint); // XXX This is a 1.5-ism, not in the 1.4 DOM
         ekkid.setAttribute("ValueType", SoapUtil.VALUETYPE_X509_THUMB_SHA1);
-        XencUtil.assertKeyInfoMatchesCertificate(ekkinf, recipCert);
+        KeyInfoElement.assertKeyInfoMatchesCertificate(ekkinf, recipCert);
 
         // Replace the EncryptedKey payload with our own symmetric key
         String aesKeyB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipCert.getPublicKey(), new Random());

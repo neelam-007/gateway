@@ -473,7 +473,7 @@ public class WssProcessorImpl implements WssProcessor {
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
         try {
-            XencUtil.checkKeyInfo(encryptedKeyElement, recipientCert);
+            KeyInfoElement.checkKeyInfo(encryptedKeyElement, recipientCert);
         } catch (UnexpectedKeyInfoException e) {
             if (cntx.secHeaderActor == SecurityActor.L7ACTOR) {
                 logger.warning("We do not appear to be the intended recipient for this EncryptedKey however the " +
@@ -1178,12 +1178,12 @@ public class WssProcessorImpl implements WssProcessor {
         if (cntx.senderCertificate == null)
             return null; // nothing to compare it with
         try {
-            XencUtil.assertKeyInfoMatchesCertificate(ki, cntx.senderCertificate);
+            KeyInfoElement.assertKeyInfoMatchesCertificate(ki, cntx.senderCertificate);
             return cntx.senderCertificate;
         } catch (UnexpectedKeyInfoException e) {
             // Ski was mentioned, but did not match senderCert.
             return null;
-        } catch (XencUtil.UnsupportedKeyInfoFormatException e) {
+        } catch (KeyInfoElement.UnsupportedKeyInfoFormatException e) {
             // We didn't recognize this KeyInfo
             return null;
         } catch (CertificateException e) {

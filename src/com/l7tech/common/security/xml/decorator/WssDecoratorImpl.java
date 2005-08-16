@@ -12,6 +12,7 @@ import com.l7tech.common.security.DesKey;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.DsigUtil;
+import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.CertUtils;
@@ -58,6 +59,12 @@ public class WssDecoratorImpl implements WssDecorator {
         Map idToElementCache = new HashMap();
         String wsseNS = SoapUtil.SECURITY_NAMESPACE;
         String wsuNS = SoapUtil.WSU_NAMESPACE;
+
+        String getBase64EncodingTypeUri() {
+            return wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)
+                    ? SoapUtil.ENCODINGTYPE_BASE64BINARY
+                    : SoapUtil.ENCODINGTYPE_BASE64BINARY_2;     // lyonsm: ??? what is this for?  It hardcodes wsse: prefix!
+        }
     }
 
     /**
@@ -552,50 +559,15 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element signatureElement = (Element)securityHeader.appendChild(emptySignatureElement);
 
-        // Add the KeyInfo element.
-        if (senderSki != null) {
-            // Include KeyInfo element in signature that refers to the specified SKI.
-            addKeyInfoToElement(signatureElement, securityHeader.getNamespaceURI(), securityHeader.getPrefix(), SoapUtil.VALUETYPE_SKI, senderSki, c);
-        } else {
-            // Include KeyInfo element in signature that refers to the specified target element with the specified value type.
-            // add following KeyInfo
-            // <KeyInfo>
-            //  <wsse:SecurityTokenReference>
-            //      <wsse:Reference	URI="#bstId"
-            //                      ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" />
-            //      </wsse:SecurityTokenReference>
-            // </KeyInfo>
-            String wssePrefix = securityHeader.getPrefix();
-            Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(emptySignatureElement.getNamespaceURI(),
-                "KeyInfo");
-            keyInfoEl.setPrefix("ds");
-            Element secTokRefEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-            secTokRefEl.setPrefix(wssePrefix);
-            keyInfoEl.appendChild(secTokRefEl);
-
-            if (keyInfoReferenceTarget != null) {
-                // Create <KeyInfo><SecurityTokenReference><Reference URI="#Blah" ValueType="ValueTypeURI"></></></>
-                Element refEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                    "Reference");
-                refEl.setPrefix(wssePrefix);
-                secTokRefEl.appendChild(refEl);
-                refEl.setAttribute("URI", "#" + getOrCreateWsuId(c, keyInfoReferenceTarget, null));
-                refEl.setAttribute("ValueType", keyInfoValueTypeURI);
-                signatureElement.appendChild(keyInfoEl);
-            } else if (keyInfoKeyIdValue != null) {
-                // Create <KeyInfo><SecurityTokenReference><KeyIdentifier ValueType="ValueTypeURI">b64blah==</></></>
-                Element kidEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                                                                                  "KeyIdentifier");
-                kidEl.setPrefix(wssePrefix);
-                secTokRefEl.appendChild(kidEl);
-                kidEl.setAttribute("ValueType", keyInfoValueTypeURI);
-                kidEl.appendChild(XmlUtil.createTextNode(kidEl, keyInfoKeyIdValue));
-                signatureElement.appendChild(keyInfoEl);
-            } else {
-                throw new DecoratorException("Signing requested, but theres no sender SKI, KeyInfo Reference target, or KeyIdentifier value");
-            }
-        }
+        KeyInfoElement.addDsigKeyInfo(signatureElement,
+                       securityHeader.getNamespaceURI(),
+                       securityHeader.getPrefix(),
+                       c.getBase64EncodingTypeUri(),
+                       senderSki,
+                       keyInfoReferenceTarget,
+                       keyInfoReferenceTarget != null ? getOrCreateWsuId(c, keyInfoReferenceTarget, null) : null,
+                       keyInfoValueTypeURI,
+                       keyInfoKeyIdValue);
 
         return signatureElement;
     }
@@ -624,46 +596,6 @@ public class WssDecoratorImpl implements WssDecorator {
         return token;
     }
 
-
-    /**
-     * Appends a KeyInfo to the specified parent Element, referring to keyInfoReferenceTarget.
-     */
-    private Element addKeyInfo(Context c,
-                               Element securityHeader,
-                               Element parent,
-                               Element keyInfoReferenceTarget,
-                               String keyInfoKeyIdValue,
-                               String keyInfoValueTypeURI) throws DecoratorException
-    {
-        Element cipherData = XmlUtil.findFirstChildElementByName(parent, SoapUtil.XMLENC_NS, "CipherData");
-        final Element keyInfo;
-        if (cipherData == null)
-            keyInfo = XmlUtil.createAndAppendElementNS(parent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        else
-            keyInfo = XmlUtil.createAndInsertBeforeElementNS(cipherData, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        final String wsseNs = securityHeader.getNamespaceURI();
-        final String wsse = "wsse";
-        Element str = XmlUtil.createAndAppendElementNS(keyInfo,
-            SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-            wsseNs,
-            wsse);
-        if (keyInfoReferenceTarget != null) {
-            Element ref = XmlUtil.createAndAppendElementNS(str,
-                "Reference",
-                wsseNs,
-                wsse);
-            String uri = getOrCreateWsuId(c, keyInfoReferenceTarget, null);
-            ref.setAttribute("URI", uri);
-            ref.setAttribute("ValueType", keyInfoValueTypeURI);
-        } else if (keyInfoKeyIdValue != null) {
-            Element kid = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, wsse);
-            kid.setAttribute("ValueType", keyInfoValueTypeURI);
-            kid.appendChild(XmlUtil.createTextNode(kid, keyInfoKeyIdValue));
-        } else {
-            throw new DecoratorException("Encryption requested, but theres no KeyInfo Reference target or KeyIdentifier value");
-        }
-        return keyInfo;
-    }
 
     /**
      * Encrypts one or more document elements using a caller-supplied key (probaly from a DKT),
@@ -708,7 +640,13 @@ public class WssDecoratorImpl implements WssDecorator {
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
 
-            addKeyInfo(c, securityHeader, encryptedElement, keyInfoReferenceTarget, keyInfoKeyIdValue, keyInfoValueTypeURI);
+            KeyInfoElement.addXencKeyInfo(securityHeader,
+                       encryptedElement,
+                       keyInfoReferenceTarget,
+                       keyInfoReferenceTarget != null ? getOrCreateWsuId(c, keyInfoReferenceTarget, null) : null,
+                       keyInfoKeyIdValue,
+                       keyInfoValueTypeURI);
+
             numElementsEncrypted++;
         }
 
@@ -821,37 +759,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private void addKeyInfoToEncryptedKey(Element encryptedKey, byte[] idBytes, String valueType, Context c) {
         String wsseNs = encryptedKey.getParentNode().getNamespaceURI();
         String wssePrefix = encryptedKey.getParentNode().getPrefix();
-        addKeyInfoToElement(encryptedKey, wsseNs, wssePrefix, valueType, idBytes, c);
-
-    }
-
-    /**
-     * Add a KeyInfo that refers to a cert by its SKI to any parent element.  Caller must supply the namespaces.
-     */
-    private void addKeyInfoToElement(Element keyInfoParent, String wsseNs, String wssePrefix, String valueType, byte[] idBytes, Context c) {
-        Document soapMsg = keyInfoParent.getOwnerDocument();
-
-        Element cipherData = XmlUtil.findFirstChildElementByName(keyInfoParent, SoapUtil.XMLENC_NS, "CipherData");
-        // If there's a cipherdata, but keyinfo before it
-        final Element keyInfo;
-        if (cipherData == null)
-            keyInfo = XmlUtil.createAndAppendElementNS(keyInfoParent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        else
-            keyInfo = XmlUtil.createAndInsertBeforeElementNS(cipherData, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-            wsseNs, wssePrefix);
-        Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
-            wsseNs, wssePrefix);
-
-        keyId.setAttribute("ValueType", valueType);
-        if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
-            keyId.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
-        } else {
-            keyId.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY_2);
-        }
-
-        String recipSkiB64 = HexUtils.encodeBase64(idBytes, true);
-        keyId.appendChild(XmlUtil.createTextNode(soapMsg, recipSkiB64));
+        KeyInfoElement.addKeyInfoToElement(encryptedKey, wsseNs, wssePrefix, valueType, idBytes, c.getBase64EncodingTypeUri());
     }
 
     /**

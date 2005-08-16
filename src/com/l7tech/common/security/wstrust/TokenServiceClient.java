@@ -18,6 +18,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
+import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -605,7 +606,7 @@ public class TokenServiceClient {
             // If there's a KeyIdentifier, log whether it's talking about our key
             // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
             if (clientCertificate != null)
-                XencUtil.checkKeyInfo(encryptedKeyEl, clientCertificate);
+                KeyInfoElement.checkKeyInfo(encryptedKeyEl, clientCertificate);
             else
                 log.log(Level.FINER, "Not checking KeyIdentifier: client cert not available");
 
