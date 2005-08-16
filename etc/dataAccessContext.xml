@@ -144,6 +144,7 @@
              <idref bean="counterIDManager"/>
              <idref bean="countedHitsManager"/>
              <idref bean="communitySchemaManager"/>
+             <idref bean="clusterPropertyManager"/>
          </list>
      </property>
  </bean>
