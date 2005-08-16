@@ -846,8 +846,12 @@
                 <include name="com/l7tech/**/*.properties" if="dev.build"/>
                 <include name="com/l7tech/common/security/xml/test_*" if="dev.build"/>
                 <include name="com/l7tech/**/*.xml" if="dev.build"/>
+                <include name="com/l7tech/**/*.pfx" if="dev.build"/>
+                <include name="com/l7tech/**/*.crt" if="dev.build"/>
                 <include name="com/l7tech/**/*.xsd" if="dev.build"/>
                 <include name="com/l7tech/**/*.wsdl" if="dev.build"/>
+                <include name="**/resources/*" if="dev.build"/>
+                <include name="**/resources/**/*" if="dev.build"/>
             </fileset>
 
 
