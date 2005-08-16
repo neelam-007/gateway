@@ -47,22 +47,32 @@ public class ClusterPropertyManager extends HibernateDaoSupport {
      * @return may return null if the property is not set. will return the property value otherwise
      */
     public String getProperty(String key) throws FindException {
+        ClusterProperty prop = getRowObject(key);
+        if (prop != null) {
+            return prop.getValue();
+        }
+        return null;
+    }
+
+    private ClusterProperty getRowObject(String key) throws FindException {
         String query = "from " + TABLE_NAME + " in class " + ClusterProperty.class.getName() +
-                       " where " + TABLE_NAME + ".propkey" + " = \'" + key + "\'";
+                       " where " + TABLE_NAME + ".key" + " = \'" + key + "\'";
         List hibResults = null;
         try {
             hibResults = getSession().find(query);
         }  catch (HibernateException e) {
             String msg = "error retrieving property";
             logger.log(Level.WARNING, msg, e);
+            throw new FindException(msg, e);
         }
         if (hibResults == null || hibResults.isEmpty()) {
+            logger.finest("property " + key + " does not exist");
             return null;
         }
         switch (hibResults.size()) {
             case 1: {
                 ClusterProperty prop = (ClusterProperty)hibResults.get(0);
-                return prop.getValue();
+                return prop;
             }
             default:
                 logger.warning("this should not happen. more than one entry found" +
@@ -77,21 +87,22 @@ public class ClusterPropertyManager extends HibernateDaoSupport {
      */
     public void setProperty(String key, String value) throws SaveException, UpdateException, DeleteException {
         // try to get the prop
-        String existingVal = null;
+        ClusterProperty existingVal = null;
         try {
-            existingVal = getProperty(key);
+            existingVal = getRowObject(key);
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting existing value", e);
         }
         boolean alreadyExists = (existingVal != null);
-        ClusterProperty row = new ClusterProperty();
-        row.setKey(key);
-        row.setValue(value);
+
         if (value == null) {
             // this is meant to be a deletion
-            row.setValue(existingVal);
             try {
-                getSession().delete(row);
+                if (existingVal != null) {
+                    getSession().delete(existingVal);
+                } else {
+                    logger.info("null set on a property that already did not exist?");
+                }
             } catch (HibernateException e) {
                 String msg = "exception deleting property for key = " + key;
                 logger.log(Level.WARNING, msg, e);
@@ -99,7 +110,8 @@ public class ClusterPropertyManager extends HibernateDaoSupport {
             }
         } else if (alreadyExists) {
             try {
-                getSession().update(row);
+                existingVal.setValue(value);
+                getSession().update(existingVal);
             } catch (HibernateException e) {
                 String msg = "exception updating property for key = " + key;
                 logger.log(Level.WARNING, msg, e);
@@ -107,6 +119,9 @@ public class ClusterPropertyManager extends HibernateDaoSupport {
             }
         } else {
             try {
+                ClusterProperty row = new ClusterProperty();
+                row.setKey(key);
+                row.setValue(value);
                 getSession().save(row);
             } catch (HibernateException e) {
                 String msg = "exception saving property for key = " + key;
