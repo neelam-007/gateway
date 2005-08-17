@@ -108,10 +108,12 @@ then
     # GET A NEW KEYSTORE PASSWORD FROM CALLER
     echo "Please choose a CA keystore password"
     read -s CA_KEYSTORE_PASSWORD
-    INDEXOFAT=`expr index $CA_KEYSTORE_PASSWORD '@'`
-    if [ $INDEXOFAT -gt 0 ]; then
-      echo "ERROR: character @ not allowed in passwords - please re-run $0"
-      exit
+    if [ ${#CA_KEYSTORE_PASSWORD} -gt 0 ]; then
+        INDEXOFAT=`expr index $CA_KEYSTORE_PASSWORD '@'`
+        if [ $INDEXOFAT -gt 0 ]; then
+          echo "ERROR: character @ not allowed in passwords - please re-run $0"
+          exit
+        fi
     fi
     echo "Please repeat"
     read -s CA_KEYSTORE_PASSWORD_REPEAT
@@ -134,10 +136,12 @@ fi
 # GET A NEW SSL KEYSTORE PASSWORD FROM CALLER
 echo "Please choose an SSL keystore password"
 read -s SSL_KEYSTORE_PASSWORD
-INDEXOFAT=`expr index $SSL_KEYSTORE_PASSWORD '@'`
-if [ $INDEXOFAT -gt 0 ]; then
-  echo "ERROR: character @ not allowed in passwords - please re-run $0"
-  exit
+if [ ${#SSL_KEYSTORE_PASSWORD} -gt 0 ]; then
+    INDEXOFAT=`expr index $SSL_KEYSTORE_PASSWORD '@'`
+    if [ $INDEXOFAT -gt 0 ]; then
+      echo "ERROR: character @ not allowed in passwords - please re-run $0"
+      exit
+    fi
 fi
 echo "Please repeat"
 read -s SSL_KEYSTORE_PASSWORD_REPEAT
