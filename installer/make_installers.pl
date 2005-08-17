@@ -185,7 +185,7 @@ sub make_tar_file {
 
         # default options for both manager and bridge.
 	my $start_options=<<EOF;
-extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
+extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
 
 EOF
 	if ($file eq "Bridge") {
