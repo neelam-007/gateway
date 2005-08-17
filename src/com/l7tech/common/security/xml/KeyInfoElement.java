@@ -6,7 +6,6 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.security.token.ParsedElement;
-import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -30,6 +29,13 @@ import java.util.logging.Logger;
 public class KeyInfoElement implements ParsedElement {
     private static final Logger logger = Logger.getLogger(KeyInfoElement.class.getName());
     private Element element;
+
+    public static class KeyInfoElementException extends Exception {
+        public KeyInfoElementException() {}
+        public KeyInfoElementException(String message) { super(message); }
+        public KeyInfoElementException(String message, Throwable cause) { super(message, cause); }
+        public KeyInfoElementException(Throwable cause) { super(cause); }
+    }
 
     /**
      * Parse the specified KeyInfo element.
@@ -222,7 +228,7 @@ public class KeyInfoElement implements ParsedElement {
      * @param keyInfoReferenceTargetWsuId  if keyInfoReferenceTarget is supplied, this must be the reference target's already-set wsu:Id.
      * @param keyInfoValueTypeURI    the value type URL to use for the KeyInfo reference to keyInfoReferenceTarget.  Must not be null if keyInfoReferenceTarget != null.
      * @param keyInfoKeyIdValue  to content of a KeyInfo/SecurityTokenReference/KeyIdentifier element, or null if keyInfoReferenceTarget is provided.
-     * @throws com.l7tech.common.security.xml.decorator.DecoratorException if a KeyInfo cannot be built with the specified arguments.
+     * @throws KeyInfoElementException if a KeyInfo cannot be built with the specified arguments.
      */
     public static void addDsigKeyInfo(Element sigElement,
                                       String wsseNs,
@@ -233,7 +239,7 @@ public class KeyInfoElement implements ParsedElement {
                                       String keyInfoReferenceTargetWsuId,
                                       String keyInfoValueTypeURI,
                                       String keyInfoKeyIdValue)
-            throws DecoratorException
+            throws KeyInfoElementException
     {
         // Add the KeyInfo element.
         if (senderSki != null) {
@@ -271,7 +277,7 @@ public class KeyInfoElement implements ParsedElement {
                 kidEl.appendChild(XmlUtil.createTextNode(kidEl, keyInfoKeyIdValue));
                 sigElement.appendChild(keyInfoEl);
             } else {
-                throw new DecoratorException("Signing requested, but theres no sender SKI, KeyInfo Reference target, or KeyIdentifier value");
+                throw new KeyInfoElementException("Signing requested, but theres no sender SKI, KeyInfo Reference target, or KeyIdentifier value");
             }
         }
     }
@@ -293,7 +299,7 @@ public class KeyInfoElement implements ParsedElement {
                                          String keyInfoReferenceTargetWsuId,
                                          String keyInfoKeyIdValue,
                                          String keyInfoValueTypeURI)
-            throws DecoratorException
+            throws KeyInfoElementException
     {
         Element cipherData = XmlUtil.findFirstChildElementByName(parent, SoapUtil.XMLENC_NS, "CipherData");
         final Element keyInfo;
@@ -320,7 +326,7 @@ public class KeyInfoElement implements ParsedElement {
             kid.setAttribute("ValueType", keyInfoValueTypeURI);
             kid.appendChild(XmlUtil.createTextNode(kid, keyInfoKeyIdValue));
         } else {
-            throw new DecoratorException("Encryption requested, but theres no KeyInfo Reference target or KeyIdentifier value");
+            throw new KeyInfoElementException("Encryption requested, but theres no KeyInfo Reference target or KeyIdentifier value");
         }
         return keyInfo;
     }

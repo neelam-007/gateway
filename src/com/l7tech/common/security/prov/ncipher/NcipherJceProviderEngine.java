@@ -10,11 +10,9 @@ import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProviderEngine;
 import com.l7tech.common.security.RsaSignerEngine;
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.ncipher.provider.km.KMRSAKeyPairGenerator;
 import com.ncipher.provider.km.nCipherKM;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.Cipher;
@@ -28,7 +26,6 @@ import java.security.*;
  */
 public class NcipherJceProviderEngine implements JceProviderEngine {
     static final Provider PROVIDER = new nCipherKM();
-    public static final String REQUEST_SIG_ALG = "SHA1withRSA";
 
     public NcipherJceProviderEngine() {
         Security.insertProviderAt(bouncyCastleProvider, 0);
@@ -57,7 +54,7 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
      * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
-        return new NcipherRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
+        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, PROVIDER.getName());
     }
 
     /**
@@ -78,21 +75,7 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
      * @return
      */
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
-        X509Name subject = new X509Name("cn=" + username);
-        ASN1Set attrs = null;
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
-
-        // Generate request
-        PKCS10CertificationRequest certReq = null;
-        try {
-            certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, PROVIDER.getName());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (NoSuchProviderException e) {
-            throw new RuntimeException(e); // can't happen
-        }
-        return new BouncyCastleCertificateRequest(certReq, PROVIDER.getName());
+        return BouncyCastleCertificateRequest.makeCsr(username, keyPair, PROVIDER.getName());
     }
 
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {

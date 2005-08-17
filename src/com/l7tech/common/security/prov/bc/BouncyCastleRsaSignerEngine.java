@@ -62,6 +62,8 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
 
     private final String keyStoreType;
 
+    private final String providerName;
+
     /**
      *  Constructor for the RsaCertificateSigner object sets all fields to their most common usage using
      * the passed keystore parameters to retreive the private key,
@@ -70,13 +72,15 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
                                         String storePass,
                                         String privateKeyAlias,
                                         String privateKeyPass,
-                                        String keyStoreType ) {
+                                        String keyStoreType,
+                                        String providerName) {
         initDefaults();
         this.keyStorePath = keyStorePath;
         this.keyStoreType = keyStoreType;
         this.storePass = storePass;
         this.privateKeyAlias = privateKeyAlias;
         this.privateKeyPassString = privateKeyPass;
+        this.providerName = providerName;
         try {
             initClass();
         } catch (Exception e) {
@@ -214,7 +218,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             dn = certReqInfo.getSubject().toString();
         }
         logger.info("Signing cert for subject DN = " + dn);
-        if (pkcs10.verify() == false) {
+        if (pkcs10.verify(providerName) == false) {
             logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
@@ -227,7 +231,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
                                          caCert, caPrivateKey, CertType.CLIENT);
         }
         // Verify before returning
-        cert.verify(caCert.getPublicKey());
+        cert.verify(caCert.getPublicKey(), providerName);
         return cert;
     }
 

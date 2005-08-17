@@ -1,20 +1,20 @@
 package com.l7tech.common.security;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Abstract superclass of entities that have certs, like {@link com.l7tech.server.identity.cert.CertEntryRow}
  * and {@link TrustedCert}
  */
-public abstract class CertEntity extends NamedEntityImp {
+public abstract class X509Entity extends NamedEntityImp {
     protected transient X509Certificate cachedCert;
     protected String certBase64;
     protected String thumbprintSha1;
@@ -96,7 +96,7 @@ public abstract class CertEntity extends NamedEntityImp {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final CertEntity that = (CertEntity)o;
+        final X509Entity that = (X509Entity)o;
 
         if (certBase64 != null ? !certBase64.equals(that.certBase64) : that.certBase64 != null) return false;
 

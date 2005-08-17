@@ -9,6 +9,8 @@ import com.chrysalisits.cryptox.LunaJCEProvider;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProviderEngine;
 import com.l7tech.common.security.RsaSignerEngine;
+import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -30,7 +32,8 @@ public class LunaJceProviderEngine implements JceProviderEngine {
     }
 
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
-        throw new UnsupportedOperationException("certificate signing support currently not implemented for Luna");
+        String provName = new BouncyCastleToLunaProvider().getName(); // map BC OID alg aliases missing from Luna Provider
+        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, provName);
     }
 
     public KeyPair generateRsaKeyPair() {
@@ -48,7 +51,7 @@ public class LunaJceProviderEngine implements JceProviderEngine {
     }
 
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
-        throw new UnsupportedOperationException("certificate signing request support currently not implemented for Luna");
+        return BouncyCastleCertificateRequest.makeCsr(username, keyPair, PROVNAME);
     }
 
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {

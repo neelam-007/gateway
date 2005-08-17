@@ -1,6 +1,6 @@
 package com.l7tech.server.identity.cert;
 
-import com.l7tech.common.security.CertEntity;
+import com.l7tech.common.security.X509Entity;
 
 /**
  * Bean representation of a row in the client_cert table. This bean class is meant to be used by hibernate only.
@@ -12,7 +12,7 @@ import com.l7tech.common.security.CertEntity;
  * Date: Oct 23, 2003<br/>
  * $Id$
  */
-public class CertEntryRow extends CertEntity {
+public class CertEntryRow extends X509Entity {
     public long getProvider() {
         return provider;
     }

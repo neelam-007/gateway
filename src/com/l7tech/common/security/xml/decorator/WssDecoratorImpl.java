@@ -559,15 +559,19 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element signatureElement = (Element)securityHeader.appendChild(emptySignatureElement);
 
-        KeyInfoElement.addDsigKeyInfo(signatureElement,
-                       securityHeader.getNamespaceURI(),
-                       securityHeader.getPrefix(),
-                       c.getBase64EncodingTypeUri(),
-                       senderSki,
-                       keyInfoReferenceTarget,
-                       keyInfoReferenceTarget != null ? getOrCreateWsuId(c, keyInfoReferenceTarget, null) : null,
-                       keyInfoValueTypeURI,
-                       keyInfoKeyIdValue);
+        try {
+            KeyInfoElement.addDsigKeyInfo(signatureElement,
+                           securityHeader.getNamespaceURI(),
+                           securityHeader.getPrefix(),
+                           c.getBase64EncodingTypeUri(),
+                           senderSki,
+                           keyInfoReferenceTarget,
+                           keyInfoReferenceTarget != null ? getOrCreateWsuId(c, keyInfoReferenceTarget, null) : null,
+                           keyInfoValueTypeURI,
+                           keyInfoKeyIdValue);
+        } catch (KeyInfoElement.KeyInfoElementException e) {
+            throw new DecoratorException(e.getMessage(), e);
+        }
 
         return signatureElement;
     }
@@ -635,17 +639,26 @@ public class WssDecoratorImpl implements WssDecorator {
                 continue;
             }
 
-            Element encryptedElement = XencUtil.encryptElement(element, encKey);
+            Element encryptedElement = null;
+            try {
+                encryptedElement = XencUtil.encryptElement(element, encKey);
+            } catch (XencUtil.XencException e) {
+                throw new DecoratorException(e.getMessage(), e);
+            }
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
 
-            KeyInfoElement.addXencKeyInfo(securityHeader,
-                       encryptedElement,
-                       keyInfoReferenceTarget,
-                       keyInfoReferenceTarget != null ? getOrCreateWsuId(c, keyInfoReferenceTarget, null) : null,
-                       keyInfoKeyIdValue,
-                       keyInfoValueTypeURI);
+            try {
+                KeyInfoElement.addXencKeyInfo(securityHeader,
+                           encryptedElement,
+                           keyInfoReferenceTarget,
+                           keyInfoReferenceTarget != null ? getOrCreateWsuId(c, keyInfoReferenceTarget, null) : null,
+                           keyInfoKeyIdValue,
+                           keyInfoValueTypeURI);
+            } catch (KeyInfoElement.KeyInfoElementException e) {
+                throw new DecoratorException(e.getMessage(), e);
+            }
 
             numElementsEncrypted++;
         }
@@ -722,7 +735,12 @@ public class WssDecoratorImpl implements WssDecorator {
                 logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
             }
-            Element encryptedElement = XencUtil.encryptElement(element, encKey);
+            Element encryptedElement = null;
+            try {
+                encryptedElement = XencUtil.encryptElement(element, encKey);
+            } catch (XencUtil.XencException e) {
+                throw new DecoratorException(e.getMessage(), e);
+            }
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));

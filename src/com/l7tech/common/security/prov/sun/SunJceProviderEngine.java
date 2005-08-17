@@ -1,20 +1,19 @@
 package com.l7tech.common.security.prov.sun;
 
+import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProviderEngine;
 import com.l7tech.common.security.RsaSignerEngine;
-import com.l7tech.common.security.CertificateRequest;
-import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.sun.crypto.provider.SunJCE;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
-
-import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.ASN1Set;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -54,7 +53,7 @@ public class SunJceProviderEngine implements JceProviderEngine {
      * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
-        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType );
+        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, PROVIDER.getName() );
     }
 
     /**

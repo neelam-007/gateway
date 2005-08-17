@@ -15,7 +15,6 @@ import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -44,6 +43,13 @@ public class XencUtil {
     public static final String AES_128_CBC = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     public static final String AES_192_CBC = "http://www.w3.org/2001/04/xmlenc#aes192-cbc";
     public static final String AES_256_CBC = "http://www.w3.org/2001/04/xmlenc#aes256-cbc";
+
+    public static class XencException extends Exception {
+        public XencException() {}
+        public XencException(String message) { super(message); }
+        public XencException(String message, Throwable cause) { super(message, cause); }
+        public XencException(Throwable cause) { super(cause); }
+    }
 
     /**
      * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
@@ -99,7 +105,7 @@ public class XencUtil {
      * @return the EncryptedData element that replaces the specified element.
      */
     public static Element encryptElement(Element element, XmlEncKey encKey)
-      throws DecoratorException, GeneralSecurityException
+      throws XencException, GeneralSecurityException
     {
 
         Document soapMsg = element.getOwnerDocument();
@@ -117,7 +123,7 @@ public class XencUtil {
         try {
             encDataElement = encData.createElement(soapMsg, true);
         } catch (StructureException e) {
-            throw new DecoratorException(e);
+            throw new XencException(e);
         }
 
         // Create encryption context and encrypt the header subtree
@@ -135,11 +141,11 @@ public class XencUtil {
             ec.encrypt();
             ec.replace();
         } catch (KeyInfoResolvingException e) {
-            throw new DecoratorException(e); // can't happen
+            throw new XencException(e); // can't happen
         } catch (StructureException e) {
-            throw new DecoratorException(e); // shouldn't happen
+            throw new XencException(e); // shouldn't happen
         } catch (IOException e) {
-            throw new DecoratorException(e); // shouldn't happen
+            throw new XencException(e); // shouldn't happen
         }
 
         Element encryptedData = ec.getEncryptedTypeAsElement();

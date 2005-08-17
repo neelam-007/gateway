@@ -359,7 +359,7 @@
       ** This target is invoked by other targets such as deploy and dist.
       -->
     <target name="package"
-            depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api"/>
+            depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce"/>
 
 
     <target name="package.gateway">
@@ -487,9 +487,11 @@
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/tarari/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/luna/**/*"/>
                 <!-- goes in lib/ext -->
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
                 <exclude name="com/l7tech/common/security/CertEntity**"/>
+                <exclude name="com/l7tech/common/security/X509Entity**"/>
 
                 <!-- Tarari drivers not available in standalone Agent -->
                 <exclude name="com/l7tech/common/xml/tarari/TarariUtil.class"/>
@@ -533,7 +535,6 @@
                 <include name="com/l7tech/common/xml/tarari/util/*.class" />
                 <exclude name="com/l7tech/common/security/wstrust/**/*" />
                 <include name="com/l7tech/common/security/TrustedCert*.class"/>
-                <include name="com/l7tech/common/security/CertEntity*.class"/>
                 <exclude name="com/l7tech/common/security/AesKey.class"/>
                 <exclude name="com/l7tech/common/security/Cert*.class"/>
                 <exclude name="com/l7tech/common/security/Jce*.class"/>
@@ -594,6 +595,14 @@
             <arg line="-N"/>
         </exec>
         <!-- invoke the dssm webstart target (conditional) -->
+    </target>
+
+    <target name="package.bcluna-jce">
+        <jar jarfile="${build.dir}/bcluna-jce.jar" manifest="${src.root}/etc/bcluna-jce.mf">
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/common/security/prov/luna/BouncyCastleToLunaProvider.class"/>
+            </fileset>
+        </jar>
     </target>
 
     <target name="package.api" unless="ssg.only">
