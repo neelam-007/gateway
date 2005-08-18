@@ -9,12 +9,19 @@
 
 
 <beans>
-    <!-- Hibernate Properties location -->
- <bean id="hibernateProperties" class="com.l7tech.spring.factory.config.PropertiesFactoryBean">
+    <!--
+    Hibernate Properties location
+
+    Note that serverConfig has to initialize first, since it will set the configDirectory
+    system property.
+    -->
+ <bean id="hibernateProperties"
+       class="com.l7tech.spring.factory.config.PropertiesFactoryBean"
+       depends-on="serverConfig">
      <property name="locations">
          <list>
              <value>classpath:hibernate.properties</value>
-             <value>file:///ssg/etc/conf/hibernate.properties</value>
+             <value>file:${com.l7tech.server.configDirectory}${file.separator}hibernate.properties</value>
          </list>
      </property>
  </bean>

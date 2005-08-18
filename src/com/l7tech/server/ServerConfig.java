@@ -6,6 +6,9 @@
 
 package com.l7tech.server;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ApplicationObjectSupport;
+
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.*;
@@ -13,9 +16,6 @@ import java.net.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
@@ -62,6 +62,7 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
+    private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
     private static final String SUFFIX_DESC = ".description";
     private static final String SUFFIX_DEFAULT = ".default";
 
@@ -72,10 +73,12 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     public String getProperty(String propName) {
         String sysPropProp = propName + SUFFIX_SYSPROP;
+        String setSysPropProp = propName + SUFFIX_SETSYSPROP;
         String jndiProp = propName + SUFFIX_JNDI;
         String dfltProp = propName + SUFFIX_DEFAULT;
 
         String systemValue = getPropertyValue(sysPropProp);
+        String setSystemValue = getPropertyValue(setSysPropProp);
         String jndiValue = getPropertyValue(jndiProp);
         String defaultValue = getPropertyValue(dfltProp);
 
@@ -103,6 +106,10 @@ public class ServerConfig extends ApplicationObjectSupport {
             value = defaultValue;
         }
 
+        if (value != null && "true".equalsIgnoreCase(setSystemValue)) {
+            System.setProperty(systemValue, value);
+        }
+
         return value;
     }
 
@@ -120,7 +127,7 @@ public class ServerConfig extends ApplicationObjectSupport {
                     if (pos2 >= 0) {
                         // there's a reference
                         String prop2 = val.substring(pos + 2, pos2);
-                        String ref = getPropertyValue(prop2);
+                        String ref = getProperty(prop2);
                         if (ref == null) {
                             val2.append("${");
                             val2.append(prop2);
