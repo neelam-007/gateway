@@ -11,6 +11,7 @@ import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.server.ServerConfig;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +32,8 @@ public class UptimeMonitor {
         "/usr/bin/uptime",
         "/bin/uptime",
         "c:/cygwin/bin/uptime",
-        "c:/opt/cygwin/bin/uptime"
+        "c:/opt/cygwin/bin/uptime",
+        ServerConfig.getInstance().getProperty("ssgHome") + File.separator + "bin" + File.separator + "uptime"
     };
     private static String foundUptime = null;
 
@@ -105,8 +107,6 @@ public class UptimeMonitor {
     /**
      * Check if uptime metrics are available on this system.  If not, any call to getLastUptime()
      * will throw FileNotFoundException.
-     *
-     * @return
      */
     public static boolean isUptimeMetricsAvailable() {
         return getInstance().thread != null;
