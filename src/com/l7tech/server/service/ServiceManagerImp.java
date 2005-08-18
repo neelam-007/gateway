@@ -338,7 +338,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     serviceCache.cache(service);
                 }
                 TarariLoader.compile();
-                TarariLoader.updateSchemasToCard(applicationContext);
+                try {
+                    TarariLoader.updateSchemasToCard(applicationContext);
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, "error uploading schemas to tarari card", e);
+                }
             }
             // make sure the integrity check is running
             logger.info("initiate service cache version check process");
