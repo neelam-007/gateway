@@ -109,6 +109,16 @@ public class CertUtils {
         "Encipher Only",
         "Decipher Only",
     };
+
+    public static String getThumbprintSHA1(X509Certificate cert) throws CertificateEncodingException 
+    {
+        try {
+            return getCertificateFingerprint(cert, ALG_SHA1, FINGERPRINT_BASE64);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Misconfigured VM: SHA-1 not available: " + e.getMessage(), e); // can't happen
+        }
+    }
+
     public static final class KeyUsage {
         public static final int digitalSignature = 0;
         public static final int nonRepudiation = 1;

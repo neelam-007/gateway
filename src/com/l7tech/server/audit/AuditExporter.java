@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.sql.*;
 import java.util.regex.Pattern;
@@ -288,7 +289,7 @@ public class AuditExporter extends HibernateDaoSupport {
 
             Element signature = DsigUtil.createEnvelopedSignature(auditMetadata,
                                                          signingCert,
-                                                         signingKey);
+                                                         signingKey, false);
             auditMetadata.appendChild(signature);
 
             zipOut.putNextEntry(new ZipEntry("sig.xml"));
@@ -303,6 +304,8 @@ public class AuditExporter extends HibernateDaoSupport {
         } catch (SignatureStructureException e) {
             throw new CausedSignatureException(e);
         } catch (XSignatureException e) {
+            throw new CausedSignatureException(e);
+        } catch (CertificateEncodingException e) {
             throw new CausedSignatureException(e);
         } finally {
             if (zipOut != null) zipOut.close();

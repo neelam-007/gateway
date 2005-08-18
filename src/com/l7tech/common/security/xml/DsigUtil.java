@@ -7,6 +7,8 @@
 package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.*;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -18,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -36,15 +39,19 @@ public class DsigUtil {
      * @param elementToSign         the element to sign
      * @param senderSigningCert     certificate to sign it with.  will be included inline in keyinfo
      * @param senderSigningKey      private key to sign it with.
+     * @param useKeyInfoTumbprint   if true, KeyInfo will use SecurityTokenReference/KeyId with cert thumbprint.
+     *                              if false, KeyInfo will use X509Data containing a b64 copy of the entire cert.
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
      * @throws SignatureException   if there is a problem creating the signature
      * @throws SignatureStructureException if there is a problem creating the signature
      * @throws XSignatureException  if there is a problem creating the signature
+     * @throws CertificateEncodingException if senderSigningCert is no good
      */
     public static Element createEnvelopedSignature(Element elementToSign,
-                                               X509Certificate senderSigningCert,
-                                               PrivateKey senderSigningKey)
-            throws SignatureException, SignatureStructureException, XSignatureException
+                                                   X509Certificate senderSigningCert,
+                                                   PrivateKey senderSigningKey,
+                                                   boolean useKeyInfoTumbprint)
+            throws SignatureException, SignatureStructureException, XSignatureException, CertificateEncodingException
     {
         String signaturemethod = null;
         if (senderSigningKey instanceof RSAPrivateKey)
@@ -61,14 +68,20 @@ public class DsigUtil {
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementToSign.getOwnerDocument(),
                                                            XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
+        template.setIndentation(false);
         template.setPrefix("ds");
 
         // Add enveloped signature of entire document
         final Element root = elementToSign;
-        String rootId = root.getAttribute("Id");
+        String idAttr = "Id";
+        if ("Assertion".equals(root.getLocalName()) &&
+                root.getNamespaceURI() != null &&
+                root.getNamespaceURI().indexOf("urn:oasis:names:tc:SAML") == 0)
+            idAttr = "AssertionID";
+        String rootId = root.getAttribute(idAttr);
         if (rootId == null || rootId.length() < 1) {
             rootId = "root";
-            root.setAttribute("Id", rootId);
+            root.setAttribute(idAttr, rootId);
         }
         Reference rootRef = template.createReference("#" + rootId);
         rootRef.addTransform(Transform.ENVELOPED);
@@ -79,18 +92,31 @@ public class DsigUtil {
         Element sigElement = template.getSignatureElement();
 
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
+
         KeyInfo keyInfo = new KeyInfo();
-        keyInfo.setKeyValue(senderSigningCert.getPublicKey());
-        KeyInfo.X509Data x5data = new KeyInfo.X509Data();
-        x5data.setCertificate(senderSigningCert);
-        x5data.setParameters(senderSigningCert, true, true, true);
-        keyInfo.setX509Data(new KeyInfo.X509Data[] { x5data });
+        if (useKeyInfoTumbprint) {
+            final Document factory = elementToSign.getOwnerDocument();
+            final String wsseNs = SoapUtil.SECURITY_NAMESPACE;
+            Element str = factory.createElementNS(wsseNs, "wsse:SecurityTokenReference");
+            str.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsse", wsseNs);
+            Element keyId = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, "wsse");
+            keyId.setAttribute("ValueType", SoapUtil.VALUETYPE_X509_THUMB_SHA1);
+            XmlUtil.setTextContent(keyId, CertUtils.getThumbprintSHA1(senderSigningCert));
+            keyInfo.setUnknownChildren(new Element[] { str });
+        } else {
+            //keyInfo.setKeyValue(senderSigningCert.getPublicKey());
+            KeyInfo.X509Data x5data = new KeyInfo.X509Data();
+            x5data.setCertificate(senderSigningCert);
+            x5data.setParameters(senderSigningCert, false, false, false);
+            keyInfo.setX509Data(new KeyInfo.X509Data[] { x5data });
+        }
         keyInfo.insertTo(sigElement);
 
         SignatureContext sigContext = new SignatureContext();
+        final String finalRootId = rootId;
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document document, String s) {
-                return s.equals("root") ? root : null;
+                return s.equals(finalRootId) ? root : null;
             }
         });
         sigContext.setEntityResolver(new EntityResolver() {

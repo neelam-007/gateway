@@ -7,18 +7,18 @@ package com.l7tech.server;
 
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
-import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.service.ServiceManager;
 
+import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Iterator;
-import java.io.IOException;
+import java.util.Set;
 
 /**
  * TestMessageProcessor that allows access to the <code>PolicyEnforcementContext</code>
@@ -43,7 +43,7 @@ public class TestMessageProcessor extends MessageProcessor {
      */
     public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext)
       throws IllegalArgumentException {
-        super(sm, wssd, pkey, cert, auditContext);
+        super(sm, wssd, pkey, cert, auditContext, null);
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)

@@ -263,9 +263,10 @@ public class WssRoundTripTest extends TestCase {
 
         ProcessorResult r = trogdor.undecorateMessage(new Message(incomingMessage),
                                                       td.senderCert,
-                                                                   td.recipientCert,
-                                                                   td.recipientKey,
-                                                                   makeSecurityContextFinder(td.secureConversationKey));
+                                                      td.recipientCert,
+                                                      td.recipientKey,
+                                                      makeSecurityContextFinder(td.secureConversationKey),
+                                                      null);
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingMessage));
 

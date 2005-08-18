@@ -256,7 +256,7 @@ public class WssInteropTestMessage extends TestCase {
         // TODO lookup in a registry?
         // TODO lookup in a registry?
         // TODO lookup in a registry?
-        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null);
+        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, null);
 
         log.info("The following elements had at least all their content encrypted:");
         EncryptedElement[] enc = wssResults.getElementsThatWereEncrypted();
@@ -436,11 +436,6 @@ public class WssInteropTestMessage extends TestCase {
         return id;
     }
 
-
-    public void testUnhexdump() throws Exception {
-        byte[] got = HexUtils.unHexDump("07a4ac1febc9c5369c7f46605d6f20deafaed1e5");
-        log.info("Unhexed: " + got.length + " bytes");
-    }
 
     public static final String LOCUTUS_CERT = "-----BEGIN CERTIFICATE-----\n" +
             "MIICHDCCAYWgAwIBAgIIdE4leiyWLRgwDQYJKoZIhvcNAQEFBQAwIjEgMB4GA1UE\n" +

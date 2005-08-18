@@ -16,7 +16,6 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.XencUtil;
@@ -497,8 +496,6 @@ public class TokenServiceClient {
                 return new SamlAssertion(samlTokenEl);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException(e);
-            } catch (SamlException e) {
-                throw new InvalidDocumentFormatException(e);
             }
         }
 
@@ -531,6 +528,7 @@ public class TokenServiceClient {
             result = wssProcessor.undecorateMessage(new Message(response),
                                                     null, clientCertificate,
                                                     clientPrivateKey,
+                                                    null,
                                                     null);
         } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);

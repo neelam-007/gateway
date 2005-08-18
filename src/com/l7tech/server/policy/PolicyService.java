@@ -4,6 +4,7 @@ import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.xml.ThumbprintResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -98,7 +99,13 @@ public class PolicyService extends ApplicationObjectSupport {
         ServiceInfo getPolicy(String serviceId);
     }
 
-    public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, FilterManager filterManager, AuditContext auditContext) {
+    public PolicyService(PrivateKey privateServerKey, 
+                         X509Certificate serverCert, 
+                         ServerPolicyFactory policyFactory, 
+                         FilterManager filterManager, 
+                         AuditContext auditContext,
+                         ThumbprintResolver thumbprintResolver)
+    {
         // populate all possible credentials sources
         allCredentialAssertions = new ArrayList();
         for (int i = 0; i < ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
@@ -141,6 +148,7 @@ public class PolicyService extends ApplicationObjectSupport {
             throw new IllegalArgumentException("Audit Context is required");
         }
         this.auditContext = auditContext;
+        this.thumbprintResolver = thumbprintResolver;
     }
 
 
@@ -204,7 +212,8 @@ public class PolicyService extends ApplicationObjectSupport {
             wssOutput = trogdor.undecorateMessage(context.getRequest(),
                                                   null, serverCert,
                                                   privateServerKey,
-                                                  SecureConversationContextManager.getInstance());
+                                                  SecureConversationContextManager.getInstance(),
+                                                  thumbprintResolver);
             reqXml.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));
@@ -496,5 +505,6 @@ public class PolicyService extends ApplicationObjectSupport {
     private final ServerPolicyFactory policyFactory;
     private final AuditContext auditContext;
     private final FilterManager filterManager;
+    private final ThumbprintResolver thumbprintResolver;
     private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }

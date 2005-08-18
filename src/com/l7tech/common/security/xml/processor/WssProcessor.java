@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.message.Message;
+import com.l7tech.common.security.xml.ThumbprintResolver;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.xml.sax.SAXException;
 
@@ -47,6 +48,7 @@ public interface WssProcessor {
                                       X509Certificate senderCertificate,
                                       X509Certificate recipientCertificate,
                                       PrivateKey recipientPrivateKey,
-                                      SecurityContextFinder securityContextFinder)
+                                      SecurityContextFinder securityContextFinder,
+                                      ThumbprintResolver thumbprintResolver)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException;
 }

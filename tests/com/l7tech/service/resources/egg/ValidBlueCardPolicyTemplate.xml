@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<exp:Export Version="3.0" xmlns:exp="http://www.layer7tech.com/ws/policy/export">
+    <exp:References/>
+    <wsp:Policy xmlns="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+        <All>
+            <All>
+                <SslAssertion>
+                    <RequireClientAuthentication booleanValue="true"/>
+                </SslAssertion>
+                <RequestWssSaml>
+                    <AudienceRestriction stringValue=""/>
+                    <SubjectConfirmations stringArrayValue="included">
+                        <item stringValue="urn:oasis:names:tc:SAML:1.0:cm:sender-vouches"/>
+                    </SubjectConfirmations>
+                    <RequireSenderVouchesWithMessageSignature booleanValue="true"/>
+                    <NameFormats stringArrayValue="included">
+                        <item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"/>
+                    </NameFormats>
+                    <AuthenticationStatement samlAuthenticationInfo="included">
+                        <AuthenticationMethods stringArrayValue="included">
+                            <item stringValue="urn:oasis:names:tc:SAML:1.0:am:password"/>
+                        </AuthenticationMethods>
+                    </AuthenticationStatement>
+                    <NameQualifier stringValue="http://www.egg.com"/>
+                </RequestWssSaml>
+                <RequestWssSaml>
+                    <AudienceRestriction stringValue=""/>
+                    <SubjectConfirmations stringArrayValue="included">
+                        <item stringValue="urn:oasis:names:tc:SAML:1.0:cm:sender-vouches"/>
+                    </SubjectConfirmations>
+                    <RequireSenderVouchesWithMessageSignature booleanValue="true"/>
+                    <NameFormats stringArrayValue="included">
+                        <item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"/>
+                    </NameFormats>
+                    <AttributeStatement samlAttributeInfo="included">
+                        <Attributes samlAttributeElementInfoArray="included">
+                            <item samlAttributeElementInfo="included">
+                                <Value stringValue="low"/>
+                                <Namespace stringValue="http://www.egg.com/ns/attributes"/>
+                                <Name stringValue="CustomerRiskCategory"/>
+                            </item>
+                        </Attributes>
+                    </AttributeStatement>
+                    <NameQualifier stringValue="http://www.egg.com"/>
+                </RequestWssSaml>
+                <RequestXpathAssertion>
+                    <XpathExpression xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Header/wsse:Security/saml:Assertion[@Issuer='http://www.egg.com']"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="saml"/>
+                                <value stringValue="urn:oasis:names:tc:SAML:1.0:assertion"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="SOAP-ENC"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/encoding/"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="wsse"/>
+                                <value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="ns1"/>
+                                <value stringValue="http://axis.apache.org"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </XpathExpression>
+                </RequestXpathAssertion>
+                <RequestXpathAssertion>
+                    <XpathExpression xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Header/wsse:Security/saml:Assertion/saml:AttributeStatement/saml:Attribute[@AttributeName='ProductPortfolio']/saml:AttributeValue/xyz:ProductPortfolio/xyz:Product[xyz:Type='CreditCard' and xyz:Activated='true' ][xyz:Name='Blue']"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="saml"/>
+                                <value stringValue="urn:oasis:names:tc:SAML:1.0:assertion"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="SOAP-ENC"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/encoding/"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="wsse"/>
+                                <value stringValue="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="ns1"/>
+                                <value stringValue="http://axis.apache.org"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xyz"/>
+                                <value stringValue="http://www.egg.com/ns/products"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </XpathExpression>
+                </RequestXpathAssertion>
+                <HttpRoutingAssertion>
+                    <ProtectedServiceUrl stringValue="http://192.168.1.101:8081/axis/services/Version"/>
+                </HttpRoutingAssertion>
+            </All>
+        </All>
+    </wsp:Policy>
+</exp:Export>

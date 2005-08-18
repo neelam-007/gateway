@@ -3,17 +3,22 @@ package com.l7tech.server.saml;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.Keys;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.ThumbprintResolver;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -30,17 +35,29 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.xmlbeans.XmlID;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlOptions;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import x0Assertion.oasisNamesTcSAML1.*;
 
 import javax.xml.soap.SOAPMessage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.net.InetAddress;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Class SamlProcessingTest.
@@ -48,6 +65,7 @@ import java.util.Arrays;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SamlProcessingTest extends TestCase {
+    private static final Logger logger = Logger.getLogger(SamlProcessingTest.class.getName());
     private static MockServletApi servletApi;
     private static ServiceDescriptor[] serviceDescriptors;
     private SoapMessageProcessingServlet messageProcessingServlet;
@@ -93,9 +111,9 @@ public class SamlProcessingTest extends TestCase {
     }
 
     public void setUp() throws Exception {
-        servletApi.reset();
-        messageProcessingServlet = new SoapMessageProcessingServlet();
-        messageProcessingServlet.init(servletApi.getServletConfig());
+        //servletApi.reset();
+        //messageProcessingServlet = new SoapMessageProcessingServlet();
+        //messageProcessingServlet.init(servletApi.getServletConfig());
 
     }
 
@@ -131,7 +149,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -176,7 +194,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -221,7 +239,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -265,7 +283,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 SecurityToken[] tokens = result.getSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -364,6 +382,163 @@ public class SamlProcessingTest extends TestCase {
             this.policyXml = policyXml;
             this.wsdlXml = wsdlXml;
         }
+    }
+
+    public static void testSenderVouchesWithThumbprint() throws Exception {
+        AssertionType at = AssertionType.Factory.newInstance();
+        XmlID aid = XmlID.Factory.newInstance();
+        aid.setStringValue("EggSvTest-1");
+        at.xsetAssertionID(aid);
+
+        Calendar now = Calendar.getInstance();
+        at.setIssueInstant(now);
+        at.setIssuer("data.l7tech.com");
+        at.setMajorVersion(BigInteger.ONE);
+        at.setMinorVersion(BigInteger.ZERO);
+
+        ConditionsType cond = at.addNewConditions();
+        cond.setNotBefore(now);
+        Calendar then = Calendar.getInstance();
+        then.add(Calendar.YEAR, 25);
+        cond.setNotOnOrAfter(then);
+
+        AuthenticationStatementType ast = at.addNewAuthenticationStatement();
+        ast.setAuthenticationInstant(now);
+        ast.setAuthenticationMethod(SamlConstants.UNSPECIFIED_AUTHENTICATION);
+
+        SubjectType subj = ast.addNewSubject();
+        NameIdentifierType namei = subj.addNewNameIdentifier();
+        namei.setFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
+        namei.setStringValue("CN=mike");
+
+        SubjectConfirmationType subjconf = subj.addNewSubjectConfirmation();
+        subjconf.addConfirmationMethod("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
+
+        assertTrue(subjconf.validate());
+        assertTrue(namei.validate());
+        assertTrue(subj.validate());
+
+        assertTrue(ast.validate());
+
+        XmlOptions xo = new XmlOptions();
+        Map namespaces = new HashMap();
+        namespaces.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
+        xo.setSaveSuggestedPrefixes(namespaces);
+        AssertionDocument ad = AssertionDocument.Factory.newInstance(xo);
+        ad.setAssertion(at);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ad.save(bos, xo);
+
+        Document assDoc = XmlUtil.stringToDocument(bos.toString());
+
+        final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
+        PrivateKey singingKey = TestDocuments.getDotNetServerPrivateKey();
+        final Element assEl = assDoc.getDocumentElement();
+        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true);
+        assEl.appendChild(sig);
+
+
+        logger.info("Assertion:\n" + XmlUtil.nodeToString(assDoc));
+
+        //XmlUtil.nodeToOutputStream(assDoc, new FileOutputStream("c:/newsamltest.xml"));
+
+        final String assString = XmlUtil.nodeToFormattedString(assDoc);
+        logger.info("\n\nAssertion (Pretty-printed): " + assString);
+
+        // See if it validates
+        AssertionDocument got = AssertionDocument.Factory.parse(assString);
+        assertTrue(got.validate());
+
+        // See if our code can deal with it
+        final String signingCertThumbprint = CertUtils.getThumbprintSHA1(signingCert);
+        ThumbprintResolver thumbResolver = new ThumbprintResolver() {
+            public X509Certificate lookup(String thumbprint) {
+                if (signingCertThumbprint.equals(thumbprint))
+                    return signingCert;
+                return null;
+            }
+        };
+        SamlAssertion sa = new SamlAssertion(assDoc.getDocumentElement(), thumbResolver);
+        assertTrue(sa.isSenderVouches());
+        assertNotNull(sa.getIssuerCertificate());
+        sa.verifyEmbeddedIssuerSignature();
+
+
+    }
+
+    public static void DISABLED_testAttributeStatementWithThumbprint() throws Exception {
+        AssertionType at = AssertionType.Factory.newInstance();
+        XmlID aid = XmlID.Factory.newInstance();
+        aid.setStringValue("EggSvTest-1");
+        at.xsetAssertionID(aid);
+
+        Calendar now = Calendar.getInstance();
+        at.setIssueInstant(now);
+        at.setIssuer("data.l7tech.com");
+        at.setMajorVersion(BigInteger.ONE);
+        at.setMinorVersion(BigInteger.ZERO);
+
+        ConditionsType cond = at.addNewConditions();
+        cond.setNotBefore(now);
+        Calendar then = Calendar.getInstance();
+        then.add(Calendar.DATE, 1);
+        cond.setNotOnOrAfter(then);
+
+        AttributeStatementType ast = at.addNewAttributeStatement();
+        //ast.setAuthenticationInstant(now);
+        //ast.setAuthenticationMethod(SamlConstants.UNSPECIFIED_AUTHENTICATION);
+
+        SubjectType subj = ast.addNewSubject();
+        NameIdentifierType namei = subj.addNewNameIdentifier();
+        namei.setFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
+        namei.setStringValue("CN=mike");
+
+        //SubjectConfirmationType subjconf = subj.addNewSubjectConfirmation();
+        //subjconf.addConfirmationMethod("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
+
+        //assertTrue(subjconf.validate());
+        assertTrue(namei.validate());
+        assertTrue(subj.validate());
+
+        AttributeType a1 = ast.addNewAttribute();
+        a1.setAttributeName("FooAttr");
+        XmlObject v1 = a1.addNewAttributeValue();
+        v1.set(XmlObject.Factory.parse("<xml-fragment><u:Complex xmlns:u=\"http://example.com/blahschema.xsd\" uattr1=\"blee\" uattr2=\"blah\">subtext<u:Subelement1/>moresubtext<u:Subelement2 seattr1=\"blahblah\" seattr2=\"foof\">bletch</u:Subelement2>lastbit of subtext</u:Complex></xml-fragment>"));
+
+        AttributeType a2 = ast.addNewAttribute();
+        a2.setAttributeName("BarAttr");
+        XmlObject v2 = a2.addNewAttributeValue();
+        v2.set(XmlObject.Factory.parse("<xml-fragment>this is stuff</xml-fragment>"));
+
+        assertTrue(ast.validate());
+
+        XmlOptions xo = new XmlOptions();
+        Map namespaces = new HashMap();
+        namespaces.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
+        xo.setSaveSuggestedPrefixes(namespaces);
+        AssertionDocument ad = AssertionDocument.Factory.newInstance(xo);
+        ad.setAssertion(at);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ad.save(bos, xo);
+
+        Document assDoc = XmlUtil.stringToDocument(bos.toString());
+
+        X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
+        PrivateKey singingKey = TestDocuments.getDotNetServerPrivateKey();
+        final Element assEl = assDoc.getDocumentElement();
+        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true);
+        assEl.appendChild(sig);
+
+
+        final String assString = XmlUtil.nodeToFormattedString(assDoc);
+        logger.info("Made new assertion: " + assString);
+
+        // See if it validates
+        AssertionDocument got = AssertionDocument.Factory.parse(assString);
+        assertTrue(got.validate());
+
     }
 
     /**

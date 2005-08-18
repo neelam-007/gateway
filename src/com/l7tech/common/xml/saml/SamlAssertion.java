@@ -9,12 +9,12 @@ package com.l7tech.common.xml.saml;
 import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.Validity;
-import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.KeyInfoElement;
+import com.l7tech.common.security.xml.ThumbprintResolver;
 import com.l7tech.common.security.xml.processor.MutableX509SigningSecurityToken;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TooManyChildElementsException;
@@ -84,9 +84,26 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
      * The resulting object could be either sender-vouches or holder-of-key depending on the
      * SubjectConfirmation/ConfirmationMethod found in the XML; separate subclasses are no longer used.
      *
-     * @param ass xmlassertion the xml element containing the assertion
+     * @param ass xmlassertion the xml element containing the assertion.  Must be saml:Assertion.
+     * @throws SAXException    if the format of this assertion is invalid or not supported
      */
-    public SamlAssertion(Element ass) throws SAXException, SamlException {
+    public SamlAssertion(Element ass) throws SAXException {
+        this(ass, null);
+    }
+
+    /**
+     * Construct a new SamlAssertion from an XML element, using the specified thumbprint resolver to locate
+     * certificates by thumbprint reference (as opposed to inline keyinfo).
+     *
+     * @param ass the XML element containing the assertion.  Must be a saml:Assertion element.
+     * @param thumbprintResolver  the resolver for thumbprint KeyInfos, or null for no thumbprint support.
+     * @throws SAXException    if the format of this assertion is invalid or not supported
+     * @throws SAXException    if the KeyInfo used a thumbprint, but no thumbprint resolver was supplied.
+     */
+    public SamlAssertion(Element ass,
+                         ThumbprintResolver thumbprintResolver)
+            throws SAXException
+    {
         super(ass);
         assertionElement = ass;
         assertionId = assertionElement.getAttribute("AssertionID");
@@ -127,7 +144,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
             if (subject == null) {
                 String msg = "Could not find the subject in the assertion :\n" + XmlUtil.nodeToFormattedString(ass);
                 logger.warning(msg);
-                throw new SamlException(msg);
+                throw new SAXException(msg);
             }
             ConditionsType conditions = assertion.getConditions();
             if (conditions != null) {
@@ -168,14 +185,8 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
                 // Extract the issuer certificate
                 Element keyinfo = XmlUtil.findOnlyOneChildElementByName(signature, SoapUtil.DIGSIG_URI, "KeyInfo");
                 if (keyinfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
-                Element x509Data = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.DIGSIG_URI, "X509Data");
-                if (x509Data == null) throw new SAXException("SAML issuer signature has no KeyInfo/X509Data");
-                Element x509CertEl = XmlUtil.findOnlyOneChildElementByName(x509Data, SoapUtil.DIGSIG_URI, "X509Certificate");
-                if (x509CertEl == null) throw new SAXException("SAML issuer signature has no KeyInfo/X509Data/X509Certificate");
-                String certBase64 = XmlUtil.getTextValue(x509CertEl);
-                byte[] certBytes = HexUtils.decodeBase64(certBase64, true);
-                issuerCertificate = CertUtils.decodeCert(certBytes);
-                if (issuerCertificate == null) throw new SAXException("SAML assertion is signed but unable to recover issuer certificate"); // can't happen
+                KeyInfoElement keyInfo = KeyInfoElement.parse(keyinfo, thumbprintResolver);
+                issuerCertificate = keyInfo.getCertificate();
             }
 
         } catch (XmlException e) {
@@ -188,6 +199,8 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
             throw new SAXException(e);
         } catch (IOException e) {
             throw new SAXException("Invalid Base64 in SAML token issuer certificate", e);
+        } catch (KeyInfoElement.KeyInfoElementException e) {
+            throw new SAXException(e);
         }
     }
 

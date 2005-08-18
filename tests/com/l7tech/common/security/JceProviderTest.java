@@ -179,6 +179,7 @@ public class JceProviderTest {
             ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(new Message(td.c.message),
                                                                                        null, TestDocuments.getDotNetServerCertificate(),
                     TestDocuments.getDotNetServerPrivateKey(),
+                    null,
                     null);
             log.info("signature verified on " + processorResult.getElementsThatWereSigned().length + " elements");
         }
@@ -243,6 +244,7 @@ public class JceProviderTest {
                 new WssProcessorImpl().undecorateMessage(new Message(blah),
                                                          null, TestDocuments.getDotNetServerCertificate(),
                         TestDocuments.getDotNetServerPrivateKey(),
+                        null,
                         null);
             }
         });

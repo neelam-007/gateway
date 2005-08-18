@@ -13,6 +13,8 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SignedSamlTest;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
@@ -50,6 +52,7 @@ public class WssProcessorTest extends TestCase {
         Document request = testDocument.document;
         X509Certificate recipientCertificate = testDocument.recipientCertificate;
         PrivateKey recipientPrivateKey = testDocument.recipientPrivateKey;
+        ThumbprintResolver thumbprintResolver = testDocument.thumbprintResolver;
 
 
         log.info("Testing document: " + testDocument.name);
@@ -58,7 +61,8 @@ public class WssProcessorTest extends TestCase {
                                                                 testDocument.senderCeritifcate,
                                                                 recipientCertificate,
                                                                 recipientPrivateKey,
-                                                                testDocument.securityContextFinder);
+                                                                testDocument.securityContextFinder,
+                                                                thumbprintResolver);
         assertTrue(result != null);
 
         ParsedElement[] encrypted = result.getElementsThatWereEncrypted();
@@ -122,8 +126,11 @@ public class WssProcessorTest extends TestCase {
         PrivateKey recipientPrivateKey;
         X509Certificate recipientCertificate;
         SecurityContextFinder securityContextFinder = null;
+        ThumbprintResolver thumbprintResolver;
+
         TestDocument(String n, Document d, PrivateKey rpk, X509Certificate rc,
-                     SecurityContextFinder securityContextFinder, X509Certificate senderCert)
+                     SecurityContextFinder securityContextFinder, X509Certificate senderCert,
+                     ThumbprintResolver thumbprintResolver)
         {
             this.name = n;
             this.document = d;
@@ -131,6 +138,7 @@ public class WssProcessorTest extends TestCase {
             this.recipientCertificate = rc;
             this.securityContextFinder = securityContextFinder;
             this.senderCeritifcate = senderCert;
+            this.thumbprintResolver = thumbprintResolver;
         }
     }
 
@@ -219,42 +227,47 @@ public class WssProcessorTest extends TestCase {
                                                 TestDocuments.getWssInteropBobKey(),
                                                 TestDocuments.getWssInteropBobCert(),
                                                 null,
-                                                TestDocuments.getWssInteropAliceCert());
+                                                TestDocuments.getWssInteropAliceCert(), null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         doTest(result);
     }
 
-    public void D_testWssInterop2005MsRequest() throws Exception {
-        TestDocument result;
-        try {
-            Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "wssInterop/msRequest.xml");
-
-            result = new TestDocument("WssInterop2005MsRequest", d,
-                                                TestDocuments.getWssInteropBobKey(),
-                                                TestDocuments.getWssInteropBobCert(),
-                                                null,
-                                                null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        doTest(result);
+    public void testSignedSvAssertionWithThumbprintSha1() throws Exception {
+        TestDocument r;
+        Document ass = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/generatedSvThumbAssertion.xml");
+        Document d = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        Element security = SoapUtil.getOrMakeSecurityElement(d);
+        security.appendChild(d.importNode(ass.getDocumentElement(), true));
+        final X509Certificate expectedIssuerCert = TestDocuments.getDotNetServerCertificate();
+        final String expectedThumb = CertUtils.getThumbprintSHA1(expectedIssuerCert);
+        ThumbprintResolver thumbprintResolver = new ThumbprintResolver() {
+            public X509Certificate lookup(String thumbprint) {
+                if (expectedThumb.equals(thumbprint))
+                    return expectedIssuerCert;
+                return null;
+            }
+        };
+        r = new TestDocument("SignedSvAssertionWithThumbprintSha1",
+                             d,
+                             null,
+                             null,
+                             null,
+                             null,
+                             thumbprintResolver);
+        doTest(r);
     }
 
     public void testWssInterop2005JulyResponse() throws Exception {
         TestDocument result;
-        try {
-            Document d = TestDocuments.getTestDocument(TestDocuments.WSS2005JUL_RESPONSE);
+        Document d = TestDocuments.getTestDocument(TestDocuments.WSS2005JUL_RESPONSE);
 
-            result = new TestDocument("WssInterop2005JulyResponse", d,
-                                                TestDocuments.getWssInteropAliceKey(),
-                                                TestDocuments.getWssInteropAliceCert(),
-                                                null,
-                                                TestDocuments.getWssInteropBobCert());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        result = new TestDocument("WssInterop2005JulyResponse", d,
+                                  TestDocuments.getWssInteropAliceKey(),
+                                  TestDocuments.getWssInteropAliceCert(),
+                                  null,
+                                  TestDocuments.getWssInteropBobCert(), null);
         doTest(result);
     }
 
@@ -265,7 +278,7 @@ public class WssProcessorTest extends TestCase {
                                     TestDocuments.getEttkServerPrivateKey(),
                                     TestDocuments.getEttkServerCertificate(),
                                     null,
-                                    null);
+                                    null, null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -277,7 +290,7 @@ public class WssProcessorTest extends TestCase {
                                     TestDocuments.getEttkServerPrivateKey(),
                                     TestDocuments.getEttkServerCertificate(),
                                     null,
-                                    null);
+                                    null, null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -300,7 +313,7 @@ public class WssProcessorTest extends TestCase {
                                     TestDocuments.getDotNetServerPrivateKey(),
                                     TestDocuments.getDotNetServerCertificate(),
                                     dotNetSecurityContextFinder,
-                                    null);
+                                    null, null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

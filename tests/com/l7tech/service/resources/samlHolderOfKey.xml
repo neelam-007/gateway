@@ -1,0 +1,44 @@
+<saml:Assertion
+                AssertionID="SamlAssertion-2414d0358170b20c36ebe5a3328602f0"
+                IssueInstant="2005-08-17T23:56:20.609Z"
+                Issuer="data.l7tech.com" MajorVersion="1"
+                MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+                <saml:Conditions NotBefore="2005-08-17T23:56:00.000Z" NotOnOrAfter="2005-08-18T00:01:00.000Z"/>
+                <saml:AuthenticationStatement AuthenticationMethod="urn:ietf:rfc:3075">
+                    <saml:Subject>
+                        <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">CN=mike</saml:NameIdentifier>
+                        <saml:SubjectConfirmation>
+                            <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</saml:ConfirmationMethod>
+                            <xd:KeyInfo xmlns:xd="http://www.w3.org/2000/09/xmldsig#">
+                                <xd:X509Data>
+                                    <xd:X509Certificate>MIICCzCCAXSgAwIBAgIIefR3c891EW4wDQYJKoZIhvcNAQEFBQAwHzEdMBsGA1UEAxMUcm9vdC5kYXRhLmw3dGVjaC5jb20wHhcNMDUwODE3MjI1ODA3WhcNMDcwODE3MjMwODA3WjAPMQ0wCwYDVQQDEwRtaWtlMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCxjNUjnTWkGFOaMakIqKhIifuNY0ppRdzkTffG1+RbyB4yQeiKJoxq9Vmk0I6zYUwoalfPtTO5jsE9VyGRc9XrQDWTeRswblnH7Q9WV4XN9ruEGjz8G1+dIjo9NfXt1HOVMbb9ObqA9AipzK3TZro8xfg9aLFSYsufNZc5Cb1ttQIDAQABo2AwXjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIF4DAdBgNVHQ4EFgQUW3G9ZQ3vIQiyHCJQKMP6cOif9J8wHwYDVR0jBBgwFoAUlxZqkLNSlOI5QYWZqMzwY88j+HkwDQYJKoZIhvcNAQEFBQADgYEABcB/qsLiRnfnp+RcrJzVcNEEFGjCF3fB5GqHdgMJbQ+7UQbJP0p1OiaXFjYOVORtbfI3LmRyRXTDtLu5oQhTfqmCK2Y/MtFep17i0PphQ7QMsw/3ZTisBlCSJXCQxE8m67UyX62XL5Us5AV4TZB61fSgXZfUoq5AgwzM3jPanI8=</xd:X509Certificate>
+                                </xd:X509Data>
+                            </xd:KeyInfo>
+                        </saml:SubjectConfirmation>
+                    </saml:Subject>
+                    <saml:SubjectLocality DNSAddress="Data.l7tech.com" IPAddress="192.168.1.154"/>
+                </saml:AuthenticationStatement>
+                <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                    <ds:SignedInfo>
+                        <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                        <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                        <ds:Reference URI="#SamlAssertion-2414d0358170b20c36ebe5a3328602f0">
+                            <ds:Transforms>
+                                <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                                <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                            </ds:Transforms>
+                            <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                            <ds:DigestValue>XjplqQzwGGGrQg2zuFwWUnEP498=</ds:DigestValue>
+                        </ds:Reference>
+                    </ds:SignedInfo>
+                    <ds:SignatureValue>
+                        dmhkaiqtlLOYkFHw1jL81otN9m8S+zS78pmmi+nm/0vgbkMzxEdP88rrWRr+Jplb8QTmndgf
+                        B455Zow/SamR5BUND1MINTZEkhEFrE0U8W7kC+LZbmOx0LxHFdiw0lonUGTmAOCQlwsdTkiE
+                        qULxx2CL0FNRP64bNrx7FzovdWI=   </ds:SignatureValue>
+                    <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+                        <SecurityTokenReference>
+                            <KeyIdentifier/>
+                        </SecurityTokenReference>
+                    </KeyInfo>
+                </ds:Signature>
+            </saml:Assertion>

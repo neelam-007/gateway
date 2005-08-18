@@ -71,6 +71,7 @@
     <!-- server side client cert manager -->
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerStub">
     </bean>
+
     <!-- stub audit record manager -->
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerStub">
     </bean>
@@ -141,6 +142,15 @@
         </property>
     </bean>
 
+    <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject">
+            <ref local='keystore'/>
+        </property>
+        <property name="targetMethod">
+            <value>getRootCert</value>
+        </property>
+    </bean>
+
     <!-- server Wss Decorator -->
     <bean id="wssDecorator" class="com.l7tech.common.security.xml.decorator.WssDecoratorImpl">
     </bean>
@@ -193,4 +203,8 @@
             <value>auditContextTarget</value>
         </property>
     </bean>
+
+    <bean id="thumbprintResolver" class="com.l7tech.server.TestThumbprintResolver">
+    </bean>
+
 </beans>

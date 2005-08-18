@@ -9,7 +9,6 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
@@ -54,7 +53,8 @@ public class WssProcessorImpl implements WssProcessor {
                                              X509Certificate senderCertificate,
                                              X509Certificate recipientCert,
                                              PrivateKey recipientKey,
-                                             SecurityContextFinder securityContextFinder)
+                                             SecurityContextFinder securityContextFinder,
+                                             ThumbprintResolver thumbprintResolver)
       throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
     {
         // Reset all potential outputs
@@ -67,6 +67,7 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.releventSecurityHeader = null;
         cntx.elementsByWsuId = SoapUtil.getElementByWsuIdMap(soapMsg);
         cntx.senderCertificate = senderCertificate;
+        cntx.thumbprintResolver = thumbprintResolver;
 
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
@@ -783,7 +784,7 @@ public class WssProcessorImpl implements WssProcessor {
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
-            final SamlAssertion samlToken = new SamlAssertion(securityTokenElement);
+            final SamlAssertion samlToken = new SamlAssertion(securityTokenElement, context.thumbprintResolver);
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
 
@@ -851,8 +852,6 @@ public class WssProcessorImpl implements WssProcessor {
             context.securityTokens.add(samlToken);
             context.x509TokensById.put(samlToken.getElementId(), samlToken);
         } catch (SAXException e) {
-            throw new InvalidDocumentFormatException(e);
-        } catch (SamlException e) {
             throw new InvalidDocumentFormatException(e);
         } catch (SignatureException e) {
             throw new InvalidDocumentFormatException(e);
@@ -1321,6 +1320,7 @@ public class WssProcessorImpl implements WssProcessor {
         String lastSignatureValue = null;
         String lastSignatureConfirmation = null;
         boolean isWsse11Seen = false;
+        ThumbprintResolver thumbprintResolver = null;
 
         public ProcessingStatusHolder(Message message, Document processedDocument) {
             this.message = message;

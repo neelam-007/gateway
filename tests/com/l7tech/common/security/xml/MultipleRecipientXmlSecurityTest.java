@@ -290,6 +290,7 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         return processor.undecorateMessage(new Message(doc),
                                            null, TestDocuments.getDotNetServerCertificate(),
                                           TestDocuments.getDotNetServerPrivateKey(),
+                                          null,
                                           null);
     }
 }
