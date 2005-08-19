@@ -467,7 +467,7 @@ public class SamlProcessingTest extends TestCase {
 
     }
 
-    public static void DISABLED_testAttributeStatementWithThumbprint() throws Exception {
+    public static void testAttributeStatementWithThumbprint() throws Exception {
         AssertionType at = AssertionType.Factory.newInstance();
         XmlID aid = XmlID.Factory.newInstance();
         aid.setStringValue("EggSvTest-1");
@@ -486,30 +486,41 @@ public class SamlProcessingTest extends TestCase {
         cond.setNotOnOrAfter(then);
 
         AttributeStatementType ast = at.addNewAttributeStatement();
-        //ast.setAuthenticationInstant(now);
-        //ast.setAuthenticationMethod(SamlConstants.UNSPECIFIED_AUTHENTICATION);
 
         SubjectType subj = ast.addNewSubject();
         NameIdentifierType namei = subj.addNewNameIdentifier();
-        namei.setFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
-        namei.setStringValue("CN=mike");
+        namei.setFormat(SamlConstants.NAMEIDENTIFIER_EMAIL);
+        namei.setStringValue("mike@l7tech.com");
 
-        //SubjectConfirmationType subjconf = subj.addNewSubjectConfirmation();
-        //subjconf.addConfirmationMethod("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
+        SubjectConfirmationType subjconf = subj.addNewSubjectConfirmation();
+        subjconf.addConfirmationMethod("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
 
-        //assertTrue(subjconf.validate());
+        assertTrue(subjconf.validate());
         assertTrue(namei.validate());
         assertTrue(subj.validate());
 
         AttributeType a1 = ast.addNewAttribute();
-        a1.setAttributeName("FooAttr");
+        a1.setAttributeName("ProductPortfolio");
+        a1.setAttributeNamespace("http://www.egg.com/ns/attributes");
         XmlObject v1 = a1.addNewAttributeValue();
-        v1.set(XmlObject.Factory.parse("<xml-fragment><u:Complex xmlns:u=\"http://example.com/blahschema.xsd\" uattr1=\"blee\" uattr2=\"blah\">subtext<u:Subelement1/>moresubtext<u:Subelement2 seattr1=\"blahblah\" seattr2=\"foof\">bletch</u:Subelement2>lastbit of subtext</u:Complex></xml-fragment>"));
+        v1.set(XmlObject.Factory.parse("<xml-fragment><xyz:ProductPortfolio xmlns:xyz=\"http://www.egg.com/ns/products\">\n" +
+                                       "                                <xyz:Product>\n" +
+                                       "                                    <xyz:Name>Red</xyz:Name>\n" +
+                                       "                                    <xyz:Type>CreditCard</xyz:Type>\n" +
+                                       "                                    <xyz:Activated>true</xyz:Activated>\n" +
+                                       "                                </xyz:Product>\n" +
+                                       "                                <xyz:Product>\n" +
+                                       "                                    <xyz:Name>Blue</xyz:Name>\n" +
+                                       "                                    <xyz:Type>CreditCard</xyz:Type>\n" +
+                                       "                                    <xyz:Activated>true</xyz:Activated>\n" +
+                                       "                                </xyz:Product>\n" +
+                                       "                            </xyz:ProductPortfolio></xml-fragment>"));
 
         AttributeType a2 = ast.addNewAttribute();
-        a2.setAttributeName("BarAttr");
+        a2.setAttributeName("CustomerRiskCategory");
+        a2.setAttributeNamespace("http://www.egg.com/ns/attributes");
         XmlObject v2 = a2.addNewAttributeValue();
-        v2.set(XmlObject.Factory.parse("<xml-fragment>this is stuff</xml-fragment>"));
+        v2.set(XmlObject.Factory.parse("<xml-fragment>low</xml-fragment>"));
 
         assertTrue(ast.validate());
 
@@ -532,8 +543,12 @@ public class SamlProcessingTest extends TestCase {
         assEl.appendChild(sig);
 
 
+        logger.info("Assertion:\n" + XmlUtil.nodeToString(assDoc));
+
+        //XmlUtil.nodeToOutputStream(assDoc, new FileOutputStream("c:/newsamlattr.xml"));
+
         final String assString = XmlUtil.nodeToFormattedString(assDoc);
-        logger.info("Made new assertion: " + assString);
+        logger.info("\n\nAssertion (Pretty-printed): " + assString);
 
         // See if it validates
         AssertionDocument got = AssertionDocument.Factory.parse(assString);

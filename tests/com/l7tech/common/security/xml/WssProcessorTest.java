@@ -10,10 +10,10 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.message.Message;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SignedSamlTest;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -240,15 +240,7 @@ public class WssProcessorTest extends TestCase {
         Document d = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element security = SoapUtil.getOrMakeSecurityElement(d);
         security.appendChild(d.importNode(ass.getDocumentElement(), true));
-        final X509Certificate expectedIssuerCert = TestDocuments.getDotNetServerCertificate();
-        final String expectedThumb = CertUtils.getThumbprintSHA1(expectedIssuerCert);
-        ThumbprintResolver thumbprintResolver = new ThumbprintResolver() {
-            public X509Certificate lookup(String thumbprint) {
-                if (expectedThumb.equals(thumbprint))
-                    return expectedIssuerCert;
-                return null;
-            }
-        };
+        ThumbprintResolver thumbprintResolver = new SimpleThumbprintResolver(TestDocuments.getDotNetServerCertificate());
         r = new TestDocument("SignedSvAssertionWithThumbprintSha1",
                              d,
                              null,
@@ -257,6 +249,28 @@ public class WssProcessorTest extends TestCase {
                              null,
                              thumbprintResolver);
         doTest(r);
+    }
+
+    public void testCompleteEggRequest() throws Exception {
+        Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/ValidBlueCardRequest.xml");
+
+        Element sec = SoapUtil.getSecurityElement(d);
+        Element ass = XmlUtil.findFirstChildElementByName(sec, SamlConstants.NS_SAML, "Assertion");
+
+        Document assDoc = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/generatedAttrThumbAssertion.xml");
+        sec.replaceChild(d.importNode(assDoc.getDocumentElement(), true), ass);
+
+        //XmlUtil.nodeToOutputStream(d, new FileOutputStream("c:/eggerequest.xml"));
+
+        ThumbprintResolver thumbprintResolver = new SimpleThumbprintResolver(TestDocuments.getDotNetServerCertificate());
+        TestDocument td = new TestDocument("CompleteEggRequest",
+                                           d,
+                                           null,
+                                           null,
+                                           null,
+                                           null,
+                                           thumbprintResolver);
+        doTest(td);
     }
 
     public void testWssInterop2005JulyResponse() throws Exception {
