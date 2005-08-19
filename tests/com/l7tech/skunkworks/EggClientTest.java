@@ -5,32 +5,23 @@
 
 package com.l7tech.skunkworks;
 
-import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.security.JceProvider;
-import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
-import com.l7tech.proxy.ssl.SslPeer;
-import com.l7tech.proxy.ssl.CurrentSslPeer;
-import com.l7tech.proxy.ssl.SslPeerHttpClient;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.ssl.SslPeer;
 import org.w3c.dom.Document;
 
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.SSLContext;
 import java.net.URL;
-import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
+import java.util.logging.Logger;
 
 /**
  * @author mike
