@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class BootProcess extends ApplicationObjectSupport
   implements ServerComponentLifecycle, DisposableBean, InitializingBean {
-    public static final String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getProperty("ssgHome") + File.separator + "ssglog.properties";
+    public static final String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getProperty("configDirectory") + File.separator + "ssglog.properties";
 
     static {
         JdkLoggerConfigurator.configure("com.l7tech.logging",
