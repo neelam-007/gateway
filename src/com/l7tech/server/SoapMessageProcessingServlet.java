@@ -53,6 +53,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
+    private ServerConfig serverConfig;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -62,6 +63,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
         messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
         auditContext = (AuditContext)applicationContext.getBean("auditContext");
+        serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
     }
 
     public void doGet(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
@@ -134,7 +136,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
                 logger.info("Policy returned error and stealth mode is set. " +
-                            "instructing valve to drop connection completly");
+                            "Instructing valve to drop connection completly.");
+                hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
+                                      ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                return;
+            } else if (status == AssertionStatus.SERVICE_NOT_FOUND && isGlobalSettingStealthPolicyNotFound()) {
+                logger.info("No policy found and global setting is to go stealth in this case. " +
+                            "Instructing valve to drop connection completly.");
                 hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
                                       ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                 return;
@@ -193,7 +201,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // if the policy throws AND the stealth flag is set, drop connection
             if (context.isStealthResponseMode()) {
                 logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
-                                       "instructing valve to drop connection completly",
+                                       "Instructing valve to drop connection completly.",
                                        e);
                 hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
                                       ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
@@ -333,6 +341,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             if (sos != null) sos.close();
         }
+    }
+
+    private boolean isGlobalSettingStealthPolicyNotFound() {
+        // todo, use cluster property instead in 3.4
+        // serverConfig properties are already cached so no need to cache here
+        String property = serverConfig.getProperty("noServiceResolvedStealthResponse");
+        logger.finest("noServiceResolvedStealthResponse has value " + property);
+        if (property != null && Boolean.parseBoolean(property)) {
+            return true;
+        }
+        return false;
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
