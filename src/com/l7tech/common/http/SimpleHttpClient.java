@@ -156,6 +156,8 @@ public class SimpleHttpClient implements GenericHttpClient {
         if (params == null || doc == null) throw new NullPointerException();
         GenericHttpRequest request = null;
         GenericHttpResponse response = null;
+        if (params.getContentType() == null)
+            params.setContentType(ContentTypeHeader.XML_DEFAULT);
         try {
             byte[] requestBody = XmlUtil.nodeToString(doc).getBytes(params.getContentType().getEncoding());
             request = client.createRequest(GenericHttpClient.POST, params);
