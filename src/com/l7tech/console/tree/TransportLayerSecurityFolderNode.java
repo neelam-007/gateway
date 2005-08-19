@@ -42,7 +42,7 @@ public class TransportLayerSecurityFolderNode extends AbstractTreeNode {
     protected void loadChildren() {
         children = null;
         insert(new SslTransportNode(false), 0);
-        insert(new DropConnectionNode(), 1);
+        insert(new StealthFaultNode(), 1);
     }
 
     /**

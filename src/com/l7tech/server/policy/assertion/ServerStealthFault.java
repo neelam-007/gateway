@@ -8,26 +8,27 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.DropConnection;
+import com.l7tech.policy.assertion.StealthFault;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.PolicyInterruptedException;
 
 import java.io.IOException;
 
 import org.springframework.context.ApplicationContext;
 
 /**
- * This assertion interrupts the policy execution and instruct the http transport
- * sub-system to drop the connection with the requestor.
+ * This assertion flags the policy context so that if the policy results in an error (policy is not succesfull) then
+ * the transport does not return an error but drops the client connection instead.
  *
  * @author flascelles@layer7-tech.com
  */
-public class ServerDropConnection implements ServerAssertion {
+public class ServerStealthFault implements ServerAssertion {
 
-    public ServerDropConnection(DropConnection assertion, ApplicationContext context) {}
+    public ServerStealthFault(StealthFault assertion, ApplicationContext context) {}
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        // todo, log this
         context.setStealthResponseMode(true);
-        throw new PolicyInterruptedException("Interrupting policy execution.");
+        //throw new PolicyInterruptedException("Interrupting policy execution.");
+        return AssertionStatus.NONE;
     }
 }

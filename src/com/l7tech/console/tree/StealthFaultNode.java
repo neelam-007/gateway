@@ -7,24 +7,24 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.DropConnection;
+import com.l7tech.policy.assertion.StealthFault;
 
 import javax.swing.*;
 
 /**
- * Palette node for the DropConnection assertion.
+ * Palette node for the StealthFault assertion.
  *
  * @author flascelles@layer7-tech.com
  */
-public class DropConnectionNode extends AbstractTreeNode {
+public class StealthFaultNode extends AbstractTreeNode {
 
-    public DropConnectionNode() {
+    public StealthFaultNode() {
         super(null);
     }
     protected void loadChildren() {}
 
     public String getName() {
-        return "Drop Connection";
+        return "Stealth Fault";
     }
 
     protected String iconResource(boolean open) {
@@ -36,7 +36,7 @@ public class DropConnectionNode extends AbstractTreeNode {
     }
 
     public Assertion asAssertion() {
-        return new DropConnection();
+        return new StealthFault();
 
     }
 

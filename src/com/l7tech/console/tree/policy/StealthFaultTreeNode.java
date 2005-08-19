@@ -6,22 +6,22 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.DropConnection;
+import com.l7tech.policy.assertion.StealthFault;
 
 import javax.swing.*;
 
 /**
- * Policy node for the DropConnection assertion.
+ * Policy node for the StealthFault assertion.
  *
  * @author flascelles@layer7-tech.com
  */
-public class DropConnectionTreeNode extends LeafAssertionTreeNode {
-    public DropConnectionTreeNode(DropConnection assertion) {
+public class StealthFaultTreeNode extends LeafAssertionTreeNode {
+    public StealthFaultTreeNode(StealthFault assertion) {
         super(assertion);
     }
 
     public String getName() {
-        return "Drop Connection";
+        return "Stealth Fault";
     }
 
     protected String iconResource(boolean open) {

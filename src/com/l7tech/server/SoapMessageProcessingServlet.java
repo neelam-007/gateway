@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.policy.PolicyInterruptedException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
@@ -128,99 +127,106 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         try {
             // Process message
-            try {
-                request.initialize(stashManager, ctype, hrequest.getInputStream());
-                AssertionStatus status = AssertionStatus.UNDEFINED;
-                try {
-                    status = messageProcessor.processMessage(context);
-                } catch (PolicyInterruptedException e) {
-                    logger.log(Level.INFO, "Policy interrupted", e);
-                }
+            request.initialize(stashManager, ctype, hrequest.getInputStream());
+            AssertionStatus status = AssertionStatus.UNDEFINED;
+            status = messageProcessor.processMessage(context);
 
-                if (context.isStealthResponseMode()) {
-                    logger.info("Stealth mode set for response, instructing valve to drop connection completly");
-                    hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
-                                          ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
-                    return;
-                }
+            // if the policy is not successful AND the stealth flag is on, drop connection
+            if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
+                logger.info("Policy returned error and stealth mode is set. " +
+                            "instructing valve to drop connection completly");
+                hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
+                                      ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                return;
+            }
 
-                // Send response headers
-                respKnob.beginResponse();
+            // Send response headers
+            respKnob.beginResponse();
 
-                int routeStat = respKnob.getStatus();
-                if (routeStat < 1) {
-                    if (status == AssertionStatus.NONE) {
-                        routeStat = HttpServletResponse.SC_OK;
-                    } else {
-                        // Request wasn't routed
-                        routeStat = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-                    }
-                }
-
+            int routeStat = respKnob.getStatus();
+            if (routeStat < 1) {
                 if (status == AssertionStatus.NONE) {
-                    if (response.getKnob(MimeKnob.class) == null) {
-                        // Routing successful, but no actual response received, probably due to a one-way JMS send.
-                        hresponse.setStatus(200);
-                        hresponse.setContentType(null);
-                        hresponse.setContentLength(0);
-                        hresponse.getOutputStream().close();
-                        logger.fine("servlet transport returning a placeholder empty response to a successful one-way message");
-                        return;
-                    }
-
-                    // Transmit the response and return
-                    hresponse.setStatus(routeStat);
-                    hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
-                    OutputStream responseos = hresponse.getOutputStream();
-                    HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
-                    responseos.close();
-                    logger.fine("servlet transport returned status " + routeStat +
-                                ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
-
-                    return;
-                } else if (context.getFaultDetail() != null) {
-                    logger.fine("returning special soap fault");
-                    sendFault(context, context.getFaultDetail(), hrequest, hresponse);
-                    return;
-                } else if (respKnob.hasChallenge()) {
-                    logger.fine("servlet transport returning challenge");
-                    respKnob.beginChallenge();
-                    sendChallenge(context, hrequest, hresponse);
-                    return;
+                    routeStat = HttpServletResponse.SC_OK;
                 } else {
-                    logger.fine("servlet transport returning 500");
-                    sendFault(context, hrequest, hresponse,
-                      status.getSoapFaultCode(), status.getMessage());
+                    // Request wasn't routed
+                    routeStat = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+                }
+            }
+
+            if (status == AssertionStatus.NONE) {
+                if (response.getKnob(MimeKnob.class) == null) {
+                    // Routing successful, but no actual response received, probably due to a one-way JMS send.
+                    hresponse.setStatus(200);
+                    hresponse.setContentType(null);
+                    hresponse.setContentLength(0);
+                    hresponse.getOutputStream().close();
+                    logger.fine("servlet transport returning a placeholder empty response to a successful one-way message");
                     return;
                 }
-            } catch (PolicyAssertionException pae) {
-                logger.log(Level.SEVERE, pae.getMessage(), pae);
-                sendFault(context, hrequest, hresponse,
-                  SoapFaultUtils.FC_SERVER, pae.toString());
+
+                // Transmit the response and return
+                hresponse.setStatus(routeStat);
+                hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
+                OutputStream responseos = hresponse.getOutputStream();
+                HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
+                responseos.close();
+                logger.fine("servlet transport returned status " + routeStat +
+                            ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
+
                 return;
-            } catch (PolicyVersionException pve) {
-                String msg = "Request referred to an outdated version of policy";
-                logger.log(Level.INFO, msg);
-                sendFault(context, hrequest, hresponse,
-                  SoapFaultUtils.FC_CLIENT, msg);
+            } else if (context.getFaultDetail() != null) {
+                logger.fine("returning special soap fault");
+                sendFault(context, context.getFaultDetail(), hrequest, hresponse);
                 return;
-            } catch (NoSuchPartException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+            } else if (respKnob.hasChallenge()) {
+                logger.fine("servlet transport returning challenge");
+                respKnob.beginChallenge();
+                sendChallenge(context, hrequest, hresponse);
+                return;
+            } else {
+                logger.fine("servlet transport returning 500");
                 sendFault(context, hrequest, hresponse,
-                  SoapFaultUtils.FC_CLIENT, e.toString());
+                  status.getSoapFaultCode(), status.getMessage());
                 return;
             }
         } catch (Throwable e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            if (e instanceof Error) throw (Error)e;
+            // if the policy throws AND the stealth flag is set, drop connection
+            if (context.isStealthResponseMode()) {
+                logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
+                                       "instructing valve to drop connection completly",
+                                       e);
+                hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
+                                      ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                return;
+            }
             try {
-                sendFault(context,
-                  hrequest,
-                  hresponse,
-                  SoapFaultUtils.FC_SERVER,
-                  e.getMessage());
+                if (e instanceof PolicyAssertionException) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    sendFault(context, hrequest, hresponse,
+                              SoapFaultUtils.FC_SERVER, e.toString());
+                    return;
+                } else if (e instanceof PolicyVersionException) {
+                    String msg = "Request referred to an outdated version of policy";
+                    logger.log(Level.INFO, msg);
+                    sendFault(context, hrequest, hresponse,
+                              SoapFaultUtils.FC_CLIENT, msg);
+                    return;
+                } else if (e instanceof NoSuchPartException) {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    sendFault(context, hrequest, hresponse,
+                              SoapFaultUtils.FC_CLIENT, e.toString());
+                    return;
+                } else {
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    //? if (e instanceof Error) throw (Error)e;
+                    sendFault(context,
+                              hrequest,
+                              hresponse,
+                              SoapFaultUtils.FC_SERVER,
+                              e.getMessage());
+                }
             } catch (SAXException e1) {
-                throw new ServletException(e);
+                throw new ServletException(e1);
             }
         } finally {
             try {
