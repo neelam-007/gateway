@@ -71,7 +71,10 @@ if [ `grep ^gateway: /etc/passwd` ]; then
 else
   adduser gateway
 fi
-if [ `grep ^s0:2345:respawn:/sbin/agetty /etc/inittab` ]; then
+
+gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
+
+if [ "$gettys" ]; then
 	echo -n ""
 	# serial line agetty exists
 else
@@ -79,16 +82,21 @@ else
 	echo 	'ttyS0' >> /etc/securetty
 fi
 
+connt=`grep "options ip_conntrack" /etc/modprobe.conf`
+
+if [ "$connt" ]; then
+	echo -n "" 
+	# connection tracking already set
+else
+	echo "options ip_conntrack hashsize=32768" >> /etc/modprobe.conf
+	# add in larger hash size. final conntrack size will be 8* hashsize
+	# any way to set the multiplier>?	
+fi	
+
 
 %post
 # Check for existence of install crumbs left by install.pl
 if [ -e "/etc/SSG_INSTALL" ]; then 
-	version=`grep V3.2 /etc/SSG_INSTALL`
-	if [ -z "$version" ]; then
-		echo "** Upgraded to 3.2 **"
-	else 
-		echo -n ""
-	fi
 else 
 	echo "** New system: Run interactive /ssg/bin/install.pl to configure this system **"
 fi
@@ -110,7 +118,9 @@ if [ "$1" = "0" ] ; then
         else
             echo -n ""
         fi
-	if [ `grep ^s0:2345:respawn:/sbin/agetty /etc/inittab` ]; then
+	gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
+
+	if [ "$gettys" ]; then
 		perl -pi.bak -e 's/^s0.*agetty.*//' /etc/inittab
 		perl -pi.bak -e 's/ttyS0//' /etc/securetty
 	fi
