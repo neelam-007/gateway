@@ -1346,7 +1346,7 @@
         <copy todir="${install.src.sql}">
             <fileset dir="${src.root}/etc/db/${database.type}">
                 <include name="ssg.sql"/>
-                <include name="upgrade_*.sql"/>
+                <include name="upgrade*.sql"/>
             </fileset>
         </copy>
         <copy todir="${install.src.bin}">
