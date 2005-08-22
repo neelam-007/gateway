@@ -1320,12 +1320,6 @@
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
-        <!--
-        bugzilla #1940
-        clara, those jars need to be dropping in tomcat here
-        however, i'm not sure if the jars exists yet (it depends the order in which the targets
-        are invoked
-
         <copy todir="${install.src.base}/common/classpath">
             <fileset dir="${build.dir}">
                 <include name="rmiannotation.jar"/>
@@ -1337,7 +1331,7 @@
                 <include name="l7valve.jar"/>
             </fileset>
         </copy>
-        -->
+
         <!-- Copy WAR file into position -->
         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
 
