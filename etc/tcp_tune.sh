@@ -56,8 +56,6 @@ start() {
 	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
 	echo "Disable responding to ping broadcasts"
 	echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
-        echo "Set connection tracking limit very high to prevent self DOS"
-        echo "2200000" > /proc/sys/net/ipv4/ip_conntrack_max
         echo "Done"
         return 0
 }
