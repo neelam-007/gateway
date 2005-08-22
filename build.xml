@@ -1348,6 +1348,7 @@
                 <include name="ssg.sql"/>
                 <include name="upgrade_3.0-3.1.sql"/>
 		<include name="upgrade_3.1-3.2.sql"/>
+	        <include name="upgrade_3.2-3.3.sql"/>
             </fileset>
         </copy>
         <copy todir="${install.src.bin}">
