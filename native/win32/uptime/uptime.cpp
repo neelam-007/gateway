@@ -253,7 +253,7 @@ cleanup:
 static void printUsage()
 {
     printf(
-		"Copyright (C) 2005 Layer 7 Technologies Inc.\n"
+        "Copyright (C) 2005 Layer 7 Technologies Inc.\n"
         "Purpose: Prints how long the system has been running.\n"
         "Usage  : uptime [options]\n"
         "Options: --cygwin    Prints in Cygwin-like format (default).\n"
@@ -261,13 +261,13 @@ static void printUsage()
         "                           \" 11:22:20 up 28 days, 18:57\"\n"
         "         --seconds   Prints number of seconds.\n"
         "                     e.g., \"79296\"\n"
-		"         --hostname=RemoteHostname\n"
-		"                     Query remote machine instead of local machine\n"
-		"         --quiet     Don't print error message if failure.\n"
-		"Exit   : 0 if success\n"
-		"         1 if error with command line option\n"
-		"         2 if error with command line argument\n"
-		"         3 if fail to query for system up time\n"
+        "         --hostname=RemoteHostname\n"
+        "                     Query remote machine instead of local machine\n"
+        "         --quiet     Don't print error message if failure.\n"
+        "Exit   : 0 if success\n"
+        "         1 if error with command line option\n"
+        "         2 if error with command line argument\n"
+        "         3 if fail to query for system up time\n"
     );
 } // printUsage
 
@@ -293,8 +293,8 @@ int main( int argc, char * argv[] )
     // Sets default hostname to NULL for local machine.
     const char * hostname = NULL;
 
-	// Sets default quiet mode.
-	bool quiet = false;
+    // Sets default quiet mode.
+    bool quiet = false;
 
     // Parses command line options.
     int iArg = 1;
@@ -346,16 +346,16 @@ int main( int argc, char * argv[] )
                                                    & errorMessage );
     if ( pdhStatus != ERROR_SUCCESS )
     {
-		if ( ! quiet )
-		{
-			const char * const name        = getPdhErrorCodeName( pdhStatus );
-			const char * const description = getPdhErrorCodeDescription( pdhStatus );
-			printf( "!!%s (PDH error code = %s [0x%08X]: %s)\n",
-					errorMessage,
-					name == NULL ? "" : name,
-					pdhStatus,
-					description == NULL ? "" : description );
-		}
+        if ( ! quiet )
+        {
+            const char * const name        = getPdhErrorCodeName( pdhStatus );
+            const char * const description = getPdhErrorCodeDescription( pdhStatus );
+            printf( "!!%s (PDH error code = %s [0x%08X]: %s)\n",
+                    errorMessage,
+                    name == NULL ? "" : name,
+                    pdhStatus,
+                    description == NULL ? "" : description );
+        }
         return 3;
     }
 
