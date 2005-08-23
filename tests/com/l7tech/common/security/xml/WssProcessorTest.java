@@ -234,6 +234,25 @@ public class WssProcessorTest extends TestCase {
         doTest(result);
     }
 
+    public void testKeyInfoThumbprintRequest() throws Exception {
+        TestDocument result;
+        try {
+            Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "/keyinfothumbreq.xml");
+
+            ThumbprintResolver thumbprintResolver = new SimpleThumbprintResolver(TestDocuments.getWssInteropAliceCert());
+            result = new TestDocument("KeyInfoThumbprintRequest",
+                                      d,
+                                      null,
+                                      null,
+                                      null,
+                                      null,
+                                      thumbprintResolver);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        doTest(result);
+    }
+
     public void testSignedSvAssertionWithThumbprintSha1() throws Exception {
         TestDocument r;
         Document ass = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/generatedSvThumbAssertion.xml");
@@ -281,7 +300,8 @@ public class WssProcessorTest extends TestCase {
                                   TestDocuments.getWssInteropAliceKey(),
                                   TestDocuments.getWssInteropAliceCert(),
                                   null,
-                                  TestDocuments.getWssInteropBobCert(), null);
+                                  TestDocuments.getWssInteropBobCert(),
+                                  null);
         doTest(result);
     }
 

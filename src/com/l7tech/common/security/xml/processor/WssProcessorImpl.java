@@ -262,7 +262,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     /**
-     * Process the SecurityTokeReference. different mechanisms for referencing security tokens using the
+     * Process a free-floating SecurityTokeReference. different mechanisms for referencing security tokens using the
      * <wsse:SecurityTokenReference> exist, and currently the supported are:
      * <ul>
      * <li> Key Identifier <wsse:KeyIdentifier>
@@ -275,6 +275,7 @@ public class WssProcessorImpl implements WssProcessor {
      * <li> Key Name <ds:KeyName>
      * </ul>
      * This is as per <i>Web Services Security: SOAP Message Security 1.0 (WS-Security 2004) OASIS standard</i>
+     * TODO this should be merged into KeyInfoElement
      *
      * @param str  the SecurityTokeReference element
      * @param cntx thge processing status holder/accumulator
@@ -858,8 +859,9 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
+    // TODO centralize this KeyInfo processing into the KeyInfoElement class somehow
     private SigningSecurityToken resolveSigningTokenByRef(final Element parentElement, ProcessingStatusHolder cntx) {
-        // TODO SAML Assertion reference by URI (Bug #1434)
+        // TODO SAML Assertion reference by URI (Bug #1434)  -- lyonsm: Bug #1434 was closed a long time ago, is this still an issue?
         // Looking for reference to a wsse:BinarySecurityToken or to a derived key
         // 1. look for a wsse:SecurityTokenReference element
         List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
@@ -902,18 +904,40 @@ public class WssProcessorImpl implements WssProcessor {
 
                 logger.fine("The reference " + uriAttr + " did not point to a X509Cert.");
             } else if (keyIdentifiers.size() > 0) {
-                if (knownEncryptedKey == null) {
-                    logger.warning("The KeyInfo referred to a KeyIdentifier, but no EncryptedKeys are currently known");
-                } else {
-                    Element keyId = (Element)keyIdentifiers.get(0);
-                    String valueType = keyId.getAttribute("ValueType");
-                    if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
-                        String eks = XmlUtil.getTextValue(keyId).trim();
-                        if (eks.equals(knownEncryptedKey.getEncryptedKeySHA1())) {
+                // TODO support multiple KeyIdentifier elements
+                Element keyId = (Element)keyIdentifiers.get(0);
+                String valueType = keyId.getAttribute("ValueType");
+                String value = XmlUtil.getTextValue(keyId).trim();
+                if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
+                    if (knownEncryptedKey == null) {
+                        logger.warning("The KeyInfo referred to a KeyIdentifier, but no EncryptedKeys are currently known");
+                    } else {
+                        if (value.equals(knownEncryptedKey.getEncryptedKeySHA1())) {
                             logger.finest("The KeyInfo referred to an already-known EncryptedKey token");
                             return knownEncryptedKey;
+                        } else {
+                            logger.finest("The KeyInfo referred to an EncryptedKey token, but we did not recognize the EncryptedKeySHA1.");
                         }
                     }
+                } else if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX)) {
+                    SigningSecurityToken token = (SigningSecurityToken)cntx.x509TokensByThumbprint.get(value);
+                    if (token != null) {
+                        logger.finest("The KeyInfo referred to a previously used X.509 token.");
+                        return token;
+                    }
+
+                    if (cntx.thumbprintResolver == null) {
+                        logger.warning("The KeyInfo referred to a ThumbprintSHA1, but no ThumbprintResolver is available");
+                    } else {
+                        X509Certificate foundCert = cntx.thumbprintResolver.lookup(value);
+                        logger.finest("The KeyInfo referred to a recognized X.509 certificate by its thumbprint: " + foundCert.getSubjectDN().getName().toString());
+                        token = new X509BinarySecurityTokenImpl(foundCert, keyId);
+                        cntx.securityTokens.add(token);
+                        cntx.x509TokensByThumbprint.put(value, token);
+                        return token;
+                    }
+                } else {
+                    logger.finest("The KeyInfo used an unsupported KeyIdentifier ValueType: " + valueType);
                 }
             } else {
                 logger.warning("SecurityTokenReference does not contain any References");
@@ -922,6 +946,7 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
+    // TODO merge this into KeyInfoElement class somehow
     private DerivedKeyTokenImpl resolveDerivedKeyByRef(final Element parentElement, ProcessingStatusHolder cntx) {
 
         // Looking for reference to a a derived key token
@@ -1311,6 +1336,7 @@ public class WssProcessorImpl implements WssProcessor {
         TimestampImpl timestamp = null;
         Element releventSecurityHeader = null;
         Map x509TokensById = new HashMap();
+        Map x509TokensByThumbprint = new HashMap();
         Map securityTokenReferenceElementToTargetElement = new HashMap();
         Map encryptedKeyById = new HashMap();
         SecurityActor secHeaderActor;
@@ -1344,6 +1370,35 @@ public class WssProcessorImpl implements WssProcessor {
             } catch (IOException e) {
                 throw new CausedIllegalStateException(e); // can't happen anymore
             }
+        }
+    }
+
+    private static class X509ThumbprintVirtualTokenImpl extends MutableX509SigningSecurityToken implements X509SecurityToken {
+        private final X509Certificate finalcert;
+
+        public X509ThumbprintVirtualTokenImpl(X509Certificate finalcert, Element keyId) {
+            super(keyId);
+            this.finalcert = finalcert;
+        }
+
+        public SecurityTokenType getType() {
+            return SecurityTokenType.X509;
+        }
+
+        public String getElementId() {
+            return SoapUtil.getElementWsuId(asElement());
+        }
+
+        public X509Certificate getMessageSigningCertificate() {
+            return finalcert;
+        }
+
+        public X509Certificate asX509Certificate() {
+            return finalcert;
+        }
+
+        public String toString() {
+            return "X509 Thumbprint Virtual SecurityToken: " + finalcert.toString();
         }
     }
 
@@ -1541,7 +1596,24 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    // TODO LYONSM: replace this HACK for the interop with something that actually makes sense
+    /**
+     * Set an EncryptedKey reference that will be recognized for subsequent messages processed by this processor
+     * instance.  This is really only meaningful when used client side, since the client can expect that the
+     * server's response can only refer to an EncryptedKey that the client included with its original request.
+     * <p>
+     * Recognizing a single known EncryptedKey per WssProcessor instance is not very useful for server side code
+     * since a server does not necessarily know which client or session it is dealing with until after it has
+     * already processed the security header in the request.  A future version of the software will require
+     * some kind of EncryptedKey resolver which might hook into a cluster-wide registry of previously-seen
+     * EncryptedKeys.
+     *<p>
+     * If no KnownEncryptedKey is set, EncryptedKeySHA1 KeyIdentifiers will not be recognized during message
+     * processing.
+     *
+     * @param key             The SecretKey that was encoded into the original EncryptedKey
+     * @param encryptedForm   the un-base64'ed octets of the CipherData of the original EncryptedKey, that is, after
+     *                        it has already been encrypted with the recipient's public key.
+     */
     public void setKnownEncryptedKey(SecretKey key, byte[] encryptedForm) {
         try {
             String wsuUri = SoapUtil.WSU_NAMESPACE;
@@ -1557,5 +1629,6 @@ public class WssProcessorImpl implements WssProcessor {
             throw new RuntimeException(e); // can't happen
         }
     }
+
     private EncryptedKeyImpl knownEncryptedKey = null;
 }

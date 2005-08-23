@@ -15,6 +15,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.SimpleThumbprintResolver;
 import com.l7tech.common.security.xml.ThumbprintResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -800,7 +801,9 @@ public class MessageProcessor {
             ProcessorResult processorResult = null;
             try {
                 final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
-                ThumbprintResolver thumbResolver = new MyThumbprintResolver(ssg);
+                ThumbprintResolver thumbResolver =
+                        new SimpleThumbprintResolver(new X509Certificate[] { ssg.getClientCertificate(),
+                                                                             ssg.getServerCertificate() });
                 final ProcessorResult processorResultRaw =
                   wssProcessor.undecorateMessage(response,
                                                  ssg.getServerCertificate(), haveKey ? ssg.getClientCertificate() : null,
@@ -1023,44 +1026,4 @@ public class MessageProcessor {
         params.setPasswordAuthentication(new PasswordAuthentication(username, password));
     }
 
-    private static class MyThumbprintResolver implements ThumbprintResolver {
-        // We'll recognize our own client cert or the SSG's SSL cert in a keyinfo.
-        private String clientCertThumbprint = null;
-        private String ssgCertThumbprint = null;
-        private final Ssg ssg;
-
-        public MyThumbprintResolver(Ssg ssg) {
-            this.ssg = ssg;
-        }
-
-        public X509Certificate lookup(String thumbprint) {
-            X509Certificate clientCert = ssg.getClientCertificate();
-            if (clientCert != null) {
-                if (clientCertThumbprint == null) {
-                    try {
-                        clientCertThumbprint = CertUtils.getThumbprintSHA1(clientCert);
-                    } catch (CertificateEncodingException e) {
-                        log.log(Level.WARNING, "Unable to compute thumbprint of client cert: " + e.getMessage(), e);
-                        return null;
-                    }
-                }
-                if (clientCertThumbprint.equals(thumbprint))
-                    return clientCert;
-            }
-            X509Certificate ssgCert = ssg.getServerCertificate();
-            if (ssgCert != null) {
-                if (ssgCertThumbprint == null) {
-                    try {
-                        ssgCertThumbprint = CertUtils.getThumbprintSHA1(ssgCert);
-                    } catch (CertificateEncodingException e) {
-                        log.log(Level.WARNING, "Unable to compute thumbprint of Gateway cert: " + e.getMessage(), e);
-                        return null;
-                    }
-                }
-                if (ssgCertThumbprint.equals(thumbprint))
-                    return ssgCert;
-            }
-            return null;
-        }
-    }
 }
