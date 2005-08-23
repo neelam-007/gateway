@@ -340,10 +340,32 @@
     </target>
 
     <!-- javadoc target -->
-    <target name="javadoc" depends="prepare">
-        <javadoc packagenames="com.*" sourcepath="src"
-                 destdir="${javadoc.home}">
-            <classpath refid="project.classpath"/>
+    <target name="javadoc" depends="init-dev,prepare" description="Generates Javadoc.">
+        <delete includeEmptyDirs="true" quiet="true">
+            <fileset dir="${javadoc.home}" includes="**/*"/>
+        </delete>
+        <mkdir dir="${javadoc.home}"/>
+        <javadoc sourcepath="src"
+                 classpathref="project.classpath"
+                 destdir="${javadoc.home}"
+                 packagenames="com.*"
+                 windowtitle="Layer 7 Technologies API Specification"
+                 doctitle="Layer 7 Technologies API Specification"
+                 defaultexcludes="yes"
+                 version="true"
+                 use="true"
+                 splitindex="true"
+                 maxmemory="128m">
+<!-- other possible options:
+                 author="true"
+                 private="true"
+                 additionalparam="-linksource"
+-->
+            <header><![CDATA[<b>Layer 7 Technologies Inc.<b><br><font size='-1'>UneasyRooster</font>]]></header>
+            <bottom><![CDATA[<i>Copyright &#169; 2005 Layer 7 Technologies Inc. All Rights Reserved.</i>]]></bottom>
+            <link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
+            <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
+            <link href="http://static.springframework.org/spring/docs/1.1.5/api"/>
         </javadoc>
     </target>
 
