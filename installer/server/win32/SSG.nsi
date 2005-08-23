@@ -84,11 +84,9 @@ Section "SecureSpan Gateway" SecCopyUI
   File "${BUILD_DIR}\classes\keystore.properties"
   File "${BUILD_DIR}\classes\hibernate.properties"
 
-  SetOutPath "$INSTDIR/jdk"
-  ; todo, where is the JDK going to come from in this case?
-  
-  SetOutPath "$INSTDIR/tomcat"
-  ; todo, where is tomcat going to come from in this case?
+  SetOutPath "$INSTDIR"
+  File /r "${BUILD_DIR}\install\ssg\tomcat"
+  File /r "${BUILD_DIR}\install\ssg\jdk_1.5"
 
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
