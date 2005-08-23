@@ -100,6 +100,7 @@ fi
 %post
 # Check for existence of install crumbs left by install.pl
 if [ -e "/etc/SSG_INSTALL" ]; then 
+	echo -n ""
 else 
 	echo "** New system: Run interactive /ssg/bin/install.pl to configure this system **"
 fi
