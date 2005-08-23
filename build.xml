@@ -1342,6 +1342,11 @@
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
+        <!--
+        i'm not sure whether those special jars exist here
+        it depends of the order in which the targets get called
+        clara, you may want to verify this
+        -->
         <copy todir="${install.src.base}/tomcat/common/classpath">
             <fileset dir="${build.dir}">
                 <include name="rmiannotation.jar"/>
