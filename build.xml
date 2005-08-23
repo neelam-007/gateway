@@ -1342,13 +1342,13 @@
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
-        <copy todir="${install.src.base}/common/classpath">
+        <copy todir="${install.src.base}/tomcat/common/classpath">
             <fileset dir="${build.dir}">
                 <include name="rmiannotation.jar"/>
             </fileset>
         </copy>
 
-        <copy todir="${install.src.base}/server/lib">
+        <copy todir="${install.src.base}/tomcat/server/lib">
             <fileset dir="${build.dir}">
                 <include name="l7valve.jar"/>
             </fileset>
