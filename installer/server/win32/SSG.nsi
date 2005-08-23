@@ -77,22 +77,23 @@ Section "SecureSpan Gateway" SecCopyUI
   SetOutPath "$INSTDIR"
   ; there will need to be a bunch of File statements here to copy the correct files to the destination.
 
-  SetOutPath "$INSTDIR/lib"
-  ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
-  SetOutPath "$INSTDIR"
+  SetOutPath "$INSTDIR/bin"
+  ; copy all files that need to go to bin
+  File "${BUILD_DIR}\..\native\win32\uptime\Release\uptime.exe"
+  File "${BUILD_DIR}\..\native\win32\process\Release\process.exe"
+  File "${BUILD_DIR}\..\native\win32\killproc\Release\killproc.exe"
+  File "${BUILD_DIR}\..\etc\ssg.cmd"
+  File "${BUILD_DIR}\..\etc\ssgruntimedefs.cmd"
+
+  SetOutPath "$INSTDIR/etc"
 
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
 
   !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
-    ;Create shortcuts
-    ;this is what the bridge currently does, but we need to update it for the SSG
-    ;CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
-    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_PRODUCT}.exe" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 0
-    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} in Troubleshooting Mode.lnk" "$INSTDIR\${MUI_PRODUCT}.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 1
-    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} in Text Mode.lnk" "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 2
-    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan Bridge.lnk" "$INSTDIR\Uninstall.exe"
+  ; Create shortcuts
+  ; fla -- i assume the gateway will start as a service and not though a startmenu shortcut
 
   !insertmacro MUI_STARTMENU_WRITE_END
 
