@@ -72,20 +72,23 @@
 
 Section "SecureSpan Gateway" SecCopyUI
 
-  ;ADD YOUR OWN STUFF HERE!
-
-  SetOutPath "$INSTDIR"
-  ; there will need to be a bunch of File statements here to copy the correct files to the destination.
-
   SetOutPath "$INSTDIR/bin"
-  ; copy all files that need to go to bin
   File "${BUILD_DIR}\..\native\win32\uptime\Release\uptime.exe"
   File "${BUILD_DIR}\..\native\win32\process\Release\process.exe"
   File "${BUILD_DIR}\..\native\win32\killproc\Release\killproc.exe"
   File "${BUILD_DIR}\..\etc\ssg.cmd"
   File "${BUILD_DIR}\..\etc\ssgruntimedefs.cmd"
 
-  SetOutPath "$INSTDIR/etc"
+  SetOutPath "$INSTDIR/etc/conf"
+  File "${BUILD_DIR}\..\etc\ssglog.properties"
+  File "${BUILD_DIR}\classes\keystore.properties"
+  File "${BUILD_DIR}\classes\hibernate.properties"
+
+  SetOutPath "$INSTDIR/jdk"
+  ; todo, where is the JDK going to come from in this case?
+  
+  SetOutPath "$INSTDIR/tomcat"
+  ; todo, where is tomcat going to come from in this case?
 
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
