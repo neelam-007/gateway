@@ -86,7 +86,7 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
-  File /r "${BUILD_DIR}\install\ssg\jdk_1.5"
+  File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02"
 
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
