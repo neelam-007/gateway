@@ -93,12 +93,12 @@ Section "SecureSpan Gateway" SecCopyUI
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
 
-  !insertmacro MUI_STARTMENU_WRITE_BEGIN
+  ; !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
   ; Create shortcuts
   ; fla -- i assume the gateway will start as a service and not though a startmenu shortcut
 
-  !insertmacro MUI_STARTMENU_WRITE_END
+  ; !insertmacro MUI_STARTMENU_WRITE_END
 
   ;Register with Add/Remove programs
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "DisplayName" "${MUI_PRODUCT}"
@@ -131,34 +131,11 @@ SectionEnd
 
 Section "Uninstall"
 
-  ;ADD YOUR OWN STUFF HERE!
-  ;this is what is currently done for the Bridge, we'll need to change it for the SSG
-  ;Delete "$INSTDIR\${MUI_PRODUCT}.exe"
-  ;Delete "$INSTDIR\${MUI_PRODUCT}.ini"
-  ;Delete "$INSTDIR\${MUI_PRODUCT}.bat"
-  ;Delete "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat"
-  ;Delete "$INSTDIR\Bridge.jar"
-  ;Delete "$INSTDIR\systray4j.dll"
-  ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
-  ;RMDir "$INSTDIR\lib"
-  ;RMDir /r "$INSTDIR\${J2RE}"
-  ;Delete "$INSTDIR\Uninstall.exe"
-
-  ;Remove shortcut
-  ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
-
-  StrCmp ${TEMP} "" noshortcuts
-
-    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT}.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Troubleshooting Mode.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Text Mode.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Uninstall ${MUI_PRODUCT}.lnk"
-    RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
-
-  noshortcuts:
-
   RMDir "$INSTDIR"
-  RMDir "$PROGRAMFILES\${COMPANY}"
+
+  ; Remove shortcut
+  ; fla note -- no shortcut
+  ; ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
 
   DeleteRegKey /ifempty HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}"
