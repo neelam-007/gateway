@@ -8,14 +8,12 @@ package com.l7tech.server.util;
 import com.chrysalisits.crypto.LunaCertificateX509;
 import com.l7tech.common.util.ExceptionUtils;
 
-import java.security.KeyStore;
-import java.security.KeyPairGenerator;
-import java.security.KeyPair;
+import java.io.FileOutputStream;
+import java.math.BigInteger;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
-import java.math.BigInteger;
-import java.io.FileOutputStream;
 
 /**
  * @author mike
@@ -54,7 +52,7 @@ public class MakeLunaCerts {
         KeyStore ks = KeyStore.getInstance("Luna");
         ks.load(null, null);
 
-        if (ks.getKey("tomcat", null) != null || ks.getKey("ssgroot", null) != null) {
+        if (keyExists(ks, "tomcat") || keyExists(ks, "ssgroot")) {
             if (!force)
                 throw new RuntimeException("SSG Certificates already present on this KeyStore.\n       Use -f switch to force them to be overwritten.");
             System.out.println("Deleting existing certificates...");
@@ -102,5 +100,13 @@ public class MakeLunaCerts {
         }
 
         System.out.println("Success.");
+    }
+
+    private static boolean keyExists(KeyStore ks, final String alias) throws NoSuchAlgorithmException, KeyStoreException {
+        try {
+            return ks.getKey(alias, null) != null;
+        } catch (UnrecoverableKeyException kse) {
+            return false;
+        }
     }
 }
