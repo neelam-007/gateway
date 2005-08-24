@@ -72,6 +72,15 @@
 
 Section "SecureSpan Gateway" SecCopyUI
 
+  CreateDirectory "$INSTDIR/logs"
+  CreateDirectory "$INSTDIR/bin"
+  CreateDirectory "$INSTDIR/etc/conf"
+  CreateDirectory "$INSTDIR/etc/keys"
+
+  SetOutPath "$INSTDIR"
+  File /r "${BUILD_DIR}\install\ssg\tomcat"
+  File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02"
+
   SetOutPath "$INSTDIR/bin"
   File "${BUILD_DIR}\..\native\win32\uptime\Release\uptime.exe"
   File "${BUILD_DIR}\..\native\win32\process\Release\process.exe"
@@ -84,9 +93,8 @@ Section "SecureSpan Gateway" SecCopyUI
   File "${BUILD_DIR}\classes\keystore.properties"
   File "${BUILD_DIR}\classes\hibernate.properties"
 
-  SetOutPath "$INSTDIR"
-  File /r "${BUILD_DIR}\install\ssg\tomcat"
-  File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02"
+  SetOutPath "$INSTDIR/etc"
+  File /r "${BUILD_DIR}\install\ssg\etc\ldapTemplates"
 
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
