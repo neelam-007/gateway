@@ -257,3 +257,4 @@ foreach my $file (@FILES) {
 
 	make_tar_file($file, \@jars, \@includes);
 }
+build_installer("server/win32/SSG.nsi");

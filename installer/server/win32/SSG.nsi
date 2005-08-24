@@ -88,12 +88,8 @@ Section "SecureSpan Gateway" SecCopyUI
   File "${BUILD_DIR}\..\etc\ssg.cmd"
   File "${BUILD_DIR}\..\etc\ssgruntimedefs.cmd"
 
-  SetOutPath "$INSTDIR/etc/conf"
-  File "${BUILD_DIR}\..\etc\ssglog.properties"
-  File "${BUILD_DIR}\classes\keystore.properties"
-  File "${BUILD_DIR}\classes\hibernate.properties"
-
   SetOutPath "$INSTDIR/etc"
+  File /r "${BUILD_DIR}\install\ssg\etc\conf"
   File /r "${BUILD_DIR}\install\ssg\etc\ldapTemplates"
 
   ;Store install folder
