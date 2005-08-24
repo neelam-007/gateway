@@ -133,7 +133,7 @@ SectionEnd
 
 Section "Uninstall"
 
-  RMDir "$INSTDIR"
+  RMDir /r "$INSTDIR"
 
   ; Remove shortcut
   ; fla note -- no shortcut
