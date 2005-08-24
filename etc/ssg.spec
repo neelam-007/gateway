@@ -1,7 +1,7 @@
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.2
-Release: m0
+Version: 3.3
+Release: 1
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2005
 URL: http://www.layer7tech.com
@@ -42,8 +42,6 @@ mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
-mv %{buildroot}/ssg/server/lib/l7valve.jar %{buildroot}/ssg/tomcat/server/lib/l7valve.jar
-mv %{buildroot}/ssg/common/classpath/rmiannotation.jar %{buildroot}/ssg/tomcat/common/classpath/rmiannotation.jar
 
 rm -f %{buildroot}/ssg/dist/*
 
