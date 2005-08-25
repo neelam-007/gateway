@@ -1,0 +1,49 @@
+package com.l7tech.server.config.beans;
+
+import com.l7tech.server.config.OSSpecificFunctions;
+
+import java.util.ArrayList;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: megery
+ * Date: Aug 25, 2005
+ * Time: 10:50:19 AM
+ * To change this template use File | Settings | File Templates.
+ */
+public class WindowsServiceBean extends BaseConfigurationBean {
+    boolean doService;
+
+    private final static String NAME = "Windows Service Configuration";
+    private final static String DESCRIPTION = "Configures the SSG to start as a service";
+    private static final String DO_SERVICE_INFO = "Configure the SSG to start as a service";
+    private static final String DONT_DO_SERVICE_INFO = "Will not configure the SSG to start as a service";
+
+
+    public WindowsServiceBean(OSSpecificFunctions osFunctions) {
+        super(NAME, DESCRIPTION, osFunctions);
+    }
+
+    void reset() {
+
+    }
+
+    public String[] explain() {
+        ArrayList explanations = new ArrayList();
+        explanations.add(getName() + " - " + getDescription());
+        if (isDoService()) {
+           explanations.add(insertTab + DO_SERVICE_INFO);
+        } else {
+           explanations.add(insertTab + DONT_DO_SERVICE_INFO);
+        }
+        return (String[]) explanations.toArray(new String[explanations.size()]);
+    }
+
+    public boolean isDoService() {
+        return doService;
+    }
+
+    public void setDoService(boolean doService) {
+        this.doService = doService;
+    }
+}
