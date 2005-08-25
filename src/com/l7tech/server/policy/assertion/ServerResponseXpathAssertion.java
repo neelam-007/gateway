@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
@@ -17,6 +18,8 @@ import org.jaxen.dom.DOMXPath;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -120,21 +123,26 @@ public class ServerResponseXpathAssertion implements ServerAssertion {
                         context.setVariable(varFound, "false");
                         return AssertionStatus.FALSIFIED;
                     }
-                } else if ( o instanceof Node ) {
+                } else if (o instanceof Node) {
                     Node n = (Node)o;
                     int type = n.getNodeType();
-                    context.setVariable(varResult, n.getTextContent());
-                    switch( type ) {
+                    String nodeContents = null;
+                    switch (type) {
                         case Node.TEXT_NODE:
                             auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
+                            nodeContents = ((Text)n).getNodeValue();
+                            context.setVariable(varResult, nodeContents);
                             return AssertionStatus.NONE;
                         case Node.ELEMENT_NODE:
+                            nodeContents = XmlUtil.getTextValue((Element)n);
+                            context.setVariable(varResult, nodeContents);
                             auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND);
                             return AssertionStatus.NONE;
                         default:
                             auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND);
                             return AssertionStatus.NONE;
                     }
+
                 } else {
                     auditor.logAndAudit(AssertionMessages.XPATH_SUCCEED_RESPONSE);
                     context.setVariable(varResult, o.toString());
