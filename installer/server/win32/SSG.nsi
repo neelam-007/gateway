@@ -116,6 +116,8 @@ Section "SecureSpan Gateway" SecCopyUI
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
+  Exec '"$INSTDIR/bin/service.cmd" install'
+
 SectionEnd
 
 ;Display the Finish header
@@ -133,6 +135,8 @@ SectionEnd
 ;Uninstaller Section
 
 Section "Uninstall"
+
+  Exec '"$INSTDIR/bin/service.cmd" uninstall'
 
   RMDir /r "$INSTDIR"
 
