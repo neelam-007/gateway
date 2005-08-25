@@ -106,12 +106,12 @@ public class ConfigurationWizard extends Wizard {
         ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel, osFunctions);
 
         ConfigWizardStepPanel startPanel;
-        //if (osFunctions.isWindows())  {
+        if (osFunctions.isWindows())  {
             ConfigWizardStepPanel servicePanel = new ConfigWizardWinServicePanel(clusteringPanel, osFunctions);
             startPanel = new ConfigWizardStartPanel(servicePanel, osFunctions);
-        //} else {
-            //startPanel = new ConfigWizardStartPanel(clusteringPanel,osFunctions);
-        //}
+        } else {
+            startPanel = new ConfigWizardStartPanel(clusteringPanel,osFunctions);
+        }
 
         return startPanel;
     }
