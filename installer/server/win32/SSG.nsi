@@ -39,7 +39,7 @@
   !define MUI_UNINSTALLER
   !define MUI_UNCONFIRMPAGE
 
-    !define MUI_HEADERBITMAP "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
+  !define MUI_HEADERBITMAP "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
 
   ;Remember the Start Menu Folder
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
@@ -72,10 +72,11 @@
 
 Section "SecureSpan Gateway" SecCopyUI
 
-  CreateDirectory "$INSTDIR/logs"
-  CreateDirectory "$INSTDIR/bin"
-  CreateDirectory "$INSTDIR/etc/conf"
-  CreateDirectory "$INSTDIR/etc/keys"
+  CreateDirectory "$INSTDIR\logs"
+  CreateDirectory "$INSTDIR\bin"
+  CreateDirectory "$INSTDIR\etc\conf"
+  CreateDirectory "$INSTDIR\etc\keys"
+  CreateDirectory "$INSTDIR\var\attachments"
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
@@ -93,6 +94,7 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR/etc"
   File /r "${BUILD_DIR}\install\ssg\etc\conf"
+  File /r "${BUILD_DIR}\install\ssg\etc\sql"
   File /r "${BUILD_DIR}\install\ssg\etc\ldapTemplates"
 
   ;Store install folder
@@ -101,7 +103,8 @@ Section "SecureSpan Gateway" SecCopyUI
   ; !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
   ; Create shortcuts
-  ; fla -- i assume the gateway will start as a service and not through a startmenu shortcut
+  CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
+  CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan Gateway.lnk" "$INSTDIR\Uninstall.exe"
 
   ; !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -145,8 +148,12 @@ Section "Uninstall"
   RMDir /r "$INSTDIR"
 
   ; Remove shortcut
-  ; fla note -- no shortcut
-  ; ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
+  ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
+  StrCmp ${TEMP} "" noshortcuts
+  Delete "$SMPROGRAMS\${TEMP}\Uninstall SecureSpan Gateway.lnk"
+  RMDir "$SMPROGRAMS\${TEMP}" ; Only if empty, so it won't delete other shortcuts
+
+  noshortcuts:
 
   DeleteRegKey /ifempty HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}"
