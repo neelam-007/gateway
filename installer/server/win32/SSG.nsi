@@ -79,7 +79,9 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
-  File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02" ;todo. oops, i think this will include a linux jvm
+  File /r "C:\jdk1.5.0_02-windows-i586-p-redist"
+  Rename "$INSTDIR\jdk1.5.0_02-windows-i586-p-redist" "$INSTDIR\jdk"
+  ;File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02" this would include the linux jvm
 
   SetOutPath "$INSTDIR/bin"
   File "${BUILD_DIR}\..\native\win32\uptime\Release\uptime.exe"
@@ -99,7 +101,7 @@ Section "SecureSpan Gateway" SecCopyUI
   ; !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
   ; Create shortcuts
-  ; fla -- i assume the gateway will start as a service and not though a startmenu shortcut
+  ; fla -- i assume the gateway will start as a service and not through a startmenu shortcut
 
   ; !insertmacro MUI_STARTMENU_WRITE_END
 
