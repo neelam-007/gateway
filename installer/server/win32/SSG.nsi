@@ -140,7 +140,7 @@ SectionEnd
 Section "Uninstall"
 
   ExecWait '"$INSTDIR\bin\service.cmd" uninstall' $0
-  DetailPrint "service.cmd install returned with code $0"
+  DetailPrint "service.cmd uninstall returned with code $0"
 
   RMDir /r "$INSTDIR"
 
