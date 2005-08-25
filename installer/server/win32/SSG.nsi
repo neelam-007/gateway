@@ -116,7 +116,8 @@ Section "SecureSpan Gateway" SecCopyUI
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
-  Exec '"$INSTDIR/bin/service.cmd" install'
+  ExecWait '"$INSTDIR\bin\service.cmd" install' $0
+  DetailPrint "service.cmd install returned with code $0"
 
 SectionEnd
 
@@ -136,7 +137,8 @@ SectionEnd
 
 Section "Uninstall"
 
-  Exec '"$INSTDIR/bin/service.cmd" uninstall'
+  ExecWait '"$INSTDIR\bin\service.cmd" uninstall' $0
+  DetailPrint "service.cmd install returned with code $0"
 
   RMDir /r "$INSTDIR"
 
