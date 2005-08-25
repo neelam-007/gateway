@@ -79,13 +79,14 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
-  File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02"
+  File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02" ;todo. oops, i think this will include a linux jvm
 
   SetOutPath "$INSTDIR/bin"
   File "${BUILD_DIR}\..\native\win32\uptime\Release\uptime.exe"
   File "${BUILD_DIR}\..\native\win32\process\Release\process.exe"
   File "${BUILD_DIR}\..\native\win32\killproc\Release\killproc.exe"
   File "${BUILD_DIR}\..\etc\ssg.cmd"
+  File "${BUILD_DIR}\..\etc\service.cmd"
   File "${BUILD_DIR}\..\etc\ssgruntimedefs.cmd"
 
   SetOutPath "$INSTDIR/etc"
