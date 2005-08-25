@@ -4,7 +4,7 @@ THE SOFTWARE TO WHICH YOU ARE REQUESTING TO ACCESS IS THE PROPERTY OF LAYER 7 TE
 
 Ownership of the Software
 
-1.  The software contained in the Layer 7 Technologies SecureSpan Bridge ("the Software"), to which you are requesting access, is owned or licensed by Layer 7 Technologies and is protected by United States and Canada copyright laws, laws of other nations, and/or international treaties.
+1.  The software contained in the Layer 7 Technologies SecureSpan Gateway ("the Software"), to which you are requesting access, is owned or licensed by Layer 7 Technologies and is protected by United States and Canada copyright laws, laws of other nations, and/or international treaties.
 
 Grant of License
 
