@@ -1,6 +1,6 @@
 :: Copyright (C) 2005 Layer 7 Technologies Inc.
 ::
-:: $Id$
+:: $Id: ssgruntimedefs.cmd,v 1.1 2005/08/23 20:19:38 rmak Exp $
 ::
 :: Compatibility: Windows XP, Windows Server 2003.
 
@@ -46,7 +46,8 @@ set JAVA_OPTS=^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger ^
 -XX:NewSize=%maxnewsize%M ^
 -XX:MaxNewSize=%maxnewsize%M ^
--XX:+DisableExplicitGC 
+-XX:+DisableExplicitGC ^
+-Xrs
 
 :: Tune for single or multi processor machine.
 if %NUMBER_OF_PROCESSORS%==1 (
