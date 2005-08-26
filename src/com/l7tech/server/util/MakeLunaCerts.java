@@ -17,11 +17,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.util.logging.Logger;
 
 /**
  * @author mike
  */
 public class MakeLunaCerts {
+    private static final Logger log = Logger.getLogger(MakeLunaCerts.class.getName());
+
     private static final String USAGE = "Usage: MakeLunaCerts [-f] ssghostname.company.com\n\n  -f    Force overwrite of existing certificate(s)";
 
     public static void main(String[] args) {
@@ -57,23 +60,23 @@ public class MakeLunaCerts {
     }
 
     public static void makeCerts(boolean force, String hostname) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        System.out.println("Checking for Luna Certificate Management Utility (cmu) command... ");
+        log.info("Checking for Luna Certificate Management Utility (cmu) command... ");
         LunaCmu cmu = new LunaCmu();
-        System.out.println("Connecting to Luna KeyStore... ");
+        log.info("Connecting to Luna KeyStore... ");
         KeyStore ks = KeyStore.getInstance("Luna");
         ks.load(null, null);
 
         if (keyExists(ks, "tomcat") || keyExists(ks, "ssgroot")) {
             if (!force)
                 throw new RuntimeException("SSG Certificates already present on this KeyStore.\n       Use -f switch to force them to be overwritten.");
-            System.out.println("Deleting existing CA and SSL certificates with labels 'tomcat' or 'ssgroot'...");
+            log.info("Deleting existing CA and SSL certificates with labels 'tomcat' or 'ssgroot'...");
             ks.deleteEntry("tomcat");
             ks.deleteEntry("ssgroot");
             LunaCmu.CmuObject[] objs = cmu.list();
             for (int i = 0; i < objs.length; i++) {
                 LunaCmu.CmuObject obj = objs[i];
                 if (obj.getLabel() != null && (obj.getLabel().startsWith("tomcat") || obj.getLabel().startsWith("ssgroot"))) {
-                    System.out.println("  deleting object " + obj);
+                    log.info("  deleting object " + obj);
                     cmu.delete(obj);
                 }
             }
@@ -84,7 +87,7 @@ public class MakeLunaCerts {
         final X509Certificate rootCertKs;
         {
             final String cn = "root." + hostname;
-            System.out.println("Generating new CA certificate: cn=" + cn);
+            log.info("Generating new CA certificate: cn=" + cn);
 
             LunaCmu.CmuObject caKeyObj = cmu.generateRsaKeyPair("ssgroot");
             caCertObj = cmu.generateCaCert(caKeyObj, null, cn);
@@ -97,16 +100,16 @@ public class MakeLunaCerts {
             if (!keyExists(ks, "ssgroot"))
                 throw new IllegalStateException("Unable to find newly created CA key and cert through Luna KeyStore");
 
-            System.out.println("Generated and saved a CA certificate under alias \"ssgroot\": " + rootCert.getSubjectDN().toString());
+            log.info("Generated and saved a CA certificate under alias \"ssgroot\": " + rootCert.getSubjectDN().toString());
 
             new FileOutputStream("ca.cer").write(rootCert.getEncoded());
-            System.out.println("CA cert exported to ca.cer in current directory");
+            log.info("CA cert exported to ca.cer in current directory");
         }
 
         // Generate SSL certificate signed by the CA certificate
         {
             final String cn = hostname;
-            System.out.println("Generating new SSL certificate: cn=" + cn);
+            log.info("Generating new SSL certificate: cn=" + cn);
 
             LunaCmu.CmuObject sslKeyObj = cmu.generateRsaKeyPair("tomcat");
             byte[] csr = cmu.requestCertificate(sslKeyObj, cn);
@@ -119,13 +122,13 @@ public class MakeLunaCerts {
             if (!keyExists(ks, "tomcat"))
                 throw new IllegalStateException("Unable to find newly recreated SSL key and cert through Luna KeyStore");
 
-            System.out.println("Generated and saved an SSL certificate under alias \"tomcat\": " + sslCert.getSubjectDN().toString());
+            log.info("Generated and saved an SSL certificate under alias \"tomcat\": " + sslCert.getSubjectDN().toString());
 
             new FileOutputStream("ssl.cer").write(sslCert.getEncoded());
-            System.out.println("SSL cert exported to ssl.cer in current directory");
+            log.info("SSL cert exported to ssl.cer in current directory");
         }
 
-        System.out.println("Success.");
+        log.info("Success.");
     }
 
     private static boolean keyExists(KeyStore ks, final String alias) throws NoSuchAlgorithmException, KeyStoreException {
