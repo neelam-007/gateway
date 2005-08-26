@@ -12,6 +12,7 @@ import com.l7tech.common.util.FileUtils;
 
 import java.io.*;
 import java.util.Properties;
+import java.util.Enumeration;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -47,7 +48,19 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private static final String XML_KSFILE = "keystoreFile";
     private static final String XML_KSPASS = "keystorePass";
     private static final String XML_KSTYPE = "keystoreType";
+    private static final String LUNA_SYSTEM_CMU_PROPERTY = "lunaCmuPath";
 
+    private static final String PROPKEY_SECURITY_PROVIDER = "security.provider";
+    private static final String PROPKEY_JCEPROVIDER = "com.l7tech.common.security.jceProviderEngine";
+    private static final String PROPERTY_LUNA_JCEPROVIDER_VALUE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
+
+    private static final String[] SECURITY_PROVIDERS =
+            {
+                "com.chrysalisits.crypto.LunaJCAProvider",
+                "com.chrysalisits.cryptox.LunaJCEProvider",
+                "sun.security.provider.Sun",
+                "com.sun.net.ssl.internal.ssl.Provider"
+            };
 
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
@@ -65,15 +78,32 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void doLunaKeyConfig(KeystoreConfigBean ksBean) {
-        String hostname = ksBean.getHostname();
-        boolean overwrite = ksBean.isOverwriteLunaCerts();
-        makeLunaKeys(hostname, overwrite);
+        File javaSecFile = new File(osFunctions.getPathToJavaSecurityFile());
+        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
 
+        File[] fileList = new File[]
+        {
+            javaSecFile,
+            systemPropertiesFile
+        };
+        try {
+            backupFiles(fileList, BACKUP_FILE_NAME);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        setLunaSystemProps(ksBean);
+
+        copyLunaJars(ksBean);
+        updateJavaSecurity(ksBean, javaSecFile);
+        makeLunaKeys(ksBean);
+        updateSystemPropertiesFile(ksBean, systemPropertiesFile);
     }
 
-    private void makeLunaKeys(String hostname, boolean overwrite) {
+    private void makeLunaKeys(KeystoreConfigBean ksBean) {
         String args[];
-
+        boolean overwrite = ksBean.isOverwriteLunaCerts();
+        String hostname = ksBean.getHostname();
         if (overwrite) {
             args = new String[]
             {
@@ -87,18 +117,129 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 hostname
             };
         }
-        makeSystemProps();
-        copyLunaJars();
-
-        MakeLunaCerts.main(args);
+        try {
+            MakeLunaCerts.realMain(args);
+        } catch (Exception e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        moveLunaCerts();
     }
 
-    private void copyLunaJars() {
-        //To change body of created methods use File | Settings | File Templates.
+    private void moveLunaCerts() {
+
     }
 
-    private void makeSystemProps() {
-        //To change body of created methods use File | Settings | File Templates.
+    private void updateSystemPropertiesFile(KeystoreConfigBean ksBean, File systemPropertiesFile) {
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+
+        Properties props = new Properties();
+        try {
+            fis = new FileInputStream(systemPropertiesFile);
+            props.load(fis);
+            fis.close();
+            fis = null;
+
+            props.setProperty(PROPKEY_JCEPROVIDER, PROPERTY_LUNA_JCEPROVIDER_VALUE);
+
+            fos = new FileOutputStream(systemPropertiesFile);
+            props.store(fos, PROPERTY_COMMENT);
+            fos.close();
+            fos = null;
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally{
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile) {
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+        Properties props = new Properties();
+        try {
+            fis = new FileInputStream(javaSecFile);
+            props.load(fis);
+            fis.close();
+            fis = null;
+
+            //remove whatever properties
+            Enumeration propertyNames = props.propertyNames();
+            while (propertyNames.hasMoreElements()) {
+                String propertyName = (String) propertyNames.nextElement();
+                if (propertyName.startsWith(PROPKEY_SECURITY_PROVIDER)) {
+                    props.remove(propertyName);
+                }
+            }
+
+            //now add the ones we want
+            for (int i = 0; i < SECURITY_PROVIDERS.length; i++) {
+                String securityProvider = SECURITY_PROVIDERS[i];
+                props.setProperty(PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(i + 1), securityProvider);
+            }
+
+            fos = new FileOutputStream(javaSecFile);
+            props.store(fos, PROPERTY_COMMENT);
+            fos.close();
+            fos = null;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void copyLunaJars(KeystoreConfigBean ksBean) {
+        String lunaJarSourcePath = ksBean.getLunaJspPath() + "/lib/";
+        String destination = osFunctions.getPathToJreLibExt();
+        File srcDir = new File(lunaJarSourcePath);
+        File destDir = new File(destination);
+
+        File[] fileList = srcDir.listFiles();
+        for (int i = 0; i < fileList.length; i++) {
+            File file = fileList[i];
+            File destFile = new File(destDir, file.getName());
+            try {
+                FileUtils.copyFile(file, destFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void setLunaSystemProps(KeystoreConfigBean ksBean) {
+        System.setProperty(LUNA_SYSTEM_CMU_PROPERTY, ksBean.getLunaInstallationPath() + osFunctions.getLunaCmuPath());
     }
 
     private void doDefaultKeyConfig(KeystoreConfigBean ksBean) {
