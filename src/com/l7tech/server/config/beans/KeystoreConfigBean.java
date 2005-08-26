@@ -26,6 +26,8 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private static final String USING_HOSTNAME_INFO = "Using hostname: ";
     private static final String OVERWRITE_LUNA_CERT_INFO = "Will overwrite existing certs";
     private static final String NO_OVERWRITE_LUNA_CERT_INFO = "Will not overwrite existing certs";
+    private String lunaJspPath;
+    private String lunaInstallationPath;
 
     public String getKeyStoreType() {
         return keyStoreType;
@@ -105,5 +107,21 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     public void overwriteLunaCerts(boolean isOverwrite) {
         overwriteLunaCerts = isOverwrite;
+    }
+
+    public String getLunaJspPath() {
+        return lunaJspPath;
+    }
+
+    public void setLunaJspPath(String lunaJspPath) {
+        this.lunaJspPath = lunaJspPath;
+    }
+
+    public String getLunaInstallationPath() {
+        return lunaInstallationPath;
+    }
+
+    public void setLunaInstallationPath(String lunaInstallationPath) {
+        this.lunaInstallationPath = lunaInstallationPath;
     }
 }
