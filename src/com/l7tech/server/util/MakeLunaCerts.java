@@ -5,15 +5,16 @@
 
 package com.l7tech.server.util;
 
-import com.chrysalisits.crypto.LunaCertificateX509;
+import com.l7tech.common.security.prov.luna.LunaCmu;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 
 import java.io.FileOutputStream;
-import java.math.BigInteger;
-import java.security.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.Date;
 
 /**
  * @author mike
@@ -48,6 +49,8 @@ public class MakeLunaCerts {
 
         if (hostname == null || hostname.trim().length() < 1) throw new IllegalArgumentException(USAGE);
 
+        System.out.println("Checking for Luna Certificate Management Utility (cmu) command... ");
+        LunaCmu cmu = new LunaCmu();
         System.out.println("Connecting to Luna KeyStore... ");
         KeyStore ks = KeyStore.getInstance("Luna");
         ks.load(null, null);
@@ -55,45 +58,60 @@ public class MakeLunaCerts {
         if (keyExists(ks, "tomcat") || keyExists(ks, "ssgroot")) {
             if (!force)
                 throw new RuntimeException("SSG Certificates already present on this KeyStore.\n       Use -f switch to force them to be overwritten.");
-            System.out.println("Deleting existing certificates...");
+            System.out.println("Deleting existing CA and SSL certificates with labels 'tomcat' or 'ssgroot'...");
             ks.deleteEntry("tomcat");
             ks.deleteEntry("ssgroot");
+            LunaCmu.CmuObject[] objs = cmu.list();
+            for (int i = 0; i < objs.length; i++) {
+                LunaCmu.CmuObject obj = objs[i];
+                if (obj.getLabel() != null && (obj.getLabel().startsWith("tomcat") || obj.getLabel().startsWith("ssgroot"))) {
+                    System.out.println("  deleting object " + obj);
+                    cmu.delete(obj);
+                }
+            }
         }
-
-        final Calendar cal = Calendar.getInstance();
-        Date start = cal.getTime();
-        cal.add(Calendar.YEAR, 5);
-        Date sslExpires = cal.getTime();
-        cal.add(Calendar.YEAR, 20);
-        Date rootExpires = cal.getTime();
-
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
 
         // Generate CA certificate
+        final LunaCmu.CmuObject caCertObj;
+        final X509Certificate rootCertKs;
         {
-            final String dn = "cn=root." + hostname;
-            System.out.println("Generating new root certificate: " + dn);
-            kpg.initialize(1024);
-            KeyPair rootKp = kpg.generateKeyPair();
-            LunaCertificateX509 rootCert = LunaCertificateX509.SelfSign(rootKp, dn, new BigInteger("1001"), start, rootExpires);
-            ks.setKeyEntry("ssgroot", rootKp.getPrivate(), null, new X509Certificate[] { rootCert });
+            final String cn = "root." + hostname;
+            System.out.println("Generating new CA certificate: cn=" + cn);
 
-            System.out.println("Generated and saved a root certificate: " + rootCert.getSubjectDN().toString());
+            LunaCmu.CmuObject caKeyObj = cmu.generateRsaKeyPair("ssgroot");
+            caCertObj = cmu.generateCaCert(caKeyObj, null, cn);
+            X509Certificate rootCert = cmu.exportCertificate(caCertObj);
+
+            rootCertKs = (X509Certificate)ks.getCertificate("ssgroot");
+            if (!CertUtils.certsAreEqual(rootCert, rootCertKs))
+                throw new IllegalStateException("Exported CA cert from CMU differs from CA cert retrieved through Luna KeyStore");
+
+            if (!keyExists(ks, "ssgroot"))
+                throw new IllegalStateException("Unable to find newly created CA key and cert through Luna KeyStore");
+
+            System.out.println("Generated and saved a CA certificate under alias \"ssgroot\": " + rootCert.getSubjectDN().toString());
 
             new FileOutputStream("ca.cer").write(rootCert.getEncoded());
-            System.out.println("Root cert exported to ca.cer in current directory");
+            System.out.println("CA cert exported to ca.cer in current directory");
         }
 
-        // Generate SSL certificate
+        // Generate SSL certificate signed by the CA certificate
         {
-            final String dn = "cn=" + hostname;
-            System.out.println("Generating new SSL certificate: " + dn);
-            kpg.initialize(1024);
-            KeyPair sslKp = kpg.generateKeyPair();
-            LunaCertificateX509 sslCert = LunaCertificateX509.SelfSign(sslKp, dn, new BigInteger("1002"), start, sslExpires);
-            ks.setKeyEntry("tomcat", sslKp.getPrivate(), null, new X509Certificate[] { sslCert });
+            final String cn = hostname;
+            System.out.println("Generating new SSL certificate: cn=" + cn);
 
-            System.out.println("Generated and saved an SSL certificate: " + sslCert.getSubjectDN().toString());
+            LunaCmu.CmuObject sslKeyObj = cmu.generateRsaKeyPair("tomcat");
+            byte[] csr = cmu.requestCertificate(sslKeyObj, cn);
+            X509Certificate sslCert = cmu.certify(csr, caCertObj, 365 * 5, 1002, "tomcat--cert0");
+
+            X509Certificate sslCertKs = (X509Certificate)ks.getCertificate("tomcat");
+            if (!CertUtils.certsAreEqual(sslCert, sslCertKs))
+                throw new IllegalStateException("Exported SSL cert from CMU differs from SSL cert retrieved through Luna KeyStore");
+
+            if (!keyExists(ks, "tomcat"))
+                throw new IllegalStateException("Unable to find newly recreated SSL key and cert through Luna KeyStore");
+
+            System.out.println("Generated and saved an SSL certificate under alias \"tomcat\": " + sslCert.getSubjectDN().toString());
 
             new FileOutputStream("ssl.cer").write(sslCert.getEncoded());
             System.out.println("SSL cert exported to ssl.cer in current directory");
@@ -104,7 +122,7 @@ public class MakeLunaCerts {
 
     private static boolean keyExists(KeyStore ks, final String alias) throws NoSuchAlgorithmException, KeyStoreException {
         try {
-            return ks.getKey(alias, null) != null;
+            return ks.getKey(alias, null) != null && ks.getCertificate(alias) instanceof X509Certificate;
         } catch (UnrecoverableKeyException kse) {
             return false;
         }
