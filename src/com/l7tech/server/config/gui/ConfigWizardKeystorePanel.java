@@ -53,10 +53,12 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         ksBean.setKeyStoreType(ksType);
 
         if (ksType == KeyStoreConstants.DEFAULT_KEYSTORE_NAME) {
-            ksBean.setKsPassword(((DefaultKeystorePanel)defaultPanel).getKsPassword());
-            ksBean.setDoBothKeys(((DefaultKeystorePanel)defaultPanel).doBothKeys());
+            ksBean.setKsPassword(defaultPanel.getKsPassword());
+            ksBean.setDoBothKeys(defaultPanel.doBothKeys());
         } else {
-            ksBean.overwriteLunaCerts(((LunaKeystorePanel)lunaPanel).isOverwriteExisting());
+            ksBean.overwriteLunaCerts(lunaPanel.isOverwriteExisting());
+            ksBean.setLunaInstallationPath(lunaPanel.getLunaInstallPath());
+            ksBean.setLunaJspPath(lunaPanel.getLunaJSPPath());
         }
     }
 
