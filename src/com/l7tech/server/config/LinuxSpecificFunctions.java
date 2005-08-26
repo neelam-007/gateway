@@ -22,9 +22,9 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
         if (StringUtils.isEmpty(installRoot)) {
             installRoot = "/ssg";
         }
-//        dbFailDetect = "ssg/bin/dbfaildetect.sh";
         lunaInstallDir = "/usr/lunasa";
         lunaJSPDir = "/usr/lunasa/jsp";
+        lunaCmuPath = "bin/cmu";
     }
 
     public String[] getKeystoreTypes() {

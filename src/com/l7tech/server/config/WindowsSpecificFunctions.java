@@ -21,10 +21,9 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         if (StringUtils.isEmpty(installRoot)) {
             installRoot = "c:/program files/Layer 7/SSG";
         }
-//        mysqlConfig = "etc/my.cnf";
-//        dbFailDetect = "ssg/bin/dbfaildetect.sh";
         lunaInstallDir = "C:/Program Files/LunaSA/";
         lunaJSPDir = "C:/Program Files/LunaSA/JSP";
+        lunaCmuPath = "cmu.exe";
     }
 
     public String[] getKeystoreTypes() {
