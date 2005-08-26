@@ -28,7 +28,13 @@ public abstract class OSSpecificFunctions {
     protected String lunaInstallDir;
     protected String lunaJSPDir;
 
+    protected String pathToJdk;
+    protected String pathToJreLibExt;
+
     protected String ssgLogProperties;
+    protected String lunaCmuPath;
+    private String pathToJavaSecurityFile;
+    private String ssgSystemPropertiesFile;
 
     public OSSpecificFunctions() {
         installRoot = System.getProperty("com.l7tech.server.home");
@@ -56,6 +62,10 @@ public abstract class OSSpecificFunctions {
         keyStorePropertiesFile = "etc/conf/keystore.properties";
         tomcatServerConfig = "tomcat/conf/server.xml";
         keystoreDir = "etc/keys/";
+        pathToJreLibExt = "jre/lib/ext/";
+        pathToJavaSecurityFile = "jre/lib/security/java.security";
+        pathToJdk = "jdk1.5.0_02/";
+        ssgSystemPropertiesFile = "etc/conf/system.properties";
     }
 
     public String getClusterHostName() {
@@ -107,10 +117,6 @@ public abstract class OSSpecificFunctions {
         return installRoot + databaseConfig;
     }
 
-//    public String getDbFailDetect() {
-//        return installRoot + dbFailDetect;
-//    }
-
     public String getClusterHostFile() {
         return installRoot + clusterHostFile;
     }
@@ -149,6 +155,18 @@ public abstract class OSSpecificFunctions {
         this.lunaInstallDir = lunaInstallDir;
     }
 
+    public String getPathToJdk() {
+        return installRoot + pathToJdk;
+    }
+
+    public String getPathToJavaSecurityFile() {
+        return getPathToJdk() + pathToJavaSecurityFile;
+    }
+
+    public String getPathToJreLibExt() {
+        return getPathToJdk() + pathToJreLibExt;
+    }
+
     public static void main(String[] args) {
         System.setProperty("SSG_ROOT", "/tmp/testing");
         OSSpecificFunctions functions = null;
@@ -161,5 +179,13 @@ public abstract class OSSpecificFunctions {
         System.out.println("Install root = " + functions.getSsgInstallRoot());
         System.out.println("Cluster Hostname File = " + functions.getClusterHostFile());
         System.out.println("Cluster Hostname = " + functions.getClusterHostName());
+    }
+
+    public String getLunaCmuPath() {
+        return lunaCmuPath;
+    }
+
+    public String getSsgSystemPropertiesFile() {
+        return installRoot + ssgSystemPropertiesFile;
     }
 }
