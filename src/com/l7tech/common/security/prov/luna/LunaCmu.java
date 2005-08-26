@@ -313,7 +313,7 @@ public class LunaCmu {
         File csrFile = null;
         FileInputStream fis = null;
         try {
-            csrFile = File.createTempFile("lcsr", "tmp");
+            csrFile = File.createTempFile("lcsr", makeShortUuid());
             csrFile.deleteOnExit();
 
             List args = new ArrayList();
@@ -453,7 +453,7 @@ public class LunaCmu {
         CmuObject newCertObject = null;
         boolean deleteAfterExport = label == null;
         try {
-            csrFile = File.createTempFile("lcsr", "csr");
+            csrFile = File.createTempFile("lcsr", makeShortUuid());
             csrFile.deleteOnExit();
             fos = new FileOutputStream(csrFile);
             fos.write(csr);
@@ -536,7 +536,7 @@ public class LunaCmu {
                 }
             }
 
-            exportFile = File.createTempFile("lcrt", "cer");
+            exportFile = File.createTempFile("lcrt", makeShortUuid());
             exportFile.deleteOnExit();
 
             out = exec(new String[]{"export",
