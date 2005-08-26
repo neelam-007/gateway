@@ -8,6 +8,7 @@ package com.l7tech.common.security.prov.luna;
 import com.l7tech.common.security.RsaSignerEngine;
 
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Random;
 
@@ -35,6 +36,7 @@ public class LunaRsaSignerEngine implements RsaSignerEngine {
     }
 
     public Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception {
+        if (subject == null || subject.length() < 1) throw new IllegalArgumentException("Must specify a subject for the new cert");
         long daysValid = CERT_DAYS_VALID;
         if (expiration > 0) {
             long now = System.currentTimeMillis();
@@ -43,6 +45,11 @@ public class LunaRsaSignerEngine implements RsaSignerEngine {
                 daysValid = days;
         }
 
-        return cmu.certify(pkcs10req, caCert, (int)daysValid, new Random().nextLong(), null);
+        X509Certificate cert =  cmu.certify(pkcs10req, caCert, (int)daysValid, new Random().nextLong(), null);
+        String gotSubj = cert.getSubjectDN().getName();
+        if (!(subject.equalsIgnoreCase(gotSubj)))
+            throw new IllegalArgumentException("The CSR requested the subject \"" + gotSubj + "\", but only the subject \"" + subject + "\" is permitted");
+
+        return cert;
     }
 }
