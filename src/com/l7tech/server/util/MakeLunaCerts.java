@@ -10,11 +10,13 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 
 /**
  * @author mike
@@ -28,6 +30,7 @@ public class MakeLunaCerts {
             System.exit(0);
         } catch (Exception e) {
             System.err.println("ERROR: " + ExceptionUtils.getMessage(e));
+            e.printStackTrace();
             System.exit(1);
         }
     }
@@ -49,6 +52,11 @@ public class MakeLunaCerts {
 
         if (hostname == null || hostname.trim().length() < 1) throw new IllegalArgumentException(USAGE);
 
+        makeCerts(force, hostname);
+
+    }
+
+    public static void makeCerts(boolean force, String hostname) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
         System.out.println("Checking for Luna Certificate Management Utility (cmu) command... ");
         LunaCmu cmu = new LunaCmu();
         System.out.println("Connecting to Luna KeyStore... ");
