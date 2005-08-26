@@ -8,9 +8,8 @@
 
 setlocal
 
-for /f "tokens=2-4 delims=/ " %%i in ('date /t') do set month=%%i&set day=%%j&set year=%%k
-for /f "tokens=1-3 delims=: " %%i in ('time /t') do set hour=%%i&set minute=%%j&set ampm=%%k
-set dateTime=%year%-%month%-%day% %hour%:%minute% %ampm%
+for /f "delims=*" %%i in ('date /t') do set dateTime=%%i
+for /f "delims=*" %%i in ('time /t') do set dateTime=%dateTime% %%i
 
 if ""%1"" == ""start""   goto doStart
 if ""%1"" == ""stop""    goto doStop
