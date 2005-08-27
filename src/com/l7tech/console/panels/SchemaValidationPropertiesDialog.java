@@ -225,7 +225,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             }
         }
         if (!unresolvedImportsList.isEmpty()) {
-            StringBuffer msg = new StringBuffer("The schema contains the following unresolved imported schemas:\n");
+            StringBuffer msg = new StringBuffer("The assertion cannot be saved because the schema\n" +
+                                                "contains the following unresolved imported schemas:\n");
             for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
                 msg.append(iterator.next());
                 msg.append("\n");
