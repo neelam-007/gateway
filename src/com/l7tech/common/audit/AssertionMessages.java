@@ -36,7 +36,7 @@ public class AssertionMessages extends Messages {
     public static final M SAML_SV_REQUEST_NOT_AUTHENTICATED    = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
 
     // ServerCredentialSourceAssertion messages
-    public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");
+    public static final M AUTH_REQUIRED                        = m(4100, Level.WARNING, "Authentication Required");
 
     // ServerIdentityAssertion
     public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.WARNING, "Request is authenticated but request has no LoginCredentials!");
