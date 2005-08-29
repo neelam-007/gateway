@@ -12,18 +12,18 @@ import java.util.regex.Pattern;
  * To change this template use File | Settings | File Templates.
  */
 public class OSDetector {
-    private static Pattern LINUX_PATTERN = Pattern.compile("Linux");
-    private static Pattern WINDOWS_PATTERN = Pattern.compile("Windows");
+    private static Pattern LINUX_PATTERN = Pattern.compile("Linux.*");
+    private static Pattern WINDOWS_PATTERN = Pattern.compile("Windows.*");
 
     private static String OSName;
 
     public static OSSpecificFunctions getOSSpecificActions() throws UnsupportedOsException {
         OSName = System.getProperty("os.name");
         if (isWindows()) {
-            return new WindowsSpecificFunctions();
+            return new WindowsSpecificFunctions(OSName);
         }
         if (isLinux()) {
-            return new LinuxSpecificFunctions();
+            return new LinuxSpecificFunctions(OSName);
         }
         else {
             throw new UnsupportedOsException(OSName + " is not a supported operating system.");
