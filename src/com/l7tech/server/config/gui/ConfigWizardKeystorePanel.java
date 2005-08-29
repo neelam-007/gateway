@@ -40,6 +40,17 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         }
     };
 
+    private ActionListener doKsConfigActionListener = new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+                enableKsConfigPanel();
+            }
+    };
+
+    private JPanel ksConfigPanel;
+    private JRadioButton doKsConfig;
+    private JRadioButton dontDoKsConfig;
+
+
     public ConfigWizardKeystorePanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
         init();
@@ -47,18 +58,23 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     protected void updateModel(HashMap settings) {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
-        ksBean.setHostname(getParentWizard().getHostname());
-
-        String ksType = (String) keystoreType.getSelectedItem();
-        ksBean.setKeyStoreType(ksType);
-
-        if (ksType == KeyStoreConstants.DEFAULT_KEYSTORE_NAME) {
-            ksBean.setKsPassword(defaultPanel.getKsPassword());
-            ksBean.setDoBothKeys(defaultPanel.doBothKeys());
+        if (dontDoKsConfig.isSelected()) {
+            ksBean.doKeystoreConfig(false);
         } else {
-            ksBean.overwriteLunaCerts(lunaPanel.isOverwriteExisting());
-            ksBean.setLunaInstallationPath(lunaPanel.getLunaInstallPath());
-            ksBean.setLunaJspPath(lunaPanel.getLunaJSPPath());
+            ksBean.doKeystoreConfig(true);
+            ksBean.setHostname(getParentWizard().getHostname());
+
+            String ksType = (String) keystoreType.getSelectedItem();
+            ksBean.setKeyStoreType(ksType);
+
+            if (ksType == KeyStoreConstants.DEFAULT_KEYSTORE_NAME) {
+                ksBean.setKsPassword(defaultPanel.getKsPassword());
+                ksBean.setDoBothKeys(defaultPanel.doBothKeys());
+            } else {
+                //ksBean.overwriteLunaCerts(lunaPanel.isOverwriteExisting());
+                ksBean.setLunaInstallationPath(lunaPanel.getLunaInstallPath());
+                ksBean.setLunaJspPath(lunaPanel.getLunaJSPPath());
+            }
         }
     }
 
@@ -76,6 +92,16 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         configBean = new KeystoreConfigBean(osFunctions);
         configCommand = new KeystoreConfigCommand(configBean);
 
+        ButtonGroup doKsChoices = new ButtonGroup();
+        doKsChoices.add(doKsConfig);
+        doKsChoices.add(dontDoKsConfig);
+        dontDoKsConfig.setSelected(true);
+        enableKsConfigPanel();
+
+
+        doKsConfig.addActionListener(doKsConfigActionListener);
+        dontDoKsConfig.addActionListener(doKsConfigActionListener);
+
         String[] keystores = getKeystores();
         if (keystores == null) {
             setSkipped(true);
@@ -92,6 +118,16 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void enableKsConfigPanel() {
+        if (dontDoKsConfig.isSelected()) {
+            ksConfigPanel.setVisible(false);
+            ksDataPanel.setVisible(false);
+        } else {
+            ksConfigPanel.setVisible(true);
+            ksDataPanel.setVisible(true);
+        }
     }
 
     private String[] getKeystores() {
@@ -131,8 +167,11 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     }
 
     public boolean onNextButton() {
-        KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
-        return ksPanel.validateInput();
+        if (!dontDoKsConfig.isSelected()) {
+            KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
+            return ksPanel.validateInput();
+        }
+        return true;
     }
 
 
