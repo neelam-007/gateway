@@ -12,8 +12,8 @@ import com.l7tech.server.config.beans.KeystoreConfigBean;
  */
 public class LinuxSpecificFunctions extends OSSpecificFunctions {
 
-    public LinuxSpecificFunctions() {
-        super();
+    public LinuxSpecificFunctions(String osname) {
+        super(osname);
     }
 
     void makeOSSpecificFilenames() {

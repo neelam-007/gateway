@@ -11,8 +11,8 @@ import org.apache.commons.lang.StringUtils;
  */
 public class WindowsSpecificFunctions extends OSSpecificFunctions {
 
-    public WindowsSpecificFunctions() {
-        super();
+    public WindowsSpecificFunctions(String osname) {
+        super(osname);
     }
 
     void makeOSSpecificFilenames() {

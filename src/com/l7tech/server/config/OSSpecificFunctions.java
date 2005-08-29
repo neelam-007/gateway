@@ -20,7 +20,6 @@ public abstract class OSSpecificFunctions {
     protected String hostsFile;
     protected String clusterHostFile;
     protected String databaseConfig;
-//    protected String dbFailDetect;
     protected String keyStorePropertiesFile;
     protected String tomcatServerConfig;
     protected String keystoreDir;
@@ -36,7 +35,7 @@ public abstract class OSSpecificFunctions {
     private String pathToJavaSecurityFile;
     private String ssgSystemPropertiesFile;
 
-    public OSSpecificFunctions() {
+    public OSSpecificFunctions(String OSName) {
         installRoot = System.getProperty("com.l7tech.server.home");
         if (installRoot==null || installRoot.equalsIgnoreCase("")) {
             throw new RuntimeException("please set the system property: com.l7tech.server.home to point to the SSG installation root");
@@ -45,6 +44,7 @@ public abstract class OSSpecificFunctions {
         if (installRoot != null && !installRoot.endsWith("/")) {
             installRoot = installRoot + "/";
         }
+        this.osName = OSName;
         makeFilenames();
         makeOSSpecificFilenames();
     }
