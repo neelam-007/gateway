@@ -45,7 +45,7 @@ public class ConfigurationWizard extends Wizard {
         } catch (UnsupportedOsException e) {
             throw new RuntimeException(e.getMessage());
         }
-        JdkLoggerConfigurator.configure("com.l7tech.server.config.gui", osFunctions.getSsgInstallRoot() + LOG_PROPERTIES_NAME);
+//        JdkLoggerConfigurator.configure("com.l7tech.server.config.gui", osFunctions.getSsgInstallRoot() + LOG_PROPERTIES_NAME);
     }
 
     /**
@@ -62,8 +62,8 @@ public class ConfigurationWizard extends Wizard {
     }
 
     public void init(WizardStepPanel panel) {
-        JdkLoggerConfigurator.configure("com.l7tech.server.config.gui", osFunctions.getSsgInstallRoot() + "configlogging.properties");setResizable(true);
-        setTitle("SSG Configuration Wizard");
+        //JdkLoggerConfigurator.configure("com.l7tech.server.config.gui", osFunctions.getSsgInstallRoot() + "configlogging.properties");setResizable(true);
+        setTitle("SSG Configuration Wizard for " + osFunctions.getOSName());
         setShowDescription(false);
         Actions.setEscKeyStrokeDisposes(this);
         wizardInput = new HashMap();
