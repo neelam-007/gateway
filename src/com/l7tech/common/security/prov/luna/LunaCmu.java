@@ -7,6 +7,8 @@ package com.l7tech.common.security.prov.luna;
 
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.chrysalisits.crypto.LunaCertificateX509;
+import com.chrysalisits.crypto.LunaKey;
 
 import java.io.*;
 import java.security.cert.CertificateException;
@@ -30,10 +32,11 @@ public class LunaCmu {
 
     private final String cmuPath;
     private final File cmuFile;
+    private final boolean isWindows;
 
     public LunaCmu() throws LunaCmuException {
         final String osname = System.getProperty("os.name");
-        final boolean isWindows = (osname != null && osname.indexOf("Windows") >= 0);
+        isWindows = (osname != null && osname.indexOf("Windows") >= 0);
         final String defaultCmuPath =  isWindows ? DEFAULT_CMU_PATH_WINDOWS : DEFAULT_CMU_PATH_UNIX;
         cmuPath = System.getProperty(PROPERTY_CMU_PATH, defaultCmuPath);
         if (cmuPath == null || cmuPath.length() < 1)
@@ -130,7 +133,6 @@ public class LunaCmu {
      */
     public CmuObject generateRsaKeyPair(String label) throws LunaCmuException {
         String labelPublic = label + "--publicKey";
-        CmuObject[] haveBefore = list();
 
         byte[] out = exec(new String[] { "gen",
                                          "-modulusBits=1024",
@@ -147,37 +149,16 @@ public class LunaCmu {
                           null);
         checkForErrorMessage(out, "create RSA key pair labeled " + label);
 
-        // Find new objects
-        CmuObject[] haveAfter = list();
-        Set setAfter = new HashSet(Arrays.asList(haveAfter));
-        setAfter.removeAll(new HashSet(Arrays.asList(haveBefore)));
-
-        // Find new objects of type PrivateKey that match our label
-        CmuObject found = null;
-        CmuObject foundPublic = null;
-        for (Iterator i = setAfter.iterator(); i.hasNext();) {
-            CmuObject obj = (CmuObject)i.next();
-            if (obj.getKeyType().equals("RSA")) {
-                if (obj.getType().equals("privateKey") && obj.getLabel().equals(label)) {
-                    if (found != null)
-                        throw new LunaCmuException("Luna Certificate Management Utility found multiple new RSA private keys with the label " + label);
-                    found = obj;
-                } else if (obj.getType().equals("publicKey") && obj.getLabel().equals(labelPublic)) {
-                    if (foundPublic != null)
-                        throw new LunaCmuException("Luna Certificate Management Utility found multiple new RSA public keys with the label " + labelPublic);
-                    foundPublic = obj;
-                }
-            }
-        }
-
-        if (foundPublic == null)
-            throw new LunaCmuException("Luna Certificate Management Utility did not find the newly generated RSA public key object with label " + labelPublic);
-        try { delete(foundPublic); } catch (LunaCmuException e) {}
-
-        if (found == null)
+        LunaKey privateKey = LunaKey.LocateKeyByAlias(label);
+        if (privateKey == null)
             throw new LunaCmuException("Luna Certificate Management Utility did not find the newly generated RSA private key object with label " + label);
 
-        return found;
+        LunaKey publicKey = LunaKey.LocateKeyByAlias(labelPublic);
+        if (publicKey == null)
+            throw new LunaCmuException("Luna Certificate Management Utility did not find the newly generated RSA public key object with label " + labelPublic);
+        publicKey.DestroyKey();
+
+        return new CmuObject(0, privateKey.GetKeyHandle(), "privateKey", "RSA", label, "n/a");
     }
 
 
@@ -288,12 +269,12 @@ public class LunaCmu {
 
     private List makeDnArgs(String C, String S, String L, String O, String OU, String CN) throws LunaCmuException {
         List dnArgs = new ArrayList();
-        if (C != null) dnArgs.add("-C=\"" + C + "\"");
-        if (S != null) dnArgs.add("-S=\"" + S + "\"");
-        if (L != null) dnArgs.add("-L=\"" + L + "\"");
-        if (O != null) dnArgs.add("-O=\"" + O + "\"");
-        if (OU != null) dnArgs.add("-OU=\"" + OU + "\"");
-        if (CN != null) dnArgs.add("-CN=\"" + CN + "\"");
+        if (C != null) dnArgs.add("-C=" + quoteMaybe(C));
+        if (S != null) dnArgs.add("-S=" + quoteMaybe(S));
+        if (L != null) dnArgs.add("-L=" + quoteMaybe(L));
+        if (O != null) dnArgs.add("-O=" + quoteMaybe(O));
+        if (OU != null) dnArgs.add("-OU=" + quoteMaybe(OU));
+        if (CN != null) dnArgs.add("-CN=" + quoteMaybe(CN));
         if (dnArgs.size() < 1) throw new LunaCmuException("To create a new certificate, at least one DN component must be specified.");
         return dnArgs;
     }
@@ -313,16 +294,15 @@ public class LunaCmu {
         File csrFile = null;
         FileInputStream fis = null;
         try {
-            csrFile = File.createTempFile("lcsr", makeShortUuid());
+            csrFile = File.createTempFile("lcsr", makeShortUuid() + ".tmp");
             csrFile.deleteOnExit();
 
             List args = new ArrayList();
             args.add("requestCertificate");
             args.add("-privatehandle=" + privateKey.getHandle());
-            args.add("-outputfile=\"" + csrFile.getPath() + "\"");
+            args.add("-outputfile=" + quoteMaybe(csrFile.getPath()));
             args.add("-binary");
             args.addAll(makeDnArgs(null, null, null, null, null, CN));
-
             byte[] out = exec((String[])args.toArray(new String[0]), null);
             checkForErrorMessage(out, "create certificate signing request");
 
@@ -335,6 +315,10 @@ public class LunaCmu {
             if (fis != null) try { fis.close(); } catch (IOException e) {}
             if (csrFile != null) csrFile.delete();
         }
+    }
+
+    private String quoteMaybe(String path) {
+        return isWindows ? ("\"" + path + "\"") : path;
     }
 
     private static String format(Calendar cal) {
@@ -368,7 +352,7 @@ public class LunaCmu {
      */
     private byte[] exec(String[] args, byte[] stdin) throws LunaCmuException {
         try {
-            return doExcec(args, stdin);
+            return doExec(args, stdin);
         } catch (IOException e) {
             throw new LunaCmuException("Unable to invoke Luna Certificate Management Utility (cmu): " + e.getMessage(), e);
         } catch (InterruptedException e) {
@@ -376,14 +360,14 @@ public class LunaCmu {
         }
     }
 
-    private byte[] doExcec(String[] args, byte[] stdin) throws IOException, InterruptedException {
+    private byte[] doExec(String[] args, byte[] stdin) throws IOException, InterruptedException {
         String[] cmdArray = new String[args.length + 1];
         cmdArray[0] = cmuFile.getPath();
         for (int i = 0; i < args.length; i++)
             cmdArray[i + 1] = args[i];
 
         logger.finest("Running Luna cmu utility");
-        Process proc = Runtime.getRuntime().exec(cmdArray, null, cmuFile.getParentFile());
+        Process proc = Runtime.getRuntime().exec(cmdArray);
 
         final OutputStream os = proc.getOutputStream();
         if (stdin != null) {
@@ -453,7 +437,7 @@ public class LunaCmu {
         CmuObject newCertObject = null;
         boolean deleteAfterExport = label == null;
         try {
-            csrFile = File.createTempFile("lcsr", makeShortUuid());
+            csrFile = File.createTempFile("lcsr", makeShortUuid() + ".tmp");
             csrFile.deleteOnExit();
             fos = new FileOutputStream(csrFile);
             fos.write(csr);
@@ -474,7 +458,7 @@ public class LunaCmu {
 
             CmuObject[] before = list();
             final String[] args = new String[] { "certify",
-                                                         "-input=\"" + csrFile.getPath() + "\"" ,
+                                                         "-input=" + quoteMaybe(csrFile.getPath()),
                                                          "-handle=" + caCert.getHandle(),
                                                          "-startDate=" + now,
                                                          "-endDate=" + then,
@@ -536,13 +520,14 @@ public class LunaCmu {
                 }
             }
 
-            exportFile = File.createTempFile("lcrt", makeShortUuid());
+            exportFile = File.createTempFile("lcrt", makeShortUuid() + ".tmp");
             exportFile.deleteOnExit();
 
             out = exec(new String[]{"export",
                                     "-handle=" + certObj.getHandle(),
                                     "-binary",
-                                    "-outputFile=\"" + exportFile.getPath() + "\""}, null);
+                                    "-outputFile=" + quoteMaybe(exportFile.getPath())
+                                   }, null);
             checkForErrorMessage(out, "export newly signed certificate");
 
             fis = new FileInputStream(exportFile);
