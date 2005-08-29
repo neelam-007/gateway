@@ -36,11 +36,11 @@ public class AssertionMessages extends Messages {
     public static final M SAML_SV_REQUEST_NOT_AUTHENTICATED    = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
 
     // ServerCredentialSourceAssertion messages
-    public static final M AUTH_REQUIRED                        = m(4100, Level.WARNING, "Authentication Required");
+    public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");
 
     // ServerIdentityAssertion
-    public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.WARNING, "Request is authenticated but request has no LoginCredentials!");
-    public static final M CREDENTIALS_NOT_FOUND                   = m(4201, Level.INFO, "No credentials found!");
+    public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.SEVERE, "Request is authenticated but request has no LoginCredentials!");
+    public static final M CREDENTIALS_NOT_FOUND                   = m(4201, Level.WARNING, "No credentials found!");
     public static final M ALREADY_AUTHENTICATED                   = m(4202, Level.FINEST, "Request already authenticated");
     public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.SEVERE, "Can't call checkRequest() when no valid identityProviderOid has been set!");
     public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.SEVERE, "Couldn't find identity provider!");
