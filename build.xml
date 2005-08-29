@@ -381,7 +381,7 @@
       ** This target is invoked by other targets such as deploy and dist.
       -->
     <target name="package"
-            depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce"/>
+            depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz"/>
 
 
     <target name="package.gateway">
@@ -602,7 +602,6 @@
                 <exclude name="com/l7tech/policy/assertion/ext/*Security*"/>
                 <include name="com/l7tech/service/ServiceAdmin.class"/>
                 <include name="com/l7tech/service/PublishedService.class"/>
-                <include name="com/l7tech/service/SampleMessage.class"/>
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
                 <include name="com/l7tech/spring/remoting/rmi/**/*"/>
@@ -627,7 +626,46 @@
             </fileset>
         </jar>
     </target>
+    
+    <target name="package.configwiz" unless="ssg.only">
+        <mkdir dir="${build.dir}/configwizard"/>
+        <mkdir dir="${build.dir}/configwizard/lib"/>
 
+        <copy todir="${build.dir}/configwizard/lib">
+            <fileset dir="${build.dir}/lib">
+                <include name="commons-lang-1.0.1.jar"/>
+                <include name="forms_rt.jar"/>
+                <include name="mysql-connector-java-3.0.14-stable-bin.jar"/>
+            </fileset>
+        </copy>
+
+        <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar" manifest="${src.root}/etc/ConfigWizard.mf">
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/server/config/**/*"/>
+                <include name="com/l7tech/console/MainWindow.class"/>
+                <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
+                <include name="com/l7tech/common/util/FileUtils.class"/>
+                <include name="com/l7tech/common/util/HexUtils*.class"/>
+                <include name="com/l7tech/server/util/MakeLunaCerts.class"/>
+                <include name="com/l7tech/server/util/SetKeys*.class"/>
+                <include name="com/l7tech/common/security/JceProvider*.class"/>
+                <include name="com/l7tech/common/security/prov/luna/LunaCmu*.class"/>
+                <include name="com/l7tech/common/util/CertUtils*.class"/>
+                <include name="com/l7tech/common/util/ExceptionUtils.class"/>
+                <include name="com/l7tech/objectmodel/DeleteException.class"/>
+                <include name="com/l7tech/objectmodel/ObjectModelException.class"/>
+                <include name="com/l7tech/console/panels/Wizard*.class"/>
+                <include name="com/l7tech/console/event/Wizard*.class"/>
+                <include name="com/l7tech/console/event/WeakEventListenerList.class"/>
+                <include name="com/l7tech/console/action/Actions*.class"/>
+                <include name="com/l7tech/common/gui/util/Utilities*.class"/>
+                <include name="com/l7tech/common/gui/util/ImageCache.class"/>
+                <include name="com/l7tech/console/resources/layer7_logo_small_32x32.png"/>
+            </fileset>
+        </jar>
+    </target>
+        
+    
     <target name="package.api" unless="ssg.only">
 <!--
            ** Layer7 API jar, pack and sign
@@ -1400,6 +1438,10 @@
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
             </fileset>
+            <fileset dir="${src.root}/native/linux">
+                <include name="nc"/>
+                <include name="garp"/>
+            </fileset>
         </copy>
 
         <!-- Hack ssgruntimedefs.sh -->
@@ -1421,6 +1463,8 @@
                 <include name="*.pl"/>
                 <include name="back_route"/>
                 <include name="ssg-initd"/>
+                <include name="nc"/>
+                <include name="garp"/>
             </fileset>
             <fileset dir="${install.src.jdk}">
                 <include name="bin/*"/>
