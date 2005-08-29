@@ -490,7 +490,7 @@ CREATE TABLE sample_messages (
   operation_name varchar(128),
   INDEX i_ps_oid (published_service_oid),
   INDEX i_operation_name (operation_name),
-  PRIMARY KEY (objectid),
+  PRIMARY KEY (objectid)
 ) TYPE=InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;
