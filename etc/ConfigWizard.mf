@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Class-Path: . lib/commons-lang-1.0.1.jar lib/forms_rt.jar lib/mysql-connector-java-3.0.14-stable-bin.jar
+Main-Class: com.l7tech.server.config.gui.ConfigurationWizard
