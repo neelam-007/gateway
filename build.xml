@@ -1400,10 +1400,6 @@
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
             </fileset>
-            <fileset dir="${src.root}/native/linux">
-                <include name="nc"/>
-                <include name="garp"/>
-            </fileset>
         </copy>
 
         <!-- Hack ssgruntimedefs.sh -->
@@ -1425,8 +1421,6 @@
                 <include name="*.pl"/>
                 <include name="back_route"/>
                 <include name="ssg-initd"/>
-                <include name="nc"/>
-                <include name="garp"/>
             </fileset>
             <fileset dir="${install.src.jdk}">
                 <include name="bin/*"/>
