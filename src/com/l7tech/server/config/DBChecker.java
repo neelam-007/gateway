@@ -34,16 +34,23 @@ public class DBChecker {
         int failureCode = DB_SUCCESS;
         if (retryCount < maxRetryCount) {
             ++retryCount;
-            Connection conn;
+            Connection conn = null;
             try {
                 Class.forName(JDBC_DRIVER_NAME);
                 conn = DriverManager.getConnection(connectionString, name, password);
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                //e.printStackTrace();
                 failureCode = DB_CHECK_INTERNAL_ERROR;
             } catch (SQLException e) {
                 failureCode = DB_AUTH_FAILURE;
                 //e.printStackTrace(); LOG THIS?
+            } finally {
+                if (conn != null) {
+                    try {
+                        conn.close();
+                    } catch (SQLException e) {
+                    }
+                }
             }
         } else {
             failureCode = DB_MAX_RETRIES_EXCEEDED;
