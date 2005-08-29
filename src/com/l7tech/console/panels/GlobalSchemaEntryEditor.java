@@ -13,6 +13,7 @@ import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.text.FilterDocument;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import javax.swing.*;
@@ -105,6 +106,12 @@ public class GlobalSchemaEntryEditor extends JDialog {
             }
         });
 
+        schemanametxt.setDocument(new FilterDocument(128, new FilterDocument.Filter() {
+                                                                public boolean accept(String str) {
+                                                                    if (str == null) return false;
+                                                                    return true;
+                                                                }
+                                                            }));
     }
 
     private void help() {
