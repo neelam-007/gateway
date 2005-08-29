@@ -26,6 +26,8 @@ public class LunaRsaSignerEngine implements RsaSignerEngine {
             caCert = cmu.findCertificateByHandle(privateKeyAlias);
         } catch (LunaCmu.LunaCmuException e) {
             throw new RuntimeException("Unable to process Certificate Signing Request: " + e.getMessage(), e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Unable to process Certificate Signing Request: " + e.getMessage(), e);
         }
     }
 

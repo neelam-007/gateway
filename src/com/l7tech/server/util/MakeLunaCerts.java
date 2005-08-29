@@ -15,8 +15,8 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
@@ -58,7 +58,24 @@ public class MakeLunaCerts {
 
     }
 
-    public static void makeCerts(boolean force, String hostname) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+    /**
+     *
+     * @param force  set this to true if existing certifictes should be overwritten.  Otherwise no action will be
+     *               taken if existing certificates are detected.
+     * @param hostname  the hostname to use in the CN of the newly generated certs.  Must not be null or empty.
+     *                  The SSL cert will use the DN "CN=hostname".  The CA cert will use the DN "CN=root.hostname".
+     * @throws LunaCmu.LunaCmuException if the Luna cmu utility was not found (check "lunaCmuPath" system property)
+     * @throws LunaCmu.LunaCmuException if the Luna token manager is not currently logged into a partition
+     * @throws ClassNotFoundException if the Luna classes are not in the current classpath
+     * @throws ClassNotFoundException if the Luna class version is not compatible with this code
+     * @throws KeyStoreException if there is a problem creating a Luna keystore or locating or storing a key with it
+     * @throws IOException if there is a problem writing the exported certificates to disk
+     * @throws NoSuchAlgorithmException if the certs could not be loaded or exported due to a signature algorithm being missing.
+     *                                  Normally, this should not be possible.
+     * @throws CertificateException if the new certificates cannot be DER encoded for export.
+     *                              Normally, this should not be possible.
+     */
+    public static void makeCerts(boolean force, String hostname) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, ClassNotFoundException {
         log.info("Checking for Luna Certificate Management Utility (cmu) command... ");
         LunaCmu cmu = new LunaCmu();
         log.info("Connecting to Luna KeyStore... ");

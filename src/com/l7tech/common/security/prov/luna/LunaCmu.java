@@ -7,8 +7,6 @@ package com.l7tech.common.security.prov.luna;
 
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.chrysalisits.crypto.LunaCertificateX509;
-import com.chrysalisits.crypto.LunaKey;
 
 import java.io.*;
 import java.security.cert.CertificateException;
@@ -25,6 +23,7 @@ import java.util.regex.Pattern;
 public class LunaCmu {
     private static final Logger logger = Logger.getLogger(LunaCmu.class.getName());
 
+    /** The system property that holds the path to the Luna cmu exectuable. */
     public static final String PROPERTY_CMU_PATH = "lunaCmuPath";
     private static final String DEFAULT_CMU_PATH_WINDOWS = "C:/Program Files/LunaSA/cmu.exe";
     private static final String DEFAULT_CMU_PATH_UNIX = "/usr/lunasa/bin/cmu";
@@ -34,7 +33,17 @@ public class LunaCmu {
     private final File cmuFile;
     private final boolean isWindows;
 
-    public LunaCmu() throws LunaCmuException {
+    /**
+     * Create a LunaCmu instance ready to perform cmu operations.  This requires the cmu binary *and* a connection
+     * via the Luna API.
+     *
+     * @see #PROPERTY_CMU_PATH
+     * @throws LunaCmuException if the Luna cmu utility was not found (see system property: {@link #PROPERTY_CMU_PATH})
+     * @throws LunaCmuException if the Luna token manager is not currently logged into a partition
+     * @throws ClassNotFoundException if the Luna classes are not in the current classpath
+     * @throws ClassNotFoundException if the Luna class version is not compatible with this code
+     */
+    public LunaCmu() throws LunaCmuException, ClassNotFoundException {
         final String osname = System.getProperty("os.name");
         isWindows = (osname != null && osname.indexOf("Windows") >= 0);
         final String defaultCmuPath =  isWindows ? DEFAULT_CMU_PATH_WINDOWS : DEFAULT_CMU_PATH_UNIX;
@@ -57,14 +66,20 @@ public class LunaCmu {
      * <p>
      * It should not normally be necessary to call this directly since it is called within the LunaCmu constructor.
      *
+     * @see #PROPERTY_CMU_PATH
      * @throws LunaCmuException if the LunaCmu utility was not probed successfully.
+     * @throws LunaCmuException if the Luna token manager is not currently logged into a partition
+     * @throws ClassNotFoundException if the Luna classes are not in the current classpath
+     * @throws ClassNotFoundException if the Luna class version is not compatible with this code
      */
-    public void probe() throws LunaCmuException {
+    public void probe() throws LunaCmuException, ClassNotFoundException {
         // Ping the CMU with a help request
         String got = new String(exec(new String[] { "-?" }, null));
         final String wanted = "Certificate Management Utility";
         if (got.indexOf(wanted) < 0)
             throw new LunaCmuException("Unrecognized output from Luna Certificate Management Utility (cmu): possible unsupported version?  Invocation of cmu -? failed to produce the string: " + wanted);
+        if (!LunaProber.isPartitionLoggedIn())
+            throw new LunaCmuException("Luna partition is not logged in -- please log in munually");
     }
 
     /**
@@ -149,16 +164,21 @@ public class LunaCmu {
                           null);
         checkForErrorMessage(out, "create RSA key pair labeled " + label);
 
-        LunaKey privateKey = LunaKey.LocateKeyByAlias(label);
-        if (privateKey == null)
-            throw new LunaCmuException("Luna Certificate Management Utility did not find the newly generated RSA private key object with label " + label);
+        final Integer privateKeyHandle;
+        try {
+            privateKeyHandle = LunaProber.locateKeyHandleByAlias(label);
+            if (privateKeyHandle == null)
+                throw new LunaCmuException("Unable to locate the newly generated private key with alias: " + label);
 
-        LunaKey publicKey = LunaKey.LocateKeyByAlias(labelPublic);
-        if (publicKey == null)
-            throw new LunaCmuException("Luna Certificate Management Utility did not find the newly generated RSA public key object with label " + labelPublic);
-        publicKey.DestroyKey();
+            LunaProber.destroyKeyByAlias(labelPublic);
 
-        return new CmuObject(0, privateKey.GetKeyHandle(), "privateKey", "RSA", label, "n/a");
+        } catch (ClassNotFoundException e) {
+            throw new LunaCmuException("Unable to locate the newly generated private key: " + e.getMessage(), e);
+        } catch (LunaProber.KeyNotFoundException e) {
+            throw new LunaCmuException("Unable to locate the newly generated public key: " + e.getMessage(), e);
+        }
+
+        return new CmuObject(0, privateKeyHandle.intValue(), "privateKey", "RSA", label, "n/a");
     }
 
 
