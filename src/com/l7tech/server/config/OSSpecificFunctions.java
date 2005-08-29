@@ -38,6 +38,10 @@ public abstract class OSSpecificFunctions {
 
     public OSSpecificFunctions() {
         installRoot = System.getProperty("com.l7tech.server.home");
+        if (installRoot==null || installRoot.equalsIgnoreCase("")) {
+            throw new RuntimeException("please set the system property: com.l7tech.server.home to point to the SSG installation root");
+        }
+
         if (installRoot != null && !installRoot.endsWith("/")) {
             installRoot = installRoot + "/";
         }
@@ -64,7 +68,6 @@ public abstract class OSSpecificFunctions {
         keystoreDir = "etc/keys/";
         pathToJreLibExt = "jre/lib/ext/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
-        pathToJdk = "jdk1.5.0_02/";
         ssgSystemPropertiesFile = "etc/conf/system.properties";
     }
 

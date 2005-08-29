@@ -1,5 +1,8 @@
 package com.l7tech.server.config.gui;
 
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
@@ -10,7 +13,6 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.exceptions.UnsupportedOsException;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,8 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.Iterator;
-import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -29,9 +30,14 @@ import java.util.ArrayList;
  * To change this template use File | Settings | File Templates.
  */
 public class ConfigurationWizard extends Wizard {
+    static Logger log = Logger.getLogger(ConfigurationWizard.class.getName());
+
     private boolean isNewInstall;
     private static OSSpecificFunctions osFunctions;
     private String hostname;
+
+    public static final String RESOURCE_PATH = "com/l7tech/console/resources";
+    public static final String LOG_PROPERTIES_NAME = "configuration-logging.properties";
 
     static {
         try {
@@ -39,6 +45,7 @@ public class ConfigurationWizard extends Wizard {
         } catch (UnsupportedOsException e) {
             throw new RuntimeException(e.getMessage());
         }
+        JdkLoggerConfigurator.configure("com.l7tech.server.config.gui", osFunctions.getSsgInstallRoot() + LOG_PROPERTIES_NAME);
     }
 
     /**
@@ -55,7 +62,7 @@ public class ConfigurationWizard extends Wizard {
     }
 
     public void init(WizardStepPanel panel) {
-        setResizable(true);
+        JdkLoggerConfigurator.configure("com.l7tech.server.config.gui", osFunctions.getSsgInstallRoot() + "configlogging.properties");setResizable(true);
         setTitle("SSG Configuration Wizard");
         setShowDescription(false);
         Actions.setEscKeyStrokeDisposes(this);
@@ -68,9 +75,11 @@ public class ConfigurationWizard extends Wizard {
             }
             public void wizardFinished(WizardEvent e) {
                 applyConfiguration();
+                System.exit(0);
             }
             public void wizardCanceled(WizardEvent e) {
-                // dont care
+                System.out.println("Wizard Cancelled");
+                System.exit(1);
             }
         });
 
@@ -83,6 +92,7 @@ public class ConfigurationWizard extends Wizard {
     }
 
     private void applyConfiguration() {
+        log.info("Applying the configuration changes");
         HashMap commands = (HashMap) wizardInput;
 
         //we need to add this to make sure that non clustering/db/etc. specific actions occur
@@ -106,12 +116,12 @@ public class ConfigurationWizard extends Wizard {
         ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel, osFunctions);
 
         ConfigWizardStepPanel startPanel;
-        if (osFunctions.isWindows())  {
-            ConfigWizardStepPanel servicePanel = new ConfigWizardWinServicePanel(clusteringPanel, osFunctions);
-            startPanel = new ConfigWizardStartPanel(servicePanel, osFunctions);
-        } else {
+//        if (osFunctions.isWindows())  {
+//            ConfigWizardStepPanel servicePanel = new ConfigWizardWinServicePanel(clusteringPanel, osFunctions);
+//            startPanel = new ConfigWizardStartPanel(servicePanel, osFunctions);
+//        } else {
             startPanel = new ConfigWizardStartPanel(clusteringPanel,osFunctions);
-        }
+//        }
 
         return startPanel;
     }
@@ -145,9 +155,14 @@ public class ConfigurationWizard extends Wizard {
 
     public static void main(String[] args)
       throws Exception {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        log.info("Starting SSG Configuration Wizard");
 
-        ConfigurationWizard wizard = ConfigurationWizard.getInstance(new JFrame());
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        JFrame mainFrame = new JFrame();
+        Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
+        ImageIcon imageIcon = new ImageIcon(icon);
+        mainFrame.setIconImage(imageIcon.getImage());
+        ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
 
         wizard.setSize(780, 560);
         Utilities.centerOnScreen(wizard);

@@ -34,10 +34,6 @@ public class DatabaseConfigCommand extends BaseConfigurationCommand {
         super(bean, bean.getOSFunctions());
     }
 
-//    public String[] explain() {
-//        return new String[0];
-//    }
-
     public void execute() {
         //printPlans();
         if ( ((DatabaseConfigBean)configBean).isDbConfigOn() ){

@@ -33,7 +33,6 @@ public class MakeLunaCerts {
             System.exit(0);
         } catch (Exception e) {
             System.err.println("ERROR: " + ExceptionUtils.getMessage(e));
-            e.printStackTrace();
             System.exit(1);
         }
     }

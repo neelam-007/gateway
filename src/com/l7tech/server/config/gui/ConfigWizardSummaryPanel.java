@@ -62,4 +62,8 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
 
     protected void updateModel(HashMap settings) {
     }
+
+    public boolean canFinish() {
+        return true;
+    }
 }

@@ -56,6 +56,10 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
         }
     }
 
+    public boolean canFinish() {
+        return false;
+    }
+
     protected abstract void updateModel(HashMap settings);
 
     protected abstract void updateView(HashMap settings);

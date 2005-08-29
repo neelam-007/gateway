@@ -96,7 +96,7 @@ public class DatabaseConfigBean extends BaseConfigurationBean {
                 explanations.add(insertTab + SETUP_REMOTE_DB_INFO);
                 explanations.add(insertTab + "    HOSTNAME = " + getDbHostname());
                 explanations.add(insertTab + "    USERNAME = " + getDbUsername());
-                explanations.add(insertTab + "    DATABASE = " + getDbUsername());
+                explanations.add(insertTab + "    DATABASE = " + getDbName());
             } else {
                 explanations.add(insertTab + SETUP_LOCAL_DB_INFO);
             }
@@ -106,7 +106,7 @@ public class DatabaseConfigBean extends BaseConfigurationBean {
             explanations.add(insertTab + "tried to connect to:");
             explanations.add(insertTab + "    HOSTNAME = " + getDbHostname());
             explanations.add(insertTab + "    USERNAME = " + getDbUsername());
-            explanations.add(insertTab + "    DATABASE = " + getDbUsername());
+            explanations.add(insertTab + "    DATABASE = " + getDbName());
         }
 
         return (String[]) explanations.toArray(new String[explanations.size()]);

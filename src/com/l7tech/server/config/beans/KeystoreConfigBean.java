@@ -21,13 +21,18 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     boolean doBothKeys;
     String hostname;
     private boolean overwriteLunaCerts;
+    
     private static final String DO_BOTH_KEYS_INFO = "Creating CA and SSL keys";
     private static final String SKIP_CA_KEY_INFO = "Skipping CA leys creation";
     private static final String USING_HOSTNAME_INFO = "Using hostname: ";
     private static final String OVERWRITE_LUNA_CERT_INFO = "Will overwrite existing certs";
     private static final String NO_OVERWRITE_LUNA_CERT_INFO = "Will not overwrite existing certs";
+    private static final String SKIPPING_KEYSTORE_CONFIG_INFO = "Skipping keystore configuration";
+
     private String lunaJspPath;
     private String lunaInstallationPath;
+    private boolean doKeystoreConfig;
+
 
     public String getKeyStoreType() {
         return keyStoreType;
@@ -55,25 +60,22 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     public String[] explain() {
         ArrayList explanations = new ArrayList();
         explanations.add(getName() + " - " + getDescription());
-
-        explanations.add(insertTab + "create " + getKeyStoreType());
-        if (getKeyStoreType().equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
-            if (isDoBothKeys()) {
-                explanations.add(insertTab + DO_BOTH_KEYS_INFO);
-
-            } else {
-                explanations.add(insertTab + SKIP_CA_KEY_INFO);
-            }
-        } else {
-            if (isOverwriteLunaCerts()) {
-                explanations.add(insertTab + OVERWRITE_LUNA_CERT_INFO);
+        if (isDoKeystoreConfig()) {
+            explanations.add(insertTab + "create " + getKeyStoreType());
+            if (getKeyStoreType().equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+                if (isDoBothKeys()) {
+                    explanations.add(insertTab + DO_BOTH_KEYS_INFO);
+                } else {
+                    explanations.add(insertTab + SKIP_CA_KEY_INFO);
+                }
             } else {
                 explanations.add(insertTab + NO_OVERWRITE_LUNA_CERT_INFO);
             }
+            explanations.add(insertTab + USING_HOSTNAME_INFO + getHostname());
         }
-
-        explanations.add(insertTab + USING_HOSTNAME_INFO + getHostname());
-
+        else {
+            explanations.add(insertTab + SKIPPING_KEYSTORE_CONFIG_INFO);
+        }
         return (String[]) explanations.toArray(new String[explanations.size()]);
     }
 
@@ -101,13 +103,13 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         this.hostname = hostname;
     }
 
-    public boolean isOverwriteLunaCerts() {
-        return overwriteLunaCerts;
-    }
-
-    public void overwriteLunaCerts(boolean isOverwrite) {
-        overwriteLunaCerts = isOverwrite;
-    }
+//    public boolean isOverwriteLunaCerts() {
+//        return overwriteLunaCerts;
+//    }
+//
+//    public void overwriteLunaCerts(boolean isOverwrite) {
+//        overwriteLunaCerts = isOverwrite;
+//    }
 
     public String getLunaJspPath() {
         return lunaJspPath;
@@ -123,5 +125,16 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     public void setLunaInstallationPath(String lunaInstallationPath) {
         this.lunaInstallationPath = lunaInstallationPath;
+        if (!this.lunaInstallationPath.endsWith("/")) {
+            this.lunaInstallationPath = this.lunaInstallationPath + "/";
+        }
+    }
+
+    public void doKeystoreConfig(boolean b) {
+        this.doKeystoreConfig = b;
+    }
+
+    public boolean isDoKeystoreConfig() {
+        return doKeystoreConfig;
     }
 }

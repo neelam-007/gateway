@@ -24,6 +24,7 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         lunaInstallDir = "C:/Program Files/LunaSA/";
         lunaJSPDir = "C:/Program Files/LunaSA/JSP";
         lunaCmuPath = "cmu.exe";
+        pathToJdk = "jdk/";
     }
 
     public String[] getKeystoreTypes() {

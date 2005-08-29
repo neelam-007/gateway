@@ -17,9 +17,12 @@ public class DBChecker {
     public static final int DB_AUTH_FAILURE = -1;
     public static final int DB_MISSING_FAILURE = -2;
     public static final int DB_MAX_RETRIES_EXCEEDED = -3;
+    public static final int DB_CHECK_INTERNAL_ERROR = -4;
 
     private int maxRetryCount;
     private int retryCount;
+
+    private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
 
     public DBChecker(int maxRetryCount) {
         this.maxRetryCount = maxRetryCount;
@@ -33,10 +36,11 @@ public class DBChecker {
             ++retryCount;
             Connection conn;
             try {
-                Class.forName("com.mysql.jdbc.Driver");
+                Class.forName(JDBC_DRIVER_NAME);
                 conn = DriverManager.getConnection(connectionString, name, password);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
+                failureCode = DB_CHECK_INTERNAL_ERROR;
             } catch (SQLException e) {
                 failureCode = DB_AUTH_FAILURE;
                 //e.printStackTrace(); LOG THIS?
@@ -48,4 +52,7 @@ public class DBChecker {
     }
 
 
+    public void resetRetryCount() {
+        retryCount = 0;
+    }
 }

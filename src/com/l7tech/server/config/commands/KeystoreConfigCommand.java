@@ -69,64 +69,119 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     public void execute() {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
-        String ksType = ksBean.getKeyStoreType();
-        if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
-            doDefaultKeyConfig(ksBean);
-        } else {
-            doLunaKeyConfig(ksBean);
+        if (ksBean.isDoKeystoreConfig()) {
+
+            String ksType = ksBean.getKeyStoreType();
+            if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+                doDefaultKeyConfig(ksBean);
+            } else {
+                doLunaKeyConfig(ksBean);
+            }
         }
     }
 
-    private void doLunaKeyConfig(KeystoreConfigBean ksBean) {
-        File javaSecFile = new File(osFunctions.getPathToJavaSecurityFile());
-        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
+    private void doDefaultKeyConfig(KeystoreConfigBean ksBean) {
+        char[] ksPassword = ksBean.getKsPassword();
+        boolean doBothKeys = ksBean.isDoBothKeys();
 
-        File[] fileList = new File[]
+        String ksDir = osFunctions.getKeystoreDir();
+        File keystorePropertiesFile = new File(osFunctions.getKeyStorePropertiesFile());
+        File tomcatServerConfigFile = new File(osFunctions.getTomcatServerConfig());
+        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+
+        File[] files = new File[]
         {
-            javaSecFile,
-            systemPropertiesFile
+            keystorePropertiesFile,
+            tomcatServerConfigFile,
+            caKeyStoreFile,
+            sslKeyStoreFile,
+            caCertFile,
+            sslCertFile
         };
+
         try {
-            backupFiles(fileList, BACKUP_FILE_NAME);
+            backupFiles(files, BACKUP_FILE_NAME);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        setLunaSystemProps(ksBean);
+        boolean keysDone = makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
+        if (keysDone) {
+            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+        }
+    }
 
+    private void doLunaKeyConfig(KeystoreConfigBean ksBean) {
+        char[] ksPassword = ksBean.getKsPassword();
+        //we don't actually care what the password is for Luna, so make it obvious.
+        ksPassword = new String("ignoredbyluna").toCharArray();
+
+        String ksDir = osFunctions.getKeystoreDir();
+
+        File newJavaSecFile = new File(osFunctions.getPathToJavaSecurityFile() + ".new");
+
+        File javaSecFile = new File(osFunctions.getPathToJavaSecurityFile());
+        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
+        File keystorePropertiesFile = new File(osFunctions.getKeyStorePropertiesFile());
+        File tomcatServerConfigFile = new File(osFunctions.getTomcatServerConfig());
+        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
+        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
+        File caCertFile = new File(ksDir + CA_CERT_FILE);
+        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+
+        File[] files = new File[]
+        {
+            javaSecFile,
+            systemPropertiesFile,
+            keystorePropertiesFile,
+            tomcatServerConfigFile,
+            caKeyStoreFile,
+            sslKeyStoreFile,
+            caCertFile,
+            sslCertFile
+        };
+
+        try {
+            backupFiles(files, BACKUP_FILE_NAME);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //prepare the JDK and the Luna environment before generating keys
+        setLunaSystemProps(ksBean);
         copyLunaJars(ksBean);
-        updateJavaSecurity(ksBean, javaSecFile);
+        updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile);
         makeLunaKeys(ksBean);
+
+        updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+        updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
         updateSystemPropertiesFile(ksBean, systemPropertiesFile);
     }
 
-    private void makeLunaKeys(KeystoreConfigBean ksBean) {
+    private boolean makeLunaKeys(KeystoreConfigBean ksBean) {
+        boolean success = true;
         String args[];
-        boolean overwrite = ksBean.isOverwriteLunaCerts();
         String hostname = ksBean.getHostname();
-        if (overwrite) {
-            args = new String[]
-            {
-                "-f",
-                hostname
-            };
+        args = new String[]
+        {
+            "-f",
+            hostname
+        };
 
-        } else {
-            args = new String[]
-            {
-                hostname
-            };
-        }
         try {
             MakeLunaCerts.realMain(args);
         } catch (Exception e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
+            success = false;
         }
-        moveLunaCerts();
-    }
-
-    private void moveLunaCerts() {
-
+        if (success) {
+            moveLunaCerts();
+        }
+        return success;
     }
 
     private void updateSystemPropertiesFile(KeystoreConfigBean ksBean, File systemPropertiesFile) {
@@ -169,53 +224,48 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile) {
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        Properties props = new Properties();
+    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile, File newJavaSecFile) {
+        BufferedReader reader = null;
+        PrintWriter writer = null;
         try {
-            fis = new FileInputStream(javaSecFile);
-            props.load(fis);
-            fis.close();
-            fis = null;
+            reader = new BufferedReader(new FileReader(javaSecFile));
+            writer= new PrintWriter(newJavaSecFile);
 
-            //remove whatever properties
-            Enumeration propertyNames = props.propertyNames();
-            while (propertyNames.hasMoreElements()) {
-                String propertyName = (String) propertyNames.nextElement();
-                if (propertyName.startsWith(PROPKEY_SECURITY_PROVIDER)) {
-                    props.remove(propertyName);
+            String line = null;
+            int secProviderIndex = 0;
+            while ((line = reader.readLine()) != null) {
+                if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) {
+                    if (secProviderIndex < SECURITY_PROVIDERS.length) {
+                        line = new String(PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + SECURITY_PROVIDERS[secProviderIndex]);
+                        secProviderIndex++;
+                    } else {
+                        continue;
+                    }
                 }
+                writer.println(line);
             }
+            reader.close();
+            reader = null;
+            writer.close();
+            writer = null;
 
-            //now add the ones we want
-            for (int i = 0; i < SECURITY_PROVIDERS.length; i++) {
-                String securityProvider = SECURITY_PROVIDERS[i];
-                props.setProperty(PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(i + 1), securityProvider);
-            }
+            newJavaSecFile.renameTo(javaSecFile);
 
-            fos = new FileOutputStream(javaSecFile);
-            props.store(fos, PROPERTY_COMMENT);
-            fos.close();
-            fos = null;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (fis != null) {
+            if (reader != null) {
                 try {
-                    fis.close();
+                    reader.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
+            if (writer != null) {
+                writer.close();
             }
         }
     }
@@ -242,39 +292,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         System.setProperty(LUNA_SYSTEM_CMU_PROPERTY, ksBean.getLunaInstallationPath() + osFunctions.getLunaCmuPath());
     }
 
-    private void doDefaultKeyConfig(KeystoreConfigBean ksBean) {
-        char[] ksPassword = ksBean.getKsPassword();
-        boolean doBothKeys = ksBean.isDoBothKeys();
+    private void moveLunaCerts() {
 
-        String ksDir = osFunctions.getKeystoreDir();
-        File keystorePropertiesFile = new File(osFunctions.getKeyStorePropertiesFile());
-        File tomcatServerConfigFile = new File(osFunctions.getTomcatServerConfig());
-        File caKeyStoreFile = new File( ksDir + CA_KEYSTORE_FILE);
-        File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
-        File caCertFile = new File(ksDir + CA_CERT_FILE);
-        File sslCertFile = new File(ksDir + SSL_CERT_FILE);
-
-        File[] files = new File[]
-        {
-            keystorePropertiesFile,
-            tomcatServerConfigFile,
-            caKeyStoreFile,
-            sslKeyStoreFile,
-            caCertFile,
-            sslCertFile
-        };
-
-        try {
-            backupFiles(files, BACKUP_FILE_NAME);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        boolean keysDone = makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
-        if (keysDone) {
-            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
-        }
     }
 
     private boolean makeDefaultKeys(boolean doBothKeys, KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) {
