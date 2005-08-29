@@ -16,7 +16,7 @@ import java.io.File;
 public class LunaKeystorePanel extends KeystorePanel {
     private JPanel mainPanel;
 
-    private JCheckBox overwriteExisting;
+    //private JCheckBox overwriteExisting;
     private JTextField lunaInstallPath;
     private JButton browseLunaPath;
     private JTextField lunaJSPPath;
@@ -51,9 +51,9 @@ public class LunaKeystorePanel extends KeystorePanel {
         return true;
     }
 
-    public boolean isOverwriteExisting() {
-        return overwriteExisting.isSelected();
-    }
+//    public boolean isOverwriteExisting() {
+//        return overwriteExisting.isSelected();
+//    }
 
     public void setDefaultLunaInstallPath(String path) {
         lunaInstallPath.setText(path);
