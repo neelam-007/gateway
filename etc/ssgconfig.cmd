@@ -4,7 +4,7 @@
 
 :: Launches the SecureSpan Gateway configuration tool.
 
-::@echo off
+@echo off
 
 setlocal
 
