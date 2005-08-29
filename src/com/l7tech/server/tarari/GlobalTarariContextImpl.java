@@ -157,15 +157,19 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
 
             // Keep track of all targetnamespace so that serverschemavalidation can check whether or not more than one
             // schema uses the same tns
-            tnss = new String[schemasInPolicyAndTable.size()];
-            int i = 0;
+            ArrayList allTNSs = new ArrayList();
             for (Iterator iterator = schemasInPolicyAndTable.iterator(); iterator.hasNext();) {
                 String s = (String) iterator.next();
                 SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(s));
                 String tns = sdoc.getSchema().getTargetNamespace();
-                tnss[i] = tns;
-                i++;
+                if (tns == null || tns.length() < 1) {
+                    logger.warning("An schema validation assertion or a global schema was " +
+                                   "published without a declared targetnamespace\n" + s);
+                } else {
+                    allTNSs.add(tns);
+                }
             }
+            tnss = (String[])allTNSs.toArray(new String[0]);
         }
     }
 
