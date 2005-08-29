@@ -1,8 +1,8 @@
 package com.l7tech.service;
 
+import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.common.uddi.WsdlInfo;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -118,4 +118,23 @@ public interface ServiceAdmin {
      * @return a string array with one item for each different counter name for this gateway
      */
     String[] listExistingCounterNames() throws RemoteException, FindException;
+
+    /**
+     * Finds the {@link SampleMessage} instance with the specified OID, or null if it does not exist.
+     * @return the {@link SampleMessage} instance with the specified OID.  May be null if not present.
+     */
+    SampleMessage findSampleMessageById(long oid) throws RemoteException, FindException;
+
+    /**
+     * Finds any {@link EntityHeader}s belonging to the {@link PublishedService}
+     * with the specified OID and (optional) operation name.
+     * @param serviceOid the OID of the {@link PublishedService} to which the SampleMessage belongs. Pass -1 for all services.
+     * @param operationName the name of the operation for which the SampleMessage was saved. Pass null for all operations, or "" for messages that are not categorized by operation name.
+     * @return an array of {@link EntityHeader}s. May be empty, but never null.
+     */
+    EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException;
+
+    long saveSampleMessage(SampleMessage sm) throws SaveException;
+
+    void deleteSampleMessage(SampleMessage message) throws DeleteException;
 }

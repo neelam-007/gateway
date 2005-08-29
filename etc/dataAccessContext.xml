@@ -152,6 +152,7 @@
              <idref bean="countedHitsManager"/>
              <idref bean="communitySchemaManager"/>
              <idref bean="clusterPropertyManager"/>
+             <idref bean="sampleMessageManager"/>
          </list>
      </property>
  </bean>

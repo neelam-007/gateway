@@ -270,6 +270,9 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="sampleMessageManager">
+            <ref bean="sampleMessageManager"/>
+        </property>
     </bean>
 
     <bean id="schemaAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"

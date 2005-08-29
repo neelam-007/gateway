@@ -4,33 +4,40 @@ import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
+import com.l7tech.common.security.xml.KeyReference;
+import com.l7tech.common.security.xml.XencAlgorithm;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
-import com.l7tech.common.security.xml.XencAlgorithm;
-import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
 import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.xmlviewer.ExchangerDocument;
 import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.console.xmlviewer.ViewerToolBar;
 import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.SimpleXpathAssertion;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.SampleMessage;
+import com.l7tech.service.ServiceAdmin;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
@@ -54,10 +61,7 @@ import javax.xml.soap.SOAPMessage;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.text.ParseException;
@@ -108,6 +112,18 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JRadioButton skiReferenceRadioButton;
     private JTextField varPrefixField;
     private JLabel varPrefixLabel;
+
+    private JComboBox sampleMessagesCombo;
+    private DefaultComboBoxModel sampleMessagesComboModel;
+    private JButton addSampleButton;
+    private JButton removeSampleButton;
+    private static final SampleMessageComboEntry USE_AUTOGEN = new SampleMessageComboEntry(null) {
+        public String toString() {
+            return "<use automatically generated message above>";
+        }
+    };
+    private BindingOperation currentOperation;
+    private JButton editSampleButton;
 
     /**
      * @param owner this panel owner
@@ -193,6 +209,153 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             initialvalue = assertion.getXpathExpression().getExpression();
         }
         messageViewerToolBar.getxpathField().setText(initialvalue);
+
+        populateSampleMessages(null);
+        enableSampleButtons();
+
+        addSampleButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                SampleMessage sm;
+                try {
+                    String xml = messageViewer.getContent();
+                    try {
+                        org.w3c.dom.Document doc = XmlUtil.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+                        xml = XmlUtil.nodeToFormattedString(doc);
+                    } catch (Exception e1) {
+                        log.log(Level.WARNING, "Invalid XML", e1);
+                    }
+                    PublishedService service = serviceNode.getPublishedService();
+                    String name = currentOperation == null ? null : currentOperation.getName();
+                    sm = new SampleMessage(service.getOid(), name, name, xml);
+                } catch (Exception ex) {
+                    throw new RuntimeException("Couldn't find PublishedService", ex);
+                }
+
+                SampleMessageDialog smd = showSampleMessageDialog(sm);
+                if (smd.isOk()) {
+                    try {
+                        Registry.getDefault().getServiceManager().saveSampleMessage(sm);
+                        SampleMessageComboEntry entry = new SampleMessageComboEntry(sm);
+                        sampleMessagesComboModel.addElement(entry);
+                        sampleMessagesComboModel.setSelectedItem(entry);
+                    } catch (SaveException ex) {
+                        throw new RuntimeException("Couldn't save SampleMessage", ex);
+                    }
+                }
+            }
+        });
+
+        editSampleButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
+                if (entry == USE_AUTOGEN) return;
+                try {
+                    SampleMessageDialog smd = showSampleMessageDialog(entry.message);
+                    if (smd.isOk()) {
+                        Registry.getDefault().getServiceManager().saveSampleMessage(entry.message);
+                        sampleMessagesCombo.repaint();
+                    }
+                } catch (SaveException ex) {
+                    throw new RuntimeException("Couldn't save SampleMessage", ex);
+                }
+            }
+        });
+
+        removeSampleButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
+                if (entry == USE_AUTOGEN) return;
+                int resp = JOptionPane.showConfirmDialog(XpathBasedAssertionPropertiesDialog.this,
+                        "Are you sure you want to remove '" + entry.toString() + "'?",
+                        "Remove Sample Message",
+                        JOptionPane.OK_CANCEL_OPTION);
+
+                if (resp == JOptionPane.OK_OPTION) {
+                    try {
+                        Registry.getDefault().getServiceManager().deleteSampleMessage(entry.message);
+                        sampleMessagesCombo.removeItem(entry);
+                    } catch (DeleteException e1) {
+                        throw new RuntimeException(e1);
+                    }
+                }
+            }
+        });
+
+        sampleMessagesCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                SampleMessageComboEntry entry = (SampleMessageComboEntry)sampleMessagesCombo.getSelectedItem();
+                try {
+                    if (entry == USE_AUTOGEN) {
+                        if (currentOperation == null) {
+                            displayMessage(blankMessage);
+                        } else {
+                            displayMessage(forOperation(currentOperation).getSOAPMessage());
+                        }
+                    } else {
+                        displayMessage(entry.message.getXml());
+                    }
+                } catch (Exception e1) {
+                    throw new RuntimeException("Can't use sample message XML", e1);
+                }
+            }
+        });
+    }
+
+    private SampleMessageDialog showSampleMessageDialog(SampleMessage sm) {
+        SampleMessageDialog smd = new SampleMessageDialog(this, sm, false);
+        smd.pack();
+        Utilities.centerOnScreen(smd);
+        smd.setVisible(true);
+        return smd;
+    }
+
+    private void populateSampleMessages(String operationName) {
+        EntityHeader[] sampleMessages;
+        ArrayList messageEntries = new ArrayList();
+        messageEntries.add(USE_AUTOGEN);
+        try {
+            ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
+            sampleMessages = serviceManager.findSampleMessageHeaders(serviceNode.getPublishedService().getOid(), operationName);
+            for (int i = 0; i < sampleMessages.length; i++) {
+                messageEntries.add(new SampleMessageComboEntry(serviceManager.findSampleMessageById(sampleMessages[i].getOid())));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't get sample messages", e);
+        }
+
+        sampleMessagesComboModel = new DefaultComboBoxModel(messageEntries.toArray(new SampleMessageComboEntry[0]));
+        sampleMessagesCombo.setModel(sampleMessagesComboModel);
+        sampleMessagesCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableSampleButtons();
+            }
+        });
+    }
+
+    private void enableSampleButtons() {
+        boolean gotOne = sampleMessagesComboModel.getSelectedItem() != USE_AUTOGEN;
+        removeSampleButton.setEnabled(gotOne);
+        editSampleButton.setEnabled(gotOne);
+    }
+
+    private static class SampleMessageComboEntry {
+        public SampleMessageComboEntry(SampleMessage message) {
+            this.message = message;
+            if (message == null) return;
+            try {
+                org.w3c.dom.Document doc = XmlUtil.stringToDocument(message.getXml());
+                XmlUtil.findAllNamespaces(doc.getDocumentElement());
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Sample message is not XML", e);
+            }
+        }
+
+        public String toString() {
+            return message.getName();
+        }
+
+        private final SampleMessage message;
+        private final Map namespaces = new HashMap();
     }
 
 
@@ -210,7 +373,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                                                                      requiredNS);
                 nseditor.pack();
                 Utilities.centerOnScreen(nseditor);
-                nseditor.show();
+                nseditor.setVisible(true);
                 Map newMap = nseditor.newNSMap();
                 if (newMap != null) {
                     namespaces = newMap;
@@ -436,7 +599,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         soapMessage.getSOAPMessage().writeTo(bo);
         String s = bo.toString();
         org.w3c.dom.Document document = XmlUtil.stringToDocument(s);
-        Element body = null;
+        Element body;
         try {
             body = SoapUtil.getBodyElement(document);
         } catch (InvalidDocumentFormatException e) {
@@ -449,7 +612,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
         NodeList nl = body.getChildNodes();
         for (int i = 0; i < nl.getLength(); i++) {
-            Node item = (Node)nl.item(i);
+            Node item = nl.item(i);
             if (item == null) continue;
             if (item.getNodeType() == Element.ELEMENT_NODE) {
                 item.getParentNode().removeChild(item);
@@ -586,10 +749,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 final JTextField xpf = messageViewerToolBar.getxpathField();
 
                 BindingOperationTreeNode boperation = (BindingOperationTreeNode)lpc;
+                currentOperation = boperation.getOperation();
+                populateSampleMessages(currentOperation.getName());
                 Message sreq = forOperation(boperation.getOperation());
                 messageViewerToolBar.setToolbarEnabled(true);
-                if (sreq == null) {
-                } else {
+                if (sreq != null) {
                     try {
                         SOAPMessage soapMessage = sreq.getSOAPMessage();
                         displayMessage(soapMessage);
@@ -633,6 +797,20 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private void displayMessage(String soapMessage)
       throws RuntimeException {
         try {
+            org.w3c.dom.Document doc;
+            try {
+                doc = XmlUtil.stringToDocument(soapMessage);
+                Map docns = XmlUtil.findAllNamespaces(doc.getDocumentElement());
+                for (Iterator i = docns.keySet().iterator(); i.hasNext();) {
+                    String prefix = (String)i.next();
+                    String uri = (String)docns.get(prefix);
+                    if (!namespaces.containsValue(uri)) {
+                        namespaces.put(prefix, uri);
+                    }
+                }
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Couldn't get namespaces from non-XML document", e);
+            }
             URL url = asTempFileURL(soapMessage);
             exchangerDocument.setProperties(url, null);
             exchangerDocument.load();
@@ -736,7 +914,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             StringBuffer tooltip = new StringBuffer();
             boolean htmlOpenAdded = false;
             if (feedBack.getErrorPosition() != -1) {
-                tooltip.append("<html><b>Position : " + feedBack.getErrorPosition() + ", ");
+                tooltip.append("<html><b>Position : ").append(feedBack.getErrorPosition()).append(", ");
                 htmlOpenAdded = true;
             }
             String msg = feedBack.getShortMessage();
@@ -744,7 +922,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 if (!htmlOpenAdded) {
                     msg = "<html><b>" + msg;
                 }
-                tooltip.append(msg + "</b></html>");
+                tooltip.append(msg).append("</b></html>");
             }
 
             xpathField.setToolTipText(tooltip.toString());

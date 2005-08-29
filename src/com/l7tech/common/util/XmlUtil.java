@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.util;
@@ -9,12 +7,12 @@ package com.l7tech.common.util;
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.common.xml.TooManyChildElementsException;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.*;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -35,7 +33,7 @@ public class XmlUtil {
     public static final String TEXT_XML = "text/xml";
 
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
-        public InputSource resolveEntity( String publicId, String systemId ) throws SAXException {
+        public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
             String msg = "Document referred to an external entity with system id '" + systemId + "'";
             logger.warning( msg );
             throw new SAXException(msg);
@@ -590,7 +588,6 @@ public class XmlUtil {
      * @param parent
      * @param namespace
      * @param desiredPrefix
-     * @return
      */
     public static Element createAndAppendElementNS(Element parent, String localName, String namespace, String desiredPrefix) {
         Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
@@ -606,7 +603,6 @@ public class XmlUtil {
      * @param parent
      * @param namespace
      * @param desiredPrefix
-     * @return
      */
     public static Element createAndPrependElementNS(Element parent, String localName, String namespace, String desiredPrefix) {
         if (desiredPrefix == null) desiredPrefix = "ns";
@@ -629,7 +625,6 @@ public class XmlUtil {
      * @param localName
      * @param namespace
      * @param desiredPrefix
-     * @return
      */
     public static Element createAndInsertBeforeElementNS(Node desiredNextSibling, String localName,
                                                          String namespace, String desiredPrefix)
@@ -661,7 +656,6 @@ public class XmlUtil {
      *
      * @param factory
      * @param nodeValue
-     * @return
      */
     public static Text createTextNode(Node factory, String nodeValue) {
         if (nodeValue == null) {
@@ -769,6 +763,49 @@ public class XmlUtil {
         for (int i = 0; i < kids.getLength(); ++i) {
             Node kid = kids.item(i);
             e.removeChild(kid);
+        }
+    }
+
+    public static Map findAllNamespaces(Element element) {
+        Map entries = new HashMap();
+        collectNamespaces(element, entries);
+        NodeList nodes = element.getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node n = nodes.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE) {
+                collectNamespaces((Element)n, entries);
+            }
+        }
+
+        Map result = new HashMap();
+        int ns = 1;
+        for (Iterator i = entries.keySet().iterator(); i.hasNext();) {
+            String uri = (String)i.next();
+            String prefix = (String)entries.get(uri);
+            if (prefix == null) prefix = "ns" + ns++;
+            result.put(prefix, uri);
+        }
+
+        return result;
+    }
+
+    private static void collectNamespaces(Element n, Map entries) {
+        NamedNodeMap foo = n.getAttributes();
+        // Find xmlns:foo, xmlns=
+        for (int j = 0; j < foo.getLength(); j++) {
+            Attr attrNode = (Attr)foo.item(j);
+            String attPrefix = attrNode.getPrefix();
+            String attNsUri = attrNode.getNamespaceURI();
+            String attLocalName = attrNode.getLocalName();
+            String attValue = attrNode.getValue();
+
+            if (entries.get(attValue) != null) continue;
+
+            if ("xmlns".equals(attPrefix) && XmlUtil.XMLNS_NS.equals(attNsUri)) {
+                entries.put(attValue, attLocalName);
+            } else if ("xmlns".equals(attLocalName)) {
+                entries.put(attValue, null);
+            }
         }
     }
 }

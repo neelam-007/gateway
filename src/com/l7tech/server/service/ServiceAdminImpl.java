@@ -8,15 +8,16 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.service.uddi.UddiAgentV3;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
-import com.l7tech.server.service.uddi.UddiAgentV3;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.net.ssl.SSLContext;
@@ -27,13 +28,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.*;
 import java.rmi.RemoteException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.NoSuchAlgorithmException;
-import java.security.KeyManagementException;
 
 /**
  * Server side implementation of the ServiceAdmin admin api.
@@ -51,11 +52,13 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     private static final String UDDI_PROP_BATCH_SIZE = "uddi.result.batch_size";
 
     private ServiceManager serviceManager;
+    private SampleMessageManager sampleMessageManager;
     private PolicyValidator policyValidator;
     private Properties uddiProps = null;
-    private final AccessManager accessManager;
     private ServerConfig serverConfig;
     private SSLContext sslContext;
+
+    private final AccessManager accessManager;
 
     public ServiceAdminImpl(AccessManager accessManager) {
         this.accessManager = accessManager;
@@ -200,6 +203,10 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         this.serverConfig = serverConfig;
     }
 
+    public void setSampleMessageManager(SampleMessageManager sampleMessageManager) {
+        this.sampleMessageManager = sampleMessageManager;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -292,6 +299,32 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         // get all the names for the counters
         CounterIDManager counterIDManager = (CounterIDManager)serverConfig.getSpringContext().getBean("counterIDManager");
         return counterIDManager.getDistinctCounterNames();
+    }
+
+    public SampleMessage findSampleMessageById(long oid) throws RemoteException, FindException {
+        return sampleMessageManager.findByPrimaryKey(oid);
+    }
+
+    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException {
+        return sampleMessageManager.findHeaders(serviceOid, operationName);
+    }
+
+    public long saveSampleMessage(SampleMessage sm) throws SaveException {
+        long oid = sm.getOid();
+        if (sm.getOid() == Entity.DEFAULT_OID) {
+            oid = sampleMessageManager.save(sm);
+        } else {
+            try {
+                sampleMessageManager.update(sm);
+            } catch (UpdateException e) {
+                throw new SaveException("Couldn't update existing SampleMessage", e.getCause());
+            }
+        }
+        return oid;
+    }
+
+    public void deleteSampleMessage(SampleMessage message) throws DeleteException {
+        sampleMessageManager.delete(message);
     }
 
     private int getInt(Object o) {

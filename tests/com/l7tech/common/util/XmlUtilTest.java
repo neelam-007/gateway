@@ -57,6 +57,12 @@ public class XmlUtilTest extends TestCase {
 
     }
 
+    public void testFindAllNamespaces() throws Exception {
+        Element el = getTestDocument().getDocumentElement();
+        Map foo = XmlUtil.findAllNamespaces(el);
+        logger.info("Found namespaces: " + foo);
+    }
+
     private void assertElementEquals( Element element, String nsuri, String name ) {
         assertTrue(element != null);
         assertTrue(nsuri.equals(element.getNamespaceURI()));

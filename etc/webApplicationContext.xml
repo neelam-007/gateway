@@ -194,6 +194,12 @@
             <ref bean="transactionManager"/>
         </property>
     </bean>
+    <!-- server side SampleMessage manager -->
+    <bean id="sampleMessageManager" class="com.l7tech.server.service.SampleMessageManagerImp">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
     <!-- server side custom assertions registrar -->
     <bean id="customAssertionRegistrar" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarImpl">
         <property name="serviceManager">

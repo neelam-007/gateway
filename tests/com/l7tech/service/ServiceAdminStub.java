@@ -148,6 +148,22 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return new String[0];
     }
 
+    public SampleMessage findSampleMessageById(long oid) throws RemoteException, FindException {
+        return null;
+    }
+
+    public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException {
+        return new EntityHeader[0];  
+    }
+
+    public long saveSampleMessage(SampleMessage sm) throws SaveException {
+        return 0;
+    }
+
+    public void deleteSampleMessage(SampleMessage message) throws DeleteException {
+        
+    }
+
     private EntityHeader fromService(PublishedService s) {
         return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);
     }
