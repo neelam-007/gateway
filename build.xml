@@ -644,6 +644,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="ssgconfig.cmd"/>
                 <include name="ssgconfig.sh"/>
+                <include name="configlogging.properties"/>
             </fileset>
         </copy>
 
@@ -654,7 +655,7 @@
                 <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
                 <include name="com/l7tech/common/util/FileUtils.class"/>
                 <include name="com/l7tech/common/util/HexUtils*.class"/>
-                <include name="com/l7tech/server/util/MakeLunaCerts.class"/>
+                <include name="com/l7tech/server/util/MakeLunaCerts*.class"/>
                 <include name="com/l7tech/server/util/SetKeys*.class"/>
                 <include name="com/l7tech/common/security/JceProvider*.class"/>
                 <include name="com/l7tech/common/security/prov/luna/LunaCmu*.class"/>
@@ -668,6 +669,7 @@
                 <include name="com/l7tech/console/action/Actions*.class"/>
                 <include name="com/l7tech/common/gui/util/Utilities*.class"/>
                 <include name="com/l7tech/common/gui/util/ImageCache.class"/>
+                <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
                 <include name="com/l7tech/console/resources/layer7_logo_small_32x32.png"/>
             </fileset>
         </jar>
