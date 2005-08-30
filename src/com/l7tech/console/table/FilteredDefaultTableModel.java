@@ -29,10 +29,6 @@ public abstract class FilteredDefaultTableModel extends AbstractTableModel {
         realModel.addTableModelListener(l);
     }
 
-    public TableModelListener getTableModelListener(){
-        return getTableModelListener();
-    }
-
     public void fireTableDataChanged(){
         realModel.fireTableDataChanged();
     }
