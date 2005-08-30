@@ -1,18 +1,14 @@
 package com.l7tech.server.config.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.ListHandler;
-import com.l7tech.server.config.commands.ClusteringConfigCommand;
-import com.l7tech.server.config.beans.ClusteringConfigBean;
+import com.l7tech.server.config.OSSpecificFunctions;
 
 import javax.swing.*;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Handler;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * Created by IntelliJ IDEA.
@@ -22,7 +18,6 @@ import java.awt.*;
  * To change this template use File | Settings | File Templates.
  */
 public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
-    static Logger logger = Logger.getLogger(ConfigWizardResultsPanel.class.getName());
     private JPanel mainPanel;
     private JTabbedPane tabs;
     private JPanel informattionPanel;
