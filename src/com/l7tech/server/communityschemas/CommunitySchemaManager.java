@@ -93,7 +93,7 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    logger.fine("updating tarari schemas post-update from " + CommunitySchemaManager.class.getName());
+                    logger.fine("updating tarari schemas post-save from " + CommunitySchemaManager.class.getName());
                     try {
                         TarariLoader.updateSchemasToCard(serverConfig.getSpringContext());
                     } catch (FindException e) {
@@ -138,6 +138,24 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
 
     public void delete(SchemaEntry existingSchema) throws DeleteException {
         getHibernateTemplate().delete(existingSchema);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    logger.fine("updating tarari schemas post-delete from " + CommunitySchemaManager.class.getName());
+                    try {
+                        TarariLoader.updateSchemasToCard(serverConfig.getSpringContext());
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (SchemaLoadingException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (XmlException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    }
+                }
+            }
+        });
     }
 
     /**
