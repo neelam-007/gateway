@@ -90,6 +90,7 @@ Section "SecureSpan Gateway" SecCopyUI
   File "${BUILD_DIR}\..\native\win32\killproc\Release\killproc.exe"
   File "${BUILD_DIR}\..\etc\ssg.cmd"
   File "${BUILD_DIR}\..\etc\service.cmd"
+  File "${BUILD_DIR}\..\etc\SSG.exe"
   File "${BUILD_DIR}\..\etc\ssgruntimedefs.cmd"
 
   SetOutPath "$INSTDIR/etc"
