@@ -2,6 +2,7 @@ package com.l7tech.server.config.gui;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
@@ -38,6 +39,8 @@ public class ConfigurationWizard extends Wizard {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     public static final String LOG_PROPERTIES_NAME = "configuration-logging.properties";
 
+    boolean hadFailures = false;
+
     static {
         try {
             osFunctions = OSDetector.getOSSpecificActions();
@@ -72,7 +75,7 @@ public class ConfigurationWizard extends Wizard {
                 // dont care
             }
             public void wizardFinished(WizardEvent e) {
-                applyConfiguration();
+                //applyConfiguration();
                 System.exit(0);
             }
             public void wizardCanceled(WizardEvent e) {
@@ -89,7 +92,7 @@ public class ConfigurationWizard extends Wizard {
         pack();
     }
 
-    private void applyConfiguration() {
+    public void applyConfiguration() {
         log.info("Applying the configuration changes");
         HashMap commands = (HashMap) wizardInput;
 
@@ -100,16 +103,22 @@ public class ConfigurationWizard extends Wizard {
         Set keys = commands.keySet();
         java.util.Iterator iterator = keys.iterator();
 
+        hadFailures = false;
         while (iterator.hasNext()) {
+            boolean successful = true;
             String key = (String) iterator.next();
             ConfigurationCommand cmd = (ConfigurationCommand) commands.get(key);
-            cmd.execute();
+            successful = cmd.execute();
+            if (!successful) {
+                hadFailures = true;
+            }
         }
     }
 
     private static ConfigWizardStepPanel getStartPanel() {
-        ConfigWizardSummaryPanel lastPanel = new ConfigWizardSummaryPanel(null, osFunctions);
-        ConfigWizardKeystorePanel keystorePanel = new ConfigWizardKeystorePanel(lastPanel, osFunctions);
+        ConfigWizardResultsPanel lastPanel = new ConfigWizardResultsPanel(null, osFunctions);
+        ConfigWizardSummaryPanel summaryPanel = new ConfigWizardSummaryPanel(lastPanel, osFunctions);
+        ConfigWizardKeystorePanel keystorePanel = new ConfigWizardKeystorePanel(summaryPanel, osFunctions);
         ConfigWizardDatabasePanel configWizardDatabasePanelPanel = new ConfigWizardDatabasePanel(keystorePanel, osFunctions);
         ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel, osFunctions);
 
@@ -151,11 +160,27 @@ public class ConfigurationWizard extends Wizard {
         hostname = newHostname;
     }
 
-    public static void main(String[] args)
-      throws Exception {
+    public boolean isHadFailures() {
+        return hadFailures;
+    }
+
+    public static void main(String[] args) {
+
+        initLogging();
         log.info("Starting SSG Configuration Wizard");
 
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (InstantiationException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (UnsupportedLookAndFeelException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
         JFrame mainFrame = new JFrame();
         Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
         ImageIcon imageIcon = new ImageIcon(icon);
@@ -166,6 +191,12 @@ public class ConfigurationWizard extends Wizard {
         Utilities.centerOnScreen(wizard);
         wizard.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         wizard.setVisible(true);
+    }
+
+    private static void initLogging() {
+        // apache logging layer to use the jdk logger
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+        JdkLoggerConfigurator.configure("com.l7tech", "logging.properties");
     }
 
 }
