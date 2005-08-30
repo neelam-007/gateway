@@ -2,8 +2,8 @@ package com.l7tech.server.config.gui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 
 /**
@@ -48,12 +48,24 @@ public class LunaKeystorePanel extends KeystorePanel {
     }
 
     public boolean validateInput() {
+        boolean isValid = false;
+//        try {
+//            isValid = LunaProber.isPartitionLoggedIn();
+//            if (!isValid) {
+//            JOptionPane.showMessageDialog(this,
+//                    "The luna partition is not logged in - skipping luna configuration",
+//                    "Luna not logged in",
+//                    JOptionPane.ERROR_MESSAGE);
+//            }
+//        } catch (ClassNotFoundException e) {
+//            JOptionPane.showMessageDialog(this,
+//                    "The luna classes cannot be located in the classpath -  - skipping luna configuration",
+//                    "Luna cannot be located",
+//                    JOptionPane.ERROR_MESSAGE);
+//            isValid = false;
+//        }
         return true;
     }
-
-//    public boolean isOverwriteExisting() {
-//        return overwriteExisting.isSelected();
-//    }
 
     public void setDefaultLunaInstallPath(String path) {
         lunaInstallPath.setText(path);
