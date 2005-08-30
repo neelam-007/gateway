@@ -34,6 +34,7 @@ public abstract class OSSpecificFunctions {
     protected String lunaCmuPath;
     private String pathToJavaSecurityFile;
     private String ssgSystemPropertiesFile;
+    private String pathToJavaLibPath;
 
     public OSSpecificFunctions(String OSName) {
         installRoot = System.getProperty("com.l7tech.server.home");
@@ -67,6 +68,7 @@ public abstract class OSSpecificFunctions {
         tomcatServerConfig = "tomcat/conf/server.xml";
         keystoreDir = "etc/keys/";
         pathToJreLibExt = "jre/lib/ext/";
+        pathToJavaLibPath = "jre/lib/i386/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
         ssgSystemPropertiesFile = "etc/conf/system.properties";
     }
@@ -190,5 +192,9 @@ public abstract class OSSpecificFunctions {
 
     public String getSsgSystemPropertiesFile() {
         return installRoot + ssgSystemPropertiesFile;
+    }
+
+    public String getPathToJavaLibPath() {
+        return getPathToJdk() + pathToJavaLibPath;
     }
 }
