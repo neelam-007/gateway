@@ -1,16 +1,12 @@
 package com.l7tech.server.config.commands;
 
-import com.l7tech.server.config.commands.BaseConfigurationCommand;
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.exceptions.DatabaseConfigException;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.DatabaseConfigBean;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.Properties;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,6 +16,8 @@ import java.util.regex.Matcher;
  * To change this template use File | Settings | File Templates.
  */
 public class DatabaseConfigCommand extends BaseConfigurationCommand {
+
+    static Logger logger = Logger.getLogger(DatabaseConfigCommand.class.getName());
 
     private static final String BACKUP_FILE_NAME = "database_config_backups";
     private static final String HIBERNATE_URL_KEY = "hibernate.connection.url";
@@ -34,7 +32,8 @@ public class DatabaseConfigCommand extends BaseConfigurationCommand {
         super(bean, bean.getOSFunctions());
     }
 
-    public void execute() {
+    public boolean execute() {
+        boolean success = true;
         //printPlans();
         if ( ((DatabaseConfigBean)configBean).isDbConfigOn() ){
 
@@ -52,11 +51,16 @@ public class DatabaseConfigCommand extends BaseConfigurationCommand {
                 e.printStackTrace();
             }
 
-            updateDbConfigFile(dbConfigFile);
+            try {
+                updateDbConfigFile(dbConfigFile);
+            } catch (IOException e) {
+                success = false;
+            }
         }
+        return success;
     }
 
-    private void updateDbConfigFile(File dbConfigFile){
+    private void updateDbConfigFile(File dbConfigFile) throws IOException {
 
         DatabaseConfigBean dbConfigBean = (DatabaseConfigBean) configBean;
         String dbUrl = dbConfigBean.getDbHostname();
@@ -83,9 +87,13 @@ public class DatabaseConfigCommand extends BaseConfigurationCommand {
             fos = new FileOutputStream(dbConfigFile);
             dbProps.store(fos, HIBERNATE_PROPERTY_COMMENTS);
         } catch (FileNotFoundException fnf) {
-            fnf.printStackTrace();
+            logger.severe("error while updating the Database configuration file");
+            logger.severe(fnf.getMessage());
+            throw fnf;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("error while updating the Database configuration file");
+            logger.severe(e.getMessage());
+            throw e;
         } finally {
             if (fis != null) {
                 try {

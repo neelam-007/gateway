@@ -15,7 +15,8 @@ public class WindowsServiceCommand extends BaseConfigurationCommand {
         super(bean, bean.getOSFunctions());
     }
 
-    public void execute() {
+    public boolean execute() {
+        boolean success = true;
         WindowsServiceBean svcCommand = (WindowsServiceBean) configBean;
         if (svcCommand.isDoService()) {
             System.out.println("Will configure the SSG as service");
@@ -23,5 +24,6 @@ public class WindowsServiceCommand extends BaseConfigurationCommand {
         else {
             System.out.println("Will not configure the SSG as a service");
         }
+        return success;
     }
 }

@@ -9,5 +9,5 @@ package com.l7tech.server.config.commands;
  */
 public interface ConfigurationCommand {
     public String[] getActionSummary();
-    public void execute();
+    public boolean execute();
 }

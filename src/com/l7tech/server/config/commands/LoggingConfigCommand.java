@@ -4,6 +4,7 @@ import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.OSSpecificFunctions;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 import java.io.*;
 
 /**
@@ -14,6 +15,8 @@ import java.io.*;
  * To change this template use File | Settings | File Templates.
  */
 public class LoggingConfigCommand extends BaseConfigurationCommand {
+    static Logger logger = Logger.getLogger(LoggingConfigCommand.class.getName());
+
 
     private static final String SSG_LOG_PATTERN = "logs/ssg_%g_%u.log";
     private static final String BACKUP_FILE_NAME = "logging_config_backups";
@@ -24,7 +27,8 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
         super(bean, osFunctions);
     }
 
-    public void execute() {
+    public boolean execute() {
+        boolean success = true;
         String ssgLogPropsPath = osFunctions.getSsgLogPropertiesFile();
         File logProps = new File(ssgLogPropsPath);
         File[] files = new File[]
@@ -55,9 +59,13 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             props.store(fos, PROPERTY_COMMENT);
 
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.severe("error while updating the logging configuration file");
+            logger.severe(e.getMessage());
+            success = false;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("error while updating the logging configuration file");
+            logger.severe(e.getMessage());
+            success = false;
         } finally{
             if (fis != null) {
                 try {
@@ -75,5 +83,7 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
                 }
             }
         }
+        return success;
     }
+
 }

@@ -11,6 +11,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -22,6 +23,8 @@ import java.util.zip.ZipOutputStream;
  * To change this template use File | Settings | File Templates.
  */
 public abstract class BaseConfigurationCommand implements ConfigurationCommand {
+    private static final Logger logger = Logger.getLogger(BaseConfigurationCommand.class.getName());
+
     OSSpecificFunctions osFunctions;
     ConfigurationBean configBean;
     DateFormat formatter;
@@ -47,7 +50,7 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
         if (files != null && files.length > 0) {
             String backupFileName = backupName + "_" + formatter.format(currentTime);
             String fullBackupPath = osFunctions.getSsgInstallRoot() + backupFileName + ".zip";
-//            System.out.println("creating ZIP file: " + fullBackupPath);
+            logger.info("creating ZIP file: " + fullBackupPath);
 
             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(fullBackupPath));
 
