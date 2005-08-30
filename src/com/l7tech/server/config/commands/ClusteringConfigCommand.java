@@ -2,13 +2,11 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
-import com.l7tech.common.util.HexUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.text.DateFormat;
-import java.util.ArrayList;
-
-import org.apache.commons.lang.StringUtils;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -18,6 +16,9 @@ import org.apache.commons.lang.StringUtils;
  * To change this template use File | Settings | File Templates.
  */
 public class ClusteringConfigCommand extends BaseConfigurationCommand {
+    static Logger logger = Logger.getLogger(ClusteringConfigCommand.class.getName());
+
+
     private String hostname;
     private String clusterHostname;
     private static final String BACKUP_FILE_NAME = "cluster_config_backups";
@@ -43,9 +44,9 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         this.clusterHostname = clusterHostname;
     }
 
-    public void execute() {
+    public boolean execute() {
 //        printPlans();
-
+        boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
 
         String clusterHostname = clusterBean.getClusterHostname();
@@ -68,21 +69,25 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         }
 
         if (configureCluster) {
-            writeClusterHostname(clusterHostNameFile, clusterHostname);
+            try {
+                writeClusterHostname(clusterHostNameFile, clusterHostname);
+            } catch (IOException e) {
+                success = false;
+            }
         }
 
-        updateHostsFile(hostsFile, clusterHostname);
+//        updateHostsFile(hostsFile, clusterHostname);
 
-
+        return success;
     }
 
-    private void updateHostsFile(File hostsFile, String clusterHostname) {
-        if (hostsFile == null || StringUtils.isEmpty(clusterHostname)) {
-            throw new IllegalArgumentException("hosts file and cluster hostname need to be provided");
-        }     
-    }
+//    private void updateHostsFile(File hostsFile, String clusterHostname) {
+//        if (hostsFile == null || StringUtils.isEmpty(clusterHostname)) {
+//            throw new IllegalArgumentException("hosts file and cluster hostname need to be provided");
+//        }
+//    }
 
-    private void writeClusterHostname(File clusterHostNameFile, String clusterHostname) {
+    private void writeClusterHostname(File clusterHostNameFile, String clusterHostname) throws IOException {
         if (clusterHostNameFile == null || StringUtils.isEmpty(clusterHostname)) {
             throw new IllegalArgumentException("cluster hostname file and cluster hostname need to be provided");
         }
@@ -92,11 +97,17 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             fos.write((clusterHostname + "\n").getBytes("UTF-8"));
             fos.close();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.severe("error while updating the cluster host name file");
+            logger.severe(e.getMessage());
+            throw e;
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            logger.severe("error while updating the cluster host name file");
+            logger.severe(e.getMessage());
+            throw e;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("error while updating the cluster host name file");
+            logger.severe(e.getMessage());
+            throw e;
         }
     }
 
