@@ -23,7 +23,10 @@ goto end
 if ""%1"" == ""install""   goto doInstall
 if ""%1"" == ""uninstall"" goto doUninstall
 
-echo Usage: service.cmd install|uninstall
+echo Usage: service command
+echo Commands:
+echo   install          Installs the SecureSpan Gateway service.
+echo   uninstall        Uninstalls the SecureSpan Gateway service.
 goto end
 
 
@@ -52,11 +55,12 @@ for %%i in ("%TOMCAT_HOME%\common\classpath\*.jar") do if "!PR_CLASSPATH!"=="" (
 
 set JVMOPTIONS=^
 -Dcatalina.home=%TOMCAT_HOME%;^
--Djava.endorsed.dirs=%TOMCAT_HOME%\common\endorsed;^
--Djava.io.tmpdir=%TOMCAT_HOME%\temp;^
 -Dcom.l7tech.server.home=%SSG_HOME%;^
 -Dfile.encoding=UTF-8;^
 -Djava.awt.headless=true;^
+-Djava.endorsed.dirs=%TOMCAT_HOME%\common\endorsed;^
+-Djava.io.tmpdir=%TOMCAT_HOME%\temp;^
+-Djava.rmi.server.hostname=%rmi_server_full_hostname%;^
 -Dnetworkaddress.cache.ttl=30;^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger;^
 -Xrs;^

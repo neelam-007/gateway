@@ -1,6 +1,6 @@
 :: Copyright (C) 2005 Layer 7 Technologies Inc.
 ::
-:: $Id: ssgruntimedefs.cmd,v 1.1 2005/08/23 20:19:38 rmak Exp $
+:: $Id: ssgruntimedefs.cmd,v 1.2 2005/08/26 19:16:33 rmak Exp $
 ::
 :: Compatibility: Windows XP, Windows Server 2003.
 
@@ -58,15 +58,11 @@ if %NUMBER_OF_PROCESSORS%==1 (
 
 :: Set the fully qualified host name of the RMI server.
 for /F "tokens=1" %%i in ('hostname') do set short_hostname=%%i
-for /F "tokens=1,2" %%i in ('nslookup %short_hostname%') do if "%%i"=="Name:" set full_hostname=%%j
+for /F "tokens=1,2" %%i in ('nslookup %short_hostname%') do if "%%i"=="Name:" set rmi_server_full_hostname=%%j
 if exist "%SSG_HOME%\etc\conf\cluster_hostname" (
-    for /F "usebackq tokens=1" %%i in ("%SSG_HOME%\etc\conf\cluster_hostname") do set cluster_hostname=%%i
+    for /F "usebackq tokens=1" %%i in ("%SSG_HOME%\etc\conf\cluster_hostname") do set rmi_server_full_hostname=%%i
 )
-if exist "%SSG_HOME%\etc\conf\cluster_hostname" (
-    set JAVA_OPTS=%JAVA_OPTS% -Djava.rmi.server.hostname=%cluster_hostname%
-) else (
-    set JAVA_OPTS=%JAVA_OPTS% -Djava.rmi.server.hostname=%full_hostname%
-)
+set JAVA_OPTS=%JAVA_OPTS% -Djava.rmi.server.hostname=%rmi_server_full_hostname%
 
 :: Append to the system search path.
 set PATH=%PATH%;%JAVA_HOME%\bin;%SSG_HOME%\bin
