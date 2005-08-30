@@ -9,12 +9,14 @@ import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
@@ -28,34 +30,45 @@ public class MakeLunaCerts {
     private static final String USAGE = "Usage: MakeLunaCerts [-f] ssghostname.company.com\n\n  -f    Force overwrite of existing certificate(s)";
 
     public static void main(String[] args) {
+        boolean debug = false;
         try {
-            realMain(args);
+            if (args.length < 1) throw new IllegalArgumentException(USAGE);
+
+            String hostname = null;
+            boolean force = false;
+            for (int i = 0; i < args.length; i++) {
+                String arg = args[i];
+                if ("-f".equalsIgnoreCase(arg))
+                    force = true;
+                else if ("-d".equalsIgnoreCase(arg))
+                    debug = true;
+                else if (hostname != null)
+                    throw new IllegalArgumentException(USAGE);
+                else
+                    hostname = arg;
+            }
+
+            if (hostname == null || hostname.trim().length() < 1) throw new IllegalArgumentException(USAGE);
+
+            makeCerts(force, hostname, new File("./ca.cer"), new File("./ssl.cer"));
+
             System.exit(0);
+        } catch (ClassNotFoundException e) {
+            System.err.println("ERROR: The following class was not found: " + ExceptionUtils.getMessage(e) + "\n" +
+                               "       Please ensure that the current Java environment has been configured\n" +
+                               "       to use the Luna key store.");
+            System.exit(1);
         } catch (Exception e) {
             System.err.println("ERROR: " + ExceptionUtils.getMessage(e));
+            if (debug)
+                e.printStackTrace(System.err);
             System.exit(1);
         }
     }
 
-    public static void realMain(String[] args) throws Exception {
-        if (args.length < 1) throw new IllegalArgumentException(USAGE);
-
-        String hostname = null;
-        boolean force = false;
-        for (int i = 0; i < args.length; i++) {
-            String arg = args[i];
-            if ("-f".equalsIgnoreCase(arg))
-                force = true;
-            else if (hostname != null)
-                throw new IllegalArgumentException(USAGE);
-            else
-                hostname = arg;
-        }
-
-        if (hostname == null || hostname.trim().length() < 1) throw new IllegalArgumentException(USAGE);
-
-        makeCerts(force, hostname);
-
+    /** @deprecated remove this as soon as megry's code no longer uses it */
+    public static void realMain(String hostname, boolean force) throws Exception {
+        makeCerts(force, hostname, new File("./ca.cer"), new File("./ssl.cer"));
     }
 
     /**
@@ -64,8 +77,12 @@ public class MakeLunaCerts {
      *               taken if existing certificates are detected.
      * @param hostname  the hostname to use in the CN of the newly generated certs.  Must not be null or empty.
      *                  The SSL cert will use the DN "CN=hostname".  The CA cert will use the DN "CN=root.hostname".
+     * @param exportCaCert if non-null, the CA cert will exported to this file in DER format.  Any existing file
+     *                     will be overwritten.
+     * @param exportSslCert if non-null, the SSL cert will be exported to this file in DER format.  Any existing
+     *                      file will be overwritten.
      * @throws LunaCmu.LunaCmuException if the Luna cmu utility was not found (check "lunaCmuPath" system property)
-     * @throws LunaCmu.LunaCmuException if the Luna token manager is not currently logged into a partition
+     * @throws LunaCmu.LunaTokenNotLoggedOnException if the Luna token manager is not currently logged into a partition
      * @throws ClassNotFoundException if the Luna classes are not in the current classpath
      * @throws ClassNotFoundException if the Luna class version is not compatible with this code
      * @throws KeyStoreException if there is a problem creating a Luna keystore or locating or storing a key with it
@@ -75,7 +92,7 @@ public class MakeLunaCerts {
      * @throws CertificateException if the new certificates cannot be DER encoded for export.
      *                              Normally, this should not be possible.
      */
-    public static void makeCerts(boolean force, String hostname) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, ClassNotFoundException {
+    public static void makeCerts(boolean force, String hostname, File exportCaCert, File exportSslCert) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, ClassNotFoundException, LunaCmu.LunaTokenNotLoggedOnException {
         log.info("Checking for Luna Certificate Management Utility (cmu) command... ");
         LunaCmu cmu = new LunaCmu();
         log.info("Connecting to Luna KeyStore... ");
@@ -118,8 +135,10 @@ public class MakeLunaCerts {
 
             log.info("Generated and saved a CA certificate under alias \"ssgroot\": " + rootCert.getSubjectDN().toString());
 
-            new FileOutputStream("ca.cer").write(rootCert.getEncoded());
-            log.info("CA cert exported to ca.cer in current directory");
+            if (exportCaCert != null) {
+                writeCertToFile(exportCaCert, rootCert);
+                log.info("CA cert exported to " + exportCaCert.toString());
+            }
         }
 
         // Generate SSL certificate signed by the CA certificate
@@ -140,11 +159,23 @@ public class MakeLunaCerts {
 
             log.info("Generated and saved an SSL certificate under alias \"tomcat\": " + sslCert.getSubjectDN().toString());
 
-            new FileOutputStream("ssl.cer").write(sslCert.getEncoded());
-            log.info("SSL cert exported to ssl.cer in current directory");
+            if (exportSslCert != null) {
+                writeCertToFile(exportSslCert, sslCert);
+                log.info("SSL cert exported to " + exportSslCert.toString());
+            }
         }
 
         log.info("Success.");
+    }
+
+    private static void writeCertToFile(File exportCaCert, X509Certificate rootCert) throws IOException, CertificateEncodingException {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(exportCaCert);
+            fos.write(rootCert.getEncoded());
+        } finally {
+            if (fos != null) try { fos.close(); } catch (IOException e) {}
+        }
     }
 
     private static boolean keyExists(KeyStore ks, final String alias) throws NoSuchAlgorithmException, KeyStoreException {

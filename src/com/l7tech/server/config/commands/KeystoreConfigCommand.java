@@ -1,25 +1,19 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
-import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.KeyStoreConstants;
-import com.l7tech.server.util.SetKeys;
 import com.l7tech.server.util.MakeLunaCerts;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.FileUtils;
+import com.l7tech.server.util.SetKeys;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import java.io.*;
 import java.util.Properties;
-import java.util.Enumeration;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -164,16 +158,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private boolean makeLunaKeys(KeystoreConfigBean ksBean) {
         boolean success = true;
-        String args[];
+
         String hostname = ksBean.getHostname();
-        args = new String[]
-        {
-            "-f",
-            hostname
-        };
 
         try {
-            MakeLunaCerts.realMain(args);
+            MakeLunaCerts.realMain(hostname, true);
         } catch (Exception e) {
             e.printStackTrace();
             success = false;

@@ -28,6 +28,8 @@ public class LunaRsaSignerEngine implements RsaSignerEngine {
             throw new RuntimeException("Unable to process Certificate Signing Request: " + e.getMessage(), e);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Unable to process Certificate Signing Request: " + e.getMessage(), e);
+        } catch (LunaCmu.LunaTokenNotLoggedOnException e) {
+            throw new RuntimeException("Unable to process Certificate Signing Request: " + e.getMessage(), e);
         }
     }
 

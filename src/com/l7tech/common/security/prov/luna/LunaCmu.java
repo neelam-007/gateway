@@ -39,11 +39,11 @@ public class LunaCmu {
      *
      * @see #PROPERTY_CMU_PATH
      * @throws LunaCmuException if the Luna cmu utility was not found (see system property: {@link #PROPERTY_CMU_PATH})
-     * @throws LunaCmuException if the Luna token manager is not currently logged into a partition
+     * @throws LunaTokenNotLoggedOnException if the Luna token manager is not currently logged into a partition
      * @throws ClassNotFoundException if the Luna classes are not in the current classpath
      * @throws ClassNotFoundException if the Luna class version is not compatible with this code
      */
-    public LunaCmu() throws LunaCmuException, ClassNotFoundException {
+    public LunaCmu() throws LunaCmuException, ClassNotFoundException, LunaTokenNotLoggedOnException {
         final String osname = System.getProperty("os.name");
         isWindows = (osname != null && osname.indexOf("Windows") >= 0);
         final String defaultCmuPath =  isWindows ? DEFAULT_CMU_PATH_WINDOWS : DEFAULT_CMU_PATH_UNIX;
@@ -68,18 +68,18 @@ public class LunaCmu {
      *
      * @see #PROPERTY_CMU_PATH
      * @throws LunaCmuException if the LunaCmu utility was not probed successfully.
-     * @throws LunaCmuException if the Luna token manager is not currently logged into a partition
+     * @throws LunaTokenNotLoggedOnException if the Luna token manager is not currently logged into a partition
      * @throws ClassNotFoundException if the Luna classes are not in the current classpath
      * @throws ClassNotFoundException if the Luna class version is not compatible with this code
      */
-    public void probe() throws LunaCmuException, ClassNotFoundException {
+    public void probe() throws LunaCmuException, ClassNotFoundException, LunaTokenNotLoggedOnException {
         // Ping the CMU with a help request
         String got = new String(exec(new String[] { "-?" }, null));
         final String wanted = "Certificate Management Utility";
         if (got.indexOf(wanted) < 0)
             throw new LunaCmuException("Unrecognized output from Luna Certificate Management Utility (cmu): possible unsupported version?  Invocation of cmu -? failed to produce the string: " + wanted);
         if (!LunaProber.isPartitionLoggedIn())
-            throw new LunaCmuException("Luna partition is not logged in -- please log in munually");
+            throw new LunaTokenNotLoggedOnException();
     }
 
     /**
@@ -642,5 +642,13 @@ public class LunaCmu {
         public LunaCmuException(String message) { super(message); }
         public LunaCmuException(String message, Throwable cause) { super(message, cause); }
         public LunaCmuException(Throwable cause) { super(cause); }
+    }
+
+    public static class LunaTokenNotLoggedOnException extends Exception {
+        private static final String DEFAULT_MESSAGE = "Luna partition is not logged in -- please log in manually";
+        public LunaTokenNotLoggedOnException() { super(DEFAULT_MESSAGE); }
+        public LunaTokenNotLoggedOnException(String message) { super(message == null ? DEFAULT_MESSAGE : message); }
+        public LunaTokenNotLoggedOnException(String message, Throwable cause) { super(message == null ? DEFAULT_MESSAGE : message, cause); }
+        public LunaTokenNotLoggedOnException(Throwable cause) { super(cause); }
     }
 }
