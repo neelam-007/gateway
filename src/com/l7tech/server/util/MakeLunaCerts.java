@@ -50,7 +50,7 @@ public class MakeLunaCerts {
 
             if (hostname == null || hostname.trim().length() < 1) throw new IllegalArgumentException(USAGE);
 
-            makeCerts(force, hostname, new File("./ca.cer"), new File("./ssl.cer"));
+            makeCerts(hostname, force, new File("./ca.cer"), new File("./ssl.cer"));
 
             System.exit(0);
         } catch (ClassNotFoundException e) {
@@ -68,15 +68,24 @@ public class MakeLunaCerts {
 
     /** @deprecated remove this as soon as megry's code no longer uses it */
     public static void realMain(String hostname, boolean force) throws Exception {
-        makeCerts(force, hostname, new File("./ca.cer"), new File("./ssl.cer"));
+        makeCerts(hostname, force, new File("./ca.cer"), new File("./ssl.cer"));
+    }
+
+    public static class CertsAlreadyExistException extends Exception {
+        public CertsAlreadyExistException() {}
+        public CertsAlreadyExistException(String message) {super(message);}
+        public CertsAlreadyExistException(String message, Throwable cause) {super(message, cause);}
+        public CertsAlreadyExistException(Throwable cause) {super(cause);}
     }
 
     /**
+     * Create new CA and SSL certificates in the current Luna partition
+     * and optionally export them to disk in DER format.
      *
-     * @param force  set this to true if existing certifictes should be overwritten.  Otherwise no action will be
-     *               taken if existing certificates are detected.
      * @param hostname  the hostname to use in the CN of the newly generated certs.  Must not be null or empty.
      *                  The SSL cert will use the DN "CN=hostname".  The CA cert will use the DN "CN=root.hostname".
+     * @param forceOverwrite  set this to true if existing certifictes should be overwritten.  Otherwise no action will be
+     *                        taken if existing certificates are detected.
      * @param exportCaCert if non-null, the CA cert will exported to this file in DER format.  Any existing file
      *                     will be overwritten.
      * @param exportSslCert if non-null, the SSL cert will be exported to this file in DER format.  Any existing
@@ -85,6 +94,7 @@ public class MakeLunaCerts {
      * @throws LunaCmu.LunaTokenNotLoggedOnException if the Luna token manager is not currently logged into a partition
      * @throws ClassNotFoundException if the Luna classes are not in the current classpath
      * @throws ClassNotFoundException if the Luna class version is not compatible with this code
+     * @throws CertsAlreadyExistException if existing certificates are detected in the keystore and forceOverwrite is false.
      * @throws KeyStoreException if there is a problem creating a Luna keystore or locating or storing a key with it
      * @throws IOException if there is a problem writing the exported certificates to disk
      * @throws NoSuchAlgorithmException if the certs could not be loaded or exported due to a signature algorithm being missing.
@@ -92,7 +102,7 @@ public class MakeLunaCerts {
      * @throws CertificateException if the new certificates cannot be DER encoded for export.
      *                              Normally, this should not be possible.
      */
-    public static void makeCerts(boolean force, String hostname, File exportCaCert, File exportSslCert) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, ClassNotFoundException, LunaCmu.LunaTokenNotLoggedOnException {
+    public static void makeCerts(String hostname, boolean forceOverwrite, File exportCaCert, File exportSslCert) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, ClassNotFoundException, LunaCmu.LunaTokenNotLoggedOnException, CertsAlreadyExistException {
         log.info("Checking for Luna Certificate Management Utility (cmu) command... ");
         LunaCmu cmu = new LunaCmu();
         log.info("Connecting to Luna KeyStore... ");
@@ -100,8 +110,8 @@ public class MakeLunaCerts {
         ks.load(null, null);
 
         if (keyExists(ks, "tomcat") || keyExists(ks, "ssgroot")) {
-            if (!force)
-                throw new RuntimeException("SSG Certificates already present on this KeyStore.\n       Use -f switch to force them to be overwritten.");
+            if (!forceOverwrite)
+                throw new CertsAlreadyExistException("SSG Certificates already present on this KeyStore.\n       Use -f switch to forceOverwrite them to be overwritten.");
             log.info("Deleting existing CA and SSL certificates with labels 'tomcat' or 'ssgroot'...");
             ks.deleteEntry("tomcat");
             ks.deleteEntry("ssgroot");
