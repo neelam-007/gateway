@@ -13,10 +13,15 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
+import org.apache.xmlbeans.XmlException;
+import org.w3.x2001.xmlSchema.SchemaDocument;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.XMLConstants;
+import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -705,6 +710,32 @@ public class XmlUtil {
         xmlSerializer.setOutputFormat(of);
         xmlSerializer.serialize(schemadoc);
         return sw.toString();
+    }
+
+    public static class BadSchemaException extends Exception {
+        public BadSchemaException(String s){super(s);}
+        public BadSchemaException(Throwable e){super(e.getMessage(), e);}
+    }
+
+    public static String getSchemaTNS(String schemaSrc) throws BadSchemaException {
+        if (schemaSrc == null) {
+            throw new BadSchemaException("no xml");
+        }
+        // 1. pass through the javax.xml.validation.SchemaFactory
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        try {
+            factory.newSchema(new StreamSource(new ByteArrayInputStream(schemaSrc.getBytes())));
+        } catch (Exception e) {
+            throw new BadSchemaException(e);
+        }
+        // 2. pass through SchemaDocument
+        SchemaDocument sdoc = null;
+        try {
+            sdoc = SchemaDocument.Factory.parse(new StringReader(schemaSrc));
+        } catch (Exception e) {
+            throw new BadSchemaException(e);
+        }
+        return sdoc.getSchema().getTargetNamespace();
     }
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());

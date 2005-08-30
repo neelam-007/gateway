@@ -244,9 +244,20 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void ok() {
-        // check that whatever is captured is an xml document and a schema
+        // check that whatever is captured is an xml document, a schema and has a tns
         String contents = uiAccessibility.getEditor().getText();
-        if (contents == null || contents.length() < 1) {
+        try {
+            String tns = XmlUtil.getSchemaTNS(contents);
+            if (tns == null) {
+                displayError("The schema must declare a targetNamespace", null);
+                return;
+            }
+        } catch (XmlUtil.BadSchemaException e) {
+            log.log(Level.WARNING, "issue with schema at hand", e);
+            displayError("This does not appear to be a legal schema. Consult log for more information", null);
+            return;
+        }
+        /*if (contents == null || contents.length() < 1) {
             log.warning("empty doc");
             displayError(resources.getString("error.notschema"), null);
             return;
@@ -259,8 +270,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (!docIsSchema(doc)) {
             displayError(resources.getString("error.notschema"), null);
             return;
-        }
-
+        }*/
+        Document doc = stringToDoc(contents);
         // before saving, make sure all imports are resolveable
         if (checkForUnresolvedImports(doc)) {
             return;

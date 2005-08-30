@@ -14,19 +14,13 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.FilterDocument;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 /**
  * Called by the GlobalSchemaDialog, this is used to edit an existing or add a new global schema entry.
@@ -122,7 +116,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         dispose();
     }
 
-    private boolean docIsSchema(Document doc) {
+    /*private boolean docIsSchema(Document doc) {
         if (doc == null) return false;
         Element rootEl = doc.getDocumentElement();
 
@@ -137,13 +131,22 @@ public class GlobalSchemaEntryEditor extends JDialog {
             return false;
         }
         return true;
-    }
+    }*/
 
     private void ok() {
         // make sure this is a schema
         String contents = uiAccessibility.getEditor().getText();
-
-        if (contents == null || contents.length() < 1) {
+        String tns = null;
+        try {
+            tns = XmlUtil.getSchemaTNS(contents);
+        } catch (XmlUtil.BadSchemaException e) {
+            logger.log(Level.WARNING, "problem parsing schema", e);
+            JOptionPane.showMessageDialog(this, "This is not a legal xml schema. Consult log for more details",
+                                                "Illegal Schema",
+                                                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        /*if (contents == null || contents.length() < 1) {
             JOptionPane.showMessageDialog(this, "There is not xml here. Insert a schema or cancel.",
                                                 "Empty",
                                                 JOptionPane.ERROR_MESSAGE);
@@ -172,7 +175,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
             return;
         }
         // get the tns
-        String tns = doc.getDocumentElement().getAttribute("targetNamespace");
+        String tns = doc.getDocumentElement().getAttribute("targetNamespace");*/
         if (tns == null || tns.length() < 1) {
             JOptionPane.showMessageDialog(this, "This schema does not declare a target namespace.",
                                                 "Invalid Schema",
