@@ -6,7 +6,6 @@ import com.l7tech.console.beaneditor.BeanListener;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -50,21 +49,23 @@ public class EditAttributeDialog extends JDialog {
      */
     private String CMD_OK = "cmd.ok";
 
-    private JButton okButton = null;
+    private JButton okButton;
 
     /* attribute name text field */
-    private JTextField attributeNameField = null;
+    private JTextField attributeNameField;
     /* attribute namespace text field */
-    private JTextField attributeNamespaceField = null;
+    private JTextField attributeNamespaceField;
     /* attribute value text field */
-    private JTextField attributeValueField = null;
+    private JTextField attributeValueField;
+
+    private JButton cancelButton;
+    private JRadioButton anyValueRadio;
+    private JRadioButton specificValueRadio;
+    private JPanel mainPanel;
 
     private SamlAttributeStatement.Attribute attribute;
 
-
     /**
-     * Create a new PasswordDialog
-     *
      * @param parent the parent Frame. May be <B>null</B>
      */
     public EditAttributeDialog(JDialog parent, SamlAttributeStatement.Attribute attribute) {
@@ -108,11 +109,6 @@ public class EditAttributeDialog extends JDialog {
      * initialize the dialog.
      */
     private void initComponents() {
-
-        GridBagConstraints constraints = null;
-
-        Container contents = getContentPane();
-        contents.setLayout(new GridBagLayout());
         setTitle(resources.getString("dialog.title"));
 
         addWindowListener(new WindowAdapter() {
@@ -122,152 +118,55 @@ public class EditAttributeDialog extends JDialog {
             }
         });
 
-        attributeNameField = new JTextField(); // needed below
         attributeNameField.setText(attribute.getName());
-        // attribute name label
-        JLabel attributeNameLabel = new JLabel();
-        attributeNameLabel.setToolTipText(resources.getString("attributeNameField.tooltip"));
-        attributeNameLabel.setText(resources.getString("attributeNameField.label"));
-        attributeNameLabel.setLabelFor(attributeNameField);
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(11, 12, 0, 0);
-
-        contents.add(attributeNameLabel, constraints);
-
-        // attribute name field
-        attributeNameField.setToolTipText(resources.getString("attributeNameField.tooltip"));
-
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 0;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
-        constraints.insets = new Insets(11, 7, 0, 11);
-        contents.add(attributeNameField, constraints);
-
-
-        attributeNamespaceField = new JTextField();
         attributeNamespaceField.setText(attribute.getNamespace());
-
-        // attribute namespace label
-        JLabel attributeNamespaceLabel = new JLabel();
-        attributeNamespaceLabel.setToolTipText(resources.getString("attributeNamespaceField.tooltip"));
-        attributeNamespaceLabel.setText(resources.getString("attributeNamespaceField.label"));
-        attributeNamespaceLabel.setLabelFor(attributeNamespaceField);
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 1;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(11, 12, 0, 0);
-
-        contents.add(attributeNamespaceLabel, constraints);
-
-        // attribute namespace field
-        attributeNamespaceField.setToolTipText(resources.getString("attributeNamespaceField.tooltip"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 1;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
-        constraints.insets = new Insets(11, 7, 0, 11);
-        contents.add(attributeNamespaceField, constraints);
-
-
-        attributeValueField = new JTextField();
         attributeValueField.setText(attribute.getValue());
-
-        // attribute value label
-        JLabel attributeValueLabel = new JLabel();
-        attributeValueLabel.setToolTipText(resources.getString("attributeValueField.tooltip"));
-        attributeValueLabel.setText(resources.getString("attributeValueField.label"));
-        attributeValueLabel.setLabelFor(attributeValueField);
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(11, 12, 0, 0);
-
-        contents.add(attributeValueLabel, constraints);
-
-        // attribute namespace field
-        attributeValueField.setToolTipText(resources.getString("attributeValueField.tooltip"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 2;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
-        constraints.insets = new Insets(11, 7, 0, 11);
-        contents.add(attributeValueField, constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 2;
-        constraints.gridy = 4;
-        constraints.gridwidth = 2;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.anchor = GridBagConstraints.EAST;
-        constraints.weightx = 1.0;
-        constraints.insets = new Insets(17, 12, 11, 11);
-        JPanel buttonPanel = createButtonPanel(); // sets global okButton
-        contents.add(buttonPanel, constraints);
-
         getRootPane().setDefaultButton(okButton);
-    } // initComponents()
-
-    /**
-     * Creates the panel of buttons that goes along the bottom
-     * of the dialog
-     * <p/>
-     * Sets the variable okButton
-     */
-    private JPanel createButtonPanel() {
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, 0));
 
         // login button (global variable)
-        okButton = new JButton();
-        okButton.setText(resources.getString("okButton.label"));
-        okButton.setToolTipText(resources.getString("okButton.tooltip"));
         okButton.setActionCommand(CMD_OK);
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 windowAction(event);
             }
         });
-        panel.add(okButton);
-
-        // space
-        panel.add(Box.createRigidArea(new Dimension(5, 0)));
 
         // cancel button
-        JButton cancelButton = new JButton();
-        cancelButton.setText(resources.getString("cancelButton.label"));
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 windowAction(event);
             }
         });
-        panel.add(cancelButton);
 
-        // space
-        panel.add(Box.createRigidArea(new Dimension(5, 0)));
-        Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton});
-        return panel;
-    } // createButtonPanel()
+        ButtonGroup radioButtons = new ButtonGroup();
+        radioButtons.add(specificValueRadio);
+        radioButtons.add(anyValueRadio);
 
+        ActionListener buttonEnabler = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                enableButtons();
+            }
+        };
+
+        specificValueRadio.addActionListener(buttonEnabler);
+        anyValueRadio.addActionListener(buttonEnabler);
+
+        if (attribute.isAnyValue()) {
+            anyValueRadio.setSelected(true);
+        } else {
+            specificValueRadio.setSelected(true);
+            attributeValueField.setText(attribute.getValue());
+        }
+
+        enableButtons();
+
+        add(mainPanel);
+    }
+
+    private void enableButtons() {
+        attributeValueField.setEnabled(specificValueRadio.isSelected());
+    }
 
     /**
      * The user has selected an option. Here we close and dispose
@@ -296,7 +195,13 @@ public class EditAttributeDialog extends JDialog {
             if (validateInput()) {
                 attribute.setName(attributeNameField.getText());
                 attribute.setNamespace(attributeNamespaceField.getText());
-                attribute.setValue(attributeValueField.getText());
+                if (anyValueRadio.isSelected()) {
+                    attribute.setValue(null);
+                    attribute.setAnyValue(true);
+                } else {
+                    attribute.setAnyValue(false);
+                    attribute.setValue(attributeValueField.getText());
+                }
                 fireEditAccepted();
                 dispose();
             } else {
@@ -340,7 +245,7 @@ public class EditAttributeDialog extends JDialog {
         }
 
         String value = attributeValueField.getText();
-        if (value == null || "".equals(value.trim())) {
+        if (specificValueRadio.isSelected() && (value == null || "".equals(value.trim()) )) {
             JOptionPane.
             showMessageDialog(this,
                               resources.getString("attributeValueField.error.empty"),

@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 package com.l7tech.console.panels.saml;
 
@@ -36,6 +34,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JButton removeButton;
     private JButton editButton;
     private DefaultTableModel attributesTableModel;
+    private static final String ANY = "<any>";
 
     /**
      * Creates new form AttributeStatementWizardStepPanel
@@ -86,10 +85,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         int nrows = attributesTableModel.getRowCount();
         Collection attributes = new ArrayList();
         for (int i = 0; i < nrows; i++) {
-            SamlAttributeStatement.Attribute att =
-            new SamlAttributeStatement.Attribute(attributesTableModel.getValueAt(i, 0).toString(),
-                          attributesTableModel.getValueAt(i, 1).toString(),
-                          attributesTableModel.getValueAt(i, 2).toString());
+            String col2 = attributesTableModel.getValueAt(i, 2).toString();
+            boolean isAny = ANY.equals(col2);
+            SamlAttributeStatement.Attribute att = new SamlAttributeStatement.Attribute(
+                    attributesTableModel.getValueAt(i, 0).toString(),
+                    attributesTableModel.getValueAt(i, 1).toString(),
+                    isAny ? null : col2,
+                    isAny);
             attributes.add(att);
         }
         statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[]{}));
@@ -118,7 +120,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
         for (int i = 0; i < attributes.length; i++) {
             SamlAttributeStatement.Attribute att = attributes[i];
-            attributesTableModel.addRow(new Object[]{att.getName(), att.getNamespace(), att.getValue()});
+            attributesTableModel.addRow(new Object[]{att.getName(), att.getNamespace(), att.isAnyValue() ? ANY : att.getValue()});
         }
     }
 
@@ -158,7 +160,14 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                 final SamlAttributeStatement.Attribute attribute = new SamlAttributeStatement.Attribute();
                 attribute.setName(attributesTableModel.getValueAt(row, 0).toString());
                 attribute.setNamespace(attributesTableModel.getValueAt(row, 1).toString());
-                attribute.setValue(attributesTableModel.getValueAt(row, 2).toString());
+                String col2 = attributesTableModel.getValueAt(row, 2).toString();
+                if (ANY.equals(col2)) {
+                    attribute.setAnyValue(true);
+                    attribute.setValue(null);
+                } else {
+                    attribute.setAnyValue(false);
+                    attribute.setValue(col2);
+                }
                 EditAttributeDialog editAttributeDialog = new EditAttributeDialog(owner, attribute);
                 editAttributeDialog.addBeanListener(new BeanAdapter() {
                     /**
@@ -170,11 +179,11 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                     public void onEditAccepted(Object source, Object bean) {
                         attributesTableModel.setValueAt(attribute.getName(), row, 0);
                         attributesTableModel.setValueAt(attribute.getNamespace(), row, 1);
-                        attributesTableModel.setValueAt(attribute.getValue(), row, 2);
+                        attributesTableModel.setValueAt(attribute.isAnyValue() ? ANY : attribute.getValue(), row, 2);
                         notifyListeners();
                     }
                 });
-                editAttributeDialog.show();
+                editAttributeDialog.setVisible(true);
             }
         });
         addAttributeButton.addActionListener(new ActionListener() {
@@ -189,11 +198,11 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
                      * @param bean   the bean being edited
                      */
                     public void onEditAccepted(Object source, Object bean) {
-                        attributesTableModel.addRow(new Object[] {attribute.getName(), attribute.getNamespace(), attribute.getValue()});
+                        attributesTableModel.addRow(new Object[] {attribute.getName(), attribute.getNamespace(), attribute.isAnyValue() ? ANY : attribute.getValue()});
                         notifyListeners();
                     }
                 });
-                editAttributeDialog.show();
+                editAttributeDialog.setVisible(true);
             }
         });
     }

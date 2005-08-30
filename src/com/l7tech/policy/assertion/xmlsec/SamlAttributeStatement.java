@@ -30,17 +30,19 @@ public class SamlAttributeStatement implements Serializable {
         private String name;
         private String namespace;
         private String value;
+        private boolean anyValue;
 
         public Attribute() {
         }
 
-        public Attribute(String name, String namespace, String value) {
-            if (name == null || value == null) {
+        public Attribute(String name, String namespace, String value, boolean anyValue) {
+            if (name == null || (value == null && !anyValue)) {
                 throw new IllegalArgumentException();
             }
             this.name = name;
             this.namespace = namespace;
             this.value = value;
+            this.anyValue = anyValue;
         }
 
         public String getName() {
@@ -67,15 +69,24 @@ public class SamlAttributeStatement implements Serializable {
             this.value = value;
         }
 
-    public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("[ ")
-          .append("namespace="+ (namespace == null ? "null" : namespace))
-          .append(", name="+ (name == null ? "null" : name))
-          .append(", value="+ (value == null ? "null" : value))
-          .append(" ]");
-        return sb.toString();
-    }
+        public boolean isAnyValue() {
+            return anyValue;
+        }
+
+        public void setAnyValue(boolean anyValue) {
+            this.anyValue = anyValue;
+        }
+
+        public String toString() {
+            StringBuffer sb = new StringBuffer();
+            sb.append("[ ")
+              .append("namespace="+ (namespace == null ? "null" : namespace))
+              .append(", name="+ (name == null ? "null" : name))
+              .append(", value="+ (value == null ? "null" : value))
+              .append(", anyValue=" + anyValue)
+              .append(" ]");
+            return sb.toString();
+        }
     }
 
 }

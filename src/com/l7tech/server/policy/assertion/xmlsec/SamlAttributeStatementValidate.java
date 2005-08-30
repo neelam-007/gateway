@@ -75,10 +75,11 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
      * @return true if the expected attribute is present, false otherwise
      */
     private boolean isAttributePresented(SamlAttributeStatement.Attribute expectedAttribute, AttributeType[] receivedAttributes, Collection validationResults) {
-        String name = expectedAttribute.getName();
-        String nameSpace = expectedAttribute.getNamespace();
-        String value = expectedAttribute.getValue();
-        if (isEmpty(name) || isEmpty(value)) {
+        String expectedName = expectedAttribute.getName();
+        String expectedNamespace = expectedAttribute.getNamespace();
+        String expectedValue = expectedAttribute.getValue();
+        boolean expectedAny = expectedAttribute.isAnyValue();
+        if (isEmpty(expectedName) || (!expectedAny && isEmpty(expectedValue))) {
             SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name or value is null)", null, null, null);
             validationResults.add(result);
             logger.finer(result.toString());
@@ -87,8 +88,8 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
 
         for (int i = 0; i < receivedAttributes.length; i++) {
             AttributeType receivedAttribute = receivedAttributes[i];
-            if (name.equals(receivedAttribute.getAttributeName())) {
-                if (!isEmpty(nameSpace) && !nameSpace.equals(receivedAttribute.getAttributeNamespace())) {
+            if (expectedName.equals(receivedAttribute.getAttributeName())) {
+                if (!isEmpty(expectedNamespace) && !expectedNamespace.equals(receivedAttribute.getAttributeNamespace())) {
                     continue;
                 }
                 XmlObject[] values = receivedAttribute.getAttributeValueArray();
@@ -96,9 +97,14 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
                     XmlObject presentedValue = values[j];
                     XmlCursor cursor = presentedValue.newCursor();
                     try {
-                        if (cursor.getTextValue().equals(value)) {
+                        if (expectedAny && !isEmpty(cursor.getTextValue())) {
                             if (logger.isLoggable(Level.FINER)) {
-                                logger.finer(MessageFormat.format("Matched name {0}, value {1} ", new Object[]{name, value}));
+                                logger.finer(MessageFormat.format("Matched name {0}, any value", new Object[]{expectedName, expectedValue}));
+                            }
+                            return true;
+                        } else if (cursor.getTextValue().equals(expectedValue)) {
+                            if (logger.isLoggable(Level.FINER)) {
+                                logger.finer(MessageFormat.format("Matched name {0}, value {1} ", new Object[]{expectedName, expectedValue}));
                             }
                             return true;
                         }
