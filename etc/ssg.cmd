@@ -2,7 +2,8 @@
 ::
 :: Compatibility: Windows XP, Windows Server 2003.
 
-:: Startup/Shutdown script for the SecureSpan Gateway server.
+:: Manual startup/shutdown script for the SecureSpan Gateway server.
+:: For diagnostic use only. Do not use when SSG is running as a service.
 
 @echo off
 
