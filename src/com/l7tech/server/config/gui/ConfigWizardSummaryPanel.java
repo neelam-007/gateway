@@ -9,7 +9,6 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.ArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -63,7 +62,8 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
     protected void updateModel(HashMap settings) {
     }
 
-    public boolean canFinish() {
+    public boolean onNextButton() {
+        getParentWizard().applyConfiguration();
         return true;
     }
 }
