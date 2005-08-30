@@ -1,5 +1,6 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.KeyStoreConstants;
@@ -13,7 +14,15 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.*;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.Security;
+import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,6 +32,9 @@ import java.util.Properties;
  * To change this template use File | Settings | File Templates.
  */
 public class KeystoreConfigCommand extends BaseConfigurationCommand {
+
+    private static final Logger logger = Logger.getLogger(KeystoreConfigCommand.class.getName());
+
     private static final String BACKUP_FILE_NAME = "keystore_config_backups";
 
     private static final String CA_KEYSTORE_FILE = "ca.ks";
@@ -48,12 +60,22 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private static final String PROPKEY_JCEPROVIDER = "com.l7tech.common.security.jceProviderEngine";
     private static final String PROPERTY_LUNA_JCEPROVIDER_VALUE = "com.l7tech.common.security.prov.luna.LunaJceProviderEngine";
 
-    private static final String[] SECURITY_PROVIDERS =
+    private static final String[] LUNA_SECURITY_PROVIDERS =
             {
                 "com.chrysalisits.crypto.LunaJCAProvider",
                 "com.chrysalisits.cryptox.LunaJCEProvider",
                 "sun.security.provider.Sun",
                 "com.sun.net.ssl.internal.ssl.Provider"
+            };
+    
+    private static final String[] DEFAULT_SECURITY_PROVIDERS = 
+            {
+                "sun.security.provider.Sun",
+                "sun.security.rsa.SunRsaSign",
+                "com.sun.net.ssl.internal.ssl.Provider",
+                "com.sun.crypto.provider.SunJCE",
+                "sun.security.jgss.SunProvider",
+                "com.sun.security.sasl.Provider"
             };
 
 
@@ -61,20 +83,67 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         super(bean, bean.getOSFunctions());
     }
 
-    public void execute() {
+    public boolean execute() {
+        boolean success = true;
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
 
             String ksType = ksBean.getKeyStoreType();
-            if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
-                doDefaultKeyConfig(ksBean);
-            } else {
-                doLunaKeyConfig(ksBean);
+            try {
+                 if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+                    doDefaultKeyConfig(ksBean);
+                    success = true;
+                } else {
+                    doLunaKeyConfig(ksBean);
+                    success = true;
+                }
+            } catch (Exception e) {
+                success = false;
             }
+        }
+        return success;
+    }
+
+    private void prepareJvm(String ksType) {
+        ArrayList providers = new ArrayList();
+        String javaLibPath = System.getProperty("java.library.path");
+
+        Provider[] currentProviders = Security.getProviders();
+        for (int i = 0; i < currentProviders.length; i++) {
+            Provider provider = currentProviders[i];
+            Security.removeProvider(provider.getName());
+        }
+
+        if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
+
+            if (isJava15()) {
+                providers.add(new sun.security.provider.Sun());
+                providers.add(new sun.security.rsa.SunRsaSign());
+                providers.add(new com.sun.net.ssl.internal.ssl.Provider());
+                providers.add(new com.sun.crypto.provider.SunJCE());
+                providers.add(new sun.security.jgss.SunProvider());
+                providers.add(new com.sun.security.sasl.Provider());
+            }
+            else {
+                System.out.println("******** TODO ***********");
+                System.out.println("do security provider runtime setup for java14");
+            }
+
+        } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+            providers.add(new com.chrysalisits.crypto.LunaJCAProvider());
+            providers.add(new com.chrysalisits.cryptox.LunaJCEProvider());
+            providers.add(new sun.security.provider.Sun());
+            providers.add(new com.sun.net.ssl.internal.ssl.Provider());
+        }
+
+        Iterator provIter = providers.iterator();
+        while (provIter.hasNext()) {
+            Provider prov = (Provider) provIter.next();
+            Security.addProvider(prov);
         }
     }
 
-    private void doDefaultKeyConfig(KeystoreConfigBean ksBean) {
+    private void doDefaultKeyConfig(KeystoreConfigBean ksBean) throws Exception {
         char[] ksPassword = ksBean.getKsPassword();
         boolean doBothKeys = ksBean.isDoBothKeys();
 
@@ -85,9 +154,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         File sslKeyStoreFile = new File(ksDir + SSL_KEYSTORE_FILE);
         File caCertFile = new File(ksDir + CA_CERT_FILE);
         File sslCertFile = new File(ksDir + SSL_CERT_FILE);
+        File javaSecFile = new File(osFunctions.getPathToJavaSecurityFile());
+
+        File newJavaSecFile  = new File(osFunctions.getPathToJavaSecurityFile() + ".new");
 
         File[] files = new File[]
         {
+            javaSecFile,
             keystorePropertiesFile,
             tomcatServerConfigFile,
             caKeyStoreFile,
@@ -102,14 +175,20 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             e.printStackTrace();
         }
 
-        boolean keysDone = makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
-        if (keysDone) {
+        try {
+            prepareJvm(KeyStoreConstants.DEFAULT_KEYSTORE_NAME);
+            makeDefaultKeys(doBothKeys, ksBean, ksDir, ksPassword);
+            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile,DEFAULT_SECURITY_PROVIDERS );
             updateKeystoreProperties(keystorePropertiesFile, ksPassword);
             updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+        } catch (Exception e) {
+            logger.severe("problem generating keys or keystore - skipping keystore configuration");
+            logger.severe(e.getMessage());
+            throw e;
         }
     }
 
-    private void doLunaKeyConfig(KeystoreConfigBean ksBean) {
+    private void doLunaKeyConfig(KeystoreConfigBean ksBean) throws Exception {
         char[] ksPassword = ksBean.getKsPassword();
         //we don't actually care what the password is for Luna, so make it obvious.
         ksPassword = new String("ignoredbyluna").toCharArray();
@@ -145,30 +224,65 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             e.printStackTrace();
         }
 
-        //prepare the JDK and the Luna environment before generating keys
-        setLunaSystemProps(ksBean);
-        copyLunaJars(ksBean);
-        updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile);
-        makeLunaKeys(ksBean);
 
-        updateKeystoreProperties(keystorePropertiesFile, ksPassword);
-        updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
-        updateSystemPropertiesFile(ksBean, systemPropertiesFile);
-    }
-
-    private boolean makeLunaKeys(KeystoreConfigBean ksBean) {
-        boolean success = true;
-
-        String hostname = ksBean.getHostname();
 
         try {
-            MakeLunaCerts.realMain(hostname, true);
+            //prepare the JDK and the Luna environment before generating keys
+            setLunaSystemProps(ksBean);
+            copyLunaJars(ksBean);
+            prepareJvm(KeyStoreConstants.LUNA_KEYSTORE_NAME);
+            makeLunaKeys(ksBean, caCertFile, sslCertFile, caKeyStoreFile, sslKeyStoreFile);
+            updateJavaSecurity(ksBean, javaSecFile, newJavaSecFile, LUNA_SECURITY_PROVIDERS);
+            updateKeystoreProperties(keystorePropertiesFile, ksPassword);
+            updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
+            updateSystemPropertiesFile(ksBean, systemPropertiesFile);
         } catch (Exception e) {
-            e.printStackTrace();
-            success = false;
+            logger.severe("problem generating keys or keystore - skipping keystore configuration");
+            logger.severe(e.getMessage());
+            throw e;
         }
+    }
+
+    private boolean makeLunaKeys(KeystoreConfigBean ksBean, File caCertFile, File sslCertFile, File caKeyStoreFile, File sslKeyStoreFile) throws Exception {
+        boolean success = false;
+        String hostname = ksBean.getHostname();
+        
+        try {
+            MakeLunaCerts.makeCerts(hostname, true, caCertFile, sslCertFile);
+            success = true;
+        } catch (LunaCmu.LunaCmuException e) {
+            logger.severe("Could not locate the Luna CMU. Please rerun the wizard and check the Luna paths");
+            logger.severe(e.getMessage());
+            throw e;
+        } catch (KeyStoreException e) {
+            logger.severe("There has been a problem creating the Luna Keystore, or in creating/locating a key within it");
+            logger.severe(e.getMessage());
+            throw e;
+        } catch (IOException e) {
+            logger.severe("Could not write the certificates to disk");
+            logger.severe(e.getMessage());
+            throw e;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();    //should not happen
+            throw e;
+        } catch (CertificateException e) {
+            e.printStackTrace(); //should not happen
+            throw e;
+        } catch (ClassNotFoundException e) {
+            logger.severe("Luna classes not found in the classpath - cannot generate Luna certs");
+            logger.severe(e.getMessage());
+            throw e;
+        } catch (MakeLunaCerts.CertsAlreadyExistException e) {
+            logger.severe("Luna certificates already exist - new certs will not be written");
+            throw e;
+        } catch (LunaCmu.LunaTokenNotLoggedOnException e) {
+            logger.severe("This SSG is not already logged into the luna partition, please log in and re-run");
+            logger.severe(e.getMessage());
+            throw e;
+        }
+
         if (success) {
-            moveLunaCerts();
+            truncateKeystores(caKeyStoreFile, sslKeyStoreFile);
         }
         return success;
     }
@@ -199,21 +313,17 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             if (fis != null) {
                 try {
                     fis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) {}
             }
             if (fos != null) {
                 try {
                     fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) {}
             }
         }
     }
 
-    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile, File newJavaSecFile) {
+    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile, File newJavaSecFile, String[] providersList) {
         BufferedReader reader = null;
         PrintWriter writer = null;
         try {
@@ -222,16 +332,26 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             String line = null;
             int secProviderIndex = 0;
-            while ((line = reader.readLine()) != null) {
-                if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) {
-                    if (secProviderIndex < SECURITY_PROVIDERS.length) {
-                        line = new String(PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + SECURITY_PROVIDERS[secProviderIndex]);
+            while ((line = reader.readLine()) != null) { //start looking for the security providers section
+                if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) { //ignore comments and match if we find a security providers section
+                    while ((line = reader.readLine()) != null) { //read the rest of the security providers list, esssentially skipping over it
+                        if (!line.startsWith("#") && line.startsWith(PROPKEY_SECURITY_PROVIDER)) {
+                        }
+                        else {
+                            break; //we're done with the sec providers
+                        }
+                    }
+
+                    //now write out the new ones
+                    while (secProviderIndex < providersList.length) {
+                        line = new String(PROPKEY_SECURITY_PROVIDER + "." + String.valueOf(secProviderIndex + 1) + "=" + providersList[secProviderIndex]);
+                        writer.println(line);
                         secProviderIndex++;
-                    } else {
-                        continue;
                     }
                 }
-                writer.println(line);
+                else {
+                    writer.println(line);
+                }
             }
             reader.close();
             reader = null;
@@ -248,9 +368,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             if (reader != null) {
                 try {
                     reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) {}
             }
 
             if (writer != null) {
@@ -261,19 +379,40 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private void copyLunaJars(KeystoreConfigBean ksBean) {
         String lunaJarSourcePath = ksBean.getLunaJspPath() + "/lib/";
-        String destination = osFunctions.getPathToJreLibExt();
-        File srcDir = new File(lunaJarSourcePath);
-        File destDir = new File(destination);
+        String jreLibExtdestination = osFunctions.getPathToJreLibExt();
+        String javaLibPathDestination = osFunctions.getPathToJavaLibPath();
 
-        File[] fileList = srcDir.listFiles();
-        for (int i = 0; i < fileList.length; i++) {
-            File file = fileList[i];
-            File destFile = new File(destDir, file.getName());
-            try {
-                FileUtils.copyFile(file, destFile);
-            } catch (IOException e) {
-                e.printStackTrace();
+        File srcDir = new File(lunaJarSourcePath);
+        File destDir = new File(jreLibExtdestination);
+
+        File[] fileList = srcDir.listFiles(new FilenameFilter() {
+            public boolean accept(File file, String s) {
+                return s.toUpperCase().endsWith(".JAR");
             }
+        });
+
+        File[] dllFileList = srcDir.listFiles(new FilenameFilter() {
+            public boolean accept(File file, String s) {
+                return s.toUpperCase().endsWith(".DLL") || s.toUpperCase().endsWith(".SO");
+            }
+        });
+
+        try {
+            for (int i = 0; i < fileList.length; i++) {
+                File file = fileList[i];
+                File destFile = new File(destDir, file.getName());
+                FileUtils.copyFile(file, destFile);
+            }
+
+            for (int i = 0; i < dllFileList.length; i++) {
+                File file = dllFileList[i];
+                File destFile = new File(javaLibPathDestination, file.getName());
+                FileUtils.copyFile(file, destFile);
+            }
+
+        } catch (IOException e) {
+            logger.warning("Could not copy the Luna libraries - the files are possibly in use. Please close all programs and retry.");
+            logger.warning(e.getMessage());
         }
     }
 
@@ -281,11 +420,38 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         System.setProperty(LUNA_SYSTEM_CMU_PROPERTY, ksBean.getLunaInstallationPath() + osFunctions.getLunaCmuPath());
     }
 
-    private void moveLunaCerts() {
+    private void truncateKeystores(File caKeyStore, File sslKeyStore) {
+        FileOutputStream emptyCaFileStream = null;
+        FileOutputStream emptySslFileStream = null;
+
+        try {
+            emptyCaFileStream = new FileOutputStream(caKeyStore);
+            emptyCaFileStream.close();
+            emptyCaFileStream = null;
+
+            emptySslFileStream = new FileOutputStream(sslKeyStore);
+            emptySslFileStream.close();
+            emptySslFileStream = null;
+        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
+        } finally {
+            if (emptyCaFileStream != null) {
+                try {
+                    emptyCaFileStream.close();
+                } catch (IOException e) {}
+            }
+
+            if (emptySslFileStream != null) {
+                try {
+                    emptySslFileStream.close();
+                } catch (IOException e) {}
+            }
+        }
+
 
     }
 
-    private boolean makeDefaultKeys(boolean doBothKeys, KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) {
+    private boolean makeDefaultKeys(boolean doBothKeys, KeystoreConfigBean ksBean, String ksDir, char[] ksPassword) throws Exception {
         boolean keysDone = false;
         String args[] = new String[]
         {
@@ -295,19 +461,17 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 new String(ksPassword),
                 getKsType()
         };
-        try {
-            if (doBothKeys) {
-                System.out.println("Generating both keys");
-                SetKeys.NewCa.main(args);
-                keysDone = true;
-            } else {
-                System.out.println("Generating only SSL key");
-                SetKeys.ExistingCa.main(args);
-                keysDone = true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        if (doBothKeys) {
+            System.out.println("Generating both keys");
+            SetKeys.NewCa.main(args);
+            keysDone = true;
+        } else {
+            System.out.println("Generating only SSL key");
+            SetKeys.ExistingCa.main(args);
+            keysDone = true;
         }
+
         return keysDone;
     }
 
@@ -345,16 +509,12 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             if (fis != null) {
                 try {
                     fis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
+                } catch (IOException e) {}
             }
             if (fos != null) {
                 try {
                     fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
+                } catch (IOException e) {}
             }
         }
     }
@@ -388,9 +548,12 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             if (fis != null) {
                 try {
                     fis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) {}
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {}
             }
         }
     }
@@ -401,14 +564,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             return "Luna";
         }
         else {
-            String version = System.getProperty("java.version");
-            boolean java15 = version.startsWith("1.5");
-            if (java15) {
+            if (isJava15()) {
                 return "PKCS12";
             }
             else {
                 return "BCPKCS12";
             }
         }
+    }
+
+    private boolean isJava15() {
+        String version = System.getProperty("java.version");
+        boolean java15 = version.startsWith("1.5");
+        return java15;
     }
 }
