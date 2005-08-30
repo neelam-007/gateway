@@ -1,17 +1,17 @@
 package com.l7tech.server.config.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.KeyStoreConstants;
-import com.l7tech.server.config.commands.KeystoreConfigCommand;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
+import com.l7tech.server.config.commands.KeystoreConfigCommand;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.HashMap;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by IntelliJ IDEA.
@@ -79,11 +79,35 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     }
 
     protected void updateView(HashMap settings) {
-        String[] keystores = getKeystores();
+        boolean isLunaOk = true;
+//        try {
+//            isLunaOk = LunaProber.isPartitionLoggedIn();
+//        } catch (ClassNotFoundException e) {
+//            isLunaOk = false;
+//        }
+        String[] keystores = getKeystores(isLunaOk);
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;
 
         String ksType = ksConfigBean.getKeyStoreType();
         keystoreType.setSelectedItem(ksType == null?keystores[0]:ksType);
+    }
+
+    private String[] getKeystores(boolean lunaOk) {
+        if (lunaOk) {
+            return getKeystores();
+        }
+        else {
+            String[] fullList = getKeystores();
+            ArrayList newKeystoreList = new ArrayList();
+            for (int i = 0; i < fullList.length; i++) {
+                String s = new String(fullList[i]);
+                if (!s.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+                    newKeystoreList.add(s);
+                }
+            }
+            return (String[]) newKeystoreList.toArray(new String[newKeystoreList.size()]);
+        }
+
     }
 
     private void init() {
@@ -167,11 +191,12 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     }
 
     public boolean onNextButton() {
+        boolean allIsWell = true;
         if (!dontDoKsConfig.isSelected()) {
             KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
-            return ksPanel.validateInput();
+            allIsWell = ksPanel.validateInput();
         }
-        return true;
+        return allIsWell;
     }
 
 
