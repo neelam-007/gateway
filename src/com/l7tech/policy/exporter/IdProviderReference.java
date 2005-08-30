@@ -312,9 +312,9 @@ public class IdProviderReference extends ExternalReference {
                         su.setUserUid(userFromLogin.getUniqueIdentifier());
                     } else {
                         // the user is not found with the id nor the login
-                        String msg = "The user whose id equals " + su.getUserUid() +
-                                     " and login equals " + su.getUserLogin() +
-                                     " cannot be found on the local system.";
+                        String msg = "The userid \"" + su.getUserUid() + "\" (with login \"" + su.getUserLogin() +
+                                     "\") does not\nexist on the target SecureSpan Gateway. You should remove\n" +
+                                     "or replace the identity assertion from the policy.";
                         logger.warning(msg);
                         JOptionPane.showMessageDialog(null, msg, "Unresolved identity", JOptionPane.WARNING_MESSAGE);
                     }
