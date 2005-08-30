@@ -6,10 +6,16 @@
  */
 package com.l7tech.skunkworks.schemavalidation;
 
+import org.w3.x2001.xmlSchema.SchemaDocument;
+import org.apache.xmlbeans.XmlException;
+
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Schema;
 import java.io.ByteArrayInputStream;
+import java.io.StringReader;
+import java.io.IOException;
 
 /**
  * A class that takes an xml document and decides whether it's a good schema or not.
@@ -21,54 +27,42 @@ public class SchemaCritic {
 
     // todo, move this to a proper junit test
     public static void main(String[] args) throws Exception {
-        if (isValidSchema(GOOD_SCHEMA)) {
-            System.out.println("OK");
+        //        GOOD_SCHEMA
+        //        BAD_SCHEMA1
+        //        BAD_SCHEMA2 (can't find a way to catch errors in this schema)
+        //        NOT_EVEN_A_SCHEMA
+        //        NOT_EVEN_XML
+        //        SCHEMA_WOTNS
+        if (getSchemaTNS(SCHEMA_WOTNS) == null) {
+            System.out.println("No tns");
         } else {
-            System.out.println("unexpected result with GOOD_SCHEMA");
-        }
-
-        if (!isValidSchema(BAD_SCHEMA1)) {
-            System.out.println("OK");
-        } else {
-            System.out.println("unexpected result with BAD_SCHEMA1");
-        }
-
-        if (!isValidSchema(BAD_SCHEMA2)) {
-            System.out.println("OK");
-        } else {
-            System.out.println("unexpected result with BAD_SCHEMA2");
-        }
-
-        if (!isValidSchema(NOT_EVEN_A_SCHEMA)) {
-            System.out.println("OK");
-        } else {
-            System.out.println("unexpected result with NOT_EVEN_A_SCHEMA");
-        }
-
-        if (!isValidSchema(NOT_EVEN_XML)) {
-            System.out.println("OK");
-        } else {
-            System.out.println("unexpected result with NOT_EVEN_XML");
-        }
-
-        if (!isValidSchema(SCHEMA_WOTNS)) {
-            System.out.println("OK");
-        } else {
-            System.out.println("unexpected result with SCHEMA_WOTNS");
+            System.out.println("All good");
         }
     }
 
-    public static boolean isValidSchema(String maybeSchemaXml) {
+    public static class BadSchemaException extends Exception {
+        public BadSchemaException(String s){super(s);}
+        public BadSchemaException(Throwable e){super(e.getMessage(), e);}
+    }
+
+    public static String getSchemaTNS(String schemaSrc) throws BadSchemaException {
+        // 1. pass through the javax.xml.validation.SchemaFactory
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try {
-            factory.newSchema(new StreamSource(new ByteArrayInputStream(maybeSchemaXml.getBytes())));
+            factory.newSchema(new StreamSource(new ByteArrayInputStream(schemaSrc.getBytes())));
         } catch (Exception e) {
-            // todo, logger
-            //e.printStackTrace();
-            System.out.println("NOT VALID");
-            return false;
+            throw new BadSchemaException(e);
         }
-        return true;
+        // 2. pass through SchemaDocument
+        SchemaDocument sdoc = null;
+        try {
+            sdoc = SchemaDocument.Factory.parse(new StringReader(schemaSrc));
+        } catch (XmlException e) {
+            throw new BadSchemaException(e);
+        } catch (IOException e) {
+            throw new BadSchemaException(e);
+        }
+        return sdoc.getSchema().getTargetNamespace();
     }
 
     private static final String GOOD_SCHEMA = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
