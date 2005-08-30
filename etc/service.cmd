@@ -83,10 +83,10 @@ goto end
 
 :doUninstall
 "%PRUNSRV%" //DS//%SERVICE_NAME%
-if not errorlevel 1 goto installed
+if not errorlevel 1 goto uninstalled
 echo ERROR: Failed to uninstall "%SERVICE_NAME%" service.
 goto end
-:installed
+:uninstalled
 echo Uninstalled service "%SERVICE_NAME%".
 goto end
 
