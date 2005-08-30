@@ -510,6 +510,9 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
+        <property name="serverConfig">
+            <ref local="serverConfig"/>
+        </property>
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManager">

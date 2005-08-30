@@ -7,9 +7,13 @@
 package com.l7tech.server.communityschemas;
 
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.apache.xmlbeans.XmlException;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -23,7 +27,10 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.common.xml.schema.SchemaEntry;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.server.ServerConfig;
 import com.tarari.xml.schema.SchemaResolver;
+import com.tarari.xml.schema.SchemaLoadingException;
 
 /**
  * This manager gives access to the community schemas included in the
@@ -34,8 +41,13 @@ import com.tarari.xml.schema.SchemaResolver;
  * @author flascelles@layer7-tech.com
  */
 public class CommunitySchemaManager extends HibernateDaoSupport {
+    private ServerConfig serverConfig;
 
     public CommunitySchemaManager() {
+    }
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     public Collection findAll() throws FindException {
@@ -77,11 +89,51 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
     }
 
     public long save(SchemaEntry newSchema) throws SaveException {
-        return ((Long)getHibernateTemplate().save(newSchema)).longValue();
+        Long res = (Long)getHibernateTemplate().save(newSchema);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    logger.fine("updating tarari schemas post-update from " + CommunitySchemaManager.class.getName());
+                    try {
+                        TarariLoader.updateSchemasToCard(serverConfig.getSpringContext());
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (SchemaLoadingException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (XmlException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    }
+                }
+            }
+        });
+        if (res == null) {
+            throw new SaveException("unexpected value returned from HibernateTemplate.save (null)");
+        }
+        return res.longValue();
     }
 
     public void update(SchemaEntry existingSchema) throws UpdateException {
         getHibernateTemplate().update(existingSchema);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                    logger.fine("updating tarari schemas post-update from " + CommunitySchemaManager.class.getName());
+                    try {
+                        TarariLoader.updateSchemasToCard(serverConfig.getSpringContext());
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (SchemaLoadingException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    } catch (XmlException e) {
+                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
+                    }
+                }
+            }
+        });
     }
 
     public void delete(SchemaEntry existingSchema) throws DeleteException {
