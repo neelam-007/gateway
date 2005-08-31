@@ -1,6 +1,6 @@
 SECURESPAN GATEWAY SOFTWARE LICENSE AGREEMENT OF LAYER 7 TECHNOLOGIES.
 
-THE SOFTWARE TO WHICH YOU ARE REQUESTING TO ACCESS IS THE PROPERTY OF LAYER 7 TECHNOLOGIES.  THE USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS OF THE AGREEMENT SET FORTH BELOW.  BY CLICKING "I AGREE" ON THIS SCREEN, YOU INDICATE THAT YOU AGREE TO BE BOUND BY THE TERMS AND CONDITIONS OF THAT AGREEMENT.   THEREFORE, PLEASE READ THE TERMS AND CONDITIONS CAREFULLY BEFORE CLICKING ON "I AGREE".  IF YOU DO NOT AGREE TO THE TERMS AND CONDITIONS OF THE AGREEMENT, CLICK "CANCEL" ON THIS SCREEN, IN WHICH CASE YOU WILL BE DENIED ACCESS TO THE SOFTWARE.
+THE SOFTWARE TO WHICH YOU ARE REQUESTING ACCESS IS THE PROPERTY OF LAYER 7 TECHNOLOGIES.  THE USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS OF THE AGREEMENT SET FORTH BELOW.  BY CLICKING "I AGREE" ON THIS SCREEN, YOU INDICATE THAT YOU AGREE TO BE BOUND BY THE TERMS AND CONDITIONS OF THAT AGREEMENT.   THEREFORE, PLEASE READ THE TERMS AND CONDITIONS CAREFULLY BEFORE CLICKING ON "I AGREE".  IF YOU DO NOT AGREE TO THE TERMS AND CONDITIONS OF THE AGREEMENT, CLICK "CANCEL" ON THIS SCREEN, IN WHICH CASE YOU WILL BE DENIED ACCESS TO THE SOFTWARE.
 
 Ownership of the Software
 
@@ -8,7 +8,7 @@ Ownership of the Software
 
 Grant of License
 
-2. Layer 7 Technologies hereby grants to you the right to install and use the Software on an unlimited number of computers, provided that each of those computers must use the Software only to connect to Layer 7 Technologies products, and subject to export restrictions in paragraph 4 hereof. You may make one copy of the Software for each such computer for the purpose of installing the Software on that computer. The Software is licensed for use only with Layer 7 Technologies products, and for no other use.
+2. Layer 7 Technologies hereby grants to you the right to install and use the Software on a single server and subject to export restrictions in paragraph 4 hereof. The Software is licensed for use only with Layer 7 Technologies products, and for no other use.
 
 Restrictions on Use and Transfer
 
