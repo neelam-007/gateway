@@ -4,6 +4,8 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Level;
 import java.util.ArrayList;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,6 +25,14 @@ public class ListHandler extends Handler {
             Level level = logRecord.getLevel();
             if (level == Level.SEVERE) {
                 severeLogList.add(level + ": " + logRecord.getMessage());
+                Throwable t = logRecord.getThrown();
+                if (t != null)  {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    PrintStream ps = new PrintStream(baos);
+                    t.printStackTrace(ps);
+                    ps.close();
+                    severeLogList.add(baos.toString());
+                }
             }
             else if (level == Level.WARNING) {
                 warningLogList.add(level + ": " + logRecord.getMessage());
