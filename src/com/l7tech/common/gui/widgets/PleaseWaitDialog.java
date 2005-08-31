@@ -4,24 +4,19 @@
  * $Id$
  */
 
-package com.l7tech.proxy.gui.dialogs;
-
-import com.l7tech.proxy.gui.Gui;
+package com.l7tech.common.gui.widgets;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
  * Dialog box that says "Please wait..."
- * User: mike
- * Date: Aug 18, 2003
- * Time: 2:59:32 PM
  */
 public class PleaseWaitDialog extends JDialog {
     private JLabel messageLabel;
 
-    public PleaseWaitDialog() {
-        super(Gui.getInstance().getFrame(), "Please wait...", false);
+    public PleaseWaitDialog(JFrame parentFrame) {
+        super(parentFrame, "Please wait...", false);
         this.setFocusableWindowState(false);
         Container c = this.getContentPane();
         c.setLayout(new GridBagLayout());

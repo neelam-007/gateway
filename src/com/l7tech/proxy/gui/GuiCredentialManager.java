@@ -7,13 +7,13 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.PleaseWaitDialog;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.LogonDialog;
-import com.l7tech.proxy.gui.dialogs.PleaseWaitDialog;
 import com.l7tech.proxy.gui.dialogs.TrustCertificateDialog;
 import com.l7tech.proxy.ssl.SslPeer;
 
@@ -295,7 +295,7 @@ class GuiCredentialManager extends CredentialManager {
 
     private PleaseWaitDialog getPleaseWaitDialog() {
         if (pleaseWaitDialog == null) {
-            pleaseWaitDialog = new PleaseWaitDialog();
+            pleaseWaitDialog = new PleaseWaitDialog(Gui.getInstance().getFrame());
             Utilities.centerOnScreen(pleaseWaitDialog);
         }
 
