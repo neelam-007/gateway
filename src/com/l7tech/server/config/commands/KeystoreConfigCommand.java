@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Created by IntelliJ IDEA.
@@ -104,9 +105,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void prepareJvm(String ksType) {
-        ArrayList providers = new ArrayList();
-        String javaLibPath = System.getProperty("java.library.path");
+    private void prepareJvm(String ksType) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
 
         Provider[] currentProviders = Security.getProviders();
         for (int i = 0; i < currentProviders.length; i++) {
@@ -130,8 +129,14 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
 
         } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
-            Security.addProvider(new com.chrysalisits.crypto.LunaJCAProvider());
-            Security.addProvider(new com.chrysalisits.cryptox.LunaJCEProvider());
+            Class lunaJCAClass = Class.forName("com.chrysalisits.crypto.LunaJCAProvider");
+            Object lunaJCA = lunaJCAClass.newInstance();
+            Security.addProvider((Provider)lunaJCA);
+
+            Class lunaJCEClass = Class.forName("com.chrysalisits.cryptox.LunaJCEProvider");
+            Object lunaJCE = lunaJCEClass.newInstance();
+            Security.addProvider((Provider) lunaJCE);
+
             Security.addProvider(new sun.security.provider.Sun());
             Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
         }
@@ -240,8 +245,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             updateServerConfig(tomcatServerConfigFile, sslKeyStoreFile.getAbsolutePath(), ksPassword);
             updateSystemPropertiesFile(ksBean, systemPropertiesFile);
         } catch (Exception e) {
-            logger.severe("problem generating keys or keystore - skipping keystore configuration");
-            logger.severe(e.getMessage());
+            String mess = "problem generating keys or keystore - skipping keystore configuration: ";
+            logger.log(Level.SEVERE, mess + e.getMessage(), e);
             throw e;
         }
     }
