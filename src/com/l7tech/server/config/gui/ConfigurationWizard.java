@@ -164,6 +164,14 @@ public class ConfigurationWizard extends Wizard {
         return hadFailures;
     }
 
+    public void setCancelEnabled(boolean enabled) {
+        getButtonCancel().setEnabled(enabled);
+    }
+
+    public JButton getBackButton() {
+        return getButtonBack();
+    }
+
     public static void main(String[] args) {
 
         initLogging();
@@ -196,7 +204,7 @@ public class ConfigurationWizard extends Wizard {
     private static void initLogging() {
         // apache logging layer to use the jdk logger
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-        JdkLoggerConfigurator.configure("com.l7tech", "logging.properties");
+        JdkLoggerConfigurator.configure("com.l7tech", "configlogging.properties");
     }
 
 }
