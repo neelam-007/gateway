@@ -57,7 +57,11 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         ArrayList warnings = ListHandler.getWarningLogList();
         ArrayList infos = ListHandler.getInfoLogList();
         tabs.removeAll();
-
+        ConfigurationWizard wizard = getParentWizard();
+        if (wizard != null) {
+            wizard.setCancelEnabled(false);
+            wizard.setEnableBackButton(false);
+        }
         if (errors.size() > 0) {
             Iterator errorIter = errors.iterator();
             StringBuffer errorBuffer = new StringBuffer();
