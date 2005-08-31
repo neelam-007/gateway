@@ -70,7 +70,9 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
 
         if (configureCluster) {
             try {
-                writeClusterHostname(clusterHostNameFile, clusterHostname);
+                if (StringUtils.isNotEmpty(clusterHostname)) {
+                    writeClusterHostname(clusterHostNameFile, clusterHostname);
+                }
             } catch (IOException e) {
                 success = false;
             }
@@ -88,8 +90,12 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
 //    }
 
     private void writeClusterHostname(File clusterHostNameFile, String clusterHostname) throws IOException {
-        if (clusterHostNameFile == null || StringUtils.isEmpty(clusterHostname)) {
-            throw new IllegalArgumentException("cluster hostname file and cluster hostname need to be provided");
+        if (clusterHostNameFile == null) {
+            logger.severe("Cannot write cluster host name file");
+        }
+
+        if (StringUtils.isEmpty(clusterHostname)) {
+            throw new IllegalArgumentException("cluster hostname needs to be provided");
         }
 
         try {
