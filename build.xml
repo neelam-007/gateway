@@ -1370,6 +1370,7 @@
         <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
 
         <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
+	<property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
 
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
@@ -1385,6 +1386,7 @@
         <mkdir dir="${install.src.logs}"/>
         <mkdir dir="${install.src.var}"/>
         <mkdir dir="${install.src.var.attachments}"/>
+	<mkdir dir="${install.src.configwizard}"/>
 
         <antcall target="INTERNAL-ssg-install-optional-1"/>
 
@@ -1408,6 +1410,13 @@
                 <include name="l7valve.jar"/>
             </fileset>
         </copy>
+
+	<!--copy the config wizard -->
+	<copy todir="${install.src.configwizard}">
+		<fileset dir="${build.dir}/configwizard">
+			<include name="**/*"/>
+		</fileset>
+	</copy>
 
         <!-- Copy WAR file into position -->
         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
@@ -1470,8 +1479,6 @@
                 <include name="*.pl"/>
                 <include name="back_route"/>
                 <include name="ssg-initd"/>
-                <include name="nc"/>
-                <include name="garp"/>
             </fileset>
             <fileset dir="${install.src.jdk}">
                 <include name="bin/*"/>
