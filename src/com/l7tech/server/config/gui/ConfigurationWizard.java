@@ -103,16 +103,16 @@ public class ConfigurationWizard extends Wizard {
         Set keys = commands.keySet();
         java.util.Iterator iterator = keys.iterator();
 
-        hadFailures = false;
-        while (iterator.hasNext()) {
-            boolean successful = true;
-            String key = (String) iterator.next();
-            ConfigurationCommand cmd = (ConfigurationCommand) commands.get(key);
-            successful = cmd.execute();
-            if (!successful) {
-                hadFailures = true;
+            hadFailures = false;
+            while (iterator.hasNext()) {
+                boolean successful = true;
+                String key = (String) iterator.next();
+                ConfigurationCommand cmd = (ConfigurationCommand) commands.get(key);
+                successful = cmd.execute();
+                if (!successful) {
+                    hadFailures = true;
+                }
             }
-        }
     }
 
     private static ConfigWizardStepPanel getStartPanel() {
