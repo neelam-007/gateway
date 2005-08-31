@@ -30,6 +30,7 @@ public class Wizard extends JDialog {
     private Wizard.Iterator wizardIterator;
     protected Object wizardInput;
     private boolean wasCanceled = false;
+    private boolean enableBackButton = true;
 
     /**
      * is show description enabled for the panel steps
@@ -425,7 +426,7 @@ public class Wizard extends JDialog {
         */
         buttonFinish.setEnabled(wp.canFinish());
         buttonNext.setEnabled(wp.canAdvance() && wizardIterator.hasNext());
-        buttonBack.setEnabled(wizardIterator.hasPrevious());
+        buttonBack.setEnabled(wizardIterator.hasPrevious() && enableBackButton);
         stepDescriptionTextPane.setText(getSelectedWizardPanel().getDescription());
         wizardStepPanel.updateUI();
     }
@@ -697,4 +698,13 @@ public class Wizard extends JDialog {
     private JButton buttonBack;
     private JButton buttonHelp;
 
+
+    public boolean isEnableBackButton() {
+        return enableBackButton;
+    }
+
+    public void setEnableBackButton(boolean enableBackButton) {
+        this.enableBackButton = enableBackButton;
+        getButtonBack().setEnabled(enableBackButton);
+    }
 }
