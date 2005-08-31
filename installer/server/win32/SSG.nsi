@@ -44,7 +44,7 @@
   ;Remember the Start Menu Folder
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
-  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Layer 7 SecureSpan Gateway"
+  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "SecureSpan Gateway"
 
   !define TEMP $R0
 
