@@ -1448,10 +1448,6 @@
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
             </fileset>
-            <fileset dir="${src.root}/native/linux">
-                <include name="nc"/>
-                <include name="garp"/>
-            </fileset>
         </copy>
 
         <!-- Hack ssgruntimedefs.sh -->
