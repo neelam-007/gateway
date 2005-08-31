@@ -2,14 +2,10 @@ package com.l7tech.server.config.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.OSDetector;
-import com.l7tech.server.config.commands.ConfigurationCommand;
-import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.beans.ConfigurationBean;
+import com.l7tech.server.config.commands.ConfigurationCommand;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -59,6 +55,8 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
     public boolean canFinish() {
         return false;
     }
+
+
 
     protected abstract void updateModel(HashMap settings);
 
