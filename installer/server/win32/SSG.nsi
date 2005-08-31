@@ -134,6 +134,8 @@ Section "SecureSpan Gateway" SecCopyUI
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd"' $0
   DetailPrint "configwizard returned with code $0"
 
+  ; todo, tell user service is installer but not started. suggest to start it now?
+
 SectionEnd
 
 ;Display the Finish header
@@ -151,6 +153,9 @@ SectionEnd
 ;Uninstaller Section
 
 Section "Uninstall"
+
+  ExecWait 'net stop SSG' $0
+  DetailPrint "net stop SSG returned with code $0"
 
   ExecWait '"$INSTDIR\bin\service.cmd" uninstall' $0
   DetailPrint "service.cmd uninstall returned with code $0"
