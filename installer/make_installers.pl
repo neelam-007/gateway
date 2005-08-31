@@ -151,14 +151,18 @@ sub build_installer {
 }
 
 sub docopy {
-	my ($src, $dst) = @_;
-        print "Copying $src -> $dst\n"; 
-        copy($src, $dst) or die "Unable to copy $src to $dst: $!";
-        # for building NSIS exe on window, 
-        # please comment out copy, and replace with rsync
-        # use resync instead of copy to be flexible to perform cross platform build - rsync provides modify-window options to work around NT and FAT don't store time to 1 second precision, making it it believe a source file (on Windows) and a destination file (on UNIX) had the same date 
-        # print "Rsync'ing(copying) $src -> $dst\n"; 
-        # system("rsync --modify-window=2 $src $dst") or die "Unable to rsync $src to $dst: $!"; 
+
+        my $platform = `uname` =~ /cygwin/i ? 'cygwin' : 'noncygwin';
+        my ($src, $dst) = @_;
+
+	if ($platform eq 'noncygwin') {
+        	print "Copying $src -> $dst\n"; 
+        	copy($src, $dst) or die "Unable to copy $src to $dst: $!";
+	} else {
+        	# use rsync instead of copy to be flexible to perform cross platform build - rsync provides modify-window options to work around NT and FAT don't store time to 1 second precision, making it it believe a source file (on Windows) and a destination file (on UNIX) had the same date 
+        	print "Rsync'ing(copying) $src -> $dst\n"; 
+        	system("rsync --modify-window=2 $src $dst") or die "Unable to rsync $src to $dst: $!"; 
+	}
 }
 
 sub create_file {
