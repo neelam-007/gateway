@@ -56,8 +56,8 @@
                       <component id="32b77" class="javax.swing.JTextArea" binding="errorMessages">
                         <constraints/>
                         <properties>
-                          <lineWrap value="true"/>
-                          <wrapStyleWord value="true"/>
+                          <lineWrap value="false"/>
+                          <wrapStyleWord value="false"/>
                         </properties>
                       </component>
                     </children>
@@ -98,7 +98,7 @@
                 <children>
                   <scrollpane id="bacf8" binding="infoScroller">
                     <constraints>
-                      <xy x="206" y="152" width="84" height="136"/>
+                      <xy x="0" y="0" width="432" height="172"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
