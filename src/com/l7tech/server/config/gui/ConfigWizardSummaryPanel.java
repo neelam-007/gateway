@@ -3,6 +3,8 @@ package com.l7tech.server.config.gui;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.common.gui.widgets.PleaseWaitDialog;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -63,7 +65,24 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
     }
 
     public boolean onNextButton() {
-        getParentWizard().applyConfiguration();
+        final PleaseWaitDialog dlg =
+                new PleaseWaitDialog(this.getParentWizard(),
+                                     "Configuration is being applied");
+        dlg.setModal(true);
+        Utilities.centerOnScreen(dlg);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    getParentWizard().applyConfiguration();
+                } finally {
+                    dlg.setVisible(false);
+                    dlg.dispose();
+                }
+            }
+        });
+        dlg.pack();
+        dlg.validate();
+        dlg.setVisible(true); // Will block here until work finishes
         return true;
     }
 }
