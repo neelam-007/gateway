@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'
+            targetNamespace='http://ns.l7tech.com/SecureSpan/common/admin/core'
+            xmlns:l7core='http://ns.l7tech.com/SecureSpan/common/admin/core'>
+
+    <xsd:complexType name='EntityType' abstract="true">
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                The abstract superclass of all persistent entities
+            </xsd:documentation>
+        </xsd:annotation>
+
+        <xsd:attribute name='oid' type='xsd:unsignedLong' use="optional">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The unique ID of this entity.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name='version' type='xsd:unsignedInt' use="optional">
+                <xsd:annotation>
+                    <xsd:documentation xml:lang="en">
+                        The internal revision number of this entity, used for optimistic locking.
+                    </xsd:documentation>
+                </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:simpleType name="EntityTypeEnum">
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                Names of the types of entities that can be described by an EntityHeader.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value='SERVICE'/>
+            <xsd:enumeration value='USER'/>
+            <xsd:enumeration value='GROUP'/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name='EntityHeaderType'>
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                A simple reference to a persistent entity.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:sequence>
+            <!-- TODO how to make this an attribute? -->
+            <xsd:element name="type" type="l7core:EntityTypeEnum"/>
+            <xsd:element name="id" type="xsd:string"/>
+            <xsd:element name="name" type="xsd:string"/>
+            <xsd:element name="description" nillable="true" type="xsd:string"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="ListOfOidsType">
+        <xsd:list itemType="xsd:unsignedLong"/>
+    </xsd:simpleType>
+
+    <xsd:complexType name='NamedEntityType' abstract='true'>
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                The abstract superclass of all persistent entities that have a name
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base='l7core:EntityType'>
+                <xsd:sequence>
+                    <xsd:element name='name' type='xsd:string'/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+</xsd:schema>

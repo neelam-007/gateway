@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'
+            targetNamespace='http://ns.l7tech.com/SecureSpan/common/admin/identity'
+            xmlns:l7core='http://ns.l7tech.com/SecureSpan/common/admin/core'
+            xmlns:l7id='http://ns.l7tech.com/SecureSpan/common/admin/identity'>
+    <xsd:import namespace='http://ns.l7tech.com/SecureSpan/common/admin/core'
+                schemaLocation="_core.xsd"/>
+
+    <xsd:complexType name='UserInfoType'>
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                Various fields that any user can have.
+            </xsd:documentation>
+        </xsd:annotation>
+
+        <xsd:sequence>
+            <xsd:element name='uniqueId' nillable='true' type='xsd:string'/>
+            <xsd:element name='name' nillable='true' type='xsd:string'/>
+            <xsd:element name='login' nillable='true' type='xsd:string'/>
+            <xsd:element name='email' nillable='true' type='xsd:string'/>
+            <xsd:element name='password' nillable='true' type='xsd:string'/>
+            <xsd:element name='department' nillable='true' type='xsd:string'/>
+            <xsd:element name='firstName' nillable='true' type='xsd:string'/>
+            <xsd:element name='lastName' nillable='true' type='xsd:string'/>
+            <xsd:element name='subjectDn' nillable='true' type='xsd:string'/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:simpleType name="IdentityProviderTypeEnum">
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                Enumerates the supported types of IdentityProviderConfig
+            </xsd:documentation>
+        </xsd:annotation>
+
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="INTERNAL"/>
+            <xsd:enumeration value="LDAP"/>
+            <xsd:enumeration value="FEDERATED"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="IdentityProviderConfigType" abstract="true">
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                Describes the configuration of an Identity Provider.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="l7core:NamedEntityType">
+                <xsd:sequence>
+                    <xsd:element name="writable" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation xml:lang="en">
+                                True if the identity provider described here can be updated
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="type" type="l7id:IdentityProviderTypeEnum"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="FederatedIdentityProviderConfigType">
+        <xsd:complexContent>
+            <xsd:extension base="l7id:IdentityProviderConfigType">
+                <xsd:sequence>
+                    <xsd:element name="samlSupported" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation xml:lang="en">
+                                True if this federated identity provider supports authorization based on SAML assertions
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="x509Supported" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation xml:lang="en">
+                                True if this federated identity provider supports authorization based on X.509 certs (e.g. client cert, BinarySecurityToken)
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                    <xsd:element name="trustedCertIds" type="l7core:ListOfOidsType">
+                        <xsd:annotation>
+                            <xsd:documentation xml:lang="en">
+                                List of OIDs of certificates trusted by this federated identity provider
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name='PersistentUserType' abstract='true'>
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                A user stored in the database (as opposed to e.g. LDAP).
+
+                Every user belongs to a particular identity provider. Any user can have a certificate.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base='l7core:NamedEntityType'>
+                <xsd:sequence>
+                    <xsd:element name="providerId" nillable="false" type="xsd:unsignedLong"/>
+                    <xsd:element name='info' nillable='true' type='l7id:UserInfoType'/>
+                    <xsd:element name="certBase64" nillable="true" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+</xsd:schema>

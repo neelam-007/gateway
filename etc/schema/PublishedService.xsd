@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'
+            targetNamespace='http://ns.l7tech.com/SecureSpan/common/admin/service'
+            xmlns:tns='http://ns.l7tech.com/SecureSpan/common/admin/service'
+            xmlns:l7core='http://ns.l7tech.com/SecureSpan/common/admin/core'>
+
+    <xsd:import namespace='http://ns.l7tech.com/SecureSpan/common/admin/core'
+                schemaLocation="_core.xsd"/>
+
+    <xsd:complexType name='PublishedServiceType'>
+        <xsd:complexContent>
+            <xsd:extension base='l7core:NamedEntityType'>
+                <xsd:sequence>
+                    <xsd:element name='disabled' type='xsd:boolean'/>
+                    <xsd:element name='policyXml' nillable='false' type='xsd:string'/>
+                    <xsd:element name='wsdlUrl' nillable='true' type='xsd:string'/>
+                    <xsd:element name='wsdlXml' nillable='true' type='xsd:string'/>
+                    <xsd:element name='routingUri' nillable='true' type='xsd:string'/>
+                    <xsd:element name='soap' type='xsd:boolean'/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:element name="PublishedService" type="tns:PublishedServiceType"/>
+</xsd:schema>

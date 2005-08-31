@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'
+            targetNamespace='http://ns.l7tech.com/SecureSpan/common/admin/service'
+            xmlns:tns='http://ns.l7tech.com/SecureSpan/common/admin/service'>
+
+    <xsd:complexType name='ServiceUsageType'>
+        <xsd:sequence>
+            <xsd:element name='authorizedRequests' type='xsd:long'/>
+            <xsd:element name='completedRequests' type='xsd:long'/>
+            <xsd:element name='nodeid' nillable='true' type='xsd:string'/>
+            <xsd:element name='attemptedRequests' type='xsd:long'/>
+            <xsd:element name='serviceName' nillable='true' type='xsd:string'/>
+            <xsd:element name='serviceid' type='xsd:long'/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:element name="ServiceUsage" type="tns:ServiceUsageType"/>
+</xsd:schema>

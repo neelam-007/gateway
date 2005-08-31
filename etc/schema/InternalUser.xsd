@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'
+            targetNamespace='http://ns.l7tech.com/SecureSpan/common/admin/identity/internal'
+            xmlns:tns='http://ns.l7tech.com/SecureSpan/common/admin/identity/internal'
+            xmlns:l7id='http://ns.l7tech.com/SecureSpan/common/admin/identity'>
+    <xsd:import namespace='http://ns.l7tech.com/SecureSpan/common/admin/identity'
+                schemaLocation="_identity.xsd"/>
+    <xsd:complexType name='InternalUserType'>
+        <xsd:annotation>
+            <xsd:documentation xml:lang="en">
+                A user in the internal identity provider.  providerId is always -2.
+            </xsd:documentation>
+        </xsd:annotation>
+
+        <xsd:complexContent>
+            <xsd:extension base='l7id:PersistentUserType'>
+                <xsd:sequence>
+                    <xsd:element name='expiration' type='xsd:dateTime'/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:element name="InternalUser" type="tns:InternalUserType"/>
+</xsd:schema>
