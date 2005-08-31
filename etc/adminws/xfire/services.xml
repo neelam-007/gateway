@@ -1,0 +1,33 @@
+<xfire>
+
+  <services>
+    <service>
+      <!-- The service name -->
+      <name>ServiceAdminService</name>
+
+      <!-- The default namespace for the service -->
+      <namespace>http://ns.l7tech.com/SecureSpan/common/admin/service</namespace>
+
+      <!-- Document, Wrapped or RPC? -->
+      <style>document</style>
+
+      <!-- The class for the service -->
+      <serviceClass>com.l7tech.server.service.ServiceAdminImpl</serviceClass>
+    </service>
+
+    <service>
+      <!-- The service name -->
+      <name>IdentityAdminService</name>
+
+      <!-- The default namespace for the service -->
+      <namespace>http://ns.l7tech.com/SecureSpan/common/admin/identity</namespace>
+
+      <!-- Document, Wrapped or RPC? -->
+      <style>document</style>
+
+      <!-- The class for the service -->
+      <serviceClass>com.l7tech.server.identity.IdentityAdminImpl</serviceClass>
+    </service>
+  </services>
+</xfire>
+
