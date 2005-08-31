@@ -99,7 +99,7 @@ Section "SecureSpan Gateway" SecCopyUI
   File /r "${BUILD_DIR}\install\ssg\etc\ldapTemplates"
 
   SetOutPath "$INSTDIR"
-  File /r "${BUILD_DIR}\configwizard"
+  File /r "${BUILD_DIR}\install\ssg\configwizard"
 
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
