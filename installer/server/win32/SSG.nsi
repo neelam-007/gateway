@@ -109,7 +109,9 @@ Section "SecureSpan Gateway" SecCopyUI
   ; Create shortcuts
   CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
   CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan Gateway.lnk" "$INSTDIR\Uninstall.exe"
+  SetOutPath "$INSTDIR/configwizard"
   CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Configure SecureSpan Gateway.lnk" "$INSTDIR\configwizard\ssgconfig.cmd"
+  SetOutPath "$INSTDIR"
 
   ; !insertmacro MUI_STARTMENU_WRITE_END
 
