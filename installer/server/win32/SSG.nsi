@@ -133,6 +133,7 @@ Section "SecureSpan Gateway" SecCopyUI
   DetailPrint "service.cmd install returned with code $0"
 
   ; run the gateway configurator
+  SetOutPath "$INSTDIR/configwizard"
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd"' $0
   DetailPrint "configwizard returned with code $0"
 
