@@ -9,7 +9,7 @@
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="3bc24" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="3bc24" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <xy x="0" y="0" width="477" height="356"/>
@@ -20,8 +20,8 @@
         <children>
           <component id="2e7cf" class="javax.swing.JLabel" binding="mainLabel">
             <constraints>
-              <xy x="0" y="2" width="80" height="15"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <xy x="20" y="22" width="80" height="15"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Log Messages"/>
@@ -29,8 +29,8 @@
           </component>
           <tabbedpane id="4ff69" binding="tabs">
             <constraints>
-              <xy x="0" y="25" width="477" height="331"/>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
+              <xy x="20" y="45" width="437" height="200"/>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
                 <preferred-size width="200" height="200"/>
               </grid>
             </constraints>
@@ -45,15 +45,23 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="32b77" class="javax.swing.JTextArea" binding="errorMessages">
+                  <scrollpane id="65d2d" binding="errorsScroller">
                     <constraints>
-                      <xy x="0" y="0" width="472" height="303"/>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
-                        <preferred-size width="150" height="50"/>
-                      </grid>
+                      <xy x="0" y="0" width="432" height="172"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
-                  </component>
+                    <border type="none"/>
+                    <children>
+                      <component id="32b77" class="javax.swing.JTextArea" binding="errorMessages">
+                        <constraints/>
+                        <properties>
+                          <lineWrap value="true"/>
+                          <wrapStyleWord value="true"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </scrollpane>
                 </children>
               </grid>
               <grid id="77dc9" binding="warningPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -64,15 +72,20 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="87407" class="javax.swing.JTextArea" binding="warningMessages">
+                  <scrollpane id="c3db1" binding="warningsScroller">
                     <constraints>
-                      <xy x="0" y="0" width="472" height="303"/>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
-                        <preferred-size width="150" height="50"/>
-                      </grid>
+                      <xy x="0" y="0" width="432" height="172"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
-                  </component>
+                    <border type="none"/>
+                    <children>
+                      <component id="87407" class="javax.swing.JTextArea" binding="warningMessages">
+                        <constraints/>
+                        <properties/>
+                      </component>
+                    </children>
+                  </scrollpane>
                 </children>
               </grid>
               <grid id="9d410" binding="informattionPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -83,19 +96,88 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="b7a96" class="javax.swing.JTextArea" binding="informationMesssages">
+                  <scrollpane id="bacf8" binding="infoScroller">
                     <constraints>
-                      <xy x="0" y="0" width="472" height="303"/>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
-                        <preferred-size width="150" height="50"/>
-                      </grid>
+                      <xy x="206" y="152" width="84" height="136"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
-                  </component>
+                    <border type="none"/>
+                    <children>
+                      <component id="b7a96" class="javax.swing.JTextArea" binding="informationMesssages">
+                        <constraints/>
+                        <properties/>
+                      </component>
+                    </children>
+                  </scrollpane>
                 </children>
               </grid>
             </children>
           </tabbedpane>
+          <vspacer id="c0efb">
+            <constraints>
+              <xy x="233" y="275" width="11" height="81"/>
+              <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+            </constraints>
+          </vspacer>
+          <hspacer id="e984a">
+            <constraints>
+              <xy x="0" y="139" width="20" height="11"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+                <minimum-size width="15" height="-1"/>
+              </grid>
+            </constraints>
+          </hspacer>
+          <hspacer id="7b64a">
+            <constraints>
+              <xy x="457" y="139" width="20" height="11"/>
+              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+                <minimum-size width="15" height="-1"/>
+              </grid>
+            </constraints>
+          </hspacer>
+          <vspacer id="152fe">
+            <constraints>
+              <xy x="233" y="0" width="11" height="20"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="15"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <grid id="8129b" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="20" y="250" width="437" height="25"/>
+              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="68759" class="javax.swing.JButton" binding="saveButton">
+                <constraints>
+                  <xy x="322" y="0" width="90" height="25"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="Save Logs"/>
+                </properties>
+              </component>
+              <hspacer id="f4912">
+                <constraints>
+                  <xy x="412" y="7" width="25" height="11"/>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+                    <minimum-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+              </hspacer>
+              <hspacer id="354aa">
+                <constraints>
+                  <xy x="0" y="7" width="322" height="11"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+            </children>
+          </grid>
         </children>
       </grid>
     </children>
