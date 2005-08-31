@@ -14,9 +14,32 @@ import java.awt.*;
  */
 public class PleaseWaitDialog extends JDialog {
     private JLabel messageLabel;
+    private String initialMess = "";
+    private static final String MESS = "Please wait...";
 
-    public PleaseWaitDialog(JFrame parentFrame) {
-        super(parentFrame, "Please wait...", false);
+    public PleaseWaitDialog(Dialog dialog) throws HeadlessException {
+        super(dialog, MESS, false);
+        doInit();
+    }
+
+    public PleaseWaitDialog(JFrame parentFrame) throws HeadlessException {
+        super(parentFrame, MESS, false);
+        doInit();
+    }
+
+    public PleaseWaitDialog(Dialog dialog, String message) throws HeadlessException {
+        super(dialog, MESS, false);
+        initialMess = message;
+        doInit();
+    }
+
+    public PleaseWaitDialog(JFrame parentFrame, String message) throws HeadlessException {
+        super(parentFrame, MESS, false);
+        initialMess = message;
+        doInit();
+    }
+
+    private void doInit() {
         this.setFocusableWindowState(false);
         Container c = this.getContentPane();
         c.setLayout(new GridBagLayout());
@@ -25,11 +48,12 @@ public class PleaseWaitDialog extends JDialog {
                                      GridBagConstraints.CENTER,
                                      GridBagConstraints.BOTH,
                                      new Insets(15, 8, 15, 8), 0, 0));
+        pack();
     }
 
     private JLabel getMessageLabel() {
         if (messageLabel == null) {
-            messageLabel = new JLabel();
+            messageLabel = new JLabel(initialMess);
         }
         return messageLabel;
     }
