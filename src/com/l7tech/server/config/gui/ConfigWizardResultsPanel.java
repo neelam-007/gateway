@@ -6,9 +6,15 @@ import com.l7tech.server.config.OSSpecificFunctions;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,6 +33,11 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private JTextArea warningMessages;
     private JTextArea informationMesssages;
     private JLabel mainLabel;
+    private JButton saveButton;
+    private JButton button2;
+    private JScrollPane errorsScroller;
+    private JScrollPane warningsScroller;
+    private JScrollPane infoScroller;
 
     public ConfigWizardResultsPanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
@@ -38,6 +49,12 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         configBean = null;
         configCommand = null;
         stepLabel = "Configuration Results";
+        saveButton.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent event) {
+                doSaveLogs();
+            }
+        });
 
         tabs.removeAll();
 
@@ -47,6 +64,38 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+    }
+
+    private void doSaveLogs() {
+        JFileChooser fc = new JFileChooser(".");
+        int retval = fc.showOpenDialog(this);
+        File selectedFile = null;
+        if (retval == JFileChooser.CANCEL_OPTION) {
+        } else if (retval == JFileChooser.APPROVE_OPTION) {
+            selectedFile = fc.getSelectedFile();
+        }
+        if (selectedFile != null) {
+            PrintStream ps = null;
+            try {
+                ps = new PrintStream(new FileOutputStream(selectedFile));
+
+                ps.println("--- ERROR MESSAGES ---");
+                ps.print(errorMessages.getText());
+
+                ps.println("--- WARNING MESSAGES ---");
+                ps.print(warningMessages.getText());
+
+                ps.println("--- INFORMATIONAL MESSAGES ---");
+                ps.print(informationMesssages.getText());
+                ps.close();
+                ps = null;
+            } catch (FileNotFoundException e) {
+            } finally{
+                if (ps != null) {
+                    ps.close();
+                }
+            }
+        }
     }
 
     protected void updateModel(HashMap settings) {
