@@ -2,7 +2,6 @@
  * Copyright (C) 2005 Layer 7 Technologies Inc.
  *
  * @file process.cpp
- * @version $Id$
  * @author rmak
  *
  * Compatibility: Windows 2000, Windows XP, Windows Server 2003
@@ -436,7 +435,7 @@ int main( int argc, char * argv[] )
     {
         if ( ! quiet )
         {
-            cout << e << endl;
+            cout << "!!" << e << endl;
         }
         return EC_FAIL;
     }

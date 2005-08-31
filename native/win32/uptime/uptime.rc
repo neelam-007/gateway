@@ -82,12 +82,12 @@ BEGIN
         BLOCK "100904b0"
         BEGIN
             VALUE "CompanyName", "Layer 7 Technologies Inc."
-            VALUE "FileDescription", "uptime Application"
+            VALUE "FileDescription", "uptime"
             VALUE "FileVersion", "1, 0, 0, 1"
             VALUE "InternalName", "uptime"
             VALUE "LegalCopyright", "Copyright (C) 2005 Layer 7 Technologies Inc."
             VALUE "OriginalFilename", "uptime.exe"
-            VALUE "ProductName", " uptime Application"
+            VALUE "ProductName", " uptime"
             VALUE "ProductVersion", "1, 0, 0, 1"
         END
     END

@@ -2,8 +2,9 @@
  * Copyright (C) 2005 Layer 7 Technologies Inc.
  *
  * @file uptime.cpp
- * @version $Id$
  * @author rmak
+ *
+ * Compatibility: Windows 2000, Windows XP, Windows Server 2003
  */
 
 #define WIN32_LEAN_AND_MEAN 1   // Because we are not using MFC.
@@ -159,8 +160,6 @@ static const char * const getPdhErrorCodeDescription( PDH_STATUS errorCode )
  * This method uses the Windows SDK performance data helper (PDH) functions.
  * They are more complicated than GetTickCount(). But GetTickCount() returns
  * the number of milliseconds in a DWORD which wraps around every 49.7 days.
- *
- * Compatibility: Windows NT 4.0, Windows 2000, Windows XP, Windows Server 2003.
  *
  * @return ERROR_SUCCESS if success; otherwise a Windows system error code
  *         or a PDH error code.

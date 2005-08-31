@@ -81,9 +81,8 @@ BEGIN
     BEGIN
         BLOCK "100904b0"
         BEGIN
-            VALUE "Comments", "Prints process info."
             VALUE "CompanyName", "Layer 7 Technologies Inc."
-            VALUE "FileDescription", "process Application"
+            VALUE "FileDescription", "Prints process info."
             VALUE "FileVersion", "1, 0, 0, 1"
             VALUE "InternalName", "process"
             VALUE "LegalCopyright", "Copyright (C) 2005 Layer 7 Technologies Inc."

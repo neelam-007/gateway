@@ -2,7 +2,6 @@
  * Copyright (C) 2005 Layer 7 Technologies Inc.
  *
  * @file killproc.cpp
- * @version $Id$
  * @author rmak
  *
  * Compatibility: Windows 2000, Windows XP, Windows Server 2003
@@ -89,7 +88,9 @@ const string getWin32ErrorMessage( const DWORD errorCode )
 HANDLE getProcessByExePath
 (
     const string & pattern,     ///< [in]
-    const bool     ignoreCase   ///< [in]
+    const bool     ignoreCase,  ///< [in] whether to ignore case when matching
+                                ///<      executable path
+    string &       exeFull      ///< [out] the full executable path matched
 )
 {
     // Gets ID of all processes.
@@ -148,6 +149,7 @@ HANDLE getProcessByExePath
 
                     if ( found )
                     {
+                        exeFull = fullPath;
                         break;      // Note: This will leave the handle unclosed.
                     }
                 }
@@ -259,19 +261,26 @@ int main( int argc, char * argv[] )
     const string exePattern = argv[ iArg ];
 
     HANDLE hProcess = NULL;
+    string exeFull;
     try
     {
-        hProcess = getProcessByExePath( exePattern, ignoreCase );
+        hProcess = getProcessByExePath( exePattern, ignoreCase, exeFull );
     }
     catch ( const string & e )
     {
-        cout << "!!" << e << endl;
+        if ( ! quiet )
+        {
+            cout << "!!" << e << endl;
+        }
         return EC_FAIL;
     }
 
     if ( hProcess == NULL )
     {
-        cout << "!!Process not found." << endl;
+        if ( ! quiet )
+        {
+            cout << "!!Process not found: " << exePattern << endl;
+        }
         return EC_FAIL;
     }
     else
@@ -280,7 +289,7 @@ int main( int argc, char * argv[] )
         {
             if ( ! quiet )
             {
-                cout << "Process ended before kill." << endl;
+                cout << "Process ended before kill: " << exeFull << endl;
             }
         }
         else
@@ -293,6 +302,13 @@ int main( int argc, char * argv[] )
                          << getWin32ErrorMessage( ::GetLastError() ) << endl;
                     ::CloseHandle( hProcess );
                     return EC_FAIL;
+                }
+            }
+            else
+            {
+                if ( ! quiet )
+                {
+                    cout << "Killed process: " << exeFull << endl;
                 }
             }
         }

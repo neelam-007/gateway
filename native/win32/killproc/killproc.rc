@@ -81,9 +81,8 @@ BEGIN
     BEGIN
         BLOCK "100904b0"
         BEGIN
-            VALUE "Comments", "Kill a process by matching its exeutable path."
             VALUE "CompanyName", "Layer 7 Technologies Inc."
-            VALUE "FileDescription", "killproc Application"
+            VALUE "FileDescription", "Kill a process by matching its exeutable path."
             VALUE "FileVersion", "1, 0, 0, 1"
             VALUE "InternalName", "killproc"
             VALUE "LegalCopyright", "Copyright (C) 2005 Layer 7 Technologies Inc."
