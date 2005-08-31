@@ -31,17 +31,19 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         String ssgLogPropsPath = osFunctions.getSsgLogPropertiesFile();
         File logProps = new File(ssgLogPropsPath);
-        File[] files = new File[]
-        {
-            logProps
-        };
+        if (logProps.exists()) {
+            File[] files = new File[]
+            {
+                logProps
+            };
 
-        try {
-            backupFiles(files, BACKUP_FILE_NAME);
-        } catch (IOException e) {
-            e.printStackTrace();
+            try {
+                backupFiles(files, BACKUP_FILE_NAME);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-
+        
         FileInputStream fis = null;
         FileOutputStream fos = null;
         Properties props = new Properties();

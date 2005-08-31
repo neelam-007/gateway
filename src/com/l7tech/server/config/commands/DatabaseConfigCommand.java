@@ -39,16 +39,17 @@ public class DatabaseConfigCommand extends BaseConfigurationCommand {
 
             File dbConfigFile = new File(osFunctions.getDatabaseConfig()); //hibernate config file
 
-            File[] files = new File[]
-            {
+            if (dbConfigFile.exists()) {
+                File[] files = new File[]
+                {
 
-                dbConfigFile
-            };
+                    dbConfigFile
+                };
 
-            try {
-                backupFiles(files, BACKUP_FILE_NAME);
-            } catch (IOException e) {
-                e.printStackTrace();
+                try {
+                    backupFiles(files, BACKUP_FILE_NAME);
+                } catch (IOException e) {
+                }
             }
 
             try {
