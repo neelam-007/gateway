@@ -109,6 +109,7 @@ Section "SecureSpan Gateway" SecCopyUI
   ; Create shortcuts
   CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
   CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan Gateway.lnk" "$INSTDIR\Uninstall.exe"
+  CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Configure SecureSpan Gateway.lnk" "$INSTDIR\configwizard\ssgconfig.cmd"
 
   ; !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -125,8 +126,13 @@ Section "SecureSpan Gateway" SecCopyUI
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
+  ; install the service
   ExecWait '"$INSTDIR\bin\service.cmd" install' $0
   DetailPrint "service.cmd install returned with code $0"
+
+  ; run the gateway configurator
+  ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd"' $0
+  DetailPrint "configwizard returned with code $0"
 
 SectionEnd
 
