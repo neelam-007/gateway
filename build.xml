@@ -669,6 +669,7 @@
                 <include name="com/l7tech/console/action/Actions*.class"/>
                 <include name="com/l7tech/common/gui/util/Utilities*.class"/>
                 <include name="com/l7tech/common/gui/util/ImageCache.class"/>
+                <include name="com/l7tech/common/gui/widgets/PleaseWaitDialog.class"/>
                 <include name="com/l7tech/common/util/JdkLoggerConfigurator*.class"/>
                 <include name="com/l7tech/console/resources/layer7_logo_small_32x32.png"/>
             </fileset>
