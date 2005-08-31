@@ -14,6 +14,7 @@ import java.awt.event.ActionEvent;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.*;
@@ -31,6 +32,8 @@ import org.apache.commons.lang.StringUtils;
  * To change this template use File | Settings | File Templates.
  */
 public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
+    private static final Logger logger = Logger.getLogger(ConfigWizardDatabasePanel.class.getName());
+
     private final static String LOCALDB_HOSTNAME="localhost";
     private final static String LOCALDB_DBNAME="ssg";
     private final static String LOCALDB_USER="gateway";
@@ -163,16 +166,16 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
                     }
                 }
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                logger.warning("Could not find the database configuration file. Cannot determine existing configuration.");
+                logger.warning(e.getMessage());
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.warning("Error while reading the database configuration file. Cannot determine existing configuration.");
+                logger.warning(e.getMessage());
             } finally{
                 if (fis != null) {
                     try {
                         fis.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    } catch (IOException e) {}
                 }
             }
         }
@@ -188,8 +191,10 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
             database.setText(existingDBName);
         }
 
-        if (existingDBHostname.equalsIgnoreCase(LOCALDB_HOSTNAME)) {
-            localDatabase.setSelected(true);
+        if (existingDBHostname != null) {
+            if (existingDBHostname.equalsIgnoreCase(LOCALDB_HOSTNAME)) {
+                localDatabase.setSelected(true);
+            }
         }
     }
 
