@@ -134,8 +134,13 @@ Section "SecureSpan Gateway" SecCopyUI
   ExecWait '"$INSTDIR\configwizard\ssgconfig.cmd"' $0
   DetailPrint "configwizard returned with code $0"
 
-  ; todo, tell user service is installer but not started. suggest to start it now?
+  ; ask user if he wants the service to be started now
+  MessageBox MB_YESNO "Do you want to start the SecureSpan Gateway service now?" IDNO skipstartservice
 
+  ExecWait 'net start SSG' $0
+  DetailPrint "net start SSG returned with code $0"
+
+  skipstartservice:
 SectionEnd
 
 ;Display the Finish header
@@ -166,12 +171,15 @@ Section "Uninstall"
   ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
   StrCmp ${TEMP} "" noshortcuts
   Delete "$SMPROGRAMS\${TEMP}\Uninstall SecureSpan Gateway.lnk"
+  Delete "$SMPROGRAMS\${TEMP}\Configure SecureSpan Gateway.lnk"
   RMDir "$SMPROGRAMS\${TEMP}" ; Only if empty, so it won't delete other shortcuts
 
   noshortcuts:
 
   DeleteRegKey /ifempty HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}"
+
+  RMDir "$PROGRAMFILES\${COMPANY}"
 
   ;Display the Finish header
   !insertmacro MUI_UNFINISHHEADER
