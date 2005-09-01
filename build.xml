@@ -1553,6 +1553,7 @@
             <fileset dir="${src.root}">
                 <include name="installer/proxy/win32/Bridge.nsi"/>
                 <include name="installer/console/win32/Manager.nsi"/>
+                <include name="installer/server/win32/SSG.nsi"/>
             </fileset>
         </replaceregexp>
 
