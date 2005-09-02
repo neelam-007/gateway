@@ -155,7 +155,8 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
 //            tabs.setEnabledAt(2, false);
         }
 
-        tabs.setSelectedIndex(0);
+        if (tabs.getTabCount() > 0)
+            tabs.setSelectedIndex(0);
 
         boolean hadFailures = getParentWizard().isHadFailures();
         if (hadFailures) {
