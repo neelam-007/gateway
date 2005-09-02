@@ -1,9 +1,13 @@
 package com.l7tech.server.config;
 
+import com.l7tech.server.config.gui.ConfigWizardDatabasePanel;
+
 import javax.swing.*;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Connection;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,6 +17,8 @@ import java.sql.Connection;
  * To change this template use File | Settings | File Templates.
  */
 public class DBChecker {
+    private static final Logger logger = Logger.getLogger(DBChecker.class.getName());
+
     public static final int DB_SUCCESS = 0;
     public static final int DB_AUTH_FAILURE = -1;
     public static final int DB_MISSING_FAILURE = -2;
@@ -32,18 +38,22 @@ public class DBChecker {
 
     public int checkDb(String connectionString, String name, String password) {
         int failureCode = DB_SUCCESS;
-        if (retryCount < maxRetryCount) {
-            ++retryCount;
+        //if (retryCount < maxRetryCount) {
             Connection conn = null;
             try {
                 Class.forName(JDBC_DRIVER_NAME);
                 conn = DriverManager.getConnection(connectionString, name, password);
             } catch (ClassNotFoundException e) {
-                //e.printStackTrace();
+                logger.log(Level.SEVERE, "Could not locate the MySQL driver in the classpath", e.getException());
+                logger.warning(String.valueOf(maxRetryCount - retryCount) + " retries remaining");
                 failureCode = DB_CHECK_INTERNAL_ERROR;
+                retryCount++;
             } catch (SQLException e) {
+                logger.warning("Could not login to the database using the following connection string:");
+                logger.warning(connectionString);
+                logger.warning(String.valueOf(maxRetryCount - retryCount) + " retries remaining");
                 failureCode = DB_AUTH_FAILURE;
-                //e.printStackTrace(); LOG THIS?
+                retryCount++;
             } finally {
                 if (conn != null) {
                     try {
@@ -52,9 +62,13 @@ public class DBChecker {
                     }
                 }
             }
-        } else {
-            failureCode = DB_MAX_RETRIES_EXCEEDED;
-        }
+//        } else {
+          if (retryCount > maxRetryCount) {
+                logger.warning("Maximum database connection attempts ("  + String.valueOf(maxRetryCount) + ") exceeded.");
+                failureCode = DB_MAX_RETRIES_EXCEEDED;
+          }
+
+//        }
         return failureCode;
     }
 
