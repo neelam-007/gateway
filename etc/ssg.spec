@@ -59,7 +59,8 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %defattr(-,gateway,gateway)
 %config(noreplace) /ssg/etc/conf/*
 %config(noreplace) /ssg/tomcat/conf/*
-/ssg/
+%config(noreplace) /ssg/*/jre/lib/security/java.security
+
 
 
 %pre
