@@ -185,7 +185,7 @@ public class SecureConversationKeyDeriver {
     private Mac getHMacSHA1(byte[] secret) throws NoSuchAlgorithmException, InvalidKeyException {
         if (hmac == null) {
             hmac = Mac.getInstance("HMacSHA1");
-            Key key = new SecretKeySpec(secret, "SHA1");
+            Key key = new SecretKeySpec(secret, "HMacSHA1");
             hmac.init(key);
         }
         return hmac;
