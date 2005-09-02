@@ -57,6 +57,8 @@ public class MakeLunaCerts {
             System.err.println("ERROR: The following class was not found: " + ExceptionUtils.getMessage(e) + "\n" +
                                "       Please ensure that the current Java environment has been configured\n" +
                                "       to use the Luna key store.");
+            if (debug)
+                e.printStackTrace(System.err);
             System.exit(1);
         } catch (Exception e) {
             System.err.println("ERROR: " + ExceptionUtils.getMessage(e));
