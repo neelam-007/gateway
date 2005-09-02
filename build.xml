@@ -638,6 +638,7 @@
                 <include name="forms_rt.jar"/>
                 <include name="mysql-connector-java-3.0.14-stable-bin.jar"/>
                 <include name="xss4j.jar"/>
+                <include name="bcprov-jdk15-127.jar"/>
             </fileset>
         </copy>
         
