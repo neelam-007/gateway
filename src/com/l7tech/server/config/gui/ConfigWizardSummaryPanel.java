@@ -25,6 +25,7 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
     private JPanel summaryPanel;
 
     private String newline= "\n";
+    private JScrollPane summaryScroller;
 
     public ConfigWizardSummaryPanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
@@ -58,6 +59,7 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
             }
             summaryText.setText("");
             summaryText.setText(buffer.toString());
+//            summaryText.setText(summaryText.getText() + "\n this is a really long line that should cause the screen to wrap or scroll 01234567890abcdefghijklmnopqrstuvwxyz");
         }
     }
 
