@@ -68,6 +68,13 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     private JLabel usernameLabel;
     private JLabel passwordLabel;
     private JTextPane errorMsg;
+    private JLabel localHostnameLabel;
+    private JLabel localDbNameLabel;
+    private JLabel localDbUsernameLabel;
+    private JLabel localHostname;
+    private JLabel localDbName;
+    private JLabel localDbUsername;
+    private int dbCheckStatus = DBChecker.DB_SUCCESS;
 
 
     /**
@@ -100,6 +107,15 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
             stepLabel = "Setup SSG Configuration Storage";
             errorMsg.setBackground(mainPanel.getBackground());
             errorMsg.setVisible(false);
+
+            localHostname.setText(LOCALDB_HOSTNAME);
+            localDbName.setText(LOCALDB_DBNAME);
+            localDbUsername.setText(LOCALDB_USER);
+
+            String msg = "could not connect to specified database with the supplied credentials, please try again";
+            errorMsg.setText(msg);
+            errorMsg.setForeground(Color.RED);
+
             enableControls();
             setLayout(new BorderLayout());
             add(mainPanel, BorderLayout.CENTER);
@@ -124,12 +140,17 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     }
 
     protected void updateView(HashMap settings) {
-        DatabaseConfigBean dbBean;
+        DatabaseConfigBean dbBean = null;
         String existingDbUsername = null;
         String existingDBUrl = null;
         String existingDBHostname = null;
         String existingDBName = null;
         dbChecker.resetRetryCount();
+        if (dbCheckStatus == DBChecker.DB_SUCCESS) {
+            errorMsg.setVisible(false);
+        } else {
+            errorMsg.setVisible(true);
+        }
 
         //first try and get the bean information if it exists and use that.
         boolean beanInitialized = false;
@@ -192,27 +213,30 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
         }
 
         if (existingDBHostname != null) {
-            if (existingDBHostname.equalsIgnoreCase(LOCALDB_HOSTNAME)) {
-                localDatabase.setSelected(true);
+            if (dbBean != null && dbBean.isRemote()) {
+                remoteDatabase.setSelected(true);
             }
         }
     }
 
     public boolean onNextButton() {
-        int dbStatus = testDb();
-        if (dbStatus != DBChecker.DB_SUCCESS) {
-            if (dbStatus == DBChecker.DB_MAX_RETRIES_EXCEEDED || dbStatus == DBChecker.DB_CHECK_INTERNAL_ERROR) {
+        dbCheckStatus = testDb();
+        if (dbCheckStatus == DBChecker.DB_SUCCESS) {
+            logger.info("Successfully connected to the database");
+        } else {
+            if (dbCheckStatus == DBChecker.DB_MAX_RETRIES_EXCEEDED || dbCheckStatus == DBChecker.DB_CHECK_INTERNAL_ERROR) {
+                ((DatabaseConfigBean)configBean).setDbPassword("".toCharArray());
                 ((DatabaseConfigBean)configBean).setDBConfigOn(false);
                 JOptionPane.showMessageDialog(this, "Database connection failed, skipping database configuration.\n" +
                         "Please see logs for details\n" +
                         "You can run this tool again later to configure the database", "Skipping Database Configuration", JOptionPane.ERROR_MESSAGE);
             } else {
-                showDbFailure(dbStatus);
+                showDbFailure(dbCheckStatus);
             }
         }
-        return (dbStatus == DBChecker.DB_SUCCESS ||
-                dbStatus == DBChecker.DB_MAX_RETRIES_EXCEEDED ||
-                dbStatus == DBChecker.DB_CHECK_INTERNAL_ERROR);
+        return (dbCheckStatus == DBChecker.DB_SUCCESS ||
+                dbCheckStatus == DBChecker.DB_MAX_RETRIES_EXCEEDED ||
+                dbCheckStatus == DBChecker.DB_CHECK_INTERNAL_ERROR);
     }
 
     private int testDb() {
@@ -225,10 +249,10 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     }
 
     private void showDbFailure(int reason) {
-        String msg = "could not connect to specified database with the supplied credentials, please try again";
-        errorMsg.setText(msg);
-        errorMsg.setForeground(Color.RED);
         errorMsg.setVisible(true);
+        if (remoteDatabase.isSelected()) {
+            password.setText("");
+        }
     }
 
     private void enableControls() {
@@ -252,18 +276,12 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     }
 
     private char[] getPassword() {
-        char[] pwd = ((DatabaseConfigBean)configBean).getDbPassword();
-        if (pwd == null || pwd.length == 0) {
-            pwd = remoteDatabase.isSelected()?password.getPassword():LOCALDB_PASSWORD;
-        }
+        char[] pwd = remoteDatabase.isSelected()?password.getPassword():LOCALDB_PASSWORD;
         return pwd;
     }
 
     private String getUsername() {
-        String name = ((DatabaseConfigBean)configBean).getDbUsername();
-        if (StringUtils.isEmpty(name)) {
-            name = remoteDatabase.isSelected()?username.getText():LOCALDB_USER;
-        }
+        String name = remoteDatabase.isSelected()?username.getText():LOCALDB_USER;
         return name;
     }
 
@@ -274,18 +292,12 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     }
 
     private String getDBName() {
-        String theDBname = ((DatabaseConfigBean)configBean).getDbHostname();
-        if (StringUtils.isEmpty(theDBname)) {
-            theDBname = remoteDatabase.isSelected()?database.getText():LOCALDB_DBNAME;
-        }
+        String theDBname = remoteDatabase.isSelected()?database.getText():LOCALDB_DBNAME;
         return theDBname;
     }
 
     private String getDBHostname() {
-        String theHostname = ((DatabaseConfigBean)configBean).getDbHostname();
-        if (StringUtils.isEmpty(theHostname)) {
-            theHostname = remoteDatabase.isSelected()?hostname.getText():LOCALDB_HOSTNAME;
-        }
+        String theHostname = remoteDatabase.isSelected()?hostname.getText():LOCALDB_HOSTNAME;
         return theHostname;
     }
 }
