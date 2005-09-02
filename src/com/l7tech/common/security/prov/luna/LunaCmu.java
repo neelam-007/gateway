@@ -380,7 +380,7 @@ public class LunaCmu {
         }
     }
 
-    private byte[] doExec(String[] args, byte[] stdin) throws IOException, InterruptedException {
+    private byte[] doExec(String[] args, byte[] stdin) throws IOException, InterruptedException, LunaCmuException {
         String[] cmdArray = new String[args.length + 1];
         cmdArray[0] = cmuFile.getPath();
         for (int i = 0; i < args.length; i++)
@@ -403,6 +403,8 @@ public class LunaCmu {
 
         int status = proc.waitFor();
         logger.finest("Luna cmu utility exited status code " + status);
+        if (status != 0)
+            throw new LunaCmuException("Luna cmu utility exited with status " + status + ".  Output: " + new String(slurped));
 
         return slurped;
     }
@@ -501,7 +503,7 @@ public class LunaCmu {
                 }
             }
             if (newCertObject == null)
-                throw new LunaCmuException("Luna Certificate Management Utility was unable to certify CSR: could not find the newly created certificate inside the HSM");
+                throw new LunaCmuException("Luna Certificate Management Utility was unable to certify CSR: could not find the newly created certificate inside the HSM with label: " + label);
 
             return exportCertificate(newCertObject);
         } catch (IOException e) {
