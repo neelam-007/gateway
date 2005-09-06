@@ -42,6 +42,7 @@
   !define MUI_HEADERBITMAP "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
 
   ;Remember the Start Menu Folder
+  ; todo, local machine instead?
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
   !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "SecureSpan Gateway"
@@ -114,7 +115,7 @@ Section "SecureSpan Gateway" SecCopyUI
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
 
-  ; !insertmacro MUI_STARTMENU_WRITE_BEGIN
+  !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
   ; Create shortcuts
   CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
@@ -123,7 +124,7 @@ Section "SecureSpan Gateway" SecCopyUI
   CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Configure SecureSpan Gateway.lnk" "$INSTDIR\configwizard\ssgconfig.cmd"
   SetOutPath "$INSTDIR"
 
-  ; !insertmacro MUI_STARTMENU_WRITE_END
+  !insertmacro MUI_STARTMENU_WRITE_END
 
   ;Register with Add/Remove programs
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "DisplayName" "${MUI_PRODUCT}"
