@@ -72,6 +72,10 @@
 
 Section "SecureSpan Gateway" SecCopyUI
 
+  ; make sure existing ssg is not running before trying to overwrite files (bugzilla #1964)
+  ExecWait 'net stop SSG' $0
+  DetailPrint "net stop SSG returned with code $0"
+
   CreateDirectory "$INSTDIR\logs"
   CreateDirectory "$INSTDIR\bin"
   CreateDirectory "$INSTDIR\etc\conf"
