@@ -197,4 +197,8 @@ Section "Uninstall"
   ;Display the Finish header
   !insertmacro MUI_UNFINISHHEADER
 
+  IfRebootFlag 0 noreboot
+    MessageBox MB_YESNO "A reboot is required to complete uninstallation. Do you wish to reboot now?" IDNO noreboot
+  noreboot:
+  
 SectionEnd
