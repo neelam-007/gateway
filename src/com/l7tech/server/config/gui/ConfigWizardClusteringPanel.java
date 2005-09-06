@@ -187,14 +187,14 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         }
 
         if (joinClusterOption.isSelected()) {
-            msgs.add("\n- COPY KEYS");
+            msgs.add("\n- COPY KEYS: copy the certificates and keystores from the primary node in the cluster to \"" + osFunctions.getKeystoreDir() + "\"");
         }
 
-        if (showMsg) {
+        if (showMsg == true) {
             String title = "Necessary Manual Action Required";
 
             StringBuffer buffer = new StringBuffer();
-            buffer.append("please note, you will need to perform the following manual tasks once this wizard is finished in order to properly configure the cluster");
+            buffer.append("Please note, you will need to perform the following manual tasks once this wizard is finished in order to properly configure the cluster");
             Iterator iter = msgs.iterator();
             while (iter.hasNext()) {
                 buffer.append((String)iter.next());
