@@ -26,6 +26,8 @@ public class DBActions {
 
     public static final int DB_SUCCESS = 0;
     public static final int DB_ALREADY_EXISTS = 2;
+    public static final int DB_CREATEFILE_MISSING = 3;
+
     public static final int DB_AUTHORIZATION_FAILURE = 28000;
     public static final int DB_UNKNOWNDB_FAILURE = 42000;
 
@@ -95,7 +97,7 @@ public class DBActions {
         retryCount = 0;
     }
 
-    public int createDb(String privUsername, String privPassword, String dbHostname, String dbName, String dbUsername, String dbPassword, String dbCreateScript, boolean isWindows, boolean overwriteDb) {
+    public int createDb(String privUsername, String privPassword, String dbHostname, String dbName, String dbUsername, String dbPassword, String dbCreateScript, boolean isWindows, boolean overwriteDb) throws IOException {
         int failureCode = DBActions.DB_UNKNOWN_FAILURE;
 
         Connection conn = null;
@@ -110,19 +112,13 @@ public class DBActions {
                 }
                 else {  //we should overwrite the db
                     dropDatabase(stmt, dbName);
-                    try {
-                        makeDatabase(stmt, dbName, dbUsername, dbPassword, dbHostname, dbCreateScript, isWindows);
-                        failureCode = DB_SUCCESS;
-                    } catch (IOException e) {
-                    }
-                }
-            } else {
-                try {
                     makeDatabase(stmt, dbName, dbUsername, dbPassword, dbHostname, dbCreateScript, isWindows);
                     failureCode = DB_SUCCESS;
-                } catch (IOException e) {
-                    failureCode = DB_CHECK_INTERNAL_ERROR;
                 }
+            } else {
+                makeDatabase(stmt, dbName, dbUsername, dbPassword, dbHostname, dbCreateScript, isWindows);
+                failureCode = DB_SUCCESS;
+
             }
         } catch (SQLException e) {
             String sqlState = e.getSQLState();

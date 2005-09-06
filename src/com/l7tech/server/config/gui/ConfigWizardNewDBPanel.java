@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -191,50 +192,58 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
         logger.info("Attempting to create a new database (" + hostname + "/" + name + ") using priveleged user/password \"" + pUsername + "/" + pPassword + "\"");
         String dbCreateScriptFile = osFunctions.getPathToDBCreateFile();
         boolean isWindows = osFunctions.isWindows();
-        status = dbActions.createDb(pUsername, pPassword, hostname, name, username, password, dbCreateScriptFile, isWindows, overwriteDb);
-        if (status == DBActions.DB_SUCCESS) {
-            hideErrorMessage();
-            isOk = true;
-        } else {
-            logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-            switch (status) {
-                case DBActions.DB_AUTHORIZATION_FAILURE:
-                    errorMsg = "There was an authentication error when attempting to create the new database using the username \"" +
-                            pUsername + "\" and password \"" + pPassword + "\"- please retry";
-                    logger.warning(errorMsg);
-                    showErrorMessage(errorMsg);
-                    isOk = false;
-                    break;
-                case DBActions.DB_ALREADY_EXISTS:
-                    logger.warning("The database named \"" + name + "\" already exists");
-                    errorMsg = "The database named \"" + name + "\" already exists. Would you like to overwrite it?";
-                    int response = JOptionPane.showConfirmDialog(this,errorMsg, "Database already exists", JOptionPane.YES_NO_OPTION);
-                    if (response == JOptionPane.OK_OPTION) {
-                        Object[] options = {"Yes", "No"};
-                        response = JOptionPane.showOptionDialog(this,"Are you certain you want to overwrite the \"" + name + "\"database? All existing data will be lost.",
-                                "Confirm Database Overwrite",
-                                JOptionPane.YES_NO_OPTION,
-                                JOptionPane.WARNING_MESSAGE,
-                                null,
-                                options,
-                                options[1]);
-                        if (response == JOptionPane.OK_OPTION) {
-                            logger.info("creating new database (overwriting existing one)");
-                            logger.warning("The database will be overwritten");
-                            isOk = doCreateDb(pUsername, pPassword, hostname, name, username, password, true);
-                        }
-                    } else {
+        try {
+            status = dbActions.createDb(pUsername, pPassword, hostname, name, username, password, dbCreateScriptFile, isWindows, overwriteDb);
+            if (status == DBActions.DB_SUCCESS) {
+                hideErrorMessage();
+                isOk = true;
+            } else {
+                logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
+                switch (status) {
+                    case DBActions.DB_AUTHORIZATION_FAILURE:
+                        errorMsg = "There was an authentication error when attempting to create the new database using the username \"" +
+                                pUsername + "\" and password \"" + pPassword + "\"- please retry";
+                        logger.warning(errorMsg);
+                        showErrorMessage(errorMsg);
                         isOk = false;
-                    }
-                    break;
-                case DBActions.DB_UNKNOWN_FAILURE:
-                default:
-                    errorMsg = "There was an error while attempting to create the database. Please try again";
-                    logger.warning(errorMsg);
-                    showErrorMessage(errorMsg);
-                    isOk = false;
-                    break;
+                        break;
+                    case DBActions.DB_ALREADY_EXISTS:
+                        logger.warning("The database named \"" + name + "\" already exists");
+                        errorMsg = "The database named \"" + name + "\" already exists. Would you like to overwrite it?";
+                        int response = JOptionPane.showConfirmDialog(this,errorMsg, "Database already exists", JOptionPane.YES_NO_OPTION);
+                        if (response == JOptionPane.OK_OPTION) {
+                            Object[] options = {"Yes", "No"};
+                            response = JOptionPane.showOptionDialog(this,"Are you certain you want to overwrite the \"" + name + "\"database? All existing data will be lost.",
+                                    "Confirm Database Overwrite",
+                                    JOptionPane.YES_NO_OPTION,
+                                    JOptionPane.WARNING_MESSAGE,
+                                    null,
+                                    options,
+                                    options[1]);
+                            if (response == JOptionPane.OK_OPTION) {
+                                logger.info("creating new database (overwriting existing one)");
+                                logger.warning("The database will be overwritten");
+                                isOk = doCreateDb(pUsername, pPassword, hostname, name, username, password, true);
+                            }
+                        } else {
+                            isOk = false;
+                        }
+                        break;
+                    case DBActions.DB_UNKNOWN_FAILURE:
+                    default:
+                        errorMsg = "There was an error while attempting to create the database. Please try again";
+                        logger.warning(errorMsg);
+                        showErrorMessage(errorMsg);
+                        isOk = false;
+                        break;
+                }
             }
+        } catch (IOException e) {
+            errorMsg = "Could not create the database because there was an error while reading the file \"" + dbCreateScriptFile + "\"." +
+                    " The error was: " + e.getMessage();
+            logger.warning(errorMsg);
+            showErrorMessage(errorMsg);
+            isOk = false;
         }
         return isOk;
     }
