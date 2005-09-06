@@ -3,7 +3,7 @@ package com.l7tech.server.config.gui;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
-import com.l7tech.server.config.DBChecker;
+import com.l7tech.server.config.DBActions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,10 +37,10 @@ public class ConfigWizardDbFailureDialog extends JDialog {
         add(mainPanel, BorderLayout.CENTER);
         inputPanel.setLayout(new BorderLayout());
         switch (reason) {
-            case DBChecker.DB_MISSING_FAILURE:
+            case DBActions.DB_UNKNOWNDB_FAILURE:
                 reasonPanel = new DBMissingPanel();
                 break;
-            case DBChecker.DB_AUTH_FAILURE:
+            case DBActions.DB_AUTHORIZATION_FAILURE:
                 reasonPanel = new DBAuthenticationFailedPanel();
                 break;
             default:
@@ -78,14 +78,14 @@ public class ConfigWizardDbFailureDialog extends JDialog {
 
     private boolean retry(int reason) {
         boolean retrySuccess = false;
-        if (reason == DBChecker.DB_AUTH_FAILURE) {
+        if (reason == DBActions.DB_AUTHORIZATION_FAILURE) {
             System.out.println("Retry DB auth failure with following creds: ");
             DBAuthenticationFailedPanel dbafp = (DBAuthenticationFailedPanel) reasonPanel;
             System.out.println("username = " + dbafp.getUsername());
             System.out.println("pasword = " + dbafp.getPassword());
             retrySuccess = true;
         }
-        if (reason == DBChecker.DB_MISSING_FAILURE) {
+        if (reason == DBActions.DB_UNKNOWNDB_FAILURE) {
             System.out.println("Retry DB missing failure with following creds: ");
             DBMissingPanel dbmp = (DBMissingPanel) reasonPanel;
             System.out.println("username = " + dbmp.getUsername());

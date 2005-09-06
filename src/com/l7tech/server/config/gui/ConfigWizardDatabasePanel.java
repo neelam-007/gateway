@@ -2,7 +2,7 @@ package com.l7tech.server.config.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.DBChecker;
+import com.l7tech.server.config.DBActions;
 import com.l7tech.server.config.commands.DatabaseConfigCommand;
 import com.l7tech.server.config.beans.DatabaseConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
@@ -46,7 +46,7 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     private Pattern urlPattern = Pattern.compile("^.*//(.*)/(.*)\\?.*$");
 
 
-    DBChecker dbChecker = new DBChecker(1);
+    DBActions dbActions;
     private JPanel mainPanel;
     private JPasswordField password;
     private JTextField username;
@@ -74,7 +74,7 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     private JLabel localHostname;
     private JLabel localDbName;
     private JLabel localDbUsername;
-    private int dbCheckStatus = DBChecker.DB_SUCCESS;
+    private int dbCheckStatus = DBActions.DB_SUCCESS;
 
 
     /**
@@ -91,35 +91,40 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     }
 
     private void init() {
-            setShowDescriptionPanel(false);
-            configBean = new DatabaseConfigBean(osFunctions);
-            configCommand = new DatabaseConfigCommand(configBean);
-
-            remoteDatabase.addActionListener(controlListener);
-            localDatabase.addActionListener(controlListener);
-
-            ButtonGroup localOrRemote = new ButtonGroup();
-            localOrRemote.add(remoteDatabase);
-            localOrRemote.add(localDatabase);
-
-            database.setText(LOCALDB_DBNAME);       //set the default name for the database
-
-            stepLabel = "Setup SSG Configuration Storage";
-            errorMsg.setBackground(mainPanel.getBackground());
-            errorMsg.setVisible(false);
-
-            localHostname.setText(LOCALDB_HOSTNAME);
-            localDbName.setText(LOCALDB_DBNAME);
-            localDbUsername.setText(LOCALDB_USER);
-
-            String msg = "could not connect to specified database with the supplied credentials, please try again";
-            errorMsg.setText(msg);
-            errorMsg.setForeground(Color.RED);
-
-            enableControls();
-            setLayout(new BorderLayout());
-            add(mainPanel, BorderLayout.CENTER);
+        try {
+             dbActions = new DBActions(1);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard");
         }
+        setShowDescriptionPanel(false);
+        configBean = new DatabaseConfigBean(osFunctions);
+        configCommand = new DatabaseConfigCommand(configBean);
+
+        remoteDatabase.addActionListener(controlListener);
+        localDatabase.addActionListener(controlListener);
+
+        ButtonGroup localOrRemote = new ButtonGroup();
+        localOrRemote.add(remoteDatabase);
+        localOrRemote.add(localDatabase);
+
+        database.setText(LOCALDB_DBNAME);       //set the default name for the database
+
+        stepLabel = "Setup SSG Configuration Storage";
+        errorMsg.setBackground(mainPanel.getBackground());
+        errorMsg.setVisible(false);
+
+        localHostname.setText(LOCALDB_HOSTNAME);
+        localDbName.setText(LOCALDB_DBNAME);
+        localDbUsername.setText(LOCALDB_USER);
+
+        String msg = "could not connect to specified database with the supplied credentials, please try again";
+        errorMsg.setText(msg);
+        errorMsg.setForeground(Color.RED);
+
+        enableControls();
+        setLayout(new BorderLayout());
+        add(mainPanel, BorderLayout.CENTER);
+    }
 
     protected void updateModel(HashMap settings) {
         DatabaseConfigBean dbConfigBean = (DatabaseConfigBean) configBean;
@@ -145,8 +150,8 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
         String existingDBUrl = null;
         String existingDBHostname = null;
         String existingDBName = null;
-        dbChecker.resetRetryCount();
-        if (dbCheckStatus == DBChecker.DB_SUCCESS) {
+        dbActions.resetRetryCount();
+        if (dbCheckStatus == DBActions.DB_SUCCESS) {
             errorMsg.setVisible(false);
         } else {
             errorMsg.setVisible(true);
@@ -220,33 +225,34 @@ public class ConfigWizardDatabasePanel extends ConfigWizardStepPanel {
     }
 
     public boolean onNextButton() {
-        dbCheckStatus = testDb();
-        if (dbCheckStatus == DBChecker.DB_SUCCESS) {
-            logger.info("Successfully connected to the database");
-        } else {
-            if (dbCheckStatus == DBChecker.DB_MAX_RETRIES_EXCEEDED || dbCheckStatus == DBChecker.DB_CHECK_INTERNAL_ERROR) {
-                ((DatabaseConfigBean)configBean).setDbPassword("".toCharArray());
-                ((DatabaseConfigBean)configBean).setDBConfigOn(false);
-                JOptionPane.showMessageDialog(this, "Database connection failed, skipping database configuration.\n" +
-                        "Please see logs for details\n" +
-                        "You can run this tool again later to configure the database", "Skipping Database Configuration", JOptionPane.ERROR_MESSAGE);
-            } else {
-                showDbFailure(dbCheckStatus);
-            }
-        }
-        return (dbCheckStatus == DBChecker.DB_SUCCESS ||
-                dbCheckStatus == DBChecker.DB_MAX_RETRIES_EXCEEDED ||
-                dbCheckStatus == DBChecker.DB_CHECK_INTERNAL_ERROR);
+//        dbCheckStatus = testDb();
+//        if (dbCheckStatus == DBActions.DB_SUCCESS) {
+//            logger.info("Successfully connected to the database");
+//        } else {
+//            if (dbCheckStatus == DBActions.DB_MAX_RETRIES_EXCEEDED || dbCheckStatus == DBActions.DB_CHECK_INTERNAL_ERROR) {
+//                ((DatabaseConfigBean)configBean).setDbPassword("".toCharArray());
+//                ((DatabaseConfigBean)configBean).setDBConfigOn(false);
+//                JOptionPane.showMessageDialog(this, "Database connection failed, skipping database configuration.\n" +
+//                        "Please see logs for details\n" +
+//                        "You can run this tool again later to configure the database", "Skipping Database Configuration", JOptionPane.ERROR_MESSAGE);
+//            } else {
+//                showDbFailure(dbCheckStatus);
+//            }
+//        }
+//        return (dbCheckStatus == DBActions.DB_SUCCESS ||
+//                dbCheckStatus == DBActions.DB_MAX_RETRIES_EXCEEDED ||
+//                dbCheckStatus == DBActions.DB_CHECK_INTERNAL_ERROR);
+        return true;
     }
 
-    private int testDb() {
-        String connectionString = getConnectionString();
-        String name = getUsername();
-        String pwd = new String(getPassword());
-
-        int failureCode = dbChecker.checkDb(connectionString, name, pwd);
-        return failureCode;
-    }
+//    private int testDb() {
+//        String connectionString = getConnectionString();
+//        String name = getUsername();
+//        String pwd = new String(getPassword());
+//
+//        int failureCode = dbActions.checkExistingDb(connectionString, name, pwd);
+//        return failureCode;
+//    }
 
     private void showDbFailure(int reason) {
         errorMsg.setVisible(true);

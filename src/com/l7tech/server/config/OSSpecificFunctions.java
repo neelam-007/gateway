@@ -36,6 +36,8 @@ public abstract class OSSpecificFunctions {
     private String ssgSystemPropertiesFile;
     private String pathToJavaLibPath;
 
+    private String pathToDBCreateFile;
+
     public OSSpecificFunctions(String OSName) {
         installRoot = System.getProperty("com.l7tech.server.home");
         if (installRoot==null || installRoot.equalsIgnoreCase("")) {
@@ -71,6 +73,7 @@ public abstract class OSSpecificFunctions {
         pathToJavaLibPath = "jre/lib/i386/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
         ssgSystemPropertiesFile = "etc/conf/system.properties";
+        pathToDBCreateFile = "etc/sql/ssg.sql";
     }
 
     public String getClusterHostName() {
@@ -196,5 +199,9 @@ public abstract class OSSpecificFunctions {
 
     public String getPathToJavaLibPath() {
         return getPathToJdk() + pathToJavaLibPath;
+    }
+
+    public String getPathToDBCreateFile() {
+        return installRoot + pathToDBCreateFile;
     }
 }

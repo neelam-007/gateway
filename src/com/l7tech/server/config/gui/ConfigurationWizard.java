@@ -119,16 +119,12 @@ public class ConfigurationWizard extends Wizard {
         ConfigWizardResultsPanel lastPanel = new ConfigWizardResultsPanel(null, osFunctions);
         ConfigWizardSummaryPanel summaryPanel = new ConfigWizardSummaryPanel(lastPanel, osFunctions);
         ConfigWizardKeystorePanel keystorePanel = new ConfigWizardKeystorePanel(summaryPanel, osFunctions);
-        ConfigWizardDatabasePanel configWizardDatabasePanelPanel = new ConfigWizardDatabasePanel(keystorePanel, osFunctions);
+        ConfigWizardNewDBPanel configWizardDatabasePanelPanel = new ConfigWizardNewDBPanel(keystorePanel, osFunctions);
+        //ConfigWizardDatabasePanel configWizardDatabasePanelPanel = new ConfigWizardDatabasePanel(keystorePanel, osFunctions);
         ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel, osFunctions);
 
         ConfigWizardStepPanel startPanel;
-//        if (osFunctions.isWindows())  {
-//            ConfigWizardStepPanel servicePanel = new ConfigWizardWinServicePanel(clusteringPanel, osFunctions);
-//            startPanel = new ConfigWizardStartPanel(servicePanel, osFunctions);
-//        } else {
-            startPanel = new ConfigWizardStartPanel(clusteringPanel,osFunctions);
-//        }
+        startPanel = new ConfigWizardStartPanel(clusteringPanel,osFunctions);
 
         return startPanel;
     }
