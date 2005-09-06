@@ -72,9 +72,15 @@
 
 Section "SecureSpan Gateway" SecCopyUI
 
-  ; make sure existing ssg is not running before trying to overwrite files (bugzilla #1964)
-  ExecWait 'net stop SSG' $0
-  DetailPrint "net stop SSG returned with code $0"
+  ; check if ssg is already installed
+  IfFileExists "$INSTDIR\bin\service.cmd" 0 cleaninstall
+
+    MessageBox MB_YESNO "The SecureSpan Gateway is already installed on this system. Would you like to stop the SSG and re-install over the existing installation?" IDNO endofinstall
+      ; make sure existing ssg is not running before trying to overwrite files (bugzilla #1964)
+      ExecWait 'net stop SSG' $0
+      DetailPrint "net stop SSG returned with code $0"
+
+  cleaninstall:
 
   CreateDirectory "$INSTDIR\logs"
   CreateDirectory "$INSTDIR\bin"
@@ -142,12 +148,12 @@ Section "SecureSpan Gateway" SecCopyUI
   DetailPrint "configwizard returned with code $0"
 
   ; ask user if he wants the service to be started now
-  MessageBox MB_YESNO "Do you want to start the SecureSpan Gateway service now?" IDNO skipstartservice
+  MessageBox MB_YESNO "Do you want to start the SecureSpan Gateway service now?" IDNO endofinstall
 
   ExecWait 'net start SSG' $0
   DetailPrint "net start SSG returned with code $0"
 
-  skipstartservice:
+  endofinstall:
 SectionEnd
 
 ;Display the Finish header
