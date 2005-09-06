@@ -1,17 +1,15 @@
 package com.l7tech.server.config;
 
-import com.l7tech.server.config.gui.ConfigWizardDatabasePanel;
-import com.l7tech.server.config.beans.NewDatabaseConfigBean;
-import com.l7tech.server.config.exceptions.UnsupportedOsException;
-
-import javax.swing.*;
-import java.sql.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
-import java.io.*;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,6 +25,7 @@ public class DBActions {
     public static final int DB_SUCCESS = 0;
     public static final int DB_ALREADY_EXISTS = 2;
     public static final int DB_CREATEFILE_MISSING = 3;
+    public static final int DB_INCORRECT_VERSION = 4;
 
     public static final int DB_AUTHORIZATION_FAILURE = 28000;
     public static final int DB_UNKNOWNDB_FAILURE = 42000;
@@ -34,17 +33,59 @@ public class DBActions {
     public static final int DB_UNKNOWN_FAILURE = -1;
     public static final int DB_CHECK_INTERNAL_ERROR = -2;
 
+
     private int maxRetryCount;
     private int retryCount;
 
     private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
     private static final String ADMIN_DB_NAME = "mysql";
 
-    private Connection conn = null;
     private static final String SQL_CREATE_DB = "create database ";
     private static final String SQL_USE_DB = "use ";
     private static final String SQL_GRANT_ALL = "grant all on ";
     private static final String SQL_DROP_DB = "drop database ";
+    private static final String SQL_DETECT_VERSION_33 = "select 1 from community_schemas";
+    private static final String SQL_DETECT_SSG_DATABASE = "select 1 from published_service";
+
+    public static final String PRE_33_VERSION_MSG = "The existing database appears to be pre version 3.3";
+    public static final String UPGRADE_DB_MSG = "If the SSG fails to start, you may need to upgrade the database";
+
+    private static final String ERROR_CODE_UNKNOWNDB = "42000";
+    private static final String ERROR_CODE_AUTH_FAILURE = "28000";
+
+
+    public class WrongDbVersionException extends Exception {
+        String dbVersionMessage = null;
+        private String dbVersion;
+
+        public WrongDbVersionException(String version, String versionMsg) {
+            setVersionInfo(version, versionMsg);
+        }
+
+        public WrongDbVersionException(String s, String version, String versionMsg) {
+            super(s);
+            setVersionInfo(version, versionMsg);
+        }
+
+        public WrongDbVersionException(String s, Throwable throwable, String version, String versionMsg) {
+            super(s, throwable);
+            setVersionInfo(version, versionMsg);
+        }
+
+        private void setVersionInfo(String version, String versionMsg) {
+            dbVersion = version;
+            dbVersionMessage = versionMsg;
+        }
+
+        public String getVersionMessage() {
+            return dbVersionMessage;
+        }
+
+        public String getVersionString() {
+            return dbVersion;
+        }
+    }
+
 
     public DBActions(int maxRetryCount) throws ClassNotFoundException {
         this.maxRetryCount = maxRetryCount;
@@ -61,20 +102,20 @@ public class DBActions {
         Class.forName(JDBC_DRIVER_NAME);
     }
 
-    public int checkExistingDb(String dbHostname, String dbName, String dbUsername, String dbPassword) {
+    public int checkExistingDb(String dbHostname, String dbName, String dbUsername, String dbPassword) throws WrongDbVersionException {
         int failureCode = DB_UNKNOWN_FAILURE;
         Connection conn = null;
         String connectionString = makeConnectionString(dbHostname, dbName);
         try {
             conn = DriverManager.getConnection(connectionString, dbUsername, dbPassword);
-            failureCode = DB_SUCCESS;
+            failureCode = checkDbVersion(conn);
         } catch (SQLException e) {
             String sqlState = e.getSQLState();
             if (sqlState != null) {
-                if ("42000".equals(sqlState)) {
+                if (ERROR_CODE_UNKNOWNDB.equals(sqlState)) {
                     failureCode = DB_UNKNOWNDB_FAILURE;
 
-                } else if ("28000".equals(sqlState)) {
+                } else if (ERROR_CODE_AUTH_FAILURE.equals(sqlState)) {
                     failureCode = DB_AUTHORIZATION_FAILURE;
                 } else {
                     failureCode = DB_UNKNOWN_FAILURE;
@@ -91,6 +132,39 @@ public class DBActions {
             }
         }
         return failureCode;
+    }
+
+    private int checkDbVersion(Connection conn) throws WrongDbVersionException {
+        int status = DB_INCORRECT_VERSION;
+        Statement stmt = null;
+        try {
+            stmt = conn.createStatement();
+            try {
+                stmt.executeQuery(SQL_DETECT_SSG_DATABASE);
+                try {
+                    stmt.executeQuery(SQL_DETECT_VERSION_33);
+                    status = DB_SUCCESS;
+                } catch (SQLException e) {
+                    throw new WrongDbVersionException("3.2", PRE_33_VERSION_MSG);
+//                    logger.warning(PRE_33_VERSION_MSG);
+//                    logger.warning(UPGRADE_DB_MSG);
+//                    status = DB_INCORRECT_VERSION;
+                }
+            } catch(SQLException e) {
+                status = DB_INCORRECT_VERSION;
+            }
+        } catch (SQLException e) {
+            status = DB_CHECK_INTERNAL_ERROR;
+        } finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+
+        return status;
     }
 
     public void resetRetryCount() {
