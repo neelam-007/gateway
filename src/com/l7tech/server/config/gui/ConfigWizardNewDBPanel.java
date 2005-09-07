@@ -5,6 +5,7 @@ import com.l7tech.console.panels.PasswordDialog;
 import com.l7tech.server.config.DBActions;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.NewDatabaseConfigBean;
+import com.l7tech.server.config.beans.DatabaseConfigBean;
 import com.l7tech.server.config.commands.NewDatabaseConfigCommand;
 
 import javax.swing.*;
@@ -12,8 +13,15 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.
@@ -55,12 +63,22 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
     private static final String CONNECTION_UNSUCCESSFUL_MSG = "Connection to the database was unsuccessful - see warning/errors for details";
     private static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
 
+    private final static String PROP_DB_USERNAME = "hibernate.connection.username";
+    private final static String PROP_DB_URL = "hibernate.connection.url";
+    private static final String PROP_DB_PASSWORD = "hibernate.connection.password" ;
+
+    private Pattern urlPattern = Pattern.compile("^.*//(.*)/(.*)\\?.*$");
+
     private ActionListener dbActionListener = new ActionListener() {
 
         public void actionPerformed(ActionEvent e) {
             enableFields();
         }
     };
+    private JLabel dbHostnameLabel;
+    private JLabel dbNameLabel;
+    private JLabel dbUsernameLabel;
+    private JLabel dbPasswordLabel;
 
     private void enableFields() {
         boolean isEnabled = false;
@@ -136,21 +154,150 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
     }
 
     protected void updateView(HashMap settings) {
-        NewDatabaseConfigBean dbConfigBean = (NewDatabaseConfigBean)configBean;
-        boolean isNew = dbConfigBean.isCreateNewDb();
-        createNewDb.setSelected(isNew);
+        NewDatabaseConfigBean dbBean = null;
+        String existingDbUsername = null;
+        String existingDBUrl = null;
+        String existingDbHostname = null;
+        String existingDbName = null;
+        String existingDbPassword = null;
+
+        //first try and get the bean information if it exists and use that.
+        boolean beanInitialized = false;
+        if (configBean != null) {
+            dbBean = (NewDatabaseConfigBean) configBean;
+            existingDbUsername = dbBean.getDbUsername();
+            existingDbName = dbBean.getDbName();
+            existingDbHostname = dbBean.getDbHostname();
+            existingDbPassword = dbBean.getDbPassword();
+
+            beanInitialized = (
+                    StringUtils.isNotEmpty(existingDbUsername) &&
+                    StringUtils.isNotEmpty(existingDbName) &&
+                    StringUtils.isNotEmpty(existingDbHostname));
+                    //don't include check for the password here since it MIGHT be empty on purpose
+        } else {
+            beanInitialized = false;
+        }
+
+
+        if (!beanInitialized) {
+
+            FileInputStream fis = null;
+            Properties props = new Properties();
+            try {
+                fis = new FileInputStream(osFunctions.getDatabaseConfig());
+                props.load(fis);
+                fis.close();
+                fis = null;
+                existingDbUsername =props.getProperty(PROP_DB_USERNAME);
+                existingDbPassword = props.getProperty(PROP_DB_PASSWORD);
+                existingDBUrl = props.getProperty(PROP_DB_URL);
+                if (StringUtils.isNotEmpty(existingDBUrl)) {
+                    Matcher matcher = urlPattern.matcher(existingDBUrl);
+                    if (matcher.matches()) {
+                        existingDbHostname = matcher.group(1);
+                        existingDbName = matcher.group(2);
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                logger.warning("Could not find the database configuration file. Cannot determine existing configuration.");
+                logger.warning(e.getMessage());
+            } catch (IOException e) {
+                logger.warning("Error while reading the database configuration file. Cannot determine existing configuration.");
+                logger.warning(e.getMessage());
+            } finally{
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException e) {}
+                }
+            }
+        }
+
+        if (StringUtils.isNotEmpty(existingDbUsername)) {
+            dbUsername.setText(existingDbUsername);
+        }
+        if (StringUtils.isNotEmpty(existingDbHostname)) {
+            dbHostname.setText(existingDbHostname);
+        }
+
+        if (StringUtils.isNotEmpty(existingDbName)) {
+            dbName.setText(existingDbName);
+        }
+
+        if (StringUtils.isNotEmpty(existingDbPassword)) {
+            dbPassword.setText(existingDbPassword);
+        }
+
+//        if (existingDbHostname != null) {
+//            if (dbBean != null && dbBean.isRemote()) {
+//                remoteDatabase.setSelected(true);
+//            }
+//        }
+//        NewDatabaseConfigBean dbConfigBean = (NewDatabaseConfigBean)configBean;
+//        boolean isNew = dbConfigBean.isCreateNewDb();
+//        createNewDb.setSelected(isNew);
     }
 
     public boolean onNextButton() {
-        boolean isOk = false;
-        if (createNewDb.isSelected()) {
-            isOk = doCreateDb(privUsername.getText(),new String(privPassword.getPassword()),dbHostname.getText(), dbName.getText(), dbUsername.getText(), dbPassword.getText(), false);
-        }
-        else {
-            isOk = doExistingDb(dbHostname.getText(), dbName.getText(), dbUsername.getText(), dbPassword.getText());
+        resetLabelColours();
+        boolean isOk = true;
+        //enforce that all the required fields are present.
+        isOk = checkRequiredFields();
+
+        if (isOk == false) { // if we've passed the required fields checks
+            showErrorMessage("Some required fields are missing. \n\n" +
+                    "Please fill in all the required fields (indicated in red above)");
+        } else {
+            if (createNewDb.isSelected()) {
+                isOk = doCreateDb(privUsername.getText(),new String(privPassword.getPassword()),dbHostname.getText(), dbName.getText(), dbUsername.getText(), dbPassword.getText(), false);
+            }
+            else {
+                isOk = doExistingDb(dbHostname.getText(), dbName.getText(), dbUsername.getText(), dbPassword.getText());
+            }
         }
 
         return isOk;
+    }
+
+    private void resetLabelColours() {
+        privUserLabel.setForeground(Color.BLACK);
+        privPasswordLabel.setForeground(Color.BLACK);
+        dbHostnameLabel.setForeground(Color.BLACK);
+        dbNameLabel.setForeground(Color.BLACK);
+        dbUsernameLabel.setForeground(Color.BLACK);
+        dbPasswordLabel.setForeground(Color.BLACK);
+    }
+
+    private boolean checkRequiredFields() {
+        boolean ok = true;
+        if (createNewDb.isSelected()) {
+            if (StringUtils.isEmpty(privUsername.getText())) {
+                doInformMissingFields(privUserLabel);
+                ok = false;
+            }
+            else {
+                ok = true;
+            }
+        }
+
+        if (StringUtils.isEmpty(dbHostname.getText())) {
+            doInformMissingFields(dbHostnameLabel);
+            ok = false;
+        }
+        if (StringUtils.isEmpty(dbName.getText())) {
+            doInformMissingFields(dbNameLabel);
+            ok = false;
+        }
+        if (StringUtils.isEmpty(dbUsername.getText())) {
+            doInformMissingFields(dbUsernameLabel);
+            ok = false;
+        }
+        return ok;
+    }
+
+    private void doInformMissingFields(JLabel theLabel) {
+        theLabel.setForeground(Color.RED);
     }
 
     private boolean doExistingDb(String hostname, String name, String username, String password) {

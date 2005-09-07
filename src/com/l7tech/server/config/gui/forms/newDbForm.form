@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.server.config.gui.ConfigWizardNewDBPanel">
-  <grid id="1c678" binding="mainPanel" row-count="10" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="1c678" binding="mainPanel" row-count="11" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="47" y="93" width="687" height="440"/>
+      <xy x="47" y="93" width="687" height="507"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="70684" binding="createNewPanel" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="70684" binding="createNewPanel" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="65" width="647" height="77"/>
+          <xy x="20" y="65" width="647" height="109"/>
           <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
-        <border type="none"/>
+        <border type="etched" title="Select Database Connection Type"/>
         <children>
           <grid id="c675f" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="20" y="28" width="627" height="49"/>
+              <xy x="22" y="30" width="623" height="49"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -38,7 +38,7 @@
               </component>
               <component id="aae6f" class="javax.swing.JTextField" binding="privUsername">
                 <constraints>
-                  <xy x="162" y="0" width="465" height="22"/>
+                  <xy x="162" y="0" width="461" height="22"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <preferred-size width="150" height="-1"/>
                   </grid>
@@ -56,7 +56,7 @@
               </component>
               <component id="5cd95" class="javax.swing.JPasswordField" binding="privPassword">
                 <constraints>
-                  <xy x="162" y="27" width="465" height="22"/>
+                  <xy x="162" y="27" width="461" height="22"/>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <preferred-size width="150" height="-1"/>
                   </grid>
@@ -67,7 +67,7 @@
           </grid>
           <component id="f2daf" class="javax.swing.JRadioButton" binding="createNewDb">
             <constraints>
-              <xy x="0" y="0" width="184" height="23"/>
+              <xy x="2" y="2" width="184" height="23"/>
               <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -76,19 +76,28 @@
           </component>
           <hspacer id="bb506">
             <constraints>
-              <xy x="0" y="47" width="20" height="11"/>
+              <xy x="2" y="49" width="20" height="11"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
                 <minimum-size width="15" height="-1"/>
               </grid>
             </constraints>
           </hspacer>
+          <component id="1ded2" class="javax.swing.JRadioButton" binding="existingDb">
+            <constraints>
+              <xy x="2" y="84" width="235" height="23"/>
+              <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Connect to an existing SSG database"/>
+            </properties>
+          </component>
         </children>
       </grid>
       <grid id="15a3d" binding="dbInfoPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="195" width="647" height="150"/>
-          <grid row="6" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+          <xy x="20" y="239" width="647" height="150"/>
+          <grid row="7" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -100,9 +109,9 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
-            <border type="etched" title="Database Information"/>
+            <border type="etched" title="Information for New or Existing Database"/>
             <children>
-              <component id="b39b7" class="javax.swing.JLabel">
+              <component id="b39b7" class="javax.swing.JLabel" binding="dbHostnameLabel">
                 <constraints>
                   <xy x="6" y="24" width="58" height="15"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
@@ -111,7 +120,7 @@
                   <text value="Hostname"/>
                 </properties>
               </component>
-              <component id="8e389" class="javax.swing.JLabel">
+              <component id="8e389" class="javax.swing.JLabel" binding="dbPasswordLabel">
                 <constraints>
                   <xy x="6" y="105" width="169" height="15"/>
                   <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
@@ -120,7 +129,7 @@
                   <text value="SSG Database user password"/>
                 </properties>
               </component>
-              <component id="9e8cb" class="javax.swing.JLabel">
+              <component id="9e8cb" class="javax.swing.JLabel" binding="dbUsernameLabel">
                 <constraints>
                   <xy x="6" y="78" width="140" height="15"/>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
@@ -129,7 +138,7 @@
                   <text value="SSG database username"/>
                 </properties>
               </component>
-              <component id="60691" class="javax.swing.JLabel">
+              <component id="60691" class="javax.swing.JLabel" binding="dbNameLabel">
                 <constraints>
                   <xy x="6" y="51" width="154" height="15"/>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
@@ -180,8 +189,8 @@
       </grid>
       <vspacer id="fbebc">
         <constraints>
-          <xy x="328" y="420" width="11" height="20"/>
-          <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+          <xy x="328" y="464" width="11" height="20"/>
+          <grid row="10" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
         </constraints>
       </vspacer>
       <vspacer id="c0e41">
@@ -194,16 +203,16 @@
       </vspacer>
       <hspacer id="6fe7b">
         <constraints>
-          <xy x="0" y="264" width="20" height="11"/>
-          <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <xy x="0" y="308" width="20" height="11"/>
+          <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="15" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
       <hspacer id="6f0f7">
         <constraints>
-          <xy x="667" y="264" width="20" height="11"/>
-          <grid row="6" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <xy x="667" y="308" width="20" height="11"/>
+          <grid row="7" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="15" height="-1"/>
           </grid>
         </constraints>
@@ -227,8 +236,8 @@
       </vspacer>
       <component id="d33c7" class="javax.swing.JTextPane" binding="errorMessagePane">
         <constraints>
-          <xy x="20" y="370" width="627" height="50"/>
-          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
+          <xy x="20" y="414" width="627" height="50"/>
+          <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
             <preferred-size width="150" height="50"/>
           </grid>
         </constraints>
@@ -238,24 +247,23 @@
       </component>
       <vspacer id="dac26">
         <constraints>
-          <xy x="328" y="350" width="11" height="20"/>
-          <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+          <xy x="328" y="394" width="11" height="20"/>
+          <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="15"/>
           </grid>
         </constraints>
       </vspacer>
-      <component id="1ded2" class="javax.swing.JRadioButton" binding="existingDb">
-        <constraints>
-          <xy x="20" y="147" width="235" height="23"/>
-          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-        </constraints>
-        <properties>
-          <text value="Connect to an existing SSG database"/>
-        </properties>
-      </component>
       <vspacer id="2b391">
         <constraints>
-          <xy x="328" y="175" width="11" height="20"/>
+          <xy x="328" y="219" width="11" height="20"/>
+          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="15"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="bd2e0">
+        <constraints>
+          <xy x="328" y="199" width="11" height="20"/>
           <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="15"/>
           </grid>
