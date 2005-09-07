@@ -452,10 +452,7 @@ public class MainWindow extends JFrame {
 
             editMenu.add(getManageCertificatesMenuItem());
             editMenu.add(getManageGlobalSchemasMenuItem());
-            /*
-            todo, reenable this for 3.4
             editMenu.add(getManageClusterPropertiesActionMenuItem());
-            */
             editMenu.add(getManageJmsEndpointsMenuItem());
 
             int mnemonic = editMenu.getText().toCharArray()[0];
