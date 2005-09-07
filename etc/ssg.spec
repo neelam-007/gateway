@@ -60,7 +60,7 @@ chmod 755 %{buildroot}/etc/profile.d/*.sh
 %config(noreplace) /ssg/etc/conf/*
 %config(noreplace) /ssg/tomcat/conf/*
 %config(noreplace) /ssg/*/jre/lib/security/java.security
-
+/ssg/*
 
 
 %pre
