@@ -110,7 +110,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
             titleLabel.getParent().remove(titleLabel);
         }
 
-        textFieldResource.getDocument().addDocumentListener(new DocumentListener() {
+        DocumentListener docListener = new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {
                 notifyListeners();
             }
@@ -120,6 +120,14 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
             }
 
             public void removeUpdate(DocumentEvent e) {
+                notifyListeners();
+            }
+        };
+        textFieldResource.getDocument().addDocumentListener(docListener);
+        textFieldAction.getDocument().addDocumentListener(docListener);
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
                 notifyListeners();
             }
         });
@@ -148,7 +156,12 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      */
     public boolean canAdvance() {
         String resource = textFieldResource.getText();
-        return (resource != null && !"".equals(resource.trim()));
+        String action = textFieldAction.getText();
+        return (notNullOrEmpty(resource) && notNullOrEmpty(action));
+    }
+
+    private boolean notNullOrEmpty(String s) {
+        return s != null && !"".equals(s.trim());
     }
 
     /**
