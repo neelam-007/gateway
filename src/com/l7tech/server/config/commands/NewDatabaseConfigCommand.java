@@ -65,6 +65,7 @@ public class NewDatabaseConfigCommand extends BaseConfigurationCommand {
 
         try {
             updateDbConfigFile(dbConfigFile);
+            success = true;
         } catch (IOException e) {
             success = false;
         }
