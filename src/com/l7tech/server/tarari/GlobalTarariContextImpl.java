@@ -10,27 +10,25 @@ import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariUtil;
-import com.l7tech.server.communityschemas.CommunitySchemaManager;
-import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.server.service.ServiceCache;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.communityschemas.CommunitySchemaManager;
+import com.l7tech.server.service.ServiceCache;
 import com.tarari.xml.schema.SchemaLoader;
 import com.tarari.xml.schema.SchemaLoadingException;
 import com.tarari.xml.xpath.XPathCompiler;
 import com.tarari.xml.xpath.XPathCompilerException;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
+import org.springframework.beans.factory.BeanFactory;
 
 import java.io.ByteArrayInputStream;
-import java.io.StringReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Logger;
-
-import org.springframework.beans.factory.BeanFactory;
-import org.w3.x2001.xmlSchema.SchemaDocument;
-import org.apache.xmlbeans.XmlException;
 
 /**
  * Holds the server-side Tarari state

@@ -29,8 +29,8 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.w3.x2001.xmlSchema.SchemaDocument;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;

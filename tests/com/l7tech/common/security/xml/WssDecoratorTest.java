@@ -514,7 +514,7 @@ public class WssDecoratorTest extends TestCase {
             creds = LoginCredentials.makePasswordCredentials(subjectNameIdentifierValue, "secret".toCharArray(), HttpBasic.class);
             confirmationMethod = SubjectStatement.SENDER_VOUCHES;
         }
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, false);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         return generator.createAssertion(subjectStatement, samlOptions).getDocumentElement();
     }

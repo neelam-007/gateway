@@ -198,7 +198,7 @@ public class WssProcessorTest extends TestCase {
         SignedSamlTest sst = new SignedSamlTest("blah");
         sst.setUp();
         doTest(makeEttkTestDocument("sample signed SAML holder-of-key request",
-                                    /*TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST*/sst.getRequestSignedWithSamlToken()));
+                                    /*TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST*/sst.getRequestSignedWithSamlToken(false, false)));
     }
 
     public void testSignedSamlSenderVouchesRequest() throws Exception {

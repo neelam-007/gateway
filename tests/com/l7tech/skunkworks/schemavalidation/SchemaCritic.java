@@ -6,13 +6,12 @@
  */
 package com.l7tech.skunkworks.schemavalidation;
 
-import org.w3.x2001.xmlSchema.SchemaDocument;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Schema;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.io.IOException;

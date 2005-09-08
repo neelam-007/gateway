@@ -22,8 +22,8 @@ class AuthenticationStatement extends SubjectStatement {
     private final String authenticationMethod;
     private final Calendar authenticationInstant = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
 
-    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation) {
-        super(credentials, confirmation);
+    public AuthenticationStatement(LoginCredentials credentials, Confirmation confirmation, boolean useThumbprintForSubject) {
+        super(credentials, confirmation, useThumbprintForSubject);
 
         this.authenticationMethod = mapAuthMethod(credentials.getCredentialSourceAssertion());
         this.authenticationInstant.setTime(new Date(credentials.getAuthInstant()));

@@ -17,6 +17,8 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
 
     // saml (model as a different bean when serializer supports it)
     private boolean attachSamlSenderVouches;
+    private boolean useThumbprintInSamlSignature;
+    private boolean useThumbprintInSamlSubject;
     private int samlAssertionExpiry = 5;
     private boolean groupMembershipStatement;
     private boolean taiCredentialChaining = false;
@@ -55,6 +57,34 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.attachSamlSenderVouches = attachSamlSenderVouches;
     }
 
+    /**
+     * @return true if the signature of any attached Sender-Vouches SAML assertion should contain a thumbprint instead of the whole signing certificate
+     */
+    public boolean isUseThumbprintInSamlSignature() {
+        return useThumbprintInSamlSignature;
+    }
+
+    /**
+     * @param useThumbprintInSamlSignature true if the signature of any attached Sender-Vouches SAML assertion should contain a thumbprint instead of the whole signing certificate
+     */
+    public void setUseThumbprintInSamlSignature(boolean useThumbprintInSamlSignature) {
+        this.useThumbprintInSamlSignature = useThumbprintInSamlSignature;
+    }
+
+    /**
+     * @return true if the subject cert in any attached Sender-Vouches SAML assertion should be replaced with a thumbprint
+     */
+    public boolean isUseThumbprintInSamlSubject() {
+        return useThumbprintInSamlSubject;
+    }
+
+    /**
+     * @param useThumbprintInSamlSubject true if the subject cert in any attached Sender-Vouches SAML assertion should be replaced with a thumbprint
+     */
+    public void setUseThumbprintInSamlSubject(boolean useThumbprintInSamlSubject) {
+        this.useThumbprintInSamlSubject = useThumbprintInSamlSubject;
+    }
+
     public int getSamlAssertionExpiry() {
         return samlAssertionExpiry;
     }
@@ -85,20 +115,20 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     /**
      * This setting controls what this routing assertion should do with the current security header
      * before routing the request. Possible values are:
-     * REMOVE_CURRENT_SECURITY_HEADER,
-     * LEAVE_CURRENT_SECURITY_HEADER_AS_IS,
-     * PROMOTE_OTHER_SECURITY_HEADER
+     * {@link #REMOVE_CURRENT_SECURITY_HEADER},
+     * {@link #LEAVE_CURRENT_SECURITY_HEADER_AS_IS},
+     * {@link #PROMOTE_OTHER_SECURITY_HEADER}
      */ 
     public int getCurrentSecurityHeaderHandling() {
         return currentSecurityHeaderHandling;
     }
 
     /**
-     * Set what this routing assertion should do with the current security header before routing the request. Possible
-     * values are:
-     * REMOVE_CURRENT_SECURITY_HEADER,
-     * LEAVE_CURRENT_SECURITY_HEADER_AS_IS,
-     * PROMOTE_OTHER_SECURITY_HEADER
+     * Set what this routing assertion should do with the current security header
+     * before routing the request. Possible values are:
+     * {@link #REMOVE_CURRENT_SECURITY_HEADER},
+     * {@link #LEAVE_CURRENT_SECURITY_HEADER_AS_IS},
+     * {@link #PROMOTE_OTHER_SECURITY_HEADER}
      * @param currentSecurityHeaderHandling see description for possible values
      */
     public void setCurrentSecurityHeaderHandling(int currentSecurityHeaderHandling) {
@@ -107,6 +137,8 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
 
     /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
     protected void copyFrom(RoutingAssertion source) {
+        this.setUseThumbprintInSamlSignature(source.isUseThumbprintInSamlSignature());
+        this.setUseThumbprintInSamlSubject(source.isUseThumbprintInSamlSubject());
         this.setAttachSamlSenderVouches(source.isAttachSamlSenderVouches());
         this.setCurrentSecurityHeaderHandling(source.getCurrentSecurityHeaderHandling());
         this.setGroupMembershipStatement(source.isGroupMembershipStatement());

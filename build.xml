@@ -416,6 +416,10 @@
                 <include name="spring-dao.jar"/>
                 <include name="spring-orm.jar"/>
                 <include name="spring-web.jar"/>
+<!-- TODO AC WORK IN PROGRESS
+                <include name="spring-webmvc.jar"/>
+                <include name="velocity-1.4.jar"/>
+-->
                 <include name="cglib-full-2.0.2.jar"/>
                 <include name="ehcache-0.9.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
@@ -436,8 +440,8 @@
 
                 <include name="saxpath.jar"/>
                 <include name="xalan-2.5.2.jar"/>
+                <include name="jsr173_api.jar"/> <!-- StAX -->
                 <include name="xbean.jar"/>
-                <include name="xbean-common.jar"/>
                 <include name="xbean-saml.jar"/>
                 <include name="xercesImpl.jar"/>
                 <include name="xml-apis.jar"/>
@@ -479,6 +483,14 @@
             <zipfileset dir="${src.root}/etc" includes="webApplicationContext.xml" prefix="WEB-INF"/>
             <zipfileset dir="${src.root}/etc" includes="dataAccessContext.xml" prefix="WEB-INF"/>
             <zipfileset dir="${src.root}/etc" includes="adminContext.xml" prefix="WEB-INF"/>
+
+            <!-- Admin web stuff -->
+<!-- TODO AC WORK IN PROGRESS
+            <zipfileset dir="${src.root}/etc/admin/web" prefix="WEB-INF">
+                <include name="adminDispatcher-servlet.xml"/>
+                <include name="velocity/"/>
+            </zipfileset>
+-->
         </war>
 
         <jar jarfile="${build.dir}/rmiannotation.jar">
@@ -624,7 +636,7 @@
             </fileset>
         </jar>
     </target>
-    
+
     <target name="package.configwiz" unless="ssg.only">
         <mkdir dir="${build.dir}/configwizard"/>
         <mkdir dir="${build.dir}/configwizard/lib"/>
@@ -638,7 +650,7 @@
                 <include name="bcprov-jdk15-127.jar"/>
             </fileset>
         </copy>
-        
+
         <copy todir="${build.dir}/configwizard">
             <fileset dir="${src.root}/etc">
                 <include name="ssgconfig.cmd"/>
@@ -677,8 +689,8 @@
             </fileset>
         </jar>
     </target>
-        
-    
+
+
     <target name="package.api" unless="ssg.only">
 <!--
            ** Layer7 API jar, pack and sign
@@ -1372,7 +1384,7 @@
         <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
 
         <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
-	<property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
+        <property name="install.src.configwizard" value="${install.src.base}/configwizard"/>
 
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
@@ -1388,7 +1400,7 @@
         <mkdir dir="${install.src.logs}"/>
         <mkdir dir="${install.src.var}"/>
         <mkdir dir="${install.src.var.attachments}"/>
-	<mkdir dir="${install.src.configwizard}"/>
+        <mkdir dir="${install.src.configwizard}"/>
 
         <antcall target="INTERNAL-ssg-install-optional-1"/>
 

@@ -95,7 +95,7 @@ public class TokenServiceServlet extends HttpServlet {
             try {
                 final StashManager stashManager = StashManagerFactory.createStashManager();
                 request.initialize(stashManager, ctype, req.getInputStream());
-                status = tokenService.respondToSecurityTokenRequest(context, authenticator());
+                status = tokenService.respondToSecurityTokenRequest(context, authenticator(), false, false);
             } catch (InvalidDocumentFormatException e) {
                 String msg = "Request is not formatted as expected. " + e.getMessage();
                 logger.log(Level.INFO, msg, e);

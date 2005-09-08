@@ -2,6 +2,7 @@ package com.l7tech.common.security.saml;
 
 import com.ibm.xml.dsig.*;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -23,9 +24,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -69,7 +68,11 @@ public class SamlAssertionGenerator {
       throws IOException, SignatureException, SAXException, CertificateException {
 
         Document doc = assertionToDocument(createStatementType(subject, options));
-        if (options.isSignAssertion()) signAssertion(doc, assertionSigner.getPrivate(), assertionSigner.getCertificateChain());
+        if (options.isSignAssertion()) signAssertion(
+                doc,
+                assertionSigner.getPrivate(),
+                assertionSigner.getCertificateChain(),
+                options.isUseThumbprintForSignature());
         return doc;
     }
 
@@ -92,7 +95,10 @@ public class SamlAssertionGenerator {
         // sign only if requested and if the confirmation is holder of key.
         // according to WSS SAML interop scenarios the sender vouches is not signed
         if (options.isSignAssertion() && subject.isConfirmationHolderOfKey()) {
-            signAssertion(doc, assertionSigner.getPrivate(), assertionSigner.getCertificateChain());
+            signAssertion(doc,
+                    assertionSigner.getPrivate(),
+                    assertionSigner.getCertificateChain(),
+                    options.isUseThumbprintForSignature());
         }
         attachAssertion(document, doc, options);
         return doc;
@@ -173,7 +179,7 @@ public class SamlAssertionGenerator {
      * @throws CertificateEncodingException on certificate error
      */
     protected void populateSubjectStatement(SubjectStatementAbstractType subjectStatementAbstractType,
-                                            SubjectStatement subjectStatement) throws CertificateEncodingException {
+                                            SubjectStatement subjectStatement) throws CertificateException {
 
         SubjectType subjectStatementType = subjectStatementAbstractType.addNewSubject();
         NameIdentifierType nameIdentifierType = subjectStatementType.addNewNameIdentifier();
@@ -192,9 +198,25 @@ public class SamlAssertionGenerator {
         if (keyInfo == null || !(keyInfo instanceof X509Certificate)) {
             return;
         }
-        KeyInfoType keyInfoType = subjectConfirmation.addNewKeyInfo();
-        X509DataType x509Data = keyInfoType.addNewX509Data();
-        x509Data.addX509Certificate(((X509Certificate)keyInfo).getEncoded());
+
+        X509Certificate cert = (X509Certificate)keyInfo;
+        if (subjectStatement.isUseThumbprintForSubject()) {
+            Element subjConfEl = (Element)subjectConfirmation.getDomNode();
+            try {
+                KeyInfoElement.addKeyInfoToElement(subjConfEl,
+                        SoapUtil.SECURITY_NAMESPACE,
+                        "wsse",
+                        SoapUtil.VALUETYPE_X509_THUMB_SHA1,
+                        MessageDigest.getInstance("SHA1").digest(cert.getEncoded()),
+                        SoapUtil.ENCODINGTYPE_BASE64BINARY);
+            } catch (NoSuchAlgorithmException e) {
+                throw new CertificateException(e); // Can't happen
+            }
+        } else {
+            KeyInfoType keyInfoType = subjectConfirmation.addNewKeyInfo();
+            X509DataType x509Data = keyInfoType.addNewX509Data();
+            x509Data.addX509Certificate(((X509Certificate)keyInfo).getEncoded());
+        }
     }
 
     /**
@@ -231,7 +253,10 @@ public class SamlAssertionGenerator {
 
 
     public static void signAssertion(final Document assertionDoc, PrivateKey signingKey,
-                                     X509Certificate[] signingCertChain) throws SignatureException {
+                                     X509Certificate[] signingCertChain,
+                                     boolean useThumbprintForSignature)
+            throws SignatureException
+    {
         TemplateGenerator template = new TemplateGenerator(assertionDoc, XSignature.SHA1,
                                                            Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
         final String id = assertionDoc.getDocumentElement().getAttribute(SamlConstants.ATTR_ASSERTION_ID);
@@ -253,13 +278,30 @@ public class SamlAssertionGenerator {
 
         final Element signatureElement = template.getSignatureElement();
         assertionDoc.getDocumentElement().appendChild(signatureElement);
-        KeyInfo keyInfo = new KeyInfo();
-        KeyInfo.X509Data x509 = new KeyInfo.X509Data();
-        x509.setCertificate(signingCertChain[0]);
-        x509.setParameters(signingCertChain[0], false, false, true);
-        keyInfo.setX509Data(new KeyInfo.X509Data[]{x509});
 
+        KeyInfo keyInfo = new KeyInfo();
         final Element keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc);
+        if (useThumbprintForSignature) {
+            // Replace cert with STR?
+            try {
+                byte[] thumb = MessageDigest.getInstance("SHA1").digest(signingCertChain[0].getEncoded());
+                KeyInfoElement.populateKeyInfo(keyInfoElement,
+                        SoapUtil.SECURITY_NAMESPACE,
+                        "wsse",
+                        SoapUtil.VALUETYPE_X509_THUMB_SHA1,
+                        SoapUtil.ENCODINGTYPE_BASE64BINARY,
+                        thumb,
+                        assertionDoc);
+            } catch (Exception e) {
+                throw new SignatureException(e);
+            }
+        } else {
+            KeyInfo.X509Data x509 = new KeyInfo.X509Data();
+            x509.setCertificate(signingCertChain[0]);
+            x509.setParameters(signingCertChain[0], false, false, true);
+            keyInfo.setX509Data(new KeyInfo.X509Data[]{x509});
+        }
+
         keyInfoElement.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);
         signatureElement.appendChild(keyInfoElement);
 
@@ -369,6 +411,15 @@ public class SamlAssertionGenerator {
             this.attestingEntity = attestingEntity;
         }
 
+        public boolean isUseThumbprintForSignature() {
+            return useThumbprintForSignature;
+        }
+
+        public void setUseThumbprintForSignature(boolean useThumbprintForSignature) {
+            this.useThumbprintForSignature = useThumbprintForSignature;
+        }
+
+        boolean useThumbprintForSignature = false;
         boolean proofOfPosessionRequired = true;
         int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
         InetAddress clientAddress;

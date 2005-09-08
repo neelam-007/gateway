@@ -321,7 +321,8 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                         }
                     }
                     samlOptions.setExpiryMinutes(bridgeRoutingAssertion.getSamlAssertionExpiry());
-                    SubjectStatement statement = SubjectStatement.createAuthenticationStatement(context.getCredentials(), SubjectStatement.SENDER_VOUCHES);
+                    samlOptions.setUseThumbprintForSignature(bridgeRoutingAssertion.isUseThumbprintInSamlSignature());
+                    SubjectStatement statement = SubjectStatement.createAuthenticationStatement(context.getCredentials(), SubjectStatement.SENDER_VOUCHES, bridgeRoutingAssertion.isUseThumbprintInSamlSubject());
                     ag.attachStatement(document, statement, samlOptions);
                 }
 

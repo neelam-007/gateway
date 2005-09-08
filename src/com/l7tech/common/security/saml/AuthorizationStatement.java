@@ -18,8 +18,8 @@ class AuthorizationStatement extends SubjectStatement {
 
     public AuthorizationStatement(LoginCredentials credentials,
                                   Confirmation confirmation,
-                                  String resource, String action, String actionNamespace) {
-        super(credentials, confirmation);
+                                  String resource, String action, String actionNamespace, boolean useThumbprintForSubject) {
+        super(credentials, confirmation, useThumbprintForSubject);
         this.resource = resource;
         this.action = action;
         this.actionNamespace = actionNamespace;

@@ -134,7 +134,7 @@ public class SamlProcessingTest extends TestCase {
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authorityKeys.asSignerInfo());
         SubjectStatement subjectStatement =
           SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequestWssX509Cert.class),
-          SubjectStatement.HOLDER_OF_KEY);
+          SubjectStatement.HOLDER_OF_KEY, false);
         for (int i = 0; i < serviceDescriptors.length; i++) {
             ServiceDescriptor serviceDescriptor = serviceDescriptors[i];
             Wsdl wsdl = Wsdl.newInstance(null, new StringReader(serviceDescriptor.wsdlXml));
@@ -178,7 +178,7 @@ public class SamlProcessingTest extends TestCase {
         final String name = holderOfKeySigner.getCertificateChain()[0].getSubjectDN().getName();
           final LoginCredentials credentials = LoginCredentials.makePasswordCredentials(name, new char[] {}, HttpBasic.class);
 
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, false);
 
         for (int i = 0; i < serviceDescriptors.length; i++) {
             ServiceDescriptor serviceDescriptor = serviceDescriptors[i];
@@ -223,7 +223,7 @@ public class SamlProcessingTest extends TestCase {
         final String name = holderOfKeySigner.getCertificateChain()[0].getSubjectDN().getName();
         final LoginCredentials credentials = LoginCredentials.makePasswordCredentials(name, new char[] {}, HttpBasic.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthorizationStatement(credentials,
-          SubjectStatement.SENDER_VOUCHES, "http://wheel", null, null);
+          SubjectStatement.SENDER_VOUCHES, "http://wheel", null, null, false);
 
         for (int i = 0; i < serviceDescriptors.length; i++) {
             ServiceDescriptor serviceDescriptor = serviceDescriptors[i];
@@ -267,7 +267,7 @@ public class SamlProcessingTest extends TestCase {
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authorityKeys.asSignerInfo());
         final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequestWssX509Cert.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthorizationStatement(credentials,
-          SubjectStatement.HOLDER_OF_KEY, "http://wheel", null, null);
+          SubjectStatement.HOLDER_OF_KEY, "http://wheel", null, null, false);
 
         for (int i = 0; i < serviceDescriptors.length; i++) {
             ServiceDescriptor serviceDescriptor = serviceDescriptors[i];

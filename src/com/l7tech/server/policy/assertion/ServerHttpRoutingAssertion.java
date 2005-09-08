@@ -309,7 +309,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             }
                         }
                         samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
-                        SubjectStatement statement = SubjectStatement.createAuthenticationStatement(svInputCredentials, SubjectStatement.SENDER_VOUCHES);
+                        samlOptions.setUseThumbprintForSignature(httpRoutingAssertion.isUseThumbprintInSamlSignature());
+                        SubjectStatement statement = SubjectStatement.createAuthenticationStatement(svInputCredentials, SubjectStatement.SENDER_VOUCHES, httpRoutingAssertion.isUseThumbprintInSamlSubject());
                         ag.attachStatement(document, statement, samlOptions);
                     }
                 }

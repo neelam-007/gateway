@@ -14,8 +14,8 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 class AttributeStatement extends SubjectStatement {
     private final Attribute[] attributes;
 
-    public AttributeStatement(LoginCredentials credentials, Confirmation confirmation, Attribute[] attributes) {
-        super(credentials, confirmation);
+    public AttributeStatement(LoginCredentials credentials, Confirmation confirmation, Attribute[] attributes, boolean useThumbprintInSubject) {
+        super(credentials, confirmation, useThumbprintInSubject);
         this.attributes = attributes;
     }
 

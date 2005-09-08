@@ -91,7 +91,9 @@ public class TokenServiceImpl implements TokenService {
      * context.getFaultDetail() is to contain an error to return to the requestor.
      */
     public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context,
-                                                         CredentialsAuthenticator authenticator)
+                                                         CredentialsAuthenticator authenticator,
+                                                         boolean useThumbprintForSamlSignature,
+                                                         boolean useThumbprintForSamlSubject)
                                                          throws InvalidDocumentFormatException,
                                                                 TokenServiceImpl.TokenServiceException,
                                                                 ProcessorException,
@@ -153,7 +155,7 @@ public class TokenServiceImpl implements TokenService {
         if (isRequestForSecureConversationContext(context)) {
             response = handleSecureConversationContextRequest(context, authenticatedUser);
         } else if (isRequestForSAMLToken(context)) {
-            response = handleSamlRequest(context);
+            response = handleSamlRequest(context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
         } else {
             throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
                                                      "RequestSecurityToken");
@@ -231,7 +233,7 @@ public class TokenServiceImpl implements TokenService {
         this.thumbprintResolver = thumbprintResolver;
     }
 
-    private Document handleSamlRequest(PolicyEnforcementContext context) throws TokenServiceException,
+    private Document handleSamlRequest(PolicyEnforcementContext context, boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws TokenServiceException,
                                                                                 GeneralSecurityException
     {
         String clientAddress = null;
@@ -244,9 +246,10 @@ public class TokenServiceImpl implements TokenService {
         try {
             SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
             if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
+            options.setUseThumbprintForSignature(useThumbprintForSignature);
             options.setSignAssertion(true);
             SignerInfo signerInfo = new SignerInfo(getServerKey(), new X509Certificate[] { getServerCert() });
-            SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY);
+            SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
             SamlAssertionGenerator generator = new SamlAssertionGenerator(signerInfo);
             Document signedAssertionDoc = generator.createAssertion(subjectStatement, options);
             responseXml.append(XmlUtil.nodeToString(signedAssertionDoc));

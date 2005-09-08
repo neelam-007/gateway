@@ -1,9 +1,10 @@
 package com.l7tech.common.security.saml;
 
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -61,35 +62,42 @@ public class SignedSamlTest extends TestCase {
         System.out.println("CA private key: " + caPrivateKey);
         System.out.println("CA public key: " + caPublicKey);
         System.out.println("CA cert: " + caCertChain[0]);
+        System.out.println("CA PEM:\n" + new String(CertUtils.encodeAsPEM(caCertChain[0])));
 
         System.out.println("Client private key: " + clientPrivateKey);
         System.out.println("Client public key: " + clientPublicKey);
         System.out.println("Client cert: " + clientCertChain[0]);
+        System.out.println("Client PEM:\n" + new String(CertUtils.encodeAsPEM(clientCertChain[0])));
     }
 
-    private Document getUnsignedHolderOfKeyAssertion(String id) throws IOException, SAXException, CertificateException, SignatureException {
+    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject) throws IOException, SAXException, CertificateException, SignatureException {
         LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         samlOptions.setSignAssertion(false);
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
         samlOptions.setId(id);
         return generator.createAssertion(subjectStatement, samlOptions);
     }
 
-    public Document getSignedHolderOfKey(final String assertionId) throws Exception {
-        final Document assertionDoc = getUnsignedHolderOfKeyAssertion(assertionId);
+    public Document getSignedHolderOfKey(final String assertionId, boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws Exception {
+        final Document assertionDoc = getUnsignedHolderOfKeyAssertion(assertionId, useThumbprintForSubject);
 
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
-        SamlAssertionGenerator.signAssertion(assertionDoc, caPrivateKey, caCertChain);
+        SamlAssertionGenerator.signAssertion(assertionDoc, caPrivateKey, caCertChain, useThumbprintForSignature);
         return assertionDoc;
     }
 
     public void testRequestSignedWithSamlToken() throws Exception {
-        Document req = getRequestSignedWithSamlToken();
+        Document req = getRequestSignedWithSamlToken(false, false);
+        log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
+    }
+
+    public void testRequestSignedWithSamlTokenWithThumbprint() throws Exception {
+        Document req = getRequestSignedWithSamlToken(true, true);
         log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
     }
 
@@ -113,7 +121,7 @@ public class SignedSamlTest extends TestCase {
         SubjectStatement statement =
           SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(clientCertChain[0],
                                                                                                      RequestWssX509Cert.class),
-                                                         SubjectStatement.HOLDER_OF_KEY);
+                                                         SubjectStatement.HOLDER_OF_KEY, false);
         ag.attachStatement(request, statement, samlOptions);
         return request;
     }
@@ -150,7 +158,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId(bstId);
         final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
-        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES);
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, false);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         samlOptions.setId(bstId);
         Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);
@@ -160,7 +168,7 @@ public class SignedSamlTest extends TestCase {
         return request;
     }
 
-    public Document getRequestSignedWithSamlToken() throws Exception {
+    public Document getRequestSignedWithSamlToken(boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws Exception {
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         assertNotNull(request);
         Element body = XmlUtil.findOnlyOneChildElementByName(request.getDocumentElement(),
@@ -188,7 +196,7 @@ public class SignedSamlTest extends TestCase {
         assertTrue(bstId.length() > 0);
 
         // Create saml assertion using the same ID
-        Document assertionDoc = getSignedHolderOfKey(bstId);
+        Document assertionDoc = getSignedHolderOfKey(bstId, useThumbprintForSignature, useThumbprintForSubject);
         assertNotNull(assertionDoc);
         Element samlAssertion = assertionDoc.getDocumentElement();
         assertNotNull(samlAssertion);

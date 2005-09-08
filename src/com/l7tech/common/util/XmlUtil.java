@@ -13,8 +13,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
-import org.apache.xmlbeans.XmlException;
-import org.w3.x2001.xmlSchema.SchemaDocument;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -506,23 +505,25 @@ public class XmlUtil {
      * @return the prefix for this namespace in scope at the specified elment, or null if it is not declared with a prefix.
      *         Note that the default namespace is not considered to have been declared with a prefix.
      */
-    public static String findActivePrefixForNamespace(Element element, String namespace) {
+    public static String findActivePrefixForNamespace(Node element, String namespace) {
 
         while (element != null) {
             NamedNodeMap attrs = element.getAttributes();
-            int numAttr = attrs.getLength();
-            for (int i = 0; i < numAttr; ++i) {
-                Attr attr = (Attr)attrs.item(i);
-                if (!"xmlns".equals(attr.getPrefix()))
-                    continue;
-                if (namespace.equals(attr.getValue()))
-                    return attr.getLocalName();
+            if (attrs != null) {
+                int numAttr = attrs.getLength();
+                for (int i = 0; i < numAttr; ++i) {
+                    Attr attr = (Attr)attrs.item(i);
+                    if (!"xmlns".equals(attr.getPrefix()))
+                        continue;
+                    if (namespace.equals(attr.getValue()))
+                        return attr.getLocalName();
+                }
             }
 
             if (element == element.getOwnerDocument().getDocumentElement())
                 return null;
 
-            element = (Element)element.getParentNode();
+            element = element.getParentNode();
         }
 
         return null;
@@ -538,21 +539,23 @@ public class XmlUtil {
      * @return An namespace prefix as close as possible to desiredPrefix that is undeclared by this element or
      *         its direct ancestors.
      */
-    public static String findUnusedNamespacePrefix(Element element, String desiredPrefix) {
+    public static String findUnusedNamespacePrefix(Node element, String desiredPrefix) {
         // Find all used prefixes
         Set usedPrefixes = new HashSet();
         while (element != null) {
             NamedNodeMap attrs = element.getAttributes();
-            int numAttr = attrs.getLength();
-            for (int i = 0; i < numAttr; ++i) {
-                Attr attr = (Attr)attrs.item(i);
-                if (!"xmlns".equals(attr.getPrefix()))
-                    continue;
-                usedPrefixes.add(attr.getLocalName());
+            if (attrs != null) {
+                int numAttr = attrs.getLength();
+                for (int i = 0; i < numAttr; ++i) {
+                    Attr attr = (Attr)attrs.item(i);
+                    if (!"xmlns".equals(attr.getPrefix()))
+                        continue;
+                    usedPrefixes.add(attr.getLocalName());
+                }
             }
             if (element == element.getOwnerDocument().getDocumentElement())
                 return desiredPrefix;
-            element = (Element)element.getParentNode();
+            element = element.getParentNode();
         }
 
         // Generate an unused prefix

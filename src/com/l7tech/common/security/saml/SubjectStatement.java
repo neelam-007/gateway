@@ -34,6 +34,7 @@ public class SubjectStatement {
     private String name = null;
     private String subjectConfirmationData = null;
     private Object keyInfo = null;
+    private boolean useThumbprintForSubject = false;
 
     /**
      * Creates the authentication statement
@@ -43,8 +44,9 @@ public class SubjectStatement {
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAuthenticationStatement(LoginCredentials credentials,
-                                                                 Confirmation confirmation) {
-        return new AuthenticationStatement(credentials, confirmation);
+                                                                 Confirmation confirmation,
+                                                                 boolean useThumbprintForSubject) {
+        return new AuthenticationStatement(credentials, confirmation, useThumbprintForSubject);
     }
 
     /**
@@ -56,8 +58,9 @@ public class SubjectStatement {
      */
     public static SubjectStatement createAuthorizationStatement(LoginCredentials credentials,
                                                                 Confirmation confirmation,
-                                                                String resource, String action, String actionNamespace) {
-        return new AuthorizationStatement(credentials, confirmation, resource, action, actionNamespace);
+                                                                String resource, String action, String actionNamespace,
+                                                                boolean useThumbprintInSubject) {
+        return new AuthorizationStatement(credentials, confirmation, resource, action, actionNamespace, useThumbprintInSubject);
     }
 
     /**
@@ -66,7 +69,7 @@ public class SubjectStatement {
      * @param credentials  the source of this subject statement
      * @param confirmation the cvo
      */
-    protected SubjectStatement(LoginCredentials credentials, Confirmation confirmation) {
+    protected SubjectStatement(LoginCredentials credentials, Confirmation confirmation, boolean useThumbprintForSubject) {
         if (credentials == null) {
             throw new IllegalArgumentException();
         }
@@ -78,6 +81,8 @@ public class SubjectStatement {
                 throw new IllegalArgumentException("Credential format of Client cert and client certificate are required");
             }
         }
+
+        setUseThumbprintForSubject(useThumbprintForSubject);
 
         final X509Certificate clientCert = credentials.getClientCert();
         if (clientCert != null) {
@@ -123,6 +128,14 @@ public class SubjectStatement {
      */
     public boolean isConfirmationSenderVouches() {
         return SENDER_VOUCHES.equals(confirmationMethod);
+    }
+
+    public boolean isUseThumbprintForSubject() {
+        return useThumbprintForSubject;
+    }
+
+    public void setUseThumbprintForSubject(boolean useThumbprintForSubject) {
+        this.useThumbprintForSubject = useThumbprintForSubject;
     }
 
     public Object getKeyInfo() {

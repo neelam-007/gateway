@@ -254,6 +254,10 @@ public class KeyInfoElement implements ParsedElement {
             keyInfo = XmlUtil.createAndAppendElementNS(keyInfoParent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
         else
             keyInfo = XmlUtil.createAndInsertBeforeElementNS(cipherData, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
+        populateKeyInfo(keyInfo, wsseNs, wssePrefix, valueType, base64EncodingTypeUri, idBytes, soapMsg);
+    }
+
+    public static void populateKeyInfo(Element keyInfo, String wsseNs, String wssePrefix, String valueType, String base64EncodingTypeUri, byte[] idBytes, Document soapMsg) {
         Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
             wsseNs, wssePrefix);
         Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,

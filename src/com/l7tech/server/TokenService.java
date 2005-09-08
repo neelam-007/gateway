@@ -30,11 +30,15 @@ public interface TokenService {
      *
      * @param context must contain the request at entry and will be populated with a response document if everything
      * goes well.
+     * @param useThumbprintForSamlSignature true if the KeyInfo in the assertion's Signature (if any) should be a thumbprint instead of an entire cert
+     * @param useThumbprintForSamlSubject true if the KeyInfo in the assertion's Subject (if any) should be a thumbprint instead of an entire cert
      * @return AssertionStatus.NONE if all is good, other return values indicate an error in which case
      * context.getFaultDetail() is to contain an error to return to the requestor
      */
     AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context,
-                                                  CredentialsAuthenticator authenticator)
+                                                  CredentialsAuthenticator authenticator,
+                                                  boolean useThumbprintForSamlSignature,
+                                                  boolean useThumbprintForSamlSubject)
                                                   throws InvalidDocumentFormatException,
                                                          TokenServiceImpl.TokenServiceException,
                                                          ProcessorException,

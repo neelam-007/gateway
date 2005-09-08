@@ -174,6 +174,13 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
                     if (x509datas != null && x509datas.length > 0) {
                         X509DataType x509data = x509datas[0];
                         subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
+                    } else {
+                        try {
+                            KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), thumbprintResolver);
+                            subjectCertificate = kie.getCertificate();
+                        } catch (Exception e) {
+                            logger.log(Level.WARNING, "KeyInfo contained neither X509Data nor a valid SecurityTokenReference");
+                        }
                     }
                 }
             }
