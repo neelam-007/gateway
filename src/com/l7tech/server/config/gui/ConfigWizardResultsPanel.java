@@ -32,12 +32,13 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private JTextArea errorMessages;
     private JTextArea warningMessages;
     private JTextArea informationMesssages;
-    private JLabel mainLabel;
+    //private JLabel mainLabel;
     private JButton saveButton;
     private JButton button2;
     private JScrollPane errorsScroller;
     private JScrollPane warningsScroller;
     private JScrollPane infoScroller;
+    private JTextArea messageText;
 
     public ConfigWizardResultsPanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
@@ -61,6 +62,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         errorMessages.setBackground(mainPanel.getBackground());
         warningMessages.setBackground(mainPanel.getBackground());
         informationMesssages.setBackground(mainPanel.getBackground());
+        messageText.setBackground(mainPanel.getBackground());
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
@@ -160,9 +162,10 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
 
         boolean hadFailures = getParentWizard().isHadFailures();
         if (hadFailures) {
-                mainLabel.setText("There were errors during configuration, see below for details");
+            messageText.setText("There were errors during configuration, see below for details");
         } else {
-            mainLabel.setText("The configuration was successfully applied");
+            messageText.setText("The configuration was successfully applied\n" +
+                    "You must restart the SSG in order for the configuration to take effect.");
         }
     }
 
