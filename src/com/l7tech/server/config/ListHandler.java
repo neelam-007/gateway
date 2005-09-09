@@ -15,52 +15,57 @@ import java.io.PrintStream;
  * To change this template use File | Settings | File Templates.
  */
 public class ListHandler extends Handler {
-    private static ArrayList severeLogList = new ArrayList();
-    private static ArrayList warningLogList = new ArrayList();
-    private static ArrayList infoLogList = new ArrayList();
-
+//    private static ArrayList severeLogList = new ArrayList();
+//    private static ArrayList warningLogList = new ArrayList();
+//    private static ArrayList infoLogList = new ArrayList();
+    private static ArrayList logList = new ArrayList();
 
     public synchronized void publish(LogRecord logRecord) {
         if (logRecord != null) {
             Level level = logRecord.getLevel();
             if (level == Level.SEVERE) {
-                severeLogList.add(level + ": " + logRecord.getMessage());
+                logList.add(level + ": " + logRecord.getMessage());
                 Throwable t = logRecord.getThrown();
                 if (t != null)  {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     PrintStream ps = new PrintStream(baos);
                     t.printStackTrace(ps);
                     ps.close();
-                    severeLogList.add(baos.toString());
+                    logList.add(baos.toString());
                 }
             }
             else if (level == Level.WARNING) {
-                warningLogList.add(level + ": " + logRecord.getMessage());
+                logList.add(level + ": " + logRecord.getMessage());
             }
             else { //(level == Level.INFO) or other wise
-                infoLogList.add(level + ": " + logRecord.getMessage());
+                logList.add(level + ": " + logRecord.getMessage());
             }
         }
     }
 
     public void flush() {
-        severeLogList.clear();
-        warningLogList.clear();
-        infoLogList.clear();
+//        severeLogList.clear();
+//        warningLogList.clear();
+//        infoLogList.clear();
+        logList.clear();
     }
 
     public void close() throws SecurityException {
     }
 
-    public static ArrayList getSevereLogList() {
-        return severeLogList;
-    }
+//    public static ArrayList getSevereLogList() {
+//        return severeLogList;
+//    }
+//
+//    public static ArrayList getWarningLogList() {
+//        return warningLogList;
+//    }
+//
+//    public static ArrayList getInfoLogList() {
+//        return infoLogList;
+//    }
 
-    public static ArrayList getWarningLogList() {
-        return warningLogList;
-    }
-
-    public static ArrayList getInfoLogList() {
-        return infoLogList;
-    }
+        public static ArrayList getLogList() {
+            return logList;
+        }
 }

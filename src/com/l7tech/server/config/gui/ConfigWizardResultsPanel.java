@@ -25,20 +25,11 @@ import java.io.PrintStream;
  */
 public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private JPanel mainPanel;
-    private JTabbedPane tabs;
-    private JPanel informattionPanel;
-    private JPanel warningPanel;
-    private JPanel errorPanel;
-    private JTextArea errorMessages;
-    private JTextArea warningMessages;
-    private JTextArea informationMesssages;
-    //private JLabel mainLabel;
+
     private JButton saveButton;
-    private JButton button2;
-    private JScrollPane errorsScroller;
-    private JScrollPane warningsScroller;
-    private JScrollPane infoScroller;
     private JTextArea messageText;
+    private JTextArea logsView;
+    private JPanel logsPanel;
 
     public ConfigWizardResultsPanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
@@ -57,11 +48,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
             }
         });
 
-        tabs.removeAll();
-
-        errorMessages.setBackground(mainPanel.getBackground());
-        warningMessages.setBackground(mainPanel.getBackground());
-        informationMesssages.setBackground(mainPanel.getBackground());
+        logsView.setBackground(mainPanel.getBackground());
         messageText.setBackground(mainPanel.getBackground());
 
         setLayout(new BorderLayout());
@@ -81,14 +68,8 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
             try {
                 ps = new PrintStream(new FileOutputStream(selectedFile));
 
-                ps.println("--- ERROR MESSAGES ---");
-                ps.print(errorMessages.getText());
+                ps.print(logsView.getText());
 
-                ps.println("--- WARNING MESSAGES ---");
-                ps.print(warningMessages.getText());
-
-                ps.println("--- INFORMATIONAL MESSAGES ---");
-                ps.print(informationMesssages.getText());
                 ps.close();
                 ps = null;
             } catch (FileNotFoundException e) {
@@ -101,65 +82,23 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     }
 
     protected void updateModel(HashMap settings) {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
+
     protected void updateView(HashMap settings) {
-        ArrayList errors = ListHandler.getSevereLogList();
-        ArrayList warnings = ListHandler.getWarningLogList();
-        ArrayList infos = ListHandler.getInfoLogList();
-        tabs.removeAll();
+        ArrayList logs = ListHandler.getLogList();
         ConfigurationWizard wizard = getParentWizard();
         if (wizard != null) {
             wizard.setCancelEnabled(false);
             wizard.setEnableBackButton(false);
         }
-        if (errors.size() > 0) {
-            Iterator errorIter = errors.iterator();
-            StringBuffer errorBuffer = new StringBuffer();
-            while (errorIter.hasNext()) {
-                errorBuffer.append((String)errorIter.next()).append("\n");
+        if (logs.size() > 0) {
+            Iterator logIter = logs.iterator();
+            StringBuffer logBuffer = new StringBuffer();
+            while (logIter.hasNext()) {
+                logBuffer.append((String)logIter.next()).append("\n");
             }
-            tabs.add(errorPanel);
-            tabs.setTitleAt(tabs.getTabCount() - 1, "Errors");
-            errorMessages.setText(errorBuffer.toString());
-//            tabs.setEnabledAt(0, true);
-
-        } else {
-//            tabs.setEnabledAt(0, false);
+            logsView.setText(logBuffer.toString());
         }
-
-
-        if (warnings.size() > 0) {
-            Iterator warningIter = warnings.iterator();
-            StringBuffer warningBuffer = new StringBuffer();
-            while (warningIter.hasNext()) {
-                warningBuffer.append((String)warningIter.next()).append("\n");
-            }
-            tabs.add(warningPanel);
-            tabs.setTitleAt(tabs.getTabCount() - 1, "Warnings");
-            warningMessages.setText(warningBuffer.toString());
-//            tabs.setEnabledAt(1, true);
-        } else {
-//            tabs.setEnabledAt(1, false);
-        }
-
-        if (infos.size() > 0) {
-            Iterator infoIter = infos.iterator();
-            StringBuffer infoBuffer = new StringBuffer();
-            while (infoIter.hasNext()) {
-                infoBuffer.append((String)infoIter.next()).append("\n");
-            }
-            tabs.add(informattionPanel);
-            tabs.setTitleAt(tabs.getTabCount() - 1, "Information");
-            informationMesssages.setText(infoBuffer.toString());
-//            tabs.setEnabledAt(2, true);
-        } else {
-//            tabs.setEnabledAt(2, false);
-        }
-
-        if (tabs.getTabCount() > 0)
-            tabs.setSelectedIndex(0);
-
         boolean hadFailures = getParentWizard().isHadFailures();
         if (hadFailures) {
             messageText.setText("There were errors during configuration, see below for details");
