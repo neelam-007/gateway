@@ -280,8 +280,9 @@ public class SamlAssertionGenerator {
         assertionDoc.getDocumentElement().appendChild(signatureElement);
 
         KeyInfo keyInfo = new KeyInfo();
-        final Element keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc);
+        Element keyInfoElement;
         if (useThumbprintForSignature) {
+            keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc);
             // Replace cert with STR?
             try {
                 byte[] thumb = MessageDigest.getInstance("SHA1").digest(signingCertChain[0].getEncoded());
@@ -300,6 +301,7 @@ public class SamlAssertionGenerator {
             x509.setCertificate(signingCertChain[0]);
             x509.setParameters(signingCertChain[0], false, false, true);
             keyInfo.setX509Data(new KeyInfo.X509Data[]{x509});
+            keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc);
         }
 
         keyInfoElement.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);

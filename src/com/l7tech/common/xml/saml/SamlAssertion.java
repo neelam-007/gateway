@@ -175,11 +175,15 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
                         X509DataType x509data = x509datas[0];
                         subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
                     } else {
-                        try {
-                            KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), thumbprintResolver);
-                            subjectCertificate = kie.getCertificate();
-                        } catch (Exception e) {
-                            logger.log(Level.WARNING, "KeyInfo contained neither X509Data nor a valid SecurityTokenReference");
+                        Element keyInfoEl = (Element)keyInfo.getDomNode();
+                        List strs = XmlUtil.findChildElementsByName(keyInfoEl, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
+                        if (keyInfoEl != null && !strs.isEmpty()) {
+                            try {
+                                KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), thumbprintResolver);
+                                subjectCertificate = kie.getCertificate();
+                            } catch (Exception e) {
+                                logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
+                            }
                         }
                     }
                 }
