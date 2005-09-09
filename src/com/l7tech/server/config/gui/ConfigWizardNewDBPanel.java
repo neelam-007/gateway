@@ -62,6 +62,13 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
 
     private static final String CONNECTION_UNSUCCESSFUL_MSG = "Connection to the database was unsuccessful - see warning/errors for details";
     private static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
+    private static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
+    private static final String GENERIC_DBCONNECT_ERROR_MSG = "There was an error while attempting to connect to the database. Please try again";
+    private static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
+    private static final String CONFIG_FILE_NOT_FOUND_MSG = "Could not find the database configuration file. Cannot determine existing configuration.";
+    private static final String CONFIG_FILE_IO_ERROR_MSG = "Error while reading the database configuration file. Cannot determine existing configuration.";
+    private static final String MISSING_FIELDS_MSG = "Some required fields are missing. \n\n" +
+                        "Please fill in all the required fields (indicated in red above)";
 
     private final static String PROP_DB_USERNAME = "hibernate.connection.username";
     private final static String PROP_DB_URL = "hibernate.connection.url";
@@ -79,6 +86,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
     private JLabel dbNameLabel;
     private JLabel dbUsernameLabel;
     private JLabel dbPasswordLabel;
+
 
     private void enableFields() {
         boolean isEnabled = false;
@@ -108,7 +116,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
         try {
             dbActions = new DBActions();
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard");
+            throw new RuntimeException(MYSQL_CLASS_NOT_FOUND_MSG);
         }
 
         ButtonGroup group = new ButtonGroup();
@@ -200,10 +208,10 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
                     }
                 }
             } catch (FileNotFoundException e) {
-                logger.warning("Could not find the database configuration file. Cannot determine existing configuration.");
+                logger.warning(CONFIG_FILE_NOT_FOUND_MSG);
                 logger.warning(e.getMessage());
             } catch (IOException e) {
-                logger.warning("Error while reading the database configuration file. Cannot determine existing configuration.");
+                logger.warning(CONFIG_FILE_IO_ERROR_MSG);
                 logger.warning(e.getMessage());
             } finally{
                 if (fis != null) {
@@ -229,14 +237,6 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
             dbPassword.setText(existingDbPassword);
         }
 
-//        if (existingDbHostname != null) {
-//            if (dbBean != null && dbBean.isRemote()) {
-//                remoteDatabase.setSelected(true);
-//            }
-//        }
-//        NewDatabaseConfigBean dbConfigBean = (NewDatabaseConfigBean)configBean;
-//        boolean isNew = dbConfigBean.isCreateNewDb();
-//        createNewDb.setSelected(isNew);
     }
 
     public boolean onNextButton() {
@@ -246,8 +246,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
         isOk = checkRequiredFields();
 
         if (isOk == false) { // if we've passed the required fields checks
-            showErrorMessage("Some required fields are missing. \n\n" +
-                    "Please fill in all the required fields (indicated in red above)");
+            showErrorMessage(MISSING_FIELDS_MSG);
         } else {
             if (createNewDb.isSelected()) {
                 isOk = doCreateDb(privUsername.getText(),new String(privPassword.getPassword()),dbHostname.getText(), dbName.getText(), dbUsername.getText(), dbPassword.getText(), false);
@@ -334,7 +333,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
                     case DBActions.DB_UNKNOWN_FAILURE:
                     default:
                         logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                        errorMsg = "There was an error while attempting to connect to the database. Please try again";
+                        errorMsg = GENERIC_DBCONNECT_ERROR_MSG;
                         showErrorMessage(errorMsg);
                         logger.warning("There was an unknown error while attempting to connect to the database.");
                         isOk = false;
@@ -392,7 +391,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
         boolean isOk = false;
 
         int status = DBActions.DB_SUCCESS;
-        logger.info("Attempting to create a new database (" + hostname + "/" + name + ") using priveleged user \"" + pUsername + "\"");
+        logger.info("Attempting to create a new database (" + hostname + "/" + name + ") using privileged user \"" + pUsername + "\"");
         String dbCreateScriptFile = osFunctions.getPathToDBCreateFile();
         boolean isWindows = osFunctions.isWindows();
         try {
@@ -427,7 +426,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
                         break;
                     case DBActions.DB_UNKNOWN_FAILURE:
                     default:
-                        errorMsg = "There was an error while attempting to create the database. Please try again";
+                        errorMsg = GENERIC_DBCREATE_ERROR_MSG;
                         logger.warning(errorMsg);
                         showErrorMessage(errorMsg);
                         isOk = false;
