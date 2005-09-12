@@ -156,7 +156,7 @@ public class TokenServiceTest extends TestCase {
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setAuditContext(new AuditContextStub());
-        AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator, true, true);
+        AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator, false, false);
         assertEquals(status, AssertionStatus.NONE);
 
         Document responseMsg = response.getXmlKnob().getDocumentWritable();
