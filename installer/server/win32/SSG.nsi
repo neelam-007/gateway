@@ -83,6 +83,20 @@ Section "SecureSpan Gateway" SecCopyUI
 
   cleaninstall:
 
+  ; make sure configurable properties files are not overwritten
+  IfFileExists "$INSTDIR\etc\conf\hibernate.properties" 0 +2
+    CopyFiles "$INSTDIR\etc\conf\hibernate.properties" "$INSTDIR\etc\conf\hibernate.properties.old"
+  IfFileExists "$INSTDIR\etc\conf\keystore.properties" 0 +2
+    CopyFiles "$INSTDIR\etc\conf\keystore.properties" "$INSTDIR\etc\conf\keystore.properties.old"
+  IfFileExists "$INSTDIR\etc\conf\ssglog.properties" 0 +2
+    CopyFiles "$INSTDIR\etc\conf\ssglog.properties" "$INSTDIR\etc\conf\ssglog.properties.old"
+  IfFileExists "$INSTDIR\etc\conf\system.properties" 0 +2
+    CopyFiles "$INSTDIR\etc\conf\system.properties" "$INSTDIR\etc\conf\system.properties.old"
+  IfFileExists "$INSTDIR\tomcat\conf\server.xml" 0 +2
+    CopyFiles "$INSTDIR\tomcat\conf\server.xml" "$INSTDIR\tomcat\conf\server.xml.old"
+  IfFileExists "$INSTDIR\jdk\jre\lib\security\java.security" 0 +2
+    CopyFiles "$INSTDIR\jdk\jre\lib\security\java.security" "$INSTDIR\jdk\jre\lib\security\java.security.old"
+
   CreateDirectory "$INSTDIR\logs"
   CreateDirectory "$INSTDIR\bin"
   CreateDirectory "$INSTDIR\etc\conf"
@@ -142,6 +156,32 @@ Section "SecureSpan Gateway" SecCopyUI
   ; install the service
   ExecWait '"$INSTDIR\bin\service.cmd" install' $0
   DetailPrint "service.cmd install returned with code $0"
+
+  ; substitute overwritten config files
+  IfFileExists "$INSTDIR\etc\conf\hibernate.properties.old" 0 +4
+    CopyFiles "$INSTDIR\etc\conf\hibernate.properties" "$INSTDIR\etc\conf\hibernate.properties.new"
+    CopyFiles "$INSTDIR\etc\conf\hibernate.properties.old" "$INSTDIR\etc\conf\hibernate.properties"
+    Delete "$INSTDIR\etc\conf\hibernate.properties.old"
+  IfFileExists "$INSTDIR\etc\conf\keystore.properties.old" 0 +4
+    CopyFiles "$INSTDIR\etc\conf\keystore.properties" "$INSTDIR\etc\conf\keystore.properties.new"
+    CopyFiles "$INSTDIR\etc\conf\keystore.properties.old" "$INSTDIR\etc\conf\keystore.properties"
+    Delete "$INSTDIR\etc\conf\keystore.properties.old"
+  IfFileExists "$INSTDIR\etc\conf\ssglog.properties.old" 0 +4
+    CopyFiles "$INSTDIR\etc\conf\ssglog.properties" "$INSTDIR\etc\conf\ssglog.properties.new"
+    CopyFiles "$INSTDIR\etc\conf\ssglog.properties.old" "$INSTDIR\etc\conf\ssglog.properties"
+    Delete "$INSTDIR\etc\conf\ssglog.properties.old"
+  IfFileExists "$INSTDIR\etc\conf\system.properties.old" 0 +4
+    CopyFiles "$INSTDIR\etc\conf\system.properties" "$INSTDIR\etc\conf\system.properties.new"
+    CopyFiles "$INSTDIR\etc\conf\system.properties.old" "$INSTDIR\etc\conf\system.properties"
+    Delete "$INSTDIR\etc\conf\system.properties.old"
+  IfFileExists "$INSTDIR\tomcat\conf\server.xml.old" 0 +4
+    CopyFiles "$INSTDIR\tomcat\conf\server.xml" "$INSTDIR\tomcat\conf\server.xml.new"
+    CopyFiles "$INSTDIR\tomcat\conf\server.xml.old" "$INSTDIR\tomcat\conf\server.xml"
+    Delete "$INSTDIR\tomcat\conf\server.xml.old"
+  IfFileExists "$INSTDIR\jdk\jre\lib\security\java.security.old" 0 +4
+    CopyFiles "$INSTDIR\jdk\jre\lib\security\java.security" "$INSTDIR\jdk\jre\lib\security\java.security.new"
+    CopyFiles "$INSTDIR\jdk\jre\lib\security\java.security.old" "$INSTDIR\jdk\jre\lib\security\java.security"
+    Delete "$INSTDIR\jdk\jre\lib\security\java.security.old"
 
   ; run the gateway configurator
   SetOutPath "$INSTDIR/configwizard"
