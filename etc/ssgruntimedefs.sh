@@ -80,15 +80,16 @@ else
         default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`hostname -f`"
 fi
 
-if $cygwin; then
-    mac=''
-else
-    mac=`/sbin/ifconfig eth0 |awk '/HWaddr/ {print $5}'`
-fi
-
-if [ ! -z $mac ]; then
-        default_java_opts="$default_java_opts -Dcom.l7tech.cluster.macAddress=$mac"
-fi
+# May have to restore something like this for OS other than linux
+# if $cygwin; then
+#    mac=''
+#else
+#    mac=`/sbin/ifconfig eth0 |awk '/HWaddr/ {print $5}'`
+#fi
+#
+#if [ ! -z $mac ]; then
+#        default_java_opts="$default_java_opts -Dcom.l7tech.cluster.macAddress=$mac"
+#fi
 
 # aliases to start and stop ssg
 alias startssg='/etc/rc.d/init.d/ssg start'
