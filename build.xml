@@ -1452,7 +1452,6 @@
         <copy todir="${install.src.bin}">
             <fileset dir="${src.root}/etc">
                 <include name="setkeys.sh"/>
-                <include name="resetAdmin.sh"/>
                 <include name="md5passwd.pl"/>
                 <include name="rpass.pl"/>
                 <include name="install.pl"/>
