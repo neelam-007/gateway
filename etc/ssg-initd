@@ -57,7 +57,7 @@ stop() {
 	fi
 	echo -n $"Stopping $prog: "
 	if [ "$USER" = "root" ]; then
-        	su - $ssguser -c "$ssg stop" > /dev/null 2>&1
+        	su - $ssguser -c "$ssg stop -force" > /dev/null 2>&1
         	RETVAL=$?
 	elif [ "$USER" = "$ssguser" ]; then
 		$ssg stop > /dev/null 2>&1
