@@ -246,6 +246,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private void ok() {
         // check that whatever is captured is an xml document, a schema and has a tns
         String contents = uiAccessibility.getEditor().getText();
+
         try {
             String tns = XmlUtil.getSchemaTNS(contents);
             if (tns == null) {
@@ -271,6 +272,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             displayError(resources.getString("error.notschema"), null);
             return;
         }*/
+
         Document doc = stringToDoc(contents);
         // before saving, make sure all imports are resolveable
         if (checkForUnresolvedImports(doc)) {

@@ -18,9 +18,6 @@ import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.XMLConstants;
-import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -724,13 +721,18 @@ public class XmlUtil {
         if (schemaSrc == null) {
             throw new BadSchemaException("no xml");
         }
+        /* can't do this as it ends up chocking on unresolved imports which is beyond the scope here
         // 1. pass through the javax.xml.validation.SchemaFactory
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        if (resolver != null) {
+            factory.setResourceResolver(resolver);
+        }
         try {
             factory.newSchema(new StreamSource(new ByteArrayInputStream(schemaSrc.getBytes())));
         } catch (Exception e) {
             throw new BadSchemaException(e);
         }
+        */
         // 2. pass through SchemaDocument
         SchemaDocument sdoc = null;
         try {
