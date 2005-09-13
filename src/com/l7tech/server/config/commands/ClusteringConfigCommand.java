@@ -45,7 +45,6 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     }
 
     public boolean execute() {
-//        printPlans();
         boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
 
@@ -98,15 +97,11 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             throw new IllegalArgumentException("cluster hostname needs to be provided");
         }
 
+        PrintStream ps = null;
         try {
-            FileOutputStream fos = new FileOutputStream(clusterHostNameFile);
-            fos.write((clusterHostname + "\n").getBytes("UTF-8"));
-            fos.close();
+            ps = new PrintStream(new FileOutputStream(clusterHostNameFile));
+            ps.print(clusterHostname);
         } catch (FileNotFoundException e) {
-            logger.severe("error while updating the cluster host name file");
-            logger.severe(e.getMessage());
-            throw e;
-        } catch (UnsupportedEncodingException e) {
             logger.severe("error while updating the cluster host name file");
             logger.severe(e.getMessage());
             throw e;
@@ -114,6 +109,10 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             logger.severe("error while updating the cluster host name file");
             logger.severe(e.getMessage());
             throw e;
+        } finally {
+            if (ps != null) {
+               ps.close();
+            }
         }
     }
 
