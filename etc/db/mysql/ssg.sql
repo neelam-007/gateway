@@ -150,8 +150,10 @@ CREATE TABLE client_cert (
   cert mediumtext DEFAULT NULL,
   reset_counter int NOT NULL,
   thumbprint_sha1 varchar(64),
+  ski varchar(64),
   PRIMARY KEY  (objectid),
-  INDEX i_thumb (thumbprint_sha1)
+  INDEX i_thumb (thumbprint_sha1),
+  INDEX i_ski (ski)
 ) TYPE=InnoDB;
 
 --
@@ -272,10 +274,12 @@ CREATE TABLE trusted_cert (
   trusted_for_saml tinyint(1) default '0',
   trusted_as_saml_attesting_entity tinyint(1) default '0',
   thumbprint_sha1 varchar(64),
+  ski varchar(64),
   primary key(objectid),
   unique (subject_dn),
   unique (name),
-  INDEX i_thumb (thumbprint_sha1)
+  INDEX i_thumb (thumbprint_sha1),
+  INDEX i_ski (ski)
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS fed_user;
