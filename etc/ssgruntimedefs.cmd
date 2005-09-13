@@ -56,13 +56,16 @@ if %NUMBER_OF_PROCESSORS%==1 (
     set JAVA_OPTS=%JAVA_OPTS% -XX:+DisableExplicitGC -XX:+UseParallelGC
 )
 
-:: Set the fully qualified host name of the RMI server.
-for /F "tokens=1" %%i in ('hostname') do set short_hostname=%%i
-for /F "tokens=1,2" %%i in ('nslookup %short_hostname%') do if "%%i"=="Name:" set rmi_server_full_hostname=%%j
-if exist "%SSG_HOME%\etc\conf\cluster_hostname" (
-    for /F "usebackq tokens=1" %%i in ("%SSG_HOME%\etc\conf\cluster_hostname") do set rmi_server_full_hostname=%%i
-)
-set JAVA_OPTS=%JAVA_OPTS% -Djava.rmi.server.hostname=%rmi_server_full_hostname%
+REM 2005-09-13 rmak
+REM Setting of RMI server host name has been moved to etc\conf\system.properties.
+REM
+REM :: Set the fully qualified host name of the RMI server.
+REM for /F "tokens=1" %%i in ('hostname') do set short_hostname=%%i
+REM for /F "tokens=1,2" %%i in ('nslookup %short_hostname%') do if "%%i"=="Name:" set rmi_server_full_hostname=%%j
+REM if exist "%SSG_HOME%\etc\conf\cluster_hostname" (
+REM     for /F "usebackq tokens=1" %%i in ("%SSG_HOME%\etc\conf\cluster_hostname") do set rmi_server_full_hostname=%%i
+REM )
+REM set JAVA_OPTS=%JAVA_OPTS% -Djava.rmi.server.hostname=%rmi_server_full_hostname%
 
 :: Append to the system search path.
 set PATH=%PATH%;%JAVA_HOME%\bin;%SSG_HOME%\bin

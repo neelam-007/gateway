@@ -60,7 +60,6 @@ set JVMOPTIONS=^
 -Djava.awt.headless=true;^
 -Djava.endorsed.dirs=%TOMCAT_HOME%\common\endorsed;^
 -Djava.io.tmpdir=%TOMCAT_HOME%\temp;^
--Djava.rmi.server.hostname=%rmi_server_full_hostname%;^
 -Dnetworkaddress.cache.ttl=30;^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger;^
 -Xrs;^
