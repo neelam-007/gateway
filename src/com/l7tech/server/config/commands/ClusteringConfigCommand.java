@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 import java.io.*;
 import java.text.DateFormat;
 import java.util.logging.Logger;
+import java.util.Properties;
 
 /**
  * Created by IntelliJ IDEA.
@@ -23,6 +24,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     private String clusterHostname;
     private static final String BACKUP_FILE_NAME = "cluster_config_backups";
     DateFormat formatter;
+    private static final String PROP_RMI_HOSTNAME = "java.rmi.server.hostname";
 
     public ClusteringConfigCommand(ConfigurationBean bean) {
         super(bean, bean.getOSFunctions());
@@ -48,17 +50,18 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
 
-        String clusterHostname = clusterBean.getClusterHostname();
-        boolean configureCluster = (!(clusterHostname == null || clusterHostname.equalsIgnoreCase(clusterBean.getLocalHostName())));
-
+        boolean configureCluster = clusterBean.getClusterType() != ClusteringConfigBean.CLUSTER_NONE;
 
         File clusterHostNameFile = configureCluster? new File(osFunctions.getClusterHostFile()):null;
-        File hostsFile = new File(osFunctions.getHostsFile());
+        //File hostsFile = new File(osFunctions.getHostsFile());
+        File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
 
         File[] files = new File[]
         {   clusterHostNameFile,
-            hostsFile
+            systemPropertiesFile,
+            //hostsFile
         };
+
 
 
         try {
@@ -67,19 +70,63 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             e.printStackTrace();
         }
 
+
+        String hostname = clusterBean.getClusterHostname();
         if (configureCluster) {
             try {
-                if (StringUtils.isNotEmpty(clusterHostname)) {
-                    writeClusterHostname(clusterHostNameFile, clusterHostname);
-                }
+                writeClusterHostname(clusterHostNameFile, hostname);
             } catch (IOException e) {
                 success = false;
             }
         }
+        updateSystemPropertiesFile(hostname, systemPropertiesFile);
 
 //        updateHostsFile(hostsFile, clusterHostname);
 
         return success;
+    }
+
+    private void updateSystemPropertiesFile(String hostname, File systemPropertiesFile) {
+
+        InputStream fis = null;
+        OutputStream fos = null;
+
+        try {
+            if (!systemPropertiesFile.exists()) {
+                systemPropertiesFile.createNewFile();
+            }
+
+            fis = new FileInputStream(systemPropertiesFile);
+            Properties props = new Properties();
+            props.load(fis);
+            props.setProperty(PROP_RMI_HOSTNAME, hostname);
+
+            fis.close();
+            fis = null;
+
+            fos =   new FileOutputStream(systemPropertiesFile);
+            props.store(fos, "Updated by the SSG Configuration Tool");
+            logger.info("Setting " + PROP_RMI_HOSTNAME + "=" + hostname + " in system.properties file");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
+
     }
 
 //    private void updateHostsFile(File hostsFile, String clusterHostname) {
@@ -100,7 +147,9 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         PrintStream ps = null;
         try {
             ps = new PrintStream(new FileOutputStream(clusterHostNameFile));
+            logger.info("Writing " + clusterHostname + " to cluster_hostname file");
             ps.print(clusterHostname);
+
         } catch (FileNotFoundException e) {
             logger.severe("error while updating the cluster host name file");
             logger.severe(e.getMessage());
