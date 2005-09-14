@@ -21,16 +21,22 @@ public class SampleMessageManagerImp extends HibernateEntityManager implements S
         hql.append(" WHERE ").append(getTableName()).append(".serviceOid ");
         try {
             List results;
-            Object[] params;
+            List params = new ArrayList();
             if (serviceOid == -1) {
                 hql.append("IS NULL");
-                params = new Object[] { operationName };
             } else {
                 hql.append("= ?");
-                params = new Object[] { Long.toString(serviceOid), operationName };
+                params.add(Long.toString(serviceOid));
             }
-            hql.append(" AND ").append(getTableName()).append(".operationName = ?");
-            results = getHibernateTemplate().find(hql.toString(), params);
+
+            hql.append(" AND ").append(getTableName()).append(".operationName ");
+            if (operationName == null) {
+                hql.append("IS NULL");
+            } else {
+                hql.append(" = ?");
+                params.add(operationName);
+            }
+            results = getHibernateTemplate().find(hql.toString(), params.toArray());
 
             ArrayList out = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {

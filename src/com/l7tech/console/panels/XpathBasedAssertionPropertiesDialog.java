@@ -235,7 +235,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 if (smd.isOk()) {
                     try {
                         long oid = Registry.getDefault().getServiceManager().saveSampleMessage(sm);
-                        populateSampleMessages(currentOperation.getName(), oid);
+                        populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), oid);
                     } catch (SaveException ex) {
                         throw new RuntimeException("Couldn't save SampleMessage", ex);
                     }
