@@ -40,6 +40,7 @@ public class ConfigurationWizard extends Wizard {
     public static final String LOG_PROPERTIES_NAME = "configuration-logging.properties";
 
     boolean hadFailures = false;
+    private int clusteringType;
 
     static {
         try {
@@ -203,4 +204,11 @@ public class ConfigurationWizard extends Wizard {
         JdkLoggerConfigurator.configure("com.l7tech", "configlogging.properties");
     }
 
+    public int getClusteringType() {
+        return clusteringType;
+    }
+
+    public void setClusteringType(int clusteringConfigured) {
+        this.clusteringType = clusteringConfigured;
+    }
 }

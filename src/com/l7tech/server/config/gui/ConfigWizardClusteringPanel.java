@@ -138,6 +138,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
     protected void updateModel(HashMap settingsMap) {
         String hostnameForWizard; //this is the hostname that will be used to
+        boolean isClusteringConfigured = false;
         if (useNewHostnameOption.isSelected()) {
             clusteringConfigBean.setNewHostName(true);
             clusteringConfigBean.setClusterHostname(newHostname.getText());
@@ -151,19 +152,20 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
         if (noClusterOption.isSelected()) {
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
-            //clusteringConfigBean.setClusterHostname("");
+            isClusteringConfigured = false;
+
         }
 
         else if (newClusterOption.isSelected()) {
-            //clusteringConfigBean.setClusterHostname(hostnameForWizard);
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NEW);
+            isClusteringConfigured = true;
         }
         else if (joinClusterOption.isSelected()) {
-            //clusteringConfigBean.setClusterHostname(hostnameForWizard);
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_JOIN);
             clusteringConfigBean.setCloneHostname(cloneHostname.getText());
             clusteringConfigBean.setCloneUsername(cloneUsername.getText());
             clusteringConfigBean.setClonePassword(clonePassword.getPassword());
+            isClusteringConfigured = true;
         }
         else { //somehow none of these is selected so it's best not to do anything with the cluster
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
@@ -171,6 +173,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
         //set the hostname in the wizard so it can be used by later panels
         getParentWizard().setHostname(hostnameForWizard);
+        getParentWizard().setClusteringType(clusteringConfigBean.getClusterType());
     }
 
     private void enableControls() {
@@ -195,29 +198,29 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
             }
         }
 
-        if (validInput) {
-            ArrayList msgs = new ArrayList();
-            if (newClusterOption.isSelected() || joinClusterOption.isSelected()) {
-                showMsg = true;
-                msgs.add("\n- UPDATE HOSTS FILE: add or update a line which contains the IP address for this ssgm, followed by the cluster host name and then true hostname");
-            }
-
-            if (joinClusterOption.isSelected()) {
-                msgs.add("\n- COPY KEYS: copy the certificates and keystores from the primary node in the cluster to \"" + osFunctions.getKeystoreDir() + "\"");
-            }
-
-            if (showMsg == true) {
-                String title = "Necessary Manual Action Required";
-
-                StringBuffer buffer = new StringBuffer();
-                buffer.append("Please note, you will need to perform the following manual tasks once this wizard is finished in order to properly configure the cluster");
-                Iterator iter = msgs.iterator();
-                while (iter.hasNext()) {
-                    buffer.append((String)iter.next());
-                }
-                JOptionPane.showMessageDialog(this, buffer.toString(), title, JOptionPane.INFORMATION_MESSAGE);
-            }
-        }
+//        if (validInput) {
+//            ArrayList msgs = new ArrayList();
+//            if (newClusterOption.isSelected() || joinClusterOption.isSelected()) {
+//                showMsg = true;
+//                msgs.add("\n- UPDATE HOSTS FILE: add or update a line which contains the IP address for this ssgm, followed by the cluster host name and then true hostname");
+//            }
+//
+//            if (joinClusterOption.isSelected()) {
+//                msgs.add("\n- COPY KEYS: copy the certificates and keystores from the primary node in the cluster to \"" + osFunctions.getKeystoreDir() + "\"");
+//            }
+//
+//            if (showMsg == true) {
+//                String title = "Necessary Manual Action Required";
+//
+//                StringBuffer buffer = new StringBuffer();
+//                buffer.append("Please note, you will need to perform the following manual tasks once this wizard is finished in order to properly configure the cluster");
+//                Iterator iter = msgs.iterator();
+//                while (iter.hasNext()) {
+//                    buffer.append((String)iter.next());
+//                }
+//                JOptionPane.showMessageDialog(this, buffer.toString(), title, JOptionPane.INFORMATION_MESSAGE);
+//            }
+//        }
         return validInput;
     }
 }
