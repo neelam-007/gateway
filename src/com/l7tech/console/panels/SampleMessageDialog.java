@@ -1,14 +1,15 @@
 package com.l7tech.console.panels;
 
 import com.japisoft.xmlpad.XMLContainer;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.service.SampleMessage;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Used to edit {@link com.l7tech.service.SampleMessage}s.
@@ -66,9 +67,19 @@ public class SampleMessageDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 message.setName(nameField.getText());
                 if (allowOperationChange) message.setOperationName(operationNameField.getText());
-                message.setXml(xmlContainer.getAccessibility().getText());
-                ok = true;
-                dispose();
+                String text = xmlContainer.getAccessibility().getText();
+                try {
+                    XmlUtil.stringToDocument(text);
+                    message.setXml(text);
+                    ok = true;
+                    dispose();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(
+                            SampleMessageDialog.this,
+                            "The XML is not valid: " + ex.toString(),
+                            "Invalid XML",
+                            JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
 
