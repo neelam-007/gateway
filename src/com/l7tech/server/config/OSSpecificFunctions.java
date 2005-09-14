@@ -32,9 +32,9 @@ public abstract class OSSpecificFunctions {
 
     protected String ssgLogProperties;
     protected String lunaCmuPath;
-    private String pathToJavaSecurityFile;
-    private String ssgSystemPropertiesFile;
-    private String pathToJavaLibPath;
+    protected String pathToJavaSecurityFile;
+    protected String ssgSystemPropertiesFile;
+    protected String pathToJavaLibPath;
 
     private String pathToDBCreateFile;
 
@@ -70,7 +70,7 @@ public abstract class OSSpecificFunctions {
         tomcatServerConfig = "tomcat/conf/server.xml";
         keystoreDir = "etc/keys/";
         pathToJreLibExt = "jre/lib/ext/";
-        pathToJavaLibPath = "jre/lib/i386/";
+//        pathToJavaLibPath = "jre/lib/i386/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
         ssgSystemPropertiesFile = "etc/conf/system.properties";
         pathToDBCreateFile = "etc/sql/ssg.sql";
@@ -199,6 +199,7 @@ public abstract class OSSpecificFunctions {
 
     public String getPathToJavaLibPath() {
         return getPathToJdk() + pathToJavaLibPath;
+        //return getSsgInstallRoot() + pathToJavaLibPath;
     }
 
     public String getPathToDBCreateFile() {
