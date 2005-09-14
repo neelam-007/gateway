@@ -210,7 +210,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
         messageViewerToolBar.getxpathField().setText(initialvalue);
 
-        populateSampleMessages(null);
+        populateSampleMessages(null, 0);
         enableSampleButtons();
 
         addSampleButton.addActionListener(new ActionListener() {
@@ -234,10 +234,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 SampleMessageDialog smd = showSampleMessageDialog(sm);
                 if (smd.isOk()) {
                     try {
-                        Registry.getDefault().getServiceManager().saveSampleMessage(sm);
-                        SampleMessageComboEntry entry = new SampleMessageComboEntry(sm);
-                        sampleMessagesComboModel.addElement(entry);
-                        sampleMessagesComboModel.setSelectedItem(entry);
+                        long oid = Registry.getDefault().getServiceManager().saveSampleMessage(sm);
+                        populateSampleMessages(currentOperation.getName(), oid);
                     } catch (SaveException ex) {
                         throw new RuntimeException("Couldn't save SampleMessage", ex);
                     }
@@ -309,15 +307,19 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         return smd;
     }
 
-    private void populateSampleMessages(String operationName) {
+    private void populateSampleMessages(String operationName, long whichToSelect) {
         EntityHeader[] sampleMessages;
         ArrayList messageEntries = new ArrayList();
         messageEntries.add(USE_AUTOGEN);
+        SampleMessageComboEntry whichEntryToSelect = null;
         try {
             ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
             sampleMessages = serviceManager.findSampleMessageHeaders(serviceNode.getPublishedService().getOid(), operationName);
             for (int i = 0; i < sampleMessages.length; i++) {
-                messageEntries.add(new SampleMessageComboEntry(serviceManager.findSampleMessageById(sampleMessages[i].getOid())));
+                long thisOid = sampleMessages[i].getOid();
+                SampleMessageComboEntry entry = new SampleMessageComboEntry(serviceManager.findSampleMessageById(thisOid));
+                if (thisOid == whichToSelect) whichEntryToSelect = entry;
+                messageEntries.add(entry);
             }
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get sample messages", e);
@@ -325,6 +327,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         sampleMessagesComboModel = new DefaultComboBoxModel(messageEntries.toArray(new SampleMessageComboEntry[0]));
         sampleMessagesCombo.setModel(sampleMessagesComboModel);
+
+        if (whichEntryToSelect != null)
+            sampleMessagesCombo.setSelectedItem(whichEntryToSelect);
+
         sampleMessagesCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 enableSampleButtons();
@@ -752,7 +758,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
                 BindingOperationTreeNode boperation = (BindingOperationTreeNode)lpc;
                 currentOperation = boperation.getOperation();
-                populateSampleMessages(currentOperation.getName());
+                populateSampleMessages(currentOperation.getName(), 0);
                 Message sreq = forOperation(boperation.getOperation());
                 messageViewerToolBar.setToolbarEnabled(true);
                 if (sreq != null) {
