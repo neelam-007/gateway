@@ -14,16 +14,19 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -86,6 +89,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     public boolean execute() {
         boolean success = true;
+       // System.out.println("java.library.path = " + System.getProperty("java.library.path"));
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
 
@@ -105,8 +109,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void prepareJvm(String ksType) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-
+    private void prepareJvm(String ksType) throws IllegalAccessException, InstantiationException {
         Provider[] currentProviders = Security.getProviders();
         for (int i = 0; i < currentProviders.length; i++) {
             Provider provider = currentProviders[i];
@@ -129,23 +132,55 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             }
 
         } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
-            Class lunaJCAClass = Class.forName("com.chrysalisits.crypto.LunaJCAProvider");
-            Object lunaJCA = lunaJCAClass.newInstance();
-            Security.addProvider((Provider)lunaJCA);
+            File classDir = new File(osFunctions.getPathToJreLibExt());
+            File[] lunaJars = classDir.listFiles(new FilenameFilter() {
+                public boolean accept(File file, String s) {
+                    return  s.toUpperCase().startsWith("LUNA") &&
+                            s.toUpperCase().endsWith(".JAR");
+                }
+            });
 
-            Class lunaJCEClass = Class.forName("com.chrysalisits.cryptox.LunaJCEProvider");
-            Object lunaJCE = lunaJCEClass.newInstance();
-            Security.addProvider((Provider) lunaJCE);
+            URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
+            Class sysclass = URLClassLoader.class;
+            //this is a necessary hack to be able to hotplug some jars into the classloaders classpath.
+            // On linux, this happens already, but  not on windows
 
+            try {
+                Class[] parameters = new Class[]{URL.class};
+                Method method = sysclass.getDeclaredMethod("addURL", parameters);
+                method.setAccessible(true);
+                for (int i = 0; i < lunaJars.length; i++) {
+                    File lunaJar = lunaJars[i];
+                    URL url = lunaJar.toURL();
+                    method.invoke(sysloader, new Object[]{url});
+                }
+                Class lunaJCAClass = null;
+                String lunaJCAClassName = "com.chrysalisits.crypto.LunaJCAProvider";
+                Class lunaJCEClass = null;
+                String lunaJCEClassName = "com.chrysalisits.cryptox.LunaJCEProvider";
+
+                try {
+                    lunaJCAClass = sysloader.loadClass(lunaJCAClassName);
+                    Object lunaJCA = lunaJCAClass.newInstance();
+                    Security.addProvider((Provider) lunaJCA);
+
+                    lunaJCEClass = sysloader.loadClass(lunaJCEClassName);
+                    Object lunaJCE = lunaJCEClass.newInstance();
+                    Security.addProvider((Provider) lunaJCE);
+
+                } catch (ClassNotFoundException cnfe) {
+                    cnfe.printStackTrace();
+                }
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
             Security.addProvider(new sun.security.provider.Sun());
             Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
         }
-
-//        Iterator provIter = providers.iterator();
-//        while (provIter.hasNext()) {
-//            Provider prov = (Provider) provIter.next();
-//            Security.addProvider(prov);
-//        }
     }
 
     private void doDefaultKeyConfig(KeystoreConfigBean ksBean) throws Exception {
@@ -305,6 +340,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         //Properties props = new Properties();
         try {
+            if (!systemPropertiesFile.exists()) {
+                systemPropertiesFile.createNewFile();
+            }
             reader = new BufferedReader(new FileReader(systemPropertiesFile));
             writer = new PrintWriter(newFile);
             String line = null;
@@ -323,9 +361,11 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 writer.println(line);
             }
             if (ksBean.getKeyStoreType().equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+                String lunaPropLine = PROPKEY_JCEPROVIDER + "=" + PROPERTY_LUNA_JCEPROVIDER_VALUE;
                 if (!jceProviderFound) {
-                    writer.println(PROPKEY_JCEPROVIDER + "=" + PROPERTY_LUNA_JCEPROVIDER_VALUE);
+                    writer.println(lunaPropLine);
                 }
+                logger.info("Writing " + lunaPropLine + " to system.properties file");
             }
             reader.close();
             reader = null;
@@ -333,6 +373,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             writer = null;
 
             newFile.renameTo(systemPropertiesFile);
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -385,6 +426,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             writer = null;
 
             newJavaSecFile.renameTo(javaSecFile);
+            logger.info("Updating the java.security file");
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -407,9 +449,16 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         String lunaJarSourcePath = ksBean.getLunaJspPath() + "/lib/";
         String jreLibExtdestination = osFunctions.getPathToJreLibExt();
         String javaLibPathDestination = osFunctions.getPathToJavaLibPath();
+//        logger.info("Copying the luna jars from: " + lunaJarSourcePath + " to: " + jreLibExtdestination);
+//        logger.info("Copying the luna lib from: " + lunaJarSourcePath+ " to: " + javaLibPathDestination);
 
         File srcDir = new File(lunaJarSourcePath);
-        File destDir = new File(jreLibExtdestination);
+
+        File destJarDir = new File(jreLibExtdestination);
+        File destLibDir = new File(javaLibPathDestination);
+        if (!destLibDir.exists()) {
+            destLibDir.mkdir();
+        }
 
         File[] fileList = srcDir.listFiles(new FilenameFilter() {
             public boolean accept(File file, String s) {
@@ -424,15 +473,19 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         });
 
         try {
+            //copy jars
             for (int i = 0; i < fileList.length; i++) {
                 File file = fileList[i];
-                File destFile = new File(destDir, file.getName());
+                File destFile = new File(destJarDir, file.getName());
+                logger.info("Copying " + file.getAbsolutePath() + " to " + destFile.getAbsolutePath());
                 FileUtils.copyFile(file, destFile);
             }
 
+            //copy luna shared libs (dll or so)
             for (int i = 0; i < dllFileList.length; i++) {
                 File file = dllFileList[i];
-                File destFile = new File(javaLibPathDestination, file.getName());
+                File destFile = new File(destLibDir, file.getName());
+                logger.info("Copying " + file.getAbsolutePath() + " to " + destFile.getAbsolutePath());
                 FileUtils.copyFile(file, destFile);
             }
 
@@ -523,6 +576,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             fos = new FileOutputStream(tomcatServerConfigFile);
             XmlUtil.nodeToOutputStream(doc, fos);
+            logger.info("Updating the server.xml");
             fos.close();
             fos = null;
         } catch (FileNotFoundException e) {
@@ -563,6 +617,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
             fos = new FileOutputStream(keystorePropertiesFile);
             keystoreProps.store(fos, PROPERTY_COMMENT);
+            logger.info("Updating the keystore.properties file");
             fos.close();
             fos = null;
 

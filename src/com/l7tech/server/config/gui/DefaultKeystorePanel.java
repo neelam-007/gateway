@@ -21,8 +21,9 @@ public class DefaultKeystorePanel extends KeystorePanel{
     private JLabel passwordMsg;
     private JLabel passwordAgainMsg;
 
-    private final static String DEFAULT_PASSWORD_MSG = "Must be a minimum of 6 characters";
-    private final static String DEFAULT_PASSWORDAGAIN_MSG = "Must match the first password";
+//    private final static String DEFAULT_PASSWORD_MSG = "Must be a minimum of 6 characters";
+//    private final static String DEFAULT_PASSWORDAGAIN_MSG = "Must match the first password";
+    private JPanel passwordPanel;
 
     public DefaultKeystorePanel() {
         super();
@@ -39,6 +40,7 @@ public class DefaultKeystorePanel extends KeystorePanel{
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+        validate();
     }
 
     public char[] getKsPassword() {
@@ -71,12 +73,11 @@ public class DefaultKeystorePanel extends KeystorePanel{
     }
 
     private void setLabelDefaults() {
-        passwordMsg.setText(DEFAULT_PASSWORD_MSG);
+//        passwordMsg.setText(DEFAULT_PASSWORD_MSG);
         passwordMsg.setForeground(Color.BLACK);
 
-        passwordAgainMsg.setText(DEFAULT_PASSWORDAGAIN_MSG);
+//        passwordAgainMsg.setText(DEFAULT_PASSWORDAGAIN_MSG);
         passwordAgainMsg.setForeground(Color.BLACK);
     }
-
 
 }

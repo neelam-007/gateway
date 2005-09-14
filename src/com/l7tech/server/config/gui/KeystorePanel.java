@@ -20,4 +20,8 @@ public class KeystorePanel extends JPanel {
         return true;
     }
 
+    public void refresh() {
+        
+    }
+
 }

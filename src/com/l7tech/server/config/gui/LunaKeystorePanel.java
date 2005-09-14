@@ -24,6 +24,10 @@ public class LunaKeystorePanel extends KeystorePanel {
 
     private String chosenLunaInstallPath;
     private String chosenLunaJspPath;
+    private JLabel lunaInstallPathLabel;
+    private JLabel lunaJspInstallPathLabel;
+    private JLabel lunaPathError;
+    private JLabel lunaJSPError;
 
     public LunaKeystorePanel() {
         super();
@@ -42,29 +46,38 @@ public class LunaKeystorePanel extends KeystorePanel {
                 chooseLunaJspPath();
             }
         });
-        
+
+        lunaPathError.setForeground(Color.RED);
+        lunaJSPError.setForeground(Color.RED);
+        lunaPathError.setVisible(false);
+        lunaJSPError.setVisible(false);
+
+
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
     }
 
     public boolean validateInput() {
-        boolean isValid = false;
-//        try {
-//            isValid = LunaProber.isPartitionLoggedIn();
-//            if (!isValid) {
-//            JOptionPane.showMessageDialog(this,
-//                    "The luna partition is not logged in - skipping luna configuration",
-//                    "Luna not logged in",
-//                    JOptionPane.ERROR_MESSAGE);
-//            }
-//        } catch (ClassNotFoundException e) {
-//            JOptionPane.showMessageDialog(this,
-//                    "The luna classes cannot be located in the classpath -  - skipping luna configuration",
-//                    "Luna cannot be located",
-//                    JOptionPane.ERROR_MESSAGE);
-//            isValid = false;
-//        }
-        return true;
+        boolean isLunaPathValid = true;
+        File lunaInstallDir = new File(lunaInstallPath.getText());
+        if (!lunaInstallDir.exists()) {
+            isLunaPathValid = false;
+        } else {
+            isLunaPathValid = true;
+        }
+
+        boolean isJSPPathValid = true;
+        File lunaJspInstallDir = new File(lunaJSPPath.getText());
+        if (!lunaJspInstallDir.exists()) {
+            isJSPPathValid = false;
+        } else {
+            isJSPPathValid = true;
+        }
+
+        lunaPathError.setVisible(!isLunaPathValid);
+        lunaJSPError.setVisible(!isJSPPathValid);
+
+        return isLunaPathValid && isJSPPathValid;
     }
 
     public void setDefaultLunaInstallPath(String path) {
