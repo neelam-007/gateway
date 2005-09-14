@@ -74,7 +74,7 @@ public class LunaCmu {
      */
     public void probe() throws LunaCmuException, ClassNotFoundException, LunaTokenNotLoggedOnException {
         // Ping the CMU with a help request
-        String got = new String(exec(new String[] { "-?" }, null));
+        String got = new String(exec(new String[] { "?" }, null));
         final String wanted = "Certificate Management Utility";
         if (got.indexOf(wanted) < 0)
             throw new LunaCmuException("Unrecognized output from Luna Certificate Management Utility (cmu): possible unsupported version?  Invocation of cmu -? failed to produce the string: " + wanted);
