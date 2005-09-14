@@ -87,6 +87,7 @@ public class DatabaseConfigCommand extends BaseConfigurationCommand {
 
             fos = new FileOutputStream(dbConfigFile);
             dbProps.store(fos, HIBERNATE_PROPERTY_COMMENTS);
+            logger.info("Updating the hibernate.properties file");
         } catch (FileNotFoundException fnf) {
             logger.severe("error while updating the Database configuration file");
             logger.severe(fnf.getMessage());

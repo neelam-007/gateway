@@ -43,12 +43,22 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
                 e.printStackTrace();
             }
         }
-        
+
+        success = updateSsgLogProperties(ssgLogPropsPath);
+        return success;
+    }
+
+    private boolean updateSsgLogProperties(String ssgLogPropsPath) {
+        boolean success = true;
         FileInputStream fis = null;
         FileOutputStream fos = null;
         Properties props = new Properties();
         try {
-            fis = new FileInputStream(ssgLogPropsPath);
+            File loggingPropertiesFile = new File(ssgLogPropsPath);
+            if (!loggingPropertiesFile.exists()) {
+                loggingPropertiesFile.createNewFile();
+            }
+            fis = new FileInputStream(loggingPropertiesFile);
             props.load(fis);
             fis.close();
             fis = null;
@@ -57,8 +67,9 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
             props.setProperty(LOG_PATTERN_PROPERTY, fullLogPattern);
 
 
-            fos = new FileOutputStream(ssgLogPropsPath);
+            fos = new FileOutputStream(loggingPropertiesFile);
             props.store(fos, PROPERTY_COMMENT);
+            logger.info("Updating the ssglog.properties file");
 
         } catch (FileNotFoundException e) {
             logger.severe("error while updating the logging configuration file");
@@ -73,7 +84,6 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
                 try {
                     fis.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
 
@@ -81,7 +91,6 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
                 try {
                     fos.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
         }
