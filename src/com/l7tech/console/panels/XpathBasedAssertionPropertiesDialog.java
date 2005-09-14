@@ -330,6 +330,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 enableSampleButtons();
             }
         });
+
+        enableSampleButtons();
     }
 
     private void enableSampleButtons() {
@@ -753,7 +755,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 populateSampleMessages(currentOperation.getName());
                 Message sreq = forOperation(boperation.getOperation());
                 messageViewerToolBar.setToolbarEnabled(true);
-                enableSampleButtons();
                 if (sreq != null) {
                     try {
                         SOAPMessage soapMessage = sreq.getSOAPMessage();
