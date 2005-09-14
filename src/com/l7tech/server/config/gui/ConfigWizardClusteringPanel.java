@@ -12,6 +12,7 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.net.InetAddress;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -32,7 +33,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     private JTextField newHostname;
     private JRadioButton newClusterOption;
     private JRadioButton joinClusterOption;
-    private JRadioButton existingClusterOption;
+    private JRadioButton noClusterOption;
     private JRadioButton useSsgHostnameOption;
     private JRadioButton useNewHostnameOption;
     private JTextField cloneHostname;
@@ -48,7 +49,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     ClusteringConfigBean clusteringConfigBean;
 
     private ClusterChangeListener clusterChangeListener = new ClusterChangeListener();
-
+    private JLabel emptyHostnameLabel;
 
 
     private final class ClusterChangeListener implements ActionListener {
@@ -84,16 +85,17 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
 
         clusterGroup = new ButtonGroup();
-        clusterGroup.add(existingClusterOption);
+        clusterGroup.add(noClusterOption);
         clusterGroup.add(newClusterOption);
         clusterGroup.add(joinClusterOption);
 
-        existingClusterOption.addActionListener(clusterChangeListener);
+        noClusterOption.addActionListener(clusterChangeListener);
         newClusterOption.addActionListener(clusterChangeListener);
         joinClusterOption.addActionListener(clusterChangeListener);
 
         useSsgHostnameOption.setSelected(true);
-        existingClusterOption.setSelected(true);
+        noClusterOption.setSelected(true);
+        emptyHostnameLabel.setForeground(Color.RED);
 
         clusterClonePanel.setVisible(false); //change this if we decide to collect master info and copy keys
         enableControls();
@@ -103,11 +105,12 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
     protected void updateView(HashMap settings) {
 
+        emptyHostnameLabel.setVisible(false);
         //get the local host name text for the label
         try
         {
-            java.net.InetAddress localMachine = java.net.InetAddress.getLocalHost();
-            clusteringConfigBean.setLocalHostName(localMachine.getHostName());
+            InetAddress localMachine = InetAddress.getLocalHost();
+            clusteringConfigBean.setLocalHostName(localMachine.getCanonicalHostName());
         } catch(java.net.UnknownHostException uhe) {
             System.out.println(uhe.getMessage());
         }
@@ -134,7 +137,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     }
 
     protected void updateModel(HashMap settingsMap) {
-        String hostnameForWizard;
+        String hostnameForWizard; //this is the hostname that will be used to
         if (useNewHostnameOption.isSelected()) {
             clusteringConfigBean.setNewHostName(true);
             clusteringConfigBean.setClusterHostname(newHostname.getText());
@@ -142,17 +145,21 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         }
         else {
             clusteringConfigBean.setNewHostName(false);
-            clusteringConfigBean.setClusterHostname("");
+            clusteringConfigBean.setClusterHostname(clusteringConfigBean.getLocalHostName());
             hostnameForWizard = clusteringConfigBean.getLocalHostName();
         }
 
-        if (existingClusterOption.isSelected()) {
+        if (noClusterOption.isSelected()) {
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
+            //clusteringConfigBean.setClusterHostname("");
         }
+
         else if (newClusterOption.isSelected()) {
+            //clusteringConfigBean.setClusterHostname(hostnameForWizard);
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NEW);
         }
         else if (joinClusterOption.isSelected()) {
+            //clusteringConfigBean.setClusterHostname(hostnameForWizard);
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_JOIN);
             clusteringConfigBean.setCloneHostname(cloneHostname.getText());
             clusteringConfigBean.setCloneUsername(cloneUsername.getText());
@@ -179,28 +186,38 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
     }
 
     public boolean onNextButton() {
+        boolean validInput = true;
         boolean showMsg = false;
-        ArrayList msgs = new ArrayList();
-        if (newClusterOption.isSelected() || joinClusterOption.isSelected()) {
-            showMsg = true;
-            msgs.add("\n- UPDATE HOSTS FILE: add or update a line which contains the IP address for this ssgm, followed by the cluster host name and then true hostname");
-        }
-
-        if (joinClusterOption.isSelected()) {
-            msgs.add("\n- COPY KEYS: copy the certificates and keystores from the primary node in the cluster to \"" + osFunctions.getKeystoreDir() + "\"");
-        }
-
-        if (showMsg == true) {
-            String title = "Necessary Manual Action Required";
-
-            StringBuffer buffer = new StringBuffer();
-            buffer.append("Please note, you will need to perform the following manual tasks once this wizard is finished in order to properly configure the cluster");
-            Iterator iter = msgs.iterator();
-            while (iter.hasNext()) {
-                buffer.append((String)iter.next());
+        if (useNewHostnameOption.isSelected()) {
+            if (StringUtils.isEmpty(newHostname.getText())) {
+                validInput = false;
+                emptyHostnameLabel.setVisible(true);
             }
-            JOptionPane.showMessageDialog(this, buffer.toString(), title, JOptionPane.INFORMATION_MESSAGE);
         }
-        return true;
+
+        if (validInput) {
+            ArrayList msgs = new ArrayList();
+            if (newClusterOption.isSelected() || joinClusterOption.isSelected()) {
+                showMsg = true;
+                msgs.add("\n- UPDATE HOSTS FILE: add or update a line which contains the IP address for this ssgm, followed by the cluster host name and then true hostname");
+            }
+
+            if (joinClusterOption.isSelected()) {
+                msgs.add("\n- COPY KEYS: copy the certificates and keystores from the primary node in the cluster to \"" + osFunctions.getKeystoreDir() + "\"");
+            }
+
+            if (showMsg == true) {
+                String title = "Necessary Manual Action Required";
+
+                StringBuffer buffer = new StringBuffer();
+                buffer.append("Please note, you will need to perform the following manual tasks once this wizard is finished in order to properly configure the cluster");
+                Iterator iter = msgs.iterator();
+                while (iter.hasNext()) {
+                    buffer.append((String)iter.next());
+                }
+                JOptionPane.showMessageDialog(this, buffer.toString(), title, JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+        return validInput;
     }
 }

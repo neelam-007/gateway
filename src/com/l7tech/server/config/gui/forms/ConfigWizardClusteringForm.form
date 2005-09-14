@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.server.config.gui.ConfigWizardClusteringPanel">
-  <grid id="60c79" binding="mainPanel" row-count="7" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="60c79" binding="mainPanel" row-count="6" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="94" y="23" width="758" height="535"/>
@@ -9,20 +9,10 @@
     <properties/>
     <border type="none"/>
     <children>
-      <component id="a8439" class="javax.swing.JLabel">
-        <constraints>
-          <xy x="20" y="22" width="64" height="15"/>
-          <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
-        </constraints>
-        <properties>
-          <name value="titleLabel"/>
-          <text value="Host Name"/>
-        </properties>
-      </component>
       <vspacer id="6491">
         <constraints>
-          <xy x="702" y="373" width="11" height="162"/>
-          <grid row="6" column="3" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+          <xy x="702" y="440" width="11" height="95"/>
+          <grid row="5" column="3" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="15"/>
           </grid>
         </constraints>
@@ -51,42 +41,10 @@
           </grid>
         </constraints>
       </vspacer>
-      <grid id="497d5" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints>
-          <xy x="20" y="73" width="678" height="23"/>
-          <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-        </constraints>
-        <properties/>
-        <border type="none"/>
-        <children>
-          <component id="6b958" class="javax.swing.JRadioButton" binding="useNewHostnameOption">
-            <constraints>
-              <xy x="0" y="0" width="170" height="23"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
-            </constraints>
-            <properties>
-              <text value="Use a different hostname"/>
-            </properties>
-          </component>
-          <component id="7a45d" class="javax.swing.JTextField" binding="newHostname">
-            <constraints>
-              <xy x="180" y="0" width="498" height="22"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
-                <preferred-size width="150" height="-1"/>
-              </grid>
-            </constraints>
-            <properties>
-              <focusCycleRoot value="true"/>
-              <name value="newSsgHostName"/>
-            </properties>
-          </component>
-        </children>
-      </grid>
       <vspacer id="d56c7">
         <constraints>
-          <xy x="682" y="101" width="11" height="20"/>
-          <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+          <xy x="682" y="173" width="11" height="20"/>
+          <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="16"/>
           </grid>
         </constraints>
@@ -94,8 +52,8 @@
       <grid id="9fb25" binding="clusterCreatePanel" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="121" width="678" height="252"/>
-          <grid row="5" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+          <xy x="20" y="193" width="678" height="247"/>
+          <grid row="4" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="etched" title="Creating or Joining a cluster"/>
@@ -103,7 +61,7 @@
           <grid id="4244c" binding="clusterTypePanel" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="6" y="46" width="666" height="79"/>
+              <xy x="6" y="41" width="666" height="79"/>
               <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -128,7 +86,7 @@
                   <text value="I want to create a new cluster"/>
                 </properties>
               </component>
-              <component id="2b26d" class="javax.swing.JRadioButton" binding="existingClusterOption">
+              <component id="2b26d" class="javax.swing.JRadioButton" binding="noClusterOption">
                 <constraints>
                   <xy x="0" y="0" width="405" height="23"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
@@ -143,7 +101,7 @@
           <grid id="24566" binding="clusterClonePanel" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="26" y="130" width="646" height="76"/>
+              <xy x="26" y="125" width="646" height="76"/>
               <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties>
@@ -209,7 +167,7 @@
           </grid>
           <hspacer id="3b140">
             <constraints>
-              <xy x="6" y="162" width="20" height="11"/>
+              <xy x="6" y="157" width="20" height="11"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
                 <minimum-size width="20" height="-1"/>
                 <maximum-size width="20" height="-1"/>
@@ -218,32 +176,94 @@
           </hspacer>
         </children>
       </grid>
-      <grid id="54ca7" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="4f0c3" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="45" width="658" height="23"/>
+          <xy x="20" y="40" width="658" height="128"/>
           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
-        <border type="none"/>
+        <border type="etched" title="Hostname"/>
         <children>
-          <component id="48608" class="javax.swing.JRadioButton" binding="useSsgHostnameOption">
+          <grid id="54ca7" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="0" y="0" width="168" height="23"/>
+              <xy x="6" y="46" width="646" height="23"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="92070" class="javax.swing.JLabel" binding="ssgHostnameLabel">
+                <constraints>
+                  <xy x="178" y="4" width="76" height="15"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="&lt;hostname&gt;"/>
+                </properties>
+              </component>
+              <component id="48608" class="javax.swing.JRadioButton" binding="useSsgHostnameOption">
+                <constraints>
+                  <xy x="0" y="0" width="168" height="23"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <selected value="true"/>
+                  <text value="Use this SSG's hostname:"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="497d5" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="6" y="74" width="646" height="48"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="6b958" class="javax.swing.JRadioButton" binding="useNewHostnameOption">
+                <constraints>
+                  <xy x="0" y="0" width="170" height="23"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Use a different hostname"/>
+                </properties>
+              </component>
+              <component id="7a45d" class="javax.swing.JTextField" binding="newHostname">
+                <constraints>
+                  <xy x="180" y="0" width="466" height="22"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <focusCycleRoot value="true"/>
+                  <name value="newSsgHostName"/>
+                </properties>
+              </component>
+              <component id="c2c24" class="javax.swing.JLabel" binding="emptyHostnameLabel">
+                <constraints>
+                  <xy x="180" y="30" width="108" height="15"/>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Must not be empty"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <component id="a8439" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="6" y="23" width="430" height="15"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <selected value="true"/>
-              <text value="Use this SSG's hostname:"/>
-            </properties>
-          </component>
-          <component id="92070" class="javax.swing.JLabel" binding="ssgHostnameLabel">
-            <constraints>
-              <xy x="178" y="4" width="76" height="15"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0"/>
-            </constraints>
-            <properties>
-              <text value="&lt;hostname&gt;"/>
+              <name value="titleLabel"/>
+              <text value="The hostname will be used to identify the SSG and generate it's certificates"/>
             </properties>
           </component>
         </children>
