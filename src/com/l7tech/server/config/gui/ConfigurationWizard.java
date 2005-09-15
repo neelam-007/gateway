@@ -41,6 +41,7 @@ public class ConfigurationWizard extends Wizard {
 
     boolean hadFailures = false;
     private int clusteringType;
+    private String keystoreType;
 
     static {
         try {
@@ -210,5 +211,13 @@ public class ConfigurationWizard extends Wizard {
 
     public void setClusteringType(int clusteringConfigured) {
         this.clusteringType = clusteringConfigured;
+    }
+
+    public String getKeystoreType() {
+        return keystoreType;
+    }
+
+    public void setKeystoreType(String type) {
+        keystoreType = type;
     }
 }

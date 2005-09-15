@@ -3,6 +3,7 @@ package com.l7tech.server.config.gui;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.ListHandler;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 
 import javax.swing.*;
@@ -13,6 +14,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.FileOutputStream;
@@ -38,7 +40,11 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private JButton saveManualSteps;
     private JPanel manualStepsPanel;
     private JLabel manualStepsMessage;
+
     private ArrayList steps;
+    private StringBuffer stepsBuffer;
+    private String eol;
+
 
     public ConfigWizardResultsPanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
@@ -46,6 +52,10 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     }
 
     private void init() {
+        steps = new ArrayList();
+        stepsBuffer = new StringBuffer();
+        eol = osFunctions.isWindows()?"\r\n":"\n";
+
         setShowDescriptionPanel(false);
         configBean = null;
         configCommand = null;
@@ -73,7 +83,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         messageText.setBackground(mainPanel.getBackground());
 
         manualStepsMessage.setForeground(Color.RED);
-        steps = new ArrayList();
+        //steps = new ArrayList();
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
@@ -85,11 +95,8 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
             PrintStream ps = null;
             try {
                 ps = new PrintStream(new FileOutputStream(selectedFile));
-                Iterator iter = steps.iterator();
-                while (iter.hasNext()) {
-                    String line = (String) iter.next();
-                    ps.println(line);
-                }
+                String line = stepsBuffer.toString();
+                ps.println(line);
             } catch (FileNotFoundException e) {
             } finally {
                 if (ps != null) {
@@ -100,13 +107,9 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     }
 
     private void doViewManualSteps() {
-        Iterator iter = steps.iterator();
-        StringBuffer buf = new StringBuffer();
-        while (iter.hasNext()) {
-            String line = (String) iter.next();
-            buf.append(line);
-        }
-        JOptionPane.showMessageDialog(this, buf.toString());
+        String regex = Pattern.compile(eol).toString();
+        String message = stepsBuffer.toString().replaceAll(regex, "");
+        JOptionPane.showMessageDialog(this, message.toString());
     }
 
     private File getUserSelectedFile(String chooserType, final String fileFilter, final String fileDescription) {
@@ -114,7 +117,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         if (StringUtils.isNotEmpty(fileFilter) && StringUtils.isNotEmpty(fileDescription)) {
             fc.setFileFilter(new FileFilter() {
                 public boolean accept(File f) {
-                    return  f.getName().toUpperCase().endsWith(fileFilter.toUpperCase());
+                    return  f.isDirectory() || f.getName().toUpperCase().endsWith(fileFilter.toUpperCase());
                 }
 
                 public String getDescription() {
@@ -186,44 +189,155 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         if (hadFailures) {
             messageText.setText("There were errors during configuration, see below for details");
         } else {
-            messageText.setText("The configuration was successfully applied\n" +
+            messageText.setText("The configuration was successfully applied" + eol +
                     "You must restart the SSG in order for the configuration to take effect.");
         }
 
-        setupManualStepsPanel(wizard.getClusteringType());
+        setupManualStepsPanel(wizard.getClusteringType(), wizard.getKeystoreType());
 
     }
 
-    private void setupManualStepsPanel(int clusteringType) {
-        if (clusteringType == ClusteringConfigBean.CLUSTER_NONE) {
+    private void setupManualStepsPanel(int clusteringType, String keystoreType) {
+        boolean lunaMentioned = false;
+        String intoLine = "<h3>The following <u>manual</u> steps are required to complete the configuration of the SSG</h3>" + eol;
+        String linuxLunaConfigCopy =    "<li>" + eol +
+                                            "LUNA CONFIGURATION: Copy the etc/Chrystoki.conf file from the primary node to each SSG in the cluster" + eol +
+                                            "<dl><dt></dt></dl>" + eol +
+                                        "</li>" + eol;
+
+        String windowsLunaConfigCopy =  "<li>" + eol +
+                                            "LUNA CONFIGURATION: Copy the LUNA_INSTALL_DIR/crystoki.ini file from the primary node to each SSG in the cluster" + eol +
+                                            "<dl><dt></dt></dl>" + eol +
+                                        "</li>" + eol;
+
+        String windowsLunaString =  "<dl>" + eol +
+                                        "<dt>[Misc]</dt>" + eol +
+                                            "<dd>ApplicationInstance=HTTP_SERVER</dd>" + eol +
+                                            "<dd>AppIdMajor=1</dd>" + eol +
+                                            "<dd>AppIdMinor=1</dd>" + eol +
+                                        "<dt>}</dt>" + eol +
+                                    "</dl>" + eol +
+                                    "where AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol;
+
+        String windowsUpdateCrystokiLine =  "<li>LUNA CONFIGURATION: Append the following to the LUNA_INSTALL_DIR/crystoki.ini file:" + eol +
+                                                windowsLunaString + eol +
+                                            "</li>" + eol;
+
+        String linuxLunaString =    "<dl>" + eol +
+                                        "<dt>Misc = {</dt>" + eol +
+                                            "<dd>ApplicationInstance=HTTP_SERVER;</dd>" + eol +
+                                            "<dd>AppIdMajor=1;</dd>" + eol +
+                                            "<dd>AppIdMinor=1;</dd>" + eol +
+                                        "<dt>}</dt>" + eol +
+                                    "</dl>" + eol +
+                                    "where AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol;
+
+        String linuxUpdateCrystokiLine =    "<li>LUNA CONFIGURATION: Append the following to the etc/Chrystoki.conf file:" + eol +
+                                                 linuxLunaString + eol +
+                                            "</li>" + eol;
+
+        String updateHostsFileLine =    "<li>UPDATE HOSTS FILE: add a line which contains the IP address for this SSG, then the <br>" +
+                                        "cluster host name, then the true hostname" + eol +
+                                        "<dl>" + eol +
+                                            "<dt>ex:</dt>" + eol +
+                                                "<dd>192.168.1.186      ssgcluster.domain.com realssgname</dd>" + eol +
+                                        "</dl>" + eol +
+                                        "</li>" + eol;
+
+        String timeSyncLine =   "<li>" + eol +
+                                    "TIME SYNCHRONIZATION: Please ensure time is synchronized among all SSG nodes <br>" +
+                                    "within the cluster" + eol +
+                                "</li>" + eol;
+
+        String runSSgConfigLine =   "<li>RUN THE SSG CONFIGURATION WIZARD: run the wizard on each of the <br> " +
+                                    "members of the cluster to generate the keystores" + eol +
+                                    "<dl>" + eol +
+                                        "<dt>Note:</dt>" + eol +
+                                            "<dd>Use the same password for the keystore on each of the members of the cluster</dd>" + eol +
+                                    "</dl>" + eol +
+                                    "</li>";
+
+        String copykeysLine =   "<li>COPY THE KEYS: copy the contents of the keystore directory on the first node<br> " + eol +
+                                "of the cluster to the keystore directory on the other SSGs in the cluster" + eol +
+                                "<dl>" + eol +
+                                    "<dt>Note:</dt>" + eol +
+                                        "<dd>The SSG keystore directory is: \"" + osFunctions.getKeystoreDir() + "\"</dd>" + eol +
+                                "</dl>" + eol +
+                                "</li>" + eol;
+
+        if (clusteringType == ClusteringConfigBean.CLUSTER_NONE && keystoreType.equalsIgnoreCase(KeyStoreConstants.NO_KEYSTORE)) {
             manualStepsPanel.setVisible(false);
         } else {
-            steps.add("<html>");
-            steps.add("<body>");
-            steps.add("<h3>The following <u>manual</u> steps are required to correctly configure the SSG cluster</h2>");
-            steps.add("<br>");
-            steps.add("<ul>");
-            steps.add("<li>UPDATE HOSTS FILE: add a line which contains the IP address for this SSG, then the cluster host name, then the true hostname</li>");
-            steps.add("        ex: 192.168.1.186      ssgcluster.domain.com realssgname");
-            steps.add("");
-            steps.add("<li>TIME SYNCHRONIZATION: Please ensure time is synchronized among all SSG nodes within the cluster</li>");
-            steps.add("");
+            stepsBuffer.append("<html>" + eol).append(
+                            "<head><title></title></head>" + eol).append(
+                            "<body>" + eol).append(
+                                    intoLine);
 
-            if (clusteringType == ClusteringConfigBean.CLUSTER_JOIN) {
-                steps.add("<li>RUN THE SSG CONFIGURATION WIZARD: run the wizard on each of the members of the cluster to generate the keystores</li>");
-                steps.add("        Use the same password for the keystore on each of the members of the cluster");
-                steps.add("");
-                steps.add("<li>COPY THE KEYS: copy the contents of the keystore directory (SSG_ROOT/etc/keys) on the first node</li>");
-                steps.add("        in the SSG cluster to the keystore directory (SSG_ROOT/etc/keys) on the other SSGs in the cluster");
+            if (clusteringType != ClusteringConfigBean.CLUSTER_NONE) {
+                stepsBuffer.append(     "<ul>" + eol).append(
+                                    updateHostsFileLine).append(
+                                    timeSyncLine);
+
+
+                if (clusteringType == ClusteringConfigBean.CLUSTER_JOIN) {
+                    stepsBuffer.append(runSSgConfigLine).append(
+                        copykeysLine);
+
+                    if (keystoreType == KeyStoreConstants.LUNA_KEYSTORE_NAME) {
+                        lunaMentioned = true;
+                        if (osFunctions.isLinux()) {
+                            stepsBuffer.append(linuxLunaConfigCopy);
+                        } else {
+                            stepsBuffer.append(windowsLunaConfigCopy);
+                        }
+                    }
+                }
+                if (clusteringType == ClusteringConfigBean.CLUSTER_NEW && keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+                    lunaMentioned = true;
+                    //instructions for luna in a clustered environment
+                    if (osFunctions.isLinux()) {
+
+                        stepsBuffer.append(linuxUpdateCrystokiLine);
+                    } else {
+                        stepsBuffer.append(windowsUpdateCrystokiLine);
+                    }
+                }
+                stepsBuffer.append(     "</ul>" + eol);
+            } else {
+                stepsBuffer.append("<ul>" + eol);
+                if (keystoreType == KeyStoreConstants.LUNA_KEYSTORE_NAME && !lunaMentioned) {
+                    if (osFunctions.isLinux()) {
+                        stepsBuffer.append(linuxUpdateCrystokiLine);
+                    } else {
+                        stepsBuffer.append(windowsUpdateCrystokiLine);
+                    }
+                    stepsBuffer.append("where AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol);
+                    stepsBuffer.append("</ul>" + eol);
+                }
             }
-            steps.add("</ul>");
-            steps.add("</body>");
-            steps.add("</html>");
+            stepsBuffer.append("</body>" + eol);
+            stepsBuffer.append("</html>" + eol);
             manualStepsPanel.setVisible(true);
         }
     }
 
     public boolean canFinish() {
         return true;
+    }
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame();
+
+        StringBuffer message = new StringBuffer();
+        message.append("<html>\n").append(
+                "<body>\n" +
+                "\t<ul><li><dl><dt>A DT</dt></dl></li></ul></body></html>");
+
+        String regex = Pattern.compile("\n").toString();
+        String s = message.toString();
+        String s2 = s.replaceAll(regex, "");
+        JOptionPane.showMessageDialog(frame,s2);
+        System.exit(0);
+
     }
 }

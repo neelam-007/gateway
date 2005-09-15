@@ -61,6 +61,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (dontDoKsConfig.isSelected()) {
             ksBean.doKeystoreConfig(false);
+            getParentWizard().setKeystoreType(KeyStoreConstants.NO_KEYSTORE);
         } else {
             ksBean.doKeystoreConfig(true);
             ksBean.setHostname(getParentWizard().getHostname());
@@ -76,6 +77,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                 ksBean.setLunaInstallationPath(((LunaKeystorePanel)whichKeystorePanel).getLunaInstallPath());
                 ksBean.setLunaJspPath(((LunaKeystorePanel)whichKeystorePanel).getLunaJSPPath());
             }
+            getParentWizard().setKeystoreType(ksType);
         }
     }
 
