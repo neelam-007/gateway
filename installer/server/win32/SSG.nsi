@@ -67,11 +67,37 @@
 
   ReserveFile "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
 
+; checks for non-ascii charactes in $INSTDIR
+; "Look at this code, NSIS sucks" --franco
+Function CheckInstallDir
+  StrCpy $1 $INSTDIR
+
+  Loop:
+      StrCpy $2 $1 1
+      StrCmp $2 "" Done
+      StrCpy $1 $1 "" 1
+      ; char value must be between 32 and 126 or " " and "~"
+      StrCpy $3 32
+      Loop2:
+        IntFmt $4 %c $3
+        StrCmp $2 $4 Loop
+        IntOp $3 $3 + 1
+        StrCmp $3 127 badness Loop2
+
+  Goto Loop
+
+  badness:
+    MessageBox MB_OK "The character '$2' is not allowed in the installation directory. Aborting installation."
+    Abort
+
+  Done:
+FunctionEnd
+
 ;--------------------------------
 ;Installer Sections
 
 Section "SecureSpan Gateway" SecCopyUI
-
+  Call CheckInstallDir
   ; check if ssg is already installed
   ReadRegStr ${TEMP} HKLM "Software\${COMPANY}\${MUI_PRODUCT}" ""
   StrCmp ${TEMP} "" cleaninstall
