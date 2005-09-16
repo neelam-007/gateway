@@ -311,7 +311,6 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
                     } else {
                         stepsBuffer.append(windowsUpdateCrystokiLine);
                     }
-                    stepsBuffer.append("where AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol);
                     stepsBuffer.append("</ul>" + eol);
                 }
             }
