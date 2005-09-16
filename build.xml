@@ -1470,6 +1470,7 @@
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
+		<include name="my.ini"/>
             </fileset>
         </copy>
 
