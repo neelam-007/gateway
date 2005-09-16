@@ -21,10 +21,10 @@
   OutFile "${MUI_PRODUCT} ${MUI_VERSION} Installer.exe"
 
   ;Folder selection page
-  InstallDir "$PROGRAMFILES\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
+  InstallDir "$PROGRAMFILES\${COMPANY}\${MUI_PRODUCT}"
 
   ;Remember install folder
-  InstallDirRegKey HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" ""
+  InstallDirRegKey HKLM "Software\${COMPANY}\${MUI_PRODUCT}" ""
 
 ;--------------------------------
 ;Modern UI Configuration
@@ -42,9 +42,8 @@
   !define MUI_HEADERBITMAP "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
 
   ;Remember the Start Menu Folder
-  ; todo, local machine instead?
-  !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
-  !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
+  !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKLM"
+  !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANY}\${MUI_PRODUCT}"
   !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "SecureSpan Gateway"
 
   !define TEMP $R0
@@ -74,8 +73,9 @@
 Section "SecureSpan Gateway" SecCopyUI
 
   ; check if ssg is already installed
-  IfFileExists "$INSTDIR\bin\service.cmd" 0 cleaninstall
-
+  ReadRegStr ${TEMP} HKLM "Software\${COMPANY}\${MUI_PRODUCT}" ""
+  StrCmp ${TEMP} "" cleaninstall
+    DetailPrint "existing SSG installation detected at ${TEMP}"
     MessageBox MB_YESNO "The SecureSpan Gateway is already installed on this system. Would you like to stop the SSG and re-install over the existing installation?" IDNO endofinstall
       ; make sure existing ssg is not running before trying to overwrite files (bugzilla #1964)
       ExecWait 'net stop SSG' $0
@@ -123,11 +123,14 @@ Section "SecureSpan Gateway" SecCopyUI
   File /r "${BUILD_DIR}\install\ssg\etc\sql"
   File /r "${BUILD_DIR}\install\ssg\etc\ldapTemplates"
 
+  SetOutPath "$INSTDIR/etc/conf"
+  File "${BUILD_DIR}\..\etc\db\mysql\my.ini"
+
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\configwizard"
 
   ;Store install folder
-  WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
+  WriteRegStr HKLM "Software\${COMPANY}\${MUI_PRODUCT}" "" $INSTDIR
 
   !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
@@ -230,7 +233,7 @@ Section "Uninstall"
 
   noshortcuts:
 
-  DeleteRegKey /ifempty HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
+  DeleteRegKey /ifempty HKLM "Software\${COMPANY}\${MUI_PRODUCT}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}"
 
   RMDir "$PROGRAMFILES\${COMPANY}"
