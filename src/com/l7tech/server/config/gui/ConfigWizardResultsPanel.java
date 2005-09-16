@@ -265,7 +265,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
                                 "</dl>" + eol +
                                 "</li>" + eol;
 
-        if (clusteringType == ClusteringConfigBean.CLUSTER_NONE && keystoreType.equalsIgnoreCase(KeyStoreConstants.NO_KEYSTORE)) {
+        if (clusteringType == ClusteringConfigBean.CLUSTER_NONE && !keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
             manualStepsPanel.setVisible(false);
         } else {
             stepsBuffer.append("<html>" + eol).append(
