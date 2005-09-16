@@ -67,7 +67,7 @@
 
   ReserveFile "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
 
-; checks for non-ascii charactes in $INSTDIR
+; checks for non-ascii characters in $INSTDIR [bugzilla #2005]
 ; "Look at this code, NSIS sucks" --franco
 Function CheckInstallDir
   StrCpy $1 $INSTDIR
