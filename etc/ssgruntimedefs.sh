@@ -43,7 +43,7 @@ default_java_opts="$default_java_opts -XX:NewSize=${maxnewsize}k -XX:MaxNewSize=
 if [ -e /ssg/etc/conf/JVM ]; then
 	JAVA_HOME=`cat /ssg/etc/conf/JVM`
 else
-	JAVA_HOME="/ssg/jdk1.5.0_02"
+	JAVA_HOME="/ssg/jdk"
 fi
 
 if [ $cpucount = 1 ]; then
