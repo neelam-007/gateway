@@ -30,8 +30,10 @@ public class DBActions {
     public static final int DB_AUTHORIZATION_FAILURE = 28000;
     public static final int DB_UNKNOWNDB_FAILURE = 42000;
 
+
     public static final int DB_UNKNOWN_FAILURE = -1;
     public static final int DB_CHECK_INTERNAL_ERROR = -2;
+    public static final int DB_UNKNOWNHOST_FAILURE = -3;
 
 
     private int maxRetryCount;
@@ -198,6 +200,9 @@ public class DBActions {
             String sqlState = e.getSQLState();
             if ("28000".equals(sqlState)) {
                 failureCode = DB_AUTHORIZATION_FAILURE;
+            }
+            else if ("08S01".equals(sqlState)) {
+                failureCode = DB_UNKNOWNHOST_FAILURE;
             } else {
                 logger.warning("Could not create database. An exception occurred");
                 logger.warning(e.getMessage());
