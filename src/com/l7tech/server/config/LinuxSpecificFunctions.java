@@ -25,7 +25,7 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
         lunaInstallDir = "/usr/lunasa";
         lunaJSPDir = "/usr/lunasa/jsp";
         lunaCmuPath = "bin/cmu";
-        pathToJdk = "jdk1.5.0_02/";
+        pathToJdk = "jdk/";
         pathToJavaLibPath = "jre/lib/i386/";
     }
 
