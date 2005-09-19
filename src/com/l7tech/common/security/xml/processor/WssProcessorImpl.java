@@ -930,11 +930,15 @@ public class WssProcessorImpl implements WssProcessor {
                         logger.warning("The KeyInfo referred to a ThumbprintSHA1, but no ThumbprintResolver is available");
                     } else {
                         X509Certificate foundCert = cntx.thumbprintResolver.lookup(value);
-                        logger.finest("The KeyInfo referred to a recognized X.509 certificate by its thumbprint: " + foundCert.getSubjectDN().getName().toString());
-                        token = new X509BinarySecurityTokenImpl(foundCert, keyId);
-                        cntx.securityTokens.add(token);
-                        cntx.x509TokensByThumbprint.put(value, token);
-                        return token;
+                        if (foundCert == null) {
+                            logger.info("The KeyInfo referred to a ThumbprintSHA1, but we were unable to locate a matching cert");
+                        } else {
+                            logger.finest("The KeyInfo referred to a recognized X.509 certificate by its thumbprint: " + foundCert.getSubjectDN().getName().toString());
+                            token = new X509BinarySecurityTokenImpl(foundCert, keyId);
+                            cntx.securityTokens.add(token);
+                            cntx.x509TokensByThumbprint.put(value, token);
+                            return token;
+                        }
                     }
                 } else {
                     logger.finest("The KeyInfo used an unsupported KeyIdentifier ValueType: " + valueType);
