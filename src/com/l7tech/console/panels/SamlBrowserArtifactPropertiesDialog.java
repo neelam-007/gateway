@@ -44,6 +44,8 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
     private JLabel usernameLabel;
     private DefaultComboBoxModel listModel;
     private JButton modifyFieldButton;
+    private JTextField loginUrlField;
+    private JLabel loginUrlLabel;
 
     public SamlBrowserArtifact getAssertion() {
         return samlBrowserArtifactAssertion;
@@ -207,6 +209,8 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
         okButton.setEnabled(ok);
 
         boolean isPost = httpPostRadio.isSelected();
+        loginUrlLabel.setEnabled(isPost);
+        loginUrlField.setEnabled(isPost);
         usernameLabel.setEnabled(isPost);
         usernameField.setEnabled(isPost);
         passwordLabel.setEnabled(isPost);
