@@ -106,55 +106,31 @@ fi
 if [ "$ANSWER_CAKEYS_CREATION" = "y" ]
 then
     # GET A NEW KEYSTORE PASSWORD FROM CALLER
-    echo "Please choose a CA keystore password"
-    read -s CA_KEYSTORE_PASSWORD
-    if [ ${#CA_KEYSTORE_PASSWORD} -gt 0 ]; then
-        INDEXOFAT=`expr index $CA_KEYSTORE_PASSWORD '@'`
+    echo "Please choose a keystore password"
+    read -s KEYSTORE_PASSWORD
+    if [ ${#KEYSTORE_PASSWORD} -gt 0 ]; then
+        INDEXOFAT=`expr index $KEYSTORE_PASSWORD '@'`
         if [ $INDEXOFAT -gt 0 ]; then
           echo "ERROR: character @ not allowed in passwords - please re-run $0"
           exit
         fi
     fi
     echo "Please repeat"
-    read -s CA_KEYSTORE_PASSWORD_REPEAT
+    read -s KEYSTORE_PASSWORD_REPEAT
     # VERIFY THAT PASSWORDS ARE EQUAL
-    if [ ! "$CA_KEYSTORE_PASSWORD" = "$CA_KEYSTORE_PASSWORD_REPEAT" ]; then
+    if [ ! "$KEYSTORE_PASSWORD" = "$KEYSTORE_PASSWORD_REPEAT" ]; then
         echo "ERROR : passwords do not match - please re-run $0"
         exit 
     fi
     # VERIFY THAT THE PASSWORD IS LONG ENOUGH
-    CA_PASSWORD_LENGTH=${#CA_KEYSTORE_PASSWORD}
-    if [ "$CA_PASSWORD_LENGTH" -lt 6 ]; then
+    PASSWORD_LENGTH=${#KEYSTORE_PASSWORD}
+    if [ "$PASSWORD_LENGTH" -lt 6 ]; then
         echo "ERROR : the CA keystore password must be at least 6 characters long - please re-run $0"
         exit
     fi
 else
-    echo "Please type in the existing CA keystore password"
-    read -s CA_KEYSTORE_PASSWORD
-fi
-
-# GET A NEW SSL KEYSTORE PASSWORD FROM CALLER
-echo "Please choose an SSL keystore password"
-read -s SSL_KEYSTORE_PASSWORD
-if [ ${#SSL_KEYSTORE_PASSWORD} -gt 0 ]; then
-    INDEXOFAT=`expr index $SSL_KEYSTORE_PASSWORD '@'`
-    if [ $INDEXOFAT -gt 0 ]; then
-      echo "ERROR: character @ not allowed in passwords - please re-run $0"
-      exit
-    fi
-fi
-echo "Please repeat"
-read -s SSL_KEYSTORE_PASSWORD_REPEAT
-# VERIFY THAT PASSWORDS ARE EQUAL
-if [ ! "$SSL_KEYSTORE_PASSWORD" = "$SSL_KEYSTORE_PASSWORD_REPEAT" ]; then
-    echo "ERROR : passwords do not match - please re-run $0"
-    exit
-fi
-# VERIFY THAT THE PASSWORD IS LONG ENOUGH
-SSL_PASSWORD_LENGTH=${#SSL_KEYSTORE_PASSWORD}
-if [ "$SSL_PASSWORD_LENGTH" -lt 6 ]; then
-    echo "ERROR : the SSL keystore password must be at least 6 characters long - please re-run $0"
-    exit
+    echo "Please type in the existing keystore password"
+    read -s KEYSTORE_PASSWORD
 fi
 
 # ENSURE THAT THE DIRECTORY EXISTS
@@ -204,7 +180,7 @@ else
 fi
 
 # GENERATE THE KEYSTORES & CERTS
-$JAVA_HOME/bin/java -classpath "$CP" $setKeysClassname $HOST_NAME "$KEYSTORE_DIR" $CA_KEYSTORE_PASSWORD $SSL_KEYSTORE_PASSWORD $KEYSTORE_TYPE
+$JAVA_HOME/bin/java -classpath "$CP" $setKeysClassname $HOST_NAME "$KEYSTORE_DIR" $KEYSTORE_PASSWORD $KEYSTORE_PASSWORD $KEYSTORE_TYPE
 
 # Edit the server.xml file so that the appropriate keystore location and paswords are remembered
 KS_QUOTED_SLASHES=${SSL_KEYSTORE_FILE//\//\\\/}
@@ -213,7 +189,7 @@ echo "Updating <$SERVER_XML_FILE>..."
 perl -pi.bak - "$SERVER_XML_FILE" <<!
 s/(keystoreFile)="[^"]*"/\1="${KS_QUOTED_SLASHES}"/;
 s/(keystoreType)="[^"]*"/\1="${KEYSTORE_TYPE}"/;
-s/(keystorePass)=".*?"/\1="${SSL_KEYSTORE_PASSWORD}"/;
+s/(keystorePass)=".*?"/\1="${KEYSTORE_PASSWORD}"/;
 !
 
 
@@ -224,7 +200,7 @@ if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
     echo "Updating <$KEYSTORE_PROPERTIES_FILE>..."
 
     SUBSTITUTE_FROM=rootcakspasswd=.*
-    SUBSTITUTE_TO=rootcakspasswd=${CA_KEYSTORE_PASSWORD}
+    SUBSTITUTE_TO=rootcakspasswd=${KEYSTORE_PASSWORD}
     perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$KEYSTORE_PROPERTIES_FILE"
 
     SUBSTITUTE_FROM=sslkspasswd=.*
@@ -237,7 +213,7 @@ if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
 else
 # INFORM THE USER OF THE FAILURE
     echo "ERROR"
-    echo "The CA keystore password was not recorded because the properties file was not found."
+    echo "The keystore password was not recorded because the properties file was not found."
     echo "This should be done manually"
     exit
 fi
