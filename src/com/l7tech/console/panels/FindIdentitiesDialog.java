@@ -369,7 +369,12 @@ public class FindIdentitiesDialog extends JDialog {
                                                           boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 IdentityProviderConfig ipc = (IdentityProviderConfig)value;
-                setText(ipc.getName());
+                if (ipc == null) {
+                    logger.severe("null IdentityProviderConfig in list");
+                    setText("<null Identity Provider>");
+                } else {
+                    setText(ipc.getName());
+                }
                 return c;
             }
         });
@@ -999,7 +1004,11 @@ public class FindIdentitiesDialog extends JDialog {
             for ( int i = 0; i < headers.length; i++ ) {
                 EntityHeader header = headers[i];
                 IdentityProviderConfig config = admin.findIdentityProviderConfigByID(header.getOid());
-                providersComboBoxModel.addElement(config);
+                if (config == null) {
+                    logger.warning("IdentityProviderConfig #" + header.getOid() + " no longer exists");
+                } else {
+                    providersComboBoxModel.addElement(config);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
