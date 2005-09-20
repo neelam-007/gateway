@@ -44,6 +44,7 @@ mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 rm -f %{buildroot}/ssg/dist/*
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
+chmod 755 %{buildroot}/ssg/configwizard/*.sh
 
 %files 
 %defattr(-,root,root)
