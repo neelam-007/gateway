@@ -2,7 +2,7 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
-!define J2RE "jre1.5.0_02"  ;Name of directory containing JRE
+!define J2RE "jre1.5.0_05"  ;Name of directory containing JRE
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "SecureSpan Gateway" ;Define your own software name here
@@ -131,9 +131,10 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
-  File /r "C:\jdk1.5.0_02-windows-i586-p-redist"
-  Rename "$INSTDIR\jdk1.5.0_02-windows-i586-p-redist" "$INSTDIR\jdk"
-  ;File /r "${BUILD_DIR}\install\ssg\jdk_1.5.0_02" this would include the linux jvm
+  File /r "C:\jdk1.5.0_05-windows-i586-p-redist"
+  Rename "$INSTDIR\jdk1.5.0_05-windows-i586-p-redist" "$INSTDIR\jdk"
+  ;etc/install.properties not having version as suffix to jdk 
+  ;File /r "${BUILD_DIR}\install\ssg\jdk" this would include the linux jvm
 
   SetOutPath "$INSTDIR/bin"
   File "${BUILD_DIR}\..\native\win32\uptime\Release\uptime.exe"
