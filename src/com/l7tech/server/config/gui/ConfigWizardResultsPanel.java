@@ -236,11 +236,11 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
                                                  linuxLunaString + eol +
                                             "</li>" + eol;
 
-        String updateHostsFileLine =    "<li>UPDATE HOSTS FILE: add a line which contains the IP address for this SSG, then the <br>" +
-                                        "cluster host name, then the true hostname" + eol +
+        String updateHostsFileLine =    "<li>UPDATE HOSTS FILE: add a line which contains the IP address for this SSG node, then the <br>" +
+                                        "cluster host name, then this SSG node's hostname" + eol +
                                         "<dl>" + eol +
                                             "<dt>ex:</dt>" + eol +
-                                                "<dd>192.168.1.186      ssgcluster.domain.com realssgname</dd>" + eol +
+                                                "<dd>192.168.1.186      ssgcluster.domain.com ssgnode1.domain.com</dd>" + eol +
                                         "</dl>" + eol +
                                         "</li>" + eol;
 
