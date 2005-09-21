@@ -356,7 +356,7 @@
              <ref bean="auditContext"/>
          </constructor-arg>
         <constructor-arg>
-            <ref bean="thumbprintResolver"/>
+            <ref bean="certificateResolver"/>
         </constructor-arg>
      </bean>
     <!-- server side policy service -->
@@ -377,7 +377,7 @@
             <ref bean="auditContext"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="thumbprintResolver"/>
+            <ref bean="certificateResolver"/>
         </constructor-arg>
     </bean>
     <!-- server side token service -->
@@ -392,7 +392,7 @@
             <ref bean="policyFactory"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="thumbprintResolver"/>
+            <ref bean="certificateResolver"/>
         </constructor-arg>
     </bean>
 
@@ -521,7 +521,7 @@
         </property>
     </bean>
 
-    <bean id="thumbprintResolver" class="com.l7tech.server.ThumbprintResolverImpl">
+    <bean id="certificateResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>

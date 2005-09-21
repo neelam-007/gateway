@@ -6,7 +6,7 @@
 package com.l7tech.internal.license;
 
 import com.l7tech.common.security.xml.DsigUtil;
-import com.l7tech.common.security.xml.SimpleThumbprintResolver;
+import com.l7tech.common.security.xml.SimpleCertificateResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -132,7 +132,7 @@ public class LicenseGeneratorTest extends TestCase {
         // Check the signature
         Element sigElement = XmlUtil.findOnlyOneChildElementByName(lic.getDocumentElement(), SoapUtil.DIGSIG_URI, "Signature");
         assertNotNull(sigElement);
-        DsigUtil.checkSimpleSignature(sigElement, new SimpleThumbprintResolver(signingCert));
+        DsigUtil.checkSimpleSignature(sigElement, new SimpleCertificateResolver(signingCert));
         log.info("Signature validated successfully.");
 
     }

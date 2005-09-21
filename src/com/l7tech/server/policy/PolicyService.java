@@ -4,7 +4,7 @@ import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -104,7 +104,7 @@ public class PolicyService extends ApplicationObjectSupport {
                          ServerPolicyFactory policyFactory, 
                          FilterManager filterManager, 
                          AuditContext auditContext,
-                         ThumbprintResolver thumbprintResolver)
+                         CertificateResolver certificateResolver)
     {
         // populate all possible credentials sources
         allCredentialAssertions = new ArrayList();
@@ -148,7 +148,7 @@ public class PolicyService extends ApplicationObjectSupport {
             throw new IllegalArgumentException("Audit Context is required");
         }
         this.auditContext = auditContext;
-        this.thumbprintResolver = thumbprintResolver;
+        this.certificateResolver = certificateResolver;
     }
 
 
@@ -213,7 +213,7 @@ public class PolicyService extends ApplicationObjectSupport {
                                                   null, serverCert,
                                                   privateServerKey,
                                                   SecureConversationContextManager.getInstance(),
-                                                  thumbprintResolver);
+                                                  certificateResolver);
             reqXml.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));
@@ -505,6 +505,6 @@ public class PolicyService extends ApplicationObjectSupport {
     private final ServerPolicyFactory policyFactory;
     private final AuditContext auditContext;
     private final FilterManager filterManager;
-    private final ThumbprintResolver thumbprintResolver;
+    private final CertificateResolver certificateResolver;
     private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }

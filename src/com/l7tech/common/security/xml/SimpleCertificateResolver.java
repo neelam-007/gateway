@@ -13,10 +13,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A ThumbprintResolver that is given a list of certs that it is to recognize.
+ * A CertificateResolver that is given a list of certs that it is to recognize.
  */
-public class SimpleThumbprintResolver implements ThumbprintResolver {
-    private static final Logger logger = Logger.getLogger(SimpleThumbprintResolver.class.getName());
+public class SimpleCertificateResolver implements CertificateResolver {
+    private static final Logger logger = Logger.getLogger(SimpleCertificateResolver.class.getName());
 
     private final Cert[] certs;
 
@@ -49,16 +49,24 @@ public class SimpleThumbprintResolver implements ThumbprintResolver {
     }
 
     /**
+     * Create a thumbprint resolver that will find no certs at all, ever.  Useful for testing
+     * (wiring up beans that require a resolver).
+     */
+    public SimpleCertificateResolver() {
+        this.certs = new Cert[0];
+    }
+
+    /**
      * Create a thumbprint resolver that will recognize any cert in the specified list.
      * For convenience, the certs array may contain nulls which will be ignored.
      */
-    public SimpleThumbprintResolver(X509Certificate[] certs) {
+    public SimpleCertificateResolver(X509Certificate[] certs) {
         this.certs = new Cert[certs.length];
         for (int i = 0; i < certs.length; i++)
             this.certs[i] = new Cert(certs[i]);
     }
 
-    public SimpleThumbprintResolver(X509Certificate cert) {
+    public SimpleCertificateResolver(X509Certificate cert) {
         this(new X509Certificate[] { cert });
     }
 
@@ -77,6 +85,16 @@ public class SimpleThumbprintResolver implements ThumbprintResolver {
             Cert cert = certs[i];
             String ski = cert.getSki();
             if (ski != null && ski.equals(ski))
+                return cert.cert;
+        }
+        return null;
+    }
+
+    public X509Certificate lookupByKeyName(final String keyName) {
+        for (int i = 0; i < certs.length; i++) {
+            final Cert cert = certs[i];
+            final String name = cert.cert.getSubjectDN().getName();
+            if (name != null && name.equals(keyName))
                 return cert.cert;
         }
         return null;

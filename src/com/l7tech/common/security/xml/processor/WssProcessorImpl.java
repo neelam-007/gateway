@@ -54,7 +54,7 @@ public class WssProcessorImpl implements WssProcessor {
                                              X509Certificate recipientCert,
                                              PrivateKey recipientKey,
                                              SecurityContextFinder securityContextFinder,
-                                             ThumbprintResolver thumbprintResolver)
+                                             CertificateResolver certificateResolver)
       throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
     {
         // Reset all potential outputs
@@ -67,7 +67,7 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.releventSecurityHeader = null;
         cntx.elementsByWsuId = SoapUtil.getElementByWsuIdMap(soapMsg);
         cntx.senderCertificate = senderCertificate;
-        cntx.thumbprintResolver = thumbprintResolver;
+        cntx.certificateResolver = certificateResolver;
 
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
@@ -785,7 +785,7 @@ public class WssProcessorImpl implements WssProcessor {
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
-            final SamlAssertion samlToken = new SamlAssertion(securityTokenElement, context.thumbprintResolver);
+            final SamlAssertion samlToken = new SamlAssertion(securityTokenElement, context.certificateResolver);
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
 
@@ -926,10 +926,10 @@ public class WssProcessorImpl implements WssProcessor {
                         return token;
                     }
 
-                    if (cntx.thumbprintResolver == null) {
-                        logger.warning("The KeyInfo referred to a ThumbprintSHA1, but no ThumbprintResolver is available");
+                    if (cntx.certificateResolver == null) {
+                        logger.warning("The KeyInfo referred to a ThumbprintSHA1, but no CertificateResolver is available");
                     } else {
-                        X509Certificate foundCert = cntx.thumbprintResolver.lookup(value);
+                        X509Certificate foundCert = cntx.certificateResolver.lookup(value);
                         if (foundCert == null) {
                             logger.info("The KeyInfo referred to a ThumbprintSHA1, but we were unable to locate a matching cert");
                         } else {
@@ -947,10 +947,10 @@ public class WssProcessorImpl implements WssProcessor {
                         return token;
                     }
 
-                    if (cntx.thumbprintResolver == null) {
-                        logger.warning("The KeyInfo referred to a SKI, but no ThumbprintResolver is available");
+                    if (cntx.certificateResolver == null) {
+                        logger.warning("The KeyInfo referred to a SKI, but no CertificateResolver is available");
                     } else {
-                        X509Certificate foundCert = cntx.thumbprintResolver.lookupBySki(value);
+                        X509Certificate foundCert = cntx.certificateResolver.lookupBySki(value);
                         if (foundCert == null) {
                             logger.info("The KeyInfo referred to a SKI, but we were unable to locate a matching cert");
                         } else {
@@ -1372,7 +1372,7 @@ public class WssProcessorImpl implements WssProcessor {
         String lastSignatureValue = null;
         String lastSignatureConfirmation = null;
         boolean isWsse11Seen = false;
-        ThumbprintResolver thumbprintResolver = null;
+        CertificateResolver certificateResolver = null;
 
         public ProcessingStatusHolder(Message message, Document processedDocument) {
             this.message = message;

@@ -13,7 +13,7 @@ import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -57,7 +57,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
     private final URL tokenServiceUrl;
     private final SSLContext sslContext;
     private final WssProcessor trogdor = new WssProcessorImpl();
-    private final ThumbprintResolver thumbprintResolver;
+    private final CertificateResolver certificateResolver;
 
     public ServerWsTrustCredentialExchange(WsTrustCredentialExchange assertion, ApplicationContext springContext) {
         this.assertion = assertion;
@@ -81,7 +81,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslContext.init(null, new TrustManager[]{trustManager}, null);
 
-            thumbprintResolver = (ThumbprintResolver)springContext.getBean("thumbprintResolver");
+            certificateResolver = (CertificateResolver)springContext.getBean("certificateResolver");
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
             throw new RuntimeException(e);
@@ -192,7 +192,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
                 deco.decorateMessage(requestDoc, decoReq);
                 requestXml.setDocument(requestDoc);
 
-                requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, thumbprintResolver));
+                requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, certificateResolver));
                 return AssertionStatus.NONE;
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);

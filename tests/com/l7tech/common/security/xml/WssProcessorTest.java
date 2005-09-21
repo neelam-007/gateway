@@ -52,7 +52,7 @@ public class WssProcessorTest extends TestCase {
         Document request = testDocument.document;
         X509Certificate recipientCertificate = testDocument.recipientCertificate;
         PrivateKey recipientPrivateKey = testDocument.recipientPrivateKey;
-        ThumbprintResolver thumbprintResolver = testDocument.thumbprintResolver;
+        CertificateResolver certificateResolver = testDocument.certificateResolver;
 
 
         log.info("Testing document: " + testDocument.name);
@@ -62,7 +62,7 @@ public class WssProcessorTest extends TestCase {
                                                                 recipientCertificate,
                                                                 recipientPrivateKey,
                                                                 testDocument.securityContextFinder,
-                                                                thumbprintResolver);
+                                                                certificateResolver);
         assertTrue(result != null);
 
         ParsedElement[] encrypted = result.getElementsThatWereEncrypted();
@@ -126,11 +126,11 @@ public class WssProcessorTest extends TestCase {
         PrivateKey recipientPrivateKey;
         X509Certificate recipientCertificate;
         SecurityContextFinder securityContextFinder = null;
-        ThumbprintResolver thumbprintResolver;
+        CertificateResolver certificateResolver;
 
         TestDocument(String n, Document d, PrivateKey rpk, X509Certificate rc,
                      SecurityContextFinder securityContextFinder, X509Certificate senderCert,
-                     ThumbprintResolver thumbprintResolver)
+                     CertificateResolver certificateResolver)
         {
             this.name = n;
             this.document = d;
@@ -138,7 +138,7 @@ public class WssProcessorTest extends TestCase {
             this.recipientCertificate = rc;
             this.securityContextFinder = securityContextFinder;
             this.senderCeritifcate = senderCert;
-            this.thumbprintResolver = thumbprintResolver;
+            this.certificateResolver = certificateResolver;
         }
     }
 
@@ -239,14 +239,14 @@ public class WssProcessorTest extends TestCase {
         try {
             Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "/keyinfothumbreq.xml");
 
-            ThumbprintResolver thumbprintResolver = new SimpleThumbprintResolver(TestDocuments.getWssInteropAliceCert());
+            CertificateResolver certificateResolver = new SimpleCertificateResolver(TestDocuments.getWssInteropAliceCert());
             result = new TestDocument("KeyInfoThumbprintRequest",
                                       d,
                                       null,
                                       null,
                                       null,
                                       null,
-                                      thumbprintResolver);
+                                      certificateResolver);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -259,14 +259,14 @@ public class WssProcessorTest extends TestCase {
         Document d = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element security = SoapUtil.getOrMakeSecurityElement(d);
         security.appendChild(d.importNode(ass.getDocumentElement(), true));
-        ThumbprintResolver thumbprintResolver = new SimpleThumbprintResolver(TestDocuments.getDotNetServerCertificate());
+        CertificateResolver certificateResolver = new SimpleCertificateResolver(TestDocuments.getDotNetServerCertificate());
         r = new TestDocument("SignedSvAssertionWithThumbprintSha1",
                              d,
                              null,
                              null,
                              null,
                              null,
-                             thumbprintResolver);
+                             certificateResolver);
         doTest(r);
     }
 
@@ -281,14 +281,14 @@ public class WssProcessorTest extends TestCase {
 
         //XmlUtil.nodeToOutputStream(d, new FileOutputStream("c:/eggerequest.xml"));
 
-        ThumbprintResolver thumbprintResolver = new SimpleThumbprintResolver(TestDocuments.getDotNetServerCertificate());
+        CertificateResolver certificateResolver = new SimpleCertificateResolver(TestDocuments.getDotNetServerCertificate());
         TestDocument td = new TestDocument("CompleteEggRequest",
                                            d,
                                            null,
                                            null,
                                            null,
                                            null,
-                                           thumbprintResolver);
+                                           certificateResolver);
         doTest(td);
     }
 

@@ -10,7 +10,7 @@ import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -128,7 +128,7 @@ public class PolicyServiceTest extends TestCase {
                                              TestDocuments.getDotNetServerCertificate(),
                                              (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
           (FilterManager)applicationContext.getBean("policyFilterManager"), new AuditContextStub(),
-          (ThumbprintResolver)applicationContext.getBean("thumbprintResolver"));
+          (CertificateResolver)applicationContext.getBean("certificateResolver"));
         ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {

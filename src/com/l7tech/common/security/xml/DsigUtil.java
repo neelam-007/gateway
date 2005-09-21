@@ -45,6 +45,7 @@ public class DsigUtil {
      * @param senderSigningKey      private key to sign it with.
      * @param useKeyInfoTumbprint   if true, KeyInfo will use SecurityTokenReference/KeyId with cert thumbprint.
      *                              if false, KeyInfo will use X509Data containing a b64 copy of the entire cert.
+     * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
      * @throws SignatureException   if there is a problem creating the signature
      * @throws SignatureStructureException if there is a problem creating the signature
@@ -54,7 +55,8 @@ public class DsigUtil {
     public static Element createEnvelopedSignature(Element elementToSign,
                                                    X509Certificate senderSigningCert,
                                                    PrivateKey senderSigningKey,
-                                                   boolean useKeyInfoTumbprint)
+                                                   boolean useKeyInfoTumbprint,
+                                                   String keyName)
             throws SignatureException, SignatureStructureException, XSignatureException, CertificateEncodingException
     {
         String signaturemethod = null;
@@ -98,7 +100,9 @@ public class DsigUtil {
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
 
         KeyInfo keyInfo = new KeyInfo();
-        if (useKeyInfoTumbprint) {
+        if (keyName != null && keyName.length() > 0) {
+            keyInfo.setKeyNames(new String[] { keyName });
+        } else if (useKeyInfoTumbprint) {
             final Document factory = elementToSign.getOwnerDocument();
             final String wsseNs = SoapUtil.SECURITY_NAMESPACE;
             Element str = factory.createElementNS(wsseNs, "wsse:SecurityTokenReference");
@@ -157,17 +161,17 @@ public class DsigUtil {
      *                                 or other complex behaviour needed by [for example] WssProcessorImpl)<br>
      *
      * @param sigElement
-     * @param thumbprintResolver
+     * @param certificateResolver
      * @throws SignatureException
      */
-    public static void checkSimpleSignature(Element sigElement, ThumbprintResolver thumbprintResolver) throws SignatureException {
+    public static void checkSimpleSignature(Element sigElement, CertificateResolver certificateResolver) throws SignatureException {
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
         if (keyInfoElement == null) throw new SignatureException("No KeyInfo found in signature");
 
         final X509Certificate signingCert;
 
         try {
-            KeyInfoElement parsedKeyInfo = KeyInfoElement.parse(keyInfoElement, thumbprintResolver);
+            KeyInfoElement parsedKeyInfo = KeyInfoElement.parse(keyInfoElement, certificateResolver);
             signingCert = parsedKeyInfo.getCertificate();
             if (signingCert == null) throw new SignatureException("Unable to resolve signing cert");
         } catch (SAXException e) {

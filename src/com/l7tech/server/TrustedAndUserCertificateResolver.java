@@ -6,7 +6,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.X509Entity;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -22,8 +22,8 @@ import java.util.logging.Logger;
 /**
  * Bean that can look up any certificate known to the SSG by thumbprint.
  */
-public class ThumbprintResolverImpl implements ThumbprintResolver {
-    private static final Logger logger = Logger.getLogger(ThumbprintResolverImpl.class.getName());
+public class TrustedAndUserCertificateResolver implements CertificateResolver {
+    private static final Logger logger = Logger.getLogger(TrustedAndUserCertificateResolver.class.getName());
     private TrustedCertManager trustedCertManager = null;
     private ClientCertManager clientCertManager = null;
 
@@ -123,5 +123,10 @@ public class ThumbprintResolverImpl implements ThumbprintResolver {
             logger.log(Level.WARNING, "Bad certificate in database: " + e.getMessage(), e);
             return null;
         }
+    }
+
+    public X509Certificate lookupByKeyName(String keyName) {
+        // TODO Implement this using a lookup by cert DN if we decide to bother supporting this feature here
+        return null;
     }
 }

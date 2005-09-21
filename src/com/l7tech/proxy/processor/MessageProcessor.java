@@ -15,8 +15,8 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.xml.SimpleThumbprintResolver;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -801,8 +801,8 @@ public class MessageProcessor {
             ProcessorResult processorResult = null;
             try {
                 final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
-                ThumbprintResolver thumbResolver =
-                        new SimpleThumbprintResolver(new X509Certificate[] { ssg.getClientCertificate(),
+                CertificateResolver thumbResolver =
+                        new SimpleCertificateResolver(new X509Certificate[] { ssg.getClientCertificate(),
                                                                              ssg.getServerCertificate() });
                 final ProcessorResult processorResultRaw =
                   wssProcessor.undecorateMessage(response,

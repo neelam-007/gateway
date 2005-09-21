@@ -289,7 +289,7 @@ public class AuditExporter extends HibernateDaoSupport {
 
             Element signature = DsigUtil.createEnvelopedSignature(auditMetadata,
                                                          signingCert,
-                                                         signingKey, false);
+                                                         signingKey, false, null);
             auditMetadata.appendChild(signature);
 
             zipOut.putNextEntry(new ZipEntry("sig.xml"));

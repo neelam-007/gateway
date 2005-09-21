@@ -59,6 +59,19 @@ public final class LicenseGenerator {
         appendSimpleElementIfNonEmpty(de, "description", spec.getDescription());
         appendSimpleElementIfNonEmpty(de, "valid", spec.getStartDate());
         appendSimpleElementIfNonEmpty(de, "expires", spec.getExpiryDate());
+        Element host = appendSimpleElement(de, "host", null);
+        host.setAttribute("name", "*");
+        Element ip = appendSimpleElement(de, "ip", null);
+        ip.setAttribute("address", "*");
+        Element product = appendSimpleElement(de, "product", null);
+        product.setAttribute("name", "*");
+        Element version = appendSimpleElement(product, "version", null);
+        version.setAttribute("major", "*");
+        version.setAttribute("minor", "*");
+
+        Element licensee = appendSimpleElement(de, "licensee", null);
+        licensee.setAttribute("name", name);
+        setAttributeIfNonEmpty(licensee, "contactEmail", spec.getLicenseeContactEmail());
 
 
         try {
@@ -71,14 +84,16 @@ public final class LicenseGenerator {
         }
     }
 
-    private static void appendSimpleElementIfNonEmpty(Element parent, String elname, Date date) {
+    private static Element appendSimpleElementIfNonEmpty(Element parent, String elname, Date date) {
         if (date != null)
-            appendSimpleElement(parent, elname, ISO8601Date.format(date));
+            return appendSimpleElement(parent, elname, ISO8601Date.format(date));
+        return null;
     }
 
-    private static void appendSimpleElementIfNonEmpty(Element parent, String elname, String value) {
+    private static Element appendSimpleElementIfNonEmpty(Element parent, String elname, String value) {
         if (value != null && value.length() > 0)
-            appendSimpleElement(parent, elname, value);
+            return appendSimpleElement(parent, elname, value);
+        return null;
     }
 
     /**
@@ -88,9 +103,16 @@ public final class LicenseGenerator {
      * @param elname
      * @param value
      */
-    private static void appendSimpleElement(final Element parent, final String elname, final String value) {
-        Element desc = XmlUtil.createAndAppendElement(parent, elname);
-        XmlUtil.setTextContent(desc, value);
+    private static Element appendSimpleElement(final Element parent, final String elname, final String value) {
+        Element elm = XmlUtil.createAndAppendElement(parent, elname);
+        if (value != null && value.length() > 0)
+            XmlUtil.setTextContent(elm, value);
+        return elm;
+    }
+
+    private static void setAttributeIfNonEmpty(Element element, String attribute, String value) {
+        if (value != null && value.length() > 0)
+            element.setAttribute(attribute, value);
     }
 
     /**
@@ -112,7 +134,8 @@ public final class LicenseGenerator {
             Element signature = DsigUtil.createEnvelopedSignature(d.getDocumentElement(),
                                                                   spec.getIssuerCert(),
                                                                   spec.getIssuerKey(),
-                                                                  false);
+                                                                  true,
+                                                                  spec.getIssuerCert().getSubjectDN().getName());
             d.getDocumentElement().appendChild(signature);
             return d;
         } catch (SignatureException e) {

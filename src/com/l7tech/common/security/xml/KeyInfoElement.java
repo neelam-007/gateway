@@ -26,7 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author mike
+ * Represents a parsed KeyInfo element, perhaps from a ds:Signature.
  */
 public class KeyInfoElement implements ParsedElement {
     private static final Logger logger = Logger.getLogger(KeyInfoElement.class.getName());
@@ -43,58 +43,34 @@ public class KeyInfoElement implements ParsedElement {
     /**
      * Parse the specified KeyInfo element.
      * @param keyinfo the element to parse.  Must not be null.  Must be a ds:KeyInfo element in proper namespace.
-     * @param thumbprintResolver resolver for X.509 sha1 thumbprints, or null to disable thumbprint support.
+     * @param certificateResolver resolver for X.509 sha1 thumbprints, or null to disable thumbprint support.
      * @throws NullPointerException if it's null
      * @throws IllegalArgumentException if it isn't a ds:KeyInfo element
      * @throws SAXException if the format of this KeyInfo is invalid or not supported
      * @throws KeyInfoElementException if this KeyInfo refers to an X509 SHA1 thumbprint, but no thumbprint
      *                                 resolver was supplied.
      */
-    public static KeyInfoElement parse(Element keyinfo, ThumbprintResolver thumbprintResolver)
+    public static KeyInfoElement parse(Element keyinfo, CertificateResolver certificateResolver)
             throws SAXException, KeyInfoElementException
     {
-        return new KeyInfoElement(keyinfo, thumbprintResolver);
+        return new KeyInfoElement(keyinfo, certificateResolver);
     }
 
 
     private KeyInfoElement(Element keyinfo,
-                           ThumbprintResolver thumbprintResolver)
+                           CertificateResolver certificateResolver)
             throws SAXException, KeyInfoElementException
     {
         if (!"KeyInfo".equals(keyinfo.getLocalName())) throw new IllegalArgumentException("Element is not a KeyInfo element");
         if (!SoapUtil.DIGSIG_URI.equals(keyinfo.getNamespaceURI())) throw new IllegalArgumentException("KeyInfo element is not in dsig namespace");
         try {
             this.element = keyinfo;
+            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
+            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
+            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
+            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
             Element x509Data = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.DIGSIG_URI, "X509Data");
-            if (x509Data == null) {
-                Element str = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
-                if (str == null) throw new SAXException("KeyInfo has no X509Data or SecurityTokenReference");
-                // Use SecurityTokenReference
-                if (thumbprintResolver == null) throw new KeyInfoElementException("KeyInfo uses SecurityTokenReference but no thumbprint resolver is available");
-                // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
-                // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
-                // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
-                // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
-                Element keyid = XmlUtil.findOnlyOneChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
-                if (keyid == null) throw new SAXException("KeyInfo has SecurityTokenReference but no KeyIdentifier");
-                String vt = keyid.getAttribute("ValueType");
-
-                X509Certificate gotCert;
-                String value = XmlUtil.getTextValue(keyid);
-                if (value == null || value.length() < 1) throw new SAXException("KeyInfo contains an empty KeyIdentifier");
-                if (vt == null) {
-                    throw new SAXException("KeyInfo has null STR/KeyIdentifier ValueType");
-                } else if (vt.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX)) {
-                    gotCert = thumbprintResolver.lookup(value);
-                } else if (vt.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
-                    gotCert = thumbprintResolver.lookupBySki(value);
-                } else {
-                    throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1: " + vt);
-                }
-
-                if (gotCert == null) throw new SAXException("KeyInfo KeyIdentifier thumbprint did not match any X.509 certificate known to this recipient");
-                cert = gotCert;
-            } else {
+            if (x509Data != null) {
                 // Use X509Data
                 Element x509CertEl = XmlUtil.findOnlyOneChildElementByName(x509Data, SoapUtil.DIGSIG_URI, "X509Certificate");
                 if (x509CertEl == null) throw new SAXException("KeyInfo has no X509Data/X509Certificate");
@@ -102,6 +78,44 @@ public class KeyInfoElement implements ParsedElement {
                 byte[] certBytes = HexUtils.decodeBase64(certBase64, true);
                 cert = CertUtils.decodeCert(certBytes);
                 if (cert == null) throw new SAXException("KeyInfo includes certificate which cannot be recovered"); // can't happen
+            } else {
+                // No x509Data -- look for SecurityTokenReference next
+                Element str = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
+                if (str != null) {
+                    // Use SecurityTokenReference
+                    if (certificateResolver == null) throw new KeyInfoElementException("KeyInfo uses SecurityTokenReference but no certificate resolver is available");
+                    Element keyid = XmlUtil.findOnlyOneChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
+                    if (keyid == null) throw new SAXException("KeyInfo has SecurityTokenReference but no KeyIdentifier");
+                    String vt = keyid.getAttribute("ValueType");
+
+                    X509Certificate gotCert;
+                    String value = XmlUtil.getTextValue(keyid);
+                    if (value == null || value.length() < 1) throw new SAXException("KeyInfo contains an empty KeyIdentifier");
+                    if (vt == null) {
+                        throw new SAXException("KeyInfo has null STR/KeyIdentifier ValueType");
+                    } else if (vt.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX)) {
+                        gotCert = certificateResolver.lookup(value);
+                    } else if (vt.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
+                        gotCert = certificateResolver.lookupBySki(value);
+                    } else {
+                        throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1: " + vt);
+                    }
+
+                    if (gotCert == null) throw new SAXException("KeyInfo KeyIdentifier thumbprint did not match any X.509 certificate known to this recipient");
+                    cert = gotCert;
+                } else {
+                    // No x509data or securitytokenreference -- try last-ditch KeyName lookup before giving up
+                    Element keyNameEl = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.DIGSIG_URI, "KeyName");
+                    if (keyNameEl == null) throw new SAXException("KeyInfo has no X509Data, KeyName, or SecurityTokenReference");
+                    String keyName = XmlUtil.getTextValue(keyNameEl).trim();
+                    if (keyName == null || keyName.length() < 1)
+                        throw new SAXException("KeyInfo contains KeyName but it is empty");
+                    // Use KeyName
+                    if (certificateResolver == null) throw new KeyInfoElementException("KeyInfo uses KeyName but no key name resolver is available");
+                    X509Certificate gotCert = certificateResolver.lookupByKeyName(keyName);
+                    if (gotCert == null) throw new SAXException("KeyInfo KeyName did not match any X.509 certificate known to this recipient");
+                    cert = gotCert;
+                }
             }
         } catch (TooManyChildElementsException e) {
             throw new SAXException(e);
@@ -158,7 +172,7 @@ public class KeyInfoElement implements ParsedElement {
         if (ki == null) throw new UnsupportedKeyInfoFormatException("KeyInfo's SecurityTokenReference includes no KeyIdentifier element");
         String valueType = ki.getAttribute("ValueType");
         String keyIdentifierValue = XmlUtil.getTextValue(ki);
-        byte[] keyIdValueBytes = new byte[0];
+        byte[] keyIdValueBytes;
         try {
             keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
         } catch (IOException e) {
@@ -229,10 +243,10 @@ public class KeyInfoElement implements ParsedElement {
         } else if (valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
             // TODO - to support this, need to be able to look up a (long-)previously-processed EncryptedKey by its hash
             throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
-                                                     "ValueType: " + valueType);
+                    "ValueType: " + valueType);
         } else
             throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
-                                                     "ValueType: " + valueType);
+                    "ValueType: " + valueType);
     }
 
     /**
@@ -267,9 +281,9 @@ public class KeyInfoElement implements ParsedElement {
 
     public static void populateKeyInfo(Element keyInfo, String wsseNs, String wssePrefix, String valueType, String base64EncodingTypeUri, byte[] idBytes, Document soapMsg) {
         Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-            wsseNs, wssePrefix);
+                                                                    wsseNs, wssePrefix);
         Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
-            wsseNs, wssePrefix);
+                                                         wsseNs, wssePrefix);
 
         keyId.setAttribute("ValueType", valueType);
         keyId.setAttribute("EncodingType", base64EncodingTypeUri);
@@ -382,16 +396,15 @@ public class KeyInfoElement implements ParsedElement {
         final String wsseNs = securityHeader.getNamespaceURI();
         final String wsse = "wsse";
         Element str = XmlUtil.createAndAppendElementNS(keyInfo,
-            SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-            wsseNs,
-            wsse);
+                                                       SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
+                                                       wsseNs,
+                                                       wsse);
         if (keyInfoReferenceTarget != null) {
             Element ref = XmlUtil.createAndAppendElementNS(str,
-                "Reference",
-                wsseNs,
-                wsse);
-            String uri = keyInfoReferenceTargetWsuId;
-            ref.setAttribute("URI", uri);
+                                                           "Reference",
+                                                           wsseNs,
+                                                           wsse);
+            ref.setAttribute("URI", keyInfoReferenceTargetWsuId);
             ref.setAttribute("ValueType", keyInfoValueTypeURI);
         } else if (keyInfoKeyIdValue != null) {
             Element kid = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, wsse);
@@ -404,19 +417,9 @@ public class KeyInfoElement implements ParsedElement {
     }
 
     public static class UnsupportedKeyInfoFormatException extends InvalidDocumentFormatException {
-        public UnsupportedKeyInfoFormatException(String message) {
-            super(message);
-        }
-
-        public UnsupportedKeyInfoFormatException() {
-        }
-
-        public UnsupportedKeyInfoFormatException(Throwable cause) {
-            super(cause);
-        }
-
-        public UnsupportedKeyInfoFormatException(String message, Throwable cause) {
-            super(message, cause);
-        }
+        public UnsupportedKeyInfoFormatException(String message) { super(message); }
+        public UnsupportedKeyInfoFormatException() {}
+        public UnsupportedKeyInfoFormatException(Throwable cause) { super(cause); }
+        public UnsupportedKeyInfoFormatException(String message, Throwable cause) { super(message, cause); }
     }
 }

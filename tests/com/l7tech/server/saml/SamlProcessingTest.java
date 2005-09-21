@@ -9,7 +9,8 @@ import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SimpleCertificateResolver;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
@@ -435,7 +436,7 @@ public class SamlProcessingTest extends TestCase {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         PrivateKey singingKey = TestDocuments.getDotNetServerPrivateKey();
         final Element assEl = assDoc.getDocumentElement();
-        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true);
+        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true, null);
         assEl.appendChild(sig);
 
 
@@ -453,19 +454,7 @@ public class SamlProcessingTest extends TestCase {
         // See if our code can deal with it
         final String signingCertThumbprint = CertUtils.getThumbprintSHA1(signingCert);
         final String signingCertSki = CertUtils.getSki(signingCert);
-        ThumbprintResolver thumbResolver = new ThumbprintResolver() {
-            public X509Certificate lookup(String thumbprint) {
-                if (signingCertThumbprint.equals(thumbprint))
-                    return signingCert;
-                return null;
-            }
-
-            public X509Certificate lookupBySki(String ski) {
-                if (signingCertSki != null && signingCertSki.equals(ski))
-                    return signingCert;
-                return null;
-            }
-        };
+        CertificateResolver thumbResolver = new SimpleCertificateResolver(signingCert);
         SamlAssertion sa = new SamlAssertion(assDoc.getDocumentElement(), thumbResolver);
         assertTrue(sa.isSenderVouches());
         assertNotNull(sa.getIssuerCertificate());
@@ -546,7 +535,7 @@ public class SamlProcessingTest extends TestCase {
         X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         PrivateKey singingKey = TestDocuments.getDotNetServerPrivateKey();
         final Element assEl = assDoc.getDocumentElement();
-        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true);
+        Element sig = DsigUtil.createEnvelopedSignature(assEl, signingCert, singingKey, true, null);
         assEl.appendChild(sig);
 
 

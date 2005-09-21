@@ -11,7 +11,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
@@ -55,7 +55,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCertificate;
     private final AuditContext auditContext;
-    private final ThumbprintResolver thumbprintResolver;
+    private final CertificateResolver certificateResolver;
 
     /**
          * Create the new <code>MessageProcessor</code> instance with the service
@@ -69,7 +69,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
          * @param auditContext the audit context
          * @throws IllegalArgumentException if any of the arguments is null
          */
-    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext, ThumbprintResolver thumbprintResolver)
+    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext, CertificateResolver certificateResolver)
       throws IllegalArgumentException {
         if (sm == null) {
             throw new IllegalArgumentException("Service Manager is required");
@@ -91,7 +91,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
         this.auditContext = auditContext;
-        this.thumbprintResolver = thumbprintResolver;
+        this.certificateResolver = certificateResolver;
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
@@ -135,7 +135,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         null, serverCertificate,
                         serverPrivateKey,
                         SecureConversationContextManager.getInstance(),
-                        thumbprintResolver);
+                        certificateResolver);
                     reqXml.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {
                     auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);

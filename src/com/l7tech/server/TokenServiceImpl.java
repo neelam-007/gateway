@@ -7,7 +7,7 @@ import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.ThumbprintResolver;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -110,7 +110,7 @@ public class TokenServiceImpl implements TokenService {
                                                                   serverSSLcert,
                                                                   sslPrivateKey,
                                                                   SecureConversationContextManager.getInstance(),
-                                                                  thumbprintResolver);
+                                                                  certificateResolver);
             reqXml.setProcessorResult(wssOutput);
         } catch (IOException e) {
             throw new ProcessorException(e);
@@ -223,14 +223,14 @@ public class TokenServiceImpl implements TokenService {
     /**
      * specify the server key and cert at construction time instead of letting the object try to retreive them
      */
-    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, ThumbprintResolver thumbprintResolver) {
+    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, CertificateResolver certificateResolver) {
         if (privateServerKey == null || serverCert == null) {
             throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         }
         this.privateServerKey = privateServerKey;
         this.serverCert = serverCert;
         this.policyFactory = policyFactory;
-        this.thumbprintResolver = thumbprintResolver;
+        this.certificateResolver = certificateResolver;
     }
 
     private Document handleSamlRequest(PolicyEnforcementContext context, boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws TokenServiceException,
@@ -536,7 +536,7 @@ public class TokenServiceImpl implements TokenService {
     private X509Certificate serverCert = null;
     private ServerAssertion tokenServicePolicy = null;
     private ServerPolicyFactory policyFactory = null;
-    private ThumbprintResolver thumbprintResolver = null;
+    private CertificateResolver certificateResolver = null;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final static String RST_ELNAME = "RequestSecurityToken";
