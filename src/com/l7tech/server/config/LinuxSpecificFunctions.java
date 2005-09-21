@@ -26,7 +26,7 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
         lunaJSPDir = "/usr/lunasa/jsp";
         lunaCmuPath = "bin/cmu";
         pathToJdk = "jdk/";
-        pathToJavaLibPath = "jre/lib/i386/";
+        //pathToJavaLibPath = "jre/lib/i386/";
     }
 
     public String[] getKeystoreTypes() {

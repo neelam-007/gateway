@@ -16,5 +16,5 @@ popd
 echo "stopping the ssg service if it is running"
 sc stop SSG
 echo "using %SSG_ROOT% as the SSG_ROOT\n"
-%JAVA_HOME%\bin\java -Dcom.l7tech.server.home=%SSG_ROOT% -jar ConfigWizard.jar
+%JAVA_HOME%\bin\java -Djava.library.path=%SSG_ROOT%\lib -Dcom.l7tech.server.home=%SSG_ROOT% -jar ConfigWizard.jar
 

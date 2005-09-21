@@ -70,7 +70,7 @@ public abstract class OSSpecificFunctions {
         tomcatServerConfig = "tomcat/conf/server.xml";
         keystoreDir = "etc/keys/";
         pathToJreLibExt = "jre/lib/ext/";
-//        pathToJavaLibPath = "jre/lib/i386/";
+        pathToJavaLibPath = "lib/";
         pathToJavaSecurityFile = "jre/lib/security/java.security";
         ssgSystemPropertiesFile = "etc/conf/system.properties";
         pathToDBCreateFile = "etc/sql/ssg.sql";
@@ -198,8 +198,8 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getPathToJavaLibPath() {
-        return getPathToJdk() + pathToJavaLibPath;
-        //return getSsgInstallRoot() + pathToJavaLibPath;
+//        return getPathToJdk() + pathToJavaLibPath;
+        return getSsgInstallRoot() + pathToJavaLibPath;
     }
 
     public String getPathToDBCreateFile() {

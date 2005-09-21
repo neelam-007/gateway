@@ -64,6 +64,8 @@ ulimit -s 2048
 SSG_HOME=/ssg
 TOMCAT_HOME=/ssg/tomcat/
 
+default_java_opts="$default_java_opts -Djava.library.path=${SSG_HOME}/lib"
+
 # Under cygwin?.
 cygwin=false;
 case "`uname`" in
