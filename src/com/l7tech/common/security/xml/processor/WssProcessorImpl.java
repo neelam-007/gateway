@@ -1165,7 +1165,7 @@ public class WssProcessorImpl implements WssProcessor {
                   "purposes. this signature will therefore be ignored.");
                 return;
             }
-            StringBuffer msg = new StringBuffer("Validity not achieved. " + validity.getSignedInfoMessage());
+            StringBuffer msg = new StringBuffer("Signature not valid. " + validity.getSignedInfoMessage());
             for (int i = 0; i < validity.getNumberOfReferences(); i++) {
                 msg.append("\n\tElement " + validity.getReferenceURI(i) + ": " + validity.getReferenceMessage(i));
             }
