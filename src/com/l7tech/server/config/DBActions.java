@@ -116,9 +116,10 @@ public class DBActions {
             if (sqlState != null) {
                 if (ERROR_CODE_UNKNOWNDB.equals(sqlState)) {
                     failureCode = DB_UNKNOWNDB_FAILURE;
-
                 } else if (ERROR_CODE_AUTH_FAILURE.equals(sqlState)) {
                     failureCode = DB_AUTHORIZATION_FAILURE;
+                } else if ("08S01".equals(sqlState)) {
+                    failureCode = DB_UNKNOWNHOST_FAILURE;
                 } else {
                     failureCode = DB_UNKNOWN_FAILURE;
                 }
@@ -209,15 +210,19 @@ public class DBActions {
                 failureCode = DB_UNKNOWN_FAILURE;
             }
         } finally {
-            try {
+
                 if (conn != null) {
-                    conn.close();
+                    try {
+                        conn.close();
+                    } catch (SQLException e) {
+                    }
                 }
                 if (stmt != null) {
-                    stmt.close();
+                    try {
+                        stmt.close();
+                    } catch (SQLException e) {
+                    }
                 }
-            } catch (SQLException e) {
-            }
         }
 
         return failureCode;
@@ -264,10 +269,13 @@ public class DBActions {
 
     private String[] getCreateDbStatements(String dbCreateScript) throws IOException {
         String []  stmts = null;
+        FileReader fileReader = null;
         BufferedReader reader = null;
         try {
             StringBuffer sb = new StringBuffer();
-            reader = new BufferedReader(new FileReader(dbCreateScript));
+
+            fileReader = new FileReader(dbCreateScript);
+            reader = new BufferedReader(fileReader);
             String temp = null;
             while((temp = reader.readLine()) != null) {
                 if (temp.startsWith("--") || temp.equals("")) {
@@ -280,9 +288,12 @@ public class DBActions {
             stmts = splitPattern.split(sb.toString());
         } finally{
             if (reader != null) {
-                try {
+                if (fileReader != null) {
+                    fileReader.close();
+                }
+
+                if (reader != null) {
                     reader.close();
-                } catch (IOException e) {
                 }
             }
         }

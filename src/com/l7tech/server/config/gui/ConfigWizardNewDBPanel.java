@@ -313,7 +313,13 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
                 isOk = true;
             } else {
                 switch (status) {
-
+                    case DBActions.DB_UNKNOWNHOST_FAILURE:
+                        errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
+                        logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
+                        logger.warning(errorMsg);
+                        showErrorMessage(errorMsg);
+                        isOk = false;
+                        break;
                     case DBActions.DB_AUTHORIZATION_FAILURE:
                         logger.info(CONNECTION_UNSUCCESSFUL_MSG);
                         errorMsg = "There was an authentication error when attempting to connect to the database \"" + name + "\" using the username \"" +
