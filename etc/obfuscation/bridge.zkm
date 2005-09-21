@@ -1,0 +1,90 @@
+//
+// Zelix Klassmaster script for obfuscating Bridge.jar
+//
+// author: flascelles@layer7tech.com
+// Layer 7 Technologies 2005
+//
+// prerequisites:
+// this script should be placed in UneasyRooster\installer\Bridge-HEAD
+//
+// how to run it:
+// java -jar ZKM.jar bridge.zkm
+//
+//
+classpath   "./lib/activation.jar"
+            "./lib/are.jar"
+            "./lib/axis.jar"
+            "./lib/bcprov-jdk15-127.jar"
+            "./lib/commons-httpclient-2.0.2.jar"
+            "./lib/commons-logging-1.0.4.jar"
+            "./lib/forms_rt.jar"
+            "./lib/jaxen-1.1-beta-2-l7.jar"
+            "./lib/jaxrpc.jar"
+            "./lib/jh.jar"
+            "./lib/kunststoff.jar"
+            "./lib/mailapi-1.3.2.jar"
+            "./lib/org.mortbay.jetty.jar"
+            "./lib/saaj.jar"
+            "./lib/saxpath.jar"
+            "./lib/servlet-api.jar"
+            "./lib/spring-context.jar"
+            "./lib/systray4j.jar"
+            "./lib/wsdl4j.jar"
+            "./lib/xalan-2.5.2.jar"
+            "./lib/xbean-saml.jar"
+            "./lib/xbean.jar"
+            "./lib/xercesImpl.jar"
+            "./lib/xml-apis.jar"
+            "./lib/xml4j.jar"
+            "./lib/xss4j.jar";
+
+// these jars dont seem to be required in the classpath
+//          "../ZKM.jar"
+//          "/ssg/jdk_1.5/jre/lib/rt.jar"
+//          "/ssg/jdk_1.5/jre/lib/jsse.jar"
+//          "/ssg/jdk_1.5/jre/lib/jce.jar"
+//          "/ssg/jdk_1.5/jre/lib/charsets.jar"
+
+
+// this is the jar file to process
+// this could also be a directory containing .class files
+open        "./Bridge.jar";
+
+// we dont want to let zelix determine which classes/methods are unused
+// therefore we are excluding everything from trimming otherwise some
+// classes that appear to not be used would be removed
+trimExclude public *.* and
+            *.* public * and
+            *.* protected * and
+            *.* public *(*) and
+            *.* protected *(*) and
+            *.* package * and
+            *.* package *(*) and
+            *.* private * and
+            *.* private *(*);
+
+// not sure whether or not it would be ok to delete annotation attributes and unknowns
+trim        deleteSourceFileAttributes=true
+            deleteDeprecatedAttributes=true
+            deleteAnnotationAttributes=false
+            deleteUnknownAttributes=false;
+
+// dont rename public classes, public+protected method names
+// this ensures no problem with reflected classes
+// this does not mean that classes and methods are excluded from obfuscation.
+// only their names are not obfuscated
+exclude     public *.^* and
+            *.* public * and
+            *.* protected * and
+            *.* public *(*) and
+            *.* protected *(*);
+
+obfuscate   changeLogFileIn=""
+            changeLogFileOut="./obfuscatedOutput/change.log"
+            obfuscateFlow=normal
+            encryptStringLiterals=normal
+            lineNumbers=delete;
+
+// this lets you specify the output directory. it will contain whatever you added with
+// open statement(s) except it will be the obfuscated copy
+saveAll     archiveCompression=all "./obfuscatedOutput";
