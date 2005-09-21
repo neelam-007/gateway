@@ -72,21 +72,25 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
 
 
         String hostname = clusterBean.getClusterHostname();
-        if (configureCluster) {
-            try {
-                writeClusterHostname(clusterHostNameFile, hostname);
-            } catch (IOException e) {
-                success = false;
+        try {
+            updateSystemPropertiesFile(hostname, systemPropertiesFile);
+            if (configureCluster) {
+                try {
+                    writeClusterHostname(clusterHostNameFile, hostname);
+                    success = true;
+                } catch (IOException e) {
+                    success = false;
+                }
             }
+        } catch (IOException e) {
+            success = false;
         }
-        updateSystemPropertiesFile(hostname, systemPropertiesFile);
-
 //        updateHostsFile(hostsFile, clusterHostname);
 
         return success;
     }
 
-    private void updateSystemPropertiesFile(String hostname, File systemPropertiesFile) {
+    private void updateSystemPropertiesFile(String hostname, File systemPropertiesFile) throws IOException {
 
         InputStream fis = null;
         OutputStream fos = null;
@@ -108,9 +112,13 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             props.store(fos, "Updated by the SSG Configuration Tool");
             logger.info("Setting " + PROP_RMI_HOSTNAME + "=" + hostname + " in system.properties file");
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.severe("There was an error while updating the file: " + systemPropertiesFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("There was an error while updating the file: " + systemPropertiesFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
         } finally {
             if (fis != null) {
                 try {
