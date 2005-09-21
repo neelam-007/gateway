@@ -119,12 +119,8 @@ public class WssDecoratorImpl implements WssDecorator {
             if (dreq.isSuppressBst()) {
                 // Use keyinfo reference target of a SKI
                 X509Certificate senderCert = dreq.getSenderMessageSigningCertificate();
-                senderSki = senderCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
-                if (senderSki != null && senderSki.length > 4) {
-                    byte[] goodSki = new byte[senderSki.length - 4];
-                    System.arraycopy(senderSki, 4, goodSki, 0, goodSki.length);
-                    senderSki = goodSki;
-                } else {
+                senderSki = CertUtils.getSKIBytesFromCert(senderCert);
+                if (senderSki == null) {
                     // Supposed to refer to sender cert by its SKI, but it has no SKI
                     throw new DecoratorException("suppressBst is requested, but the sender cert has no SubjectKeyIdentifier");
                 }
@@ -706,14 +702,12 @@ public class WssDecoratorImpl implements WssDecorator {
         Element encryptionMethod = XmlUtil.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
         encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO);
 
-        byte[] recipSki = recipientCertificate.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
-        if (recipSki != null && recipSki.length > 4) {
-            byte[] goodSki = new byte[recipSki.length - 4];
-            System.arraycopy(recipSki, 4, goodSki, 0, goodSki.length);
+        byte[] recipSki = CertUtils.getSKIBytesFromCert(recipientCertificate);
+        if (recipSki != null) {
             if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
-                addKeyInfoToEncryptedKey(encryptedKey, goodSki, SoapUtil.VALUETYPE_SKI, c);
+                addKeyInfoToEncryptedKey(encryptedKey, recipSki, SoapUtil.VALUETYPE_SKI, c);
             } else {
-                addKeyInfoToEncryptedKey(encryptedKey, goodSki, SoapUtil.VALUETYPE_SKI_2, c);
+                addKeyInfoToEncryptedKey(encryptedKey, recipSki, SoapUtil.VALUETYPE_SKI_2, c);
             }
         } else {
             if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {

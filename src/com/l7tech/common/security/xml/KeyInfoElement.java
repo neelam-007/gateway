@@ -171,7 +171,7 @@ public class KeyInfoElement implements ParsedElement {
         }
         if (valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
             // If not typed, assume it's a ski
-            byte[] ski = cert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
+            byte[] ski = CertUtils.getSKIBytesFromCert(cert);
             if (ski == null) {
                 // TODO try making up both RFC 3280 SKIs and see if they match (Bug #1001)
                 //throw new CertificateException("Unable to verify that KeyInfo is addressed to us -- " +

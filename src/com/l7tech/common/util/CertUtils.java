@@ -7,7 +7,6 @@ package com.l7tech.common.util;
 import com.l7tech.common.security.CertificateExpiry;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.x509.X509Extensions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -120,7 +119,7 @@ public class CertUtils {
         }
     }
 
-    public static String getSki(X509Certificate cert) throws CertificateEncodingException {
+    public static String getSki(X509Certificate cert) {
         byte[] skiBytes = getSKIBytesFromCert(cert);
         if (skiBytes == null) return null;
         return HexUtils.encodeBase64(skiBytes);
@@ -492,18 +491,19 @@ public class CertUtils {
     /**
      * Copied from Apache WSS4J's org.apache.ws.security.components.crypto.AbstractCrypto
      */
-     public static byte[] getSKIBytesFromCert(X509Certificate cert) throws CertificateEncodingException {
+     public static byte[] getSKIBytesFromCert(X509Certificate cert) {
         /*
            * Gets the DER-encoded OCTET string for the extension value (extnValue)
            * identified by the passed-in oid String. The oid string is represented
            * by a set of positive whole numbers separated by periods.
            */
-        byte[] derEncodedValue = cert.getExtensionValue(X509Extensions.SubjectKeyIdentifier.toString());
+        byte[] derEncodedValue = cert.getExtensionValue(X509_OID_SUBJECTKEYID);
 
         if (cert.getVersion() < 3 || derEncodedValue == null) {
             PublicKey key = cert.getPublicKey();
             if (!(key instanceof RSAPublicKey)) {
-                throw new CertificateEncodingException("Cannot calculate SKI for non-RSA public key");
+                logger.warning("Can't get SKI for non-RSA public key in cert '" + cert.getSubjectDN().getName() + "'");
+                return null;
             }
             byte[] encoded = key.getEncoded();
             // remove 22-byte algorithm ID and header
@@ -513,7 +513,7 @@ public class CertUtils {
             try {
                 sha = MessageDigest.getInstance("SHA-1");
             } catch (NoSuchAlgorithmException ex) {
-                throw new CertificateEncodingException("Wrong certificate version (< 3) and no SHA1 message digest availabe");
+                throw new RuntimeException(ex); // Can't happen or other stuff will be badly broken too
             }
             sha.reset();
             sha.update(value);

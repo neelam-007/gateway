@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.logging.Logger;
 
 /**
@@ -128,10 +129,14 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
 
                 // Use cert info as sender id
                 MessageDigest md = HexUtils.getSha1();
-                md.update(new Long(created).toString().getBytes("UTF-8"));
+                md.update(Long.toString(created).getBytes("UTF-8"));
                 md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
                 md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
-                md.update(skiToString(signingCert).getBytes("UTF-8"));
+                try {
+                    md.update(skiToString(signingCert).getBytes("UTF-8"));
+                } catch (CertificateEncodingException e) {
+                    throw new IOException("Unable to generate replay-protection ID; a SKI cannot be derived from signing cert '" + signingCert.getSubjectDN().getName() + "'");
+                }
                 byte[] digest = md.digest();
                 messageIdStr = HexUtils.hexDump(digest);
             } else if (signingToken instanceof SecurityContextToken) {
@@ -164,8 +169,8 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
-    private String skiToString(X509Certificate signingCert) {
-        byte[] ski = signingCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
+    private String skiToString(X509Certificate signingCert) throws CertificateEncodingException {
+        byte[] ski = CertUtils.getSKIBytesFromCert(signingCert);
         return ski == null ? "" : HexUtils.hexDump(ski);
     }
 

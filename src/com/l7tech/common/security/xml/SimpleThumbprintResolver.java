@@ -9,7 +9,6 @@ import com.l7tech.common.util.CertUtils;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,11 +42,7 @@ public class SimpleThumbprintResolver implements ThumbprintResolver {
 
         public String getSki() {
             if (ski == null && cert != null) {
-                try {
-                    ski = CertUtils.getSki(cert);
-                } catch (CertificateException e) {
-                    logger.log(Level.WARNING, "Couldn't get SKI for cert", e);
-                }
+                ski = CertUtils.getSki(cert);
             }
             return ski;
         }

@@ -379,12 +379,9 @@ public class TokenServiceImpl implements TokenService {
                                  "<xenc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-1_5\" />");
 
         // append ski if applicable
-        byte[] recipSki = requestorCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
-        if (recipSki != null && recipSki.length > 4) {
-            byte[] goodSki = new byte[recipSki.length - 4];
-            System.arraycopy(recipSki, 4, goodSki, 0, goodSki.length);
+        String recipSkiB64 = CertUtils.getSki(requestorCert);
+        if (recipSkiB64 != null) {
             // add the ski
-            String recipSkiB64 = HexUtils.encodeBase64(goodSki, true);
             String skiRef = "<wsse:SecurityTokenReference>" +
                               "<wsse:KeyIdentifier ValueType=\"" + SoapUtil.VALUETYPE_SKI + "\">" +
                                 recipSkiB64 +
