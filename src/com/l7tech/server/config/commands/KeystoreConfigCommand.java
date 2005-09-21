@@ -339,8 +339,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     }
 
     private void updateSystemPropertiesFile(KeystoreConfigBean ksBean, File systemPropertiesFile) throws IOException {
-//        FileInputStream fis = null;
-//        FileOutputStream fos = null;
 
         BufferedReader reader = null;
         PrintWriter writer = null;
@@ -380,7 +378,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             writer.close();
             writer = null;
 
-            newFile.renameTo(systemPropertiesFile);
+            logger.info("Updating the system.properties file");
+            renameFile(newFile, systemPropertiesFile);
+
+//            newFile.renameTo(systemPropertiesFile);
 
         } catch (FileNotFoundException e) {
             logger.severe("Error while updating the file: " + systemPropertiesFile.getAbsolutePath());
@@ -438,7 +439,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             writer = null;
 
             logger.info("Updating the java.security file");
-            renameJavaSecFile(newJavaSecFile, javaSecFile);
+            renameFile(newJavaSecFile, javaSecFile);
 
         } catch (FileNotFoundException e) {
             logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
@@ -461,28 +462,50 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void renameJavaSecFile(File newJavaSecFile, File javaSecFile) throws IOException {
-        String backupName = javaSecFile.getAbsoluteFile() + ".bak";
+    private void renameFile(File srcFile, File destFile) throws IOException {
+        String backupName = destFile.getAbsoluteFile() + ".bak";
 
-        logger.info("Renaming: " + javaSecFile + " to: " + backupName);
-        File javaSecBackup = new File(backupName);
-        if (javaSecBackup.exists()) {
-            javaSecBackup.delete();
+        logger.info("Renaming: " + destFile + " to: " + backupName);
+        File backupFile = new File(backupName);
+        if (backupFile.exists()) {
+            backupFile.delete();
         }
 
+        //copy the old file to the backup location
 
-        //copy the old java sec file to the backup location
-
-        FileUtils.copyFile(javaSecFile, javaSecBackup);
+        FileUtils.copyFile(destFile, backupFile);
         try {
-            javaSecFile.delete();
-            FileUtils.copyFile(newJavaSecFile, javaSecFile);
-            newJavaSecFile.delete();
-            logger.info("Successfully updated the java.security file");
+            destFile.delete();
+            FileUtils.copyFile(srcFile, destFile);
+            srcFile.delete();
+            logger.info("Successfully updated the " + destFile.getName() + " file");
         } catch (IOException e) {
-            throw new IOException("You may need to restore the java.security file from: " + javaSecBackup.getAbsolutePath() + "reason: " + e.getMessage());
+            throw new IOException("You may need to restore the " + destFile.getAbsolutePath() + " file from: " + backupFile.getAbsolutePath() + "reason: " + e.getMessage());
         }
     }
+
+//    private void renameJavaSecFile(File newJavaSecFile, File javaSecFile) throws IOException {
+//        String backupName = javaSecFile.getAbsoluteFile() + ".bak";
+//
+//        logger.info("Renaming: " + javaSecFile + " to: " + backupName);
+//        File javaSecBackup = new File(backupName);
+//        if (javaSecBackup.exists()) {
+//            javaSecBackup.delete();
+//        }
+//
+//
+//        //copy the old java sec file to the backup location
+//
+//        FileUtils.copyFile(javaSecFile, javaSecBackup);
+//        try {
+//            javaSecFile.delete();
+//            FileUtils.copyFile(newJavaSecFile, javaSecFile);
+//            newJavaSecFile.delete();
+//            logger.info("Successfully updated the java.security file");
+//        } catch (IOException e) {
+//            throw new IOException("You may need to restore the java.security file from: " + javaSecBackup.getAbsolutePath() + "reason: " + e.getMessage());
+//        }
+//    }
 
     private void copyLunaJars(KeystoreConfigBean ksBean) {
         String lunaJarSourcePath = ksBean.getLunaJspPath() + "/lib/";
