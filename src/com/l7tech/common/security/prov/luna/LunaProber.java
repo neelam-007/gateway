@@ -19,6 +19,8 @@ public class LunaProber {
     private static final String LUNA_KEY_CLASS = "com.chrysalisits.crypto.LunaKey";
     private static final String INCOMPAT = "Luna classes appear to be incompatible with the version we expect: ";
 
+    private LunaProber() {}
+
     /**
      * Safely check if a connection to a Luna partition is available, without dying at class load time if
      * the Luna jars are not installed.
