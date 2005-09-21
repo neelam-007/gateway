@@ -109,7 +109,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void prepareJvm(String ksType) throws IllegalAccessException, InstantiationException {
+    private void prepareJvm(String ksType) throws IllegalAccessException, InstantiationException, FileNotFoundException {
         Provider[] currentProviders = Security.getProviders();
         for (int i = 0; i < currentProviders.length; i++) {
             Provider provider = currentProviders[i];
@@ -126,19 +126,27 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 Security.addProvider(new sun.security.jgss.SunProvider());
                 Security.addProvider(new com.sun.security.sasl.Provider());
             }
-            else {
-                System.out.println("******** TODO ***********");
-                System.out.println("do security provider runtime setup for java14");
-            }
+//            else {
+//                System.out.println("******** TODO ***********");
+//                System.out.println("do security provider runtime setup for java14");
+//            }
 
         } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
             File classDir = new File(osFunctions.getPathToJreLibExt());
+            if (!classDir.exists()) {
+                throw new FileNotFoundException("Could not locate the directory: \"" + classDir + "\"");
+            }
+
             File[] lunaJars = classDir.listFiles(new FilenameFilter() {
                 public boolean accept(File file, String s) {
                     return  s.toUpperCase().startsWith("LUNA") &&
                             s.toUpperCase().endsWith(".JAR");
                 }
             });
+
+            if (lunaJars == null) {
+                throw new FileNotFoundException("Could not locate the Luna jar files in the specified directory: \"" + classDir + "\"");
+            }
 
             URLClassLoader sysloader = (URLClassLoader)ClassLoader.getSystemClassLoader();
             Class sysclass = URLClassLoader.class;
@@ -330,9 +338,9 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         return success;
     }
 
-    private void updateSystemPropertiesFile(KeystoreConfigBean ksBean, File systemPropertiesFile) {
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
+    private void updateSystemPropertiesFile(KeystoreConfigBean ksBean, File systemPropertiesFile) throws IOException {
+//        FileInputStream fis = null;
+//        FileOutputStream fos = null;
 
         BufferedReader reader = null;
         PrintWriter writer = null;
@@ -375,9 +383,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             newFile.renameTo(systemPropertiesFile);
 
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.severe("Error while updating the file: " + systemPropertiesFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("Error while updating the file: " + systemPropertiesFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
         } finally {
             if (reader != null) {
                 try {
@@ -390,7 +402,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile, File newJavaSecFile, String[] providersList) {
+    private void updateJavaSecurity(KeystoreConfigBean ksBean, File javaSecFile, File newJavaSecFile, String[] providersList) throws IOException {
         BufferedReader reader = null;
         PrintWriter writer = null;
         try {
@@ -425,13 +437,17 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             writer.close();
             writer = null;
 
-            newJavaSecFile.renameTo(javaSecFile);
             logger.info("Updating the java.security file");
+            renameJavaSecFile(newJavaSecFile, javaSecFile);
 
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe("Error while updating the file: " + javaSecFile.getAbsolutePath());
+            logger.severe(e.getMessage());
+            throw e;
         } finally {
             if (reader != null) {
                 try {
@@ -445,12 +461,33 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
+    private void renameJavaSecFile(File newJavaSecFile, File javaSecFile) throws IOException {
+        String backupName = javaSecFile.getAbsoluteFile() + ".bak";
+
+        logger.info("Renaming: " + javaSecFile + " to: " + backupName);
+        File javaSecBackup = new File(backupName);
+        if (javaSecBackup.exists()) {
+            javaSecBackup.delete();
+        }
+
+
+        //copy the old java sec file to the backup location
+
+        FileUtils.copyFile(javaSecFile, javaSecBackup);
+        try {
+            javaSecFile.delete();
+            FileUtils.copyFile(newJavaSecFile, javaSecFile);
+            newJavaSecFile.delete();
+            logger.info("Successfully updated the java.security file");
+        } catch (IOException e) {
+            throw new IOException("You may need to restore the java.security file from: " + javaSecBackup.getAbsolutePath() + "reason: " + e.getMessage());
+        }
+    }
+
     private void copyLunaJars(KeystoreConfigBean ksBean) {
         String lunaJarSourcePath = ksBean.getLunaJspPath() + "/lib/";
         String jreLibExtdestination = osFunctions.getPathToJreLibExt();
         String javaLibPathDestination = osFunctions.getPathToJavaLibPath();
-//        logger.info("Copying the luna jars from: " + lunaJarSourcePath + " to: " + jreLibExtdestination);
-//        logger.info("Copying the luna lib from: " + lunaJarSourcePath+ " to: " + javaLibPathDestination);
 
         File srcDir = new File(lunaJarSourcePath);
 
