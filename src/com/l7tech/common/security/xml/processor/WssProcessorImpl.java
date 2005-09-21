@@ -1098,7 +1098,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         if (signingCert != null) {
             try {
-                CertUtils.checkValidity(signingCert);
+                signingCert.checkValidity();
             } catch (CertificateExpiredException e) {
                 logger.log(Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), e);
                 throw new ProcessorException(e);
