@@ -1,7 +1,5 @@
 :: Copyright (C) 2005 Layer 7 Technologies Inc.
 ::
-:: $Id: ssgruntimedefs.cmd,v 1.3 2005/08/30 23:14:06 rmak Exp $
-::
 :: Compatibility: Windows XP, Windows Server 2003.
 
 :: This file must not be moved from its location in <SSG home folder>\bin
@@ -36,18 +34,19 @@ set /a maxnewsize=%java_ram%/2
 set JAVA_OPTS=^
 -Dcom.l7tech.server.home="%SSG_HOME%" ^
 -Dfile.encoding=UTF-8 ^
+-Djava.awt.headless=true ^
+-Djava.library.path="%SSG_HOME%\lib" ^
 -Dnetworkaddress.cache.ttl=30 ^
+-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger ^
+-server ^
 -Xms%java_ram%M ^
 -Xmx%java_ram%M ^
+-Xrs ^
 -Xss256k ^
--server ^
--Djava.awt.headless=true ^
 -XX:CompileThreshold=1500 ^
--Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger ^
 -XX:NewSize=%maxnewsize%M ^
 -XX:MaxNewSize=%maxnewsize%M ^
--XX:+DisableExplicitGC ^
--Xrs
+-XX:+DisableExplicitGC
 
 :: Tune for single or multi processor machine.
 if %NUMBER_OF_PROCESSORS%==1 (

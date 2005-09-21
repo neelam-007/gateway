@@ -53,6 +53,8 @@ set PR_CLASSPATH=%TOMCAT_HOME%\bin\bootstrap.jar
 setlocal ENABLEDELAYEDEXPANSION
 for %%i in ("%TOMCAT_HOME%\common\classpath\*.jar") do if "!PR_CLASSPATH!"=="" (set PR_CLASSPATH=%%i) else (set PR_CLASSPATH=!PR_CLASSPATH!;%%i)
 
+:: Unfortunately, we cannot use %JAVA_OPTS% composed in ssgruntimedefs.cmd
+:: because PRUNSRV wants them in forms.
 set JVMOPTIONS=^
 -Dcatalina.home=%TOMCAT_HOME%;^
 -Dcom.l7tech.server.home=%SSG_HOME%;^
@@ -60,6 +62,7 @@ set JVMOPTIONS=^
 -Djava.awt.headless=true;^
 -Djava.endorsed.dirs=%TOMCAT_HOME%\common\endorsed;^
 -Djava.io.tmpdir=%TOMCAT_HOME%\temp;^
+-Djava.library.path=%SSG_HOME%\lib;^
 -Dnetworkaddress.cache.ttl=30;^
 -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger;^
 -Xrs;^
