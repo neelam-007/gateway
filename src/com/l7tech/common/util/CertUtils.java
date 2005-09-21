@@ -120,7 +120,7 @@ public class CertUtils {
         }
     }
 
-    public static String getSki(X509Certificate cert) throws CertificateException {
+    public static String getSki(X509Certificate cert) throws CertificateEncodingException {
         byte[] skiBytes = getSKIBytesFromCert(cert);
         if (skiBytes == null) return null;
         return HexUtils.encodeBase64(skiBytes);
@@ -492,7 +492,7 @@ public class CertUtils {
     /**
      * Copied from Apache WSS4J's org.apache.ws.security.components.crypto.AbstractCrypto
      */
-     public static byte[] getSKIBytesFromCert(X509Certificate cert) throws CertificateException {
+     public static byte[] getSKIBytesFromCert(X509Certificate cert) throws CertificateEncodingException {
         /*
            * Gets the DER-encoded OCTET string for the extension value (extnValue)
            * identified by the passed-in oid String. The oid string is represented
@@ -503,7 +503,7 @@ public class CertUtils {
         if (cert.getVersion() < 3 || derEncodedValue == null) {
             PublicKey key = cert.getPublicKey();
             if (!(key instanceof RSAPublicKey)) {
-                throw new CertificateException("Cannot calculate SKI for non-RSA public key");
+                throw new CertificateEncodingException("Cannot calculate SKI for non-RSA public key");
             }
             byte[] encoded = key.getEncoded();
             // remove 22-byte algorithm ID and header
@@ -513,7 +513,7 @@ public class CertUtils {
             try {
                 sha = MessageDigest.getInstance("SHA-1");
             } catch (NoSuchAlgorithmException ex) {
-                throw new CertificateException("Wrong certificate version (<3) and no SHA1 message digest availabe");
+                throw new CertificateEncodingException("Wrong certificate version (< 3) and no SHA1 message digest availabe");
             }
             sha.reset();
             sha.update(value);
