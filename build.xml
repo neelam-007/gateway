@@ -416,10 +416,17 @@
                 <include name="spring-dao.jar"/>
                 <include name="spring-orm.jar"/>
                 <include name="spring-web.jar"/>
-<!-- TODO AC WORK IN PROGRESS
+
+                <!-- AdminWS Stuff -->
+                <include name="stax-1.1.1-dev.jar"/>
+                <include name="stax-api-1.0.jar"/>
+                <include name="xfire-aegis-1.0-SNAPSHOT.jar"/>
+                <include name="xfire-core-1.0-SNAPSHOT.jar"/>
+                <include name="xfire-spring-1.0-SNAPSHOT.jar"/>
+                <include name="yom-1.0-SNAPSHOT.jar"/>
                 <include name="spring-webmvc.jar"/>
+
                 <include name="velocity-1.4.jar"/>
--->
                 <include name="cglib-full-2.0.2.jar"/>
                 <include name="ehcache-0.9.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
@@ -484,13 +491,12 @@
             <zipfileset dir="${src.root}/etc" includes="dataAccessContext.xml" prefix="WEB-INF"/>
             <zipfileset dir="${src.root}/etc" includes="adminContext.xml" prefix="WEB-INF"/>
 
-            <!-- Admin web stuff -->
-<!-- TODO AC WORK IN PROGRESS
-            <zipfileset dir="${src.root}/etc/admin/web" prefix="WEB-INF">
-                <include name="adminDispatcher-servlet.xml"/>
-                <include name="velocity/"/>
+            <!-- AdminWS stuff -->
+            <zipfileset dir="${src.root}/etc/admin/ws/xfire" prefix="WEB-INF">
+                <include name="xfire-servlet.xml"/>
             </zipfileset>
--->
+
+            <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
         </war>
 
         <jar jarfile="${build.dir}/rmiannotation.jar">
@@ -898,6 +904,10 @@
             </fileset>
 
             <fileset dir="${src.root}/lib/gateway/snmp">
+                <include name="*.jar"/>
+            </fileset>
+
+            <fileset dir="${src.root}/lib/gateway/adminws">
                 <include name="*.jar"/>
             </fileset>
         </copy>
