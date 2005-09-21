@@ -7,13 +7,13 @@ package com.l7tech.common.util;
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.common.xml.TooManyChildElementsException;
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.w3c.dom.*;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -585,7 +585,22 @@ public class XmlUtil {
         }
         return prefix == null || prefix.length() < 1 ? null : prefix;
     }
-    
+
+    /**
+     * Creates an empty element and appends it to the end of Parent.  The element will share the parent's namespace
+     * URI and prefix.
+     *
+     * @param parent  parent element.  Must not be null.
+     * @param localName  new local name.  Must not be null or empty.
+     * @return the newly created element, which has already been appended to parent.
+     */
+    public static Element createAndAppendElement(Element parent, String localName) {
+        Element element = parent.getOwnerDocument().createElementNS(parent.getNamespaceURI(), localName);
+        parent.appendChild(element);
+        element.setPrefix(parent.getPrefix());
+        return element;
+    }
+
     /**
      * Creates an element and appends it to the end of Parent.  The element will be in the requested namespace.
      * If the namespace is already declared in parent or a direct ancestor then that prefix will be reused;

@@ -14,13 +14,17 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -142,5 +146,72 @@ public class DsigUtil {
             Transform.C14N_EXCLUSIVE,
             "c14n");
         inclusiveNamespaces.setAttribute("PrefixList", "");
+    }
+
+    /**
+     * Check a simple signature for validity.  A signature is sufficiently "simple" to be checked by this method
+     * if all of the following is true: <br>
+     *  - it does not use the STR-Transform; <br>
+     *  - all ID references can be resolved by looking for wsu:Id, saml:Assertion, or Id attributes; <br>
+     *  - caller has no special needs (such as keeping track of signed elements, the last signature value seen,
+     *                                 or other complex behaviour needed by [for example] WssProcessorImpl)<br>
+     *
+     * @param sigElement
+     * @param thumbprintResolver
+     * @throws SignatureException
+     */
+    public static void checkSimpleSignature(Element sigElement, ThumbprintResolver thumbprintResolver) throws SignatureException {
+        Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
+        if (keyInfoElement == null) throw new SignatureException("No KeyInfo found in signature");
+
+        final X509Certificate signingCert;
+
+        try {
+            KeyInfoElement parsedKeyInfo = KeyInfoElement.parse(keyInfoElement, thumbprintResolver);
+            signingCert = parsedKeyInfo.getCertificate();
+            if (signingCert == null) throw new SignatureException("Unable to resolve signing cert");
+        } catch (SAXException e) {
+            throw new SignatureException(e);
+        } catch (KeyInfoElement.KeyInfoElementException e) {
+            throw new SignatureException(e);
+        }
+
+        PublicKey signingKey = signingCert.getPublicKey();
+        if (signingKey == null) throw new SignatureException("Unable to find signing key"); // can't happen
+
+        try {
+            signingCert.checkValidity();
+        } catch (CertificateExpiredException e) {
+            throw new SignatureException(e);
+        } catch (CertificateNotYetValidException e) {
+            throw new SignatureException(e);
+        }
+
+        SignatureContext sigContext = new SignatureContext();
+        sigContext.setEntityResolver(new EntityResolver() {
+            public InputSource resolveEntity(String publicId, String systemId) throws IOException {
+                // this works but SAXException doesn't... I guess XSS4J uses SAXException internally to signal some normal condition.
+                throw new IOException("References to external resources are not permitted");
+            }
+        });
+
+        sigContext.setIDResolver(new IDResolver() {
+            public Element resolveID(Document doc, String s) {
+                return SoapUtil.getElementByWsuId(doc, s);
+            }
+        });
+
+        Validity validity = sigContext.verify(sigElement, signingKey);
+
+        if (!validity.getCoreValidity()) {
+            StringBuffer msg = new StringBuffer("Signature not valid. " + validity.getSignedInfoMessage());
+            for (int i = 0; i < validity.getNumberOfReferences(); i++) {
+                msg.append("\n\tElement " + validity.getReferenceURI(i) + ": " + validity.getReferenceMessage(i));
+            }
+            throw new SignatureException(msg.toString());
+        }
+
+        // Success.  Signature looks good.
+        return;
     }
 }
