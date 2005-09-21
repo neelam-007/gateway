@@ -9,6 +9,7 @@ import com.l7tech.common.util.CertUtils;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -23,6 +24,7 @@ public class SimpleThumbprintResolver implements ThumbprintResolver {
     private static class Cert {
         private final X509Certificate cert;
         private String thumb = null;
+        private String ski = null;
 
         public Cert(X509Certificate cert) {
             this.cert = cert;
@@ -37,6 +39,17 @@ public class SimpleThumbprintResolver implements ThumbprintResolver {
                 }
             }
             return thumb;
+        }
+
+        public String getSki() {
+            if (ski == null && cert != null) {
+                try {
+                    ski = CertUtils.getSki(cert);
+                } catch (CertificateException e) {
+                    logger.log(Level.WARNING, "Couldn't get SKI for cert", e);
+                }
+            }
+            return ski;
         }
     }
 
@@ -59,6 +72,16 @@ public class SimpleThumbprintResolver implements ThumbprintResolver {
             Cert cert = certs[i];
             String thumb = cert.getThumb();
             if (thumb != null && thumb.equals(thumbprint))
+                return cert.cert;
+        }
+        return null;
+    }
+
+    public X509Certificate lookupBySki(String targetSki) {
+        for (int i = 0; i < certs.length; i++) {
+            Cert cert = certs[i];
+            String ski = cert.getSki();
+            if (ski != null && ski.equals(ski))
                 return cert.cert;
         }
         return null;

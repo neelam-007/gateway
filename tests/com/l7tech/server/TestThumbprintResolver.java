@@ -16,4 +16,8 @@ public class TestThumbprintResolver implements ThumbprintResolver {
     public X509Certificate lookup(String thumbprint) {
         return null;
     }
+
+    public X509Certificate lookupBySki(String ski) {
+        return null;
+    }
 }

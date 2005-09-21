@@ -18,4 +18,6 @@ public interface ThumbprintResolver {
      * @return the certificate that was found, or null if one was not found.
      */
     X509Certificate lookup(String thumbprint);
+
+    X509Certificate lookupBySki(String ski);
 }

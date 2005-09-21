@@ -7,6 +7,7 @@ package com.l7tech.common.util;
 import com.l7tech.common.security.CertificateExpiry;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x509.X509Extensions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -117,6 +118,12 @@ public class CertUtils {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Misconfigured VM: SHA-1 not available: " + e.getMessage(), e); // can't happen
         }
+    }
+
+    public static String getSki(X509Certificate cert) throws CertificateException {
+        byte[] skiBytes = getSKIBytesFromCert(cert);
+        if (skiBytes == null) return null;
+        return HexUtils.encodeBase64(skiBytes);
     }
 
     public static final class KeyUsage {
@@ -480,6 +487,47 @@ public class CertUtils {
             default:
                 throw new IllegalArgumentException("DN '" + dn + "' has more than one CN value");
         }
+    }
+
+    /**
+     * Copied from Apache WSS4J's org.apache.ws.security.components.crypto.AbstractCrypto
+     */
+     public static byte[] getSKIBytesFromCert(X509Certificate cert) throws CertificateException {
+        /*
+           * Gets the DER-encoded OCTET string for the extension value (extnValue)
+           * identified by the passed-in oid String. The oid string is represented
+           * by a set of positive whole numbers separated by periods.
+           */
+        byte[] derEncodedValue = cert.getExtensionValue(X509Extensions.SubjectKeyIdentifier.toString());
+
+        if (cert.getVersion() < 3 || derEncodedValue == null) {
+            PublicKey key = cert.getPublicKey();
+            if (!(key instanceof RSAPublicKey)) {
+                throw new CertificateException("Cannot calculate SKI for non-RSA public key");
+            }
+            byte[] encoded = key.getEncoded();
+            // remove 22-byte algorithm ID and header
+            byte[] value = new byte[encoded.length - 22];
+            System.arraycopy(encoded, 22, value, 0, value.length);
+            MessageDigest sha;
+            try {
+                sha = MessageDigest.getInstance("SHA-1");
+            } catch (NoSuchAlgorithmException ex) {
+                throw new CertificateException("Wrong certificate version (<3) and no SHA1 message digest availabe");
+            }
+            sha.reset();
+            sha.update(value);
+            return sha.digest();
+        }
+
+        /**
+         * Strip away first four bytes from the DerValue (tag and length of
+         * ExtensionValue OCTET STRING and KeyIdentifier OCTET STRING)
+         */
+        byte abyte0[] = new byte[derEncodedValue.length - 4];
+
+        System.arraycopy(derEncodedValue, 4, abyte0, 0, abyte0.length);
+        return abyte0;
     }
 
     private static final String FACTORY_ALGORITHM = "X.509";

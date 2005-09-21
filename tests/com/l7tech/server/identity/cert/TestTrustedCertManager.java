@@ -63,6 +63,10 @@ public class TestTrustedCertManager implements TrustedCertManager {
         throw new RuntimeException("Not implemented");
     }
 
+    public List findBySki(String ski) throws FindException {
+        throw new RuntimeException("Not implemented");
+    }
+
     public Collection findAllHeaders() throws FindException {
         throw new RuntimeException("Not implemented");
     }

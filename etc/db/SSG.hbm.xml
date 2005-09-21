@@ -49,6 +49,29 @@
         -->
     </class>
 
+<!-- AC WORK IN PROGRESS
+    <class name="com.l7tech.identity.internal.MetaGroup" table="meta_group">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+    </class>
+
+    <class name="com.l7tech.identity.internal.MetaGroupMembership" table="meta_group_membership">
+        <composite-id>
+            <key-property name="metaGroupOid" column="meta_group_oid" type="long"/>
+            <key-property name="foreignProviderOid" column="foreign_provider_oid" type="long"/>
+            <key-property name="foreignUserId" column="foreign_user_id" type="string"/>
+            <key-property name="foreignGroupId" column="foreign_group_id" type="string"/>
+        </composite-id>
+    </class>
+-->
+
+
     <class name="com.l7tech.identity.internal.InternalUser" table="internal_user">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -77,11 +100,6 @@
             <key-property name="userOid" column="internal_user" type="long"/>
             <key-property name="groupOid" column="internal_group" type="long"/>
         </composite-id>
-
-        <!--
-        <property name="userOid" type="long" column="internal_user"/>
-        <property name="groupOid" type="long" column="internal_group"/>
-        -->
     </class>
 
 
@@ -111,6 +129,7 @@
         <property name="certBase64" column="cert" type="string"/>
         <property name="resetCounter" column="reset_counter" type="int"/>
         <property name="thumbprintSha1" column="thumbprint_sha1" type="string"/>
+        <property name="ski" type="string"/>
     </class>
 
     <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution">
@@ -204,6 +223,7 @@
         <property name="trustedAsSamlIssuer" column="trusted_for_saml" type="boolean"/>
         <property name="trustedAsSamlAttestingEntity" column="trusted_as_saml_attesting_entity" type="boolean"/>
         <property name="thumbprintSha1" column="thumbprint_sha1" type="string"/>
+        <property name="ski" type="string"/>
     </class>
 
     <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"

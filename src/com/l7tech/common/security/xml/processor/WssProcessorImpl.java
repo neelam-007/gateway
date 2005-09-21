@@ -940,6 +940,27 @@ public class WssProcessorImpl implements WssProcessor {
                             return token;
                         }
                     }
+                } else if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
+                    SigningSecurityToken token = (SigningSecurityToken)cntx.x509TokensBySki.get(value);
+                    if (token != null) {
+                        logger.finest("The KeyInfo referred to a previously used X.509 token.");
+                        return token;
+                    }
+
+                    if (cntx.thumbprintResolver == null) {
+                        logger.warning("The KeyInfo referred to a SKI, but no ThumbprintResolver is available");
+                    } else {
+                        X509Certificate foundCert = cntx.thumbprintResolver.lookupBySki(value);
+                        if (foundCert == null) {
+                            logger.info("The KeyInfo referred to a SKI, but we were unable to locate a matching cert");
+                        } else {
+                            logger.finest("The KeyInfo referred to a recognized X.509 certificate by its SKI: " + foundCert.getSubjectDN().getName());
+                            token = new X509BinarySecurityTokenImpl(foundCert, keyId);
+                            cntx.securityTokens.add(token);
+                            cntx.x509TokensBySki.put(value, token);
+                            return token;
+                        }
+                    }
                 } else {
                     logger.finest("The KeyInfo used an unsupported KeyIdentifier ValueType: " + valueType);
                 }
@@ -1341,6 +1362,7 @@ public class WssProcessorImpl implements WssProcessor {
         Element releventSecurityHeader = null;
         Map x509TokensById = new HashMap();
         Map x509TokensByThumbprint = new HashMap();
+        Map x509TokensBySki = new HashMap();
         Map securityTokenReferenceElementToTargetElement = new HashMap();
         Map encryptedKeyById = new HashMap();
         SecurityActor secHeaderActor;

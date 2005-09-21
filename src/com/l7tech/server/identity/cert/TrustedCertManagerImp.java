@@ -73,7 +73,25 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
             return getHibernateTemplate().find(hql.toString(), thumbprint.trim());
         } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new FindException("Couldn't retrieve cert", e);
+            throw new FindException("Couldn't find cert(s)", e);
+        }
+    }
+
+    public List findBySki(String ski) throws FindException {
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
+        hql.append(" WHERE ").append(getTableName()).append(".ski ");
+        try {
+            if (ski == null) {
+                hql.append("is null");
+                return getHibernateTemplate().find(hql.toString());
+            }
+
+            hql.append(" = ?");
+            return getHibernateTemplate().find(hql.toString(), ski.trim());
+        } catch (DataAccessException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new FindException("Couldn't find cert(s)", e);
         }
     }
 

@@ -228,10 +228,14 @@ public class BootProcess extends ApplicationObjectSupport
             TrustedCertManager tcm = (TrustedCertManager)getApplicationContext().getBean("trustedCertManager");
             tcm.findByThumbprint(null);
             tcm.findByThumbprint("");
+            tcm.findBySki(null);
+            tcm.findBySki("");
 
             ClientCertManager ccm = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
             ccm.findByThumbprint(null);
             ccm.findByThumbprint("");
+            ccm.findBySki(null);
+            ccm.findBySki("");
 
             logger.info("Initialized server");
         } catch (IOException e) {

@@ -7,8 +7,8 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.MimeBodyTest;
-import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.UsernameTokenImpl;
@@ -667,6 +667,11 @@ public class WssDecoratorTest extends TestCase {
         runTest(getSignedAndEncryptedBodyWithNoBstTestDocument());
     }
 
+    public void testSignedBodyWithNoBst() throws Exception {
+        TestDocument doc = getSignedBodyWithNoBstTestDocument();
+        runTest(doc);
+    }
+
     public TestDocument getSignedAndEncryptedBodyWithNoBstTestDocument() throws Exception {
         final Context c = new Context();
         return new TestDocument(c,
@@ -677,6 +682,22 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getEttkClientPrivateKey(),
                                 true,
                                 new Element[]{c.body},
+                                new Element[]{c.body},
+                                null,
+                                false,
+                                true);
+    }
+
+    public TestDocument getSignedBodyWithNoBstTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                null,
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                true,
+                                null,
                                 new Element[]{c.body},
                                 null,
                                 false,

@@ -1075,18 +1075,28 @@ public class SoapUtil {
 
     public static Operation getOperation(Wsdl wsdl, Message request)
             throws IOException, SAXException, InvalidDocumentFormatException,
-                   WsdlMissingSoapPortException, MessageNotSoapException
+                   MessageNotSoapException
     {
         XmlKnob requestXml = (XmlKnob)request.getKnob(XmlKnob.class);
-        if (requestXml == null) throw new MessageNotSoapException("Not an XML message");
+        if (requestXml == null) {
+            log.info("Can't get operation for non-XML message");
+            return null;
+        }
         Document requestDoc = requestXml.getDocumentReadOnly();
         Element payload = getPayloadElement(requestDoc);
-        if (payload == null) throw new MessageNotSoapException("No payload element");
+        if (payload == null) {
+            log.info("Can't get operation for message with no payload element");
+            return null;
+        }
 
         Operation operation = null;
 
         Map bindings = wsdl.getDefinition().getBindings();
-        if (bindings.isEmpty()) throw new WsdlMissingSoapPortException(wsdl.getDefinition().getDocumentBaseURI());
+        if (bindings.isEmpty()) {
+            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
+            return null;
+        }
+
         boolean foundSoapBinding = false;
         bindings: for (Iterator h = bindings.keySet().iterator(); h.hasNext();) {
             QName bindingName = (QName)h.next();
@@ -1207,7 +1217,10 @@ public class SoapUtil {
             }
         }
 
-        if (!foundSoapBinding) throw new WsdlMissingSoapPortException(wsdl.getDefinition().getDocumentBaseURI());
+        if (!foundSoapBinding) {
+            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
+            return null;
+        }
 
         return operation;
     }

@@ -35,6 +35,10 @@ public class ClientCertManagerStub implements ClientCertManager {
         throw new RuntimeException("Not implemented");
     }
 
+    public List findBySki(String ski) throws FindException {
+        throw new RuntimeException("Not implemented");
+    }
+
     /**
      * retrieves existing cert for this user
      */

@@ -452,9 +452,16 @@ public class SamlProcessingTest extends TestCase {
 
         // See if our code can deal with it
         final String signingCertThumbprint = CertUtils.getThumbprintSHA1(signingCert);
+        final String signingCertSki = CertUtils.getSki(signingCert);
         ThumbprintResolver thumbResolver = new ThumbprintResolver() {
             public X509Certificate lookup(String thumbprint) {
                 if (signingCertThumbprint.equals(thumbprint))
+                    return signingCert;
+                return null;
+            }
+
+            public X509Certificate lookupBySki(String ski) {
+                if (signingCertSki != null && signingCertSki.equals(ski))
                     return signingCert;
                 return null;
             }

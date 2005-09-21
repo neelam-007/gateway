@@ -62,7 +62,9 @@ public interface ClientCertManager {
      * @param thumbprint the base64'd SHA-1 thumbprint value to search for. May be null.
      */
     List findByThumbprint(String thumbprint) throws FindException;
-    
+
+    List findBySki(String ski) throws FindException;
+
     /**
      * Thrown by a {@link com.l7tech.identity.UserManager} if it doesn't like the cert
      */

@@ -18,6 +18,7 @@ public abstract class X509Entity extends NamedEntityImp {
     protected transient X509Certificate cachedCert;
     protected String certBase64;
     protected String thumbprintSha1;
+    protected String ski;
 
     /**
      * Gets the {@link java.security.cert.X509Certificate} based on the saved {@link #certBase64}
@@ -65,6 +66,29 @@ public abstract class X509Entity extends NamedEntityImp {
             }
         }
         return thumbprintSha1;
+    }
+
+    /**
+     * @return the SKI of the certificate (base64-encoded), or null either if there is no cert,
+     * or the cert has no SKI
+     * @throws IOException
+     * @throws CertificateException
+     */
+    public String getSki() throws IOException, CertificateException {
+        if (ski == null) {
+            X509Certificate cert = getCertificate();
+            if (cert == null) return null;
+            ski = CertUtils.getSki(cert);
+        }
+        return ski;
+    }
+
+    /**
+     * @param ski
+     * @deprecated for use only by serialization & persistence layers
+     */
+    public void setSki(String ski) {
+        this.ski = ski;
     }
 
     /**

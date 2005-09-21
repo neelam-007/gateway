@@ -113,4 +113,10 @@ public interface TrustedCertManager extends EntityManager {
      * @param thumbprint the base64'd SHA-1 thumbprint value to search for. May be null.
      */
     List findByThumbprint(String thumbprint) throws FindException;
+
+    /**
+     * @return {@link TrustedCert}s with the matching base64'd SKI. Never null, but may be empty.
+     * @param ski the base64'd SKI value to search for. May be null.
+     */
+    List findBySki(String ski) throws FindException;
 }

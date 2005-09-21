@@ -78,12 +78,20 @@ public class KeyInfoElement implements ParsedElement {
                 Element keyid = XmlUtil.findOnlyOneChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
                 if (keyid == null) throw new SAXException("KeyInfo has SecurityTokenReference but no KeyIdentifier");
                 String vt = keyid.getAttribute("ValueType");
-                if (vt == null || !vt.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX))
-                    throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1: " + vt);
+
+                X509Certificate gotCert;
                 String value = XmlUtil.getTextValue(keyid);
                 if (value == null || value.length() < 1) throw new SAXException("KeyInfo contains an empty KeyIdentifier");
+                if (vt == null) {
+                    throw new SAXException("KeyInfo has null STR/KeyIdentifier ValueType");
+                } else if (vt.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX)) {
+                    gotCert = thumbprintResolver.lookup(value);
+                } else if (vt.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
+                    gotCert = thumbprintResolver.lookupBySki(value);
+                } else {
+                    throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1: " + vt);
+                }
 
-                X509Certificate gotCert = thumbprintResolver.lookup(value);
                 if (gotCert == null) throw new SAXException("KeyInfo KeyIdentifier thumbprint did not match any X.509 certificate known to this recipient");
                 cert = gotCert;
             } else {

@@ -60,6 +60,11 @@ public class KeyInfoThumbprintTestMessage extends TestCase {
         }
     }
 
+    public void testSki() throws Exception {
+        X509Certificate cert = TestDocuments.getWssInteropAliceCert();
+        System.out.println(CertUtils.getSki(cert));
+    }
+
     public MsgInfo makeTestMessage() throws Exception {
 
         // Take the sample request from WSS interop and turn it into one that uses certifictes that are known.

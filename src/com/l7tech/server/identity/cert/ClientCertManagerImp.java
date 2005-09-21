@@ -202,23 +202,31 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     }
 
     public List findByThumbprint(String thumbprint) throws FindException {
+        return simpleQuery("thumbprintSha1", thumbprint);
+    }
+
+    public List findBySki(String ski) throws FindException {
+        return simpleQuery("ski", ski);
+    }
+
+    private List simpleQuery(String fieldname, String value) throws FindException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append("cc").append(" IN CLASS ").append(CertEntryRow.class.getName());
-        hql.append(" WHERE ").append("cc").append(".thumbprintSha1 ");
+        hql.append(" WHERE ").append("cc").append(".").append(fieldname).append(" ");
+
         try {
-            if (thumbprint == null) {
+            if (value == null) {
                 hql.append("is null");
                 return getHibernateTemplate().find(hql.toString());
             }
 
             hql.append(" = ?");
-            return getHibernateTemplate().find(hql.toString(), thumbprint.trim());
+            return getHibernateTemplate().find(hql.toString(), value.trim());
         } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);
         }
     }
-
 
 
     /**
