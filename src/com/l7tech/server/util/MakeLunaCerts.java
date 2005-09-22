@@ -124,6 +124,8 @@ public class MakeLunaCerts {
      * @throws IllegalArgumentException if exportOnly is requested but neither exportCaCert nor exportSslCert are given.
      */
     public static void makeCerts(String hostname, boolean forceOverwrite, boolean exportOnly, File exportCaCert, File exportSslCert) throws LunaCmu.LunaCmuException, KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, ClassNotFoundException, LunaCmu.LunaTokenNotLoggedOnException, CertsAlreadyExistException, CertsDoNotAlreadyExistException {
+        if (exportOnly) forceOverwrite = true;
+
         log.info("Checking for Luna Certificate Management Utility (cmu) command... ");
         LunaCmu cmu = new LunaCmu();
         log.info("Connecting to Luna KeyStore... ");
@@ -137,7 +139,6 @@ public class MakeLunaCerts {
                 throw new CertsAlreadyExistException("SSG Certificates already present on this KeyStore.\n       Use -f switch to forceOverwrite them to be overwritten.");
 
             if (exportOnly) {
-
                 if (oldSslCert == null)
                     throw new CertsDoNotAlreadyExistException("Unable to export existing certificates: no SSL cert with alias " + SSL_LABEL + " was found in the current partition");
 
@@ -147,7 +148,7 @@ public class MakeLunaCerts {
                 boolean exportedSomething = false;
                 if (exportCaCert != null) {
                     writeCertToFile(exportSslCert, oldSslCert);
-                    log.info("SSL cert exported to " + exportCaCert.toString());
+                    log.info("SSL cert exported to " + exportSslCert.toString());
                     exportedSomething = true;
                 }
 
