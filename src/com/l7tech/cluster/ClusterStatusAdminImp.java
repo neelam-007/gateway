@@ -137,6 +137,7 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
     }
 
     public void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException {
+        accessManager.enforceAdminRole();
         clusterPropertyManager.setProperty(key, value);
     }
 
