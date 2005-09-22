@@ -116,8 +116,6 @@ public class PolicyServiceClient {
                                                                 SoapUtil.L7_SERVICEID_ELEMENT);
             sid.appendChild(XmlUtil.createTextNode(msg, serviceId));
             SoapUtil.setL7aMessageId(msg, SoapUtil.generateUniqeUri()); // correlation ID
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (InvalidDocumentFormatException e) {

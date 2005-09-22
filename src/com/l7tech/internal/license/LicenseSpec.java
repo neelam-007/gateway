@@ -22,6 +22,11 @@ public class LicenseSpec {
     private String description = null;
     private String licenseeName = null;
     private String licenseeContactEmail = null;
+    private String hostname = "*";
+    private String ip = "*";
+    private String product = "*";
+    private String versionMinor = "*";
+    private String versionMajor = "*";
 
     /**
      * Create a LicenseSpec for generating an unsigned license.  Primarily useful for testing, since unsigned
@@ -55,7 +60,7 @@ public class LicenseSpec {
         return issuerKey;
     }
 
-    /** @return the License ID that would be used if a license were generated from this LicenseSpec. */
+    /** @return the License ID that would be used if a license were generated from this LicenseSpec, or 0 if it has not yet been set. */
     public long getLicenseId() {
         return licenseId;
     }
@@ -144,5 +149,60 @@ public class LicenseSpec {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    /** @return the hostname to which to bind the license, or "*" to allow any hostname.  Never null. */
+    public String getHostname() {
+        return hostname;
+    }
+
+    /** @param hostname the hostname to bind the license, or "*" to allow any hostname. */
+    public void setHostname(String hostname) {
+        if (hostname == null) hostname = "*";
+        this.hostname = hostname;
+    }
+
+    /** @return the ip address to which to bind the license, or "*" to allow any ip address.  Never null. */
+    public String getIp() {
+        return ip;
+    }
+
+    /** @param ip the ip to which to bind the license, or "*" to allow any ip address. */
+    public void setIp(String ip) {
+        if (ip == null) ip = "*";
+        this.ip = ip;
+    }
+
+    /** @return the product to which to bind the license, or "*" to allow any product. Never null. */
+    public String getProduct() {
+        return product;
+    }
+
+    /** @param product the name of the product to which to bind the license, or "*" to allow any product. */
+    public void setProduct(String product) {
+        if (product == null) product = "*";
+        this.product = product;
+    }
+
+    /** @return the minor version to which to bind the license, or "*" to allow any minor version. Never null. */
+    public String getVersionMinor() {
+        return versionMinor;
+    }
+
+    /** param versionMinor the minor version to which to bind the liense, or "*" to allow any minor version. */
+    public void setVersionMinor(String versionMinor) {
+        if (versionMinor == null) versionMinor = "*";
+        this.versionMinor = versionMinor;
+    }
+
+    /** @return the major version to which to bind the license, or "*" to allow any major version. Never null. */
+    public String getVersionMajor() {
+        return versionMajor;
+    }
+
+    /** @param versionMajor the major version to which to bind the license, or "*" to allow any major version. */
+    public void setVersionMajor(String versionMajor) {
+        if (versionMajor == null) versionMajor = "*";
+        this.versionMajor = versionMajor;
     }
 }

@@ -38,8 +38,6 @@ public class DomPerfTest {
             public void run() {
                 try {
                     Document newDoc = XmlUtil.stringToDocument(origXml);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
                 } catch (SAXException e) {
                     throw new RuntimeException(e);
                 }

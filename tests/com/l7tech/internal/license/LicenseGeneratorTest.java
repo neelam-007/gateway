@@ -9,6 +9,7 @@ import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SimpleCertificateResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -17,6 +18,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
+import java.security.SignatureException;
 import java.util.Calendar;
 import java.util.logging.Logger;
 
@@ -127,15 +129,29 @@ public class LicenseGeneratorTest extends TestCase {
 
         Document lic = LicenseGenerator.generateSignedLicense(spec);
 
-        log.info("Generated unsigned license (pretty-printed): \n" + XmlUtil.nodeToFormattedString(lic));
+        log.info("Generated signed license (raw): \n" + XmlUtil.nodeToString(lic));
+
+        String prettyString = XmlUtil.nodeToFormattedString(lic);
+
+        log.info("Generated signed license (pretty-printed): \n" + prettyString);
 
         // Check the signature
+        lic = XmlUtil.stringToDocument(prettyString);
         Element sigElement = XmlUtil.findOnlyOneChildElementByName(lic.getDocumentElement(), SoapUtil.DIGSIG_URI, "Signature");
         assertNotNull(sigElement);
-        DsigUtil.checkSimpleSignature(sigElement, new SimpleCertificateResolver(signingCert));
+
+        try {
+            DsigUtil.checkSimpleEnvelopedSignature(sigElement, new SimpleCertificateResolver(signingCert));
+            fail("Pretty-printing the license did not break the naive signature verification");
+        } catch (SignatureException e) {
+            // Ok - whitespace change broke the naive sig verification
+        }
+
+        // Should work if we strip the whitespace again
+        XmlUtil.stripWhitespace(lic.getDocumentElement());
+        X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(sigElement, new SimpleCertificateResolver(signingCert));
+        assertTrue(CertUtils.certsAreEqual(gotCert, signingCert));
+
         log.info("Signature validated successfully.");
-
     }
-
-
 }

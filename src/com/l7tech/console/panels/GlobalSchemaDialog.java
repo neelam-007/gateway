@@ -235,10 +235,6 @@ public class GlobalSchemaDialog extends JDialog {
         Document schemaDoc = null;
         try {
             schemaDoc = XmlUtil.stringToDocument(schemaTobeSaved.getSchema());
-        } catch (IOException e) {
-            String msg = "cannot get xml doc from schema property";
-            logger.log(Level.SEVERE, msg, e);
-            throw new RuntimeException(msg);
         } catch (SAXException e) {
             String msg = "cannot get xml doc from schema property";
             logger.log(Level.SEVERE, msg, e);

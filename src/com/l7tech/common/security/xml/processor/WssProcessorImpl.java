@@ -1649,8 +1649,6 @@ public class WssProcessorImpl implements WssProcessor {
             String id = "KnownEncryptedKey-1-" + HexUtils.hexDump(rand);
             Element elm = XmlUtil.stringToDocument("<xenc:EncryptedKey wsu:Id=\"" + id + "\" xmlns:xenc=\""+ xencUri + "\" xmlns:wsu=\"" + wsuUri + "\"/>").getDocumentElement();
             knownEncryptedKey = new EncryptedKeyImpl(elm, key, encryptedForm);
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }

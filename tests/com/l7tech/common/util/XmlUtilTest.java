@@ -229,6 +229,14 @@ public class XmlUtilTest extends TestCase {
         assertEquals(nsmap.get("sec2"), "http://schemas.xmlsoap.org/ws/2002/12/secext");
     }
 
+    public void testStripWhitespace() throws Exception {
+        Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
+        XmlUtil.stripWhitespace(d.getDocumentElement());
+        String stripped = XmlUtil.nodeToString(d);
+        String wantstripped = XmlUtil.nodeToString(XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS_STRIPPED));
+        assertEquals(wantstripped, stripped);
+    }
+
     public static final String DOC_WITH_SEC_HEADERS = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                                                   "    <s:Header>\n" +
                                                   "        <sec1:Security xmlns:sec1=\"http://schemas.xmlsoap.org/ws/2002/xx/secext\"/>\n" +
@@ -237,5 +245,15 @@ public class XmlUtilTest extends TestCase {
                                                   "        <sec4:Security xmlns:sec4=\"http://docs.oasis-open.org/asdfhalsfhasldkhf\"/>\n" +
                                                   "    </s:Header>\n" +
                                                   "    <s:Body/>\n" +
+                                                  "</s:Envelope>";
+
+    public static final String DOC_WITH_SEC_HEADERS_STRIPPED = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                                                  "<s:Header>" +
+                                                  "<sec1:Security xmlns:sec1=\"http://schemas.xmlsoap.org/ws/2002/xx/secext\"/>" +
+                                                  "<sec2:Security xmlns:sec2=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"><t:testEl xmlns:t=\"urn:testblah\"/></sec2:Security>" +
+                                                  "<sec3:Security xmlns:sec3=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"/>" +
+                                                  "<sec4:Security xmlns:sec4=\"http://docs.oasis-open.org/asdfhalsfhasldkhf\"/>" +
+                                                  "</s:Header>" +
+                                                  "<s:Body/>" +
                                                   "</s:Envelope>";
 }

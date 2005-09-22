@@ -248,9 +248,6 @@ public class XslTransformationPropertiesDialog extends JDialog {
         } catch (SAXException e) {
             log.log(Level.WARNING, "cannot parse doc", e);
             return null;
-        } catch (IOException e) {
-            log.log(Level.WARNING, "cannot parse doc", e);
-            return null;
         }
         return doc;
     }

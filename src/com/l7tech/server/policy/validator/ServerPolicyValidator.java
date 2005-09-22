@@ -177,21 +177,13 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
             Document schemaDoc = null;
             try {
                 schemaDoc = XmlUtil.stringToDocument(svass.getSchema());
-            } catch (IOException e) {
-                logger.log(Level.INFO, "cannot parse xml from schema validation assertion", e);
-                r.addError(new PolicyValidatorResult.Error(a,
-                                                          ap,
-                                                          "This schema validation assertion does not appear " +
-                                                          "to contain a well-formed xml schema.",
-                                                          null));
-                return;
             } catch (SAXException e) {
                 logger.log(Level.INFO, "cannot parse xml from schema validation assertion", e);
                 r.addError(new PolicyValidatorResult.Error(a,
-                                                          ap,
-                                                          "This schema validation assertion does not appear " +
-                                                          "to contain a well-formed xml schema.",
-                                                          null));
+                                                           ap,
+                                                           "This schema validation assertion does not appear " +
+                                                           "to contain a well-formed xml schema.",
+                                                           null));
                 return;
             }
             Element schemael = schemaDoc.getDocumentElement();

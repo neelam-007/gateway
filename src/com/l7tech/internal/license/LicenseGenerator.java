@@ -47,7 +47,7 @@ public final class LicenseGenerator {
      * @return an unsigned license.  Never null.
      * @throws LicenseGeneratorException if a license cannot be generated with this LicenseSpec.
      */
-    public static final Document generateUnsignedLicense(LicenseSpec spec) throws LicenseGeneratorException {
+    public static Document generateUnsignedLicense(LicenseSpec spec) throws LicenseGeneratorException {
         String name = spec.getLicenseeName();
         if (name == null || name.length() < 1) throw new LicenseGeneratorException("A licensee name is required.");
         long id = spec.getLicenseId();
@@ -56,18 +56,19 @@ public final class LicenseGenerator {
         Document d = XmlUtil.createEmptyDocument(LIC_EL, null, LIC_NS);
         final Element de = d.getDocumentElement();
 
+        de.setAttribute("Id", Long.toString(id));
         appendSimpleElementIfNonEmpty(de, "description", spec.getDescription());
         appendSimpleElementIfNonEmpty(de, "valid", spec.getStartDate());
         appendSimpleElementIfNonEmpty(de, "expires", spec.getExpiryDate());
         Element host = appendSimpleElement(de, "host", null);
-        host.setAttribute("name", "*");
+        host.setAttribute("name", spec.getHostname());
         Element ip = appendSimpleElement(de, "ip", null);
-        ip.setAttribute("address", "*");
+        ip.setAttribute("address", spec.getIp());
         Element product = appendSimpleElement(de, "product", null);
-        product.setAttribute("name", "*");
+        product.setAttribute("name", spec.getProduct());
         Element version = appendSimpleElement(product, "version", null);
-        version.setAttribute("major", "*");
-        version.setAttribute("minor", "*");
+        version.setAttribute("major", spec.getVersionMajor());
+        version.setAttribute("minor", spec.getVersionMinor());
 
         Element licensee = appendSimpleElement(de, "licensee", null);
         licensee.setAttribute("name", name);
@@ -131,6 +132,8 @@ public final class LicenseGenerator {
         Document d = generateUnsignedLicense(spec);
 
         try {
+            XmlUtil.stripWhitespace(d.getDocumentElement());
+            d = XmlUtil.stringToDocument(XmlUtil.nodeToString(d));
             Element signature = DsigUtil.createEnvelopedSignature(d.getDocumentElement(),
                                                                   spec.getIssuerCert(),
                                                                   spec.getIssuerKey(),
@@ -146,6 +149,10 @@ public final class LicenseGenerator {
             throw new LicenseGeneratorException(e);
         } catch (CertificateEncodingException e) {
             throw new LicenseGeneratorException(e);
+        } catch (IOException e) {
+            throw new LicenseGeneratorException(e); // shouldn't happen
+        } catch (SAXException e) {
+            throw new LicenseGeneratorException(e); // unlikely
         }
     }
 

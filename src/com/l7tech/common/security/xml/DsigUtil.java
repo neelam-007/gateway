@@ -34,6 +34,7 @@ import java.util.logging.Logger;
  * Utility class to help with XML digital signatures.
  */
 public class DsigUtil {
+    /** @noinspection UNUSED_SYMBOL*/
     private static final Logger logger = Logger.getLogger(DsigUtil.class.getName());
 
     /**
@@ -59,7 +60,7 @@ public class DsigUtil {
                                                    String keyName)
             throws SignatureException, SignatureStructureException, XSignatureException, CertificateEncodingException
     {
-        String signaturemethod = null;
+        String signaturemethod;
         if (senderSigningKey instanceof RSAPrivateKey)
             signaturemethod = SignatureMethod.RSA;
         else if (senderSigningKey instanceof DSAPrivateKey)
@@ -118,7 +119,7 @@ public class DsigUtil {
             x5data.setParameters(senderSigningCert, false, false, false);
             keyInfo.setX509Data(new KeyInfo.X509Data[] { x5data });
         }
-        keyInfo.insertTo(sigElement);
+        keyInfo.insertTo(sigElement, "ds", template);
 
         SignatureContext sigContext = new SignatureContext();
         final String finalRootId = rootId;
@@ -137,8 +138,7 @@ public class DsigUtil {
 
             }
         });
-        Element signedSig = sigContext.sign(sigElement, senderSigningKey);
-        return signedSig;
+        return sigContext.sign(sigElement, senderSigningKey);
     }
 
     /**
@@ -159,12 +159,19 @@ public class DsigUtil {
      *  - all ID references can be resolved by looking for wsu:Id, saml:Assertion, or Id attributes; <br>
      *  - caller has no special needs (such as keeping track of signed elements, the last signature value seen,
      *                                 or other complex behaviour needed by [for example] WssProcessorImpl)<br>
+     *  - it is an enveloped signature that covers the root element of sigElement's owner document.
+     *    it may additionally sign other things, but it will be accepted as long as it signs the root element.
      *
-     * @param sigElement
-     * @param certificateResolver
-     * @throws SignatureException
+     * @param sigElement            the signature to check.  Must point to a non-null ds:Signature element.
+     * @param certificateResolver   resolver for KeyInfos containing thumbprints, SKIs, or KeyNames.
+     * @return                      the certificate that was used to successfully verify the signature.  Never null.
+     *                              <b>NOTE: This cert will NOT necessarily be known to the certificateResolver --
+     *                                 it may have come from the signature itself as X509Data -- so a successful
+     *                                 return from this method does NOT guarantee that the signature should be
+     *                                 TRUSTED, just that it was VALID.</b>
+     * @throws SignatureException   if the signature could not be validated.
      */
-    public static void checkSimpleSignature(Element sigElement, CertificateResolver certificateResolver) throws SignatureException {
+    public static X509Certificate checkSimpleEnvelopedSignature(Element sigElement, CertificateResolver certificateResolver) throws SignatureException {
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
         if (keyInfoElement == null) throw new SignatureException("No KeyInfo found in signature");
 
@@ -209,13 +216,33 @@ public class DsigUtil {
 
         if (!validity.getCoreValidity()) {
             StringBuffer msg = new StringBuffer("Signature not valid. " + validity.getSignedInfoMessage());
-            for (int i = 0; i < validity.getNumberOfReferences(); i++) {
-                msg.append("\n\tElement " + validity.getReferenceURI(i) + ": " + validity.getReferenceMessage(i));
-            }
+            for (int i = 0; i < validity.getNumberOfReferences(); i++)
+                msg.append("\n\tElement ")
+                   .append(validity.getReferenceURI(i))
+                   .append(": ")
+                   .append(validity.getReferenceMessage(i));
             throw new SignatureException(msg.toString());
         }
 
+        // Make sure the root element was covered by signature
+        boolean rootWasSigned = false;
+        final int numberOfReferences = validity.getNumberOfReferences();
+        for (int i = 0; i < numberOfReferences; i++) {
+            // Resolve each elements one by one.
+            String elementId = validity.getReferenceURI(i);
+            if (elementId.charAt(0) == '#')
+                elementId = elementId.substring(1);
+            if (elementId.equals(sigElement.getOwnerDocument().getDocumentElement().getAttribute("Id"))) {
+                rootWasSigned = true;
+                break;
+            }
+        }
+
+        if (!rootWasSigned)
+            throw new SignatureException("This signature did not cover the root of the document.");
+
         // Success.  Signature looks good.
-        return;
+        return signingCert;
     }
+
 }

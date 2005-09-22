@@ -25,9 +25,6 @@ import java.util.logging.Logger;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
- * User: mike
- * Date: Aug 28, 2003
- * Time: 4:20:59 PM
  */
 public class XmlUtil {
     public static final String XML_VERSION = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
@@ -109,16 +106,18 @@ public class XmlUtil {
                 xml = "<" + rootElementName + "/>";
             }
             return stringToDocument(xml);
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }
     }
 
-    public static Document stringToDocument(String inputXmlNotAUrl) throws IOException, SAXException {
+    public static Document stringToDocument(String inputXmlNotAUrl) throws SAXException {
         ByteArrayInputStream bis = new ByteArrayInputStream(inputXmlNotAUrl.getBytes());
-        return parse(bis);
+        try {
+            return parse(bis);
+        } catch (IOException e) {  // can't happen
+            throw new SAXException("Unable to parse this XML string: " + e.getClass().getName() + ": " + e.getMessage(), e);
+        }
     }
 
     public static Document parse(InputStream input) throws IOException, SAXException {
@@ -749,7 +748,7 @@ public class XmlUtil {
         }
         */
         // 2. pass through SchemaDocument
-        SchemaDocument sdoc = null;
+        SchemaDocument sdoc;
         try {
             sdoc = SchemaDocument.Factory.parse(new StringReader(schemaSrc));
         } catch (Exception e) {
@@ -856,6 +855,48 @@ public class XmlUtil {
                 entries.put(attValue, attLocalName);
             } else if ("xmlns".equals(attLocalName)) {
                 entries.put(attValue, null);
+            }
+        }
+    }
+
+    /**
+     * Strips leading and trailing whitespace from all text nodes under the specified element.
+     * Whitespace-only text nodes have their text content replaced with the empty string.
+     * Note that this is almost certain to break any signature that may have been made on this
+     * XML.
+     * <p>
+     * It's a good idea to serialize and reparse the document, to get rid of the empty text nodes,
+     * before passing it on to any further XML processing code that might not be expecting them.
+     * <p>
+     * <b>Note</b>: this method requires that the input DOM Document does not contain two consecutive
+     * TEXT nodes.  You may be able to guarantee that this is the case be serializing and reparsing
+     * the document, if there is any doubt about its current status, and assuming your parser provides
+     * this guarantee.
+     *
+     * @param node  the element to convert.  This element and all children will have all child text nodes trimmed of
+     *              leading and trailing whitespace.
+     * @throws SAXException if the input element or one of its child elements is found to contain two consecutive
+     *                      TEXT nodes.
+     */
+    public static void stripWhitespace(Element node) throws SAXException {
+        NodeList children = node.getChildNodes();
+        boolean lastWasText = false;
+        for (int i = 0; i < children.getLength(); i++) {
+            Node n = children.item(i);
+            switch (n.getNodeType()) {
+                case Node.TEXT_NODE:
+                    if (lastWasText) throw new SAXException("Consecutive TEXT nodes are not supported");
+                    String v = n.getNodeValue();
+                    if (v == null) v = "";
+                    n.setNodeValue(v.trim());
+                    lastWasText = true;
+                    break;
+                case Node.ELEMENT_NODE:
+                    stripWhitespace((Element)n);
+                    lastWasText = false;
+                    break;
+                default:
+                    lastWasText = false;
             }
         }
     }

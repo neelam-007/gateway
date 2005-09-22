@@ -61,9 +61,13 @@ public class SimpleCertificateResolver implements CertificateResolver {
      * For convenience, the certs array may contain nulls which will be ignored.
      */
     public SimpleCertificateResolver(X509Certificate[] certs) {
-        this.certs = new Cert[certs.length];
-        for (int i = 0; i < certs.length; i++)
-            this.certs[i] = new Cert(certs[i]);
+        if (certs != null) {
+            this.certs = new Cert[certs.length];
+            for (int i = 0; i < certs.length; i++)
+                this.certs[i] = new Cert(certs[i]);
+        } else {
+            this.certs = new Cert[0];
+        }
     }
 
     public SimpleCertificateResolver(X509Certificate cert) {

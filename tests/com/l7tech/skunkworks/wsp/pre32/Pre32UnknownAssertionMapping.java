@@ -39,8 +39,6 @@ class Pre32UnknownAssertionMapping extends Pre32AssertionMapping {
                     return (Element)imported;
                 }
             }
-        } catch (IOException e) {
-            // fall through and just serialized the UA
         } catch (SAXException e) {
             // fall through and just serialized the UA
         } catch (TooManyChildElementsException e) {

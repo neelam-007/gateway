@@ -890,8 +890,6 @@ public class MessageProcessor {
                 Document respDoc = XmlUtil.stringToDocument(responseStr);
                 if (SoapFaultUtils.gatherSoapFaultDetail(respDoc) != null)
                     response.initialize(respDoc);
-            } catch (IOException e) {
-                // couldn't parse a fault, fallthrough without one
             } catch (SAXException e) {
                 // couldn't parse a fault, fallthrough without one
             } catch (InvalidDocumentFormatException e) {

@@ -29,8 +29,6 @@ public class Pre32WspWriter {
                                             "xmlns:wsp=\"" + Pre32WspConstants.WSP_POLICY_NS + "\" " +
                                             "xmlns=\"" + Pre32WspConstants.L7_POLICY_NS + "\" " +
                                             "/>");
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }

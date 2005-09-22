@@ -387,8 +387,6 @@ public class PolicyService extends ApplicationObjectSupport {
             else
                 SoapUtil.addTimestamp(header, SoapUtil.WSU_NAMESPACE, null, 0);
             return responseDoc;
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         } catch (InvalidDocumentFormatException e) {

@@ -325,8 +325,6 @@ public class TokenServiceImpl implements TokenService {
                                     "</wst:Lifetime>" +
                             WST_RST_RESPONSE_SUFFIX;
             response = XmlUtil.stringToDocument(xmlStr);
-        } catch (IOException e) {
-            throw new TokenServiceException(e);
         } catch (SAXException e) {
             throw new TokenServiceException(e);
         }
