@@ -79,6 +79,8 @@ exclude     public *.^* and
             *.* public *(*) and
             *.* protected *(*);
 
+existingSerializedClasses *.* implements java.io.Serializable;
+
 obfuscate   changeLogFileIn=""
             changeLogFileOut="./obfuscatedOutput/change.log"
             obfuscateFlow=normal

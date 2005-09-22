@@ -82,7 +82,10 @@ exclude     public *.^* and
             *.* public *(*) and
             *.* protected *(*) and
             *.* + implements java.io.Serializable and
-            *.Rmi*;
+            *.* implements java.io.Serializable * and
+            *.* implements java.io.Serializable *(*);
+
+existingSerializedClasses *.* implements java.io.Serializable;
 
 obfuscate   changeLogFileIn=""
             changeLogFileOut="./obfuscatedOutput/change.log"
