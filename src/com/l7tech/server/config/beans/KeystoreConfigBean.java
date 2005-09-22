@@ -28,6 +28,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     private String lunaJspPath;
     private String lunaInstallationPath;
     private boolean doKeystoreConfig;
+    private int clusteringType;
 
 
     public String getKeyStoreType() {
@@ -122,5 +123,13 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     public boolean isDoKeystoreConfig() {
         return doKeystoreConfig;
+    }
+
+    public void setClusterType(int theClusteringType) {
+        this.clusteringType = theClusteringType;
+    }
+
+    public int getClusteringType() {
+        return clusteringType;
     }
 }

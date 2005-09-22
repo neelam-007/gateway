@@ -4,6 +4,7 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
+import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 
 import javax.swing.*;
@@ -59,6 +60,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     protected void updateModel(HashMap settings) {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
+        ksBean.setClusterType(getParentWizard().getClusteringType());
         if (dontDoKsConfig.isSelected()) {
             ksBean.doKeystoreConfig(false);
             getParentWizard().setKeystoreType(KeyStoreConstants.NO_KEYSTORE);

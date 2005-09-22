@@ -199,7 +199,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
 
     private void setupManualStepsPanel(int clusteringType, String keystoreType) {
         boolean lunaMentioned = false;
-        String intoLine = "<h3>The following <u>manual</u> steps are required to complete the configuration of the SSG</h3>" + eol;
+        String infoLine = "<h3>The following <u>manual</u> steps are required to complete the configuration of the SSG</h3>" + eol;
         String linuxLunaConfigCopy =    "<li>" + eol +
                                             "LUNA CONFIGURATION: Copy the etc/Chrystoki.conf file from the primary node to each SSG in the cluster" + eol +
                                             "<dl><dt></dt></dl>" + eol +
@@ -271,7 +271,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
             stepsBuffer.append("<html>" + eol).append(
                             "<head><title></title></head>" + eol).append(
                             "<body>" + eol).append(
-                                    intoLine);
+                                    infoLine);
 
             if (clusteringType != ClusteringConfigBean.CLUSTER_NONE) {
                 stepsBuffer.append(     "<ul>" + eol).append(
@@ -280,8 +280,6 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
 
 
                 if (clusteringType == ClusteringConfigBean.CLUSTER_JOIN) {
-                    stepsBuffer.append(runSSgConfigLine).append(
-                        copykeysLine);
 
                     if (keystoreType == KeyStoreConstants.LUNA_KEYSTORE_NAME) {
                         lunaMentioned = true;
@@ -291,15 +289,21 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
                             stepsBuffer.append(windowsLunaConfigCopy);
                         }
                     }
+                    else {
+                        stepsBuffer.append(runSSgConfigLine).append(
+                            copykeysLine);
+                    }
                 }
-                if (clusteringType == ClusteringConfigBean.CLUSTER_NEW && keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
-                    lunaMentioned = true;
-                    //instructions for luna in a clustered environment
-                    if (osFunctions.isLinux()) {
 
-                        stepsBuffer.append(linuxUpdateCrystokiLine);
-                    } else {
-                        stepsBuffer.append(windowsUpdateCrystokiLine);
+                if (clusteringType == ClusteringConfigBean.CLUSTER_NEW) {
+                    if (keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
+                        lunaMentioned = true;
+                        //instructions for luna in a clustered environment
+                        if (osFunctions.isLinux()) {
+                            stepsBuffer.append(linuxUpdateCrystokiLine);
+                        } else {
+                            stepsBuffer.append(windowsUpdateCrystokiLine);
+                        }
                     }
                 }
                 stepsBuffer.append(     "</ul>" + eol);

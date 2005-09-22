@@ -6,6 +6,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
+import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.util.MakeLunaCerts;
 import com.l7tech.server.util.SetKeys;
 import org.w3c.dom.Document;
@@ -297,9 +298,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
     private boolean makeLunaKeys(KeystoreConfigBean ksBean, File caCertFile, File sslCertFile, File caKeyStoreFile, File sslKeyStoreFile) throws Exception {
         boolean success = false;
         String hostname = ksBean.getHostname();
-
+        boolean exportOnly = false;
         try {
-            MakeLunaCerts.makeCerts(hostname, true, false, caCertFile, sslCertFile);
+            exportOnly = (ksBean.getClusteringType() == ClusteringConfigBean.CLUSTER_JOIN);
+            MakeLunaCerts.makeCerts(hostname, true, exportOnly, caCertFile, sslCertFile);
             success = true;
         } catch (LunaCmu.LunaCmuException e) {
             logger.severe("Could not locate the Luna CMU. Please rerun the wizard and check the Luna paths");
