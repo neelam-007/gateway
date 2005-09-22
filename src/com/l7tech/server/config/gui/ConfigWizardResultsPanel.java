@@ -211,11 +211,11 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
                                         "</li>" + eol;
 
         String windowsLunaString =  "<dl>" + eol +
-                                        "<dt>[Misc]</dt>" + eol +
-                                            "<dd>ApplicationInstance=HTTP_SERVER</dd>" + eol +
-                                            "<dd>AppIdMajor=1</dd>" + eol +
-                                            "<dd>AppIdMinor=1</dd>" + eol +
-                                        "<dt>}</dt>" + eol +
+                                        "<dt>[Misc]<br>" + eol +
+                                            "ApplicationInstance=HTTP_SERVER<br>" + eol +
+                                            "AppIdMajor=1<br>" + eol +
+                                            "AppIdMinor=1<br>" + eol +
+                                        "</dt>" + eol +
                                     "</dl>" + eol +
                                     "where AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol;
 
