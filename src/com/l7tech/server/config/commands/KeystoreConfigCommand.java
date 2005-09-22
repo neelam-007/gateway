@@ -299,7 +299,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         String hostname = ksBean.getHostname();
 
         try {
-            MakeLunaCerts.makeCerts(hostname, true, caCertFile, sslCertFile);
+            MakeLunaCerts.makeCerts(hostname, true, false, caCertFile, sslCertFile);
             success = true;
         } catch (LunaCmu.LunaCmuException e) {
             logger.severe("Could not locate the Luna CMU. Please rerun the wizard and check the Luna paths");
