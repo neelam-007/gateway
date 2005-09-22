@@ -53,7 +53,7 @@ open        "./Bridge.jar";
 // we dont want to let zelix determine which classes/methods are unused
 // therefore we are excluding everything from trimming otherwise some
 // classes that appear to not be used would be removed
-trimExclude public *.* and
+trimExclude *.* and
             *.* public * and
             *.* protected * and
             *.* public *(*) and
