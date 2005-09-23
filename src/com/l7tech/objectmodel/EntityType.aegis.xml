@@ -1,6 +1,5 @@
 <mappings>
-  <mapping uri="http://ns.l7tech.com/SecureSpan/common/admin/core">
-      <property name="entityClass" ignore="true"/>
+  <mapping uri="http://ns.l7tech.com/SecureSpan/admin/core">
+    <property name="entityClass" ignore="true"/>
   </mapping>
 </mappings>
-

@@ -4,7 +4,7 @@
     <bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
         <property name="urlMap">
             <map>
-                <entry key="/ServiceAdminService">
+                <entry key="/Service">
                     <ref bean="serviceAdminWS"/>
                 </entry>
             </map>
@@ -13,6 +13,12 @@
 
     <!-- Declare a parent bean with all properties common to both services -->
     <bean id="serviceAdminWS" class="org.codehaus.xfire.spring.remoting.XFireExporter">
+        <property name="name">
+            <value>Service</value>
+        </property>
+        <property name="namespace">
+            <value>http://ns.l7tech.com/SecureSpan/admin/service</value>
+        </property>
         <property name="serviceFactory">
             <ref bean="xfire.serviceFactory"/>
         </property>
@@ -23,7 +29,7 @@
             <ref bean="serviceAdmin"/>
         </property>
         <property name="serviceInterface">
-            <value>com.l7tech.service.ServiceAdmin</value>
+            <value>com.l7tech.service.ServiceAdminPublic</value>
         </property>
     </bean>
 </beans>
