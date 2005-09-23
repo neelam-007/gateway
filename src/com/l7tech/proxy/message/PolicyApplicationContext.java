@@ -427,7 +427,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             }
         } catch (IOException e) {
             if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class))
-                throw new ServerCertificateUntrustedException(e);
+                throw new ServerCertificateUntrustedException(e); // (this is a rethrow, so we preserve existing sslPeer)
             throw new ClientCertificateException("Unable to obtain a client certificate", e);
         }
     }
