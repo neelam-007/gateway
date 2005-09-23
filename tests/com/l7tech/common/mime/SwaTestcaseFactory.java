@@ -50,9 +50,9 @@ class SwaTestcaseFactory {
             // Position it right to the end; we'll truncate it if necessary
             int oopsPos = random.nextInt(max);
 
-            // never emit last 2 bytes of boundary -- it starts getting too likely for next random
+            // never emit last 4 bytes of boundary -- it starts getting too likely for next random
             // character to happen to match it
-            int oopsLen = random.nextInt(boundary.length + 3);
+            int oopsLen = random.nextInt(boundary.length + 4);
 
             if (oopsPos < max && oopsLen-- > 0) bytes[oopsPos++] = '\r';
             if (oopsPos < max && oopsLen-- > 0) bytes[oopsPos++] = '\n';
