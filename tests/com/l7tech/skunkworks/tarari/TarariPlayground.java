@@ -3,64 +3,98 @@
  */
 package com.l7tech.skunkworks.tarari;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.server.tarari.GlobalTarariContextImpl;
-import com.tarari.xml.XMLDocument;
-import com.tarari.xml.XMLDocumentException;
-import com.tarari.xml.xpath.RAXContext;
-import com.tarari.xml.xpath.XPathProcessor;
-import com.tarari.xml.xpath.XPathProcessorException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class TarariPlayground {
     private static GlobalTarariContext tarariContext;
 
     public static void main(String[] args) throws Exception {
-        tarariContext = new GlobalTarariContextImpl();
-        tarariContext.compile();
+        GlobalTarariContext gtc = TarariLoader.getGlobalContext();
+        if (gtc != null) gtc.compile();
 
         if (args.length > 0) {
             Boolean soap = args.length == 2 ? Boolean.valueOf(args[1]) : Boolean.FALSE;
-            run(args[0], soap.booleanValue());
+            run(args[0], soap.booleanValue(), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
         } else {
-            run(TestDocuments.DIR + "tiny.xml", false);
-            run(TestDocuments.PLACEORDER_CLEARTEXT, true);
-            run(TestDocuments.DOTNET_USERNAME_TOKEN, true);
-            run(TestDocuments.DOTNET_SIGNED_REQUEST, true);
-            run(TestDocuments.PLACEORDER_WITH_MAJESTY, true);
+            run(TestDocuments.DIR + "tiny.xml", false, 5000, 1);
+            run(TestDocuments.PLACEORDER_CLEARTEXT, true, 5000, 1);
+            run(TestDocuments.DOTNET_USERNAME_TOKEN, true, 5000, 1);
+            run(TestDocuments.DOTNET_SIGNED_REQUEST, true, 5000, 1);
+            run(TestDocuments.PLACEORDER_WITH_MAJESTY, true, 5000, 1);
         }
     }
 
-    private static void run(String docName, boolean shouldBeSoap) throws Exception {
+    private static void run(String docName, final boolean shouldBeSoap, final int num, int numThreads) throws Exception {
         InputStream is = TestDocuments.getInputStream(docName);
-        byte[] bytes = HexUtils.slurpStream(is);
+        final byte[] bytes = HexUtils.slurpStream(is);
+        long now = System.currentTimeMillis();
+
+        List threads = new ArrayList();
+        for (int i = 0; i < numThreads; i++) {
+            Runnable runme = new Runnable() {
+                public void run() {
+                    try {
+                        runnit(bytes, num, shouldBeSoap);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            Thread t = new Thread(runme);
+            threads.add(t);
+            t.start();
+        }
+
+        for (Iterator i = threads.iterator(); i.hasNext();) {
+            Thread t = (Thread)i.next();
+            t.join();
+        }
+
+        long t = System.currentTimeMillis() - now;
+        System.out.println("Ran " + num + " x " + numThreads + "(" + num*numThreads + ") isSoap on " + docName + " (" + bytes.length + " bytes) in " + t + "ms (" + (1000L * num * numThreads)/t + "/s)");
+    }
+
+    private static void runnit(byte[] bytes, int num, boolean shouldBeSoap) throws Exception {
+        System.out.println("Starting");
         ByteArrayInputStream docStream = new ByteArrayInputStream(bytes);
 
         docStream.mark(102400);
-        long now = System.currentTimeMillis();
-        int i;
-        for (i = 0; i < 40000; i++) {
-            docStream.reset();
-            RAXContext context = getProcessedContext(docStream);
 
-            if (context.isSoap(tarariContext.getSoapNamespaceUriIndices()) != shouldBeSoap) {
-                System.out.println("BAD");
+        int i;
+        int numSoap = 0;
+        int numSec = 0;
+        for (i = 0; i < num; i++) {
+            docStream.reset();
+            Message request = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, docStream);
+            try {
+                if (request.isSoap()) {
+                    numSoap++;
+                    if (request.getSoapKnob().isSecurityHeaderPresent()) {
+                        numSec++;
+                    }
+                }
+            } finally {
+                request.close();
             }
         }
-        long t = System.currentTimeMillis() - now;
-        System.out.println("Ran " + i + " isSoap on " + docName + " (" + bytes.length + " bytes) in " + t + "ms (" + (1000L * i)/t + "/s)");
+
+        if (shouldBeSoap && numSoap != num) {
+            System.out.println("Expected " + num + " SOAP messages, got " + numSoap);
+            return;
+        }
+
+        System.out.println("Done, " + numSoap + " SOAP, " + numSec + " with Security Header");
     }
-
-    private static RAXContext getProcessedContext(InputStream docStream) throws XMLDocumentException, XPathProcessorException {
-        XMLDocument doc = new XMLDocument(docStream);
-        XPathProcessor proc = new XPathProcessor(doc);
-        RAXContext context = proc.processXPaths();
-        return context;
-    }
-
-
 }
