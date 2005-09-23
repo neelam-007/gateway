@@ -18,7 +18,9 @@ import org.xml.sax.SAXException;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Arrays;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.SignatureException;
 
 /**
@@ -80,16 +82,16 @@ public class License {
 
         Element lic = ld.getDocumentElement();
         if (lic == null) throw new NullPointerException(); // can't happen
-        if (!(LIC_NS.equals(lic.getNamespaceURI()))) throw new IllegalArgumentException("License document element not in namespace " + LIC_NS);
-        if (!("license".equals(lic.getLocalName()))) throw new IllegalArgumentException("License local name is not \"license\"");
+        if (!(LIC_NS.equals(lic.getNamespaceURI()))) throw new SAXException("License document element not in namespace " + LIC_NS);
+        if (!("license".equals(lic.getLocalName()))) throw new SAXException("License local name is not \"license\"");
         this.licenseDoc = ld;
 
         try {
             id = Long.parseLong(lic.getAttribute("Id"));
             if (id < 1)
-                throw new IllegalArgumentException("License id is non-positive");
+                throw new SAXException("License id is non-positive");
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("License id is missing or non-numeric");
+            throw new SAXException("License id is missing or non-numeric");
         }
 
         startDate = parseDateElement("valid");
@@ -319,4 +321,73 @@ public class License {
         // Ok looks good
         return;
     }
+
+    /**
+     * Check if the current license would enable access to the given feature if it were valid.
+     * <p>
+     * Notes: For performance, this method does not check the validity of this license.  It is assumed that the
+     * caller has already checked this before querying for individual features.
+     *
+     * @param name
+     * @return true iff. this feature is enabled by this license.
+     */
+    public boolean isFeatureEnabled(String name) {
+        // Currently there is no feature-granular control -- all features are enabled by any valid license.
+        return true;
+    }
+
+    public String toString() {
+        return String.valueOf(id) + " (" + getLicenseeName() + ")";
+    }
+
+    /** @noinspection RedundantIfStatement*/
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final License license = (License)o;
+
+        if (expiryDateUt != license.expiryDateUt) return false;
+        if (id != license.id) return false;
+        if (startDateUt != license.startDateUt) return false;
+        if (validSignature != license.validSignature) return false;
+        if (description != null ? !description.equals(license.description) : license.description != null) return false;
+        if (expiryDate != null ? !expiryDate.equals(license.expiryDate) : license.expiryDate != null) return false;
+        if (hostname != null ? !hostname.equals(license.hostname) : license.hostname != null) return false;
+        if (ip != null ? !ip.equals(license.ip) : license.ip != null) return false;
+        if (licenseeContactEmail != null ? !licenseeContactEmail.equals(license.licenseeContactEmail) : license.licenseeContactEmail != null) return false;
+        if (licenseeName != null ? !licenseeName.equals(license.licenseeName) : license.licenseeName != null) return false;
+        if (product != null ? !product.equals(license.product) : license.product != null) return false;
+        if (startDate != null ? !startDate.equals(license.startDate) : license.startDate != null) return false;
+        if (trustedIssuer != null ? !CertUtils.certsAreEqual(trustedIssuer, license.trustedIssuer) : license.trustedIssuer != null) return false;
+        if (versionMajor != null ? !versionMajor.equals(license.versionMajor) : license.versionMajor != null) return false;
+        if (versionMinor != null ? !versionMinor.equals(license.versionMinor) : license.versionMinor != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (int)(id ^ (id >>> 32));
+        result = 29 * result + (validSignature ? 1 : 0);
+        try {
+            result = 29 * result + (trustedIssuer != null ? Arrays.hashCode(trustedIssuer.getEncoded()) : 0);
+        } catch (CertificateEncodingException e) {
+            // Can't happen, but if it does, we'll ignore it and allow the hash code to differ which should cause an update
+        }
+        result = 29 * result + (startDate != null ? startDate.hashCode() : 0);
+        result = 29 * result + (int)(startDateUt ^ (startDateUt >>> 32));
+        result = 29 * result + (expiryDate != null ? expiryDate.hashCode() : 0);
+        result = 29 * result + (int)(expiryDateUt ^ (expiryDateUt >>> 32));
+        result = 29 * result + (description != null ? description.hashCode() : 0);
+        result = 29 * result + (hostname != null ? hostname.hashCode() : 0);
+        result = 29 * result + (ip != null ? ip.hashCode() : 0);
+        result = 29 * result + (licenseeName != null ? licenseeName.hashCode() : 0);
+        result = 29 * result + (licenseeContactEmail != null ? licenseeContactEmail.hashCode() : 0);
+        result = 29 * result + (product != null ? product.hashCode() : 0);
+        result = 29 * result + (versionMajor != null ? versionMajor.hashCode() : 0);
+        result = 29 * result + (versionMinor != null ? versionMinor.hashCode() : 0);
+        return result;
+    }
+
 }

@@ -44,17 +44,17 @@ public class LicenseRoundTripTest extends TestCase {
 
         Calendar cal = Calendar.getInstance();
 
-        spec.setDescription("Simple signed demo license");
+        spec.setDescription("Layer 7 Internal Developer License");
         spec.setStartDate(cal.getTime());
         cal.set(2100, 12, 1);
         spec.setExpiryDate(cal.getTime());
-        spec.setLicenseeName("Demo User");
+        spec.setLicenseeName("Layer 7 Developer");
         spec.setLicenseId(1001);
-        spec.setLicenseeContactEmail("nomailbox@NOWHERE");
-        spec.setHostname("blah.blee.bloo");
-        spec.setIp("1.2.3.4");
-        spec.setProduct("SecureSpan BaloneyMaker");
-        spec.setVersionMajor("3");
+        spec.setLicenseeContactEmail("developers@layer7tech.com");
+        spec.setHostname("*");
+        spec.setIp("*");
+        spec.setProduct("SecureSpan Gateway");
+        spec.setVersionMajor("*");
         spec.setVersionMinor("*");
         return spec;
     }

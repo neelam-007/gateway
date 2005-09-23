@@ -5,6 +5,9 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.rmi.RemoteException;
@@ -34,11 +37,13 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
     public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager,
                                  ServiceUsageManager serviceUsageManager,
                                  ClusterPropertyManager clusterPropertyManager,
-                                 AccessManager accessManager) {
+                                 AccessManager accessManager,
+                                 LicenseManager licenseManager) {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
         this.accessManager = accessManager;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.licenseManager = licenseManager;
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info manager is required");
         }
@@ -48,12 +53,22 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
         if (accessManager == null) {
             throw new IllegalArgumentException("Access manager is required");
         }
+        if (licenseManager == null)
+            throw new IllegalArgumentException("License manager is required");
+    }
+
+    private void checkLicense() throws RemoteException {
+        try {
+            licenseManager.requireFeature(Feature.ADMIN);
+        } catch (LicenseException e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 
     /**
      * get status for all nodes recorded as part of the cluster.
      */
-    public ClusterNodeInfo[] getClusterStatus() throws FindException {
+    public ClusterNodeInfo[] getClusterStatus() throws FindException, RemoteException {
         Collection res = clusterInfoManager.retrieveClusterStatus();
         Object[] resarray = res.toArray();
         ClusterNodeInfo[] output = new ClusterNodeInfo[res.size()];
@@ -66,7 +81,8 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
     /**
      * get service usage as currently recorded in database.
      */
-    public ServiceUsage[] getServiceUsage() throws FindException {
+    public ServiceUsage[] getServiceUsage() throws FindException, RemoteException {
+        checkLicense();
         Collection res = serviceUsageManager.getAll();
         Object[] resarray = res.toArray();
         ServiceUsage[] output = new ServiceUsage[res.size()];
@@ -85,6 +101,7 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
      */
     public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
         accessManager.enforceAdminRole();
+        checkLicense();
         clusterInfoManager.renameNode(nodeid, newName);
     }
 
@@ -99,6 +116,7 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
      */
     public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
         accessManager.enforceAdminRole();
+        checkLicense();
         logger.info("removing stale node: " + nodeid);
         clusterInfoManager.deleteNode(nodeid);
         serviceUsageManager.clear(nodeid);
@@ -138,6 +156,8 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
 
     public void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException {
         accessManager.enforceAdminRole();
+        if (!("license".equals(key)))
+            checkLicense();
         clusterPropertyManager.setProperty(key, value);
     }
 
@@ -145,6 +165,7 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
     private final ServiceUsageManager serviceUsageManager;
     private final ClusterPropertyManager clusterPropertyManager;
     private final AccessManager accessManager;
+    private final LicenseManager licenseManager;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
 }

@@ -8,6 +8,9 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.transport.jms.*;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import com.l7tech.objectmodel.*;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
@@ -30,13 +33,24 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
     private JmsConnectionManager jmsConnectionManager;
     private JmsEndpointManager jmsEndpointManager;
     private final AccessManager accessManager;
+    private LicenseManager licenseManager;
 
 
-    public JmsAdminImpl(AccessManager accessManager) {
+    public JmsAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
         this.accessManager = accessManager;
+        this.licenseManager = licenseManager;
+    }
+
+    private void checkLicense() throws RemoteException {
+        try {
+            licenseManager.requireFeature(Feature.ADMIN);
+        } catch (LicenseException e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 
     public JmsProvider[] getProviderList() throws RemoteException, FindException {
+        checkLicense();
         return (JmsProvider[])jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
     }
 
@@ -48,6 +62,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
      * @throws FindException
      */
     public JmsConnection[] findAllConnections() throws RemoteException, FindException {
+        checkLicense();
         Collection found = jmsConnectionManager.findAll();
         if (found == null || found.size() < 1) return new JmsConnection[0];
 
@@ -64,6 +79,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
      * Must be called in a transaction!
      */
     public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
+        checkLicense();
         JmsTuple tuple;
         ArrayList result = new ArrayList();
         Collection connections = jmsConnectionManager.findAll();
@@ -88,14 +104,17 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
      * @throws FindException
      */
     public JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
+        checkLicense();
         return jmsConnectionManager.findConnectionByPrimaryKey(oid);
     }
 
     public JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
+        checkLicense();
         return jmsEndpointManager.findByPrimaryKey(oid);
     }
 
     public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
+        checkLicense();
         accessManager.enforceAdminRole();
         JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
         if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
@@ -103,6 +122,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
     }
 
     public EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
+        checkLicense();
         Collection endpoints = jmsEndpointManager.findMessageSourceEndpoints();
         List list = new ArrayList();
         for (Iterator i = endpoints.iterator(); i.hasNext();) {
@@ -115,6 +135,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
     public long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
 
             long oid = connection.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
@@ -136,6 +157,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
      * @throws FindException
      */
     public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException {
+        checkLicense();
         return jmsEndpointManager.findEndpointsForConnection(connectionOid);
     }
 
@@ -150,6 +172,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
      */
     public void testConnection(JmsConnection connection) throws RemoteException, JmsTestException {
         try {
+            checkLicense();
             JmsUtil.connect(connection).close();
         } catch (JMSException e) {
             _logger.log(Level.INFO, "Caught JMSException while testing connection", e);
@@ -175,6 +198,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
      * @throws RemoteException
      */
     public void testEndpoint(JmsConnection conn, JmsEndpoint endpoint) throws RemoteException, FindException, JmsTestException {
+        checkLicense();
         JmsBag bag = null;
         MessageConsumer jmsQueueReceiver = null;
         TopicSubscriber jmsTopicSubscriber = null;
@@ -238,6 +262,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
     public long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             long oid = endpoint.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
                 oid = jmsEndpointManager.save(endpoint);
@@ -252,11 +277,13 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
     }
 
     public void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException {
+        checkLicense();
         accessManager.enforceAdminRole();
         jmsEndpointManager.delete(endpointOid);
     }
 
     public void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException {
+        checkLicense();
         accessManager.enforceAdminRole();
         jmsConnectionManager.delete(connectionOid);
     }

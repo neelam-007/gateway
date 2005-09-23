@@ -9,6 +9,9 @@ package com.l7tech.server;
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
@@ -34,8 +37,13 @@ import java.util.logging.Logger;
 public class TrustedCertAdminImpl extends HibernateDaoSupport implements TrustedCertAdmin {
     private final AccessManager accessManager;
     private final X509Certificate rootCertificate;
+    private final LicenseManager licenseManager;
 
-    public TrustedCertAdminImpl(TrustedCertManager trustedCertManager, X509Certificate rootCertificate, AccessManager accessManager) {
+    public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
+                                X509Certificate rootCertificate,
+                                AccessManager accessManager,
+                                LicenseManager licenseManager)
+    {
         this.trustedCertManager = trustedCertManager;
         if (trustedCertManager == null) {
             throw new IllegalArgumentException("trusted cert manager is required");
@@ -48,22 +56,37 @@ public class TrustedCertAdminImpl extends HibernateDaoSupport implements Trusted
         if (rootCertificate == null) {
             throw new IllegalArgumentException("Root Certificate is required");
         }
+        this.licenseManager = licenseManager;
+        if (licenseManager == null)
+            throw new IllegalArgumentException("License manager is required");
+    }
+
+    private void checkLicense() throws RemoteException {
+        try {
+            licenseManager.requireFeature(Feature.ADMIN);
+        } catch (LicenseException e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 
     public List findAllCerts() throws FindException, RemoteException {
+        checkLicense();
         return new ArrayList(getManager().findAll());
     }
 
     public TrustedCert findCertByPrimaryKey(final long oid) throws FindException, RemoteException {
-        return (TrustedCert)getManager().findByPrimaryKey(oid);
+        checkLicense();
+        return getManager().findByPrimaryKey(oid);
     }
 
     public TrustedCert findCertBySubjectDn(final String dn) throws FindException, RemoteException {
-        return (TrustedCert)getManager().findBySubjectDn(dn);
+        checkLicense();
+        return getManager().findBySubjectDn(dn);
     }
 
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
         accessManager.enforceAdminRole();
+        checkLicense();
         long oid;
         if (cert.getOid() == Entity.DEFAULT_OID) {
             // check that cert with same dn not already exist
@@ -88,19 +111,22 @@ public class TrustedCertAdminImpl extends HibernateDaoSupport implements Trusted
 
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
         accessManager.enforceAdminRole();
+        checkLicense();
         getManager().delete(oid);
     }
 
     public X509Certificate[] retrieveCertFromUrl(String purl) throws IOException, RemoteException, HostnameMismatchException {
+        checkLicense();
         return retrieveCertFromUrl(purl, false);
     }
 
     public X509Certificate[] retrieveCertFromUrl(String purl, boolean ignoreHostname)
       throws IOException, RemoteException, HostnameMismatchException {
+        checkLicense();
         if (!purl.startsWith("https://")) throw new IllegalArgumentException("Can't load certificate from non-https URLs");
         URL url = new URL(purl);
 
-        SSLContext sslContext = null;
+        SSLContext sslContext;
         try {
             sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null,
@@ -128,9 +154,11 @@ public class TrustedCertAdminImpl extends HibernateDaoSupport implements Trusted
         if (gconn instanceof HttpsURLConnection) {
             HttpsURLConnection conn = (HttpsURLConnection)gconn;
             conn.setSSLSocketFactory(sslContext.getSocketFactory());
+            final String[] sawHost = new String[] { null };
             if (ignoreHostname) {
                 conn.setHostnameVerifier(new HostnameVerifier() {
                     public boolean verify(String s, SSLSession sslSession) {
+                        sawHost[0] = s;
                         return true;
                     }
                 });
@@ -145,23 +173,21 @@ public class TrustedCertAdminImpl extends HibernateDaoSupport implements Trusted
                 throw e;
             }
 
-            X509Certificate cert = null;
             try {
-                cert = (X509Certificate)conn.getServerCertificates()[0];
+                return (X509Certificate[])conn.getServerCertificates();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "SSL server hostname didn't match cert", e);
                 if (e.getMessage().startsWith("HTTPS hostname wrong")) {
-                    throw new HostnameMismatchException(cert.getSubjectDN().getName(), url.getHost());
+                    throw new HostnameMismatchException(sawHost[0], url.getHost());
                 }
+                throw e;
             }
-
-
-            return (X509Certificate[])conn.getServerCertificates();
         } else
             throw new IOException("URL resulted in a non-HTTPS connection");
     }
 
     public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException {
+        checkLicense();
         return rootCertificate;
     }
 

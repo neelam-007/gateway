@@ -78,6 +78,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JPanel mainPanel;
     private JPanel messageViewerPanel;
     private JPanel messageViewerToolbarPanel;
+    /** @noinspection UNUSED_SYMBOL*/
     private JLabel operationsLabel;
     private JTree operationsTree;
     private JButton okButton;
@@ -88,6 +89,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private XpathBasedAssertion assertion;
     private ServiceNode serviceNode;
     private Wsdl serviceWsdl;
+    /** @noinspection UNUSED_SYMBOL*/
     private JScrollPane treeScrollPane;
     private Message[] soapMessages;
     private String blankMessage = "<empty />";
@@ -101,7 +103,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private XpathEvaluator testEvaluator;
     private JButton namespaceButton;
     private JLabel hardwareAccelStatusLabel;
-    private JPanel securityConfigPanel;
     private JPanel encryptionConfigPanel;
     private JPanel signatureResponseConfigPanel;
     private JRadioButton aes128radioButton;
@@ -165,11 +166,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         } else {
             namespaces = new HashMap();
         }
-        if (assertion instanceof RequestWssConfidentiality ||
-          assertion instanceof ResponseWssConfidentiality) {
-            isEncryption = true;
-        } else
-            isEncryption = false;
+        isEncryption = assertion instanceof RequestWssConfidentiality ||
+                assertion instanceof ResponseWssConfidentiality;
         if (sn != null)
             serviceNode = sn;
         else
@@ -238,6 +236,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                         populateSampleMessages(currentOperation == null ? null : currentOperation.getName(), oid);
                     } catch (SaveException ex) {
                         throw new RuntimeException("Couldn't save SampleMessage", ex);
+                    } catch (RemoteException ex) {
+                        throw new RuntimeException("Couldn't save SampleMessage", ex);
                     }
                 }
             }
@@ -254,6 +254,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                         sampleMessagesCombo.repaint();
                     }
                 } catch (SaveException ex) {
+                    throw new RuntimeException("Couldn't save SampleMessage", ex);
+                } catch (RemoteException ex) {
                     throw new RuntimeException("Couldn't save SampleMessage", ex);
                 }
             }
@@ -273,7 +275,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                         Registry.getDefault().getServiceManager().deleteSampleMessage(entry.message);
                         sampleMessagesCombo.removeItem(entry);
                     } catch (DeleteException e1) {
-                        throw new RuntimeException(e1);
+                        throw new RuntimeException("Couldn't delete SampleMessage", e1);
+                    } catch (RemoteException e1) {
+                        throw new RuntimeException("Couldn't delete SampleMessage", e1);
                     }
                 }
             }
@@ -363,7 +367,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
 
         private final SampleMessage message;
-        private final Map namespaces = new HashMap();
     }
 
 
@@ -937,7 +940,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
             if (xpathField instanceof SquigglyTextField) {
                 SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
-                final String expr = feedBack.getXpathExpression();
                 squigglyTextField.setAll();
                 squigglyTextField.setSquiggly();
                 squigglyTextField.setColor(Color.RED);

@@ -11,27 +11,33 @@ import org.springframework.context.ApplicationEvent;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class SystemEvent extends ApplicationEvent {
-    public SystemEvent(Object source, Component component) {
-        this(source, component, null);
+    private static final String MY_IP = getIp();
+
+    private static String getIp() {
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            return "<unknown>";
+        }
     }
 
-    public SystemEvent(Object source, Component component, String ipAddress) {
+    public SystemEvent(Object source, Component component) {
+        this(source, component, null, Level.INFO);
+    }
+
+    public SystemEvent(Object source, Component component, String ipAddress, Level level) {
         super(source);
         this.component = component;
-
-        try {
-            if (ipAddress == null) ipAddress = InetAddress.getLocalHost().getHostAddress();
-            this.ipAddress = ipAddress;
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
-
+        this.level = level;
+        if (ipAddress == null) ipAddress = MY_IP;
+        this.ipAddress = ipAddress;
     }
 
     public abstract String getAction();
@@ -44,6 +50,11 @@ public abstract class SystemEvent extends ApplicationEvent {
         return ipAddress;
     }
 
+    public Level getLevel() {
+        return level;
+    }
+
     private final Component component;
     private final String ipAddress;
+    private final Level level;
 }

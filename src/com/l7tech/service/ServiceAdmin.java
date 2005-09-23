@@ -134,7 +134,7 @@ public interface ServiceAdmin {
      */
     EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException;
 
-    long saveSampleMessage(SampleMessage sm) throws SaveException;
+    long saveSampleMessage(SampleMessage sm) throws SaveException, RemoteException;
 
-    void deleteSampleMessage(SampleMessage message) throws DeleteException;
+    void deleteSampleMessage(SampleMessage message) throws DeleteException, RemoteException;
 }

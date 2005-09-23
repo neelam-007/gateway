@@ -4,14 +4,17 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
@@ -56,6 +59,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final X509Certificate serverCertificate;
     private final AuditContext auditContext;
     private final CertificateResolver certificateResolver;
+    private final LicenseManager licenseManager;
 
     /**
          * Create the new <code>MessageProcessor</code> instance with the service
@@ -69,7 +73,13 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
          * @param auditContext the audit context
          * @throws IllegalArgumentException if any of the arguments is null
          */
-    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext, CertificateResolver certificateResolver)
+    public MessageProcessor(ServiceManager sm,
+                            WssDecorator wssd,
+                            PrivateKey pkey,
+                            X509Certificate cert,
+                            AuditContext auditContext,
+                            CertificateResolver certificateResolver,
+                            LicenseManager licenseManager)
       throws IllegalArgumentException {
         if (sm == null) {
             throw new IllegalArgumentException("Service Manager is required");
@@ -86,24 +96,25 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (auditContext == null) {
             throw new IllegalArgumentException("Audit Context is required");
         }
+        if (licenseManager == null)
+            throw new IllegalArgumentException("License Manager is required");
         this.serviceManager = sm;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
         this.auditContext = auditContext;
         this.certificateResolver = certificateResolver;
+        this.licenseManager = licenseManager;
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
-      throws IOException, PolicyAssertionException, PolicyVersionException
-    {
+            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException {
         context.setAuditContext(auditContext);
         return reallyProcessMessage(context);
     }
 
     private AssertionStatus reallyProcessMessage(PolicyEnforcementContext context)
-      throws IOException, PolicyAssertionException, PolicyVersionException
-    {
+            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException {
         final Message request = context.getRequest();
         final Message response = context.getResponse();
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
@@ -112,19 +123,20 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
         // WSS-Processing Step
         try {
+            // License check hook
+            licenseManager.requireFeature(Feature.MESSAGEPROCESSOR);
+
             boolean isSoap = false;
             boolean hasSecurity = false;
 
             try {
                 isSoap = context.getRequest().isSoap();
-                hasSecurity = isSoap
-                        ? context.getRequest().getSoapKnob().isSecurityHeaderPresent()
-                        : false;
+                hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
             } catch (SAXException e) {
                 auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT, null, e);
                 return AssertionStatus.BAD_REQUEST;
             } catch (MessageNotSoapException e) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e); // TODO remove this or downgrade to FINE
+                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e);
             }
 
             if (isSoap && hasSecurity) {
@@ -132,10 +144,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 try {
                     final XmlKnob reqXml = request.getXmlKnob();
                     wssOutput = trogdor.undecorateMessage(request,
-                        null, serverCertificate,
-                        serverPrivateKey,
-                        SecureConversationContextManager.getInstance(),
-                        certificateResolver);
+                                                          null, serverCertificate,
+                                                          serverPrivateKey,
+                                                          SecureConversationContextManager.getInstance(),
+                                                          certificateResolver);
                     reqXml.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {
                     auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
@@ -212,7 +224,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
 
                 // Get the server policy
-                ServerAssertion serverPolicy = null;
+                ServerAssertion serverPolicy;
                 try {
                     serverPolicy = serviceManager.getServerPolicy(service.getOid());
                 } catch (FindException e) {
@@ -242,7 +254,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 if (status == AssertionStatus.NONE &&
                       response.isSoap() &&
                       response.getXmlKnob().getDecorationRequirements().length > 0) {
-                    Document doc = null;
+                    Document doc;
                     try {
                         final XmlKnob respXml = response.getXmlKnob();
                         DecorationRequirements[] allrequirements = respXml.getDecorationRequirements();

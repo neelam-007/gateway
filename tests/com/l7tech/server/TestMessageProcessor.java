@@ -7,6 +7,8 @@ package com.l7tech.server;
 
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.TestLicenseManager;
+import com.l7tech.common.LicenseException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -43,11 +45,11 @@ public class TestMessageProcessor extends MessageProcessor {
      */
     public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext)
       throws IllegalArgumentException {
-        super(sm, wssd, pkey, cert, auditContext, null);
+        super(sm, wssd, pkey, cert, auditContext, null, new TestLicenseManager());
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
-      throws IOException, PolicyAssertionException, PolicyVersionException {
+            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException {
 
         try {
             notifyListenersBefore(context);

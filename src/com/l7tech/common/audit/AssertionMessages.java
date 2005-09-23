@@ -3,6 +3,8 @@ package com.l7tech.common.audit;
 import java.util.logging.Level;
 
 /**
+ * Message catalog for messages audited by policy assertions.
+ * The ID range 4000-7999 inclusive is reserved for these messages.
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  */
@@ -307,5 +309,7 @@ public class AssertionMessages extends Messages {
     // EqualityAssertion
     public static final M EQUALITY_EQ          = m(7100, Level.INFO, "Values were equal");
     public static final M EQUALITY_NE          = m(7101, Level.INFO, "Values were not equal");
-    public static final M EQUALITY_NO_SUCH_VAR = m(7102, Level.WARNING, "No such variable: {0}"); 
+    public static final M EQUALITY_NO_SUCH_VAR = m(7102, Level.WARNING, "No such variable: {0}");
+
+    // MAX -                                     m(7999
 }

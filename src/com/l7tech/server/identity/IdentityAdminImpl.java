@@ -2,6 +2,9 @@ package com.l7tech.server.identity;
 
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Authorizer;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
@@ -38,9 +41,19 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     private ClientCertManager clientCertManager;
 
     private final AccessManager accessManager;
+    private final LicenseManager licenseManager;
 
-    public IdentityAdminImpl(AccessManager accessManager) {
+    public IdentityAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
         this.accessManager = accessManager;
+        this.licenseManager = licenseManager;
+    }
+
+    private void checkLicense() throws RemoteException {
+        try {
+            licenseManager.requireFeature(Feature.ADMIN);
+        } catch (LicenseException e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 
     /**
@@ -75,6 +88,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
       throws RemoteException, SaveException, UpdateException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
@@ -152,6 +166,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
             final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
@@ -171,6 +186,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     }
 
     public EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException, FindException {
+            checkLicense();
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
             Collection res = userManager.findAllHeaders();
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
@@ -178,6 +194,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
 
     public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws RemoteException, FindException {
+            checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             if (types != null) {
@@ -193,6 +210,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
 
     public User findUserByID(long identityProviderConfigId, String userId)
       throws RemoteException, FindException {
+            checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
@@ -201,6 +219,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     }
 
     public User findUserByLogin(long idProvCfgId, String login) throws RemoteException, FindException {
+            checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
@@ -212,6 +231,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
       throws RemoteException, DeleteException, ObjectNotFoundException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
@@ -230,6 +250,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
@@ -253,11 +274,13 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
 
 
     public EntityHeader[] findAllGroups(long cfgid) throws RemoteException, FindException {
+            checkLicense();
             Collection res = retrieveGroupManager(cfgid).findAllHeaders();
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
     }
 
     public Group findGroupByID(long cfgid, String groupId) throws RemoteException, FindException {
+            checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
@@ -269,6 +292,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
       throws RemoteException, DeleteException, ObjectNotFoundException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new ObjectNotFoundException("Group does not exist");
@@ -283,6 +307,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
@@ -305,6 +330,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     }
 
     public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
+            checkLicense();
             // get cert from internal CA
             Certificate cert = clientCertManager.getUserCert(user);
             if (cert == null) return null;
@@ -316,6 +342,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
         try {
             accessManager.enforceAdminRole();
+            checkLicense();
             // revoke the cert in internal CA
             clientCertManager.revokeUserCert(user);
             // internal users should have their password "revoked" along with their cert
@@ -349,6 +376,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
 
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
             accessManager.enforceAdminRole();
+            checkLicense();
             // revoke the cert in internal CA
             clientCertManager.recordNewUserCert(user, cert);
     }
@@ -363,6 +391,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws RemoteException, InvalidIdProviderCfgException {
         try {
+            checkLicense();
             getIdProvCfgMan().test(identityProviderConfig);
         } catch (InvalidIdProviderCfgException e) {
             throw e;
@@ -373,18 +402,22 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
     }
 
     public Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException {
+        checkLicense();
         return retrieveGroupManager(providerId).getGroupHeaders(userId);
     }
 
     public void setGroupHeaders(long providerId, String userId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+        checkLicense();
         retrieveGroupManager(providerId).setGroupHeaders(userId, groupHeaders);
     }
 
     public Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException {
+        checkLicense();
         return retrieveGroupManager(providerId).getUserHeaders(groupId);
     }
 
     public void setUserHeaders(long providerId, String groupId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+        checkLicense();
         retrieveGroupManager(providerId).setUserHeaders(groupId, groupHeaders);
     }
 
@@ -447,6 +480,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
         checkidentityProviderConfigManager();
         checkClientCertManager();
         checkAuthorizer();
+        checkLicenseManager();
     }
 
     private void checkidentityProviderFactory() {
@@ -472,6 +506,12 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
              throw new IllegalArgumentException("Authorizer is required");
          }
      }
+
+    private void checkLicenseManager() {
+        if (licenseManager == null) {
+            throw new IllegalArgumentException("LicenseManager is required");
+        }
+    }
 
     private IdentityProviderConfigManager getIdProvCfgMan() {
         return identityProviderConfigManager;

@@ -2,6 +2,9 @@ package com.l7tech.server.service;
 
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -59,13 +62,24 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     private SSLContext sslContext;
 
     private final AccessManager accessManager;
+    private final LicenseManager licenseManager;
 
-    public ServiceAdminImpl(AccessManager accessManager) {
+    public ServiceAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
         this.accessManager = accessManager;
+        this.licenseManager = licenseManager;
+    }
+
+    private void checkLicense() throws RemoteException {
+        try {
+            licenseManager.requireFeature(Feature.ADMIN);
+        } catch (LicenseException e) {
+            throw new RemoteException(e.getMessage());
+        }
     }
 
     public String resolveWsdlTarget(String url) throws IOException, MalformedURLException {
         try {
+            checkLicense();
             URL urltarget = new URL(url);
             HttpClient client = new HttpClient();
             GetMethod get = new GetMethod(url);
@@ -163,6 +177,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
             throws RemoteException, UpdateException, SaveException, VersionException
     {
             accessManager.enforceAdminRole();
+            checkLicense();
             long oid = PublishedService.DEFAULT_OID;
 
             if (service.getOid() > 0) {
@@ -183,6 +198,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         try {
             long oid = toLong(serviceID);
             accessManager.enforceAdminRole();
+            checkLicense();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             logger.info("Deleted PublishedService: " + oid);
@@ -272,6 +288,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
      * @throws FindException   if there was a problem accessing the requested information.
      */
     public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException {
+        checkLicense();
 
         // note: we only support V3 agent
         try {
@@ -309,7 +326,9 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         return sampleMessageManager.findHeaders(serviceOid, operationName);
     }
 
-    public long saveSampleMessage(SampleMessage sm) throws SaveException {
+    public long saveSampleMessage(SampleMessage sm) throws SaveException, RemoteException {
+        accessManager.enforceAdminRole();
+        checkLicense();
         long oid = sm.getOid();
         if (sm.getOid() == Entity.DEFAULT_OID) {
             oid = sampleMessageManager.save(sm);
@@ -323,7 +342,9 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         return oid;
     }
 
-    public void deleteSampleMessage(SampleMessage message) throws DeleteException {
+    public void deleteSampleMessage(SampleMessage message) throws DeleteException, RemoteException {
+        accessManager.enforceAdminRole();
+        checkLicense();
         sampleMessageManager.delete(message);
     }
 

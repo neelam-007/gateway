@@ -17,7 +17,7 @@ import java.awt.event.ActionEvent;
  */
 public class CaptureProperty extends JDialog {
     private JPanel mainPanel;
-    private JTextField valueField;
+    private JTextArea valueField;
     private JTextField keyField;
     private JButton cancelButton;
     private JButton okButton;
@@ -26,6 +26,7 @@ public class CaptureProperty extends JDialog {
     private String initialValue;
     private String title;
     private boolean oked = false;
+    private JTextArea textArea1;
 
     public CaptureProperty(JDialog parent, String title, String initialKey, String initialValue) {
         super(parent, true);

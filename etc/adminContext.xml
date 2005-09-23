@@ -196,6 +196,9 @@
         <constructor-arg>
             <ref bean="accessManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
         <property name="identityProviderConfigManager">
             <ref bean="identityProviderConfigManager"/>
         </property>
@@ -258,6 +261,9 @@
         <constructor-arg>
             <ref bean="accessManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
         <property name="serviceManager">
             <ref bean="serviceManager"/>
         </property>
@@ -289,6 +295,9 @@
         <constructor-arg>
             <ref bean="accessManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
         <property name="communitySchemaManager">
             <ref bean="communitySchemaManager"/>
         </property>
@@ -312,6 +321,9 @@
     <bean id="jmsAdmin" class="com.l7tech.server.transport.jms.JmsAdminImpl">
         <constructor-arg>
             <ref bean="accessManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
         </constructor-arg>
         <property name="jmsConnectionManager">
             <ref bean="jmsConnectionManager"/>
@@ -345,12 +357,15 @@
         <constructor-arg>
             <ref bean="accessManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
 
-    <!--    trusted cert admin exporter -->
+    <!--    custom assertions admin exporter -->
     <bean id="customAssertionsRegistrarRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
           parent="sharedExportProperties">
         <property name="service">
@@ -360,8 +375,11 @@
             <value>com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar</value>
         </property>
     </bean>
-    <!--    trusted cert admin servant -->
+    <!--    custom assertions admin servant -->
     <bean id="customAssertionsAdmin" class="com.l7tech.policy.assertion.ext.rmi.CustomAssertionsRegistrarImpl">
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
         <property name="delegate">
             <ref bean="customAssertionRegistrar"/>
         </property>
@@ -390,6 +408,9 @@
         </constructor-arg>
         <constructor-arg>
             <ref bean="accessManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
         </constructor-arg>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>

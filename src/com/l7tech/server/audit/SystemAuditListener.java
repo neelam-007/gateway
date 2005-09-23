@@ -34,7 +34,7 @@ public class SystemAuditListener implements ApplicationListener {
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof SystemEvent) {
             SystemEvent se = (SystemEvent)event;
-            Level level = Level.INFO;
+            Level level = se.getLevel();
             if (se.getComponent() == Component.GW_SERVER) {
                 level = (event instanceof Started || event instanceof Stopped) ? Level.INFO : Level.FINE;
             } if (se.getComponent() == Component.GW_AUDIT_SYSTEM) {

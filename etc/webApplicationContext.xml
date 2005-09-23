@@ -10,6 +10,7 @@
 
 
 <beans>
+
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess">
         <property name="serverConfig">
@@ -358,6 +359,9 @@
         <constructor-arg>
             <ref bean="certificateResolver"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="licenseManager"/>
+        </constructor-arg>
      </bean>
     <!-- server side policy service -->
     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
@@ -537,6 +541,12 @@
         <property name="rootCertificate">
             <ref bean="rootCertificate"/>
         </property>
+    </bean>
+
+    <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" depends-on="systemAuditListener">
+        <constructor-arg>
+            <ref bean="clusterPropertyManager"/>
+        </constructor-arg>
     </bean>
 
 </beans>

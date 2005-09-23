@@ -5,6 +5,9 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionUI;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -20,6 +23,22 @@ public class CustomAssertionsRegistrarImpl
   extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
     protected CustomAssertionsRegistrar delegate;
 
+    private final LicenseManager licenseManager;
+
+    public CustomAssertionsRegistrarImpl(LicenseManager licenseManager) {
+        if (licenseManager == null)
+            throw new IllegalArgumentException("License manager required");
+        this.licenseManager = licenseManager;
+    }
+
+    private void checkLicense() throws RemoteException {
+        try {
+            licenseManager.requireFeature(Feature.ADMIN);
+        } catch (LicenseException e) {
+            throw new RemoteException(e.getMessage());
+        }
+    }
+
     public void setDelegate(CustomAssertionsRegistrar delegate) {
         this.delegate = delegate;
     }
@@ -29,6 +48,7 @@ public class CustomAssertionsRegistrarImpl
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions() throws RemoteException {
+        checkLicense();
         return delegate.getAssertions();
     }
 
@@ -39,6 +59,7 @@ public class CustomAssertionsRegistrarImpl
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions(Category c) throws RemoteException {
+        checkLicense();
         return delegate.getAssertions(c);
     }
 
@@ -74,6 +95,7 @@ public class CustomAssertionsRegistrarImpl
      * @throws java.io.IOException      on policy format error
      */
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
+        checkLicense();
         return delegate.resolvePolicy(xml);
     }
 

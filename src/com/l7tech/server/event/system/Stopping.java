@@ -8,13 +8,15 @@ package com.l7tech.server.event.system;
 
 import com.l7tech.common.Component;
 
+import java.util.logging.Level;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class Stopping extends SystemEvent {
     public Stopping(Object source, Component component, String ip) {
-        super(source, component, ip);
+        super(source, component, ip, Level.INFO);
     }
 
     public String getAction() {

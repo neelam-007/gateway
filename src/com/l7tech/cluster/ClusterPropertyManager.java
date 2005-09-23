@@ -10,12 +10,16 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.server.event.admin.ClusterPropertyEvent;
 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
 import net.sf.hibernate.HibernateException;
 
 /**
@@ -23,9 +27,10 @@ import net.sf.hibernate.HibernateException;
  *
  * @author flascelles@layer7-tech.com
  */
-public class ClusterPropertyManager extends HibernateDaoSupport {
+public class ClusterPropertyManager extends HibernateDaoSupport implements ApplicationContextAware {
     private static final String TABLE_NAME = "cluster_properties";
     private final Logger logger = Logger.getLogger(ClusterPropertyManager.class.getName());
+    private ApplicationContext applicationContext;
 
     public ClusterPropertyManager() {}
 
@@ -100,6 +105,7 @@ public class ClusterPropertyManager extends HibernateDaoSupport {
             try {
                 if (existingVal != null) {
                     getSession().delete(existingVal);
+                    applicationContext.publishEvent(new ClusterPropertyEvent(existingVal, ClusterPropertyEvent.REMOVED));
                 } else {
                     logger.info("null set on a property that already did not exist?");
                 }
@@ -112,6 +118,7 @@ public class ClusterPropertyManager extends HibernateDaoSupport {
             try {
                 existingVal.setValue(value);
                 getSession().update(existingVal);
+                applicationContext.publishEvent(new ClusterPropertyEvent(existingVal, ClusterPropertyEvent.CHANGED));
             } catch (HibernateException e) {
                 String msg = "exception updating property for key = " + key;
                 logger.log(Level.WARNING, msg, e);
@@ -123,11 +130,16 @@ public class ClusterPropertyManager extends HibernateDaoSupport {
                 row.setKey(key);
                 row.setValue(value);
                 getSession().save(row);
+                applicationContext.publishEvent(new ClusterPropertyEvent(row, ClusterPropertyEvent.ADDED));
             } catch (HibernateException e) {
                 String msg = "exception saving property for key = " + key;
                 logger.log(Level.WARNING, msg, e);
                 throw new SaveException(msg, e);
             }
         }
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }
