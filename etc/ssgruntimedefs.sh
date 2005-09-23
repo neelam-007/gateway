@@ -64,7 +64,6 @@ ulimit -s 2048
 SSG_HOME=/ssg
 TOMCAT_HOME=/ssg/tomcat/
 
-default_java_opts="$default_java_opts -Djava.library.path=${SSG_HOME}/lib"
 
 # Under cygwin?.
 cygwin=false;
@@ -128,7 +127,6 @@ if [ -e "/opt/oracle" ] ; then
 	export NLS_LANG=AMERICAN_AMERICA.US7ASCII
 fi
 
-if [ "$old_rel" = 1 ]; then 
+if [ "$old_rel" = 1 ]; then
 	export LD_ASSUME_KERNEL="2.2.5"
 fi
-
