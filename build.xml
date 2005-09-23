@@ -356,11 +356,11 @@
                  use="true"
                  splitindex="true"
                  maxmemory="128m">
-<!-- other possible options:
+                <!-- other possible options:
                  author="true"
                  private="true"
                  additionalparam="-linksource"
--->
+                -->
             <header><![CDATA[<b>Layer 7 Technologies Inc.<b><br><font size='-1'>UneasyRooster</font>]]></header>
             <bottom><![CDATA[<i>Copyright &#169; 2005 Layer 7 Technologies Inc. All Rights Reserved.</i>]]></bottom>
             <link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
@@ -425,6 +425,7 @@
                 <include name="xfire-spring-1.0-SNAPSHOT.jar"/>
                 <include name="yom-1.0-SNAPSHOT.jar"/>
                 <include name="spring-webmvc.jar"/>
+                <include name="0500-wsdl4j.jar"/>
 
                 <include name="velocity-1.4.jar"/>
                 <include name="cglib-full-2.0.2.jar"/>
@@ -443,7 +444,6 @@
                 <include name="systinet-*.jar" if="include.systinet"/>
                 <include name="jaxrpc.jar" unless="include.systinet"/>
                 <include name="saaj.jar" unless="include.systinet"/>
-                <include name="wsdl4j.jar" unless="include.systinet"/>
 
                 <include name="saxpath.jar"/>
                 <include name="xalan-2.5.2.jar"/>
