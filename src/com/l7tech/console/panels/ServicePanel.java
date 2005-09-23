@@ -8,6 +8,7 @@ import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -238,13 +239,15 @@ public class ServicePanel extends WizardStepPanel {
                 // canceled
                 return false;
             if (!(result instanceof String)) {
-                final String msg = "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() + "'\n";
+                String msg = "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() + "'";
                 if (result instanceof Throwable) {
+                    Throwable t = (Throwable)result;
                     logger.log(Level.WARNING, msg, (Throwable)result);
+                    msg = "Unable to parse the WSDL at this location: " + ExceptionUtils.getMessage(t);
                 }
                 final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
                 JOptionPane.showMessageDialog(mainWindow,
-                                              msg,
+                                              msg + "\n",
                                               "Error",
                                               JOptionPane.ERROR_MESSAGE);
                 return false;
