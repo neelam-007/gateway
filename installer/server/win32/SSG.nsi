@@ -3,7 +3,8 @@
 ;based on Basic Example Script, which was Written by Joost Verburg
 
 !define J2RE "jre1.5.0_04"  ;Name of directory containing JRE
-!define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
+;Windows mapped dirve Z:
+!define J2RE_PATH "Z:\Dev\drop\L7_Software\ssginstall\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "SecureSpan Gateway" ;Define your own software name here
 
@@ -131,7 +132,8 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
-  File /r "C:\jdk1.5.0_04-windows-i586-p-redist"
+  ;Windows mapped drive Z:
+  File /r "Z:\Dev\drop\L7_Software\ssginstall\jdk1.5.0_04-windows-i586-p-redist"
   Rename "$INSTDIR\jdk1.5.0_04-windows-i586-p-redist" "$INSTDIR\jdk"
   ;etc/install.properties not having version as suffix to jdk 
   ;File /r "${BUILD_DIR}\install\ssg\jdk" this would include the linux jvm
