@@ -78,7 +78,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         if (trustedCert == null) {
             final String msg = "Not configured to trust this server's SSL server certificate";
             log.log(Level.FINE, msg);
-            throw new ServerCertificateUntrustedException(msg);
+            throw new ServerCertificateUntrustedException(msg);       // sslPeer already guaranteed to be set
         }
 
         try {
@@ -86,7 +86,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
             log.log(Level.FINE, "Peer certificate was signed by a trusted Gateway.");
         } catch (CertUtils.CertificateUntrustedException e) {
             log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
-            throw new ServerCertificateUntrustedException(e);
+            throw new ServerCertificateUntrustedException(e); // ssl peer already guaranteed to be set
         } catch ( CertificateException e ) {
             log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
             throw e;
