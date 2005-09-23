@@ -7,14 +7,16 @@
 package com.l7tech.common;
 
 /**
- * Don't commit this class when doing an official build, only when you change it on purpose.
+ * Don't commit this class after doing a build, only when you change it on purpose.
  * @author alex
  * @version $Revision$
  */
 public class BuildInfo {
     // All these fields are replaced by the OFFICIAL-build target of the build script! Don't bother modifying them ever!
     private static final String BUILD_NUMBER = "BNUM";      // ie, 1014
-    private static final String PRODUCT_VERSION = "HEAD";   // ie, 0.98b
+    private static final String PRODUCT_VERSION = "HEAD";   // ie, 3.4b (human readable)
+    private static final String PRODUCT_VERSION_MAJOR = "0"; // ie, 3
+    private static final String PRODUCT_VERSION_MINOR = "0"; // ie, 4
     private static final String PRODUCT_NAME = "Layer 7 SecureSpan Suite";
     private static final String BUILD_DATE = "DATE";  // ie, 20030916
     private static final String BUILD_TIME = "TIME";  // ie, 153238
@@ -50,10 +52,22 @@ public class BuildInfo {
         return BUILD_NUMBER;
     }
 
+    /** @return a human readable product version string, ie "3.4b5_p3_banana" */
     public static String getProductVersion() {
         return PRODUCT_VERSION;
     }
 
+    /** @return the strict product major version, ie "3".  NOTE: Licenses bind to this. */
+    public static String getProductVersionMajor() {
+        return PRODUCT_VERSION_MAJOR;
+    }
+
+    /** @return the strict product minor version, ie "4". NOTE: Licenses bind to this. */
+    public static String getProductVersionMinor() {
+        return PRODUCT_VERSION_MINOR;
+    }
+
+    /** @return the strict product name, ie "Layer 7 SecureSpan Suite".  NOTE: Licenses bind to this. */
     public static String getProductName() {
         return PRODUCT_NAME;
     }
