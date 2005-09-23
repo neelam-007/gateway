@@ -144,6 +144,7 @@ Section "SecureSpan Gateway" SecCopyUI
   File "${BUILD_DIR}\..\etc\service.cmd"
   File "${BUILD_DIR}\..\etc\SSG.exe"
   File "${BUILD_DIR}\..\etc\ssgruntimedefs.cmd"
+  File "${BUILD_DIR}\..\etc\GetShortName.cmd"
 
   SetOutPath "$INSTDIR/etc"
   File /r "${BUILD_DIR}\install\ssg\etc\conf"
