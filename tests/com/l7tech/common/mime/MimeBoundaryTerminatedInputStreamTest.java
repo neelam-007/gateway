@@ -56,7 +56,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         final SwaTestcaseFactory stfu = makeStfu(1, 100, 10);
         stfu.makeTestMessage();
         byte[] rawBoundary = stfu.getBoundary();
-        byte[] boundary = new String("--" + new String(rawBoundary)).getBytes();
+        byte[] boundary = ("--" + new String(rawBoundary)).getBytes();
 
         byte[] crap = new byte[11000];
         stfu.getRandom().nextBytes(crap);
