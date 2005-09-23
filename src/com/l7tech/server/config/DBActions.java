@@ -1,14 +1,14 @@
 package com.l7tech.server.config;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import com.l7tech.server.config.exceptions.UnsupportedOsException;
+
+import java.io.*;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -34,7 +34,7 @@ public class DBActions {
     public static final int DB_UNKNOWN_FAILURE = -1;
     public static final int DB_CHECK_INTERNAL_ERROR = -2;
     public static final int DB_UNKNOWNHOST_FAILURE = -3;
-
+    public static final int DB_CANNOT_UPGRADE = -4;
 
     private int maxRetryCount;
     private int retryCount;
@@ -104,13 +104,17 @@ public class DBActions {
         Class.forName(JDBC_DRIVER_NAME);
     }
 
-    public int checkExistingDb(String dbHostname, String dbName, String dbUsername, String dbPassword) throws WrongDbVersionException {
+    public int checkExistingDb(String dbHostname, String dbName, String dbUsername, String dbPassword) /*throws WrongDbVersionException*/ {
         int failureCode = DB_UNKNOWN_FAILURE;
-        Connection conn = null;
         String connectionString = makeConnectionString(dbHostname, dbName);
+        String dbVersion = null;
+        Connection conn = null;
+
         try {
             conn = DriverManager.getConnection(connectionString, dbUsername, dbPassword);
-            failureCode = checkDbVersion(conn);
+            failureCode = DB_SUCCESS;
+            //dbVersion = checkDbVersion(conn);
+
         } catch (SQLException e) {
             String sqlState = e.getSQLState();
             if (sqlState != null) {
@@ -137,27 +141,55 @@ public class DBActions {
         return failureCode;
     }
 
-    private int checkDbVersion(Connection conn) throws WrongDbVersionException {
-        int status = DB_INCORRECT_VERSION;
+    private String checkDbVersion(Connection conn) throws SQLException {
+        String dbVersion = null;
+
         Statement stmt = null;
         try {
             stmt = conn.createStatement();
-            try {
-                stmt.executeQuery(SQL_DETECT_SSG_DATABASE);
+            if (stmt != null) {
                 try {
-                    stmt.executeQuery(SQL_DETECT_VERSION_33);
-                    status = DB_SUCCESS;
-                } catch (SQLException e) {
-                    throw new WrongDbVersionException("3.2", PRE_33_VERSION_MSG);
-//                    logger.warning(PRE_33_VERSION_MSG);
-//                    logger.warning(UPGRADE_DB_MSG);
-//                    status = DB_INCORRECT_VERSION;
+                    stmt.executeQuery(SQL_DETECT_SSG_DATABASE);
+                    //now that the db is at least found, lets check it's version
+                    HashSet tableNames = null;
+                    try {
+                        ResultSet rs = stmt.executeQuery("show tables");
+                        tableNames = new HashSet();
+                        while(rs.next()) {
+                            tableNames.add(rs.getString(1));
+                        }
+                    } catch (SQLException e) {
+                        logger.severe("could not obtain a listing of tables. Cannot determine database version");
+                    }
+
+                    if (tableNames != null && tableNames.contains("cluster_properties")) {
+                        //then this is a 3.3+ database
+
+                        try {
+                            stmt.execute("select ski from client_cert");
+                            dbVersion = "3.4";
+                        } catch (SQLException e1) {
+                            dbVersion = "3.3";
+                        }
+                    } else {
+                        //check the contents of the audit_message table to see if this is a 3.2 or a 3.1 db
+                        try {
+                            stmt.execute("select operation_name from audit_message");
+                            stmt.execute("select response_status from audit_message");
+                            stmt.execute("select routing_latency from audit_message");
+                            dbVersion = "3.2";
+                        } catch (SQLException sqlex) {
+                            dbVersion = "3.1";
+                        }
+                    }
+                } catch (SQLException e1) {
+                    logger.warning("no SSG database found");
                 }
-            } catch(SQLException e) {
-                status = DB_INCORRECT_VERSION;
             }
         } catch (SQLException e) {
-            status = DB_CHECK_INTERNAL_ERROR;
+            logger.severe("Could not check the version of the DB");
+            logger.severe(e.getMessage());
+            throw e;
         } finally {
             if (stmt != null) {
                 try {
@@ -166,8 +198,18 @@ public class DBActions {
                 }
             }
         }
+        return dbVersion;
+    }
 
-        return status;
+    public String checkDbVersion(String hostname, String dbName, String username, String password) {
+        Connection conn = null;
+        String dbVersion = null;
+        try {
+            conn = DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
+            dbVersion = checkDbVersion(conn);
+        } catch (SQLException e) {
+        }
+        return dbVersion;
     }
 
     public void resetRetryCount() {
@@ -300,9 +342,43 @@ public class DBActions {
         return stmts;
     }
 
-    private void dropDatabase(Statement stmt, String dbName) throws SQLException {
+    public void dropDatabase(Statement stmt, String dbName) throws SQLException {
         stmt.executeUpdate(SQL_DROP_DB + dbName);
         logger.warning("dropping database \"" + dbName + "\"");
+    }
+
+    public void dropDatabase(String dbName, String hostname, String username, String password) {
+        if (username == null) {
+            throw new IllegalArgumentException("Username cannot be null");
+        }
+
+
+        if (password == null) {
+            throw new IllegalArgumentException("Password cannot be null");
+        }
+
+        Connection conn = null;
+        Statement stmt = null;
+        try {
+            conn = DriverManager.getConnection(makeConnectionString(hostname, ADMIN_DB_NAME), username, password);
+            stmt = conn.createStatement();
+            dropDatabase(stmt, dbName);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
     }
 
     private boolean testForExistingDb(Statement stmt, String dbName) {
@@ -323,5 +399,177 @@ public class DBActions {
         StringBuffer buffer = new StringBuffer();
         buffer.append(MYSQL_CONNECTION_PREFIX).append(hostname).append("/").append(dbName);
         return buffer.toString();
+    }
+
+    public int upgradeDbSchema(String hostname, String username, String password, String databaseName, String oldVersion, String newVersion, OSSpecificFunctions osFunctions) throws IOException {
+        int status = DB_SUCCESS;
+        File f = new File(osFunctions.getPathToDBCreateFile());
+        File parentDir = f.getParentFile();
+
+        HashMap upgradeMap = buildUpgradeMap(parentDir);
+
+
+        Connection conn = null;
+        Statement stmt = null;
+
+        try {
+            conn = DriverManager.getConnection(makeConnectionString(hostname, databaseName), username, password);
+            stmt = conn.createStatement();
+            while (!oldVersion.equals(newVersion)) {
+                String[] upgradeInfo = (String[]) upgradeMap.get(oldVersion);
+                if (upgradeInfo == null) {
+                    logger.warning("no upgrade path from \"" + oldVersion + "\" to \"" + newVersion + "\"");
+                    status = DB_CANNOT_UPGRADE;
+                } else {
+                    logger.info("Upgrading \"" + databaseName + "\" from " + oldVersion + "->" + upgradeInfo[0]);
+
+                    String upgradeScript = upgradeInfo[1];
+                    String[] statements = getCreateDbStatements(upgradeScript);
+
+                    conn.setAutoCommit(false);
+                    for (int i = 0; i < statements.length; i++) {
+                        String statement = statements[i];
+                        stmt.executeUpdate(statement);
+                    }
+                    conn.commit();
+                    conn.setAutoCommit(true);
+
+                    oldVersion = checkDbVersion(conn);
+                }
+            }
+        } catch (SQLException e) {
+
+        } finally {
+            if (stmt != null) {
+                try {
+                    stmt.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+
+        return status;
+    }
+
+    private HashMap buildUpgradeMap(File parentDir) {
+        File[] upgradeScripts = parentDir.listFiles(new FilenameFilter() {
+                public boolean accept(File file, String s) {
+                    return s.toUpperCase().startsWith("UPGRADE") &&
+                            s.toUpperCase().endsWith("SQL");
+                }
+        });
+
+        Pattern upgradePattern = Pattern.compile("^upgrade_(.*)-(.*).sql$");
+        HashMap upgradeMap = new HashMap();
+
+        for (int i = 0; i < upgradeScripts.length; i++) {
+            File upgradeScript = upgradeScripts[i];
+            String filename = upgradeScript.getName();
+            Matcher matcher = upgradePattern.matcher(filename);
+            if (matcher.matches()) {
+                String startVersion = matcher.group(1);
+                String destinationVersion = matcher.group(2);
+                upgradeMap.put(startVersion, new String[]{destinationVersion, upgradeScript.getAbsolutePath()});
+            }
+        }
+        return upgradeMap;
+    }
+
+    public static void main(String[] args) {
+
+        final String currentVersion = "3.4";
+
+        boolean doFullTest = false;
+
+        if (args.length > 0) {
+            String arg = args[0];
+            if (arg.equals("-full")) {
+                 doFullTest = true;
+            } else if (arg.equals("-create")) {
+                doFullTest = false;
+            } else {
+                doFullTest = false;
+            }
+        }
+
+        String hostname = "localhost";
+        String dbName = "ssg";
+        String privUsername = "root";
+        String privPassword = "7layer";
+        String username = "gateway";
+        String password = "7layer";
+
+        OSSpecificFunctions osFunctions = null;
+        try {
+            osFunctions = OSDetector.getOSSpecificActions();
+        } catch (UnsupportedOsException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        boolean isWindows = osFunctions.isWindows();
+
+        String[] versions = new String[] {"3.1", "3.2", "3.3", currentVersion};
+        try {
+            DBActions dbActions = new DBActions();
+
+
+            int success = DB_SUCCESS;
+            for (int i = 0; i < versions.length; i++) {
+                String realVersion = versions[i];
+                String versionName = realVersion.replaceAll("\\.", "");
+                System.out.println("Creating database - version " + realVersion);
+                success = dbActions.createDb(privUsername, privPassword, hostname, dbName+versionName, username, password, "ssg"+realVersion +".sql", isWindows, true);
+                if (success == DB_SUCCESS) {
+                    System.out.println("Success creating database - version " + realVersion);
+                }
+                else {
+                    System.out.println("Could not create database realVersion: " + realVersion);
+                    success = DB_UNKNOWN_FAILURE;
+                }
+            }
+
+            if (success == DB_SUCCESS) {
+                String dbVersion = null;
+                for (int i = 0; i < versions.length; i++) {
+                    String realVersion = versions[i];
+                    String versionName = realVersion.replaceAll("\\.", "");
+
+                    dbVersion = dbActions.checkDbVersion(hostname, dbName+versionName, username, password);
+                    if (dbVersion != null && dbVersion.equals(realVersion)) {
+                        System.out.println(dbName+versionName + " version is correct. Wanted " + realVersion + " and detected " + dbVersion);
+                    } else {
+                        System.out.println(dbName+versionName + " has a problem with the version. Wanted " + realVersion + " but detected " + dbVersion);
+                    }
+
+                    if (!currentVersion.equals(dbVersion) && doFullTest) {
+                        System.out.println("Upgrading " + dbName+versionName + " from " + dbVersion + " to " + currentVersion);
+                        int upgradeStatus = dbActions.upgradeDbSchema(hostname, privUsername, privPassword, dbName+versionName, dbVersion, currentVersion, osFunctions);
+                        if (upgradeStatus == DB_SUCCESS) {
+                            System.out.println("Successful upgrade procedure!!");
+                            System.out.println("Checking version again");
+                            dbVersion = dbActions.checkDbVersion(hostname, dbName+versionName, username, password);
+                            if (dbVersion.equals(currentVersion)) {
+                                System.out.println("The version of the upgraded DB is correct");
+                            } else {
+                                System.out.println("The version of the upgraded DB is incorrect - detected version " + dbVersion + " should be " + currentVersion);
+                            }
+                        } else {
+                            System.out.println("Failed upgrade procedure!!");
+                        }
+                    }
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

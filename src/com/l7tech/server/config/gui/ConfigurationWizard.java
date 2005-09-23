@@ -42,6 +42,8 @@ public class ConfigurationWizard extends Wizard {
     boolean hadFailures = false;
     private int clusteringType;
     private String keystoreType;
+    
+    private final String currentVersion = "3.4";
 
     static {
         try {
@@ -219,5 +221,9 @@ public class ConfigurationWizard extends Wizard {
 
     public void setKeystoreType(String type) {
         keystoreType = type;
+    }
+
+    public String getCurrentVersion() {
+        return currentVersion;
     }
 }
