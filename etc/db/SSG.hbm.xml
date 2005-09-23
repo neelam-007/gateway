@@ -307,7 +307,7 @@
         <id name="key" column="propkey" type="string">
             <generator class="assigned"/>
         </id>
-        <property name="value" column="propvalue" type="string"/>
+        <property name="value" column="propvalue" type="text"/>
     </class>
 
     <class name="com.l7tech.service.SampleMessage" table="sample_messages">

@@ -482,7 +482,7 @@ CREATE TABLE community_schemas (
 DROP TABLE IF EXISTS cluster_properties;
 CREATE TABLE cluster_properties (
   propkey varchar(128) NOT NULL PRIMARY KEY,
-  propvalue varchar(255) NOT NULL
+  propvalue mediumtext NOT NULL
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS sample_messages;
