@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.LicenseException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -80,6 +81,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         } catch (AuthenticationException e) {
             logger.log(Level.INFO, "Credentials do not authenticate against any of the providers, assuming anonymous");
             users = null;
+        } catch (LicenseException e) {
+            logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
+            res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            res.getOutputStream().print("Gateway WSDL proxy service not enabled by license");
+            res.flushBuffer();
+            return;
         }
 
         // NOTE: sending credentials over insecure channel is treated as an anonymous request

@@ -7,8 +7,13 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -26,20 +31,36 @@ import java.security.cert.X509Certificate;
  */
 public class BridgeServlet extends HttpServlet {
     private SecureSpanBridge secureSpanBridge;
+    private WebApplicationContext applicationContext;
 
     protected void doGet(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
             throws ServletException, IOException
     {
         super.doGet(servletRequest, servletResponse);
+
+        LicenseManager licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
+
+        try {
+            licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+        } catch (LicenseException e) {
+            throw new ServletException(e);
+        }
+
+
         // TODO make WSDL proxy work
+
     }
 
     protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
             throws ServletException, IOException
     {
+
         String soapAction = servletRequest.getHeader("SOAPAction");
         Document message = null;
         try {
+            LicenseManager licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
+            licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+
             message = XmlUtil.parse(servletRequest.getInputStream());
             SecureSpanBridge.Result result = secureSpanBridge.send(soapAction, message);
             servletResponse.setStatus(result.getHttpStatus());
@@ -55,6 +76,8 @@ public class BridgeServlet extends HttpServlet {
             error(servletRequest, servletResponse, "Certificate already issued", e);
         } catch (SecureSpanBridge.SendException e) {
             error(servletRequest, servletResponse, "Unable to forward request to server", e);
+        } catch (LicenseException e) {
+            error(servletRequest, servletResponse, "Bridge service not enabled by license", e);
         }
     }
 
@@ -67,6 +90,11 @@ public class BridgeServlet extends HttpServlet {
 
     public void init(ServletConfig servletConfig) throws ServletException {
         super.init(servletConfig);
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+
+        if (applicationContext == null) {
+            throw new ServletException("Configuration error; could not get application context");
+        }
 
         String gatewayHostname = servletConfig.getInitParameter("gatewayHostname");
         char[] password = servletConfig.getInitParameter("password").toCharArray();

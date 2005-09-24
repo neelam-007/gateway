@@ -10,6 +10,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.LicenseException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -206,6 +207,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         } catch (AuthenticationException e) {
             logger.log(Level.FINE, "Authentication exception", e);
             users = Collections.EMPTY_LIST;
+        } catch (LicenseException e) {
+            logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
+            generateFaultAndSendAsResponse(res, "Gateway policy discovery service not enabled by license", e.getMessage());
+            return;
         }
 
         // pass over to the service

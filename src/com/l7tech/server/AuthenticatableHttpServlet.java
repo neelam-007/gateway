@@ -15,6 +15,9 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -64,8 +67,20 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * If credentials are provided but they are invalid, this will throw a BadCredentialsException
      *
      * @return the authenticated user, null if no creds provided
+     * @throws BadCredentialsException  if authorized credentials were not presented with the request
+     * @throws IssuedCertNotPresentedException  if the identity in question is recorded as possessing a client
+     *                                          certificate, and the connection came in over SSL, but the
+     *                                          client failed to present this client certificate during the
+     *                                          SSL handshake.
+     * @throws LicenseException   if the currently installed license does not enable use of auxilary servlets.
      */
-    protected List authenticateRequestBasic(HttpServletRequest req) throws BadCredentialsException, IssuedCertNotPresentedException {
+    protected List authenticateRequestBasic(HttpServletRequest req) 
+            throws BadCredentialsException, IssuedCertNotPresentedException, LicenseException
+    {
+        LicenseManager licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
+
+        licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+
         List users = new ArrayList();
         try {
             users = getUsers(req);

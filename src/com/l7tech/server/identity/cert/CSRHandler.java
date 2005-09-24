@@ -5,6 +5,7 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.LicenseException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
@@ -98,6 +99,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             logger.log(Level.SEVERE, "Requestor is refused csr", e);
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
               " Contact your administrator for more info.");
+            return;
+        } catch (LicenseException e) {
+            logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
+            response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not enabled by license");
             return;
         }
 

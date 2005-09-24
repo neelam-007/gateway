@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUser;
@@ -51,6 +52,10 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         } catch (AuthenticationException e) {
             logger.log(Level.WARNING, "Bad credentials, returning 401", e);
             sendBackError(res, HttpServletResponse.SC_UNAUTHORIZED, "Bad credentials");
+            return;
+        } catch (LicenseException e) {
+            logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
+            sendBackError(res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway auxiliary service not enabled by license");
             return;
         }
         if (users.isEmpty()) {
