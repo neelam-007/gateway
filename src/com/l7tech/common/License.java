@@ -70,26 +70,26 @@ public class License implements Serializable {
      * @throws ParseException if one of the fields of the license contains illegally-formatted data
      * @throws TooManyChildElementsException if there is more than one copy of an element that there can be only one of (ie, expires, Signature, etc)
      * @throws SignatureException if the license is signed, but the signature wasn't valid or wasn't made by a trusted licence issuer
+     * @throws InvalidLicenseException if the license is invalid for immediately-obvious semantic reasons
      */
     public License(String licenseXml, X509Certificate[] trustedIssuers)
-            throws SAXException, ParseException, TooManyChildElementsException, SignatureException
-    {
+            throws SAXException, ParseException, TooManyChildElementsException, SignatureException, InvalidLicenseException {
         if (licenseXml == null) throw new NullPointerException();
         Document ld = XmlUtil.stringToDocument(licenseXml);
         XmlUtil.stripWhitespace(ld.getDocumentElement());
 
         Element lic = ld.getDocumentElement();
         if (lic == null) throw new NullPointerException(); // can't happen
-        if (!(LIC_NS.equals(lic.getNamespaceURI()))) throw new SAXException("License document element not in namespace " + LIC_NS);
-        if (!("license".equals(lic.getLocalName()))) throw new SAXException("License local name is not \"license\"");
+        if (!(LIC_NS.equals(lic.getNamespaceURI()))) throw new InvalidLicenseException("License document element not in namespace " + LIC_NS);
+        if (!("license".equals(lic.getLocalName()))) throw new InvalidLicenseException("License local name is not \"license\"");
         this.licenseXml = licenseXml;
 
         try {
             id = Long.parseLong(lic.getAttribute("Id"));
             if (id < 1)
-                throw new SAXException("License id is non-positive");
+                throw new InvalidLicenseException("License id is non-positive");
         } catch (NumberFormatException e) {
-            throw new SAXException("License id is missing or non-numeric");
+            throw new InvalidLicenseException("License id is missing or non-numeric");
         }
 
         startDate = parseDateElement(ld, "valid");
@@ -103,6 +103,7 @@ public class License implements Serializable {
         versionMajor = parseStringAttribute(ld, "product", "version", "major");
         versionMinor = parseStringAttribute(ld, "product", "version", "minor");
         licenseeName = parseStringAttribute(ld, "licensee", "name");
+        requireValue("licensee name", licenseeName);
         licenseeContactEmail = parseStringAttribute(ld, "licensee", "contactEmail");
 
         // Look for valid signature by trusted issuer
@@ -128,6 +129,11 @@ public class License implements Serializable {
             trustedIssuer = null;
         }
 
+    }
+
+    private void requireValue(String name, String val) throws InvalidLicenseException {
+        if (val == null || val.length() < 1 || "*".equals(val))
+            throw new InvalidLicenseException("License does not specify " + name);
     }
 
     /**
@@ -290,9 +296,10 @@ public class License implements Serializable {
         } else {
             sb.append(product);
 
-            if (!anyMajor && !anyMinor) {
-                sb.append(" version ").append(versionMajor).append(".").append(versionMinor);
-            } else if (anyMajor) {
+            if (anyMajor == anyMinor) {
+                if (!anyMajor)
+                    sb.append(" version ").append(versionMajor).append(".").append(versionMinor);
+            } else if (!anyMinor) {
                 sb.append(" minor version ").append(versionMinor);
             } else {
                 sb.append(" major version ").append(versionMajor);
