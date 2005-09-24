@@ -1,13 +1,12 @@
 package com.l7tech.cluster;
 
 import com.l7tech.admin.AccessManager;
+import com.l7tech.common.*;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.Feature;
-import com.l7tech.common.LicenseException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.GatewayLicenseManager;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.rmi.RemoteException;
@@ -43,7 +42,7 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
         this.serviceUsageManager = serviceUsageManager;
         this.accessManager = accessManager;
         this.clusterPropertyManager = clusterPropertyManager;
-        this.licenseManager = licenseManager;
+        this.licenseManager = (GatewayLicenseManager)licenseManager; // XXX this is... Not Very Pretty
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info manager is required");
         }
@@ -82,7 +81,6 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
      * get service usage as currently recorded in database.
      */
     public ServiceUsage[] getServiceUsage() throws FindException, RemoteException {
-        checkLicense();
         Collection res = serviceUsageManager.getAll();
         Object[] resarray = res.toArray();
         ServiceUsage[] output = new ServiceUsage[res.size()];
@@ -161,11 +159,20 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
         clusterPropertyManager.setProperty(key, value);
     }
 
+    public License getCurrentLicense() throws RemoteException, InvalidLicenseException {
+        return licenseManager.getCurrentLicense();
+    }
+
+    public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException, UpdateException {
+        accessManager.enforceAdminRole();
+        licenseManager.installNewLicense(newLicenseXml);
+    }
+
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
     private final ClusterPropertyManager clusterPropertyManager;
     private final AccessManager accessManager;
-    private final LicenseManager licenseManager;
+    private final GatewayLicenseManager licenseManager;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
 }

@@ -5,20 +5,20 @@
 
 package com.l7tech.internal.license;
 
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.InvalidLicenseException;
+import com.l7tech.common.License;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-import java.util.Calendar;
-import java.security.cert.X509Certificate;
-
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.License;
-import com.l7tech.common.LicenseException;
 import org.w3c.dom.Document;
+
+import java.security.cert.X509Certificate;
+import java.util.Calendar;
+import java.util.logging.Logger;
 
 /**
  * Tries to generate some licenses and then parse them.
@@ -53,9 +53,9 @@ public class LicenseRoundTripTest extends TestCase {
         spec.setLicenseeContactEmail("developers@layer7tech.com");
         spec.setHostname("*");
         spec.setIp("*");
-        spec.setProduct("SecureSpan Gateway");
-        spec.setVersionMajor("*");
-        spec.setVersionMinor("*");
+        spec.setProduct(BuildInfo.getProductName());
+        spec.setVersionMajor("3");
+        spec.setVersionMinor("4");
         return spec;
     }
 
@@ -80,12 +80,12 @@ public class LicenseRoundTripTest extends TestCase {
         assertEquals(license.getExpiryDate(), spec.getExpiryDate());
         assertEquals(license.getStartDate(), spec.getStartDate());
         assertEquals(license.getDescription(), spec.getDescription());
-        assertEquals(license.getHostname(), spec.getHostname());
-        assertEquals(license.getIp(), spec.getIp());
-        assertEquals(license.getProduct(), spec.getProduct());
         assertEquals(license.getLicenseeName(), spec.getLicenseeName());
-        assertEquals(license.getVersionMajor(), spec.getVersionMajor());
-        assertEquals(license.getVersionMinor(), spec.getVersionMinor());
+
+        assertTrue(license.isProductEnabled(spec.getProduct(), spec.getVersionMajor(), spec.getVersionMinor()));
+        assertTrue(license.isHostnameEnabled(spec.getHostname()));
+        assertTrue(license.isIpEnabled(spec.getIp()));
+
         license.checkValidity();
     }
 
@@ -96,11 +96,13 @@ public class LicenseRoundTripTest extends TestCase {
         cal.setTimeInMillis(System.currentTimeMillis() - 50000);
         spec.setExpiryDate(cal.getTime());
         Document lic = LicenseGenerator.generateSignedLicense(spec);
-        License license = new License(XmlUtil.nodeToString(lic), new X509Certificate[] {signingCert});
+        final String licenseXml = XmlUtil.nodeToFormattedString(lic);
+        log.info("Generated signed license: " + licenseXml);
+        License license = new License(licenseXml, new X509Certificate[] {signingCert});
         try {
             license.checkValidity();
             fail("Expired license considered valid");
-        } catch (LicenseException e) {
+        } catch (InvalidLicenseException e) {
             // Ok
             log.info("The expected exception was thrown: " + e.getMessage());
         }
@@ -110,11 +112,13 @@ public class LicenseRoundTripTest extends TestCase {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         LicenseSpec spec = makeSpec(signingCert);
         Document lic = LicenseGenerator.generateUnsignedLicense(spec);
-        License license = new License(XmlUtil.nodeToString(lic), new X509Certificate[] {signingCert});
+        final String licenseXml = XmlUtil.nodeToFormattedString(lic);
+        log.info("Generated unsigned license: " + licenseXml);
+        License license = new License(licenseXml, new X509Certificate[] {signingCert});
         try {
             license.checkValidity();
             fail("Unsigned license considered valid");
-        } catch (LicenseException e) {
+        } catch (InvalidLicenseException e) {
             // Ok
             log.info("The expected exception was thrown: " + e.getMessage());
         }
@@ -124,14 +128,16 @@ public class LicenseRoundTripTest extends TestCase {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         LicenseSpec spec = makeSpec(signingCert);
         Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(System.currentTimeMillis() + 50000);
+        cal.setTimeInMillis(System.currentTimeMillis() + 500000000000L);
         spec.setStartDate(cal.getTime());
         Document lic = LicenseGenerator.generateSignedLicense(spec);
-        License license = new License(XmlUtil.nodeToString(lic), new X509Certificate[] {signingCert});
+        final String licenseXml = XmlUtil.nodeToFormattedString(lic);
+        log.info("Generated signed license: " + licenseXml);
+        License license = new License(licenseXml, new X509Certificate[] {signingCert});
         try {
             license.checkValidity();
             fail("Not-yet-valid license considered valid");
-        } catch (LicenseException e) {
+        } catch (InvalidLicenseException e) {
             // Ok
             log.info("The expected exception was thrown: " + e.getMessage());
         }

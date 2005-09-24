@@ -1,11 +1,11 @@
 <license Id="1001" xmlns="http://l7tech.com/license">
     <description>Layer 7 Internal Developer License</description>
-    <valid>2005-09-23T01:43:03.406Z</valid>
-    <expires>2101-01-02T02:43:03.406Z</expires>
+    <valid>2005-09-23T22:48:08.187Z</valid>
+    <expires>2101-01-01T23:48:08.187Z</expires>
     <host name="*"/>
     <ip address="*"/>
-    <product name="SecureSpan Gateway">
-        <version major="*" minor="*"/>
+    <product name="Layer 7 SecureSpan Suite">
+        <version major="3" minor="4"/>
     </product>
     <licensee contactEmail="developers@layer7tech.com" name="Layer 7 Developer"/>
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
@@ -18,10 +18,10 @@
                     <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
                 </ds:Transforms>
                 <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-                <ds:DigestValue>/7ghgawGeCC9HI2NO5LHuk28nh8=</ds:DigestValue>
+                <ds:DigestValue>hM95b6G/X6Di/xOY/YD3BQq87Y4=</ds:DigestValue>
             </ds:Reference>
         </ds:SignedInfo>
-        <ds:SignatureValue>c198TpmPk3A5cqdm9Fq4ueTKdlaJQA9hMqNt4Y8kuG4/EOWxtek5tfhKFzWL321yHgfm/9RZdqJ4e07i/MfvdmM05dKBEg2iw00SNm+TFL/ftnlTDdxY5utr3rUnzx6ImV/I281WPjg4tI9EHOwk+X3u2ty63TrLFawc1bgVuUI=</ds:SignatureValue>
+        <ds:SignatureValue>DV0y9EJuTLOQY1rdKuMaN5Td2YxRi/ozbrGNLQjCXwMOjk3PobGeMdiNWWVqaHxFbJ7/5z15lc1mQoN0rR8LV1pnYRGHRyv+ZKX41fEyRLCvcU/+k3zU6l7+Lscz+5c2+kHpw3tEJKhZ5Njb7LUMH4uw4Tc1whNNidpbE9atsxg=</ds:SignatureValue>
         <ds:KeyInfo>
             <ds:KeyName>CN=riker</ds:KeyName>
         </ds:KeyInfo>

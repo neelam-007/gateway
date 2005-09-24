@@ -88,6 +88,7 @@ public class MainWindow extends JFrame {
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem manageGlobalSchemasMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
+    private JMenuItem manageClusterLicensesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     // actions
@@ -117,6 +118,7 @@ public class MainWindow extends JFrame {
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
     private ManageClusterPropertiesAction manageClusterPropertiesAction = null;
+    private ManageClusterLicensesAction manageClusterLicensesAction = null;
     private NewInternalUserAction newInernalUserAction;
 
 
@@ -217,7 +219,7 @@ public class MainWindow extends JFrame {
     /**
      * The SSG URL this ssm is connected to (excluding the /ssg suffix).
      *
-     * @return
+     * @return the url of the SSG we are currently connected to.
      */
     public String ssgURL() {
         return ssgURL;
@@ -526,6 +528,7 @@ public class MainWindow extends JFrame {
         //helpMenu.setFocusable(false);
         helpMenu.setText(resapplication.getString("Help"));
         helpMenu.add(getHelpTopicsMenuItem());
+        helpMenu.add(getManageClusterLicensesMenuItem());
         helpMenu.add(new AboutAction());
         int mnemonic = helpMenu.getText().toCharArray()[0];
         helpMenu.setMnemonic(mnemonic);
@@ -1203,6 +1206,14 @@ public class MainWindow extends JFrame {
         manageClusterPropertiesAction.setEnabled(false);
         this.addLogonListener(manageClusterPropertiesAction);
         return manageClusterPropertiesAction;
+    }
+
+    private Action getManagerClusterLicensesAction() {
+        if (manageClusterLicensesAction != null) return manageClusterLicensesAction;
+        manageClusterLicensesAction = new ManageClusterLicensesAction();
+        manageClusterLicensesAction.setEnabled(false);
+        this.addLogonListener(manageClusterLicensesAction);
+        return manageClusterLicensesAction;
     }
 
     private Action getGatewayAuditWindowAction() {
@@ -1886,6 +1897,12 @@ public class MainWindow extends JFrame {
         if (manageClusterPropertiesMenuItem != null) return manageClusterPropertiesMenuItem;
         manageClusterPropertiesMenuItem = new JMenuItem(getManageClusterPropertiesAction());
         return manageClusterPropertiesMenuItem;
+    }
+
+    private JMenuItem getManageClusterLicensesMenuItem() {
+        if (manageClusterLicensesMenuItem != null) return manageClusterLicensesMenuItem;
+        manageClusterLicensesMenuItem = new JMenuItem(getManagerClusterLicensesAction());
+        return manageClusterLicensesMenuItem;
     }
 
     public JMenuItem getStatMenuItem() {

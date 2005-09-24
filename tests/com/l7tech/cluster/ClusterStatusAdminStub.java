@@ -1,9 +1,11 @@
 package com.l7tech.cluster;
 
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.common.InvalidLicenseException;
+import com.l7tech.common.License;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
@@ -17,6 +19,8 @@ import java.util.List;
  */
 
 public class ClusterStatusAdminStub implements ClusterStatusAdmin{
+    private static License license = null;
+
     public ClusterNodeInfo[] getClusterStatus() {
 
         ClusterNodeInfo[] cluster = new ClusterNodeInfo[8];
@@ -114,5 +118,17 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
 
     public void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException {
         throw new UnsupportedOperationException();
+    }
+
+    public License getCurrentLicense() throws RemoteException, InvalidLicenseException {
+        return license;
+    }
+
+    public void installNewLicense(String newLicenseXml) throws RemoteException, InvalidLicenseException {
+        try {
+            license = new License(newLicenseXml, null);
+        } catch (Exception e) {
+            throw new InvalidLicenseException(e.getMessage(), e);
+        }
     }
 }

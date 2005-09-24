@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.common.gui.widgets.LicensePanel">
+  <grid id="3ac44" binding="rootPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="16" left="16" bottom="16" right="16"/>
+    <constraints>
+      <xy x="17" y="13" width="584" height="462"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="fe42" row-count="16" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="16" y="16" width="552" height="430"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <vspacer id="4d149">
+            <constraints>
+              <xy x="85" y="350" width="11" height="80"/>
+              <grid row="15" column="1" row-span="1" col-span="1" vsize-policy="2" hsize-policy="1" anchor="0" fill="2"/>
+            </constraints>
+          </vspacer>
+          <component id="ed6e5" class="javax.swing.JLabel" binding="statusLabel">
+            <constraints>
+              <xy x="32" y="48" width="77" height="14"/>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="License Status:"/>
+            </properties>
+          </component>
+          <component id="cb50c" class="javax.swing.JLabel" binding="ssgField">
+            <constraints>
+              <xy x="159" y="3" width="40" height="14"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="            "/>
+            </properties>
+          </component>
+          <component id="9db8" class="javax.swing.JLabel" binding="licenseErrorsLabel">
+            <constraints>
+              <xy x="32" y="90" width="75" height="14"/>
+              <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="License Errors:"/>
+            </properties>
+          </component>
+          <hspacer id="7e72e">
+            <constraints>
+              <xy x="0" y="49" width="32" height="11"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+                <minimum-size width="32" height="-1"/>
+                <preferred-size width="32" height="-1"/>
+                <maximum-size width="32" height="-1"/>
+              </grid>
+            </constraints>
+          </hspacer>
+          <component id="5d544" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="0" y="3" width="111" height="14"/>
+              <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="SecureSpan Gateway:"/>
+            </properties>
+          </component>
+          <component id="c9706" class="javax.swing.JLabel" binding="statusField">
+            <constraints>
+              <xy x="159" y="48" width="31" height="14"/>
+              <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="         "/>
+            </properties>
+          </component>
+          <grid id="3d2ed" binding="licenseErrorsPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="159" y="90" width="393" height="20"/>
+              <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3">
+                <minimum-size width="300" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children/>
+          </grid>
+          <hspacer id="30808">
+            <constraints>
+              <xy x="159" y="384" width="393" height="11"/>
+              <grid row="15" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+            </constraints>
+          </hspacer>
+          <component id="4bf76" class="javax.swing.JLabel" binding="contactEmailLabel">
+            <constraints>
+              <xy x="32" y="218" width="117" height="14"/>
+              <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Licensee Contact Email:"/>
+            </properties>
+          </component>
+          <component id="49d52" class="javax.swing.JLabel" binding="contactEmailField">
+            <constraints>
+              <xy x="159" y="218" width="44" height="14"/>
+              <grid row="9" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value=".........."/>
+            </properties>
+          </component>
+          <component id="7841a" class="javax.swing.JLabel" binding="licenseeField">
+            <constraints>
+              <xy x="159" y="193" width="44" height="14"/>
+              <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value=".........."/>
+            </properties>
+          </component>
+          <component id="ec991" class="javax.swing.JLabel" binding="licenseeLabel">
+            <constraints>
+              <xy x="32" y="193" width="49" height="14"/>
+              <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Licensee:"/>
+            </properties>
+          </component>
+          <component id="a67d2" class="javax.swing.JLabel" binding="licenseIdLabel">
+            <constraints>
+              <xy x="32" y="118" width="57" height="14"/>
+              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="License ID:"/>
+            </properties>
+          </component>
+          <component id="e4f5" class="javax.swing.JLabel" binding="issuerLabel">
+            <constraints>
+              <xy x="32" y="168" width="38" height="14"/>
+              <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Issuer:"/>
+            </properties>
+          </component>
+          <component id="93d44" class="javax.swing.JLabel" binding="issuerField">
+            <constraints>
+              <xy x="159" y="168" width="44" height="14"/>
+              <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value=".........."/>
+            </properties>
+          </component>
+          <component id="cd12c" class="javax.swing.JLabel" binding="descriptionLabel">
+            <constraints>
+              <xy x="32" y="143" width="61" height="14"/>
+              <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Description:"/>
+            </properties>
+          </component>
+          <component id="eea7f" class="javax.swing.JLabel" binding="licenseIdField">
+            <constraints>
+              <xy x="159" y="118" width="44" height="14"/>
+              <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value=".........."/>
+            </properties>
+          </component>
+          <component id="66d87" class="javax.swing.JLabel" binding="descriptionField">
+            <constraints>
+              <xy x="159" y="143" width="44" height="14"/>
+              <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value=".........."/>
+            </properties>
+          </component>
+          <component id="a941b" class="javax.swing.JLabel" binding="grantsLabel">
+            <constraints>
+              <xy x="32" y="330" width="40" height="14"/>
+              <grid row="14" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Grants:"/>
+            </properties>
+          </component>
+          <component id="b1336" class="javax.swing.JLabel" binding="startLabel">
+            <constraints>
+              <xy x="32" y="263" width="57" height="14"/>
+              <grid row="11" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Valid From:"/>
+            </properties>
+          </component>
+          <component id="d09dc" class="javax.swing.JLabel" binding="expiresLabel">
+            <constraints>
+              <xy x="32" y="288" width="43" height="14"/>
+              <grid row="12" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Expires:"/>
+            </properties>
+          </component>
+          <component id="4e56a" class="javax.swing.JLabel" binding="startField">
+            <constraints>
+              <xy x="159" y="263" width="44" height="14"/>
+              <grid row="11" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value=".........."/>
+            </properties>
+          </component>
+          <component id="5fea4" class="javax.swing.JLabel" binding="expiresField">
+            <constraints>
+              <xy x="159" y="288" width="44" height="14"/>
+              <grid row="12" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value=".........."/>
+            </properties>
+          </component>
+          <vspacer id="88804">
+            <constraints>
+              <xy x="10" y="246" width="11" height="8"/>
+              <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="8"/>
+                <maximum-size width="-1" height="8"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <vspacer id="3e542">
+            <constraints>
+              <xy x="10" y="316" width="11" height="8"/>
+              <grid row="13" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="8"/>
+                <maximum-size width="-1" height="8"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <vspacer id="a1955">
+            <constraints>
+              <xy x="10" y="76" width="11" height="8"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="8"/>
+                <maximum-size width="-1" height="8"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <grid id="1c53c" binding="grantsPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="159" y="330" width="393" height="20"/>
+              <grid row="14" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3">
+                <minimum-size width="300" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children/>
+          </grid>
+          <vspacer id="b2d66">
+            <constraints>
+              <xy x="53" y="66" width="26" height="8"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="8"/>
+                <maximum-size width="-1" height="8"/>
+              </grid>
+            </constraints>
+          </vspacer>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

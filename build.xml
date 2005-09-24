@@ -7,7 +7,11 @@
     <property name="src.root" value="${basedir}"/>
 
     <!-- as the file name says -->
+    <!-- TODO delete this crap.  the file ./build.version has replaced this -->
     <property file="${src.root}/etc/ssg.version"/>
+
+    <!-- get the REAL version -->
+    <property file="${src.root}/build.version"/>
 
     <!-- override configuration with user properties -->
     <property file="${user.home}/build.properties"/>
@@ -27,7 +31,7 @@
     -->
     <property name="war" value="ROOT.war"/>
     <property name="tar" value="${app.name}.tar"/>
-    <property name="tar.gz" value="${app.name}_${app.version}.tar.gz"/>
+    <property name="tar.gz" value="${app.name}_${app.version}.tar.gz"/> <!-- TODO delete this crap -->
 
 <!-- ear not used
       <property name="ear"        value="${app.name}.ear"/>
@@ -125,7 +129,7 @@
     <target name="dev" depends="init-dev">
         <property name="dev.build" value="true"/>
         <property file="build.number"/>
-        <property name="build.version" value="HEAD"/>
+        <property name="build.version" value="HEAD"/> <!-- default build version for dev build.  Official build prompts the release engineer for a nicer one. -->
 
         <antcall target="INTERNAL-buildinfo"/>
 
@@ -1593,6 +1597,14 @@
         <antcall target="INTERNAL-buildinfo-replace">
             <param name="param_name" value="PRODUCT_VERSION"/>
             <param name="param_value" value="${build.version}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="PRODUCT_VERSION_MAJOR"/>
+            <param name="param_value" value="${build.version.major}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="PRODUCT_VERSION_MINOR"/>
+            <param name="param_value" value="${build.version.minor}"/>
         </antcall>
         <antcall target="INTERNAL-buildinfo-replace">
             <param name="param_name" value="PRODUCT_NAME"/>

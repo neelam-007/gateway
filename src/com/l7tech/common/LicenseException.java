@@ -7,6 +7,9 @@ package com.l7tech.common;
 
 /**
  * Exception thrown if an operation is not permitted by any currently-installed license.
+ * Note the subtle difference between this and {@link LicenseException} -- LicenseException is thrown when an
+ * operation is not permitted by an installed license, while {@link InvalidLicenseException} means the license
+ * couldn't be installed in the first place.
  */
 public class LicenseException extends Exception {
     private static final String MSG = "Operation not enabled by any currently-installed license";

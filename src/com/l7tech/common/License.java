@@ -5,30 +5,28 @@
 
 package com.l7tech.common;
 
-import com.l7tech.common.util.ISO8601Date;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.util.*;
+import com.l7tech.common.xml.TooManyChildElementsException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.text.ParseException;
-import java.util.Date;
-import java.util.Arrays;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
+import java.io.Serializable;
 import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.text.ParseException;
+import java.util.Arrays;
+import java.util.Date;
 
 /**
  * Immutable in-memory representation of a License file.
  */
-public class License {
+public class License implements Serializable {
     public static final String LIC_NS = "http://l7tech.com/license";
-    private final Document licenseDoc;
+    private final String licenseXml;
     private final long id;
     private final boolean validSignature;
     private final X509Certificate trustedIssuer;
@@ -84,7 +82,7 @@ public class License {
         if (lic == null) throw new NullPointerException(); // can't happen
         if (!(LIC_NS.equals(lic.getNamespaceURI()))) throw new SAXException("License document element not in namespace " + LIC_NS);
         if (!("license".equals(lic.getLocalName()))) throw new SAXException("License local name is not \"license\"");
-        this.licenseDoc = ld;
+        this.licenseXml = licenseXml;
 
         try {
             id = Long.parseLong(lic.getAttribute("Id"));
@@ -94,22 +92,22 @@ public class License {
             throw new SAXException("License id is missing or non-numeric");
         }
 
-        startDate = parseDateElement("valid");
+        startDate = parseDateElement(ld, "valid");
         startDateUt = startDate != null ? startDate.getTime() : Long.MIN_VALUE;
-        expiryDate = parseDateElement("expires");
+        expiryDate = parseDateElement(ld, "expires");
         expiryDateUt = expiryDate != null ? expiryDate.getTime() : Long.MAX_VALUE;
-        description = parseStringElement("description");
-        hostname = parseStringAttribute("host", "name");
-        ip = parseStringAttribute("ip", "address");
-        product = parseStringAttribute("product", "name");
-        versionMajor = parseStringAttribute("product", "version", "major");
-        versionMinor = parseStringAttribute("product", "version", "minor");
-        licenseeName = parseStringAttribute("licensee", "name");
-        licenseeContactEmail = parseStringAttribute("licensee", "contactEmail");
+        description = parseStringElement(ld, "description");
+        hostname = parseStringAttribute(ld, "host", "name");
+        ip = parseStringAttribute(ld, "ip", "address");
+        product = parseStringAttribute(ld, "product", "name");
+        versionMajor = parseStringAttribute(ld, "product", "version", "major");
+        versionMinor = parseStringAttribute(ld, "product", "version", "minor");
+        licenseeName = parseStringAttribute(ld, "licensee", "name");
+        licenseeContactEmail = parseStringAttribute(ld, "licensee", "contactEmail");
 
         // Look for valid signature by trusted issuer
         Element signature = XmlUtil.findOnlyOneChildElementByName(lic, SoapUtil.DIGSIG_URI, "Signature");
-        if (signature != null) {
+        if (signature != null && trustedIssuers != null) {
             // See if it is valid and if we trust it
             X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleCertificateResolver(trustedIssuers));
             X509Certificate foundTrustedIssuer = null;
@@ -125,7 +123,7 @@ public class License {
             trustedIssuer = foundTrustedIssuer;
             validSignature = true;
         } else {
-            // No signature
+            // No signature, or not prepared to check one
             validSignature = false;
             trustedIssuer = null;
         }
@@ -137,9 +135,9 @@ public class License {
      *
      * @param elementName  name of the element to search for.  Must be an immediate child of the license root element.
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
-     * @throws TooManyChildElementsException if there is more than one element with this name.
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
      */
-    private String parseStringElement(String elementName) throws TooManyChildElementsException {
+    private String parseStringElement(Document licenseDoc, String elementName) throws TooManyChildElementsException {
         Element lic = licenseDoc.getDocumentElement();
         Element elm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), elementName);
         if (elm == null)
@@ -156,9 +154,9 @@ public class License {
      * @param elementName  name of the element to search for.  Must be an immediate child of the license root element.
      * @param attributeName name of the attribute of this element to snag.  Must not be in any namespace.
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
-     * @throws TooManyChildElementsException if there is more than one element with this name.
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
      */
-    private String parseStringAttribute(String elementName, String attributeName) throws TooManyChildElementsException {
+    private String parseStringAttribute(Document licenseDoc, String elementName, String attributeName) throws TooManyChildElementsException {
         Element lic = licenseDoc.getDocumentElement();
         Element elm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), elementName);
         if (elm == null)
@@ -176,9 +174,9 @@ public class License {
      * @param name2ndEl  name of the 2nd-level element to search for.  Must be an immediate child of nameTopEl.
      * @param attributeName name of the attribute of this element to snag.  Must not be in any namespace.
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
-     * @throws TooManyChildElementsException if there is more than one element with this name.
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
      */
-    private String parseStringAttribute(String nameTopEl, String name2ndEl, String attributeName) throws TooManyChildElementsException {
+    private String parseStringAttribute(Document licenseDoc, String nameTopEl, String name2ndEl, String attributeName) throws TooManyChildElementsException {
         Element lic = licenseDoc.getDocumentElement();
         Element telm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), nameTopEl);
         if (telm == null)
@@ -195,10 +193,10 @@ public class License {
      *
      * @param elementName name of the element to search for.  Must be an immediate child of the license root element.
      * @return the date parsed out of this element, or null if the element was not found.
-     * @throws ParseException if there is a date but it is invalid.
-     * @throws TooManyChildElementsException if there is more than one element with this name.
+     * @throws java.text.ParseException if there is a date but it is invalid.
+     * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
      */
-    private Date parseDateElement(String elementName) throws ParseException, TooManyChildElementsException {
+    private Date parseDateElement(Document licenseDoc, String elementName) throws ParseException, TooManyChildElementsException {
         Element lic = licenseDoc.getDocumentElement();
         Element elm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), elementName);
         if (elm == null)
@@ -214,15 +212,6 @@ public class License {
      */
     public long getId() {
         return id;
-    }
-
-    /**
-     * Get the XML document that was used to produce this License instance.
-     *
-     * @return the XML document from which this License instance was generated.  Never null.
-     */
-    public Document getDocument() {
-        return licenseDoc;
     }
 
     /**
@@ -245,27 +234,12 @@ public class License {
     }
 
     /**
-     * Check if this license was signed by a trusted issuer.
+     * Check if this license was signed by a trusted issuer and that the signature was valid.
      *
      * @return true iff. this license was signed by a certificate that is trusted to issue licenses to us.
      */
     public boolean isValidSignature() {
         return validSignature;
-    }
-
-    /** @return the minor version this license codes for, or "*" if it allows any minor version. */
-    public String getVersionMinor() {
-        return versionMinor;
-    }
-
-    /** @return the major version this license codes for, or "*" if it allows any major version. */
-    public String getVersionMajor() {
-        return versionMajor;
-    }
-
-    /** @return the product this license codes for, or "*" if it allows any product. */
-    public String getProduct() {
-        return product;
     }
 
     /** @return the licensee contact email address, or null if the license didn't contain one. */
@@ -276,16 +250,6 @@ public class License {
     /** @return the licensee name.  Never null or empty. */
     public String getLicenseeName() {
         return licenseeName;
-    }
-
-    /** @return the IP address this license codes for, or "*" if it allows any IP address. */
-    public String getIp() {
-        return ip;
-    }
-
-    /** @return the hostname this license codes for, or "*" if it allows any hostname. */
-    public String getHostname() {
-        return hostname;
     }
 
     /** @return the short human-readable description of this license, or null if it didn't contain one. */
@@ -299,24 +263,67 @@ public class License {
     }
 
     /** @return the XML Document that produced this License.  Never null. */
-    public Document asDocument() {
-        return licenseDoc;
+    public String asXml() throws SAXException {
+        return licenseXml;
     }
 
     /**
-     * Check the validity of this license.  If this method returns, the license was signed by a trusted license
+     * Get a human-readable multiline textual summary of the grants offered by this license.
+     * <p>
+     * Notes: For performance, this method does not check the validity of this license.  It is assumed that the
+     * caller has already checked this before querying for human-readable grant information.
+     *
+     * @return human-readable summary of the grants offered by this license.  Never null.
+     */
+    public String getGrants() {
+        final StringBuffer sb = new StringBuffer();
+
+        final boolean anyIp = "*".equals(ip);
+        final boolean anyHost = "*".equals(hostname);
+        final boolean anyMajor = "*".equals(versionMajor);
+        final boolean anyMinor = "*".equals(versionMinor);
+
+        sb.append("Use of ");
+        sb.append(anyMajor && anyMinor ? "any version of " : "");
+        if ("*".equals(product)) {
+            sb.append("any product that accepts this license");
+        } else {
+            sb.append(product);
+
+            if (!anyMajor && !anyMinor) {
+                sb.append(" version ").append(versionMajor).append(".").append(versionMinor);
+            } else if (anyMajor) {
+                sb.append(" minor version ").append(versionMinor);
+            } else {
+                sb.append(" major version ").append(versionMajor);
+            }
+        }
+
+        if (!anyIp)
+            sb.append(", with the IP address ").append(ip);
+        if (!anyHost)
+            sb.append(anyIp ? ", with" : " and").append(" the host name ").append(hostname);
+
+        return sb.toString();
+    }
+
+    /**
+     * Check the validity of this license, including signature and expiration.
+     * If this method returns, the license was signed by a trusted license
      * issuer and has not expired.
      *
-     * @throws LicenseException if the license was not signed by a trusted license issuer, has expired, or is not yet valid
+     * @throws InvalidLicenseException if the license was not signed by a trusted license issuer, has expired, or is not yet valid
      */
-    public void checkValidity() throws LicenseException {
+    public void checkValidity() throws InvalidLicenseException {
         if (!isValidSignature())
-            throw new LicenseException("License " + id + " was not signed by a trusted license issuer");
+            throw new InvalidLicenseException("License " + id + " was not signed by a trusted license issuer");
         long now = System.currentTimeMillis();
         if (now < startDateUt)
-            throw new LicenseException("License " + id + " is not yet valid: becomes valid on " + startDate);
+            throw new InvalidLicenseException("License " + id + " is not yet valid: becomes valid on " +
+                    startDate + " (" + DateUtils.makeRelativeDateMessage(startDate, false) + ")");
         if (now > expiryDateUt)
-            throw new LicenseException("License " + id + " has expired: expired on " + expiryDate);
+            throw new InvalidLicenseException("License " + id + " has expired: expired on " +
+                    expiryDate + " (" + DateUtils.makeRelativeDateMessage(expiryDate, false) + ")");
 
         // Ok looks good
         return;
@@ -334,6 +341,66 @@ public class License {
     public boolean isFeatureEnabled(String name) {
         // Currently there is no feature-granular control -- all features are enabled by any valid license.
         return true;
+    }
+
+    /**
+     * Check if this license allows use of the specified product and version.
+     * <p>
+     * Notes: For performance, this method does not check the validity of this license.  It is assumed that the
+     * caller has already checked this before querying for individual products.
+     *
+     * @param wantProduct  the product that should be allowed.
+     * @param wantMajorVersion the major version of the product we are checking.
+     * @param wantMinorVersion the minor version of the product we are checking.
+     * @return true iff. this license grants access to this product
+     */
+    public boolean isProductEnabled(String wantProduct, String wantMajorVersion, String wantMinorVersion) {
+        if ("*".equals(product))
+            return true;
+        if (!wantProduct.equals(product))
+            return false;
+
+        if (!("*".equals(versionMajor))) {
+            if (!wantMajorVersion.equals(versionMajor))
+                return false;
+        }
+
+        if (!("*".equals(versionMinor))) {
+            if (!wantMinorVersion.equals(versionMinor))
+                return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if this license allows use of the specified host IP address.
+     * <p>
+     * Notes: For performance, this method does not check the validity of this license.  It is assumed that the
+     * caller has already checked this before querying for individual IP addresses.
+     *
+     * @param wantIp  the IP that we want to allow.
+     * @return true iff. this IP is allowed by this license.
+     */
+    public boolean isIpEnabled(String wantIp) {
+        if ("*".equals(ip))
+            return true;
+        return wantIp.equals(ip);
+    }
+
+    /**
+     * Check if this license allows use of the specified hostname.
+     * <p>
+     * Notes: For performance, this method does not check the validity of this license.  It is assumed that the
+     * caller has already checked this before querying for individual hostnames.
+     *
+     * @param wantHostname  the hostname that we seek to authorize.
+     * @return true iff. this hostname is allowed by this license.
+     */
+    public boolean isHostnameEnabled(String wantHostname) {
+        if ("*".equals(hostname))
+            return true;
+        return wantHostname.equals(hostname);
     }
 
     public String toString() {
@@ -389,5 +456,4 @@ public class License {
         result = 29 * result + (versionMinor != null ? versionMinor.hashCode() : 0);
         return result;
     }
-
 }

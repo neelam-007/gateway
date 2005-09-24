@@ -4,6 +4,9 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.License;
+import com.l7tech.common.InvalidLicenseException;
 
 import java.rmi.RemoteException;
 import java.util.List;
@@ -85,4 +88,39 @@ public interface ClusterStatusAdmin {
      * set new value for the cluster-wide property. value set to null will delete the property from the table
      */
     void setProperty(String key, String value) throws RemoteException, SaveException, UpdateException, DeleteException;
+
+    /**
+     * Get the currently-installed License from the LicenseManager, if it possesses a valid license.
+     * If there is license XML in the database but not live (perhaps because it is invalid)
+     * this method will throw a LicenseException explaining what the problem was with that license XML.
+     * <p>
+     * Summary:
+     * <pre>
+     *     If:                                then this method will:
+     *     ================================   =======================
+     *     No license is installed or in DB   return null
+     *     A valid license is installed       return the license
+     *     Invalid license is in the DB       throws LicenseException
+     * </pre>
+     *
+     * @return the License currently live inside the LicenseManager, if a valid signed license is currently
+     *         live, or null if no license at all is live and no license XML is present in the cluster property
+     *         table.
+     * @throws RemoteException on remote communication error
+     * @throws InvalidLicenseException a license is in the database but was not installed because it was invalid
+     */
+    License getCurrentLicense() throws RemoteException, InvalidLicenseException;
+
+    /**
+     * Check the specified license for validity with this product and, if it is valid, install it to the cluster
+     * property table and also immediately activate it.
+     * <p>
+     * If this method returns normally, the new license was installed successfully.
+     *
+     * @param newLicenseXml   the license XML to install.
+     * @throws RemoteException on remote communication error
+     * @throws InvalidLicenseException if the specified license XML was not valid.  The exception message explains the problem.
+     * @throws UpdateException if the license was valid, but was not installed because of a database problem.
+     */
+    void installNewLicense(String newLicenseXml) throws RemoteException, UpdateException, InvalidLicenseException;
 }

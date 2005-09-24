@@ -7,13 +7,14 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyManager;
-import com.l7tech.common.Feature;
-import com.l7tech.common.License;
-import com.l7tech.common.LicenseException;
-import com.l7tech.common.LicenseManager;
+import com.l7tech.common.*;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.SystemMessages;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.event.admin.ClusterPropertyEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import org.springframework.beans.factory.InitializingBean;
@@ -80,6 +81,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
 
     private boolean licenseSet = false;
     private License license = null;
+    private InvalidLicenseException licenseLastError = null;
     private long licenseLoaded = TIME_CHECK_NOW;
 
     public GatewayLicenseManager(ClusterPropertyManager clusterPropertyManager)
@@ -111,14 +113,14 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
             checkCount = 0;
             long now = System.currentTimeMillis();
             if ((now - lastCheck) > CHECK_INTERVAL) {
-                updateLicense();
+                reloadLicenseFromDatabase();
                 lastCheck = System.currentTimeMillis();
             }
         }
     }
 
     /** (Re)read the license from the cluster property table. */
-    private synchronized void updateLicense() {
+    private synchronized void reloadLicenseFromDatabase() {
         if (clusterPropertyManager == null) throw new IllegalStateException("ClusterPropertyManager has not been set");
 
         // Get current license XML from database.
@@ -133,6 +135,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
             } else {
                 fireEvent(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null);
                 setLicense(null);
+                this.licenseLastError = new InvalidLicenseException("Unable to read license information from database: " + ExceptionUtils.getMessage(e), e);
                 // Leave licenseLoaded the same so this message repeats.
                 return;
             }
@@ -145,19 +148,61 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
             return;
         }
 
-        final License license;
         try {
-            license = new License(licenseXml, getTrustedIssuers());
-            license.checkValidity();
-        } catch (Exception e) {
+            validateAndInstallLicense(licenseXml);
+            this.licenseLastError = null;
+        } catch (InvalidLicenseException e) {
+            this.licenseLastError = e;
             fireEvent(SystemMessages.LICENSE_INVALID, e.getMessage());
             setLicense(null);
             this.licenseLoaded = System.currentTimeMillis();
             return;
         }
+    }
+
+    /**
+     * Validate the specified license and, if it is valid for this issuer/product/version/date/etc, install
+     * it as the current license in this LicenseManager.
+     * <p>
+     * This does not access the database in any way.
+     *
+     * @param licenseXml the license to validate and install
+     */
+    private void validateAndInstallLicense(String licenseXml) throws InvalidLicenseException {
+
+        final License license;
+        try {
+            license = new License(licenseXml, getTrustedIssuers());
+            license.checkValidity();
+            checkProductVersion(license);
+        } catch (InvalidLicenseException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new InvalidLicenseException("License XML invalid: " + ExceptionUtils.getMessage(e), e);
+        }
 
         setLicense(license);
         this.licenseLoaded = System.currentTimeMillis();
+    }
+
+    /**
+     * Ensure that the specified license grants access to the current product and version
+     * as gathered from BuildInfo.  If this method returns, the specified license allows access
+     * to the current product version.
+     * <p>
+     * Note: this method does not check license signature or expiry or anything else except whether
+     * it allows the current product name and major/minor version.
+     *
+     * @param license   the license to check
+     * @throws InvalidLicenseException if this license does not grant access to this version of this product
+     */
+    private void checkProductVersion(License license) throws InvalidLicenseException {
+        final String product = BuildInfo.getProductName();
+        final String major = BuildInfo.getProductVersionMajor();
+        final String minor = BuildInfo.getProductVersionMinor();
+        if (!license.isProductEnabled(product, major, minor))
+            throw new InvalidLicenseException("License " + license + " does not grant access to this version of this product (" +
+                    product + " " + major + "." + minor);
     }
 
     private void fireEvent(AuditDetailMessage message, String suffix) {
@@ -175,9 +220,11 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
 
     /** Set the current license.  Should only be called by updateLicense(), and only with a valid license. */
     private synchronized void setLicense(License license) {
-        if (licenseSet && (this.license == license || (license != null && license.equals(this.license))))
+        License old = this.license;
+        this.license = license; // always replace the object with the new one...
+        // ...but suppress the event/audit message if we are just reinstalling an identical license
+        if (licenseSet && (old == license || (old != null && old.equals(this.license))))
             return;
-        this.license = license;
         this.licenseSet = true;
         fireEvent(SystemMessages.LICENSE_UPDATED, license == null ? "<none>" : license.toString());
     }
@@ -189,11 +236,75 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
             ClusterProperty clusterProperty = evt.getClusterProperty();
             if (LICENSE_PROPERTY_NAME.equals(clusterProperty.getKey())) {
                 // Schedule an immediate update, next time anyone does a license check
-                synchronized (this) {
-                    checkCount = CHECKCOUNT_CHECK_NOW;
-                    lastCheck = TIME_CHECK_NOW;
-                }
+                requestReload();
             }
         }
+    }
+
+    /**
+     * Ensure that the next time a license check is performed, the license will be reloaded from the database.
+     */
+    private void requestReload() {
+        synchronized (this) {
+            checkCount = CHECKCOUNT_CHECK_NOW;
+            lastCheck = TIME_CHECK_NOW;
+        }
+    }
+
+    /**
+     * Get the currently-installed valid license, or null if no valid license is installed or present in the database.
+     * If a license is present in the database last time we checked but was not installed because it was invalid,
+     * this method throws a LicenseException explaining the problem.
+     *
+     * @return the currently installed valid license, or null if no license is installed or present in the database.
+     * @throws InvalidLicenseException if a license is present in the database but was not installed because it was invalid.
+     */
+    public synchronized License getCurrentLicense() throws InvalidLicenseException {
+        reloadLicenseFromDatabase();
+        if (license != null)
+            return license;
+        if (licenseLastError != null)
+            throw new InvalidLicenseException(licenseLastError.getMessage(), licenseLastError);
+        return null;
+    }
+
+    /**
+     * Validate and install a new license, both in memory and to the database.  If the new license appears to be
+     * valid it will be sent to the database and also immediately made live in this license manager.
+     * <p>
+     * If a new license is successfully installed, it replaces any previous license.  The previous license XML is
+     * not saved anywhere and will be lost unless the administrator saved it up somewhere.
+     * <p>
+     * If the new license is not valid, any current license is left in place.
+     *
+     * @param newLicenseXml   the new license to install.  Must be a valid license file signed by a trusted issuer.
+     * @throws InvalidLicenseException  if the license was not valid.
+     * @throws UpdateException   if the database change could not be recorded (old license restored)
+     */
+    public synchronized void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
+        long oldLoadTime = this.licenseLoaded;
+        License oldLicense = this.license;
+        validateAndInstallLicense(newLicenseXml);
+
+        // It was valid.  Save to db so the other cluster nodes can bask in its glory
+        Exception oops;
+        try {
+            clusterPropertyManager.setProperty(LICENSE_PROPERTY_NAME, newLicenseXml);
+            return;
+        } catch (UpdateException e) {
+            // Fallthrough and roll back to old license
+            oops = e;
+        } catch (SaveException e) {
+            // Fallthrough and roll back to old license
+            oops = e;
+        } catch (DeleteException e) {
+            // Fallthrough and roll back to old license
+            oops = e;
+        }
+
+        // Roll back to the old license license
+        setLicense(oldLicense);
+        this.licenseLoaded = oldLoadTime;
+        throw new UpdateException("New license was valid, but could not be installed: " + ExceptionUtils.getMessage(oops), oops);
     }
 }
