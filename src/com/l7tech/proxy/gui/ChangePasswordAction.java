@@ -104,7 +104,9 @@ class ChangePasswordAction extends AbstractAction {
                     } catch (IOException e1) {
                         // un-hide wrapped SSLException so server cert disco can be triggered if needed.
                         SSLException sse = (SSLException)ExceptionUtils.getCauseIfCausedBy(e1, SSLException.class);
-                        throw (SSLException)new SSLException(sse.getMessage()).initCause(e1);
+                        if (sse != null)
+                            throw (SSLException)new SSLException(ExceptionUtils.getMessage(sse)).initCause(e1);
+                        throw e1;
                     }
 
                     // Succeeded, so update password and client cert
