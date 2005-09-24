@@ -297,10 +297,12 @@
             <test name="com.l7tech.common.io.failover.FailoverStrategyTest" haltonfailure="no"/>
             <test name="com.l7tech.service.WsdlTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.xml.tarari.util.TarariXpathConverterTest" haltonfailure="no"/>
+            <test name="com.l7tech.internal.license.LicenseGeneratorTest" haltonfailure="no" />
+            <test name="com.l7tech.internal.license.LicenseRoundTripTest" haltonfailure="no" />
 
 <!--
-              ** add possibly-slow intensive nightly tests here **
-              -->
+** add possibly-slow intensive nightly tests here **
+-->
         </junit>
     </target>
 
