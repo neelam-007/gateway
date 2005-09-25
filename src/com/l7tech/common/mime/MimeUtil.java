@@ -67,20 +67,22 @@ public class MimeUtil {
     }
 
     /**
-     * Generates a random boundary consisting of between 1 and 40 legal characters,
+     * Generates a random boundary consisting of between 3 and 40 legal characters,
      * plus a prefix of 0-5 hyphens and the magic quoted-printable-proof "=_"
-     * @return
+     * @return a randomly-generated valid MIME boundary.  Never null.
      */
     public static byte[] randomBoundary() {
         StringBuffer bb = new StringBuffer();
 
-        for (int i = 0; i < random.nextInt(5); i++) {
+        final int numDashes = random.nextInt(5);
+        for (int i = 0; i < numDashes; i++) {
             bb.append('-');
         }
 
         bb.append("=_");
 
-        for (int i = 0; i < random.nextInt(40)+1; i++) {
+        final int numPrintables = random.nextInt(38) + 3;
+        for (int i = 0; i < numPrintables; i++) {
             byte printable = (byte)(random.nextInt(127-32)+32);
             if (HeaderTokenizer.MIME.indexOf(printable) < 0)
                 bb.append(new String(new byte[] { printable }));

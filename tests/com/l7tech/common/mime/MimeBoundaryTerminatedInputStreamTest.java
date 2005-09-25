@@ -178,8 +178,8 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         byte[] crlfBoundary;
         {
             byte[] rawBoundary = stfu.getBoundary();
-            byte[] boundary = new String("--" + new String(rawBoundary)).getBytes();
-            crlfBoundary = new String("\r\n" + new String(boundary)).getBytes();
+            byte[] boundary = ("--" + new String(rawBoundary)).getBytes();
+            crlfBoundary = ("\r\n" + new String(boundary)).getBytes();
         }
 
         // Find opening boundary of first part
@@ -257,7 +257,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         SwaTestcaseFactory stfu = makeStfu(numparts, size, 9);
         byte[] testMsg = stfu.makeTestMessage();
         byte[] rawBoundary = stfu.getBoundary();
-        byte[] boundary = new String("\r\n--" + new String(rawBoundary) + "--\r\n").getBytes();
+        byte[] boundary = ("\r\n--" + new String(rawBoundary) + "--\r\n").getBytes();
 
         int match = HexUtils.matchSubarrayOrPrefix(testMsg, testMsg.length - boundary.length - 6, boundary.length + 6, boundary, 0);
         assertTrue(match > 0);
