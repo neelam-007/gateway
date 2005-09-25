@@ -45,7 +45,7 @@ public class LicenseGeneratorTest extends TestCase {
         LicenseSpec spec = new LicenseSpec();
 
         try {
-            LicenseGenerator.generateUnsignedLicense(spec); // no id
+            LicenseGenerator.generateUnsignedLicense(spec, false); // no id
             fail("Expected exception was not thrown");
         } catch (LicenseGenerator.LicenseGeneratorException e) {
             // ok
@@ -54,7 +54,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseId(1);
 
         try {
-            LicenseGenerator.generateUnsignedLicense(spec); // no licensee
+            LicenseGenerator.generateUnsignedLicense(spec, false); // no licensee
             fail("Expected exception was not thrown");
         } catch (LicenseGenerator.LicenseGeneratorException e) {
             // ok
@@ -63,12 +63,12 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseeName("Blah Blah");
 
         // Should work OK now
-        LicenseGenerator.generateUnsignedLicense(spec);
+        LicenseGenerator.generateUnsignedLicense(spec, false);
 
         spec.setLicenseId(0);
 
         try {
-            LicenseGenerator.generateUnsignedLicense(spec); // non-positive license id
+            LicenseGenerator.generateUnsignedLicense(spec, false); // non-positive license id
             fail("Expected exception was not thrown");
         } catch (LicenseGenerator.LicenseGeneratorException e) {
             // ok
@@ -78,7 +78,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseeName("");
 
         try {
-            LicenseGenerator.generateUnsignedLicense(spec); // empty licensee name
+            LicenseGenerator.generateUnsignedLicense(spec, false); // empty licensee name
             fail("Expected exception was not thrown");
         } catch (LicenseGenerator.LicenseGeneratorException e) {
             // ok
@@ -106,7 +106,7 @@ public class LicenseGeneratorTest extends TestCase {
         spec.setLicenseId(1001);
         spec.setLicenseeContactEmail("nomailbox@NOWHERE");
 
-        Document lic = LicenseGenerator.generateUnsignedLicense(spec);
+        Document lic = LicenseGenerator.generateUnsignedLicense(spec, false);
 
         log.info("Generated unsigned license (pretty-printed): \n" + XmlUtil.nodeToFormattedString(lic));
 

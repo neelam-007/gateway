@@ -16,7 +16,9 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.SignatureException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 
 /**
@@ -42,16 +44,24 @@ public final class LicenseGenerator {
      * by an actual license-managed product.
      *
      * @param spec  the license specification to generate.  Must be complete (containing a valid ID and licensee name
-     *              and possibly other fields; see {@link LicenseSpec}).  Does not need to include a signing
+     *              and possibly other fields; see {@link com.l7tech.internal.license.LicenseSpec}).  Does not need to include a signing
      *              cert and key since the license isn't going to be signed.
+     * @param ignoreErrors if true, will attempt to ignore errors in the license spec and return a partial license document.
      * @return an unsigned license.  Never null.
      * @throws LicenseGeneratorException if a license cannot be generated with this LicenseSpec.
      */
-    public static Document generateUnsignedLicense(LicenseSpec spec) throws LicenseGeneratorException {
+    public static Document generateUnsignedLicense(LicenseSpec spec, boolean ignoreErrors) throws LicenseGeneratorException {
         String name = spec.getLicenseeName();
-        if (name == null || name.length() < 1) throw new LicenseGeneratorException("A licensee name is required.");
+        if (name == null || name.length() < 1) {
+            if (!ignoreErrors)
+                throw new LicenseGeneratorException("A licensee name is required.");
+            name = "";
+        }
         long id = spec.getLicenseId();
-        if (id < 1) throw new LicenseGeneratorException("A unique, positive license ID is required.");
+        if (id < 1) {
+            if (!ignoreErrors)
+                throw new LicenseGeneratorException("A unique, positive license ID is required.");
+        }
 
         Document d = XmlUtil.createEmptyDocument(LIC_EL, null, LIC_NS);
         final Element de = d.getDocumentElement();
@@ -127,20 +137,53 @@ public final class LicenseGenerator {
      * @throws LicenseGeneratorException if a license cannot be generated with this LicenseSpec.
      */
     public static Document generateSignedLicense(LicenseSpec spec) throws LicenseGeneratorException {
-        if (spec.getIssuerCert() == null || spec.getIssuerKey() == null)
+        final X509Certificate signerCert = spec.getIssuerCert();
+        final PrivateKey signerKey = spec.getIssuerKey();
+        if (signerCert == null || signerKey == null)
             throw new LicenseGeneratorException("An issuer certificate and key are required to generate a signed license.");
-        Document d = generateUnsignedLicense(spec);
+        Document d = generateUnsignedLicense(spec, false);
 
+        return signLicenseDocument(d, signerCert, signerKey);
+    }
+
+    /**
+     * Sign an existing license document.
+     * The existing document will be assumed to be valid.  Unless you already have a valid license document,
+     * you should use generateSignedLicense() to generate the license XML and sign it all in one step.
+     * <p>
+     * Use this method only if the license XML may contain additional material that you do not want to lose.
+     * Note, though, that the additional material will have its whitespace stripped along with everything else
+     * before the signature is created.
+     * <p>
+     * Any existing ds:Signature second-level elements will be removed before the new signature is created.
+     *
+     * @param licenseDoc     the license document to sign.  Must be non-null.  Will be _assumed_ to be a valid license document.
+     * @param signerCert  certificate to sign it with.  Must not be null.
+     * @param signerKey   key to sign it with.  Must not be null.
+     * @return the newly-signed document.
+     * @throws LicenseGeneratorException if the document could not be signed
+     */
+    public static Document signLicenseDocument(Document licenseDoc, X509Certificate signerCert, PrivateKey signerKey)
+            throws LicenseGeneratorException
+    {
+        if (signerCert == null || signerKey == null)
+            throw new LicenseGeneratorException("An issuer certificate and key are required to generate a signed license.");
         try {
-            XmlUtil.stripWhitespace(d.getDocumentElement());
-            d = XmlUtil.stringToDocument(XmlUtil.nodeToString(d));
-            Element signature = DsigUtil.createEnvelopedSignature(d.getDocumentElement(),
-                                                                  spec.getIssuerCert(),
-                                                                  spec.getIssuerKey(),
+            // Find and remove any existing ds:Signature
+            DsigUtil.stripSignatures(licenseDoc.getDocumentElement());
+
+            // Reparse to clean out consecutive text nodes
+            licenseDoc = XmlUtil.stringToDocument(XmlUtil.nodeToString(licenseDoc));
+
+            XmlUtil.stripWhitespace(licenseDoc.getDocumentElement());
+            licenseDoc = XmlUtil.stringToDocument(XmlUtil.nodeToString(licenseDoc));
+            Element signature = DsigUtil.createEnvelopedSignature(licenseDoc.getDocumentElement(),
+                                                                  signerCert,
+                                                                  signerKey,
                                                                   true,
-                                                                  spec.getIssuerCert().getSubjectDN().getName());
-            d.getDocumentElement().appendChild(signature);
-            return d;
+                                                                  signerCert.getSubjectDN().getName());
+            licenseDoc.getDocumentElement().appendChild(signature);
+            return licenseDoc;
         } catch (SignatureException e) {
             throw new LicenseGeneratorException(e);
         } catch (SignatureStructureException e) {
@@ -155,5 +198,4 @@ public final class LicenseGenerator {
             throw new LicenseGeneratorException(e); // unlikely
         }
     }
-
 }

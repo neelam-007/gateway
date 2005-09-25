@@ -5,6 +5,8 @@
 
 package com.l7tech.internal.license;
 
+import com.l7tech.common.License;
+
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -14,8 +16,8 @@ import java.util.Date;
  * Generated licenses may be signed if the LicenseSpec is created with a certificate and private key.
  */
 public class LicenseSpec {
-    private final X509Certificate issuerCert;
-    private final PrivateKey issuerKey;
+    private X509Certificate issuerCert;
+    private PrivateKey issuerKey;
     private long licenseId = 0;
     private Date startDate = null;
     private Date expiryDate = null;
@@ -45,6 +47,48 @@ public class LicenseSpec {
      * @throws NullPointerException if issuerCert is specified without issuerKey
      */
     public LicenseSpec(X509Certificate issuerCert, PrivateKey issuerKey) {
+        if (issuerCert != null && issuerKey == null) throw new NullPointerException("Issuer private key must be specified to generate a signed license.");
+        this.issuerCert = issuerCert;
+        this.issuerKey = issuerKey;
+    }
+
+    /**
+     * Attempt to configure this LicenseSpec so that the License generated from it will look like the specified license.
+     * The license being imported won't be able to be duplicated completely -- in particular note these limitations:
+     *  -  the new license issuer will be the issuer used by this LicenseSpec rather than the original issuer
+     *  -  any XML comments and formatting will be ignored
+     *  -  any XML elements or license features not supported by this version of LicenseSpec will not be imported
+     *
+     * @param license the license whose fields and grants should be imported.  Must not be null.
+     */
+    public void copyFrom(License license) {
+        final Object spec = license.getSpec();
+        if (!(spec instanceof License.LicenseGrants))
+            throw new IllegalArgumentException("License stores grants in an unrecognized format");
+
+        License.LicenseGrants grants = (License.LicenseGrants)spec;
+
+        this.setLicenseId(license.getId());
+        this.setLicenseeName(license.getLicenseeName());
+        this.setLicenseeContactEmail(license.getLicenseeContactEmail());
+        this.setDescription(license.getDescription());
+        this.setStartDate(license.getStartDate());
+        this.setExpiryDate(license.getExpiryDate());
+
+        this.setIp(grants.getIp());
+        this.setHostname(grants.getHostname());
+        this.setProduct(grants.getProduct());
+        this.setVersionMajor(grants.getVersionMajor());
+        this.setVersionMinor(grants.getVersionMinor());
+    }
+
+    /**
+     * Change the signing info that will be used by this LicenseSpec.
+     *
+     * @param issuerCert  the certificate with which to sign the new license, or null to generate an unsigned license.
+     * @param issuerKey   the private key with which to sign the new license.  Required if issuerCert is not null.
+     */
+    public void setSigningInfo(X509Certificate issuerCert, PrivateKey issuerKey) {
         if (issuerCert != null && issuerKey == null) throw new NullPointerException("Issuer private key must be specified to generate a signed license.");
         this.issuerCert = issuerCert;
         this.issuerKey = issuerKey;

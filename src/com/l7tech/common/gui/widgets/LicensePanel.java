@@ -18,6 +18,11 @@ import java.util.Date;
  * Panel that displays License details.
  */
 public class LicensePanel extends JPanel {
+    public static final String DEFAULT_STATUS_NONE = "None Installed";
+    public static final String DEFAULT_STATUS_INVALID = "  INVALID LICENSE  ";
+    public static final String DEFAULT_STATUS_UNSIGNED = "    Unsigned    ";
+    public static final String DEFAULT_STATUS_VALID = "      Valid      ";
+
     private JPanel rootPanel;
     private JLabel ssgField;
     private JLabel statusLabel;
@@ -43,6 +48,12 @@ public class LicensePanel extends JPanel {
     private JLabel expiresField;
     private JPanel grantsPanel;
 
+    private String statusNone = DEFAULT_STATUS_NONE;
+    private String statusInvalid = DEFAULT_STATUS_INVALID;
+    private String statusUnsigned = DEFAULT_STATUS_UNSIGNED;
+    private String statusValid = DEFAULT_STATUS_VALID;
+
+    private License license = null;
     private boolean validLicense = false;
 
     private final JLabel defaultLabel = new JLabel("blah");
@@ -91,6 +102,70 @@ public class LicensePanel extends JPanel {
         setLicense(null);
     }
 
+    /**
+     * Get the status message displayed when the license is null.
+     * @return the status message displayed when the license is null.
+     */
+    public String getStatusNone() {
+        return statusNone;
+    }
+
+    /**
+     * Change the status message displayed when the license is null.
+     * @param statusNone the new status message to display when the license is null.
+     */
+    public void setStatusNone(String statusNone) {
+        this.statusNone = statusNone;
+    }
+
+    /**
+     * Get the status message displayed when a license error message is set.
+     * @return the status message displayed when a license error message is set.
+     */
+    public String getStatusInvalid() {
+        return statusInvalid;
+    }
+
+    /**
+     * Change the status message displayed when a license error message is set.
+     * @param statusInvalid the new status message displayed when a license error message is set.
+     */
+    public void setStatusInvalid(String statusInvalid) {
+        this.statusInvalid = statusInvalid;
+    }
+
+    /**
+     * Get the status message displayed when a license is valid but is not signed.
+     * @return the status message displayed when a license is valid but is not signed.
+     */
+    public String getStatusUnsigned() {
+        return statusUnsigned;
+    }
+
+    /**
+     * Change the status message displayed when a license is valid but is not signed.
+     * @param statusUnsigned the new status message displayed when a license is valid but is not signed.
+     */
+    public void setStatusUnsigned(String statusUnsigned) {
+        this.statusUnsigned = statusUnsigned;
+    }
+
+    /**
+     * Get the status message displayed when a license is valid and properly signed.
+     * @return the status message displayed when a license is valid and properly signed.
+     */
+    public String getStatusValid() {
+        return statusValid;
+    }
+
+    /**
+     * Set the status message displayed when a license is valid and properly signed.
+     * @param statusValid the new status message displayed when a license is valid and properly signed.
+     */
+    public void setStatusValid(String statusValid) {
+        this.statusValid = statusValid;
+    }
+
     private String n(String s) {
         return s == null ? "" : s;
     }
@@ -111,15 +186,26 @@ public class LicensePanel extends JPanel {
     }
 
     /**
+     * Get the last license that was displayed, if a valid license is currently being displayed.
+     *
+     * @return the last license passed to setLicense(), or null if we are displaying an error message or an empty license.
+     */
+    public License getLicense() {
+        return this.license;
+    }
+
+    /**
      * Display information about the specified license in the panel.
      *
      * @param license the license to display, or null to display "No license".
      */
     public void setLicense(License license) {
+        this.license = license;
+
         hideErrorFields();
         if (license == null) {
             setLicenseFieldsVisible(false);
-            statusField.setText("None Installed");
+            statusField.setText(statusNone);
             statusField.setOpaque(defaultLabel.isOpaque());
             statusField.setForeground(defaultLabel.getForeground());
             statusField.setBackground(defaultLabel.getBackground());
@@ -129,17 +215,27 @@ public class LicensePanel extends JPanel {
         }
 
         setLicenseFieldsVisible(true);
-        statusField.setText("      Valid      ");
-        statusField.setOpaque(true);
-        statusField.setForeground(Color.BLACK);
-        statusField.setBackground(new Color(128, 255, 128)); // bright green
-        statusField.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        if (license.isValidSignature()) {
+            // Valid and signed
+            statusField.setText(statusValid);
+            statusField.setOpaque(true);
+            statusField.setForeground(Color.BLACK);
+            statusField.setBackground(new Color(128, 255, 128)); // bright green
+            statusField.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        } else {
+            // Valid, but not signed
+            statusField.setText(statusUnsigned);
+            statusField.setOpaque(true);
+            statusField.setForeground(Color.BLACK);
+            statusField.setBackground(new Color(240, 255, 240)); // very light green, almost white
+            statusField.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        }
         validLicense = true;
 
         licenseIdField.setText(String.valueOf(license.getId()));
         descriptionField.setText(n(license.getDescription()));
         final X509Certificate issuer = license.getTrustedIssuer();
-        issuerField.setText(issuer == null ? "<None -- no trusted license signature>" : n(issuer.getSubjectDN().getName()));
+        issuerField.setText(issuer == null ? "<No trusted issuer signature>" : n(issuer.getSubjectDN().getName()));
         licenseeField.setText(n(license.getLicenseeName()));
         contactEmailField.setText(n(license.getLicenseeContactEmail()));
         displayStartDate(startField, license);
@@ -198,10 +294,12 @@ public class LicensePanel extends JPanel {
             return;
         }
 
+        this.license = null;
+
         setLicenseFieldsVisible(false);
 
         licenseErrorsLabel.setVisible(true);
-        statusField.setText("  INVALID LICENSE  ");
+        statusField.setText(statusInvalid);
         statusField.setOpaque(true);
         statusField.setForeground(Color.WHITE);
         statusField.setBackground(new Color(255, 92, 92)); // dark red
@@ -215,6 +313,7 @@ public class LicensePanel extends JPanel {
                                          JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                                          JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         licenseErrorsPanel.add(sp);
+        licenseErrorsPanel.validate();
     }
 
     /** @return true if this panel is displaying a valid license. */

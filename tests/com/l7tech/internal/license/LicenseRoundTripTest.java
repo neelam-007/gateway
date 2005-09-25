@@ -111,7 +111,7 @@ public class LicenseRoundTripTest extends TestCase {
     public void testUnsignedLicense() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
         LicenseSpec spec = makeSpec(signingCert);
-        Document lic = LicenseGenerator.generateUnsignedLicense(spec);
+        Document lic = LicenseGenerator.generateUnsignedLicense(spec, false);
         final String licenseXml = XmlUtil.nodeToFormattedString(lic);
         log.info("Generated unsigned license: " + licenseXml);
         License license = new License(licenseXml, new X509Certificate[] {signingCert});

@@ -29,6 +29,8 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.logging.Logger;
+import java.util.List;
+import java.util.Iterator;
 
 /**
  * Utility class to help with XML digital signatures.
@@ -146,9 +148,9 @@ public class DsigUtil {
      */
     public static void addInclusiveNamespacesToElement(Element element) {
         Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
-            "InclusiveNamespaces",
-            Transform.C14N_EXCLUSIVE,
-            "c14n");
+                                                                       "InclusiveNamespaces",
+                                                                       Transform.C14N_EXCLUSIVE,
+                                                                       "c14n");
         inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 
@@ -245,4 +247,18 @@ public class DsigUtil {
         return signingCert;
     }
 
+    /**
+     * Strips all ds:Signature elements that are immediate children of the specified element.
+     * Note that, if a signature is removed, the resulting DOM tree will almost certainly contain multiple
+     * consecutive text nodes.
+     *
+     * @param parent  the element whose Signature children should be eliminated.
+     */
+    public static void stripSignatures(Element parent) {
+        List sigs = XmlUtil.findChildElementsByName(parent, SoapUtil.DIGSIG_URI, "Signature");
+        for (Iterator i = sigs.iterator(); i.hasNext();) {
+            Element sigEl = (Element)i.next();
+            sigEl.getParentNode().removeChild(sigEl);
+        }
+    }
 }

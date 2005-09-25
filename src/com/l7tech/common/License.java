@@ -24,7 +24,7 @@ import java.util.Date;
 /**
  * Immutable in-memory representation of a License file.
  */
-public class License implements Serializable {
+public final class License implements Serializable {
     public static final String LIC_NS = "http://l7tech.com/license";
     private final String licenseXml;
     private final long id;
@@ -35,13 +35,113 @@ public class License implements Serializable {
     private final Date expiryDate;
     private final long expiryDateUt;
     private final String description;
-    private final String hostname;
-    private final String ip;
     private final String licenseeName;
     private final String licenseeContactEmail;
-    private final String product;
-    private final String versionMajor;
-    private final String versionMinor;
+
+    // Grant information -- details of how grants are expressed and stored is not exposed in the License interface.
+    private final LicenseGrants g;
+
+    /**
+     * Store the license grants.  The format of grants will change in the future.
+     * This is only for the use of the license generation GUI.  Other code should just use the query methods
+     * on License to see if what they want to do is permitted by the license.
+     *
+     */
+    public static final class LicenseGrants {
+        final String hostname;
+        final String ip;
+        final String product;
+        final String versionMajor;
+        final String versionMinor;
+
+        public LicenseGrants(String hostname, String ip, String product, String versionMajor, String versionMinor) {
+            this.hostname = hostname;
+            this.ip = ip;
+            this.product = product;
+            this.versionMajor = versionMajor;
+            this.versionMinor = versionMinor;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public String getIp() {
+            return ip;
+        }
+
+        public String getProduct() {
+            return product;
+        }
+
+        public String getVersionMajor() {
+            return versionMajor;
+        }
+
+        public String getVersionMinor() {
+            return versionMinor;
+        }
+
+        /** Get a string description of the grants. */
+        public String asEnglish() {
+            final StringBuffer sb = new StringBuffer();
+
+            final boolean anyIp = "*".equals(ip);
+            final boolean anyHost = "*".equals(hostname);
+            final boolean anyMajor = "*".equals(versionMajor);
+            final boolean anyMinor = "*".equals(versionMinor);
+
+            sb.append("Use of ");
+            sb.append(anyMajor && anyMinor ? "any version of " : "");
+            if ("*".equals(product)) {
+                sb.append("any product that accepts this license");
+            } else {
+                sb.append(product);
+
+                if (anyMajor == anyMinor) {
+                    if (!anyMajor)
+                        sb.append(" version ").append(versionMajor).append(".").append(versionMinor);
+                } else if (!anyMinor) {
+                    sb.append(" minor version ").append(versionMinor);
+                } else {
+                    sb.append(" major version ").append(versionMajor);
+                }
+            }
+
+            if (!anyIp)
+                sb.append(", with the IP address ").append(ip);
+            if (!anyHost)
+                sb.append(anyIp ? ", with" : " and").append(" the host name ").append(hostname);
+
+            return sb.toString();
+        }
+
+        /** @noinspection RedundantIfStatement*/
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final LicenseGrants that = (LicenseGrants)o;
+
+            if (hostname != null ? !hostname.equals(that.hostname) : that.hostname != null) return false;
+            if (ip != null ? !ip.equals(that.ip) : that.ip != null) return false;
+            if (product != null ? !product.equals(that.product) : that.product != null) return false;
+            if (versionMajor != null ? !versionMajor.equals(that.versionMajor) : that.versionMajor != null) return false;
+            if (versionMinor != null ? !versionMinor.equals(that.versionMinor) : that.versionMinor != null) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            int result;
+            result = (hostname != null ? hostname.hashCode() : 0);
+            result = 29 * result + (ip != null ? ip.hashCode() : 0);
+            result = 29 * result + (product != null ? product.hashCode() : 0);
+            result = 29 * result + (versionMajor != null ? versionMajor.hashCode() : 0);
+            result = 29 * result + (versionMinor != null ? versionMinor.hashCode() : 0);
+            return result;
+        }
+    }
 
     /**
      * Parse the specified license document, and validate the signature if it is signed.
@@ -96,15 +196,18 @@ public class License implements Serializable {
         startDateUt = startDate != null ? startDate.getTime() : Long.MIN_VALUE;
         expiryDate = parseDateElement(ld, "expires");
         expiryDateUt = expiryDate != null ? expiryDate.getTime() : Long.MAX_VALUE;
-        description = parseStringElement(ld, "description");
-        hostname = parseStringAttribute(ld, "host", "name");
-        ip = parseStringAttribute(ld, "ip", "address");
-        product = parseStringAttribute(ld, "product", "name");
-        versionMajor = parseStringAttribute(ld, "product", "version", "major");
-        versionMinor = parseStringAttribute(ld, "product", "version", "minor");
-        licenseeName = parseStringAttribute(ld, "licensee", "name");
+        final String desc = parseWildcardStringElement(ld, "description");
+        description = "*".equals(desc) ? null : desc;
+        String hostname = parseWildcardStringAttribute(ld, "host", "name");
+        String ip = parseWildcardStringAttribute(ld, "ip", "address");
+        String product = parseWildcardStringAttribute(ld, "product", "name");
+        String versionMajor = parseWildcardStringAttribute(ld, "product", "version", "major");
+        String versionMinor = parseWildcardStringAttribute(ld, "product", "version", "minor");
+        this.g = new LicenseGrants(hostname, ip, product, versionMajor, versionMinor);
+        licenseeName = parseWildcardStringAttribute(ld, "licensee", "name");
         requireValue("licensee name", licenseeName);
-        licenseeContactEmail = parseStringAttribute(ld, "licensee", "contactEmail");
+        final String cemail = parseWildcardStringAttribute(ld, "licensee", "contactEmail");
+        licenseeContactEmail = "*".equals(cemail) ? null : cemail;
 
         // Look for valid signature by trusted issuer
         Element signature = XmlUtil.findOnlyOneChildElementByName(lic, SoapUtil.DIGSIG_URI, "Signature");
@@ -133,7 +236,7 @@ public class License implements Serializable {
 
     private void requireValue(String name, String val) throws InvalidLicenseException {
         if (val == null || val.length() < 1 || "*".equals(val))
-            throw new InvalidLicenseException("License does not specify " + name);
+            throw new InvalidLicenseException("License does not specify the required value " + name);
     }
 
     /**
@@ -143,7 +246,7 @@ public class License implements Serializable {
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
      * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
      */
-    private String parseStringElement(Document licenseDoc, String elementName) throws TooManyChildElementsException {
+    private String parseWildcardStringElement(Document licenseDoc, String elementName) throws TooManyChildElementsException {
         Element lic = licenseDoc.getDocumentElement();
         Element elm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), elementName);
         if (elm == null)
@@ -162,7 +265,7 @@ public class License implements Serializable {
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
      * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
      */
-    private String parseStringAttribute(Document licenseDoc, String elementName, String attributeName) throws TooManyChildElementsException {
+    private String parseWildcardStringAttribute(Document licenseDoc, String elementName, String attributeName) throws TooManyChildElementsException {
         Element lic = licenseDoc.getDocumentElement();
         Element elm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), elementName);
         if (elm == null)
@@ -182,12 +285,14 @@ public class License implements Serializable {
      * @return the string parsed out of this element, or "*" if the element wasn't found or it was empty.
      * @throws com.l7tech.common.xml.TooManyChildElementsException if there is more than one element with this name.
      */
-    private String parseStringAttribute(Document licenseDoc, String nameTopEl, String name2ndEl, String attributeName) throws TooManyChildElementsException {
+    private String parseWildcardStringAttribute(Document licenseDoc, String nameTopEl, String name2ndEl, String attributeName) throws TooManyChildElementsException {
         Element lic = licenseDoc.getDocumentElement();
         Element telm = XmlUtil.findOnlyOneChildElementByName(lic, lic.getNamespaceURI(), nameTopEl);
         if (telm == null)
             return "*";
         Element elm = XmlUtil.findOnlyOneChildElementByName(telm, lic.getNamespaceURI(), name2ndEl);
+        if (elm == null)
+            return "*";
         String val = elm.getAttribute(attributeName);
         if (val == null || val.length() < 1)
             return "*";
@@ -269,7 +374,7 @@ public class License implements Serializable {
     }
 
     /** @return the XML Document that produced this License.  Never null. */
-    public String asXml() throws SAXException {
+    public String asXml() {
         return licenseXml;
     }
 
@@ -282,37 +387,9 @@ public class License implements Serializable {
      * @return human-readable summary of the grants offered by this license.  Never null.
      */
     public String getGrants() {
-        final StringBuffer sb = new StringBuffer();
-
-        final boolean anyIp = "*".equals(ip);
-        final boolean anyHost = "*".equals(hostname);
-        final boolean anyMajor = "*".equals(versionMajor);
-        final boolean anyMinor = "*".equals(versionMinor);
-
-        sb.append("Use of ");
-        sb.append(anyMajor && anyMinor ? "any version of " : "");
-        if ("*".equals(product)) {
-            sb.append("any product that accepts this license");
-        } else {
-            sb.append(product);
-
-            if (anyMajor == anyMinor) {
-                if (!anyMajor)
-                    sb.append(" version ").append(versionMajor).append(".").append(versionMinor);
-            } else if (!anyMinor) {
-                sb.append(" minor version ").append(versionMinor);
-            } else {
-                sb.append(" major version ").append(versionMajor);
-            }
-        }
-
-        if (!anyIp)
-            sb.append(", with the IP address ").append(ip);
-        if (!anyHost)
-            sb.append(anyIp ? ", with" : " and").append(" the host name ").append(hostname);
-
-        return sb.toString();
+        return g.asEnglish();
     }
+
 
     /**
      * Check the validity of this license, including signature and expiration.
@@ -362,18 +439,18 @@ public class License implements Serializable {
      * @return true iff. this license grants access to this product
      */
     public boolean isProductEnabled(String wantProduct, String wantMajorVersion, String wantMinorVersion) {
-        if ("*".equals(product))
+        if ("*".equals(g.product))
             return true;
-        if (!wantProduct.equals(product))
+        if (!wantProduct.equals(g.product))
             return false;
 
-        if (!("*".equals(versionMajor))) {
-            if (!wantMajorVersion.equals(versionMajor))
+        if (!("*".equals(g.versionMajor))) {
+            if (!wantMajorVersion.equals(g.versionMajor))
                 return false;
         }
 
-        if (!("*".equals(versionMinor))) {
-            if (!wantMinorVersion.equals(versionMinor))
+        if (!("*".equals(g.versionMinor))) {
+            if (!wantMinorVersion.equals(g.versionMinor))
                 return false;
         }
 
@@ -390,9 +467,9 @@ public class License implements Serializable {
      * @return true iff. this IP is allowed by this license.
      */
     public boolean isIpEnabled(String wantIp) {
-        if ("*".equals(ip))
+        if ("*".equals(g.ip))
             return true;
-        return wantIp.equals(ip);
+        return wantIp.equals(g.ip);
     }
 
     /**
@@ -405,13 +482,20 @@ public class License implements Serializable {
      * @return true iff. this hostname is allowed by this license.
      */
     public boolean isHostnameEnabled(String wantHostname) {
-        if ("*".equals(hostname))
+        if ("*".equals(g.hostname))
             return true;
-        return wantHostname.equals(hostname);
+        return wantHostname.equals(g.hostname);
     }
 
     public String toString() {
         return String.valueOf(id) + " (" + getLicenseeName() + ")";
+    }
+
+    /**
+     * For internal use only (license maker GUI) -- do not call this method anywhere else.
+     */
+    public Object getSpec() {
+        return g;
     }
 
     /** @noinspection RedundantIfStatement*/
@@ -426,16 +510,10 @@ public class License implements Serializable {
         if (startDateUt != license.startDateUt) return false;
         if (validSignature != license.validSignature) return false;
         if (description != null ? !description.equals(license.description) : license.description != null) return false;
-        if (expiryDate != null ? !expiryDate.equals(license.expiryDate) : license.expiryDate != null) return false;
-        if (hostname != null ? !hostname.equals(license.hostname) : license.hostname != null) return false;
-        if (ip != null ? !ip.equals(license.ip) : license.ip != null) return false;
+        if (g != null ? !g.equals(license.g) : license.g != null) return false;
         if (licenseeContactEmail != null ? !licenseeContactEmail.equals(license.licenseeContactEmail) : license.licenseeContactEmail != null) return false;
         if (licenseeName != null ? !licenseeName.equals(license.licenseeName) : license.licenseeName != null) return false;
-        if (product != null ? !product.equals(license.product) : license.product != null) return false;
-        if (startDate != null ? !startDate.equals(license.startDate) : license.startDate != null) return false;
         if (trustedIssuer != null ? !CertUtils.certsAreEqual(trustedIssuer, license.trustedIssuer) : license.trustedIssuer != null) return false;
-        if (versionMajor != null ? !versionMajor.equals(license.versionMajor) : license.versionMajor != null) return false;
-        if (versionMinor != null ? !versionMinor.equals(license.versionMinor) : license.versionMinor != null) return false;
 
         return true;
     }
@@ -449,18 +527,12 @@ public class License implements Serializable {
         } catch (CertificateEncodingException e) {
             // Can't happen, but if it does, we'll ignore it and allow the hash code to differ which should cause an update
         }
-        result = 29 * result + (startDate != null ? startDate.hashCode() : 0);
         result = 29 * result + (int)(startDateUt ^ (startDateUt >>> 32));
-        result = 29 * result + (expiryDate != null ? expiryDate.hashCode() : 0);
         result = 29 * result + (int)(expiryDateUt ^ (expiryDateUt >>> 32));
         result = 29 * result + (description != null ? description.hashCode() : 0);
-        result = 29 * result + (hostname != null ? hostname.hashCode() : 0);
-        result = 29 * result + (ip != null ? ip.hashCode() : 0);
         result = 29 * result + (licenseeName != null ? licenseeName.hashCode() : 0);
         result = 29 * result + (licenseeContactEmail != null ? licenseeContactEmail.hashCode() : 0);
-        result = 29 * result + (product != null ? product.hashCode() : 0);
-        result = 29 * result + (versionMajor != null ? versionMajor.hashCode() : 0);
-        result = 29 * result + (versionMinor != null ? versionMinor.hashCode() : 0);
+        result = 29 * result + (g != null ? g.hashCode() : 0);
         return result;
     }
 }

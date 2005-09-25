@@ -5,46 +5,81 @@
 
 package com.l7tech.internal.license.gui;
 
+import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.common.License;
+import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.gui.widgets.LicensePanel;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Background;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.internal.license.LicenseSpec;
+import com.l7tech.internal.license.LicenseGenerator;
+import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.TimerTask;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.io.*;
+import java.math.BigInteger;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigInteger;
+import java.security.PrivateKey;
+import java.util.TimerTask;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
-import sun.security.rsa.RSAKeyFactory;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
  * @author mike
  */
 public class LicenseGeneratorTopWindow extends JFrame {
+    private static final Logger logger = Logger.getLogger(LicenseGeneratorTopWindow.class.getName());
+    private static final long INACTIVITY_UPDATE_MILLIS = 500; // we'll fire an update when they've made a change then been idle for half a second
+
+    public static final String PROPERTY_KEYSTORE_PATH = "licenseGenerator.keystorePath";
+    public static final String PROPERTY_KEYSTORE_TYPE = "licenseGenerator.keystoreType";
+    public static final String PROPERTY_KEYSTORE_ALIAS = "licenseGenerator.keystoreAlias";
+    public static final String KEYSTORE_MESSAGE = "No keystore is configured.  Please set these system properties:\n" +
+            "\n  " + PROPERTY_KEYSTORE_PATH +
+            "\n  " + PROPERTY_KEYSTORE_TYPE +
+            "\n  " + PROPERTY_KEYSTORE_ALIAS;
+
     private LicensePanel licensePanel = new LicensePanel("Building License");
     private LicenseSpecPanel specPanel = new LicenseSpecPanel();
+
     private JPanel rootPanel;
     private JPanel displayPanel;
-    private JPanel leftPanel;
-    private JTextPane xmlField;
-    private JButton issueLicenseButton;
+    private JPanel specHolderPanel;
+    private JPanel xmlEditorPanel;
 
-    public boolean xmlChanged = false;
+    private JButton signLicenseButton;
+    private JButton saveLicenseButton;
+    private JButton quitButton;
+    private JButton stripSignatureButton;
+    private JButton newLicenseButton;
+    private JButton openLicenseButton;
+
+    private boolean xmlChanged = false;
+    private long xmlChangedTime = 0;
+    private XMLContainer xmlContainer;
+
+    private Action signLicenseAction;
+    private Action stripSignaturesAction;
+    private Action saveAsAction;
+    private Action openAction;
+    private Action newAction;
+    private Action quitAction;
 
     public LicenseGeneratorTopWindow() throws HeadlessException {
         setContentPane(rootPanel);
@@ -53,62 +88,281 @@ public class LicenseGeneratorTopWindow extends JFrame {
 
     private void init() {
         setIconImage( IconManager.getAppImage() );
-        addWindowListener( new WindowAdapter() {
-            public void windowClosing( final WindowEvent e ) {
-                System.exit(0);
-            }
-        } );
         getContentPane().setMinimumSize(new Dimension(1020, 760));
         setTitle("Layer 7 License Generator");
         setJMenuBar(makeMenuBar());
         displayPanel.add(licensePanel);
-        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.X_AXIS));
-        leftPanel.add(specPanel);
-        xmlField.setText(SAMPLE_UNSIGNED);
-        xmlField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { xmlChanged = true; }
-            public void removeUpdate(DocumentEvent e) { xmlChanged = true; }
-            public void changedUpdate(DocumentEvent e) { xmlChanged = true; }
+        specHolderPanel.setLayout(new BoxLayout(specHolderPanel, BoxLayout.X_AXIS));
+        specHolderPanel.add(specPanel);
+
+        xmlContainer = new XMLContainer(true);
+        xmlContainer.setErrorPanelAvailable(false);
+        xmlContainer.setStatusBarAvailable(false);
+        xmlContainer.getUIAccessibility().setTreeAvailable(false);
+        xmlContainer.getUIAccessibility().setToolBarAvailable(false);
+        xmlContainer.setAutoFocus(false);
+
+        xmlEditorPanel.setLayout(new BorderLayout());
+        xmlEditorPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
+
+        //xmlContainer.getAccessibility().setText(SAMPLE_UNSIGNED);
+        xmlContainer.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { xmlChanged = true; xmlChangedTime = System.currentTimeMillis(); }
+            public void removeUpdate(DocumentEvent e) { xmlChanged = true; xmlChangedTime = System.currentTimeMillis(); }
+            public void changedUpdate(DocumentEvent e) { xmlChanged = true; xmlChangedTime = System.currentTimeMillis(); }
         });
+
+        specPanel.addPropertyChangeListener(LicenseSpecPanel.PROPERTY_LICENSE_SPEC, new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                updateAllFromSpec();
+            }
+        });
+
+        // Start monitoring GUI changes in the background
         Background.schedule(new TimerTask() {
             public void run() {
                 if (!xmlChanged) return;
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        if (!xmlChanged) return;
-                        updateAllFromXml();
-                        xmlChanged = false;
+                        checkForChangedXml();
                     }
                 });
             }
-        }, 2000, 2000);
+        }, 500, 500);
 
-        issueLicenseButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                // TODO
-            }
-        });
+        licensePanel.setStatusNone("Nonexistent");
+        licensePanel.setStatusInvalid("    License has errors    ");
+        licensePanel.setStatusUnsigned("    Ready to be signed    ");
+        licensePanel.setStatusValid("   Valid Signed License   ");
 
-        updateAllFromXml();
-        Utilities.attachDefaultContextMenu(xmlField);
+        signLicenseButton.setAction(getSignLicenseAction());
+        stripSignatureButton.setAction(getStripSignaturesAction());
+        saveLicenseButton.setAction(getSaveAsAction());
+        quitButton.setAction(getQuitAction());
+        newLicenseButton.setAction(getNewAction());
+        openLicenseButton.setAction(getOpenAction());
+
+        createTemplateLicense();
+
+        //Utilities.attachDefaultContextMenu(xmlField);
         pack();
+    }
+
+    /** Initialize the currently-edited license to an empty document. */
+    public void createBlankLicense() {
+        // Initialize to an empty editor
+        xmlContainer.getAccessibility().setText("");
+        updateAllFromXml();
+    }
+
+    /** Initialize the currently-edited license to a skeleton document that is only missing the licensee name. */
+    public void createTemplateLicense() {
+        // Initialize the default spec
+        specPanel.setDefaults();
+        updateAllFromSpec();
+    }
+
+    private void checkForChangedXml() {
+        if (!xmlChanged) return;
+        if (System.currentTimeMillis() - xmlChangedTime < INACTIVITY_UPDATE_MILLIS) return;
+        updateAllFromXml();
+        xmlChanged = false;
     }
 
     private JMenuBar makeMenuBar() {
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(makeFileMenu());
+        menuBar.add(makeEditMenu());
         return menuBar;
     }
 
-    private JMenu makeFileMenu() {
-        JMenu menu = new JMenu("File");
-
-        menu.add(new JMenuItem(makeQuitAction()));
+    private JMenu makeEditMenu() {
+        JMenu menu = new JMenu("Edit");
+        menu.add(new JMenuItem(getSignLicenseAction()));
+        menu.add(new JMenuItem(getStripSignaturesAction()));
 
         return menu;
     }
 
-    private Action makeQuitAction() {
+    private JMenu makeFileMenu() {
+        JMenu menu = new JMenu("File");
+        menu.add(new JMenuItem(getNewAction()));
+        menu.add(new JMenuItem(getOpenAction()));
+        menu.add(new JMenuItem(getSaveAsAction()));
+        menu.add(new JMenuItem(getQuitAction()));
+
+        return menu;
+    }
+
+    private Action getSignLicenseAction() {
+        if (signLicenseAction != null) return signLicenseAction;
+        final Action action = new AbstractAction("Sign License") {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    X509Certificate cert = getSignerCert();
+                    if (cert == null) throw new RuntimeException(KEYSTORE_MESSAGE);
+                    PrivateKey key = getSignerKey();
+                    if (key == null) throw new RuntimeException(KEYSTORE_MESSAGE);
+
+                    License license = licensePanel.getLicense();
+                    if (license == null)
+                        return;
+
+                    String licenseXml = license.asXml();
+                    Document licenseDoc = XmlUtil.stringToDocument(licenseXml);
+                    Document signedLicense = LicenseGenerator.signLicenseDocument(licenseDoc, cert, key);
+
+                    // Success.
+                    licenseXml = XmlUtil.nodeToFormattedString(signedLicense);
+                    xmlContainer.getAccessibility().setText(licenseXml);
+                    xmlChanged = false; // suppress any spurious updates
+                    doUpdateAllFromXml(licenseXml);
+                } catch (Exception e1) {
+                    final String msg = "Unable to sign certificate: " + ExceptionUtils.getMessage(e1);
+                    logger.log(Level.WARNING, msg, e1);
+                    JOptionPane.showMessageDialog(LicenseGeneratorTopWindow.this, msg, "Unable to Sign License",
+                                                  JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        return signLicenseAction = action;
+    }
+
+    private Action getStripSignaturesAction() {
+        if (stripSignaturesAction != null) return stripSignaturesAction;
+        AbstractAction action = new AbstractAction("Strip Signatures") {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    String licenseXml;
+                    License license = licensePanel.getLicense();
+                    if (license != null) {
+                        // Use XML from license being displayed in bottom right panel, if possible
+                        licenseXml = license.asXml();
+                    } else {
+                        // Otherwise try to use XML from XML editor window
+                        licenseXml = xmlContainer.getAccessibility().getText();
+                    }
+                    Document licenseDoc = XmlUtil.stringToDocument(licenseXml);
+                    DsigUtil.stripSignatures(licenseDoc.getDocumentElement());
+
+                    // Success.
+                    licenseXml = XmlUtil.nodeToFormattedString(licenseDoc);
+                    xmlContainer.getAccessibility().setText(licenseXml);
+                    xmlChanged = false; // suppress any spurious updates
+                    doUpdateAllFromXml(licenseXml);
+                } catch (IOException ex) {
+                    logger.log(Level.WARNING, "Unable to strip signatures", ex);
+                } catch (SAXException ex) {
+                    logger.log(Level.WARNING, "Unable to strip signatures", ex);
+                    JOptionPane.showMessageDialog(LicenseGeneratorTopWindow.this,
+                                                  "Unable to strip signature because XML is not well-formed: " + ExceptionUtils.getMessage(ex),
+                                                  "Unable to Strip Signature",
+                                                  JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        return stripSignaturesAction = action;
+    }
+
+    private Action getSaveAsAction() {
+        if (saveAsAction != null) return saveAsAction;
+        AbstractAction action = new AbstractAction("Save As") {
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fc = new JFileChooser();
+                fc.setFileFilter(new XmlFileFilter());
+                fc.setMultiSelectionEnabled(false);
+                int result = fc.showSaveDialog(LicenseGeneratorTopWindow.this);
+                if (JFileChooser.APPROVE_OPTION != result)
+                    return;
+
+                File file = fc.getSelectedFile();
+
+                if (file.getName().indexOf('.') < 0)
+                    file = new File(file.getParent(), file.getName() + ".xml");
+
+                if (file.isFile()) {
+                    result = JOptionPane.showConfirmDialog(LicenseGeneratorTopWindow.this,
+                                                           "Overwrite the existing file " + file.getName() + "?",
+                                                           "Overwrite Existing File?",
+                                                           JOptionPane.YES_NO_CANCEL_OPTION);
+                    if (result != JOptionPane.YES_OPTION)
+                        return;
+                }
+
+                FileOutputStream fos = null;
+                try {
+                    fos = new FileOutputStream(file);
+                    fos.write(xmlContainer.getAccessibility().getText().getBytes());
+                    fos.close();
+                    fos = null;
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(LicenseGeneratorTopWindow.this,
+                                                  "Unable to save the license XML to the file " + file.getName() + "." +
+                                                          "\n  The error was: " + ExceptionUtils.getMessage(ex),
+                                                  "Unable to Save License XML",
+                                                  JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    if (fos != null) //noinspection EmptyCatchBlock
+                        try { fos.close(); } catch (IOException ex) {}
+                }
+            }
+        };
+        action.putValue(Action.SHORT_DESCRIPTION, "Save the current license");
+        action.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_X));
+        return saveAsAction = action;
+    }
+
+    private Action getOpenAction() {
+        if (openAction != null) return openAction;
+        AbstractAction action = new AbstractAction("Open") {
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fc = new JFileChooser();
+                fc.setFileFilter(new XmlFileFilter());
+                fc.setMultiSelectionEnabled(false);
+                int result = fc.showOpenDialog(LicenseGeneratorTopWindow.this);
+                if (JFileChooser.APPROVE_OPTION != result)
+                    return;
+
+                File file = fc.getSelectedFile();
+
+                FileInputStream fis = null;
+                try {
+                    fis = new FileInputStream(file);
+                    xmlContainer.getAccessibility().setText(new String(HexUtils.slurpStream(fis)));
+                    fis.close();
+                    fis = null;
+                    updateAllFromXml();
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(LicenseGeneratorTopWindow.this,
+                                                  "Unable to open the license XML file " + file.getName() + "." +
+                                                          "\n  The error was: " + ExceptionUtils.getMessage(ex),
+                                                  "Unable to Open License XML",
+                                                  JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    if (fis != null) //noinspection EmptyCatchBlock
+                        try { fis.close(); } catch (IOException ex) {}
+                }
+            }
+        };
+        action.putValue(Action.SHORT_DESCRIPTION, "Open an existing license");
+        action.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_X));
+        return openAction = action;
+    }
+
+    private Action getNewAction() {
+        if (newAction != null) return newAction;
+        AbstractAction action = new AbstractAction("New") {
+            public void actionPerformed(ActionEvent e) {
+                createTemplateLicense();
+            }
+        };
+        action.putValue(Action.SHORT_DESCRIPTION, "Start from a blank license document");
+        action.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_X));
+        return newAction = action;
+    }
+
+    private Action getQuitAction() {
+        if (quitAction != null) return quitAction;
         AbstractAction action = new AbstractAction("Exit") {
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
@@ -116,31 +370,95 @@ public class LicenseGeneratorTopWindow extends JFrame {
         };
         action.putValue(Action.SHORT_DESCRIPTION, "Exit the License Generator");
         action.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_X));
-        return action;
+        return quitAction = action;
     }
 
     /** Parse the XML, and update the license panel and, if possible, the spec editor panel as well. */
     private void updateAllFromXml() {
-        String xml = xmlField.getText();
+        String xml = xmlContainer.getAccessibility().getText();
 
         if (xml == null || xml.trim().length() < 1) {
             licensePanel.setLicense(null);
+            getSignLicenseAction().setEnabled(false);
+            specPanel.setSpec(null);
             return;
         }
 
-        License license = null;
+        doUpdateAllFromXml(xml);
+    }
+
+    private void doUpdateAllFromXml(String xml) {
+        License license;
         try {
-            license = new License(xml, null);
+            license = new License(xml, getTrustedIssuers());
             licensePanel.setLicense(license);
-
-            specPanel.setSpec(makeSpecFromLicense(license));
-
+            getSignLicenseAction().setEnabled(license != null && !license.isValidSignature());
+            LicenseSpec spec = new LicenseSpec();
+            spec.copyFrom(license);
+            specPanel.setSpec(spec);
+        } catch (RuntimeException e) {
+            // Unchecked exceptions are probably bugs -- we'll log them
+            final String msg = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, "Unchecked license exception: " + msg, e);
+            licensePanel.setLicenseError(pad(e.getClass().getName() + ": " + msg));
+            getSignLicenseAction().setEnabled(false);
+            // Leave spec panel alone if theres an error
+            //pack();
         } catch (Exception e) {
             licensePanel.setLicenseError(pad(e.getClass().getName() + ": " + ExceptionUtils.getMessage(e)));
-            pack();
+            getSignLicenseAction().setEnabled(false);
+            // Leave spec panel alone if theres an error
+            //pack();
         }
     }
 
+    private X509Certificate[] getTrustedIssuers() {
+        try {
+            X509Certificate cert = getSignerCert();
+            if (cert == null) return null;
+            return new X509Certificate[] { cert };
+        } catch (CertificateException e) {
+            // Ignore here -- we'll deal with it when the user goes to sign something
+            return null;
+        } catch (IOException e) {
+            // Ignore here -- we'll deal with it when the user goes to sign something
+            return null;
+        }
+    }
+
+    /** Gather data from the License Spec panel and update the XML and the license panel from it. */
+    private void updateAllFromSpec() {
+        LicenseSpec spec = specPanel.getSpec();
+        Document licenseDoc;
+        String licenseXml;
+        try {
+            licenseDoc = LicenseGenerator.generateUnsignedLicense(spec, false);
+        } catch (LicenseGenerator.LicenseGeneratorException e) {
+            licensePanel.setLicenseError(pad("Invalid license specification: " + e.getClass().getName() + ": " + ExceptionUtils.getMessage(e)));
+            getSignLicenseAction().setEnabled(false);
+            try {
+                licenseDoc = LicenseGenerator.generateUnsignedLicense(spec, true);
+            } catch (LicenseGenerator.LicenseGeneratorException e1) {
+                logger.log(Level.INFO, "LicenseGeneratorException that couldn't be overridden", e1);
+                return;
+            }
+        }
+
+        try {
+            licenseXml = XmlUtil.nodeToFormattedString(licenseDoc);
+        } catch (IOException e) {
+            // This can't actually happen
+            licensePanel.setLicenseError(pad("Invalid license specification: " + e.getClass().getName() + ": " + ExceptionUtils.getMessage(e)));
+            getSignLicenseAction().setEnabled(false);
+            return;
+        }
+        xmlContainer.getAccessibility().setText(licenseXml);
+        xmlChanged = false; // just in case it fired another update
+        doUpdateAllFromXml(licenseXml);
+        return;
+    }
+
+    /** Add lines of spaces to s to pad it to at least 6 lines of text in the wrappingLabel. */
     private String pad(String s) {
         while (s.length() < (60 * 6)) {
             s += "\n                                                            ";
@@ -149,12 +467,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         return s;
     }
 
-    private LicenseSpec makeSpecFromLicense(License license) {
-        // TODO - have to add special hack/hook to License so we can get at its private members
-        return null;
-    }
-
-    private void getSignerKey() {
+    private PrivateKey getSignerKey() {
         RSAPrivateKey privKey = new RSAPrivateKey() {
             public BigInteger getPrivateExponent() {
                 return new BigInteger(KEY_PRIVATE_EXPONENT);
@@ -180,12 +493,14 @@ public class LicenseGeneratorTopWindow extends JFrame {
                 return new BigInteger(KEY_MODULUS);
             }
         };
+        return privKey;
     }
 
-    private void getSignerCert() throws CertificateException, IOException {
+    private X509Certificate getSignerCert() throws CertificateException, IOException {
         CertificateFactory cfac = CertificateFactory.getInstance("X.509");
         X509Certificate signerCert = (X509Certificate)cfac.generateCertificate(
                 new ByteArrayInputStream(HexUtils.unHexDump(EXAMPLE_CERT)));
+        return signerCert;
     }
 
 
@@ -209,4 +524,14 @@ public class LicenseGeneratorTopWindow extends JFrame {
     public static final String KEY_PRIVATE_EXPONENT = "52465664667780706803796806008626939995486970109461563902222625824289897299266949379724281102972781310872321124045608568261012395734964308478235212962233407099665351810450969693299258191253569464257675482392194295806923755978670536307041904011677423671716680294679388235287677953431917875090301160075290495617";
 
 
+    private static class XmlFileFilter extends FileFilter {
+        public boolean accept(File file) {
+            final String name = file.getName().toLowerCase();
+            return file.isDirectory() || name.endsWith(".xml");
+        }
+
+        public String getDescription() {
+            return "License files (*.xml)";
+        }
+    }
 }
