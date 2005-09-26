@@ -10,7 +10,6 @@ import com.l7tech.common.message.SoapInfoFactory;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.objectmodel.FindException;
-import com.tarari.xml.schema.SchemaLoadingException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -114,7 +113,7 @@ public class TarariLoader {
             context.compile();
     }
 
-    public static void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, SchemaLoadingException, XmlException {
+    public static void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {
         GlobalTarariContext context = getGlobalContext();
         if (context != null)
             context.updateSchemasToCard(managerResolver);

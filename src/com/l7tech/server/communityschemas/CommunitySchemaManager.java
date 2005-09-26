@@ -30,7 +30,6 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.server.ServerConfig;
 import com.tarari.xml.schema.SchemaResolver;
-import com.tarari.xml.schema.SchemaLoadingException;
 
 /**
  * This manager gives access to the community schemas included in the
@@ -100,9 +99,9 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (SchemaLoadingException e) {
+                    } /*catch (SchemaLoadingException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (XmlException e) {
+                    }*/ catch (XmlException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     }
                 }
@@ -126,9 +125,9 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (SchemaLoadingException e) {
+                    }/* catch (SchemaLoadingException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (XmlException e) {
+                    }*/ catch (XmlException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     }
                 }
@@ -148,9 +147,9 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     } catch (IOException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (SchemaLoadingException e) {
+                    } /*catch (SchemaLoadingException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (XmlException e) {
+                    }*/ catch (XmlException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     }
                 }

@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Holds the server-side Tarari state
@@ -87,7 +88,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      * policies and makes sure the schemas loaded on the tarari card are the same. this should typically
      * be called whenever a published service is updated or saved
      */
-    public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, SchemaLoadingException, XmlException {
+    public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {
         synchronized (this) {
             // List schemas on card
             ArrayList schemasOnCard = new ArrayList();
@@ -145,8 +146,15 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
 
                 for (Iterator iterator = schemasInPolicyAndTable.iterator(); iterator.hasNext();) {
                     String s = (String) iterator.next();
-                    logger.fine("loading schema to card " + s);
-                    SchemaLoader.loadSchema(new ByteArrayInputStream(s.getBytes("UTF-8")), "");
+                    logger.finest("loading schema to card " + s);
+                    try {
+                        SchemaLoader.loadSchema(new ByteArrayInputStream(s.getBytes("UTF-8")), "");
+                    } catch (SchemaLoadingException e) {
+                        logger.log(Level.WARNING, "exception loading schema to tarari card. perhaps " +
+                                                  "the schema is incorrect or it refers to a targetnamespace " +
+                                                  "that is already declared in another schema", e);
+                        logger.finest("could not load schema on tarari card: " + s);
+                    }
                 }
             } else {
                 logger.fine("schemas loaded on card are already correct");

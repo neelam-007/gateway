@@ -7,7 +7,6 @@ package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.objectmodel.FindException;
-import com.tarari.xml.schema.SchemaLoadingException;
 
 import java.io.IOException;
 
@@ -39,7 +38,7 @@ public interface GlobalTarariContext {
      * policies and makes sure the schemas loaded on the tarari card are the same. this should typically
      * be called whenever a published service is updated or saved
      */
-    public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, SchemaLoadingException, XmlException;
+    public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException;
 
     /**
      * returns the number of schemas loaded on the card that refers to a targetnamespace
