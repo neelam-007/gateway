@@ -47,7 +47,7 @@ public final class License implements Serializable {
      * on License to see if what they want to do is permitted by the license.
      *
      */
-    public static final class LicenseGrants {
+    public static final class LicenseGrants implements Serializable {
         final String hostname;
         final String ip;
         final String product;
