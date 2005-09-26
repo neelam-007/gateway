@@ -23,7 +23,7 @@ import javax.swing.table.TableModel;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
@@ -267,7 +267,13 @@ public class ClusterPropertyDialog extends JDialog {
         if (reg != null && reg.getClusterStatusAdmin() != null) {
             properties.clear();
             try {
-                properties.addAll(reg.getClusterStatusAdmin().getAllProperties());
+                java.util.List allProperties = reg.getClusterStatusAdmin().getAllProperties();
+                for (Iterator i = allProperties.iterator(); i.hasNext();) {
+                    ClusterProperty property = (ClusterProperty)i.next();
+                    if (!property.isHiddenInGui())
+                        properties.add(property);
+                }
+                
             } catch (RemoteException e) {
                 logger.log(Level.SEVERE, "exception getting properties", e);
             } catch (FindException e) {

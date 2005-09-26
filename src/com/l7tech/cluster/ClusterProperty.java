@@ -15,6 +15,8 @@ import java.io.Serializable;
  * @author flascelles@layer7-tech.com
  */
 public class ClusterProperty implements Serializable {
+    private static final long serialVersionUID = -5971674585207716763L;
+
     private String key;
     private String value;
 
@@ -32,5 +34,12 @@ public class ClusterProperty implements Serializable {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    /** @return true if this property should be hidden in the cluster property GUI. */
+    public boolean isHiddenInGui() {
+        // Currently, there's only 1 hidden property, so for now we'll just hardcode it rather than
+        // add a whole new DB column and support code
+        return "license".equals(key);
     }
 }
