@@ -6,6 +6,7 @@
 package com.l7tech.internal.license.gui;
 
 import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.DocumentStateListener;
 import com.l7tech.common.License;
 import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.security.xml.DsigUtil;
@@ -26,6 +27,8 @@ import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.FocusEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
@@ -131,6 +134,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
                 if (!xmlChanged) return;
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
+                        if (System.currentTimeMillis() - xmlChangedTime < INACTIVITY_UPDATE_MILLIS) return;
                         checkForChangedXml();
                     }
                 });
@@ -171,7 +175,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
 
     private void checkForChangedXml() {
         if (!xmlChanged) return;
-        if (System.currentTimeMillis() - xmlChangedTime < INACTIVITY_UPDATE_MILLIS) return;
+        xmlChangedTime = System.currentTimeMillis();
         updateAllFromXml();
         xmlChanged = false;
     }
@@ -240,6 +244,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         if (signLicenseAction != null) return signLicenseAction;
         final Action action = new AbstractAction("Sign License") {
             public void actionPerformed(ActionEvent e) {
+                checkForChangedXml();
                 try {
                     X509Certificate cert = getSignerCert();
                     if (cert == null) throw new RuntimeException(KEYSTORE_MESSAGE);
@@ -276,6 +281,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         if (stripSignaturesAction != null) return stripSignaturesAction;
         AbstractAction action = new AbstractAction("Strip Signatures") {
             public void actionPerformed(ActionEvent e) {
+                checkForChangedXml();
                 try {
                     String licenseXml;
                     License license = licensePanel.getLicense();
@@ -314,6 +320,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
         if (saveAsAction != null) return saveAsAction;
         AbstractAction action = new AbstractAction("Save As") {
             public void actionPerformed(ActionEvent e) {
+                checkForChangedXml();
                 JFileChooser fc = new JFileChooser();
                 fc.setFileFilter(new XmlFileFilter());
                 fc.setMultiSelectionEnabled(false);

@@ -108,6 +108,11 @@ public class LicenseSpecPanel extends JPanel {
                 if (!fieldChanged) return;
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
+                        if (!fieldChanged)
+                            return;
+                        final long now = System.currentTimeMillis();
+                        if (now - fieldChangedWhen < INACTIVITY_UPDATE_MILLIS)
+                            return;
                         checkForChangedField();
                     }
                 });
@@ -132,10 +137,7 @@ public class LicenseSpecPanel extends JPanel {
     private void checkForChangedField() {
         if (!fieldChanged)
             return;
-        final long now = System.currentTimeMillis();
-        if (now - fieldChangedWhen < INACTIVITY_UPDATE_MILLIS)
-            return;
-        fieldChangedWhen = now;
+        fieldChangedWhen = System.currentTimeMillis();
         fireUpdate();
         fieldChanged = false;
     }
