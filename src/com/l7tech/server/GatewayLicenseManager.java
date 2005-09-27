@@ -48,20 +48,25 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
     private static Object getVal() {
         try {
             CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            // TODO replace this with encrypted version of whatever cert we're supposed to use for signing licenses
+            // I'll just let the obfuscator take care of encrypting this
             byte[] buf = ("-----BEGIN CERTIFICATE-----\n" +
-                "MIICBjCCAW+gAwIBAgIIKbOOqzbBdVAwDQYJKoZIhvcNAQEFBQAwFTETMBEGA1UE\n" +
-                "AxMKcm9vdC5yaWtlcjAeFw0wNDAzMjQyMzAyMTFaFw0wNjAzMjQyMzEyMTFaMBAx\n" +
-                "DjAMBgNVBAMTBXJpa2VyMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC6OKq/\n" +
-                "fMQAnsN5JQnZ9QqTBimVpnGQA5WAeuxqkTL3iLLvWMAhdyUJsCvAzc1S1zZ4yVPZ\n" +
-                "kkE9emTLeIMXtt8ae9UejWAwPsVgRIR4zAiciYCkiSO8odchOYxgp2uRZbzk5OpE\n" +
-                "egTO0Gbfdkitdk285I9yNarJLC9FywOH3Kq6fQIDAQABo2QwYjAPBgNVHRMBAf8E\n" +
-                "BTADAQEAMA8GA1UdDwEB/wQFAwMHoAAwHQYDVR0OBBYEFHVi/P0XVUNE93zBx0wD\n" +
-                "/80kkT7wMB8GA1UdIwQYMBaAFB+jwNtU61J/yk++WodvTbQrBux2MA0GCSqGSIb3\n" +
-                "DQEBBQUAA4GBAB5/WyqIb7QLot5Xbh+MIlrTwoXtjHwnqRPrb8YkxARdhh4hB+63\n" +
-                "2yMLDv90ReZg41kXZ1Lxd/lh8PaNFlSFerCg/6stx3xIbU4eT3WW9ws8ohL7NaaH\n" +
-                "gW3Yqo4e6aqxJ5T9NEfW6CQEdE32AZfDz6HLzWdcj0Gnqp3yxOSenf2T\n" +
-                "-----END CERTIFICATE-----").getBytes();
+                    "MIIC6DCCAdACBEM41hwwDQYJKoZIhvcNAQEEBQAwOTEdMBsGA1UEChMUTGF5ZXIg\n" +
+                    "NyBUZWNobm9sb2dpZXMxGDAWBgNVBAMTD0xpY2Vuc2UgT2ZmaWNlcjAeFw0wNTA5\n" +
+                    "MjcwNTE4MjBaFw0yNTA5MjYwNTE4MjBaMDkxHTAbBgNVBAoTFExheWVyIDcgVGVj\n" +
+                    "aG5vbG9naWVzMRgwFgYDVQQDEw9MaWNlbnNlIE9mZmljZXIwggEhMA0GCSqGSIb3\n" +
+                    "DQEBAQUAA4IBDgAwggEJAoIBAH6Zu7CyJnp/UqHlZ3WNEy4OKXzms7movyd4Bpqb\n" +
+                    "6DRRzOq/qZfMMnoKCZ5tEpAODw9DPPJHoE3bXV67dDWTnDNwCU67r1fHBFqTqJaB\n" +
+                    "WgU1Gzgy+Ve7N6BaoeAXVJgEXR5b9MVFabfG1FYsqEbvKwUvOVqow1XGLoPWqAKP\n" +
+                    "3fdBDUPOJgGUnrzY1pBvBSLlQoKzGR+fHVrMn1zQRS9MFalwzIgrgvEUxeTA72DF\n" +
+                    "G3ZJJ47ek+OmYP7q5Nzz1rCSBilv7CTW8TCZMKLJSBHfB0pPDaIMLdPdZqOes3ng\n" +
+                    "9jXuWpVCHI/lljxjBBWNTne/fUmN8gayTKTztA4UbO/heJECAwEAATANBgkqhkiG\n" +
+                    "9w0BAQQFAAOCAQEAEUDRup8nlBrK6z2114ReO2gt+k+ZwtqbSIGBMM6kCKvnUV7f\n" +
+                    "Bmi9XnvglM/ekmKBNIqMXuCjbOcRqgU5eiuKpvctHRzUKTHT9CKUQfR7ow2+Kkq8\n" +
+                    "0vD7JCcsbIqDyWD7tsf/RGNLNZIcOGuBFDrJx1+lNo8R/FlXnestXGVIRCLyH+Y2\n" +
+                    "w8GvvmUdKMymq0Adpr14v4B6/+xikxWJoUVTwnBLCNWoAqizCjla9lm4wOtKqsS1\n" +
+                    "8TyDvB+rL9Gz+K5SRUxpWt0ADRWUJRdmF29H8GcDUcaAK7Ka6BjyrOhE9t6emB7e\n" +
+                    "cX/Yl+RgwYa4F314O0xBGP6baqtVy/5BObtucA==\n" +
+                    "-----END CERTIFICATE-----").getBytes();
             InputStream is = new ByteArrayInputStream(buf);
             return certFactory.generateCertificate(is);
         } catch (CertificateException e) {

@@ -1,29 +1,30 @@
-<license Id="1001" xmlns="http://l7tech.com/license">
+<?xml version="1.0" encoding="UTF-8"?>
+<license Id="4875847842390804470" xmlns="http://l7tech.com/license">
     <description>Layer 7 Internal Developer License</description>
-    <valid>2005-09-23T22:48:08.187Z</valid>
-    <expires>2101-01-01T23:48:08.187Z</expires>
+    <valid>2005-09-27T05:30:09.107Z</valid>
+    <expires>2010-09-27T05:35:10.692Z</expires>
     <host name="*"/>
     <ip address="*"/>
     <product name="Layer 7 SecureSpan Suite">
-        <version major="3" minor="4"/>
+        <version major="3" minor="*"/>
     </product>
     <licensee contactEmail="developers@layer7tech.com" name="Layer 7 Developer"/>
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:SignedInfo>
             <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
             <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
-            <ds:Reference URI="#1001">
+            <ds:Reference URI="#4875847842390804470">
                 <ds:Transforms>
                     <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
                     <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
                 </ds:Transforms>
                 <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-                <ds:DigestValue>hM95b6G/X6Di/xOY/YD3BQq87Y4=</ds:DigestValue>
+                <ds:DigestValue>+gaPDz0qR/s5qg1+bq8qtESWZOM=</ds:DigestValue>
             </ds:Reference>
         </ds:SignedInfo>
-        <ds:SignatureValue>DV0y9EJuTLOQY1rdKuMaN5Td2YxRi/ozbrGNLQjCXwMOjk3PobGeMdiNWWVqaHxFbJ7/5z15lc1mQoN0rR8LV1pnYRGHRyv+ZKX41fEyRLCvcU/+k3zU6l7+Lscz+5c2+kHpw3tEJKhZ5Njb7LUMH4uw4Tc1whNNidpbE9atsxg=</ds:SignatureValue>
+        <ds:SignatureValue>TJq7SzT9EPyxkOuHBQjmOWWo+wq1/mnVS6m/TNRKcwkyQZ5H9aM2XPpWvI2DKDAQod3Mw/eEB1B7wFUYCaoJAszPW5uKCmkcmleLZjvkOad9mrqU628tFhNjtASPTeTSh4VaJ5TEJx2InE+aa4qL0D5TUSIetI7umGWJb/JvOSiIP4coGBQwxl8Z5Wb6X4hha2nL3DG4dXPkVbEcIIw4D+9B8juoLqy7vBQRaIAL68cZTGPRUDUYPaMg1hoVghXOTe+INICsA5H5T5T8YfklmLfECuddaIR1pI+XwikI6vRJ8rte9cWzU+71XqFa6G1Aamr48NCXK9zb+OM8wn4pZw==</ds:SignatureValue>
         <ds:KeyInfo>
-            <ds:KeyName>CN=riker</ds:KeyName>
+            <ds:KeyName>CN=License Officer, O=Layer 7 Technologies</ds:KeyName>
         </ds:KeyInfo>
     </ds:Signature>
 </license>
