@@ -13,6 +13,7 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.exceptions.UnsupportedOsException;
+import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,9 +22,26 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
+ * The SSG Configuration Wizard. Extends the functionality of the Wizard framework specifically for the ConfigurationWizard.
+ *
+ * A sequence of ConfigWizardStepPanel panels are presented to the user, and a list of ConfigurationCommand objects is created.
+ * Each ConfigurationCommand encapsulates the configuration activities for a specific area of SSG configuration.
+ *
+ * This Wizard configures the following:
+ * <ul>
+ * <li><ul>Connection to a database
+ *  <li>connection to an existing database</li>
+ *  <li>creation of a new database and subsequent connection to it</li>
+ *  <li>update the hibernate.properties file with the connection information</li>
+ *
+ *
+ * </ul></li>
+ *
+ *
+ * </ul>
  * User: megery
  * Date: Aug 8, 2005
  * Time: 3:29:35 PM
@@ -42,7 +60,7 @@ public class ConfigurationWizard extends Wizard {
     boolean hadFailures = false;
     private int clusteringType;
     private String keystoreType;
-    
+
     private final String currentVersion = "3.4";
 
     static {
@@ -67,6 +85,10 @@ public class ConfigurationWizard extends Wizard {
         init(panel);
     }
 
+    /**
+     * sets up the wizard, and it's event handlers
+     * @param panel
+     */
     public void init(WizardStepPanel panel) {
         setTitle("SSG Configuration Wizard for " + osFunctions.getOSName());
         setShowDescription(false);
@@ -87,7 +109,7 @@ public class ConfigurationWizard extends Wizard {
                 System.exit(1);
             }
         });
-
+        getButtonHelp().setVisible(false);
         getButtonHelp().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(ConfigurationWizard.this);
@@ -96,6 +118,15 @@ public class ConfigurationWizard extends Wizard {
         pack();
     }
 
+    /**
+     * Iterates over the list of ConfigurationCommand objects created in response to user input.
+     * Calls ConfigurationCommand.execute() on each of the commands to perform the relevant actions.
+     *
+     * Sets a failure flag if any of the commands returned an error.
+     *
+     * NOTE: This method can be called from any Thread, not just the Swing thread, since it does
+     * absolutely no GUI manipulation
+     */
     public void applyConfiguration() {
         log.info("Applying the configuration changes");
         HashMap commands = (HashMap) wizardInput;
@@ -119,12 +150,15 @@ public class ConfigurationWizard extends Wizard {
             }
     }
 
+    /**
+     * builds the chain of ConfigWizardStepPanel objects that will comprise the wizard.
+     * @return the first panel in the list, linked to the next ... and so on
+     */
     private static ConfigWizardStepPanel getStartPanel() {
         ConfigWizardResultsPanel lastPanel = new ConfigWizardResultsPanel(null, osFunctions);
         ConfigWizardSummaryPanel summaryPanel = new ConfigWizardSummaryPanel(lastPanel, osFunctions);
         ConfigWizardKeystorePanel keystorePanel = new ConfigWizardKeystorePanel(summaryPanel, osFunctions);
         ConfigWizardNewDBPanel configWizardDatabasePanelPanel = new ConfigWizardNewDBPanel(keystorePanel, osFunctions);
-        //ConfigWizardDatabasePanel configWizardDatabasePanelPanel = new ConfigWizardDatabasePanel(keystorePanel, osFunctions);
         ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel, osFunctions);
 
         ConfigWizardStepPanel startPanel;
@@ -133,11 +167,21 @@ public class ConfigurationWizard extends Wizard {
         return startPanel;
     }
 
+    /**
+     * returns the Singleton instance of this wizard, with a Frame as the parent
+     * @param parent - the parent of this wizard
+     * @return the Wizard instance
+     */
     public static ConfigurationWizard getInstance(Frame parent) {
         ConfigWizardStepPanel startPanel = getStartPanel();
         return new ConfigurationWizard(parent, startPanel);
     }
 
+    /**
+     * returns the Singleton instance of this wizard, with a DIalog as the parent
+     * @param parent - the parent of this wizard
+     * @return the Wizard instance
+     */
     public static ConfigurationWizard getInstance(Dialog parent) {
         ConfigWizardStepPanel startPanel = getStartPanel();
         return new ConfigurationWizard(parent, startPanel);
@@ -168,8 +212,24 @@ public class ConfigurationWizard extends Wizard {
         getButtonCancel().setEnabled(enabled);
     }
 
+    /**
+     * exposes the back button from the underlying Wizard so that it can be enabled/disabled etc.
+     * @return the back button
+     */
     public JButton getBackButton() {
         return getButtonBack();
+    }
+
+    public JButton getNextButton() {
+        return getButtonNext();
+    }
+
+    public JButton getFinishButton() {
+        return getButtonFinish();
+    }
+
+    public JButton getCancelButton() {
+        return getButtonCancel();
     }
 
     public static void main(String[] args) {
@@ -178,13 +238,15 @@ public class ConfigurationWizard extends Wizard {
         log.info("Starting SSG Configuration Wizard");
 
         try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (InstantiationException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            UIManager.setLookAndFeel(new KunststoffLookAndFeel());
+
+            //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//        } catch (ClassNotFoundException e) {
+//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//        } catch (InstantiationException e) {
+//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+//        } catch (IllegalAccessException e) {
+//            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         } catch (UnsupportedLookAndFeelException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
