@@ -115,17 +115,17 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
     private AssertionStatus reallyProcessMessage(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException {
+        context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
+        // License check hook
+        licenseManager.requireFeature(Feature.MESSAGEPROCESSOR);
+
         final Message request = context.getRequest();
         final Message response = context.getResponse();
-        context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         ProcessorResult wssOutput = null;
         AssertionStatus status = AssertionStatus.UNDEFINED;
 
         // WSS-Processing Step
         try {
-            // License check hook
-            licenseManager.requireFeature(Feature.MESSAGEPROCESSOR);
-
             boolean isSoap = false;
             boolean hasSecurity = false;
 

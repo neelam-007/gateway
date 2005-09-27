@@ -6,11 +6,10 @@ package com.l7tech.service;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
 
-import java.rmi.RemoteException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.rmi.RemoteException;
 
 /**
  * Defines the operations to be exposed as admin web service.
@@ -38,15 +37,6 @@ public interface ServiceAdminPublic {
      * @throws RemoteException on remote communication error
      */
     PublishedService findServiceByID(String oid) throws RemoteException, FindException;
-
-    /**
-     * Delete a {@link PublishedService} by its unique identifier.
-
-     * @param oid the unique identifier of the {@link PublishedService} to delete.
-     * @throws RemoteException on remote communication error
-     * @throws DeleteException if the requested information could not be deleted
-     */
-    void deletePublishedService(String oid) throws RemoteException, DeleteException;
 
     /**
      * Get a wsdl document from a URL. The WSDL document will be resolved by the gateway so that the manager

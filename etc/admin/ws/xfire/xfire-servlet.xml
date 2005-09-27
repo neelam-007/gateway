@@ -17,7 +17,7 @@
             <value>Service</value>
         </property>
         <property name="namespace">
-            <value>http://ns.l7tech.com/SecureSpan/admin/service</value>
+            <value>http://ns.l7tech.com/SecureSpan/admin/service/0.1</value>
         </property>
         <property name="serviceFactory">
             <ref bean="xfire.serviceFactory"/>

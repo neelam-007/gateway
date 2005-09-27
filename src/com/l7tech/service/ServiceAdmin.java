@@ -92,4 +92,13 @@ public interface ServiceAdmin extends ServiceAdminPublic {
     long saveSampleMessage(SampleMessage sm) throws SaveException, RemoteException;
 
     void deleteSampleMessage(SampleMessage message) throws DeleteException, RemoteException;
+
+    /**
+     * Delete a {@link com.l7tech.service.PublishedService} by its unique identifier.
+
+     * @param oid the unique identifier of the {@link com.l7tech.service.PublishedService} to delete.
+     * @throws java.rmi.RemoteException on remote communication error
+     * @throws com.l7tech.objectmodel.DeleteException if the requested information could not be deleted
+     */
+    void deletePublishedService(String oid) throws RemoteException, DeleteException;
 }

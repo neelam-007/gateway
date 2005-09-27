@@ -1,6 +1,7 @@
 <mappings>
   <mapping uri="http://ns.l7tech.com/SecureSpan/admin/service">
       <property name="wsdlXml" ignore="true"/>
+      <property name="loadTime" ignore="true"/>
   </mapping>
 </mappings>
 
