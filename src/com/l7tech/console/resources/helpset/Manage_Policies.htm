@@ -1,0 +1,130 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Manage Policies</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content=Overview2>
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=618>
+<meta name=layout-width content=849>
+<meta name=x-ignored-words content=WSDL>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Manage Policies</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The term &quot;identity&quot; includes both users and groups, the term 
+ &quot;user&quot; can represent an individual human or machine, the term 
+ “service” includes both Web services and XML applications, and the term 
+ &quot;SecureSpan™ Gateway&quot; includes all of the SecureSpan Gateway 
+ products.</p>
+</div>
+
+<p>The core function of the SecureSpan™ Manager is its ability to centrally 
+ define, provision, monitor, and audit security and integration policies 
+ for Web services and XML applications, collectively referred to as &quot;services.&quot; 
+ </p>
+
+<p>&nbsp;</p>
+
+<p>After a service is published using the Publish SOAP Web Service Wizard 
+ (see <a href="Manage_SOAP_Web_Services.htm">Manage SOAP Web Services</a>), 
+ Create WSDL Wizard (see <a href="Manage_SOAP_Web_Services.htm">Manage 
+ SOAP Web Services</a>), or Publish XML Application Wizard (see <a HREF="Manage_XML_Applications.htm">Manage 
+ XML Applications</a>), the service appears in the [Services] tab and an 
+ initial policy is created in the Policy Development window. If a published 
+ Web service WSDL document contained at least one HTTP(S) binding, then 
+ the initial policy will include an HTTP(S) Routing assertion pre-configured 
+ to point to the HTTP(S) binding URL. Before a service is adequately protected, 
+ additional policy assertions may need to be defined and configured into 
+ a policy that is saved in the SecureSpan™ Gateway. </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ If an authentication method and authorization to specific users and/or 
+ groups was defined during the Web service or XML application publication 
+ process, then service access will be restricted to those identities in 
+ the initial policy. The initial policy will automatically be populated 
+ with a Grant Access to Users/Groups authentication assertion for each 
+ selected identity. See <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a> for more information. </p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>A policy defines restrictions for the consumption of a published SecureSpan 
+ Gateway-protected service. For more information on policies and assertions, 
+ see <a href="Policy_Organization.htm">Policy Organization</a>. For information 
+ on the interface areas related to services and policies, see <a href="Interfaces.htm">Interfaces</a>. 
+ For information on using and configuring the policy assertions in the 
+ [Assertions] tab, see <a HREF="About_Policy_Assertions.htm">About Policy 
+ Assertions</a>. For information on configuring a policy in the Policy 
+ Development window, see <a href="Configure_Edit_Policies.htm">Configure 
+ and Edit Policies</a>.</p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

@@ -1,0 +1,494 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Manage Global Schemas</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=2828>
+<meta name=layout-width content=849>
+<meta name=x-ignored-words content="Tarari;sarek;mediawiki;index.php">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Manage Global Schemas</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The Manage Global Schemas form is used in conjunction with the Validate 
+ XML Schema assertion (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/Transformation Assertions</a>).</p>
+</div>
+
+<p>A global schema is a schema that can be referenced by an import statement 
+ in one or more Validate XML Schema assertions (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/Transformation Assertions</a>). During runtime, 
+ the SecureSpan™ Gateway or Tarari PCI card resolves a schema referenced 
+ by an import statement as part of the validation process. The referenced 
+ schema, or global schema, must exist in the Manage Global Schemas form 
+ — and hence in the SecureSpan Gateway or Tarari PCI card — in order for 
+ validation to succeed. Furthermore, in order for the SecureSpan Gateway 
+ to be able to resolve external schemas when running Validate XML Schema 
+ assertion, the import statement in the assertion schema must contain a 
+ &quot;schemaLocation&quot; attribute value that matches the global schema's 
+ &quot;System ID&quot; value.</p>
+
+<p>&nbsp;</p>
+
+<p>Global schemas are managed in the Manage Global Schemas form, not the 
+ Schema Validation Properties form that is associated with the Validate 
+ XML Schema assertion. Global schemas can be added, edited, and deleted 
+ from the Manage Global Schemas form.</p>
+
+<p>&nbsp;</p>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#Add_a_New_Global_Schema">Add a New Global 
+ Schema</a></p>
+
+<p class="quicklinks" style="color: #000000;"><a href="#Edit_a_Global_Schema">Edit a Global 
+ Schema</a></p>
+
+<p class="quicklinks"><a href="#Delete_a_Global_Schema">Delete a Global Schema</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Add_a_New_Global_Schema
+								style="color: #000000;">Add a New Global 
+ Schema</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ You can add global schemas prior to configuring the Validate XML Schema 
+ assertion. Before adding a new global schema, note the value in the &quot;schemaLocation&quot; 
+ attribute of the schema import statement that refers to it. This value 
+ must match the global schema System ID value configured in Step # 3 below.</p>
+</div>
+
+<p>Add a new global schema as follows:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Manager, select <span style="font-weight: bold;"><B>Tasks</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Manage Global XML Schemas </B></span>from 
+ the Main Menu. The Manage Global Schemas form appears.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ When using the Schema Validation Properties form to configure the Validate 
+ XML Schema assertion, the Manage Global Schemas form will automatically 
+ appear if the added schema contains one or more import statements that 
+ reference one or more global schemas that do not exist in the SecureSpan™ 
+ Gateway or Tarari PCI card. After adding the required global schema(s) 
+ with the Manage Global Schemas form, return to the Schema Validation Properties 
+ form (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/Transformation Assertions</a>) to complete 
+ the assertion configuration process. </p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+ The Edit Global Schema form appears. </p></li>
+	
+	<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>System 
+ ID</B></span> field, enter a value corresponding to the &quot;schemaLocation&quot; 
+ attribute in the schema import statement that references the global schema. 
+ For example, schema A contains an import statement that references global 
+ schema B. The value in the &quot;schemaLocation&quot; attribute in schema 
+ A is &quot;account.xsd&quot;.</p></li>
+</ol>
+
+<p style="margin-left: 40px;">&lt;s:import namespace=&quot;http://www.acme.com/schemas/account&quot; 
+ schemaLocation=&quot;<span style="font-weight: bold;"><B>account.xsd</B></span>&quot; 
+ /&gt;</p>
+
+<p style="margin-left: 40px;">In order to connect schema A and global schema 
+ B in the SecureSpan Gateway or Tarari card, the System ID of global schema 
+ B must be &quot;account.xsd.&quot; </p>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">Use the XML Editor in 
+ the Edit Global Schema form window <span style="margin-left: 40px;">to 
+ insert a file into, edit, search, parse, format, or comment the global 
+ schema as required:</span></p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ Any change made via the right-click menu can be undone. To undo the last 
+ change, select Undo from the drop-down menu. To redo an undone change, 
+ select Redo from the drop-down menu.</p>
+</div>
+
+<h4 style="margin-left: 40px;">Quick Links:</h4>
+
+<p class="quicklinks" style="margin-left: 40px; color: #000000;"><a href="#Insert_a_File_into_the_Schema">Insert 
+ a File into the Schema</a></p>
+
+<p class="quicklinks" style="margin-left: 40px;"><a href="#Edit_the_Schema">Edit the Schema</a></p>
+
+<p class="quicklinks" style="margin-left: 40px;"><a href="#Search_the_Schema_Nodes">Search 
+ the Schema Nodes</a></p>
+
+<p class="quicklinks" style="margin-left: 40px;"><a href="#Parse_the_Schema">Parse the Schema</a></p>
+
+<p class="quicklinks" style="margin-left: 40px;"><a href="#Parse_the_Schema">Format the Schema</a></p>
+
+<p class="quicklinks" style="margin-left: 40px;"><a href="#Comment_the_Schema">Comment the 
+ Schema</a></p>
+
+<h3 style="margin-left: 40px; color: #000000;"><span><font color=black ><a name=Insert_a_File_into_the_Schema
+														style="color: #000000;">Insert 
+ a File into the Schema</a></font></span></h3>
+
+<p style="margin-left: 40px;">To insert an XML file into the schema:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Place the cursor 
+ at the desired insert location in the Edit Global Schema form window.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Right-click inside 
+ the Edit Global Schema form window. A drop-down menu appears. </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select <span style="font-weight: bold;"><B>Document</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Insert File</B></span>. The Open form 
+ appears.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Navigate to and 
+ select the target XML file. Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The XML content is inserted into the schema.</p></li>
+	</ol>
+</ol>
+
+<h3 style="margin-left: 40px; color: #000000;"><a name=Edit_the_Schema
+													style="color: #000000;">Edit 
+ the Schema</a></h3>
+
+<p style="margin-left: 40px;">To cut, copy, and/or paste schema content, 
+ right-click inside the Edit Global Schema form window. A drop-down menu 
+ appears:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">To cut or copy content, 
+ select the target content and click <span style="font-weight: bold;"><B>Cut</B></span> 
+ or <span style="font-weight: bold;"><B>Copy</B></span></p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">To paste content, 
+ select a target location and click <span style="font-weight: bold;"><B>Paste</B></span>.</p></li>
+	</ul>
+</ul>
+
+<h3 style="margin-left: 40px;"><a name=Search_the_Schema_Nodes
+									style="color: #000000;">Search the 
+ Schema Nodes</a></h3>
+
+<p style="margin-left: 40px;">To search the nodes in the schema:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Right-click inside 
+ the Edit Global Schema form window. A drop-down menu appears. </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select <span style="font-weight: bold;"><B>Search 
+ a Node</B></span>. The Search form appears containing an expandable list of 
+ the nodes within the schema. To view the schema location of a node in 
+ the Search form, click the node. The node's corresponding location in 
+ the window is highlighted.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;"><span style="margin-left: 0px;">Click 
+ [</span><span style="margin-left: 0px; font-weight: bold;"><B>OK</B></span><span 
+ style="margin-left: 0px;">] to close the Search form. </span></p></li>
+	</ol>
+</ol>
+
+<h3 style="margin-left: 40px;"><a name=Parse_the_Schema
+									style="color: #000000;">Parse the Schema</a></h3>
+
+<p style="margin-left: 40px;">To parse the schema XML:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Right-click inside 
+ the Edit Global Schema form window. A drop-down menu appears. </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select <span style="font-weight: bold;"><B>XML 
+ </B></span>&gt; <span style="font-weight: bold;"><B>Parse</B></span>. A pop-up status 
+ message appears. </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Note the errors, 
+ if any. Click [<span style="font-weight: bold;"><B>OK</B></span>] to close the 
+ message. </p></li>
+	</ol>
+</ol>
+
+<h3 style="margin-left: 40px;"><a name=Format_the_Schema
+									style="color: #000000;">Format the 
+ Schema</a></h3>
+
+<p style="margin-left: 40px;">To format the schema XML, right-click inside 
+ the Edit Global Schema form window. A drop-down menu appears. Select <span 
+ style="font-weight: bold;"><B>XML &gt; Format</B></span>.</p>
+
+<h3 style="margin-left: 40px;"><a name=Comment_the_Schema
+									style="color: #000000;">Comment the 
+ Schema</a></h3>
+
+<p style="margin-left: 40px;">To insert a comment into the schema: </p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Place the cursor 
+ at the desired insert location in the Edit Global Schema form window.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Right-click inside 
+ the window. A drop-down menu appears. </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select <span style="font-weight: bold;"><B>XML</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Comment</B></span>. The Comment form 
+ appears.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Enter comment text 
+ into the window. Multiple lines are allowed.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The text does not require comment characters. The SecureSpan™ Manager 
+ automatically formats the text as a comment in the window.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=5
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The comment is inserted into the schema.</p></li>
+	</ol>
+</ol>
+
+<p style="margin-left: 40px;">&nbsp;</p>
+
+<ol start=5
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">In the Edit Global Schema 
+ form, click [<span style="font-weight: bold;"><B>OK</B></span>]. The new global 
+ schema is added to the Manage Global Schemas table. </p></li>
+</ol>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Edit_a_Global_Schema
+								style="color: #000000;">Edit a Global Schema</a></h2>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Manager, select <span style="font-weight: bold;"><B>Tasks</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Manage Global XML Schemas </B></span>from 
+ the Main Menu. The Manage Global Schemas form appears.</p></li>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the table, select the global schema that you 
+ want to edit. Click [<span style="font-weight: bold;"><B>Edit</B></span>]. </p></li>
+	
+	<li class="kadov-p"><p>The Edit Global Schema form appears. Edit the 
+ schema as outlined in <a href="#Add_a_New_Global_Schema">Add a New Global 
+ Schema</a>. You can also directly click and modify schema XML in the Edit 
+ Global Schema form window. </p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Delete_a_Global_Schema
+								style="color: #000000;">Delete a Global 
+ Schema</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;WARNING:</B></span> 
+ If using a Tarari PCI card for schema validation, do not delete the pre-loaded 
+ SOAP envelope schema from the Manage Global Schemas form. Doing so will 
+ cause a Tarari schema processing error that will cause schema validation 
+ to fall back on software validation. Similarly, do not remove a global 
+ schema that is referenced by schema import statements in any Validate 
+ XML Schema assertions (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/ Transformation Assertions</a>). Doing so 
+ will break the resolution process, resulting in schema validation and 
+ policy errors. </p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Manager, select <span style="font-weight: bold;"><B>Tasks</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Manage Global XML Schemas </B></span>from 
+ the Main Menu. The Manage Global Schemas form appears.</p></li>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the table, select the global schema that you 
+ want to delete. Click [<span style="font-weight: bold;"><B>Remove</B></span>].</p></li>
+	
+	<li class="kadov-p"><p>The global schema is removed from the Manage Global 
+ Schemas form and the SecureSpan™ Gateway and/or Tarari PCI card. </p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p class="quicklinks"><a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a></p>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

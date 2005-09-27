@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=16115>
-<meta name=layout-width content=769>
-<meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;workflow;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;services.example.com;purchase.wsdl.;machinename.domain.com;WSIL;UDDI;Systinet;www.systinet.com;URLs;ssg;conf;uddi.properties;APIs;URL(s;requestors;Ctrl;URI;namespaces;canonicalization">
+<meta name=layout-height content=11102>
+<meta name=layout-width content=855>
+<meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;workflow;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;services.example.com;purchase.wsdl.;machinename.domain.com;WSIL;UDDI;Systinet;www.systinet.com;URLs;ssg;conf;uddi.properties;APIs;URL(s;requestors;Ctrl;URI;namespaces;canonicalization;mediawiki;index.php">
 
 
 
 
- <link rel="StyleSheet" href="SecureSpan.css">
+ <link rel="StyleSheet" href="JavaHelp.css">
 
 
 
@@ -53,14 +53,18 @@
 			width: 550px;
 			margin-left: 4px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The SecureSpan™ Manager differentiates between SOAP Web services and XML 
- or non-SOAP applications. To publish or edit an XML application, see <a href="Manage_XML_Applications.htm">Manage XML Applications</a>. </p>
+ or non-SOAP applications. To publish or edit an XML application, see <a href="Manage_XML_Applications.htm">Manage XML Applications</a>. The Publish 
+ SOAP Web Service Wizard and Create WSDL Wizard support the WSDL 1.1 standard. 
+ For information on disabling/enabling, renaming, or deleting a published 
+ Web service, see <a href="Manage_Published_Services.htm">Manage Published 
+ Services</a>.</p>
 </div>
 
 <p>The SecureSpan™ Manager guides you through the Web service publication 
@@ -72,40 +76,19 @@
  an existing WSDL document, the Create WSDL Wizard allows you to easily 
  configure the WSDL elements that describe the business services, transactions, 
  and electronic access instructions for the Web service (see <a href="#Publish_a_SOAP_Web_Service_from_Created_WSDL">Publish 
- a SOAP Web Service from Created WSDL</a>). Publication by either method 
- adds a Web service to the SecureSpan Manager's [Services] tab, establishes 
- the Web service's initial policy in the Policy Development window, and 
- allows authorized clients to access the Web service through the SecureSpan 
- Gateway. </p>
+ a SOAP Web Service from Created WSDL</a>). Publication adds a Web service 
+ to the SecureSpan Manager's [Services] tab, establishes the Web service's 
+ initial policy in the Policy Development window, and allows authorized 
+ clients to access the Web service through the SecureSpan Gateway. </p>
 
 <p>&nbsp;</p>
 
-<p>After publication, the SecureSpan Manager allows you to view the Web 
- service WSDL code and change or reset the Web service WSDL from an established 
- WSDL document without changing its existing policy.</p>
-
-<p>&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The Publish SOAP Web Service Wizard and Create WSDL Wizard support the 
- WSDL 1.1 standard. For information on disabling/enabling, renaming, or 
- deleting a published Web service, see <a href="Manage_Published_Services.htm">Manage 
- Published Services</a>.</p>
-</div>
+<p>You can publish multiple instances of the same Web service when each 
+ contains a unique resolution URI (see <a href="#Specify_a_Custom_Routing_URI">Specify 
+ a Custom Routing URI</a>). After publication, the SecureSpan Manager also 
+ allows you to view the Web service WSDL code and change or reset the Web 
+ service WSDL from an established WSDL document without changing its existing 
+ policy.</p>
 
 <p>&nbsp;</p>
 
@@ -116,6 +99,9 @@
 
 <p class="quicklinks"><a href="#Publish_a_SOAP_Web_Service_from_Created_WSDL">Publish 
  a SOAP Web Service from Created WSDL</a></p>
+
+<p class="quicklinks"><a href="#Specify_a_Custom_Routing_URI">Specify a Custom 
+ Routing URI</a></p>
 
 <p class="quicklinks"><a href="#View_Web_Service_WSDL">View Web Service WSDL</a></p>
 
@@ -136,12 +122,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  Use the Publish SOAP Web Service Wizard to publish a Web service with 
  an existing WSDL document. When publishing a Web service that does not 
@@ -172,27 +158,6 @@
 
 <p>You can view screen-specific information and instructions in the Tips 
  Box located near the bottom of the Publish SOAP Web Service Wizard. </p>
-
-<p>&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Ensure that you have all required Web service information before you use 
- the Publish SOAP Web Service Wizard. </p>
-</div>
 
 <p>&nbsp;</p>
 
@@ -277,8 +242,8 @@
 				<li class="kadov-p-cnotenumbered"><p class="notenumbered">Continue 
  to fix and resolve the URL until the WSDL URL is entered in the URL field 
  and the Access Control screen of the Publish SOAP Web Service Wizard appears, 
- and then proceed to Step #3. If the WSDL URL cannot be resolved, see <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
- and Contact Information</a> to contact a Technical Support Representative.</p></li>
+ and then proceed to Step #3. If the WSDL URL cannot be resolved, see <a href="Technical_Support.htm">Technical Support</a> to contact a Technical 
+ Support Representative.</p></li>
 			</ol>
 		</ul>
 		
@@ -348,8 +313,8 @@
  to fix and resolve the URL until the selected WSDL URL is entered in the 
  URL field and the Access Control screen of the Publish SOAP Web Service 
  Wizard appears, and then proceed to Step #3. If the WSIL URL or WSDL URL 
- errors continue, see <a href="Technical_Support_and_Contact_Information.htm">Technical 
- Support and Contact Information</a> to contact a Technical Support Representative.</p></li>
+ errors continue, see <a href="Technical_Support.htm">Technical Support</a> 
+ to contact a Technical Support Representative.</p></li>
 			</ol>
 		</ul>
 		
@@ -375,22 +340,20 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;WARNING:</B></span> 
  In order to use this method for obtaining a WSDL or WSIL URL, you must 
  have the Systinet UDDI Registry product (www.systinet.com) and have at 
  least one Systinet UDDI URL configured in the SecureSpan™ Gateway. The 
  Systinet UDDI URLs are configured in the SecureSpan Gateway's &quot;/ssg/etc/conf/uddi.properties&quot; 
- file. See the &quot;SecureSpan Gateway Installation and Configuration 
- Manual&quot; for more information. Systinet provides a set of APIs that, 
- via the SecureSpan Gateway, can be used by a client application to retrieve 
- information about Web services registered in the Systinet UDDI Registry 
- server. </p>
+ file. Systinet provides a set of APIs that, via the SecureSpan Gateway, 
+ can be used by a client application to retrieve information about Web 
+ services registered in the Systinet UDDI Registry server. </p>
 </div>
 
 <p style="margin-left: 40px;">To search the Systinet UDDI (Universal Description, 
@@ -422,11 +385,11 @@
 			width: 550px;
 			margin-left: 84px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The URL(s) in the UDDI Registry URL drop-down list are the Systinet UDDI 
  URLs configured in the SecureSpan™ Gateway. </p>
@@ -453,12 +416,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  Check the Case Sensitive check box to restrict the search results to the 
  case of the criteria entered in the Service Name field. </p>
 </div>
@@ -516,8 +480,8 @@
  to fix and resolve the URL until the selected WSDL URL is entered in the 
  URL field and the Access Control screen of the Publish SOAP Web Service 
  Wizard appears, and then proceed to Step #3. If the WSDL URL errors continue, 
- see <a href="Technical_Support_and_Contact_Information.htm">Technical 
- Support and Contact Information</a> to contact a Technical Support Representative.</p></li>
+ see <a href="Technical_Support.htm">Technical Support</a> to contact a 
+ Technical Support Representative.</p></li>
 			</ol>
 		</ul>
 		
@@ -551,18 +515,20 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
- Upon publication, the WSDL URL in the URL field will appear as an HTTP(S) 
- Routing assertion in the Web service's initial policy. See <a href="Policies_Overview.htm">Policies 
- Overview</a> and <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
- and Edit Message Routing Assertions</a> for more information. Upon publication, 
- the name of the Web service is extracted from the resolved WSDL and added 
- to the [Services] tab.</p>
+ The SecureSpan™ Manager checks for duplicity during the publication process 
+ and will display an error message and prompt you for a URI (see <a href="#Specify_a_Custom_Routing_URI">Specify 
+ a Custom Routing URI</a>) if the Web service WSDL is not unique. Upon 
+ publication, the WSDL URL in the URL field appears as an HTTP(S) Routing 
+ assertion in the Web service's initial policy (see <a HREF="Manage_Policies.htm">Manage 
+ Policies</a> and <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a>) and the name of the Web service 
+ is extracted from the resolved WSDL and added to the [Services] tab.</p>
 </div>
 
 <p style="margin-left: 80px;">&nbsp;</p>
@@ -610,18 +576,18 @@
 			width: 550px;
 			margin-left: 124px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  If you specify an authentication method and one or more authorized identities 
  in the Publish SOAP Web Service Wizard, then Web service access will be 
  restricted to those identities. The initial policy will automatically 
  be populated with an authentication assertion for each Grant Access to 
- Users/Groups assertion corresponding to each selected identity. See <a HREF="Policies_Overview.htm">Policies Overview</a> and <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
- and Edit Access Control Assertions</a> for more information. </p>
+ Users/Groups assertion corresponding to each selected identity. See <a href="Configure_Edit_Access_Control_Assertions.htm">Configure and Edit 
+ Access Control Assertions</a> for more information. </p>
 </div>
 
 <ol start=4
@@ -660,16 +626,15 @@
 			width: 550px;
 			margin-left: 164px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  You can give LDAP Identity Provider, Federated Identity Provider, and 
- Internal Identity Provider users and groups access to the Web service. 
- For more information on identity providers, see <a href="Identity_Providers_Overview.htm">Identity 
- Providers Overview</a>. </p>
+ Internal Identity Provider (see <a HREF="Manage_Identity_Providers.htm">Manage 
+ Identity Providers</a>) users and groups access to the Web service. </p>
 </div>
 
 <ol style="list-style: decimal;"
@@ -733,11 +698,11 @@
 			width: 550px;
 			margin-left: 164px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  To de-authorize users and/or groups, move them from the Have Permission 
  window to the No Permission window. Select one or more users and/or groups 
@@ -770,7 +735,7 @@
 
 <h6>&nbsp;</h6>
 
-<ol start=5
+<ol start=4
 	style="list-style: decimal;"
 	type=1>
 	
@@ -824,7 +789,7 @@
 
 <h6>&nbsp;</h6>
 
-<ol start=6
+<ol start=5
 	style="list-style: decimal;"
 	type=1>
 	
@@ -843,15 +808,16 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  Disable the published Web service until its policy is completed. See <a href="Manage_Published_Services.htm">Manage Published Services</a> for 
- instructions. For information on policies, see <a href="Policies_Overview.htm">Policies 
- Overview</a>.</p>
+ instructions. For information on policies, see <a HREF="Manage_Policies.htm">Manage 
+ Policies</a>.</p>
 </div>
 
 <p>&nbsp;</p>
@@ -869,45 +835,22 @@
 			width: 550px;
 			margin-left: 4px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The SecureSpan™ Manager's Create WSDL Wizard should only be used by advanced 
  users who are familiar with WSDL, XML, SOAP, and the SOAP protocols. If 
  a WSDL document exists for the Web service you want to publish, use the 
- Publish SOAP Web Service Wizard instead. See <a href="#Publish_a_SOAP_Web_Service">Publish 
- a SOAP Web Service</a> for more information.</p>
+ Publish SOAP Web Service Wizard discussed in <a href="#Publish_a_SOAP_Web_Service">Publish 
+ a SOAP Web Service</a> instead.</p>
 </div>
 
 <p>The SecureSpan™ Manager guides advanced users through the WSDL definition 
  process. The Create WSDL Wizard contains six screens corresponding to 
  the six main and child elements in the WSDL document: </p>
-
-<p>&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Ensure that you have all required Web service information before you use 
- the Create WSDL Wizard.</p>
-</div>
-
-<p>&nbsp;</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -949,12 +892,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  Click [Preview] at any time during the configuration process to view the 
  read-only WSDL for the Web service. To close the WSDL form, click the 
  [X] in the top right corner of the form window.</p>
@@ -999,24 +943,6 @@
 	<li class="kadov-p"><p>The Definition screen appears:</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- View screen-specific information and instructions in the Tips Box located 
- near the bottom of the Create WSDL Wizard. </p>
-</div>
-
 <p style="margin-left: 40px;"><img src="CreateWSDL.gif" x-maintain-ratio="TRUE" style="border: none;
 											margin-left: 0px;
 											margin-right: 0px;
@@ -1049,12 +975,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The name entered in the Name field will appear in the [Services] tab. 
  </p>
@@ -1083,25 +1009,26 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The namespace plus SOAP Action combination determines the uniqueness of 
  the Web service. The SecureSpan™ Manager checks for duplicity during the 
- publication process and will display an error message if the Web service 
- is not unique. A namespace that looks like a URL does not necessarily 
- point to a Web-based resource. Avoid the use of relative URI namespaces. 
- A URI namespace causes XML canonicalization problems and prevents the 
- use of message-level security such as the signature and encryption assertions 
- in the XML Security category in the [Assertions] tab. For more information 
- on the message-level security assertions, see <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
- and Edit XML Security Assertions</a>. Upon publication, the URL in the 
+ publication process and will display an error message and prompt you for 
+ a URI (see <a href="#Specify_a_Custom_Routing_URI">Specify a Custom Routing 
+ URI</a>) if the Web service WSDL is not unique. A namespace that looks 
+ like a URL does not necessarily point to a Web-based resource. Avoid the 
+ use of relative URI namespaces. A URI namespace causes XML canonicalization 
+ problems and prevents the use of message-level security such as the signature 
+ and encryption assertions in the XML Security category in the [Assertions] 
+ tab (see <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
+ and Edit XML Security Assertions</a>). Upon publication, the URL in the 
  URL field will appear as an HTTP(S) Routing assertion in the Web service's 
- initial policy. See <a href="Policies_Overview.htm">Policies Overview</a> 
+ initial policy. See <a HREF="Manage_Policies.htm">Manage Policies</a> 
  and <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
  and Edit Message Routing Assertions</a> for more information.</p>
 </div>
@@ -1161,12 +1088,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  To remove a message from the Message List window, select the message name 
  and click [Remove].</p>
@@ -1206,12 +1133,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 124px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  To remove a part from the Message Part List window, select the part name 
  and click [Remove].</p>
@@ -1286,12 +1213,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 124px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  An operation consists of an input and output message. The messages in 
  the drop-down lists were defined in the Messages screen of the Create 
@@ -1321,12 +1248,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 124px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  To remove an operation from the Operation List window, select the operation 
  name and click [Remove].</p>
@@ -1379,12 +1306,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The Operations window lists the operations defined in the Port Type and 
  Operations screen of the Create WSDL Wizard. </p>
@@ -1452,12 +1379,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  To update the default URL in the Address field with the information entered 
  in the Name and Port fields, click [Back] and then [Next] in the Create 
  WSDL Wizard. The port type binding name in the Binding field was entered 
@@ -1489,16 +1417,16 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
- The URL in the Address field will determine the default message routing 
- assertion in the policy for the Web service. See <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
- and Edit Message Routing Assertions</a> for more information.</p>
+ The URL in the Address field will determine the default Web service message 
+ routing assertion (see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a>) in the policy. </p>
 </div>
 
 <h6>&nbsp;</h6>
@@ -1521,12 +1449,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  Since you cannot edit a Web service once it is published, it is recommended 
  that you use the Create WSDL Wizard's [Back] and [Next] buttons to scroll 
  through and double-check each screen before you click [Finish]. </p>
@@ -1538,10 +1467,44 @@
 	
 	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Finish</B></span>]. 
  The disabled Web service is immediately added to the [<span style="font-weight: bold;"><B>Services</B></span>] 
- tab. Construct a policy for the Web service as outlined in <a href="Policies_Overview.htm">Policies 
- Overview</a>, then enable the Web service as outlined in <a href="Manage_Published_Services.htm">Manage 
+ tab. Construct a policy for the Web service as outlined in <a HREF="Manage_Policies.htm">Manage 
+ Policies</a>, then enable the Web service as outlined in <a href="Manage_Published_Services.htm">Manage 
  Published Services</a>.</p></li>
 </ol>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Specify_a_Custom_Routing_URI
+								style="color: #000000;">Specify a Custom 
+ Routing URI</a></h2>
+
+<p>The SecureSpan™ Manager allows you to specify a custom routing URI for 
+ a Web service. The routing URI property of a Web service allows the SecureSpan™ 
+ Gateway to resolve an incoming request to a specific URL. For example, 
+ if a Web service has a custom routing URI value of &quot;/primary&quot;, 
+ then SOAP requests meant for that published Web service must be sent to 
+ the SecureSpan Gateway at the URL &quot;http://gatewayhostname:httpport/primary&quot; 
+ or &quot;https://gatewayhostname:httpsport/primary&quot;. </p>
+
+<p>&nbsp;</p>
+
+<p>When a custom routing URI value is not provided, the SecureSpan Gateway 
+ receives requests at the default incoming URL (such as &quot;http://gatewayhostname:httpport&quot;) 
+ and uses the message URN and soapaction values to resolve the destination 
+ Web service. Since the default service resolution process uses URN and 
+ soapaction values, customizing the routing URI value of a published Web 
+ service allows for the same WSDL to be published more than once. Without 
+ this distinction, duplication would result in runtime ambiguity. When 
+ a custom URI is set for a Web service, the Web service name in the [Services] 
+ tab contains the custom URI as a suffix.</p>
+
+<p>&nbsp;</p>
+
+<p>A custom URI is assigned to a Web service using the Web Service Routing 
+ URI form. The Web Service Routing URI form will automatically appear if 
+ ambiguity is detected during the Web service publication process (for 
+ example, if a WSDL is provided that was already used to publish another 
+ Web service). </p>
 
 <p>&nbsp;</p>
 
@@ -1553,16 +1516,68 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- Construct a policy for the Web service as outlined in <a href="Policies_Overview.htm">Policies 
- Overview</a>, then enable the Web service as outlined in <a href="Manage_Published_Services.htm">Manage 
- Published Services</a>.</p>
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ If using the Web Service Routing URI to assign a custom URI to a planned 
+ duplicate Web service, assign a unique URI to the original published Web 
+ service first, and then publish the duplicate using the Publish SOAP Web 
+ Service Wizard (see <a href="#Publish_a_SOAP_Web_Service">Publish a SOAP 
+ Web Service</a>). The name of the original Web service in the [Services] 
+ tab will change to incorporate the routing URI. For example, for the final 
+ routing URL/URI combination &quot;http://webservice:port/primary&quot;, 
+ the original service name &quot;Web Service&quot; becomes &quot;Web Service 
+ [/primary]&quot;. </p>
 </div>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Right-click the published Web service in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The Web Service Routing URI form will automatically appear if ambiguity 
+ is detected during the Web service publication process.</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Select <span style="font-weight: bold;"><B>View Gateway 
+ URL</B></span>. The Web Service Routing URI form appears.</p></li>
+	
+	<li class="kadov-p"><p>Select the <span style="font-weight: bold;"><B>Custom 
+ routing URI</B></span> option. In the field, enter a unique routing URI for 
+ the Web service. For example, &quot;primary.&quot;</p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The node name of the published Web service in the [Services] tab changes 
+ to incorporate the routing URI. For example, &quot;Web Service&quot; will 
+ now be referenced as &quot;Web Service [/primary].&quot;</p></li>
+</ol>
 
 <p>&nbsp;</p>
 
@@ -1589,23 +1604,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
- In the [Services] tab, Web services are identified by the <img src="services16.gif" x-maintain-ratio="TRUE" style="border: none;
-			width: 18px;
-			height: 18px;
-			margin-left: 0px;
-			margin-right: 0px;
-			margin-top: 0px;
-			margin-bottom: -3px;
-			float: none;
-			border-style: none;
-			border-style: none;" width="18" height="18" border="0"> &nbsp;icon. 
  The WSDL in the WSDL form is read-only. </p>
 </div>
 
@@ -1660,12 +1665,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  Since the WSDL in the WSDL form is read-only, you can only copy content 
  to an external location. For example, you cannot paste a copied WSDL element 
@@ -1712,12 +1717,12 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  You will need a WSDL document to reset or change the WSDL for an existing 
  Web service. </p>
@@ -1739,33 +1744,6 @@
  </p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEsmall.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- In the [Services] tab, Web services are identified by the <img src="services16.gif" x-maintain-ratio="TRUE" style="border: none;
-			width: 18px;
-			height: 18px;
-			margin-left: 0px;
-			margin-right: 0px;
-			margin-top: 0px;
-			margin-bottom: -3px;
-			float: none;
-			border-style: none;
-			border-style: none;" width="18" height="18" border="0"> &nbsp;icon.</p>
-</div>
-
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
@@ -1780,9 +1758,9 @@
 	
 	<li class="kadov-p"><p>In the field, enter the URL that will resolve 
  the new Web service WSDL. Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
- The routing assertion for the policy is updated with the new WSDL URL. 
- For information about the routing assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
- and Edit Message Routing Assertions</a>.</p></li>
+ The routing assertion for the policy (see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a>) is updated with the new WSDL 
+ URL. </p></li>
 </ol>
 
 <p>&nbsp;</p>

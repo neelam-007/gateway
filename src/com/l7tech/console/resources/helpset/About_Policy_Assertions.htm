@@ -1,0 +1,299 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>About Policy Assertions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="About Policy Assertions">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1539>
+<meta name=layout-width content=849>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>About Policy Assertions</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ This section discusses configuration instructions for the individual policy 
+ assertions in the [Assertions] tab of the SecureSpan™ Manager. For information 
+ on the policy and assertion rules used in the SecureSpan Manager, see 
+ <a href="Policy_Organization.htm">Policy Organization</a> and <a href="Configure_Edit_Policies.htm">Configure 
+ and Edit Policies</a>.</p>
+</div>
+
+<p>A policy defines restrictions for the consumption of a published service 
+ that is protected by the SecureSpan™ Gateway. Policy assertions are the 
+ building blocks for policies in the SecureSpan™ Manager. Located in the 
+ [Assertions] tab, the assertions are organized into categories corresponding 
+ to the main requirements of a policy: </p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold; margin-top: 4.5pt;">Access 
+ Control</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Access Control assertions establish the 
+ authorized identities and corresponding credential authentication protocols 
+ and requirements in a policy. See <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">Transport Layer Security 
+ (TLS)</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Transport Layer Security (TLS) assertion 
+ establishes the transport-level encryption requirement for a service. 
+ See <a href="Configure_Edit_TLS_Assertions.htm">Configure and Edit Transport 
+ Layer Security (TLS) Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">XML 
+ Security</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The XML Security assertions define the message-level 
+ encryption and signature requirements for service XML messages and enable 
+ protection against replay attacks. See <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
+ and Edit XML Security Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">Message Validation/Transformation</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Message Validation/Transformation assertions 
+ configure the XML transformations and validation schemas applied to service 
+ messages. See <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/Transformation Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Message 
+ Routing</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Message Routing assertions define where 
+ service messages are sent and what access credentials are required by 
+ the back-end service. See <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a> for more information</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The Message Routing assertions are not concerned with the credential requirements 
+ of the SecureSpan™ Gateway. Use them to define the credential requirements 
+ of the target back-end system that will receive SecureSpan Gateway-routed 
+ service messages.</p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Service 
+ Availability</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Service Availability assertions define 
+ the access, availability, and throughput inclusions or restrictions for 
+ the service. See <a href="Configure_Edit_Service_Availability_Assertions.htm">Configure 
+ and Edit Service Availability Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Logging, 
+ Auditing, and Alerts</p></li>
+</ul>
+
+<p style="margin-left: 40px; color: #000000;">The Logging, Auditing, and 
+ Alerts assertions set the threshold for the SecureSpan™ Gateway audit 
+ messages in the Gateway Audit Events window (see <a HREF="View_Audit_Events.htm">View 
+ Audit Events</a>) and configures the properties for SNMP trap alerts and 
+ email alerts. See <a href="Configure_Edit_Logging,_Auditing,_and_Alerts_Assertions.htm">Configure 
+ and Edit Logging, Auditing, and Alerts Assertions</a> for more information</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Policy 
+ Logic</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Policy Logic assertions organize and 
+ define the structure, logic, and processing conditions for the policy. 
+ See <a href="Configure_Edit_Logging,_Auditing,_and_Alerts_Assertions.htm">Configure 
+ and Edit Policy Logic Assertions</a> for more information.</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-left: 0px; font-weight: bold;">Policy 
+ Templates</p></li>
+</ul>
+
+<p style="margin-left: 40px;">The Policy Templates section is the repository 
+ for exported policies. For information on importing or exporting a policy, 
+ see <a href="Import_Export_Policies.htm">Import or Export Policies</a>.</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="OPTIONfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"> &nbsp;OPTION:</B></span> 
+ The default recipient of the WS-Security (WSS) assertions in the Access 
+ Control and XML Security categories of the [Policy Assertions] tab can 
+ be changed in the SecureSpan™ Manager (see <a href="Change_WSS_Assertion_Recipient.htm">Change 
+ the WSS Assertion Recipient</a>). For information about the four optional 
+ SecureSpan™ assertions — the SiteMinder™ authentication assertion, the 
+ IBM® Tivoli® Access Manager (TAM) authentication assertion, the Symantec™ 
+ Virus Scanning assertion, and the JMS message routing assertion — see 
+ <a href="Optional_Add-On_Assertion.htm">Optional Add-On Assertions</a>. 
+ </p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>Unless specified otherwise, all assertions can be used in a Web service 
+ and XML application policy. A policy is constructed by either:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">Dragging and dropping 
+ an assertion from the [Assertions] tab into the Policy Development window, 
+ or by </p></li>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">Highlighting the 
+ target assertion in the [Assertions] tab and clicking the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 22px;
+			height: 18px;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+			margin-bottom: -2.5px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+</ul>
+
+<p style="margin-bottom: 4.5pt;">&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ Double-click an assertion in the Policy Development window to open its 
+ corresponding Properties form. See <a href="Configure_Edit_Policies.htm">Configure 
+ and Edit Policies</a> for information on organizing assertions in the 
+ Policy Development window.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<p>Most assertions require configuration either before or after being added 
+ to the Policy Development window. See the assertion category-based topic 
+ pages for instructions for the individual assertions. See <a href="Policy_Organization.htm">Policy 
+ Organization</a> for general policy and assertion information and rules. 
+ See <a href="Configure_Edit_Policies.htm">Configure and Edit Policies</a> 
+ for information on constructing a policy. </p>
+
+<p>&nbsp;</p>
+
+<h4>Next Topic:</h4>
+
+<p class="quicklinks"><a HREF="Change_WSS_Assertion_Recipient.htm">Change 
+ the WSS Assertion Recipient</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+</body>
+
+</html>

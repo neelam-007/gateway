@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=4576>
-<meta name=layout-width content=770>
+<meta name=layout-height content=3095>
+<meta name=layout-width content=849>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID">
 
 
 
 
- <link rel="StyleSheet" href="SecureSpan.css">
+ <link rel="StyleSheet" href="JavaHelp.css">
 
 
 
@@ -42,7 +42,7 @@
 
 <body>
 
-<h1>Configure and Edit the Logging, Auditing, and Alerts Assertions</h1>
+<h1>Configure and Edit Logging, Auditing, and Alerts Assertions</h1>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
  assertions are available in the Logging, Auditing, and Alerts category 
@@ -81,31 +81,22 @@
 <h2 style="color: #000000;"><a name=Audit_Assertion
 								style="color: #000000;">Audit Assertion</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The Audit Assertion is used in conjunction with the Gateway Audit Events 
- window. See <a HREF="View_Gateway_Audit_Events.htm">View Gateway Audit 
- Events</a> for more information.</p>
-</div>
-
 <p style="color: #000000;">The Audit Assertion allows you to set the threshold 
- at which audit records are viewed in the Gateway Audit Events window. 
- Auditing events are typically assertion, message processing, or boot messages 
- and administrative events, such as object changes. See <a href="View_Gateway_Audit_Events.htm">View 
- Gateway Audit Events</a> for more information. </p>
+ at which audit records are viewed in the Gateway Audit Events window (see 
+ <a href="View_Audit_Events.htm">View Audit Events</a>). Auditing events 
+ are typically assertion, message processing, or boot messages and administrative 
+ events, such as object changes. </p>
+
+<p style="color: #000000; background-color: Transparent;">&nbsp;</p>
+
+<p style="color: #000000;">For example, when used in an &quot;At least 
+ one assertion must evaluate to true&quot; assertion folder (see <a href="Configure_Edit_Logging,_Auditing,_and_Alerts_Assertions.htm" style="background-color: Transparent;">Configure and Edit Policy Logic 
+ Assertions</a>) after an Evaluate Request XPath assertion (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm" style="background-color: Transparent;">Configure and Edit Message Validation/Transformation 
+ Assertions</a>), the Audit Assertion will only execute and audit the request 
+ message if the XPath assertion fails. When this happens, XPath query results 
+ are reported in the Gateway Audit Events window. If the XPath assertion 
+ in this scenario succeeds, then the Audit Assertion does not execute. 
+ </p>
 
 <p>&nbsp;</p>
 
@@ -117,23 +108,22 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE: </B></span>The 
- default &quot;warning&quot; level of events logged by the SecureSpan™ 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;WARNING: 
+ </B></span>The default &quot;warning&quot; level of events logged by the SecureSpan™ 
  Gateway cannot be changed in the SecureSpan™ Manager. To override the 
  default &quot;warning&quot; audit message threshold, you must change the 
  applicable property in the SecureSpan Gateway's &quot;/ssg/etc/conf/serverconfig_override.properties&quot; 
  file. See the &quot;SecureSpan Gateway Installation and Configuration 
  Manual&quot; for more information. Changing the default log level below 
  the &quot;warning&quot; level, such as to &quot;info&quot; or &quot;finer,&quot; 
- will yield a large number of audit messages. See <a href="Technical_Support_and_Contact_Information.htm">Technical 
- Support and Contact Information</a> to consult Layer 7 Technologies before 
- changing the audit message threshold in the SecureSpan Gateway.</p>
+ will yield a large number of audit messages. Before changing the log level, 
+ contact Layer 7 Technologies as outlined in &nbsp;<a href="Technical_Support.htm">Technical Support</a>.</p>
 </div>
 
 <p>&nbsp;</p>
@@ -206,11 +196,11 @@
 			width: 550px;
 			margin-left: 4px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  To remove the auditing of requests, you must delete the Audit Assertion. 
  To do so, right-click the assertion name in the Policy Development window. 
@@ -228,11 +218,11 @@
  path, an SNMP trap event will be broadcasted to a predefined network address. 
  The assertion is typically used to trigger an alert based on the result 
  of a previous assertion. For example, two assertions can be combined into 
- a logical &quot;One or More&quot; folder, the first assertion requiring 
- validation, the later being the Send SNMP Trap assertion. If the assertion 
- requiring validation fails, then the Send SNMP Trap assertion will execute, 
- hence broadcasting the alert. For information about policy folders, see 
- <a href="Policy_Organization_and_Rules.htm">Policy Organization and Rules</a>.</p>
+ a logical &quot;One or More&quot; folder (see <a href="Policy_Logic_Assertions.htm">Configure 
+ and Edit Policy Logic Assertions</a>), the first assertion requiring validation, 
+ the later being the Send SNMP Trap assertion. If the assertion requiring 
+ validation fails, then the Send SNMP Trap assertion will execute, hence 
+ broadcasting the alert. </p>
 
 <p>&nbsp;</p>
 
@@ -297,11 +287,11 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  Port 162 is the IANA (Internet Assigned Numbers Authority) standard SNMP 
  trap port. </p>
@@ -357,9 +347,10 @@
 <p>The placement of the assertion in the policy path determines when and 
  why an email is sent. For example, the assertion could be placed in an 
  &quot;At least one assertion must evaluate to true&quot; assertion folder 
- after an Evaluate XPath Response assertion. If the required response message 
- element is not found and the Evaluate XPath Response assertion fails, 
- then the Send Email Message assertion will execute. </p>
+ after an Evaluate Response XPath assertion (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/Transformation Assertions</a>). If the required 
+ response message element is not found and the Evaluate Response XPath 
+ assertion fails, then the Send Email Message assertion will execute. </p>
 
 <p>&nbsp;</p>
 
@@ -371,24 +362,26 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  If the outgoing email account is improperly configured, then the Send 
  Email Message assertion will fail. To configure the policy so that a failure 
  of the Send Email Message assertion does not cause a total policy failure, 
  place the assertion in an &quot;At least one assertion must evaluate to 
- true&quot; folder with a Continue Processing assertion. For information 
- on the assertion folders and the Continue Processing assertion, see <a href="Policy_Logic_Assertions.htm">Configure and Edit the Policy Logic 
- Assertions</a>. Since the pass or failure of the Send Email Message assertion 
- is determined by the ability of the SecureSpan™ Gateway to generate and 
- send an email message, destination server problems that prevent the receipt 
- of the outgoing email will not cause the Send Email Message assertion 
- to fail. </p>
+ true&quot; folder with a Continue Processing assertion (see <a href="Policy_Logic_Assertions.htm">Configure 
+ and Edit Policy Logic Assertions</a>). Since the pass or failure of the 
+ Send Email Message assertion is determined by the ability of the SecureSpan™ 
+ Gateway to generate and send an email message, destination server problems 
+ that prevent the receipt of the outgoing email will not cause the Send 
+ Email Message assertion to fail. </p>
 </div>
+
+<p>&nbsp;</p>
 
 <h3 style="color: #000000;"><a name=Add_and_Configure_the_Send_Email_Message_Assertion
 								style="color: #000000;">Add and Configure 
@@ -476,8 +469,8 @@
 
 <h4>Next Topic: </h4>
 
-<p><a href="Policy_Logic_Assertions.htm">Configure and Edit the Policy 
- Logic Assertions</a></p>
+<p><a href="Policy_Logic_Assertions.htm">Configure and Edit Policy Logic 
+ Assertions</a></p>
 
 <p>&nbsp;</p>
 

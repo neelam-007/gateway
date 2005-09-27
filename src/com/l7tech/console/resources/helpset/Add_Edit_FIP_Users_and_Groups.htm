@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=13737>
-<meta name=layout-width content=766>
+<meta name=layout-height content=7459>
+<meta name=layout-width content=849>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured;metadata;ACL;init;workflows;CN=;NameIdentifier;Format=;windowsDomain;emailAddress;DNs;O=ACME;OU=Anvils;CN=*;CN=Name;CN=user;BinarySecurityToken;AttributeStatement;CAs">
 
 
 
 
- <link rel="StyleSheet" href="SecureSpan.css">
+ <link rel="StyleSheet" href="JavaHelp.css">
 
 
 
@@ -43,29 +43,6 @@
 <body>
 
 <h1>Add and Edit Federated Identity Provider Users and Groups</h1>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-left: 4px;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
- B&quot; references are used in the identity bridging examples, workflows, 
- and instructions. The Trusted Gateway A is the certificate authority (CA) 
- that issues and manages security credentials and that is responsible for 
- authentication. The Federated Gateway B is the Web service provider that 
- is responsible for authorization. </p>
-</div>
 
 <p>In an identity bridging configuration, the federated users, groups, 
  and virtual groups added to the Federated Identity Provider (FIP) serve 
@@ -87,19 +64,19 @@
 	
 	<li class="kadov-p"><p>A login that may be found in the NameIdentifier 
  of an incoming SAML NameIdentifier with the “windowsDomain” format. (SAML 
- credential source only. See <a href="Identity_Bridging_Workflow.htm">Identity 
- Bridging Workflow Using SAML</a>)</p></li>
+ credential source only. See <a href="Workflow_Using_SAML.htm">Workflow 
+ Using SAML</a>)</p></li>
 	
 	<li class="kadov-p"><p>An email address, if applicable, that may be found 
  in the NameIdentifier of an incoming SAML assertion with the “emailAddress” 
- format. (SAML credential source only. See <a href="Identity_Bridging_Workflow.htm">Identity 
- Bridging Workflow Using SAML</a>)</p></li>
+ format. (SAML credential source only. See <a href="Workflow_Using_SAML.htm">Workflow 
+ Using SAML</a>)</p></li>
 	
 	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">An X.509 certificate 
  that may be found in an incoming WS-Security X.509 BinarySecurityToken 
  or HTTPS client certificate. (Self-signed or otherwise explicitly trusted. 
- See <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
- Bridging Workflow Using an X.509 Certificate</a>). </p></li>
+ See <a href="Workflow_Using_an_X.509_Certificate.htm">Workflow Using an 
+ X.509 Certificate</a>). </p></li>
 </ul>
 
 <p>&nbsp;</p>
@@ -126,14 +103,13 @@
 	
 	<li class="kadov-p"><p>A regular expression describing a pattern that 
  the NameIdentifier value in incoming SAML tokens (with the corresponding 
- NameIdentifier format) must match (SAML credential source only. See <a href="Identity_Bridging_Workflow.htm">Identity Bridging Workflow Using 
- SAML</a>)</p></li>
+ NameIdentifier format) must match (SAML credential source only. See <a href="Workflow_Using_SAML.htm">Workflow Using SAML</a>)</p></li>
 	
 	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">A set of attribute 
  names and values that must be present in incoming SAML tokens that have 
  an AttributeStatement. The allowable attribute names must have been previously 
- registered with the FIP. (SAML credential source only. See <a href="Identity_Bridging_Workflow.htm">Identity 
- Bridging Workflow Using SAML</a>).</p></li>
+ registered with the FIP. (SAML credential source only. See <a href="Workflow_Using_SAML.htm">Workflow 
+ Using SAML</a>).</p></li>
 </ul>
 
 <p>&nbsp;</p>
@@ -159,7 +135,7 @@
  a New Federated Virtual Group</a></p>
 
 <p class="quicklinks"><a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a></p>
+ Edit, or Delete a Federated User, Group, or Virtual Group</a></p>
 
 <p class="quicklinks">&nbsp;</p>
 
@@ -175,12 +151,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  View the properties of the signed certificates attached to the Federated 
  Identity Provider before configuring the federated user. Note the values, 
  such as the &quot;Issued to&quot; value, that must be configured in the 
@@ -230,11 +207,11 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The name in the User Name field will appear in the Search Identity Provider 
  form when searching and/or adding federated users to a policy. The User 
@@ -256,7 +233,7 @@
  without checking the <span style="font-weight: bold;"><B>Define</B></span> <span 
  style="font-weight: bold;"><B>Additional Properties</B></span> check box. The 
  user is added to the FIP. See <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a> to view, 
+ Edit, or Delete a Federated User, Group, or Virtual Group</a> to view, 
  edit, and/or delete the user at any time </p></li>
 		
 		<li class="kadov-p"><p style="margin-bottom: 4.5pt;">To specify the 
@@ -266,55 +243,9 @@
 	</ul>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- It is only necessary to import client certificates for federated users 
- when the Federated Identity Provider (FIP) is configured with no trusted 
- CA certificates. When the FIP is configured with one or more CA certificates, 
- then federated users can be successfully authorized based only on the 
- attributes entered in the Create Federated User form, as long as the certificate 
- presented along with their request was signed by one of the CAs whose 
- certificates are trusted by the FIP. For more information on the different 
- X.509 certificate credential source scenarios, see <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
- Bridging Workflow Using an X.509 Certificate</a>.</p>
-</div>
-
 <h3><a name=Configure_Federated_User_Properties
 		style="color: #000000;">Configure Federated User Properties</a> 
  </h3>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- If you click [Cancel] while configuring federated user properties, then 
- the SecureSpan™ Manager will still save the information entered in the 
- Create Federated User form.</p>
-</div>
 
 <p>&nbsp;</p>
 
@@ -354,14 +285,14 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The X509 Subject Name field is addressed in the <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a> section.</p>
+ Edit, or Delete a Federated User, Group, or Virtual Group</a> section.</p>
 </div>
 
 <ol start=3
@@ -369,80 +300,65 @@
 	type=1>
 	
 	<li class="kadov-p"><p>Click the [<span style="font-weight: bold;"><B>Membership</B></span>] 
- tab. The blank User Groups window appears. Optionally add the user to 
- one or more groups as follows:</p></li>
-	
-	<ul style="list-style: disc;"
-		type=disc>
-		
-		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
- The Add Users to the Group form appears. Add the user to one or more FIP 
- groups as follows:</p></li>
-	</ul>
+ tab. The blank User Groups window appears. To optionally add the user 
+ to one or more groups, click [<span style="font-weight: bold;"><B>Add</B></span>].</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Use the instructions in <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a> to modify 
- group membership. </p>
-</div>
-
-<h4 style="margin-left: 80px;">Add to a Single Group</h4>
-
-<p style="margin-left: 80px;">To add the user to a single group, select 
- the group's name and click [<span style="font-weight: bold;"><B>Add</B></span>]. 
- The Add Users to the Group form closes and the group is added to the User 
- Groups window in the User Properties form.</p>
-
-<h4 style="margin-left: 80px;">Add to Multiple Groups</h4>
-
-<ul style="list-style: decimal;"
+<ol start=4
+	style="list-style: decimal;"
 	type=1>
 	
-	<ul style="list-style: decimal;"
+	<li class="kadov-p"><p>The Add Users to the Group form appears. Add the 
+ user to one or more FIP groups as follows:</p></li>
+</ol>
+
+<h4 style="margin-left: 40px;">Add to a Single Group</h4>
+
+<p style="margin-left: 40px;">To add the user to a single group, select 
+ the group's name and click [Add]. The Add Users to the Group form closes 
+ and the group is added to the User Groups window in the User Properties 
+ form.</p>
+
+<h4 style="margin-left: 40px;">Add to Multiple Groups</h4>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Add the user to multiple groups by one of 
+ two methods:</p></li>
+	</ol>
+	
+	<ol style="list-style: decimal;"
 		type=1>
 		
 		<ul style="list-style: disc;"
 			type=disc>
 			
-			<li class="kadov-p"><p>Add the user to multiple groups by one 
- of two methods:</p></li>
-			
-			<ul style="list-style: disc;"
-				type=disc>
-				
-				<li class="kadov-p"><p>To select a consecutive range of groups, 
+			<li class="kadov-p"><p>To select a consecutive range of groups, 
  press [<span style="font-weight: bold;"><B>Shift</B></span>] on your keyboard, 
  left-click the first group in the range, and then left-click the last 
  group in the range</p></li>
-				
-				<li class="kadov-p"><p style="margin-left: 0px;">To select 
- groups placed throughout the list, press [<span style="font-weight: bold;"><B>Ctrl</B></span>] 
- on your keyboard as you click each group name.</p></li>
-			</ul>
 			
-			<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+			<li class="kadov-p"><p>To select groups placed throughout the 
+ list, press [<span style="font-weight: bold;"><B>Ctrl</B></span>] on your keyboard 
+ as you click each group name.</p></li>
+		</ul>
+	</ol>
+	
+	<ol start=2
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
  The Add Users to the Group form closes and the groups are added to the 
  User Groups window in the User Properties form. </p></li>
-		</ul>
-	</ul>
+	</ol>
 </ul>
 
-<ol start=4
+<ol start=5
 	style="list-style: decimal;"
 	type=1>
 	
@@ -461,11 +377,11 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  It is only necessary to import client certificates for federated users 
  when the Federated Identity Provider (FIP) is configured with no trusted 
@@ -474,13 +390,13 @@
  attributes entered in the Create Federated User form, as long as the certificate 
  presented along with their request was signed by one of the CAs whose 
  certificates are trusted by the FIP. For more information on the different 
- X.509 certificate credential source scenarios, see <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
- Bridging Workflow Using an X.509 Certificate</a>. The [Remove] button 
- in the [Certificate] tab is addressed in the <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a> section.</p>
+ X.509 certificate credential source scenarios, see <a href="Workflow_Using_an_X.509_Certificate.htm">Workflow 
+ Using an X.509 Certificate</a>. The [Remove] button in the [Certificate] 
+ tab is addressed in the <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
+ Edit, or Delete a Federated User, Group, or Virtual Group</a> section.</p>
 </div>
 
-<ol start=5
+<ol start=6
 	style="list-style: decimal;"
 	type=1>
 	
@@ -497,16 +413,16 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The client certificate must be signed by the CA root certificate.</p>
 </div>
 
-<h3 style="margin-left: 40px;">Import the Certificate from a File</h3>
+<h4 style="margin-left: 40px;">Import the Certificate from a File</h4>
 
 <p style="margin-left: 40px;">To import the certificate from a local file:</p>
 
@@ -536,7 +452,7 @@
 	</ul>
 </ul>
 
-<h3 style="margin-left: 40px;">Copy and Paste the Certificate</h3>
+<h4 style="margin-left: 40px;">Copy and Paste the Certificate</h4>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -547,11 +463,11 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  You can only cut and paste a certificate that is in Base 64 PEM format. 
  In the Code window, the SecureSpan™ Manager will only add a pasted certificate 
@@ -578,7 +494,7 @@
 	</ul>
 </ul>
 
-<ol start=6
+<ol start=7
 	style="list-style: decimal;"
 	type=1>
 	
@@ -616,8 +532,8 @@
  View Certificate Details screen of the Add Certificate Wizard appears, 
  proceed to Step #7 below. If the error message appears, continue to fix 
  the error until the Enter Certificate Info screen appears. If necessary, 
- see <a href="Technical_Support_and_Contact_Information.htm">Technical 
- Support and Contact Information</a> to contact a Technical Support Representative.</p></li>
+ see <a href="Technical_Support.htm">Technical Support</a> to contact a 
+ Technical Support Representative.</p></li>
 		</ol>
 		
 		<li class="kadov-p-cnotenumbered"><p class="notenumbered">The View 
@@ -626,7 +542,7 @@
 	</ul>
 </ol>
 
-<ol start=7
+<ol start=8
 	style="list-style: decimal;"
 	type=1>
 	
@@ -663,7 +579,7 @@
 	</ol>
 </ol>
 
-<ol start=9
+<ol start=10
 	style="list-style: decimal;"
 	type=1>
 	
@@ -673,32 +589,40 @@
 
 <p>&nbsp;</p>
 
+<h2 style="color: #000000;"><a name=Add_and_Edit_a_Federated_Group
+								style="color: #000000;">Add a New Federated 
+ Group</a></h2>
+
 <div style="padding: 5px;
 			background-color: #f8fbdd;
 			margin-right: 4px;
 			margin-top: 4px;
 			margin-bottom: 4px;
-			float: none;
 			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+			float: none;
+			height: 61px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-top: 0px;
+	margin-bottom: -.05px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Use the Search Identity Provider form to search the federated users belonging 
- to the Federated Identity Provider. See <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a> for more 
- information. </p>
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;WARNING:</B></span> 
+ In the SecureSpan™ Manager, a created group is an arbitrary organizational 
+ and time saving tool that is useful for granting Web service and XML application 
+ access to an organized block of users. Only the default &quot;Gateway 
+ Administrators&quot; and &quot;Gateway Operators&quot; access groups actually 
+ assign SecureSpan™ Gateway system rights to the users that they contain. 
+ Since you cannot add a group to a group in the SecureSpan Manager, you 
+ cannot directly give a created group access rights. If you want to give 
+ users in a &quot;System Administrators&quot; group Administrator Interface 
+ access, for example, then you must add each individual user in that group 
+ to the &quot;Gateway Administrators&quot; access group.</p>
 </div>
-
-<p>&nbsp;</p>
-
-<h2 style="color: #000000;"><a name=Add_and_Edit_a_Federated_Group
-								style="color: #000000;">Add a New Federated 
- Group</a></h2>
 
 <p class="procedure">In the SecureSpan™ Manager, a new federated group is 
  added to the Federated Identity Provider (FIP) with the Create Federated 
@@ -719,6 +643,8 @@
  field, then do one of the following:</p></li>
 </ol>
 
+<p>&nbsp;</p>
+
 <div style="padding: 5px;
 			background-color: #f8fbdd;
 			margin-right: 4px;
@@ -728,17 +654,19 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The name in the Group Name field will appear in the Search Identity Provider 
  form when searching and/or adding federated groups to a policy. The name 
  is a human readable value that does not impact the validity of the federated 
  group in an identity bridging configuration.</p>
 </div>
+
+<p>&nbsp;</p>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -751,8 +679,8 @@
  to specify additional group information, then click [<span style="font-weight: bold;"><B>Create</B></span>] 
  without checking the <span style="font-weight: bold;"><B>Define Additional 
  Properties</B></span> check box. The group is added to the FIP. See <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a><a href="#Search__Edit__or_Delete_an_IIA_Group_or_User"> 
- </a>to view, edit, and/or delete the group at any time</p></li>
+ Edit, or Delete a Federated User, Group, or Virtual Group</a> to view, 
+ edit, and/or delete the group at any time</p></li>
 		
 		<li class="kadov-p"><p style="margin-bottom: 4.5pt;">To specify a 
  group description and/or add federated users to the group, proceed to 
@@ -764,26 +692,6 @@
 <h3 style="color: #000000;"><a name=Configure_Federated_Group_Properties
 								style="color: #000000;">Configure Federated 
  Group Properties</a></h3>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE: </B></span>If 
- you click [Cancel] while configuring federated group properties, then 
- the SecureSpan™ Manager will still save the information entered in the 
- Create Federated Group form.</p>
-</div>
 
 <p>&nbsp;</p>
 
@@ -829,15 +737,15 @@
 			width: 550px;
 			margin-left: 84px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
- Use the instructions in <a href="#Search__Edit__or_Delete_an_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a><a href="#Search__Edit__or_Delete_an_IIA_Group_or_User"> 
- </a>to modify group membership. </p>
+ Use the instructions in <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
+ Edit, or Delete a Federated User, Group, or Virtual Group</a> to modify 
+ group membership. </p>
 </div>
 
 <h4 style="margin-left: 80px;">Add a Single User</h4>
@@ -887,29 +795,6 @@
 
 <p>&nbsp;</p>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Use the Search Identity Provider form to search the groups belonging to 
- the Federated Identity Provider. See <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a> for more 
- information. </p>
-</div>
-
-<p>&nbsp;</p>
-
 <h2 style="color: #000000;"><a name=Add_and_Edit_a_Federated_Virtual_Group
 								style="color: #000000;">Add a New Federated 
  Virtual Group</a></h2>
@@ -923,28 +808,27 @@
 			margin-left: 4px;
 			float: none;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  You cannot create a virtual group for the Federated Identity Provider 
  (FIP) unless it contains a trusted certificate. In the X.509 certificate 
- credential source workflow, the trusted certificate is a CA root certificate 
- attached to the FIP with the Create Federated Identity Provider Wizard. 
- In the SAML credential source workflow, the trusted certificate is a SSL 
- server certificate attached to the FIP with the Create Federated Identity 
- Provider Wizard. Since the imported certificate will have been used to 
- sign client certificates, the &quot;Signing Client Certificates&quot; 
+ credential source workflow (see <a href>Workflow 
+ Using an X.509 Certificate</a>), the trusted certificate is a CA root 
+ certificate attached to the FIP with the Create Federated Identity Provider 
+ Wizard. In the SAML credential source workflow, the trusted certificate 
+ is a SSL server certificate attached to the FIP with the Create Federated 
+ Identity Provider Wizard. Since the imported certificate will have been 
+ used to sign client certificates, the &quot;Signing Client Certificates&quot; 
  check box in the Specify Certificate Options screen of the Add Certificate 
  Wizard must also be selected. See <a href="Add_Edit_Certificates.htm">Add 
  and Edit Certificates</a> for more information. A virtual group cannot 
  be created in the &quot;Client Certificate Only&quot; X.509 certificate 
  credential source scenario since a trusted certificate does not exist 
- in the FIP. See <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
- Bridging Workflow Using an X.509 Certificate</a> or <a href="Identity_Bridging_Workflow.htm">Identity 
- Bridging Workflow Using SAML</a> for more information.</p>
+ in the FIP.</p>
 </div>
 
 <p class="procedure">In the SecureSpan™ Manager, a new federated virtual 
@@ -974,11 +858,11 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The name in the Group Name field will appear in the Search Identity Provider 
  form when searching and/or adding virtual groups to a policy. The name 
@@ -1009,11 +893,11 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE: </B></span>The 
  X509 subject DN must at least partially match the &quot;Issued to:&quot; 
  value in the CA root certificate attached to the Federated Identity Provider. 
@@ -1039,26 +923,6 @@
  into the <span style="font-weight: bold;"><B>Email</B></span> field.</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- An SSL certificate is attached to a Federated Identity Provider that uses 
- the SAML credential source. See <a href="Identity_Bridging_Workflow.htm">Identity 
- Bridging Workflow Using SAML</a> for more information.</p>
-</div>
-
 <ol start=6
 	style="list-style: decimal;"
 	type=1>
@@ -1066,29 +930,6 @@
 	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Create</B></span>]. 
  The form closes and the virtual group is added to the FIP.</p></li>
 </ol>
-
-<p>&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Use the Search Identity Provider form to search the virtual groups belonging 
- to the Federated Identity Provider. See <a href="#Search__Edit__or_Delete_a_Federated_User__Group__or_Virtual_Group">Search, 
- Edit, or Delete a Federated Identity Provider User or Group</a> for more 
- information. </p>
-</div>
 
 <p>&nbsp;</p>
 
@@ -1177,19 +1018,24 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  The Search Identity Provider form supports the following wild card characters 
  in the Name field:</p>
 
-<p class="tipsnotes">• &nbsp;The 
- asterisk truncation operator (*) retrieves terms with a common initial 
- spelling. It substitutes a string of zero or more characters when searching 
- Federated Identity Providers.</p>
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li style="margin-left: -20px;" class="kadov-p-ctipsnotes"><p class="tipsnotes">The asterisk truncation 
+ operator (*) retrieves terms with a common initial spelling. It substitutes 
+ a string of zero or more characters when searching Federated Identity 
+ Providers.</p></li>
+</ul>
 </div>
 
 <ol start=2
@@ -1222,13 +1068,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;WARNING:</B></span> 
  An error message will appear if you try to delete a federated user, group, 
  or virtual group that is being used by a policy. To delete the federated 
  user, group, or virtual group, you must first delete the identity from 
@@ -1302,12 +1148,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  For field-level form information, see <a href="#Configure_Federated_User_Properties">Configure 
  Federated User Properties</a>.</p>
 </div>
@@ -1464,20 +1311,21 @@
 			margin-bottom: 4px;
 			float: none;
 			width: 550px;
-			margin-left: 124px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			margin-left: 84px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
- </B></span>The X509 subject DN must at least partially match the &quot;Issued 
- to&quot; value in the CA root certificate attached to the Federated Identity 
- Provider. Use the asterisk truncation operator (*) to retrieve DNs with 
- a common initial spelling. The (*) substitutes a string of zero or more 
- characters in a subject DN. For example, a virtual group could contain 
- the partial DN &quot;O=ACME Inc., OU=Anvils, CN=*.&quot; Request messages 
- in which the DN was &quot;O=ACME Inc., OU=Anvils, CN=Name&quot; or &quot;O=ACME 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE: </B></span>The 
+ X509 subject DN must at least partially match the &quot;Issued to&quot; 
+ value in the CA root certificate attached to the Federated Identity Provider. 
+ Use the asterisk truncation operator (*) to retrieve DNs with a common 
+ initial spelling. The (*) substitutes a string of zero or more characters 
+ in a subject DN. For example, a virtual group could contain the partial 
+ DN &quot;O=ACME Inc., OU=Anvils, CN=*.&quot; Request messages in which 
+ the DN was &quot;O=ACME Inc., OU=Anvils, CN=Name&quot; or &quot;O=ACME 
  Inc., OU=Anvils, CN=Name2&quot; would both pass the corresponding group 
  assertion that is required to gain Web service access.</p>
 </div>

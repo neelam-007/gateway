@@ -23,13 +23,13 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=1659>
-<meta name=layout-width content=802>
+<meta name=layout-height content=1397>
+<meta name=layout-width content=849>
 
 
 
 
- <link rel="StyleSheet" href="SecureSpan.css">
+ <link rel="StyleSheet" href="JavaHelp.css">
 
 
 
@@ -43,25 +43,6 @@
 
 <h1>Search Identity Providers</h1>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-left: 4px;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- In the SecureSpan™ Manager, the term &quot;identity&quot; includes both 
- users and groups, and the term &quot;user&quot; can represent an individual 
- human or machine. </p>
-</div>
-
 <p>The SecureSpan™ Manager allows you to search LDAP Identity Provider 
  (LIP), Federated Identity Provider (FIP), and Internal Identity Provider 
  (IIP) users and groups. Use the Search Identity Provider form to:</p>
@@ -73,27 +54,6 @@
  and groups</p></li>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- LDAP Identity Provider (LIP) users and groups are read-only in the SecureSpan™ 
- Manager. Use the appropriate external management program to modify LIP 
- users and groups. For information on configuring and editing LIPs in the 
- SecureSpan Manager, see <a href="Add_Edit_LDAP_Identity_Providers.htm">Add 
- and Edit LDAP Identity Providers</a>.</p>
-</div>
-
 <ul style="list-style: disc;"
 	type=disc>
 	
@@ -103,31 +63,12 @@
 	
 	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">Search, edit, and 
  delete IIP users and groups. See <a href="Add_Edit_IIP_Users_and_Groups.htm">Add 
- and Edit Internal Identity Provider Groups and Users</a> for more information.</p></li>
+ and Edit Internal Identity Provider Users and Groups</a> for more information.</p></li>
 </ul>
 
 <p style="margin-bottom: 4.5pt;">&nbsp;</p>
 
 <h2>Use the Search Identity Provider Form</h2>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The SecureSpan™ Manager uses a definition XML file to support Tivoli (Tivoli 
- Access Manager) LDAP Identity Provider (LIP) directory searches. See <a href="Add_Edit_LDAP_Identity_Providers.htm">Add and Edit LDAP Identity 
- Providers</a> for more information about LIPs.</p>
-</div>
 
 <p>Use the Search Identity Provider form to search an LDAP Identity Provider 
  (LIP), Federated Identity Provider (FIP), and Internal Identity Provider 
@@ -194,25 +135,28 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  The Search Identity Provider form supports the following wild card characters 
  in the Name field:</p>
 
-<p class="tipsnotes">• &nbsp;The 
- asterisk truncation operator (*) retrieves terms with a common initial 
- spelling. It substitutes a string of zero or more characters when searching 
- the Internal Identity Provider, Federated Identity Providers, and LDAP 
- Identity Providers</p>
-
-<p class="tipsnotes">• &nbsp;The 
- question mark wild card operator (?) substitutes zero or one character 
- in a term. Use within a word or at the end of a word when searching the 
- Internal Identity Provider.</p>
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li style="margin-left: -20px;" class="kadov-p-ctipsnotes"><p class="tipsnotes">The asterisk truncation 
+ operator (*) retrieves terms with a common initial spelling. It substitutes 
+ a string of zero or more characters when searching the Internal Identity 
+ Provider, Federated Identity Providers, and LDAP Identity Providers</p></li>
+	
+	<li style="margin-left: -20px;" class="kadov-p-ctipsnotes"><p class="tipsnotes">The question mark wild 
+ card operator (?) substitutes zero or one character in a term. Use within 
+ a word or at the end of a word when searching the Internal Identity Provider.</p></li>
+</ul>
 </div>
 
 <ul start=2
@@ -245,15 +189,17 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
- LDAP Identity Provider (LIP) users and groups are added externally. Use 
- the appropriate external management program to add, modify, or delete 
- LIP users or groups. See <a href="Add_Edit_LDAP_Identity_Providers.htm">Add 
- and Edit LDAP Identity Providers</a> for more information about LIPs.</p>
+ LDAP Identity Provider (LIP) users and groups (see <a href="Add_Edit_LDAP_Identity_Providers.htm">Add 
+ and Edit LDAP Identity Providers</a>) are read-only in the SecureSpan™ 
+ Manager. Use the appropriate external management program to modify LIP 
+ users and groups. The SecureSpan™ Gateway uses a definition XML file to 
+ support IBM® Tivoli® Access Manager (Tivoli) LIP directory searches.</p>
 </div>
 
 <p style="margin-left: 40px;">View the User Properties or Group Properties 
@@ -302,47 +248,28 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;WARNING:</B></span> 
  An error message will appear if you try to delete a user or group that 
  is being used by a policy. To delete the user or group, you must first 
  delete the user or group from all of the policies that it is attached 
  to. See <a href="Configure_Edit_Policies.htm">Configure and Edit Policies</a> 
- for more information. </p>
+ for more information. At least one administrative Internal Identity Provider 
+ user must be present in the SecureSpan™ Manager. An error message will 
+ appear if you try to delete all administrative users or the last administrative 
+ user. </p>
 </div>
 
 <p style="margin-left: 40px;">To view, edit, or delete Federated Identity 
  Provider (FIP) or Internal Identity Provider (IIP) users or groups, or 
  to modify group membership, follow the instructions outlined in <a href="Add_Edit_FIP_Users_and_Groups.htm">Add 
  and Edit Federated Identity Provider Users and Groups</a> and <a href="Add_Edit_IIP_Users_and_Groups.htm">Add 
- and Edit Internal Identity Provider Groups and Users</a>, respectively.</p>
-
-<p style="margin-left: 40px;">&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- At least one administrative Internal Identity Provider user must be present 
- in the SecureSpan™ Manager. An error message will appear if you try to 
- delete all administrative users or the last administrative user. &nbsp;</p>
-</div>
-
-<p>&nbsp;</p>
+ and Edit Internal Identity Provider Users and Groups</a>, respectively.</p>
 
 <ol start=4
 	style="list-style: decimal;"

@@ -25,7 +25,7 @@ a:link { x-text-underline:off; color:#c10000; text-decoration:none;  }
 a:active { x-text-underline:off; color:#c10000; text-decoration:none;  }
 a:visited { x-text-underline:off; color:#c10000; text-decoration:none;  }
 a:hover { color:#c10000;  }
-p.tipsnotes { font-family:arial, sans-serif; line-height:normal; margin-top:3pt; margin-bottom:3pt; font-size:12pt;  }
-li.kadov-p-ctipsnotes { font-family:arial, sans-serif; line-height:normal; font-size:12pt;  }
+p.tipsnotes { font-family:arial, sans-serif; line-height:normal; margin-top:3pt; margin-bottom:3pt; font-size:10pt; x-next-type:h6;  }
+li.kadov-p-ctipsnotes { font-family:arial, sans-serif; line-height:normal; font-size:10pt;  }
 p.tipnotes2 { x-next-class:tipsnotes; x-next-type:p; font-size:12pt; font-family:arial, sans-serif; line-height:14pt;  }
 li.kadov-p-ctipnotes2 { font-size:12pt; font-family:arial, sans-serif; line-height:14pt;  }

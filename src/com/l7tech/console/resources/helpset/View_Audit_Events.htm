@@ -1,0 +1,659 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>View Audit Events</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=topic-status content="In Progress">
+<meta name=topic-priority content=0>
+<meta name=topic-time-estimate content=0>
+<meta name=topic-comment content>
+<meta name=topic-id content="Analyze Gateway Audit Events">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=2538>
+<meta name=layout-width content=849>
+<meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured;metadata">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>View Audit Events</h1>
+
+<p>In the SecureSpan™ Manager, the Gateway Audit Events window displays 
+ detailed service-specific audit messages and SecureSpan™ Gateway connectivity 
+ and communication messages. The default &quot;info&quot; severity level 
+ for all audit messages can be modified on a service-by-service basis using 
+ the Audit Assertion located in the Logging, Auditing, and Alerts category 
+ of the [Assertions] tab (see <a href="Configure_Edit_Logging,_Auditing,_and_Alerts_Assertions.htm">Configure 
+ and Edit Logging, Auditing, and Alerts Assertions</a>). </p>
+
+<p>&nbsp;</p>
+
+<p>The Gateway Audit Events window opens in an external SecureSpan Manager 
+ window and is divided into four sections:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The Audit Events window displays sortable audit 
+ messages</p></li>
+	
+	<li class="kadov-p"><p>The [Details] tab displays detailed information 
+ for an auditing event selected in the Audit Events window</p></li>
+	
+	<li class="kadov-p"><p>The [Associated Logs] tab displays the SecureSpan 
+ Gateway connectivity and communication messages associated with the auditing 
+ event selected in the Audit Events window</p></li>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">The area at the 
+ bottom of the Gateway Audit Events window allows you to filter information 
+ by message severity and/or enable or disable the Gateway Audit Events 
+ window's automatic refresh option.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p>The Gateway Audit Events window also allows you to download all audit 
+ events to an external file or delete audit events that are more than seven 
+ days old. </p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ In the Gateway Audit Events window, click the column titles to alphabetically 
+ or numerically sort column information into ascending or descending order.</p>
+</div>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the Main Menu, click [<span style="font-weight: bold;"><B>Tasks</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Analyze Gateway Audit Events</B></span>. 
+ </p></li>
+	
+	<li class="kadov-p"><p>The Gateway Audit Events window appears in a separate 
+ window. View, analyze, organize, download, and delete audit messages as 
+ follows:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The Gateway Audit Events window displays the last 500 audit events.</p>
+</div>
+
+
+<table x-use-null-cells style="x-cell-content-align: top;
+				left: 0px;
+				top: 2194px;
+				border-left-style: Groove;
+				border-left-width: 1px;
+				border-right-style: Groove;
+				border-right-width: 1px;
+				border-top-style: Groove;
+				border-top-width: 1px;
+				border-bottom-style: Groove;
+				border-bottom-width: 1px;
+				width: 550px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;" cellspacing="0" width="550" BORDER="1">
+<col style="width: 50%;">
+<col style="width: 50%;">
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-left-color: #000000;
+			border-top-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;
+			border-top-width: 1px;
+			border-top-style: Groove;"
+	bgcolor=#C0C0C0
+	width=50%>
+<p class="tipsnotes" style="text-align: center; font-weight: bold;" Align="center">Column Name</td>
+<td style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			background-color: #c0c0c0;
+			border-top-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-top-width: 1px;
+			border-top-style: Groove;"
+	bgcolor=#C0C0C0
+	width=50%>
+<p class="tipsnotes" style="text-align: center; font-weight: bold;" Align="center">Description</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;"
+	width=50%>
+<p class="tipsnotes" style="text-align: center;" Align="center">Node</td>
+<td style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;"
+	width=50%>
+<p class="tipsnotes">Displays the SecureSpan™ Gateway node that the event 
+ applies to.</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;"
+	width=50%>
+<p class="tipsnotes" style="text-align: center;" Align="center">Time</td>
+<td style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;"
+	width=50%>
+<p class="tipsnotes">Displays the time that the event took place in the SecureSpan 
+ Gateway.</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td colspan=1
+	rowspan=1
+	style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;"
+	width=50%>
+<p class="tipsnotes" style="text-align: center;" Align="center">Severity</td>
+<td colspan=1
+	rowspan=1
+	style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;"
+	width=50%>
+<p class="tipsnotes">Displays one of six message severity ratings assigned 
+ by the SecureSpan Gateway or set for a particular service using the Audit 
+ Assertion from the Logging and Auditing category of the [Assertions] tab 
+ (see <a href="Configure_Edit_Logging,_Auditing,_and_Alerts_Assertions.htm">Configure 
+ and Edit Logging, Auditing, and Alerts Assertions</a>). Four of the six 
+ message types can be filtered. See below for more information.</td></tr>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td colspan=1
+	rowspan=1
+	style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-left-color: #000000;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;
+			border-left-width: 1px;
+			border-left-style: Groove;"
+	width=50%>
+<p class="tipsnotes" style="text-align: center;" Align="center">Message</td>
+<td colspan=1
+	rowspan=1
+	style="width: 50%;
+			padding-right: 10px;
+			padding-left: 10px;
+			border-right-color: #000000;
+			border-bottom-color: #000000;
+			border-bottom-width: 1px;
+			border-bottom-style: Groove;
+			border-right-width: 1px;
+			border-right-style: Groove;"
+	width=50%>
+<p class="tipsnotes">The actual event message.</td></tr>
+</table>
+
+<h3 style="margin-left: 40px;">View Event Details</h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ By default, all audit events are logged at the &quot;Info&quot; severity 
+ level. Use the Audit Assertion from the Logging, Auditing, and Alerts 
+ category of the [Assertions] tab (see <a href="Configure_Edit_Logging,_Auditing,_and_Alerts_Assertions.htm">Configure 
+ and Edit Logging, Auditing, and Alerts Assertions</a>) to configure different 
+ severity levels on a service-by-service basis. </p>
+</div>
+
+<p style="margin-left: 40px;">View the details of a particular event as 
+ follows:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select the target 
+ event in the Audit Events window.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">View the corresponding 
+ event details in the [<span style="font-weight: bold;"><B>Details</B></span>] 
+ tab.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">View the associated 
+ SecureSpan Gateway log information for the event in the [<span style="font-weight: bold;"><B>Associated 
+ Logs</B></span>] tab.</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ You can cut and paste the information from the [Details] and [Associated 
+ Logs] tabs into another location. </p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Repeat to view the 
+ details of another event in the Audit Events window.</p></li>
+	</ol>
+</ol>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<h3 style="margin-left: 40px;">Filter by Message Severity</h3>
+
+<p style="margin-left: 40px;">Use the filter tool located at the bottom 
+ of the Gateway Audit Events window to filter Audit Events window messages 
+ according to the message severity reported in the Severity column. Slide 
+ the filter tool to an option to immediately populate the Audit Events 
+ window with messages of that severity type. The message severity options 
+ are:</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The other message severity types in the Severity column — Fine, Finer, 
+ and Finest — only appear when the &quot;All&quot; option is selected in 
+ the filter tool. These messages are generally internal SecureSpan™ Gateway 
+ messages. </p>
+</div>
+
+<p>&nbsp;</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;"><span style="font-weight: bold;"><B>All</B></span>: 
+ Slide the filter tool to the &quot;All&quot; option to view all event 
+ message severity types in the Audit Events window</p></li>
+	</ul>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ You can download all audit events in the Audit Events window to an external 
+ location (see <a href="#Download_Audit_Events">Download Audit Events</a>).</p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;"><span style="font-weight: bold;"><B>Info</B></span>: 
+ Slide the filter tool to the &quot;Info&quot; option to view event messages 
+ rated from &quot;Info&quot; to &quot;Severe&quot; in the Audit Events 
+ window. Information messages provide general information about an audit 
+ event</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;"><span style="font-weight: bold;"><B>Warning</B></span>: 
+ Slide the filter tool to the &quot;Warning&quot; option to view messages 
+ rated from &quot;Warning&quot; to &quot;Severe&quot; in the Audit Events 
+ window. Warning messages are alerts that may or may not require follow-up</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;"><span style="font-weight: bold;"><B>Severe</B></span>: 
+ Slide the filter tool to the &quot;Severe&quot; option to view severe 
+ or fatal problem messages in the Audit Events window. Severe messages 
+ are alerts that require immediate follow-up.</p></li>
+	</ul>
+</ul>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<h3 style="margin-left: 40px;">Set Refresh Option</h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ See the message in the bottom right-hand corner of the Audit Events window 
+ for specific date and time update information.</p>
+</div>
+
+<p style="margin-left: 40px;">If not already checked, check the <span style="font-weight: bold;"><B>Auto-Refresh</B></span> 
+ check box located at the bottom of the Gateway Audit Events window to 
+ automatically refresh audit information every five seconds.</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ When troubleshooting, un-check the Auto-Refresh check box to freeze Audit 
+ Events information. </p>
+</div>
+
+<p>&nbsp;</p>
+
+<h3 style="margin-left: 40px; color: #000000;"><a name=Download_Audit_Events
+													style="color: #000000;">Download 
+ Audit Events</a></h3>
+
+<p style="margin-left: 40px;">To download all audit events to an external 
+ file:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Download All Audit Events</B></span> 
+ from the Gateway Audit Events window Main Menu.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">The Select File 
+ to Save form appears. Navigate to your target save location. Click [<span 
+ style="font-weight: bold;"><B>Save</B></span>].</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">A confirmation message 
+ appears. Click [<span style="font-weight: bold;"><B>OK</B></span>]. </p></li>
+	</ol>
+</ol>
+
+<p style="margin-left: 0px;">&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The SecureSpan™ Manager saves audit events as a pipe-delimited text file 
+ in a zip file. The file is accompanied by a digitally-signed XML file 
+ containing checksum and metadata information about the exported audit 
+ records. The XML file is signed using the SecureSpan™ Gateway's SSL certificate. 
+ &nbsp;</p>
+</div>
+
+<p>&nbsp;</p>
+
+<h3 style="margin-left: 40px;">Delete Old Audit Events</h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ Audit events with a level of “Severe” cannot be deleted. </p>
+</div>
+
+<p style="margin-left: 40px;">To delete audit events with a level below 
+ “Severe” that are more than seven days old:</p>
+
+<p>&nbsp;</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=1
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Delete Old Audit Events</B></span> from 
+ the Gateway Audit Events window Main Menu.</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">A confirmation message 
+ appears. Click [<span style="font-weight: bold;"><B>Delete Events</B></span>]. 
+ </p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">A confirmation message 
+ with a level of &quot;Severe&quot; appears in the Audit Events window.</p></li>
+	</ol>
+</ol>
+
+<p>&nbsp;</p>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>To close the Gateway Audit Events window, select 
+ [<span style="font-weight: bold;"><B>File</B></span>] &gt; <span style="font-weight: bold;"><B>Exit</B></span> 
+ from the Main Menu or<span style="font-weight: bold;"> <B></B></span>click the 
+ [<span style="font-weight: bold;"><B>X</B></span>] in the top right corner of 
+ the window.</p></li>
+</ol>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

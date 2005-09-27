@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=3154>
-<meta name=layout-width content=802>
+<meta name=layout-height content=4060>
+<meta name=layout-width content=849>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured;metadata;ACL;init;workflows;CN=;NameIdentifier;Format=;windowsDomain;emailAddress;DNs;O=ACME;OU=Anvils;CN=*;CN=Name;CN=user;BinarySecurityToken;AttributeStatement;CAs;DNS;IPs;failover;balancer;Failover;IV_USER;non-SecureSpan;usernametoken;Kerberos;SRP;PGP;SPKI;XKMS;SecurityContextToken;WS-SecureConversation;SAML-specified;SAML-supported;www.oasis-open.org;Manager.sh;Extranet;SandraV;SandraLV;SandraLV's;MilanV;interoperable;PKCS;WS-Trust;WS-Metadata;WS-Policy;WSRP;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;URI;xml">
 
 
 
 
- <link rel="StyleSheet" href="SecureSpan.css">
+ <link rel="StyleSheet" href="JavaHelp.css">
 
 
 
@@ -53,14 +53,21 @@
 			width: 550px;
 			margin-left: 4px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The SecureSpan™ Manager differentiates between SOAP Web services and XML 
  or non-SOAP applications. To publish, edit, or view a SOAP Web service, 
- see <a href="Manage_SOAP_Web_Services.htm">Manage SOAP Web Services</a>.</p>
+ see <a href="Manage_SOAP_Web_Services.htm">Manage SOAP Web Services</a>. 
+ For information on disabling/enabling, renaming, or deleting a published 
+ XML application, see <a href="Manage_Published_Services.htm">Manage Published 
+ Services</a>. XML application policies do not support the message-level 
+ security assertions found in the XML Security category in the [Assertions] 
+ tab (see <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
+ and Edit XML Security Assertions</a>).</p>
 </div>
 
 <p>In the SecureSpan™ Manager, XML or non-SOAP applications are published 
@@ -73,30 +80,6 @@
  SecureSpan™ Gateway. After publication, the&nbsp;SecureSpan Manager allows 
  you to edit the SecureSpan Gateway URL that receives requests for the 
  XML application.</p>
-
-<p>&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- For information on disabling/enabling, renaming, or deleting a published 
- XML application, see <a href="Manage_Published_Services.htm">Manage Published 
- Services</a>. XML application policies do not support the message-level 
- security assertions found in the XML Security category in the [Assertions] 
- tab. For more information about the XML security assertions, see <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
- and Edit XML Security Assertions</a>.</p>
-</div>
 
 <p>&nbsp;</p>
 
@@ -138,14 +121,15 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Ensure that you have all required XML application information before you 
- use the Publish XML Application Wizard. </p>
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP: </B></span>&nbsp;View 
+ screen-specific information and instructions in the Tips Box located near 
+ the bottom of the Publish XML Application Wizard. </p>
 </div>
 
 <p>&nbsp;</p>
@@ -186,24 +170,6 @@
  XML Application Wizard appears. Do the following:</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- View screen-specific information and instructions in the Tips Box located 
- near the bottom of the Publish XML Application Wizard. </p>
-</div>
-
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
@@ -224,10 +190,11 @@
 			width: 550px;
 			margin-left: 84px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  Upon publication, the name entered in the Service Name field will appear 
  in the [Services] tab.</p>
@@ -255,14 +222,15 @@
 			width: 550px;
 			margin-left: 84px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  Upon publication, the URL in the Target URL field will appear as an HTTP(S) 
- Routing assertion in the XML application's initial policy. See <a href="Policies_Overview.htm">Policies 
- Overview</a> and <a HREF="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ Routing assertion in the XML application's initial policy. See <a HREF="Manage_Policies.htm">Manage 
+ Policies</a> and <a HREF="Configure_Edit_Message_Routing_Assertions.htm">Configure 
  and Edit Message Routing Assertions</a> for more information. &nbsp;</p>
 </div>
 
@@ -293,17 +261,17 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;WARNING:</B></span> 
  Do not duplicate Gateway URL and URI combinations. Each final URL that 
  receives requests for each individual XML application must be unique. 
  After publication, you can view or edit the Gateway URL from the [Services] 
- tab. See <a href="#Edit_the_Gateway_URL">Edit the Gateway URL</a> for 
- more information.</p>
+ tab (see <a href="#Edit_the_Gateway_URL">Edit the Gateway URL</a>).</p>
 </div>
 
 <ol start=3
@@ -340,8 +308,8 @@
  Access Control screen of the Publish XML Application Wizard appears, proceed 
  to Step #4. If the error message appears, continue to fix and resolve 
  the information until the Access Control screen of the Publish XML Application 
- Wizard appears. If necessary, see <a href="Technical_Support_and_Contact_Information.htm">Technical 
- Support and Contact Information</a> to contact a Technical Support Representative.</p></li>
+ Wizard appears. If necessary, see <a href="Technical_Support.htm">Technical 
+ Support</a> to contact a Technical Support Representative.</p></li>
 		</ol>
 	</ul>
 	
@@ -396,16 +364,17 @@
 			width: 550px;
 			margin-left: 124px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  If you specify an authentication method and one or more authorized identities 
  in the Publish XML Application Wizard, then XML application access will 
  be restricted to those identities. The initial policy will automatically 
  be populated with an authentication assertion for each Grant Access to 
- Users/Groups assertion corresponding to each selected identity. See <a href="Policies_Overview.htm">Policies Overview</a> and <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ Users/Groups assertion corresponding to each selected identity. See <a HREF="Manage_Policies.htm">Manage Policies</a> and <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
  and Edit Access Control Assertions</a> for more information. </p>
 </div>
 
@@ -445,15 +414,16 @@
 			width: 550px;
 			margin-left: 164px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  You can give LDAP Identity Provider, Federated Identity Provider, and 
- Internal Identity Provider users and groups access to the XML application. 
- For more information on identity providers, see <a href="Identity_Providers_Overview.htm">Identity 
- Providers Overview</a>. </p>
+ Internal Identity Provider (see <a HREF="Manage_Identity_Providers.htm">Manage 
+ Identity Providers</a>) users and groups access to the XML application. 
+ </p>
 </div>
 
 <ul style="list-style: decimal;"
@@ -517,10 +487,11 @@
 			width: 550px;
 			margin-left: 164px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  To de-authorize users and/or groups, move them from the Have Permission 
  window to the No Permission window. Select one or more users and/or groups 
@@ -557,30 +528,11 @@
 	
 	<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>Finish</B></span>]. 
  The XML application is immediately added to the [<span style="font-weight: bold;"><B>Services</B></span>] 
- tab. </p></li>
+ tab. Disable the published XML application until its policy is completed. 
+ See <a href="Manage_Published_Services.htm">Manage Published Services</a> 
+ for instructions. For information on policies, see <a href="Manage_Policies.htm">Manage 
+ Policies</a>.</p></li>
 </ol>
-
-<p>&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- Disable the published XML application until its policy is completed. See 
- <a href="Manage_Published_Services.htm">Manage Published Services</a> 
- for instructions. For information on policies, see <a href="Policies_Overview.htm">Policies 
- Overview</a>.</p>
-</div>
 
 <p>&nbsp;</p>
 
@@ -603,32 +555,6 @@
  </p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- In the [Services] tab, XML applications are identified by the <img src="xmlObject16.gif" x-maintain-ratio="TRUE" style="border: none;
-			margin-left: 0px;
-			margin-right: 0px;
-			margin-top: 0px;
-			width: 16px;
-			height: 16px;
-			margin-bottom: -3px;
-			float: none;
-			border-style: none;
-			border-style: none;" width="16" height="16" border="0"> &nbsp;icon.</p>
-</div>
-
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
@@ -649,17 +575,18 @@
 			width: 550px;
 			margin-left: 44px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
 	border-style: none;
-	width: 18px;
-	height: 18px;
-	float: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  In the Gateway URL field, complete the SecureSpan™ Gateway URL provided 
- by the Manager with a unique URI that corresponds to the unique address 
- that will receive requests for the XML application. Only enter a URI that 
- completes the embedded Gateway URL into the field. Do not duplicate Gateway 
- URL and URI combinations. Each final URL that receives requests for each 
- individual XML applications must be unique.</p>
+ by the SecureSpan™ Manager with a unique URI that corresponds to the unique 
+ address that will receive requests for the XML application. Only enter 
+ a URI that completes the embedded Gateway URL into the field. Do not duplicate 
+ Gateway URL and URI combinations. Each final URL that receives requests 
+ for each individual XML applications must be unique.</p>
 </div>
 
 <ol start=4

@@ -18,14 +18,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=6286>
-<meta name=layout-width content=762>
+<meta name=layout-height content=5111>
+<meta name=layout-width content=851>
 <meta name=x-ignored-words content=SecureSpan>
 
 
 
 
- <link rel="StyleSheet" href="SecureSpan.css">
+ <link rel="StyleSheet" href="JavaHelp.css">
 
 
 
@@ -37,7 +37,7 @@
 
 <body>
 
-<h1>Configure and Edit the Policy Logic Assertions</h1>
+<h1>Configure and Edit Policy Logic Assertions</h1>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
  assertions are available in the Policy Logic category of the [Assertions] 
@@ -65,6 +65,10 @@
 
 <h4>Quick Links:</h4>
 
+<p class="quicklinks"><a href="#Comment">Comment</a></p>
+
+<p class="quicklinks"><a href="#Equality">Equality</a></p>
+
 <p class="quicklinks"><a href="#At_Least_One_Assertion_Must_Evaluate_to_True">At 
  Least One Assertion Must Evaluate to True</a></p>
 
@@ -75,109 +79,157 @@
 
 <p class="quicklinks">&nbsp;</p>
 
-<h2 style="color: #000000;"><a name=At_Least_One_Assertion_Must_Evaluate_to_True
-								style="color: #000000;">At Least One Assertion 
- Must Evaluate to True</a></h2>
+<h2 style="color: #000000;"><a name=Comment
+								style="color: #000000;">Comment</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- See <a href="Policy_Organization_and_Rules.htm">Policy Organization and 
- Rules</a> for more information about using an &quot;At least one assertion 
- must evaluate to true&quot; assertion folder in a policy.</p>
-</div>
-
-<p>The &quot;At least one assertion must evaluate to true&quot; assertion 
- folder organizes and defines the processing conditions for the assertions 
- that it contains and for the overall policy. When assertions are grouped 
- into an &quot;At least one assertion must evaluate to true&quot; folder 
- in the Policy Development window, each successive child assertion is processed 
- until a single assertion succeeds, yielding a success outcome for the 
- folder. If all child assertions in an &quot;At least one assertion must 
- evaluate to true&quot; folder fail, then the overall folder—and possibly 
- the entire policy—fails. For more information about parent and child assertions 
- in a policy, see <a href="Policy_Organization_and_Rules.htm">Policy Organization 
- and Rules</a>.</p>
+<p>The Comment assertion allows you to insert a comment at any point in 
+ a policy path or within a policy folder in the Policy Development window. 
+ The Comment assertion is useful for self-documenting complex polices, 
+ especially those with nested assertions and policy folders. The Comment 
+ assertion has no effect on the runtime processing of a policy.</p>
 
 <p>&nbsp;</p>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- If you do not want the failure of an &quot;At least one assertion must 
- evaluate to true&quot; folder to fail the entire policy, then add a <a 
- href="#Continue_Processing">Continue Processing</a> assertion into the 
- assertion folder. The Continuing Processing assertion will always evaluate 
- to true, preventing the failure of a policy due to the failure of a non-essential 
- or conditional assertion in an &quot;At least one assertion must evaluate 
- to true&quot; folder.</p>
-</div>
-
-<p>&nbsp;</p>
-
-<h3 style="color: #000000;"><a name=Add_and_Configure_the_At_Least_One_Assertion_Must_Evaluate_to_True_Folder
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_Comment_Assertion
 								style="color: #000000;">Add and Configure 
- the At Least One Assertion Must Evaluate to True Folder</a></h3>
+ the Comment Assertion</a></h3>
 
-<ol style="list-style: decimal;"
-	type=1>
+<ol>
 	
-	<li class="kadov-p"><p>Add an &quot;At least one assertion must evaluate 
- to true&quot; assertion folder to the Policy Development window by one 
- of two methods:</p></li>
+	<li style="list-style: decimal;" type="1" class="kadov-p"><p>In the Policy Development window, select an assertion 
+ or policy folder corresponding to the target insert location for the Comment 
+ assertion. The comment will appear after the selected item. </p></li>
 </ol>
 
-<h4 style="margin-left: 40px;">Use the Right-Click Menu</h4>
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Insert the assertion by one of two methods:</p></li>
+</ol>
 
-<p style="margin-left: 40px;">Add the assertion folder from the Policy 
- Development window's right-click menu:</p>
-
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
 		type=disc>
 		
-		<li class="kadov-p"><p style="margin-left: 0px;">Highlight an assertion 
- near the desired insert location for the assertion folder</p></li>
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
 		
-		<li class="kadov-p"><p style="margin-left: 0px;">Right-click the 
- Policy Development window. A drop-down menu appears</p></li>
-		
-		<li class="kadov-p"><p style="margin-left: 0px;">Select <span style="font-weight: bold;"><B>Add 
- 'One or More' Assertion</B></span>.<span style="font-weight: bold;"> <B></B></span></p></li>
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
+</ul>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Comment Assertion Properties form appears. 
+ Type the comment text into the <span style="font-weight: bold;"><B>Comment</B></span> 
+ field.</p></li>
 </ol>
 
-<h4 style="margin-left: 40px;">Insert from the [Assertions] Tab</h4>
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ The text does not require comment characters &quot;&lt;!--comment text--&gt;.&quot;</p>
+</div>
 
-<p style="margin-left: 40px;">Add the assertion folder from the [Assertions] 
- tab by one of two methods:</p>
-
-<ul style="list-style: decimal;"
+<ol start=4
+	style="list-style: decimal;"
 	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The assertion is added to the Policy Development window.</p></li>
+</ol>
+
+<h3>Edit the Comment Assertion</h3>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Comment:&quot; assertion. A drop-down menu appears. Select <span 
+ style="font-weight: bold;"><B>Comment Assertion Properties</B></span></p></li>
+</ul>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The Comment Assertion Properties form appears. 
+ Edit the assertion as outlined in <a href="#Add_and_Configure_the_Comment_Assertion">Add 
+ and Configure the Comment Assertion</a>. </p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Equality
+								style="color: #000000;">Equality</a></h2>
+
+<p>The Equality assertion compares two values during the runtime processing 
+ of a policy. Both comparison values can be context variables in the format 
+ &quot;${variable.name}&quot; (where &quot;variable.name&quot; is the context 
+ variable), or the comparison values can be made up of one context variable 
+ and one constant. A policy can contain more than one Equality assertion.</p>
+
+<p>&nbsp;</p>
+
+<p>For example, when used with two XPath assertions — the Evaluate Request 
+ XPath assertion and/or the Evaluate Response XPath assertion (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/Transformation Assertions</a>) — the Equality 
+ assertion could be used to ensure that the value of a particular attribute 
+ in a SAML attribute statement (set with the SAML Assertion discussed in 
+ <a href="Configure_Edit_Access_Control_Assertions.htm">Configure and Edit 
+ Access Control Assertions</a>) matches a value found in the message body. 
+ In this scenario, at least one of the XPath assertions must have a non-default 
+ variable prefix so that the second XPath assertion does not overwrite 
+ the variables set by the first. Then, the Equality assertion must be configured 
+ to compare the two &quot;.result&quot; variables and placed after the 
+ SAML Assertion and two XPath assertions in the Policy Development window. 
+ In another example scenario, the Equality assertion could be used to verify 
+ that exactly one node has been found by a previous Evaluate Request XPath 
+ assertion by testing that ${requestXpath.count} is equal to &quot;1&quot;.</p>
+
+<p>&nbsp;</p>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_Equality_Assertion
+								style="color: #000000;">Add and Configure 
+ the Equality Assertion</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ul style="list-style: disc;"
+	type=disc>
 	
 	<ul style="list-style: disc;"
 		type=disc>
@@ -205,6 +257,175 @@
 	style="list-style: decimal;"
 	type=1>
 	
+	<li class="kadov-p"><p>The Equality form appears. Enter the first value 
+ into the <span style="font-weight: bold;"><B>Expression 1</B></span> field. Within 
+ the expression, variables can be referenced using ${assertionPrefix.variableName} 
+ syntax. </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ You can mix variable and constant values in the Expression 1 and Expression 
+ 2 fields by surrounding variable references with additional text. For 
+ example, if the variable &quot;requestXpath.result&quot; contains the 
+ value &quot;B&quot; and the expression entered is A${requestXpath.result}C, 
+ then the resulting value that will be compared by the Equality assertion 
+ is &quot;ABC&quot;.</p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Enter the second value into the <span style="font-weight: bold;"><B>Expression 
+ 2</B></span> field. Click [<span style="font-weight: bold;"><B>OK</B></span>].</p></li>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window.</p></li>
+</ol>
+
+<h3>Edit the Equality Assertion</h3>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Proceed if:&quot; assertion. A drop-down menu appears. Select 
+ <span style="font-weight: bold;"><B>Equality Assertion Properties</B></span></p></li>
+</ul>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The Equality form appears. Edit the assertion 
+ as outlined in <a href="#Add_and_Configure_the_Equality_Assertion">Add 
+ and Configure the Equality Assertion</a>. </p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=At_Least_One_Assertion_Must_Evaluate_to_True
+								style="color: #000000;">At Least One Assertion 
+ Must Evaluate to True</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ If you do not want the failure of an &quot;At least one assertion must 
+ evaluate to true&quot; folder to fail the entire policy, then add a Continue 
+ Processing assertion into the assertion folder (see <a href="#Continue_Processing">Continue 
+ Processing</a>). The Continuing Processing assertion will always evaluate 
+ to true, preventing the failure of a policy due to the failure of a non-essential 
+ or conditional assertion in an &quot;At least one assertion must evaluate 
+ to true&quot; folder.</p>
+</div>
+
+<p>The &quot;At least one assertion must evaluate to true&quot; assertion 
+ folder organizes and defines the processing conditions for the assertions 
+ that it contains and for the overall policy. When assertions are grouped 
+ into an &quot;At least one assertion must evaluate to true&quot; folder 
+ in the Policy Development window, each successive child assertion is processed 
+ until a single assertion succeeds, yielding a success outcome for the 
+ folder. If all child assertions in an &quot;At least one assertion must 
+ evaluate to true&quot; folder fail, then the overall folder—and possibly 
+ the entire policy—fails. For more information about parent and child assertions 
+ in a policy, see <a href="Policy_Organization.htm">Policy Organization</a>.</p>
+
+<p>&nbsp;</p>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_At_Least_One_Assertion_Must_Evaluate_to_True_Folder
+								style="color: #000000;">Add and Configure 
+ the At Least One Assertion Must Evaluate to True Folder</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add an &quot;At least one assertion must evaluate 
+ to true&quot; assertion folder to the Policy Development window by one 
+ of two methods:</p></li>
+</ol>
+
+<h4 style="margin-left: 40px;">Use the Right-Click Menu</h4>
+
+<p style="margin-left: 40px;">Add the assertion folder from the Policy 
+ Development window's right-click menu:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Highlight an assertion 
+ near the desired insert location for the assertion folder</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Right-click the 
+ Policy Development window. A drop-down menu appears</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Select <span style="font-weight: bold;"><B>Add 
+ 'One or More' Assertion</B></span>.<span style="font-weight: bold;"> <B></B></span></p></li>
+	</ul>
+</ul>
+
+<h4 style="margin-left: 40px;">Insert from the [Assertions] Tab</h4>
+
+<p style="margin-left: 40px;">Add the assertion folder from the [Assertions] 
+ tab by one of two methods:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
 	<li style="list-style: decimal;" type="1" class="kadov-p"><p>The assertion folder is added to the Policy Development 
  window. Drag and drop assertions from the Policy Development window into 
  the assertion folder, or add new assertions directly into the assertion 
@@ -219,15 +440,16 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
- </B></span>To add a new identity into the assertion folder, right-click the 
- assertion folder in the Policy Development window. A drop-down menu appears. 
- Select Add User or Group. Proceed to <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP: </B></span>To 
+ add a new identity into the assertion folder, right-click the assertion 
+ folder in the Policy Development window. A drop-down menu appears. Select 
+ Add User or Group. Proceed to <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
  and Edit Access Control Assertions</a> to configure the new Grant Access 
  to Users/Groups assertion. Note that there should not be more than one 
  first-level Grant Access to Users/Groups assertion in a policy or within 
@@ -235,11 +457,11 @@
  a policy, place each individual Grant Access to Users/Groups assertion 
  in an individual &quot;At least one assertion must evaluate to true&quot; 
  or &quot;All assertions must evaluate to true&quot; folder with an authentication 
- assertion (and other assertions, as required). See <a href="Policy_Organization_and_Rules.htm">Policy 
- Organization and Rules</a> for more information.</p>
+ assertion (and other assertions, as required). See <a href="Policy_Organization.htm">Policy 
+ Organization </a>for more information.</p>
 </div>
 
-<ul start=2
+<ol start=2
 	style="list-style: decimal;"
 	type=1>
 	
@@ -247,14 +469,17 @@
 		type=disc>
 		
 		<li class="kadov-p"><p>For assertion configuration instructions, 
- view the category specific instruction pages outlined in <a href="Policy_Assertions_Overview.htm">Policy 
- Assertions Overview</a></p></li>
+ view the category specific instruction pages outlined in <a HREF="About_Policy_Assertions.htm">About 
+ Policy Assertions</a></p></li>
+		
+		<li class="kadov-p"><p>For assertion folder information and examples, 
+ see <a HREF="Policy_Organization.htm">Policy Organization</a></p></li>
 		
 		<li class="kadov-p"><p>For assertion and assertion folder organization 
  instructions, see <a HREF="Configure_Edit_Policies.htm">Configure and 
  Edit Policies</a>. </p></li>
 	</ul>
-</ul>
+</ol>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -265,25 +490,6 @@
 </ol>
 
 <h3>Edit an At Least One Assertion Must Evaluate to True Folder</h3>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- See <a href="Policy_Organization_and_Rules.htm">Policy Organization and 
- Rules</a> for more information about using an &quot;At least one assertion 
- must evaluate to true&quot; assertion folder in a policy.</p>
-</div>
 
 <p>The contents and location of an &quot;At least one assertion must evaluate 
  to true&quot; assertion folder can be modified at any time:</p>
@@ -347,25 +553,6 @@
 								style="color: #000000;">All Assertions 
  Must Evaluate to True</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- See <a href="Policy_Organization_and_Rules.htm">Policy Organization and 
- Rules</a> for more information about using an &quot;All assertions must 
- evaluate to true&quot; assertion folder in a policy.</p>
-</div>
-
 <p>The &quot;All assertions must evaluate to true&quot; assertion folder 
  organizes and defines the processing conditions for the assertions that 
  it contains and for the overall policy. When assertions are grouped into 
@@ -375,8 +562,7 @@
  must evaluate to true&quot; folder will stop when the first child assertion 
  fails, yielding a fail outcome for the folder—and possibly the entire 
  policy. For more information about parent and child assertions in a policy, 
- see <a href="Policy_Organization_and_Rules.htm">Policy Organization and 
- Rules</a>.</p>
+ see <a href="Policy_Organization.htm">Policy Organization</a>.</p>
 
 <p>&nbsp;</p>
 
@@ -394,7 +580,7 @@
 <p style="margin-left: 40px;">Add the assertion folder from the Policy 
  Development window's right-click menu:</p>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -409,14 +595,14 @@
 		<li class="kadov-p"><p style="margin-left: 0px;">Select <span style="font-weight: bold;"><B>Add 
  'All' Assertion</B></span>.<span style="font-weight: bold;"> <B></B></span></p></li>
 	</ul>
-</ol>
+</ul>
 
 <h4 style="margin-left: 40px;">Insert from the [Assertions] Tab</h4>
 
 <p style="margin-left: 40px;">Add the assertion folder from the [Assertions] 
  tab by one of two methods:</p>
 
-<ul style="list-style: decimal;"
+<ol style="list-style: decimal;"
 	type=1>
 	
 	<ul style="list-style: disc;"
@@ -439,7 +625,7 @@
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ul>
+</ol>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -459,15 +645,16 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
 	width: 16px;
-	height: 14px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
- </B></span>To add a new identity into the assertion folder, right-click the 
- assertion folder in the Policy Development window. A drop-down menu appears. 
- Select Add User or Group. Proceed to <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP: </B></span>To 
+ add a new identity into the assertion folder, right-click the assertion 
+ folder in the Policy Development window. A drop-down menu appears. Select 
+ Add User or Group. Proceed to <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
  and Edit Access Control Assertions</a> to configure the new Grant Access 
  to Users/Groups assertion. Note that there should not be more than one 
  first-level Grant Access to Users/Groups assertion in a policy or within 
@@ -475,11 +662,11 @@
  a policy, place each individual Grant Access to Users/Groups assertion 
  in an individual &quot;At least one assertion must evaluate to true&quot; 
  or &quot;All assertions must evaluate to true&quot; folder with an authentication 
- assertion (and other assertions, as required). See <a href="Policy_Organization_and_Rules.htm">Policy 
- Organization and Rules</a> for more information.</p>
+ assertion (and other assertions, as required). See <a href="Policy_Organization.htm">Policy 
+ Organization </a>for more information.</p>
 </div>
 
-<ul start=2
+<ol start=2
 	style="list-style: decimal;"
 	type=1>
 	
@@ -487,14 +674,17 @@
 		type=disc>
 		
 		<li class="kadov-p"><p>For assertion configuration instructions, 
- view the category specific instruction pages outlined in <a href="Policy_Assertions_Overview.htm">Policy 
- Assertions Overview</a></p></li>
+ view the category specific instruction pages outlined in <a HREF="About_Policy_Assertions.htm">About 
+ Policy Assertions</a></p></li>
+		
+		<li class="kadov-p"><p>For assertion folder information and examples, 
+ see <a href="Policy_Organization.htm">Policy Organization</a></p></li>
 		
 		<li class="kadov-p"><p>For assertion and assertion folder organization 
  instructions, see <a href="Configure_Edit_Policies.htm">Configure and 
  Edit Policies</a>. </p></li>
 	</ul>
-</ul>
+</ol>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -505,25 +695,6 @@
 </ol>
 
 <h3>Edit an All Assertions Must Evaluate to True Folder</h3>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 14px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
- See <a href="Policy_Organization_and_Rules.htm">Policy Organization and 
- Rules</a> for more information about using an &quot;All assertions must 
- evaluate to true&quot; assertion folder in a policy.</p>
-</div>
 
 <p>The contents and location of an &quot;All assertions must evaluate to 
  true&quot; assertion folder can be modified at any time:</p>
@@ -595,11 +766,11 @@
 			width: 550px;
 			margin-left: 4px;">
 <p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
+	border-style: none;" width="16" height="16" border="0"></b> 
  &nbsp;NOTE:</B></span> 
  The Continue Processing assertion must be used with an &quot;At least 
  one assertion must evaluate to true&quot; assertion folder. </p>
@@ -648,28 +819,6 @@
  assertion folder, see <a href="#At_Least_One_Assertion_Must_Evaluate_to_True">At 
  Least One Assertion Must Evaluate to True</a>.</p></li>
 </ul>
-
-<p>&nbsp;</p>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- You cannot edit the Continue Processing assertion. To remove the assertion, 
- right-click the assertion name in the assertion folder or Policy Development 
- window. A drop-down menu appears. Select [Delete Assertion].</p>
-</div>
 
 <p>&nbsp;</p>
 

@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=2334>
-<meta name=layout-width content=762>
+<meta name=layout-height content=2317>
+<meta name=layout-width content=849>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured">
 
 
 
 
- <link rel="StyleSheet" href="SecureSpan.css">
+ <link rel="StyleSheet" href="JavaHelp.css">
 
 
 
@@ -42,10 +42,10 @@
 
 <body>
 
-<h1>Configure and Edit the Transport Layer Security (TLS) Assertion</h1>
+<h1>Configure and Edit Transport Layer Security (TLS) Assertions</h1>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
- assertion is available in the Transport Layer Security (TLS) category 
+ assertions are available in the Transport Layer Security (TLS) category 
  of the [Assertions] tab:</p>
 
 <p class="space">&nbsp;</p>
@@ -55,10 +55,10 @@
 				margin-right: 0px;
 				margin-top: 10px;
 				margin-bottom: 2px;
-				border-style: none;
 				width: 306px;
 				height: 385px;
 				float: none;
+				border-style: none;
 				border-style: none;" width="306" height="385" border="0"></p>
 
 <h6 style="margin-top: 2pt;
@@ -68,28 +68,16 @@
 
 <p>&nbsp;</p>
 
-<h2>SSL or TLS Transport</h2>
+<h4>Quick Links:</h4>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The SSL or TLS Transport assertion is the same as the SSL with Client 
- Certificate Authentication assertion from the Access Control category 
- in the [Assertions] tab. See <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
- and Edit the Access Control Assertions</a> for information. </p>
-</div>
+<p class="quicklinks"><a href="#SSL_or_TLS_Transport">SSL or TLS Transport</a></p>
+
+<p class="quicklinks"><a href="#Stealth_Fault">Stealth Fault</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=SSL_or_TLS_Transport
+								style="color: #000000;">SSL or TLS Transport</a></h2>
 
 <p style="color: #000000;">The SSL or TLS Transport assertion uses the 
  Transport Layer Security (TLS) protocol to ensure transport-level confidentiality 
@@ -117,8 +105,6 @@
 <p style="color: #0000ff;"><span style="color: #000000;"><font color=black >Select the Forbidden 
  option to disallow requests that arrive over an SSL-secured connection.</font></span> 
  </p>
-
-<p style="color: #0000ff;">&nbsp;</p>
 
 <h3 style="color: #000000;"><a name=Add_and_Configure_the_SSL_or_TLS_Transport_Assertion
 								style="color: #000000;">Add and Configure 
@@ -184,13 +170,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
 	float: none;
 	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
  If you select the Required option, then you can also opt to require the 
  client certificate authentication of request messages in the policy. To 
  do so, check the Require Client Certificate Authentication check box.<span 
@@ -198,6 +184,39 @@
 </div>
 
 <ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>To require a client certificate signed by the 
+ SecureSpan™ Gateway certificate authority as part of the SSL-TLS handshake, 
+ check the <span style="font-weight: bold;"><B>Require Client Certificate 
+ Authentication</B></span> checkbox. The client certificate is used to authenticate 
+ the service requestor.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ When the Require Client Certificate Authentication checkbox is checked, 
+ the SSL or TLS Transport assertion is the same as the SSL with Client 
+ Certificate Authentication assertion from the Access Control category 
+ in the [Assertions] tab (see <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a>). </p>
+</div>
+
+<ol start=5
 	style="list-style: decimal;"
 	type=1>
 	
@@ -215,31 +234,12 @@
  Select <span style="font-weight: bold;"><B>SSL Properties</B></span>.</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 18px;
-	height: 18px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="18" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The actual name of the assertion in the Policy Development window will 
- depend on the configuration setting of the assertion.</p>
-</div>
-
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p>The SSL or TLS Options form appears. Edit the 
- assertion as outlined in <a href="#Add_and_Configure_the_SSL_Security_Assertion">Add 
+ assertion as outlined in <a href="#Add_and_Configure_the_SSL_or_TLS_Transport_Assertion">Add 
  and Configure the SSL or TLS Transport Assertion</a>. </p></li>
 	
 	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
@@ -247,6 +247,106 @@
 </ol>
 
 <p>&nbsp; </p>
+
+<h2 style="color: #000000;"><a name=Stealth_Fault
+								style="color: #000000;">Stealth Fault</a></h2>
+
+<p>The Stealth Fault assertion instructs the SecureSpan™ Gateway to drop 
+ a client connection instead of generating a SOAP fault or other error 
+ when the policy requirements for a particular service are not met. When 
+ this assertion is encountered in a policy path, the policy execution context 
+ is flagged to not return any errors. If the policy execution does result 
+ in an error, then this error is not sent back to the requestor; the connection 
+ to the client, or requestor, is dropped instead.</p>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;TIP:</B></span> 
+ The Stealth Fault assertion permits the policy-based suppression of SOAP 
+ faults. You can configure the global suppression of SOAP faults for service 
+ resolution errors by directly modifying the SecureSpan™ Gateway properties 
+ file. By default, the SecureSpan Gateway generates a &quot;service not 
+ found&quot; SOAP fault when a service cannot be resolved at runtime. By 
+ directly adjusting the SecureSpan Gateway properties file, you can configure 
+ the SecureSpan Gateway to drop the client connection whenever requests 
+ do not resolve a service instead. When a service is resolved when global 
+ suppression is configured in the SecureSpan Gateway, then the presence 
+ of the Stealth Fault assertion will determine the policy-based suppression 
+ of SOAP faults. See the &quot;SecureSpan™ Installation and Maintenance 
+ Manual&quot; for instructions and more information. </p>
+</div>
+
+<p>&nbsp;</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 16px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="16" border="0"></b> 
+ &nbsp;NOTE:</B></span> 
+ To remove the suppression of SOAP faults, remove the Stealth Fault assertion 
+ from the Policy Development window. To do so, right-click the assertion 
+ name in the Policy Development window. A drop-down menu appears. Select 
+ [Delete Assertion].</p>
+</div>
+
+<p>&nbsp;</p>
 
 <h4>Next Topic: </h4>
 
