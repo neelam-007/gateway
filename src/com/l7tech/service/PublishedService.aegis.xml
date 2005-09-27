@@ -1,6 +1,6 @@
 <mappings>
   <mapping uri="http://ns.l7tech.com/SecureSpan/admin/service">
-      <property name="wsdlXml" ignored="true"/>
+      <property name="wsdlXml" ignore="true"/>
   </mapping>
 </mappings>
 
