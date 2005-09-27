@@ -1,24 +1,25 @@
 package com.l7tech.server.config.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.ListHandler;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.regex.Pattern;
-import java.io.File;
-import java.io.PrintStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -44,7 +45,6 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private ArrayList steps;
     private StringBuffer stepsBuffer;
     private String eol;
-
 
     public ConfigWizardResultsPanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
@@ -81,9 +81,9 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         });
         logsView.setBackground(mainPanel.getBackground());
         messageText.setBackground(mainPanel.getBackground());
+        messageText.setFont(messageText.getFont().deriveFont(Font.BOLD));
 
         manualStepsMessage.setForeground(Color.RED);
-        //steps = new ArrayList();
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
@@ -170,7 +170,9 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     protected void updateModel(HashMap settings) {
     }
 
-    protected void updateView(HashMap settings) {
+
+    private void doApplyConfig() {
+        getParentWizard().applyConfiguration();
         ArrayList logs = ListHandler.getLogList();
         ConfigurationWizard wizard = getParentWizard();
         if (wizard != null) {
@@ -187,6 +189,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         }
         boolean hadFailures = getParentWizard().isHadFailures();
         if (hadFailures) {
+            messageText.setForeground(Color.RED);
             messageText.setText("There were errors during configuration, see below for details");
         } else {
             messageText.setText("The configuration was successfully applied" + eol +
@@ -194,7 +197,48 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         }
 
         setupManualStepsPanel(wizard.getClusteringType(), wizard.getKeystoreType());
+    }
 
+    private void doUpdateView() {
+        getParentWizard().getBackButton().setEnabled(false);
+        getParentWizard().getNextButton().setEnabled(false);
+        getParentWizard().getFinishButton().setEnabled(false);
+        getParentWizard().getCancelButton().setEnabled(false);
+
+        messageText.setText("Please wait while the configuration is being applied");
+
+        //clear panel
+        hideControls();
+        invalidate();
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                doApplyConfig();
+                showControls();
+                invalidate();
+            }
+        });
+     }
+
+    protected void updateView(final HashMap settings) {
+        SwingUtilities.invokeLater(new Runnable() {
+
+            public void run() {
+                doUpdateView();
+            }
+        });
+    }
+
+    private void showControls() {
+        logsPanel.setVisible(true);
+        saveButton.setVisible(true);
+        getParentWizard().getFinishButton().setEnabled(true);
+    }
+
+    private void hideControls() {
+        manualStepsPanel.setVisible(false);
+        logsPanel.setVisible(false);
+        saveButton.setVisible(false);
     }
 
     private void setupManualStepsPanel(int clusteringType, String keystoreType) {
