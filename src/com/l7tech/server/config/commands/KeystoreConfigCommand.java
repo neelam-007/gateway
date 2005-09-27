@@ -604,11 +604,13 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         };
 
         if (doBothKeys) {
-            System.out.println("Generating both keys");
+            logger.info("Generating both keys");
+            //System.out.println("Generating both keys");
             SetKeys.NewCa.main(args);
             keysDone = true;
         } else {
-            System.out.println("Generating only SSL key");
+            logger.info("Generating only SSL key");
+            //System.out.println("Generating only SSL key");
             SetKeys.ExistingCa.main(args);
             keysDone = true;
         }
