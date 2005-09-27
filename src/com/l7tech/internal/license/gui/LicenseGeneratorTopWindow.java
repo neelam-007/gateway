@@ -6,7 +6,6 @@
 package com.l7tech.internal.license.gui;
 
 import com.japisoft.xmlpad.XMLContainer;
-import com.japisoft.xmlpad.DocumentStateListener;
 import com.l7tech.common.License;
 import com.l7tech.common.gui.widgets.LicensePanel;
 import com.l7tech.common.security.xml.DsigUtil;
@@ -16,7 +15,6 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.internal.license.LicenseGenerator;
 import com.l7tech.internal.license.LicenseSpec;
-import com.l7tech.proxy.gui.util.IconManager;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -27,12 +25,11 @@ import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.FocusEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.math.BigInteger;
+import java.net.URL;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -96,8 +93,15 @@ public class LicenseGeneratorTopWindow extends JFrame {
         init();
     }
 
+    private Image loadAppIcon() {
+        String path = "com/l7tech/internal/license/gui/resources/layer7_logo_small_32x32.png";
+        URL url = getClass().getClassLoader().getResource(path);
+        return url == null ? (new ImageIcon()).getImage()
+                           : Toolkit.getDefaultToolkit().createImage(url);
+    }
+
     private void init() {
-        setIconImage( IconManager.getAppImage() );
+        setIconImage(loadAppIcon());
         getContentPane().setMinimumSize(new Dimension(1020, 760));
         setTitle("Layer 7 License Generator");
         setJMenuBar(makeMenuBar());

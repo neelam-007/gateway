@@ -641,6 +641,41 @@
         </jar>
     </target>
 
+    <!-- Build LicenseGenerator package.  Always invoked by hand. -->
+    <target name="package.licensegenerator" unless="ssg.only"
+            depends="init-dev, compile">
+        <jar jarfile="${build.dir}/LicenseGenerator.jar" manifest="${src.root}/etc/LicenseGenerator.mf">
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/internal/**/*"/>
+                <include name="com/l7tech/common/*License*"/>
+                <include name="com/l7tech/common/util/**/*"/>
+                <include name="com/l7tech/common/BuildInfo.class"/>
+                <include name="com/l7tech/common/gui/**/*"/>
+                <include name="com/l7tech/common/security/xml/DsigUtil*"/>
+                <include name="com/l7tech/common/security/xml/CertificateResolver.class"/>
+                <include name="com/l7tech/common/security/xml/KeyInfoElement*"/>
+                <include name="com/l7tech/common/security/token/ParsedElement*"/>
+                <include name="com/l7tech/common/xml/*Exception.class"/>
+                <include name="com/l7tech/common/security/xml/*Exception.class"/>
+                <include name="com/l7tech/common/security/xml/SimpleCertificateResolver*"/>
+
+                <exclude name="com/l7tech/common/xml/saml/**/*"/>
+                <exclude name="com/l7tech/common/xml/*SoapMessage*"/>
+                <exclude name="com/l7tech/common/xml/tarari/**/*"/>
+                <exclude name="com/l7tech/common/xml/*Wsdl*"/>
+                <exclude name="com/l7tech/common/xml/*Xpath*"/>
+                <exclude name="com/l7tech/common/util/*CheckInfo*"/>
+                <exclude name="com/l7tech/common/util/*SoapFaultUtil*"/>
+            </fileset>
+        </jar>
+
+        <exec executable="perl" failonerror="true" dir="installer">
+            <env key="JAVA_HOME" value="$(java.home}"/>
+            <arg line="make_zip.pl"/>
+            <arg line="LicenseGenerator"/>
+        </exec>
+    </target>
+
     <target name="package.installclients" unless="ssg.only">
         <exec executable="perl" failonerror="true" dir="installer">
             <env key="JAVA_HOME" value="${java.home}"/>
@@ -759,6 +794,18 @@
             <arg line="tools/checkjar.pl"/>
             <arg line="build/Bridge.jar"/>
             <arg line="etc/Bridge.mf"/>
+        </exec>
+    </target>
+
+    <!-- Test LicenseGenerator package.  Always invoked by hand. -->
+    <target name="testpackage.licensegenerator" depends="package.licensegenerator">
+        <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
+               deprecation="on" depend="on" verbose="no"/>
+        <exec executable="perl" failonerror="true">
+            <env key="JAVA_HOME" value="${java.home}"/>
+            <arg line="tools/checkjar.pl"/>
+            <arg line="build/LicenseGenerator.jar"/>
+            <arg line="etc/LicenseGenerator.mf"/>
         </exec>
     </target>
 
