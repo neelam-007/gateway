@@ -492,15 +492,17 @@ public class SsgRuntime {
      */
     public String getSessionCookiesHeaderValue() {
         StringBuffer sb = new StringBuffer();
+
         HttpCookie[] sessionCookies = getSessionCookies();
-        if (sessionCookies == null)
-            return "";
-        for (int i = 0; i < sessionCookies.length; i++) {
-            if (i > 0)
-                sb.append("; ");
-            HttpCookie cook = sessionCookies[i];
-            sb.append(cook.toExternalForm());
+        if (sessionCookies != null) {
+            for (int i = 0; i < sessionCookies.length; i++) {
+                HttpCookie cook = sessionCookies[i];
+
+                if (i > 0) sb.append("; ");
+                sb.append(cook.getV0CookieHeaderPart());
+            }
         }
+
         return sb.toString();
     }
 
