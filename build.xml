@@ -244,6 +244,7 @@
             <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.common.http.CookieTest" haltonfailure="no"/>
 
 <!--
              ** add policy tests into the com.l7tech.policy.AllPolicyTests class
@@ -422,6 +423,7 @@
                 <include name="spring-dao.jar"/>
                 <include name="spring-orm.jar"/>
                 <include name="spring-web.jar"/>
+                <include name="nekohtml.jar"/>
 
                 <!-- AdminWS Stuff -->
                 <include name="stax-1.1.1-dev.jar"/>
