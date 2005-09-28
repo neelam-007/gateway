@@ -6,6 +6,8 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.io.failover.FailoverStrategy;
@@ -44,15 +46,22 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.servlet.http.HttpServletRequest;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
-import java.util.Vector;
+import java.util.Set;
+import java.util.Iterator;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -314,7 +323,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         ag.attachStatement(document, statement, samlOptions);
                     }
                 }
-                attachCookies(client, context, url, auditor);
+
+                Collection sentCookies = Collections.EMPTY_LIST;
+                if(httpRoutingAssertion.isCopyCookies())
+                    sentCookies = attachCookies(client, context, auditor, url.getHost());
 
                 // Serialize the request
                 final MimeKnob reqMime = context.getRequest().getMimeKnob();
@@ -340,9 +352,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 else
                     auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
-                HttpResponseKnob httpResponseKnob = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
                 if (httpResponseKnob != null)
                     httpResponseKnob.setStatus(status);
+
+                if(httpRoutingAssertion.isCopyCookies())
+                    returnCookies(client, context, sentCookies);
 
                 context.setRoutingStatus(RoutingStatus.ROUTED);
 
@@ -445,90 +460,67 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      *
      * @param client  the http client sender
      * @param context the context for this request
-     * @param url
-     * @param auditor
+     * @param auditor used to record cookie actions
+     * @return the collection of attached Cookies
      */
-    private void attachCookies(HttpClient client, PolicyEnforcementContext context, URL url, final Auditor auditor)
-    {
-        HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)context.getRequest().getKnob(HttpServletRequestKnob.class);
-        HttpServletRequest req = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
-        if (req == null)
-            return;
-        Vector updatedCookies = context.getUpdatedCookies();
+    private Collection attachCookies(HttpClient client, PolicyEnforcementContext context, Auditor auditor, String targetDomain) {
+        List attached = new ArrayList();
         HttpState state = client.getState();
-        Cookie updatedCookie = null;
+        Set contextCookies = context.getCookies();
 
-        javax.servlet.http.Cookie[] cookies = req.getCookies();
-        org.apache.commons.httpclient.Cookie cookieOut = null;
+        for (Iterator iterator = contextCookies.iterator(); iterator.hasNext();) {
+            HttpCookie cookie = (HttpCookie) iterator.next();
 
-        // if no cookies found in the request but there is cookies in the udpatedCookies list (i.e. new cookies)
-        if ((cookies == null || cookies.length == 0)) {
-            if (updatedCookies.size() > 0) {
-                for (int i = 0; i < updatedCookies.size(); i++) {
-                    Object o = (Object)updatedCookies.elementAt(i);
-                    if (o instanceof Cookie) {
-                        Cookie newCookie = (Cookie)o;
-                        cookieOut = new org.apache.commons.httpclient.Cookie();
-                        cookieOut.setDomain(url.getHost());
-                        cookieOut.setPath(url.getPath());
-                        cookieOut.setName(newCookie.getName());
-                        cookieOut.setSecure(newCookie.getSecure());
-                        cookieOut.setVersion(newCookie.getVersion());
-                        cookieOut.setComment(newCookie.getComment());
-                        // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
-                        auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE_WITH_VERSION, new String[] {cookieOut.getName(), String.valueOf(cookieOut.getVersion())});
-                        state.addCookie(cookieOut);
-                    }
+            if(CookieUtils.isPassThroughCookie(cookie)) {
+                if(cookie.isNew()) {
+                   auditor.logAndAudit(AssertionMessages.UPDATE_COOKIE, new String[] {cookie.getCookieName()});
                 }
-            }
-        } else {
-            for (int i = 0; cookies != null && i < cookies.length; i++) {
-                javax.servlet.http.Cookie incomingCookie = cookies[i];
-                cookieOut = new org.apache.commons.httpclient.Cookie(url.getHost(), incomingCookie.getName(), incomingCookie.getValue());
-                cookieOut.setPath(url.getPath());
 
-                // override the old cookie if the new one is found
-                updatedCookie = findCookieByName(updatedCookies, incomingCookie.getName());
-                if (updatedCookie != null) {
-                    cookieOut.setValue(updatedCookie.getValue());
-                    auditor.logAndAudit(AssertionMessages.UPDATE_COOKIE, new String[] {updatedCookie.getName()});
-                } else {
-                    cookieOut.setValue(incomingCookie.getValue());
-                }
-                cookieOut.setSecure(incomingCookie.getSecure());
-                cookieOut.setVersion(incomingCookie.getVersion());
-                cookieOut.setComment(incomingCookie.getComment());
-                // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
-                auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE_WITH_VERSION, new String[] {cookieOut.getName(), String.valueOf(cookieOut.getVersion())});
-                state.addCookie(cookieOut);
+                auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE_WITH_VERSION, new String[] {cookie.getCookieName(), String.valueOf(cookie.getVersion())});
+
+                // create HTTP Client version of cookie
+                Cookie httpClientCookie = CookieUtils.toHttpClientCookie(cookie);
+
+                // modify for target
+                httpClientCookie.setPathAttributeSpecified(true);
+                httpClientCookie.setPath("/");
+                httpClientCookie.setDomainAttributeSpecified(true);
+                httpClientCookie.setDomain(targetDomain);
+
+                // attach and record
+                attached.add(httpClientCookie);
+                state.addCookie(httpClientCookie);
             }
         }
 
+        return attached;
     }
 
     /**
-     * Find the cookie given the name.
+     * Get new cookies from the http state, and add them to the response.
      *
-     * @param updatedCookies the list of cookies
-     * @param cookieName     the given cookie name
-     * @return Cookie  the cookie object that matches the given name, null otherwise.
+     * @param client the client whose cookies are to be returned
+     * @param context the context to which the cookies should be added
+     * @param originalCookies the cookies that are known (not newly set)
      */
-    private Cookie findCookieByName(Vector updatedCookies, String cookieName) {
+    private void returnCookies(HttpClient client, PolicyEnforcementContext context, Collection originalCookies) {
+        HttpState state = client.getState();
+        Cookie[] cookies = state.getCookies();
 
-        Cookie cookie = null;
+        Set newCookies = new LinkedHashSet(Arrays.asList(cookies));
+        newCookies.removeAll(originalCookies);
 
-        for (int i = 0; i < updatedCookies.size(); i++) {
-            Object o = (Object)updatedCookies.elementAt(i);
-            if (o instanceof Cookie) {
-                cookie = (Cookie)o;
-                if (cookie.getName().equals(cookieName)) {
-                    break;
-                } else {
-                    cookie = null;
-                }
-            }
+        for (Iterator iterator = newCookies.iterator(); iterator.hasNext();) {
+            Cookie cookie = (Cookie) iterator.next();
+
+            // modify for client
+            cookie.setDomain(null);
+            cookie.setDomainAttributeSpecified(false);
+            cookie.setPath(null);
+            cookie.setPathAttributeSpecified(false);
+
+            context.addCookie(CookieUtils.fromHttpClientCookie(cookie, true));
         }
-        return cookie;
     }
 
     private static class MethodCloser implements Runnable {
