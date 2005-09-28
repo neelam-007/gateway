@@ -33,7 +33,7 @@ public class SqlAttackAssertion extends Assertion {
             "Blocks messages which appear to contain common MS SQL Server exploits.",
             "Blocks messages which appear to contain common MySQL exploits.",
             "Blocks messages which appear to contain common Oracle exploits.",
-    };
+     };
 
     Set protections = new HashSet();
 
@@ -64,7 +64,7 @@ public class SqlAttackAssertion extends Assertion {
      * @param protection  the protection name to enable.  May not be null or empty.
      */
     public void setProtection(String protection) {
-        if (protection == null || protection.length() > 0)
+        if (protection == null || protection.length() < 1)
             throw new IllegalArgumentException("Protection name must not be null or empty");
         this.protections.add(protection);
     }
