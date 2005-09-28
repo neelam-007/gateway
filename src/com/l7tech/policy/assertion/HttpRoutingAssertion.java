@@ -27,7 +27,7 @@ public class HttpRoutingAssertion extends RoutingAssertion {
     }
 
     /**
-     * Full constructor.
+     * Constructor.
      *
      * @param protectedServiceUrl the service url
      * @param login               protected service login
@@ -35,6 +35,19 @@ public class HttpRoutingAssertion extends RoutingAssertion {
      * @param realm               protected servcie realm
      */
     public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections) {
+        this(protectedServiceUrl, login, password, realm, maxConnections, true);
+    }
+
+    /**
+     * Full constructor.
+     *
+     * @param protectedServiceUrl the service url
+     * @param login               protected service login
+     * @param password            protected service password
+     * @param realm               protected servcie realm
+     * @param copyCookies         true to copy cookies to the service request
+     */
+    public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections, boolean copyCookies) {
         _protectedServiceUrl = protectedServiceUrl;
         _login = login;
         _password = password;
@@ -42,6 +55,7 @@ public class HttpRoutingAssertion extends RoutingAssertion {
 
         if (maxConnections == -1) maxConnections = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxConnections = maxConnections;
+        _copyCookies = copyCookies;
     }
 
     public Object clone() throws CloneNotSupportedException {
@@ -55,6 +69,14 @@ public class HttpRoutingAssertion extends RoutingAssertion {
 
     public void setMaxConnections(int maxConnections) {
         _maxConnections = maxConnections;
+    }
+
+    public boolean isCopyCookies() {
+        return _copyCookies;
+    }
+
+    public void setCopyCookies(boolean copyCookies) {
+        this._copyCookies = copyCookies;
     }
 
     public String getLogin() {
@@ -134,6 +156,7 @@ public class HttpRoutingAssertion extends RoutingAssertion {
         this.setFailoverStrategyName(source.getFailoverStrategyName());
         this.setLogin(source.getLogin());
         this.setMaxConnections(source.getMaxConnections());
+        this.setCopyCookies(source.isCopyCookies());
         this.setPassword(source.getPassword());
         this.setProtectedServiceUrl(source.getProtectedServiceUrl());
         this.setRealm(source.getRealm());
@@ -146,6 +169,7 @@ public class HttpRoutingAssertion extends RoutingAssertion {
     protected String _realm;
     protected String _userAgent;
     protected int _maxConnections;
+    protected boolean _copyCookies;
     protected String[] _customIpAddresses = null;
     protected String _failoverStrategyName = "ordered";
 }
