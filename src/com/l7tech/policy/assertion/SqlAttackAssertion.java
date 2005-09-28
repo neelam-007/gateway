@@ -88,15 +88,22 @@ public class SqlAttackAssertion extends Assertion {
     public String getProtectionLabel(String protection) throws PolicyAssertionException {
         for (int i = 0; i < PROTECTIONS.length; i++) {
             String s = PROTECTIONS[i];
-            // TODO finish this
-
+            if (s.equalsIgnoreCase(protection)) {
+                return PROTECTION_LABELS[i];
+            }
         }
-        throw new PolicyAssertionException("Not yet implemented");
+        throw new PolicyAssertionException("No label for protection \"" + protection + "\"");
     }
 
 
     public String getProtectionDescription(String protection) throws PolicyAssertionException {
-        throw new PolicyAssertionException("Not yet implemented");
+        for (int i = 0; i < PROTECTIONS.length; i++) {
+            String s = PROTECTIONS[i];
+            if (s.equalsIgnoreCase(protection)) {
+                return PROTECTION_DESCRIPTIONS[i];
+            }
+        }
+        throw new PolicyAssertionException("No label for protection \"" + protection + "\"");
     }
 
 }
