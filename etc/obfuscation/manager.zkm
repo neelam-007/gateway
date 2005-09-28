@@ -7,6 +7,9 @@
 // prerequisites:
 // this script should be placed in UneasyRooster\installer\Manager-HEAD
 //
+// output:
+// in the execution directory/obfuscatedOutput will be an obfuscated version of Manager.jar
+//
 // how to run it:
 // java -jar ZKM.jar manager.zkm
 //
