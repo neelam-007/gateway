@@ -562,7 +562,8 @@ public class MessageProcessor {
         final Ssg ssg = context.getSsg();
 
         List headers = new ArrayList();
-        headers.add(new GenericHttpHeader("Cookie", context.getSsg().getRuntime().getSessionCookiesHeaderValue()));
+        String cookieHeader = context.getSsg().getRuntime().getSessionCookiesHeaderValue();
+        headers.add(new GenericHttpHeader("Cookie", cookieHeader));
         headers.add(new GenericHttpHeader("User-Agent", SecureSpanConstants.USER_AGENT));
 
         final Message request = context.getRequest();
@@ -635,7 +636,7 @@ public class MessageProcessor {
             log.info("POST to Gateway completed with HTTP status code " + status);
 
             HttpHeaders responseHeaders = httpResponse.getHeaders();
-            gatherCookies(responseHeaders, ssg);
+            gatherCookies(url, responseHeaders, ssg);
             String certStatus = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
             if (SecureSpanConstants.INVALID.equalsIgnoreCase(certStatus)) {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
@@ -736,7 +737,7 @@ public class MessageProcessor {
             
             if (response.getKnob(HttpResponseKnob.class) == null) {
                 response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                    public void addCookie(Cookie cookie) {
+                    public void addCookie(HttpCookie cookie) {
                         // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
                         throw new UnsupportedOperationException();
                     }
@@ -748,7 +749,7 @@ public class MessageProcessor {
             }
 
             // Replace any cookies in the response.
-            gatherCookies(responseHeaders, ssg);
+            gatherCookies(url, responseHeaders, ssg);
 
             final GenericHttpResponse cleanup = httpResponse;
             context.runOnClose(new Runnable() {
@@ -899,50 +900,22 @@ public class MessageProcessor {
         return responseStr;
     }
 
-    private void gatherCookies(HttpHeaders responseHeaders, Ssg ssg) {
+    private void gatherCookies(URL url, HttpHeaders responseHeaders, Ssg ssg) {
         //get the existing cookies and update. If there are no
         // "Set-Cookie" headers returned, then this will maintain the existing
         // cookies
-        HttpCookie[] existingCookies = ssg.getRuntime().getSessionCookies();
         List values = responseHeaders.getValues("Set-Cookie");
-        List newCookies = addAndReplaceCookies(existingCookies, values);
+        if(!values.isEmpty()) {
+            HttpCookie[] existingCookies = ssg.getRuntime().getSessionCookies();
+            Set cookieSet = new LinkedHashSet(Arrays.asList(existingCookies));
 
-        ssg.getRuntime().setSessionCookies((HttpCookie[])newCookies.toArray(new HttpCookie[0]));
-    }
-
-    private List addAndReplaceCookies(HttpCookie[] existingCookies, List values) {
-
-        List newCookies = new ArrayList();
-        if (existingCookies != null) {
-            for (int i = 0; i < existingCookies.length; ++i) {
-                HttpCookie cookie = existingCookies[i];
-                newCookies.add(cookie);
+            for (Iterator iterator = values.iterator(); iterator.hasNext();) {
+                String setCookieValue =  (String) iterator.next();
+                cookieSet.add(new HttpCookie(url, setCookieValue));
             }
+
+            ssg.getRuntime().setSessionCookies((HttpCookie[]) cookieSet.toArray(new HttpCookie[cookieSet.size()]));
         }
-
-        if (values != null) {
-            for (Iterator i = values.iterator(); i.hasNext();) {
-                String s = (String)i.next();
-                try {
-                    HttpCookie newCookieFromHeader = new HttpCookie(s);
-                    HttpCookie existingCookie = existingCookieFound(newCookies, newCookieFromHeader);
-
-                    //if there is already a cookie by this name, update it since this one is more recent,
-                    // otherwise, add this one.
-                    if (existingCookie != null) {
-                        existingCookie = newCookieFromHeader;
-                    }
-                    else {
-                        newCookies.add(newCookieFromHeader);
-                    }
-
-                } catch (IOException ioex) {
-                    log.info("Exception while setting cookie: " + ioex.getMessage());
-                }
-            }
-        }
-
-        return newCookies;
     }
 
     private HttpCookie existingCookieFound(List existingCookies, HttpCookie newCookie) {
