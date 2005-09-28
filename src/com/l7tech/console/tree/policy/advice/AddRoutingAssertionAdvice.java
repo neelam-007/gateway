@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.JmsRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -10,8 +11,10 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.service.PublishedService;
 
 import javax.wsdl.WSDLException;
+import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,10 +45,25 @@ public class AddRoutingAssertionAdvice implements Advice {
 
         if (assertions[0] instanceof HttpRoutingAssertion) {
             HttpRoutingAssertion ra = (HttpRoutingAssertion) assertions[0];
-            String url = "Unable to determine the service url. Please edit";
             try {
                 if (null == ra.getProtectedServiceUrl()) {
-                    url = pc.getService().parsedWsdl().getServiceURI();
+                    String url = null;
+                    PublishedService service = pc.getService();
+                    if (service.isSoap()) {
+                        Wsdl wsdl = service.parsedWsdl();
+                        if (wsdl != null) {
+                            url = wsdl.getServiceURI();
+                        }
+                    }
+
+                    if (url == null) {
+                        url = JOptionPane.showInputDialog(
+                                TopComponents.getInstance().getPolicyTree(),
+                                "The Protected Service URL cannot be determined automatically.\nPlease enter the URL:",
+                                "Unable to Determine Service URL", JOptionPane.WARNING_MESSAGE);
+                        if (url == null) return;
+                    }
+
                     ra.setProtectedServiceUrl(url);
                 }
             } catch (WSDLException e) {
