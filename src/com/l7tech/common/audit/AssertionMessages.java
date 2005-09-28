@@ -249,16 +249,20 @@ public class AssertionMessages extends Messages {
     public static final M REGEX_NO_ENCODING       = m(6304, Level.INFO, "Character encoding not specified; will use default {0}");
     public static final M REGEX_ENCODING_OVERRIDE = m(6305, Level.FINE, "Using overridden character encoding {0}");
 
-    // SAML Browser/POST
-    public static final M SAMLBROWSERPOST_LOGINFORM_NON_200           = m(6400, Level.WARNING, "HTTP GET for login form resulted in non-200 status");
-    public static final M SAMLBROWSERPOST_LOGINFORM_NOT_HTML          = m(6401, Level.WARNING, "HTTP GET for login form resulted in non-HTML response");
-    public static final M SAMLBROWSERPOST_LOGINFORM_IOEXCEPTION       = m(6402, Level.WARNING, "Couldn't read login form HTML");
-    public static final M SAMLBROWSERPOST_LOGINFORM_PARSEEXCEPTION    = m(6403, Level.WARNING, "Unable to parse login form HTML");
-    public static final M SAMLBROWSERPOST_LOGINFORM_CANT_FIND_FIELDS  = m(6404, Level.WARNING, "Unable to find login and/or password field(s) in login form HTML");
-    public static final M SAMLBROWSERPOST_LOGINFORM_MULTIPLE_FIELDS   = m(6405, Level.WARNING, "Login form contained multiple username or password fields");
-    public static final M SAMLBROWSERPOST_LOGINFORM_MULTIPLE_FORMS    = m(6406, Level.WARNING, "Multiple login forms found");
-    public static final M SAMLBROWSERPOST_LOGINFORM_NO_FORM           = m(6407, Level.WARNING, "No matching login form found");
-    public static final M SAMLBROWSERPOST_LOGINFORM_BAD_METHOD        = m(6408, Level.WARNING, "Login form method was not POST");
+    // SAML Browser General
+    public static final M SAMLBROWSER_LOGINFORM_NON_200               = m(6400, Level.WARNING, "HTTP GET for login form resulted in non-200 status");
+    public static final M SAMLBROWSER_LOGINFORM_NOT_HTML              = m(6401, Level.WARNING, "HTTP GET for login form resulted in non-HTML response");
+    public static final M SAMLBROWSER_LOGINFORM_IOEXCEPTION           = m(6402, Level.WARNING, "Couldn't read login form HTML");
+    public static final M SAMLBROWSER_LOGINFORM_PARSEEXCEPTION        = m(6403, Level.WARNING, "Unable to parse login form HTML");
+    public static final M SAMLBROWSER_LOGINFORM_CANT_FIND_FIELDS      = m(6404, Level.WARNING, "Unable to find login and/or password field(s) in login form HTML");
+    public static final M SAMLBROWSER_LOGINFORM_MULTIPLE_FIELDS       = m(6405, Level.WARNING, "Login form contained multiple username or password fields");
+    public static final M SAMLBROWSER_LOGINFORM_MULTIPLE_FORMS        = m(6406, Level.WARNING, "Multiple login forms found");
+    public static final M SAMLBROWSER_LOGINFORM_NO_FORM               = m(6407, Level.WARNING, "No matching login form found");
+    public static final M SAMLBROWSER_LOGINFORM_BAD_METHOD            = m(6408, Level.WARNING, "Login form method was not POST");
+    public static final M SAMLBROWSER_LOGINFORM_INVALID               = m(6409, Level.WARNING, "Login form is not valid");
+    public static final M SAMLBROWSER_LOGINFORM_REDIRECT_INVALID      = m(6410, Level.WARNING, "Invalid redirect after FORM login");
+    public static final M SAMLBROWSER_CREDENTIALS_NOCREDS             = m(6420, Level.WARNING, "Request does not contain any credentials");
+    public static final M SAMLBROWSER_CREDENTIALS_CREDS_NOT_PASSWORD  = m(6421, Level.WARNING, "Request credentials do not include a password");
 
     // SAML Browser/Artifact
     public static final M SAMLBROWSERARTIFACT_RESPONSE_NON_302        = m(6500, Level.WARNING, "HTTP GET for login resulted in non-302 status");
@@ -266,8 +270,6 @@ public class AssertionMessages extends Messages {
     public static final M SAMLBROWSERARTIFACT_REDIRECT_BAD_QUERY      = m(6502, Level.WARNING, "Redirect query string could not be parsed");
     public static final M SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT    = m(6503, Level.WARNING, "Couldn't find SAML artifact in redirect query string");
     public static final M SAMLBROWSERARTIFACT_IOEXCEPTION             = m(6504, Level.WARNING, "Couldn't login");
-    public static final M SAMLBROWSERARTIFACT_NOCREDS                 = m(6505, Level.WARNING, "Request does not contain any credentials");
-    public static final M SAMLBROWSERARTIFACT_CREDS_NOT_PASSWORD      = m(6506, Level.WARNING, "Request credentials do not include a password");
 
     // XPath Credential Source
     public static final M XPATHCREDENTIAL_REQUEST_NOT_XML          = m(6600, Level.WARNING, "Request not valid XML");
