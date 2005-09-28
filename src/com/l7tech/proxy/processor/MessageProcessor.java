@@ -562,6 +562,8 @@ public class MessageProcessor {
         final Ssg ssg = context.getSsg();
 
         List headers = new ArrayList();
+
+        // TODO [steve] move this stuff into PAC  and replace with call to it
         String cookieHeader = context.getSsg().getRuntime().getSessionCookiesHeaderValue();
         headers.add(new GenericHttpHeader("Cookie", cookieHeader));
         headers.add(new GenericHttpHeader("User-Agent", SecureSpanConstants.USER_AGENT));
@@ -901,6 +903,7 @@ public class MessageProcessor {
     }
 
     private void gatherCookies(URL url, HttpHeaders responseHeaders, Ssg ssg) {
+        // TODO [steve] move this code to PAC and leave behind a call
         //get the existing cookies and update. If there are no
         // "Set-Cookie" headers returned, then this will maintain the existing
         // cookies

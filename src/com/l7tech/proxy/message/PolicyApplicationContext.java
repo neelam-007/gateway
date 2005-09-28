@@ -627,4 +627,11 @@ public class PolicyApplicationContext extends ProcessingContext {
         logger.info("New policy saved successfully");
     }
 
+    public void populateRequestCookies() {
+        // TODO [steve] Move cookies from ssgRuntime to request
+    }
+
+    public void recordResponseCookies() {
+        // TODO [steve] Copy cookies from response to ssgRuntime
+    }
 }

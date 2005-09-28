@@ -357,7 +357,15 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     Message bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
 
 
-                    PolicyApplicationContext pac = new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl);
+                    PolicyApplicationContext pac = new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
+                        public void recordResponseCookies() {
+                            // do nothing, leave them in the response and store them nowhere in the Gateway
+                        }
+
+                        public void populateRequestCookies() {
+                            // TODO [steve] copy cookies from PEC to Request headers
+                        }
+                    };
                     messageProcessor.processMessage(pac);
 
                     final HttpResponseKnob hrk = bridgeResponse.getHttpResponseKnob();
