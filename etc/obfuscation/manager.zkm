@@ -4,57 +4,13 @@
 // author: flascelles@layer7tech.com
 // Layer 7 Technologies 2005
 //
-// prerequisites:
-// this script should be placed in UneasyRooster\installer\Manager-HEAD
-//
-// output:
-// in the execution directory/obfuscatedOutput will be an obfuscated version of Manager.jar
-//
-// how to run it:
-// java -jar ZKM.jar manager.zkm
-//
-//
-classpath   "./lib/antlr.jar"
-            "./lib/aopalliance.jar"
-            "./lib/axis.jar"
-            "./lib/bcprov-jdk15-127.jar"
-            "./lib/commons-collections-2.1.1.jar"
-            "./lib/commons-discovery.jar"
-            "./lib/commons-lang-1.0.1.jar"
-            "./lib/commons-logging-1.0.4.jar"
-            "./lib/dom4j.jar"
-            "./lib/forms_rt.jar"
-            "./lib/hibernate2.jar"
-            "./lib/jaxen-1.1-beta-2-l7.jar"
-            "./lib/jaxrpc.jar"
-            "./lib/jh.jar"
-            "./lib/jnlp.jar"
-            "./lib/kunststoff.jar"
-            "./lib/log4j.jar"
-            "./lib/looks-1.1.3.jar"
-            "./lib/mailapi-1.3.2.jar"
-            "./lib/nachocalendar.jar"
-            "./lib/odmg.jar"
-            "./lib/oswego-concurrent.jar"
-            "./lib/qname.jar"
-            "./lib/saaj.jar"
-            "./lib/saxpath.jar"
-            "./lib/spring-aop.jar"
-            "./lib/spring-context.jar"
-            "./lib/spring-core.jar"
-            "./lib/spring-dao.jar"
-            "./lib/0500-wsdl4j.jar"
-            "./lib/xbean.jar"
-            "./lib/xercesImpl.jar"
-            "./lib/xml-apis.jar"
-            "./lib/xmlpad.jar"
-            "./lib/xmlpad-res.jar"
-            "./lib/xss4j.jar";
-
+// this is setup to be invoked indirectly through the ant task "obfuscate.manager"
+// the line below is replaced by the actual jar list read from the mf through substjars.pl
+%%%JARFILE_FILE_LINES%%%
 
 // this is the jar file to process
 // this could also be a directory containing .class files
-open        "./Manager.jar";
+open        "./build/Manager.jar";
 
 // we dont want to let zelix determine which classes/methods are unused
 // therefore we are excluding everything from trimming otherwise some
@@ -91,11 +47,11 @@ exclude     public *.^* and
 existingSerializedClasses *.* implements java.io.Serializable;
 
 obfuscate   changeLogFileIn=""
-            changeLogFileOut="./obfuscatedOutput/change.log"
+            changeLogFileOut="build/obfuscation/managerchange.log"
             obfuscateFlow=normal
             encryptStringLiterals=normal
             lineNumbers=delete;
 
 // this lets you specify the output directory. it will contain whatever you added with
 // open statement(s) except it will be the obfuscated copy
-saveAll     archiveCompression=all "./obfuscatedOutput";
+saveAll     archiveCompression=all "./build/obfuscation";

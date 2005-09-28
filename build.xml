@@ -74,6 +74,15 @@
     <taskdef name="javac2"
              classname="com.intellij.uiDesigner.ant.Javac2"
              classpathref="uidesigner.classpath"/>
+
+    <path id="zelix.classpath">
+        <fileset dir="etc/obfuscation">
+            <include name="ZKM.jar"/>
+        </fileset>
+    </path>
+
+    <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
+
 <!--
        * jars that go in $TOMCAT_HOME/common/lib
        * currently in ant this is used in conjunction with
@@ -1688,4 +1697,37 @@
             </fileset>
         </replaceregexp>
     </target>
+
+    <!--  depends="package.bridge" ?? -->
+    <target name="obfuscate.bridge">
+        <echo>Obfuscating Bridge.jar</echo>
+        <exec executable="perl" failonerror="true" dir=".">
+            <arg line="etc/obfuscation/substjars.pl"/>
+            <arg line="-N"/>
+        </exec>
+        <Zelix scriptFileName="etc/obfuscation/bridge_new.zkm"
+               logFileName="build/obfuscation/bridgeobfuscation.log"
+               trimLogFileName="build/obfuscation/bridgeobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+
+        <echo>Done obfuscating Bridge.jar</echo>
+    </target>
+
+    <!--  depends="package.manager" ?? -->
+    <target name="obfuscate.manager">
+        <echo>Obfuscating Manager.jar</echo>
+        <exec executable="perl" failonerror="true" dir=".">
+            <arg line="etc/obfuscation/substjars.pl"/>
+            <arg line="-N"/>
+        </exec>
+        <Zelix scriptFileName="etc/obfuscation/manager_new.zkm"
+               logFileName="build/obfuscation/managerobfuscation.log"
+               trimLogFileName="build/obfuscation/managerobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+
+        <echo>Done obfuscating Manager.jar</echo>
+    </target>
+
 </project>
