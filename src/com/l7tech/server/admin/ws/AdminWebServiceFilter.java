@@ -135,8 +135,8 @@ public class AdminWebServiceFilter implements Filter {
             throw new ServletException("Only HTTP requests are supported");
         }
 
-        HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
-        String tmp = httpServletRequest.getQueryString();
+        HttpServletRequest httpServletRequest = (HttpServletRequest)servletRequest;
+        HttpServletResponse httpServletResponse = (HttpServletResponse)servletResponse;
         if ("get".equalsIgnoreCase(httpServletRequest.getMethod()) && "wsdl".equalsIgnoreCase(httpServletRequest.getQueryString())) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
@@ -145,7 +145,7 @@ public class AdminWebServiceFilter implements Filter {
         final HttpRequestKnob reqKnob = new HttpServletRequestKnob(httpServletRequest);
         request.attachHttpRequestKnob(reqKnob);
 
-        final HttpServletResponseKnob respKnob = new HttpServletResponseKnob((HttpServletResponse) servletResponse);
+        final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(httpServletResponse);
         response.attachHttpResponseKnob(respKnob);
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
@@ -161,8 +161,17 @@ public class AdminWebServiceFilter implements Filter {
                 // TODO support admin services that requre Gateway Administrators membership
                 // Pass it along to XFire
                 filterChain.doFilter(servletRequest, servletResponse);
+                respKnob.beginResponse();
             } else {
-                throw new ServletException("Authentication Required");
+                respKnob.beginResponse();
+                if (respKnob.hasChallenge()) {
+                    // 401, not a fault
+                    respKnob.beginChallenge();
+                    httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                } else {
+                    // 500, fault
+                    throw new ServletException("Authentication Required");
+                }
             }
         } catch (Exception e) {
             PrintWriter writer = null;
