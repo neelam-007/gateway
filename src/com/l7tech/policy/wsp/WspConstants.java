@@ -136,6 +136,16 @@ public class WspConstants {
             }
         },
 
+        new BasicTypeMapping(AuthenticationProperties.Method.class, "authenticationMethod") {
+            protected String objectToString(Object in) {
+                return ((AuthenticationProperties.Method)in).getId();
+            }
+
+            protected Object stringToObject(String in) {
+                return AuthenticationProperties.forKeyName(in);
+            }
+        },
+
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
         new ArrayTypeMapping(new String[0], "stringArrayValue"),
@@ -225,6 +235,7 @@ public class WspConstants {
         new BeanTypeMapping(HttpFormPost.FieldInfo.class, "fieldInfo"),
         new ArrayTypeMapping(new HttpFormPost.FieldInfo[0], "fieldInfoArray"),
         new ArrayTypeMapping(new String[0], "fieldNames"),
+        new BeanTypeMapping(AuthenticationProperties.class, "authenticationInfo"),
 
         // Backward compatibility with old policy documents
         WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,
