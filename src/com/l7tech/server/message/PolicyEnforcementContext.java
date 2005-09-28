@@ -7,6 +7,7 @@
 package com.l7tech.server.message;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
@@ -51,7 +52,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean isAuthenticationMissing = false;
     private boolean isRequestPolicyViolated = false;
     private PublishedService service;
-    private final Vector updatedCookies = new Vector();
+    private Set cookies = new LinkedHashSet();
     private AuditContext auditContext = null;
     private final Map variables = new HashMap();
     private long routingStartTime;
@@ -212,8 +213,12 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return service;
     }
 
-    public Vector getUpdatedCookies() {
-        return updatedCookies;
+    public Set getCookies() {
+        return Collections.unmodifiableSet(cookies);
+    }
+
+    public void addCookie(HttpCookie cookie) {
+        cookies.add(cookie);
     }
 
     public ArrayList getIncrementedCounters() {
