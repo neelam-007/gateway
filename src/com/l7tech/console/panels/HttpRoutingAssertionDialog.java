@@ -55,6 +55,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JPanel serviceUrlPanel;
     private JTextField serviceUrlTextField;
 
+    private JCheckBox cookiePropagationCheckBox;
+
     private JRadioButton passwordMethod;
     private JRadioButton samlMethod;
     private JSpinner expirySpinner;
@@ -131,8 +133,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private void initComponents() {
         GridBagConstraints gridBagConstraints;
         JPanel mainPanel = new JPanel();
+        JPanel cookiePanel = new JPanel();
         JPanel credentialsPanel = new JPanel();
-
 
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
@@ -142,6 +144,23 @@ public class HttpRoutingAssertionDialog extends JDialog {
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
 
+        cookiePanel.setLayout(new GridBagLayout());
+        cookiePanel.setBorder(BorderFactory.createTitledBorder("Cookie Policy"));
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.insets = new Insets(0, 0, 20, 10);
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        cookiePanel.add(getCookiePolicyPanel(), gridBagConstraints);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.insets = new Insets(0, 0, 20, 10);
+        gridBagConstraints.weightx = 100.0;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = GridBagConstraints.EAST;
+        cookiePanel.add(Box.createGlue(), gridBagConstraints);
+        mainPanel.add(cookiePanel);
 
         credentialsPanel.setLayout(new GridBagLayout());
         credentialsPanel.setBorder(BorderFactory.createTitledBorder("Service Authentication"));
@@ -356,6 +375,18 @@ public class HttpRoutingAssertionDialog extends JDialog {
         return urlBarPanel;
     }
 
+    private JPanel getCookiePolicyPanel() {
+        JPanel cookiePanel = new JPanel();
+
+        cookiePanel.setLayout(new BoxLayout(cookiePanel, BoxLayout.X_AXIS));
+        cookiePanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 0)));
+
+        cookiePropagationCheckBox = new JCheckBox();
+        cookiePropagationCheckBox.setText("Enable HTTP Cookies");
+        cookiePanel.add(cookiePropagationCheckBox);
+
+        return cookiePanel;
+    }
 
     private JComboBox getAuthenticationMethodComboBox() {
         if (authenticationMethodComboBox != null)
@@ -387,7 +418,6 @@ public class HttpRoutingAssertionDialog extends JDialog {
         identityPanel.add(Box.createGlue());
         credentialsPanel.add(identityPanel);
         credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
 
         JPanel passwordPanel = new JPanel();
         passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
@@ -589,6 +619,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
                             assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
                             assertion.setXmlSecurityActorToPromote(null);
                         }
+
+                        assertion.setCopyCookies(cookiePropagationCheckBox.isSelected());
+
                         HttpRoutingAssertionDialog.this.dispose();
                     }
                 }
@@ -669,6 +702,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
             promoteActorCombo.setEnabled(true);
             promoteActorCombo.getModel().setSelectedItem(assertion.getXmlSecurityActorToPromote());
         }
+
+        cookiePropagationCheckBox.setSelected(assertion.isCopyCookies());
     }
 
     /**
