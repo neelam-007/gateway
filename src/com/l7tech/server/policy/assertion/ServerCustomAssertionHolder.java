@@ -18,6 +18,8 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -34,6 +36,8 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.security.*;
 import java.util.*;
@@ -98,7 +102,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         final HttpServletResponseKnob hsResponseKnob = (HttpServletResponseKnob)pec.getResponse().getKnob(HttpServletResponseKnob.class);
         final HttpServletResponse httpServletResponse = hsResponseKnob == null ? null : hsResponseKnob.getHttpServletResponse();
         if (httpServletResponse != null)
-            context.put("httpResponse", httpServletResponse);
+            context.put("httpResponse", wrap(httpServletResponse, pec, context));
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -133,10 +137,20 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             subject.setReadOnly();
             Subject.doAs(subject, new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
-                    if (isPostRouting(context)) {
-                        serviceInvocation.onResponse(new CustomServiceResponse(context));
-                    } else {
-                        serviceInvocation.onRequest(new CustomServiceRequest(context));
+                    CustomService customService = null;
+                    try {
+                        if (isPostRouting(context)) {
+                            CustomServiceResponse customServiceResponse = new CustomServiceResponse(context);
+                            customService = customServiceResponse;
+                            serviceInvocation.onResponse(customServiceResponse);
+                        } else {
+                            CustomServiceRequest customServiceRequest = new CustomServiceRequest(context);
+                            customService = customServiceRequest;
+                            serviceInvocation.onRequest(customServiceRequest);
+                        }
+                    }
+                    finally {
+                        if(customService!=null) customService.onCompletion();
                     }
                     return null;
                 }
@@ -221,7 +235,29 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         return messageParts;
     }
 
-    private class CustomServiceResponse implements ServiceResponse {
+    /**
+     * Wrap the HTTP Servlet Response to intercept any cookies and save them in the
+     * context for later.
+     */
+    private static HttpServletResponse wrap(HttpServletResponse response, final PolicyEnforcementContext pec, final Map context) {
+        return new HttpServletResponseWrapper(response){
+
+            /**
+             * Don't actually add to the response here, save it for later.
+             */
+            public void addCookie(Cookie cookie) {
+                pec.addCookie(CookieUtils.fromServletCookie(cookie, true));
+            }
+        };
+    }
+
+    private abstract class CustomService
+    {
+        protected void onCompletion() {
+        }
+    }
+
+    private class CustomServiceResponse extends CustomService implements ServiceResponse {
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
         private final Document document;
@@ -278,7 +314,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         }
     }
 
-    private class CustomServiceRequest implements ServiceRequest {
+    private class CustomServiceRequest extends CustomService implements ServiceRequest {
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
         private final Document document;
@@ -287,8 +323,8 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         public CustomServiceRequest(PolicyEnforcementContext pec)
           throws IOException, SAXException {
             this.pec = pec;
-            this.document = (Document)pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
-            Vector newCookies = pec.getUpdatedCookies();
+            this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
+            Vector newCookies = new Vector(pec.getCookies());
 
             saveServletKnobs(pec, context);
 
@@ -338,6 +374,17 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
         public Map getContext() {
             return context;
+        }
+
+        protected void onCompletion() {
+            Vector cookies = (Vector) context.get("updatedCookies");
+            for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
+                HttpCookie cookie = (HttpCookie) iterator.next();
+                if(cookie.isNew()) {
+                    // doesn't really matter if this has already been added
+                    pec.addCookie(cookie);
+                }
+            }
         }
     }
 }
