@@ -6,7 +6,7 @@
 
 package com.l7tech.common.message;
 
-import org.apache.commons.httpclient.Cookie;
+import com.l7tech.common.http.HttpCookie;
 
 /**
  * Information about a response to be sent via HTTP.
@@ -16,7 +16,7 @@ public interface HttpResponseKnob extends MessageKnob {
      * Adds the specified {@link Cookie} to the response
      * @param cookie the {@link Cookie} to be added. Must not be null.
      */
-    void addCookie(Cookie cookie);
+    void addCookie(HttpCookie cookie);
 
     /**
      * Sets the specified header to a date value

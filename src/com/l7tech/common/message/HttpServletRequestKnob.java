@@ -5,8 +5,11 @@
 package com.l7tech.common.message;
 
 import com.l7tech.common.util.IteratorEnumeration;
+import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpCookie;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -33,27 +36,16 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         this.request = request;
     }
 
-    public static org.apache.commons.httpclient.Cookie servletCookieToCommons(javax.servlet.http.Cookie cookie) {
-        org.apache.commons.httpclient.Cookie c = new org.apache.commons.httpclient.Cookie();
-        c.setName(cookie.getName());
-        c.setValue(cookie.getValue());
-        c.setPath(cookie.getPath());
-        c.setDomain(cookie.getDomain());
-        c.setVersion(cookie.getVersion());
-        c.setComment(cookie.getComment());
-        if (cookie.getMaxAge() >= 0)
-            c.setExpiryDate(new Date(System.currentTimeMillis() + (cookie.getMaxAge() * 1000L)));
-        return c;
-    }
-
-    public org.apache.commons.httpclient.Cookie[] getCookies() {
-        javax.servlet.http.Cookie[] cookies = request.getCookies();
-        List out = new ArrayList(cookies.length);
-        for (int i = 0; i < cookies.length; i++) {
-            javax.servlet.http.Cookie cookie = cookies[i];
-            out.add(servletCookieToCommons(cookie));
+    public HttpCookie[] getCookies() {
+        Cookie[] cookies = request.getCookies();
+        List out = new ArrayList();
+        if(cookies!=null) {
+            for (int i=0; i < cookies.length; i++) {
+                Cookie cookie = cookies[i];
+                out.add(CookieUtils.fromServletCookie(cookie, false));
+            }            
         }
-        return (org.apache.commons.httpclient.Cookie[])out.toArray(new org.apache.commons.httpclient.Cookie[0]);
+        return (HttpCookie[]) out.toArray(new HttpCookie[out.size()]);
     }
 
     public String getMethod() {

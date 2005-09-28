@@ -6,7 +6,11 @@
 
 package com.l7tech.common.message;
 
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.CookieUtils;
+
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Cookie;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -25,15 +29,8 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
         this.response = response;
     }
 
-    public void addCookie(org.apache.commons.httpclient.Cookie cookie) {
-        javax.servlet.http.Cookie c = new javax.servlet.http.Cookie(cookie.getName(), cookie.getValue());
-        c.setDomain(cookie.getDomain());
-        c.setPath(cookie.getPath());
-        c.setVersion(cookie.getVersion());
-        c.setComment(cookie.getComment());
-        if (cookie.getExpiryDate() != null)
-            c.setMaxAge((int)((cookie.getExpiryDate().getTime() - System.currentTimeMillis()) / 1000));
-        cookiesToSend.add(c);
+    public void addCookie(HttpCookie cookie) {
+        cookiesToSend.add(CookieUtils.toServletCookie(cookie));
     }
 
     /**
@@ -49,6 +46,11 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
             } else {
                 response.addHeader(pair.name, (String)value);
             }
+        }
+
+        for (Iterator i = cookiesToSend.iterator(); i.hasNext();) {
+            Cookie cookie = (Cookie) i.next();
+            response.addCookie(cookie);
         }
     }
 

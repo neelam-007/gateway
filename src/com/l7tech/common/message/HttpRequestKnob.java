@@ -4,13 +4,13 @@
 
 package com.l7tech.common.message;
 
-import org.apache.commons.httpclient.Cookie;
-
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.Map;
 import java.util.Enumeration;
+
+import com.l7tech.common.http.HttpCookie;
 
 /**
  * Information about a request that arrived over HTTP.
@@ -19,9 +19,9 @@ import java.util.Enumeration;
  */
 public interface HttpRequestKnob extends TcpKnob {
     /**
-     * @return the array of {@link Cookie}s that were found in this request. Never null, but may be empty.
+     * @return the array of {@link HttpCookie}s that were found in this request. Never null, but may be empty.
      */
-    Cookie[] getCookies();
+    HttpCookie[] getCookies();
 
     /**
      * @return the method (e.g. GET, PUT, POST, DELETE) used in this request. Never null or empty.
