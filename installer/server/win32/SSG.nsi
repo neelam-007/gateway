@@ -132,7 +132,7 @@ Section "SecureSpan Gateway" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File /r "${BUILD_DIR}\install\ssg\tomcat"
-  ;Windows mapped drive Z:
+  ;Windows mapped drive X:
   File /r "X:\jdk1.5.0_04-windows-i586-p-redist"
   Rename "$INSTDIR\jdk1.5.0_04-windows-i586-p-redist" "$INSTDIR\jdk"
   ;etc/install.properties not having version as suffix to jdk 
