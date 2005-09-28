@@ -44,11 +44,12 @@ public class SamlBrowserArtifactFieldDialog extends JDialog {
             }
         });
 
+        updateButtons();
         add(mainPanel);
     }
 
     private void updateButtons() {
-        okButton.setEnabled(nameField.getText().length() > 0);
+        okButton.setEnabled(nameField.getText()!=null && nameField.getText().trim().length() > 0);
     }
 
     public boolean isModified() {
