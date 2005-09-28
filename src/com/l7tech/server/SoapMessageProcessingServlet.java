@@ -16,6 +16,8 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -33,11 +35,14 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
@@ -125,6 +130,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setReplyExpected(true); // HTTP always expects to receive a reply
 
+        initCookies(hrequest.getCookies(), context);
+
         final StashManager stashManager = StashManagerFactory.createStashManager();
 
         try {
@@ -149,6 +156,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             // Send response headers
+            propagateCookies(context, respKnob);
             respKnob.beginResponse();
 
             int routeStat = respKnob.getStatus();
@@ -241,6 +249,31 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 auditContext.flush();
             } finally {
                 context.close();
+            }
+        }
+    }
+
+    private void initCookies(Cookie[] cookies, PolicyEnforcementContext context) {
+        if(cookies!=null) {
+            for (int i = 0; i < cookies.length; i++) {
+                Cookie cookie = cookies[i];
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Adding request cookie to context; name='"+cookie.getName()+"'.");
+                }
+                context.addCookie(CookieUtils.fromServletCookie(cookie,false));
+            }
+        }
+    }
+
+    private void propagateCookies(PolicyEnforcementContext context, HttpResponseKnob resKnob) {
+        Set cookies = context.getCookies();
+        for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
+            HttpCookie cookie = (HttpCookie) iterator.next();
+            if(cookie.isNew()) {
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Adding new cookie to response; name='"+cookie.getCookieName()+"'.");
+                }
+                resKnob.addCookie(cookie);
             }
         }
     }
