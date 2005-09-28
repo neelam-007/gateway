@@ -17,6 +17,7 @@ import java.net.URL;
  */
 public class GenericHttpRequestParams {
     protected URL targetUrl;
+    protected GenericHttpState state;
     protected PasswordAuthentication passwordAuthentication = null;
     protected SSLSocketFactory sslSocketFactory = null;
     protected ContentTypeHeader contentType = null;
@@ -37,7 +38,17 @@ public class GenericHttpRequestParams {
      * @param targetUrl the target URL of this request
      */
     public GenericHttpRequestParams(URL targetUrl) {
+        this();
         this.targetUrl = targetUrl;
+    }
+
+    public GenericHttpRequestParams(URL targetUrl, GenericHttpState state) {
+        this(targetUrl);
+        this.state = state;
+    }
+
+    public GenericHttpState getState() {
+        return state;        
     }
 
     /**
