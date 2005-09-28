@@ -11,6 +11,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.FailoverHttpClient;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
@@ -55,6 +56,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * SSG implementation of a routing assertion that uses the SSB.
@@ -277,7 +280,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         return true;
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
         if (messageProcessor == null || ssg == null) {
@@ -356,14 +359,20 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     // The response will need to be re-initialized
                     Message bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
 
-
                     PolicyApplicationContext pac = new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
-                        public void recordResponseCookies() {
-                            // do nothing, leave them in the response and store them nowhere in the Gateway
+                        public HttpCookie[] getSessionCookies() {
+                            Set cookies = bridgeRoutingAssertion.isCopyCookies() ? context.getCookies() : Collections.EMPTY_SET;
+                            return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
                         }
 
-                        public void populateRequestCookies() {
-                            // TODO [steve] copy cookies from PEC to Request headers
+                        public void setSessionCookies(HttpCookie[] cookies) {
+                            if(bridgeRoutingAssertion.isCopyCookies()) {
+                                //add or replace cookies
+                                for (int i = 0; i < cookies.length; i++) {
+                                    HttpCookie cookie = cookies[i];
+                                    context.addCookie(cookie);
+                                }
+                            }
                         }
                     };
                     messageProcessor.processMessage(pac);

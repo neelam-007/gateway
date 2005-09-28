@@ -485,27 +485,6 @@ public class SsgRuntime {
         }
     }
 
-    /**
-     * Get the cookies as a string.
-     *
-     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
-     */
-    public String getSessionCookiesHeaderValue() {
-        StringBuffer sb = new StringBuffer();
-
-        HttpCookie[] sessionCookies = getSessionCookies();
-        if (sessionCookies != null) {
-            for (int i = 0; i < sessionCookies.length; i++) {
-                HttpCookie cook = sessionCookies[i];
-
-                if (i > 0) sb.append("; ");
-                sb.append(cook.getV0CookieHeaderPart());
-            }
-        }
-
-        return sb.toString();
-    }
-
     // TODO remove this if it isn't needed
     private static void logSessionCookies(HttpCookie[] sessionCookies) {
             String cookieString = "HTTP cookies: ";

@@ -17,6 +17,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -627,11 +628,17 @@ public class PolicyApplicationContext extends ProcessingContext {
         logger.info("New policy saved successfully");
     }
 
-    public void populateRequestCookies() {
-        // TODO [steve] Move cookies from ssgRuntime to request
+    /**
+     *  Call through to runtime to get cookies
+     */
+    public HttpCookie[] getSessionCookies() {
+        return getSsg().getRuntime().getSessionCookies();
     }
 
-    public void recordResponseCookies() {
-        // TODO [steve] Copy cookies from response to ssgRuntime
+    /**
+     * Call through to runtime to set cookies
+     */
+    public void setSessionCookies(HttpCookie[] cookies) {
+        getSsg().getRuntime().setSessionCookies(cookies);
     }
 }

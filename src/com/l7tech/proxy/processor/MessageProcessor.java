@@ -563,8 +563,7 @@ public class MessageProcessor {
 
         List headers = new ArrayList();
 
-        // TODO [steve] move this stuff into PAC  and replace with call to it
-        String cookieHeader = context.getSsg().getRuntime().getSessionCookiesHeaderValue();
+        String cookieHeader = getSessionCookiesHeaderValue(context);
         headers.add(new GenericHttpHeader("Cookie", cookieHeader));
         headers.add(new GenericHttpHeader("User-Agent", SecureSpanConstants.USER_AGENT));
 
@@ -613,7 +612,7 @@ public class MessageProcessor {
             params.setExtraHeaders((HttpHeader[])headers.toArray(new HttpHeader[0]));
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
             httpRequest.setInputStream(bodyInputStream);
-            
+
             // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
             // everything in RAM
             if (httpRequest instanceof FailoverHttpClient.FailoverHttpRequest) {
@@ -638,7 +637,7 @@ public class MessageProcessor {
             log.info("POST to Gateway completed with HTTP status code " + status);
 
             HttpHeaders responseHeaders = httpResponse.getHeaders();
-            gatherCookies(url, responseHeaders, ssg);
+            gatherCookies(url, responseHeaders, context);
             String certStatus = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
             if (SecureSpanConstants.INVALID.equalsIgnoreCase(certStatus)) {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
@@ -736,7 +735,7 @@ public class MessageProcessor {
             response.initialize(Managers.createStashManager(),
                                 outerContentType,
                                 responseBodyAsStream);
-            
+
             if (response.getKnob(HttpResponseKnob.class) == null) {
                 response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                     public void addCookie(HttpCookie cookie) {
@@ -751,7 +750,7 @@ public class MessageProcessor {
             }
 
             // Replace any cookies in the response.
-            gatherCookies(url, responseHeaders, ssg);
+            gatherCookies(url, responseHeaders, context);
 
             final GenericHttpResponse cleanup = httpResponse;
             context.runOnClose(new Runnable() {
@@ -902,14 +901,13 @@ public class MessageProcessor {
         return responseStr;
     }
 
-    private void gatherCookies(URL url, HttpHeaders responseHeaders, Ssg ssg) {
-        // TODO [steve] move this code to PAC and leave behind a call
+    private void gatherCookies(URL url, HttpHeaders responseHeaders, PolicyApplicationContext context) {
         //get the existing cookies and update. If there are no
         // "Set-Cookie" headers returned, then this will maintain the existing
         // cookies
         List values = responseHeaders.getValues("Set-Cookie");
         if(!values.isEmpty()) {
-            HttpCookie[] existingCookies = ssg.getRuntime().getSessionCookies();
+            HttpCookie[] existingCookies = context.getSessionCookies();
             Set cookieSet = new LinkedHashSet(Arrays.asList(existingCookies));
 
             for (Iterator iterator = values.iterator(); iterator.hasNext();) {
@@ -917,21 +915,29 @@ public class MessageProcessor {
                 cookieSet.add(new HttpCookie(url, setCookieValue));
             }
 
-            ssg.getRuntime().setSessionCookies((HttpCookie[]) cookieSet.toArray(new HttpCookie[cookieSet.size()]));
+            context.setSessionCookies((HttpCookie[]) cookieSet.toArray(new HttpCookie[cookieSet.size()]));
         }
     }
 
-    private HttpCookie existingCookieFound(List existingCookies, HttpCookie newCookie) {
-        HttpCookie aCookie = null;
-        for (Iterator iterator = existingCookies.iterator(); iterator.hasNext();) {
-            HttpCookie tempCookie = (HttpCookie)iterator.next();
-            if (tempCookie.getCookieName().equalsIgnoreCase(newCookie.getCookieName())) {
-                aCookie = tempCookie;
-                break;
+    /**
+     * Get the cookies as a string.
+     *
+     * @return a string like "foo=bar; baz=blat; bloo=blot".  May be empty, but never null.
+     */
+    private String getSessionCookiesHeaderValue(PolicyApplicationContext context) {
+        StringBuffer sb = new StringBuffer();
+
+        HttpCookie[] sessionCookies = context.getSessionCookies();
+        if (sessionCookies != null) {
+            for (int i = 0; i < sessionCookies.length; i++) {
+                HttpCookie cook = sessionCookies[i];
+
+                if (i > 0) sb.append("; ");
+                sb.append(cook.getV0CookieHeaderPart());
             }
         }
 
-        return aCookie;
+        return sb.toString();
     }
 
     /**
