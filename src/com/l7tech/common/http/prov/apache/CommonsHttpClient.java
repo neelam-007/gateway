@@ -65,8 +65,7 @@ public class CommonsHttpClient implements GenericHttpClient {
             hconf = null;
 
         final HttpClient client = new HttpClient(cman);
-        HttpState state = client.getState();
-        state.setCookiePolicy(CookiePolicy.COMPATIBILITY);
+        final HttpState state = getHttpState(client, params);
 
         final HttpMethod httpMethod = method == POST ? new PostMethod(targetUrl.toString())
                                                      : new GetMethod(targetUrl.toString());
@@ -125,10 +124,14 @@ public class CommonsHttpClient implements GenericHttpClient {
                 final ContentTypeHeader contentType;
                 final Long contentLength;
                 try {
-                    if (hconf == null)
-                        status = client.executeMethod(method);
-                    else
-                        status = client.executeMethod(hconf, method);
+                    if (hconf == null) {
+                        HostConfiguration hc = (HostConfiguration) client.getHostConfiguration().clone();
+                        hc.setHost(targetUrl.getHost(), targetUrl.getPort());
+                        status = client.executeMethod(hc , method, state);
+                    }
+                    else {
+                        status = client.executeMethod(hconf, method, state);
+                    }
                     Header cth = method.getResponseHeader(MimeUtil.CONTENT_TYPE);
                     contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.parseValue(cth.getValue());
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);
@@ -192,6 +195,21 @@ public class CommonsHttpClient implements GenericHttpClient {
                 }
             }
         };
+    }
+
+    private HttpState getHttpState(HttpClient client, GenericHttpRequestParams params) {
+        HttpState httpState;
+        if(params.getState()==null) {
+            // use per client http state (standard behaviour)
+            httpState = client.getState();
+            httpState.setCookiePolicy(CookiePolicy.COMPATIBILITY);
+        }
+        else {
+            // use caller managed http state scoping
+            GenericHttpState genericState = params.getState();
+            httpState = (HttpState) genericState.getStateObject();
+        }
+        return httpState;
     }
 
     private void createCookiesFromHeaders(HttpHeader[] headers, HttpState state, URL targetUrl) {
