@@ -461,6 +461,28 @@ public class Utilities {
     private static final Color DISABLED_BACKGROUND_COLOR = new Color(232, 232, 232);
 
     /**
+     * Enable/disable a component and its children.
+     *
+     * @param component the component to be enabled/disabled
+     * @param enabled true to enable the component
+     */
+    public static void setEnabled(JComponent component, boolean enabled) {
+        if(component != null) {
+            // this component
+            component.setEnabled(enabled);
+
+            // children
+            Component[] components = component.getComponents();
+            for(int c=0; c<components.length; c++) {
+                Component subComp = components[c];
+                if(subComp instanceof JComponent) {
+                    setEnabled((JComponent) subComp, enabled);
+                }
+            }
+        }
+    }
+
+    /**
      * Configure the specified component to change its foreground color to Gray whenever it is disabled.
      *
      * @param component the component whose behaviour will be altered
