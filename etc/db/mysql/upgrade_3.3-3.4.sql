@@ -11,4 +11,4 @@ ALTER TABLE trusted_cert ADD COLUMN ski VARCHAR(64);
 ALTER TABLE trusted_cert ADD INDEX i_ski (ski);
 
 
-alter table cluster_properties modify change propvalue propvalue mediumtext;
+alter table cluster_properties change propvalue propvalue mediumtext;
