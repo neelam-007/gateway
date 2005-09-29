@@ -209,7 +209,7 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
         boolean valid = !formSelected
                       || (usernameFieldSupplied==passwordFieldSupplied
                         && (requestForm || usernameFieldSupplied)
-                        && validUrl(formTargetTextfield.getText(), true));
+                        && validUrl(formTargetTextfield.getText(), requestForm));
         okButton.setEnabled(valid);
     }
 
