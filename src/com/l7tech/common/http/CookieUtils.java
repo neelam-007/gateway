@@ -53,6 +53,39 @@ public class CookieUtils {
     }
 
     /**
+     * <p>Ensures that the given cookie is valid to be returned from the given domain and path.</p>
+     *
+     * <p>If the cookie is valid then it is returned, else a new cookie is created with the same
+     * values but a modified domain and/or path.</p>
+     *
+     * @param cookie the cookie to check
+     * @param domain the cookies target domain
+     * @param path the cookies target path (not that the path is trimmed up to and including the last /)
+     * @return a valid cookie
+     */
+    public static HttpCookie ensureValidForDomainAndPath(HttpCookie cookie, String domain, String path) {
+        HttpCookie result = cookie;
+
+        if(result!=null) {
+            String cookieDomain = cookie.getDomain();
+            String cookiePath = cookie.getPath();
+
+            String calcPath = path;
+            int trim = calcPath.lastIndexOf('/');
+            if(trim>0) {
+                calcPath = calcPath.substring(0, trim);
+            }
+
+            if((cookieDomain!=null && !domain.endsWith(cookieDomain))
+            || (cookiePath!=null && !calcPath.startsWith(cookiePath))){
+                result = new HttpCookie(cookie, domain, calcPath);
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * <p>Convert the given cookie to an HTTP Client cookies for use in a HTTP request.</p>
      *
      * <p>Note that you may need to upate the domain/path to match your request URL (or

@@ -124,6 +124,20 @@ public class CookieTest extends TestCase {
         assertFalse("Cookie domain difference test", cookie1.equals(cookie4));
     }
 
+
+    public void testEnsurePathDomain() {
+        HttpCookie cookie1 = new HttpCookie("name", "valuea", 1, "/some", ".domain.com");
+
+        HttpCookie cookie2 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", "/some/path");
+        assertEquals("Check valid", cookie1, cookie2);
+
+        HttpCookie cookie3 = CookieUtils.ensureValidForDomainAndPath(cookie1, "b.bdomain.com", "/some/path");
+        assertFalse("Check modified domain", cookie1.equals(cookie3));
+
+        HttpCookie cookie4 = CookieUtils.ensureValidForDomainAndPath(cookie1, "a.domain.com", "/otherpath");
+        assertFalse("Check modified path", cookie1.equals(cookie4));
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(CookieTest.class.getName());

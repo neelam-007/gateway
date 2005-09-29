@@ -209,6 +209,32 @@ public class HttpCookie {
         this.id = buildId();
     }
 
+    /**
+     * Create a cookie with the same values as the given cookie but altered
+     * domain/path.
+     *
+     * @param cookie the base cookie
+     * @param domain the new value for the cookie domain
+     * @param path the new value for the cookie path
+     */
+    public HttpCookie(HttpCookie cookie, String domain, String path) {
+        this.cookieName = cookie.cookieName;
+        this.cookieValue = cookie.cookieValue;
+        this.version = cookie.version;
+        this.maxAge = cookie.maxAge;
+        this.secure = cookie.secure;
+        this.newcook = cookie.newcook;
+        this.comment = cookie.comment;
+        this.createdTime = cookie.createdTime;
+
+        this.fullValue = null;
+        this.path = path;
+        this.domain = domain;
+        this.explicitDomain = true;
+
+        this.id = buildId();
+    }
+
     public String getId() {
         return id;
     }

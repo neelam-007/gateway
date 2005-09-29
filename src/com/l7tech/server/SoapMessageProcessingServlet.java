@@ -43,6 +43,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
 import java.util.Set;
+import java.net.URI;
 
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
@@ -156,7 +157,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             // Send response headers
-            propagateCookies(context, respKnob);
+            propagateCookies(context, (HttpServletRequestKnob) reqKnob, respKnob);
             respKnob.beginResponse();
 
             int routeStat = respKnob.getStatus();
@@ -265,7 +266,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void propagateCookies(PolicyEnforcementContext context, HttpResponseKnob resKnob) {
+    private void propagateCookies(PolicyEnforcementContext context, HttpRequestKnob reqKnob, HttpResponseKnob resKnob) {
         Set cookies = context.getCookies();
         for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
             HttpCookie cookie = (HttpCookie) iterator.next();
@@ -273,7 +274,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if(logger.isLoggable(Level.FINE)) {
                     logger.log(Level.FINE, "Adding new cookie to response; name='"+cookie.getCookieName()+"'.");
                 }
-                resKnob.addCookie(cookie);
+                URI url = URI.create(reqKnob.getRequestUrl());
+                resKnob.addCookie(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), url.getPath()));
             }
         }
     }
