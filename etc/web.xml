@@ -168,7 +168,7 @@
         <url-pattern>/ssg/csr/*</url-pattern>
     </servlet-mapping>
 
-    <!--  disabled (Bug #2044)
+    <!--  disabled  (Bug #2044)
     <servlet-mapping>
         <servlet-name>ClassServerServlet</servlet-name>
         <url-pattern>/classserver/*</url-pattern>
