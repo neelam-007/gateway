@@ -1699,12 +1699,8 @@
     </target>
 
     <!--  depends="package.bridge" ?? -->
-    <target name="obfuscate.bridge">
+    <target name="obfuscate.bridge" depends="obfuscate.init">
         <echo>Obfuscating Bridge.jar</echo>
-        <exec executable="perl" failonerror="true" dir=".">
-            <arg line="etc/obfuscation/substjars.pl"/>
-            <arg line="-N"/>
-        </exec>
         <Zelix scriptFileName="etc/obfuscation/bridge_new.zkm"
                logFileName="build/obfuscation/bridgeobfuscation.log"
                trimLogFileName="build/obfuscation/bridgeobfuscation.log"
@@ -1715,12 +1711,8 @@
     </target>
 
     <!--  depends="package.manager" ?? -->
-    <target name="obfuscate.manager">
+    <target name="obfuscate.manager" depends="obfuscate.init">
         <echo>Obfuscating Manager.jar</echo>
-        <exec executable="perl" failonerror="true" dir=".">
-            <arg line="etc/obfuscation/substjars.pl"/>
-            <arg line="-N"/>
-        </exec>
         <Zelix scriptFileName="etc/obfuscation/manager_new.zkm"
                logFileName="build/obfuscation/managerobfuscation.log"
                trimLogFileName="build/obfuscation/managerobfuscation.log"
@@ -1730,21 +1722,34 @@
         <!-- todo, repackage a version of Manager-HEAD.tar.gz with this obfuscated version and put is in build/obfuscation -->
     </target>
 
-    <target name="obfuscate.gateway">
-        <echo>Extracting classes from ROOT.war</echo>
-        <unzip src="build/ROOT.war" dest="build/ROOT_exploded"/>
-        <echo>Setting classpath in ssg.zkm</echo>
-        <exec executable="perl" failonerror="true" dir=".">
-            <arg line="etc/obfuscation/substjars.pl"/>
-            <arg line="-N"/>
-        </exec>
-        <echo>Obfuscating classes</echo>
+    <target name="obfuscate.gateway" depends="obfuscate.init">
+        <echo>Obfuscating war classes</echo>
         <Zelix scriptFileName="etc/obfuscation/ssg_new.zkm"
                logFileName="build/obfuscation/ssgobfuscation.log"
                trimLogFileName="build/obfuscation/ssgobfuscation.log"
                isParseOnly="false"
                isVerbose="true"/>
-        <!-- todo <echo>Repackaging war with obfuscated classes</echo> -->
+        <echo>Copying obfuscated classes in exploded war</echo>
+        <copy todir="build/ROOT_exploded/WEB-INF/classes/com" overwrite="true">
+            <fileset dir="./build/obfuscation/gatewayclasses/com">
+                <include name="**/*.class"/>
+            </fileset>
+        </copy>
+        <echo>Repackage new ROOT.war (obfuscated version)</echo>
+        <zip destfile="build/obfuscation/ROOT.war" basedir="build/ROOT_exploded"/>
+        <echo>Cleaning up...</echo>
+        <delete dir="build/ROOT_exploded"/>
+        <delete dir="build/obfuscation/gatewayclasses"/>
+    </target>
+
+    <target name="obfuscate.init">
+        <echo>Extracting classes from ROOT.war</echo>
+        <unzip src="build/ROOT.war" dest="build/ROOT_exploded"/>
+        <echo>Setting classpaths in zkm scripts</echo>
+        <exec executable="perl" failonerror="true" dir=".">
+            <arg line="etc/obfuscation/substjars.pl"/>
+            <arg line="-N"/>
+        </exec>
     </target>
 
     <target name="obfuscate"
