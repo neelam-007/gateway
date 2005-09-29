@@ -1710,8 +1710,8 @@
                trimLogFileName="build/obfuscation/bridgeobfuscation.log"
                isParseOnly="false"
                isVerbose="true"/>
-
         <echo>Done obfuscating Bridge.jar</echo>
+        <!-- todo, repackage a version of Bridge-HEAD.tar.gz with this obfuscated version and put is in build/obfuscation -->
     </target>
 
     <!--  depends="package.manager" ?? -->
@@ -1726,8 +1726,28 @@
                trimLogFileName="build/obfuscation/managerobfuscation.log"
                isParseOnly="false"
                isVerbose="true"/>
-
         <echo>Done obfuscating Manager.jar</echo>
+        <!-- todo, repackage a version of Manager-HEAD.tar.gz with this obfuscated version and put is in build/obfuscation -->
     </target>
+
+    <target name="obfuscate.gateway">
+        <echo>Extracting classes from ROOT.war</echo>
+        <unzip src="build/ROOT.war" dest="build/ROOT_exploded"/>
+        <echo>Setting classpath in ssg.zkm</echo>
+        <exec executable="perl" failonerror="true" dir=".">
+            <arg line="etc/obfuscation/substjars.pl"/>
+            <arg line="-N"/>
+        </exec>
+        <echo>Obfuscating classes</echo>
+        <Zelix scriptFileName="etc/obfuscation/ssg_new.zkm"
+               logFileName="build/obfuscation/ssgobfuscation.log"
+               trimLogFileName="build/obfuscation/ssgobfuscation.log"
+               isParseOnly="false"
+               isVerbose="true"/>
+        <!-- todo <echo>Repackaging war with obfuscated classes</echo> -->
+    </target>
+
+    <target name="obfuscate"
+            depends="package, obfuscate.bridge, obfuscate.manager, obfuscate.gateway"/>
 
 </project>
