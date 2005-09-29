@@ -23,74 +23,11 @@
 // java -jar ZKM.jar ssg.zkm
 //
 //
-classpath   "./ROOT/WEB-INF/lib/activation.jar"
-			"./ROOT/WEB-INF/lib/antlr.jar"
-			"./ROOT/WEB-INF/lib/aopalliance.jar"
-			"./ROOT/WEB-INF/lib/axis.jar"
-			"./ROOT/WEB-INF/lib/bcprov-jdk15-127.jar"
-			"./ROOT/WEB-INF/lib/c3p0-0.8.5pre4.jar"
-			"./ROOT/WEB-INF/lib/cglib-full-2.0.2.jar"
-			"./ROOT/WEB-INF/lib/commons-collections-2.1.1.jar"
-			"./ROOT/WEB-INF/lib/commons-dbcp-1.2.1.jar"
-			"./ROOT/WEB-INF/lib/commons-discovery.jar"
-			"./ROOT/WEB-INF/lib/commons-httpclient-2.0.2.jar"
-			"./ROOT/WEB-INF/lib/commons-lang-1.0.1.jar"
-			"./ROOT/WEB-INF/lib/commons-logging-1.0.4.jar"
-			"./ROOT/WEB-INF/lib/commons-pool-1.2.jar"
-			"./ROOT/WEB-INF/lib/dom4j.jar"
-			"./ROOT/WEB-INF/lib/ehcache-0.9.jar"
-			"./ROOT/WEB-INF/lib/hibernate2.jar"
-			"./ROOT/WEB-INF/lib/jaxen-1.1-beta-2-l7.jar"
-			"./ROOT/WEB-INF/lib/jboss-cache.jar"
-			"./ROOT/WEB-INF/lib/jboss-common.jar"
-			"./ROOT/WEB-INF/lib/jboss-jmx.jar"
-			"./ROOT/WEB-INF/lib/jboss-system.jar"
-			"./ROOT/WEB-INF/lib/jgroups.jar"
-			"./ROOT/WEB-INF/lib/jms-1.1.jar"
-			"./ROOT/WEB-INF/lib/jnlp.jar"
-			"./ROOT/WEB-INF/lib/jnlp-servlet.jar"
-			"./ROOT/WEB-INF/lib/jsr173_api.jar"
-			"./ROOT/WEB-INF/lib/jta.jar"
-			"./ROOT/WEB-INF/lib/log4j.jar"
-			"./ROOT/WEB-INF/lib/mailapi-1.3.2.jar"
-			"./ROOT/WEB-INF/lib/mysql-connector-java-3.0.14-stable-bin.jar"
-			"./ROOT/WEB-INF/lib/odmg.jar"
-			"./ROOT/WEB-INF/lib/oswego-concurrent.jar"
-			"./ROOT/WEB-INF/lib/qname.jar"
-			"./ROOT/WEB-INF/lib/saxpath.jar"
-			"./ROOT/WEB-INF/lib/smtp-1.3.2.jar"
-			"./ROOT/WEB-INF/lib/snmp4j.jar"
-			"./ROOT/WEB-INF/lib/spring-aop.jar"
-			"./ROOT/WEB-INF/lib/spring-context.jar"
-			"./ROOT/WEB-INF/lib/spring-core.jar"
-			"./ROOT/WEB-INF/lib/spring-dao.jar"
-			"./ROOT/WEB-INF/lib/spring-orm.jar"
-			"./ROOT/WEB-INF/lib/spring-web.jar"
-			"./ROOT/WEB-INF/lib/systinet-builtin_serialization.jar"
-			"./ROOT/WEB-INF/lib/systinet-core_services_client.jar"
-			"./ROOT/WEB-INF/lib/systinet-jaxm.jar"
-			"./ROOT/WEB-INF/lib/systinet-jaxrpc.jar"
-			"./ROOT/WEB-INF/lib/systinet-saaj.jar"
-			"./ROOT/WEB-INF/lib/systinet-uddiclient_api_v3.jar"
-			"./ROOT/WEB-INF/lib/systinet-uddiclient_core.jar"
-			"./ROOT/WEB-INF/lib/systinet-wasp.jar"
-			"./ROOT/WEB-INF/lib/systinet-wsdl2uddi_client_v3.jar"
-			"./ROOT/WEB-INF/lib/systinet-wsdl_api.jar"
-			"./ROOT/WEB-INF/lib/tarari_xcx.jar"
-			"./ROOT/WEB-INF/lib/tarari_xpath.jar"
-			"./ROOT/WEB-INF/lib/xalan-2.5.2.jar"
-			"./ROOT/WEB-INF/lib/xbean.jar"
-			"./ROOT/WEB-INF/lib/xbean-saml.jar"
-			"./ROOT/WEB-INF/lib/xercesImpl.jar"
-			"./ROOT/WEB-INF/lib/xml-apis.jar"
-			"./ROOT/WEB-INF/lib/xss4j.jar"
-			"./extralib/servlet-api.jar"
-			"./extralib/catalina.jar"
-			"./extralib/org.mortbay.jetty.jar";
+%%%JARFILE_FILE_LINES%%%
 
 // this is the jar file to process
 // this could also be a directory containing .class files
-open        "./ROOT/WEB-INF/classes/*";
+open        "build/ROOT_exploded/WEB-INF/classes/*";
 
 // we dont want to let zelix determine which classes/methods are unused
 // therefore we are excluding everything from trimming otherwise some
@@ -127,11 +64,11 @@ exclude     public *.^* and
 existingSerializedClasses *.* implements java.io.Serializable;
 
 obfuscate   changeLogFileIn=""
-            changeLogFileOut="./obfuscatedOutput/change.log"
+            changeLogFileOut="build/obfuscation/gatewaychange.log"
             obfuscateFlow=normal
             encryptStringLiterals=normal
             lineNumbers=delete;
 
 // this lets you specify the output directory. it will contain whatever you added with
 // open statement(s) except it will be the obfuscated copy
-saveAll     archiveCompression=all "./obfuscatedClasses";
+saveAll     archiveCompression=all "./build/obfuscation/gatewayclasses";
