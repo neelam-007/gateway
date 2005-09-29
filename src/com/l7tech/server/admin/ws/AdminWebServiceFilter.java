@@ -6,6 +6,7 @@ package com.l7tech.server.admin.ws;
 
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapFaultUtils;
@@ -38,8 +39,10 @@ import org.xml.sax.SAXException;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -160,7 +163,30 @@ public class AdminWebServiceFilter implements Filter {
             if (status == AssertionStatus.NONE) {
                 // TODO support admin services that requre Gateway Administrators membership
                 // Pass it along to XFire
-                filterChain.doFilter(servletRequest, servletResponse);
+                HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(httpServletRequest) {
+                    public ServletInputStream getInputStream() throws IOException {
+                        try {
+                            final InputStream is = request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                            return new ServletInputStream() {
+                                public int read() throws IOException {
+                                    return is.read();
+                                }
+
+                                public int read(byte b[]) throws IOException {
+                                    return is.read(b);
+                                }
+
+                                public int read(byte b[], int off, int len) throws IOException {
+                                    return is.read(b, off, len);
+                                }
+                            };
+                        } catch (NoSuchPartException e) {
+                            throw new IOException("Couldn't get InputStream"); // Very unlikely
+                        }
+                    }
+                };
+
+                filterChain.doFilter(wrapper, servletResponse);
                 respKnob.beginResponse();
             } else {
                 respKnob.beginResponse();
