@@ -108,7 +108,8 @@ public class AllAssertions {
         new EmailAlertAssertion(),
         new CommentAssertion(),
         new EqualityAssertion(),
-        new StealthFault()
+        new StealthFault(),
+        new SqlAttackAssertion(),
     };
 
 
@@ -151,7 +152,8 @@ public class AllAssertions {
         new EmailAlertAssertion(),
         new CommentAssertion(),
         new EqualityAssertion(),
-        new StealthFault()
+        new StealthFault(),
+        new SqlAttackAssertion(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {

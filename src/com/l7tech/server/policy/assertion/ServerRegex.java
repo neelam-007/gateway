@@ -136,7 +136,8 @@ public class ServerRegex implements ServerAssertion {
     }
 
 
-    private boolean isPostRouting(PolicyEnforcementContext context) {
+    /** @return true iff. this ServerRegex would consider the specified context to be post-routing. */
+    public static boolean isPostRouting(PolicyEnforcementContext context) {
         return RoutingStatus.ROUTED.equals(context.getRoutingStatus()) || RoutingStatus.ATTEMPTED.equals(context.getRoutingStatus());
     }
 

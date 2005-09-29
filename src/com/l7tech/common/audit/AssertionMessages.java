@@ -313,5 +313,10 @@ public class AssertionMessages extends Messages {
     public static final M EQUALITY_NE          = m(7101, Level.INFO, "Values were not equal");
     public static final M EQUALITY_NO_SUCH_VAR = m(7102, Level.WARNING, "No such variable: {0}");
 
+    // SqlAttackAssertion
+    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.SEVERE, "Unrecognized protection name: {0}.  Assertion will always fail.");
+    public static final M SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, "Request was flagged by SQL attack protection assertion");
+    public static final M SQLATTACK_ALREADY_ROUTED          = m(7203, Level.WARNING, "Unable to protect against SQL attacks -- the request has already been routed.");
+
     // MAX -                                     m(7999
 }

@@ -206,5 +206,5 @@ class BasicTypeMapping implements TypeMapping {
         } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to convert string into " + clazz, e);
         }
-    };
+    }
 }

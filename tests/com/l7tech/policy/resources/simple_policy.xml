@@ -69,6 +69,7 @@
                 <L7p:CommentAssertion/>
                 <L7p:EqualityAssertion/>
                 <L7p:StealthFault/>
+                <L7p:SqlAttackProtection/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

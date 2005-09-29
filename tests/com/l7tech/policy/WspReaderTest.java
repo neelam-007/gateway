@@ -7,6 +7,7 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -122,6 +123,22 @@ public class WspReaderTest extends TestCase {
         String reserialized = WspWriter.getPolicyXml(parsedPolicy);
         assertEquals(reserialized.length(), serialized.length());
 
+    }
+
+    public void testCollectionMappings() throws Exception {
+        // Use SqlAttackAssertion since it uses Set
+        SqlAttackAssertion ass = new SqlAttackAssertion();
+        ass.setProtection(SqlAttackAssertion.PROT_MSSQL);
+        ass.setProtection(SqlAttackAssertion.PROT_ORASQL);
+        ass.setProtection(SqlAttackAssertion.PROT_META);
+
+        String xml = WspWriter.getPolicyXml(ass);
+        log.info("Serialized SqlProtectionAssertion: \n" + xml);
+
+        SqlAttackAssertion out = (SqlAttackAssertion)WspReader.parseStrictly(xml);
+        assertNotNull(out);
+        assertTrue(out.getProtections().contains(SqlAttackAssertion.PROT_ORASQL));
+        assertFalse(out.getProtections().contains(SqlAttackAssertion.PROT_METATEXT));        
     }
 
     private static final Object[][] VERSIONS = {

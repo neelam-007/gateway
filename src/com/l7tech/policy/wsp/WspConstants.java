@@ -31,8 +31,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Contains the registry of types we can freeze to a policy.
@@ -107,7 +106,7 @@ public class WspConstants {
             }
         },
         new BasicTypeMapping(Integer.class, "boxedIntegerValue"),
-            
+
         new BasicTypeMapping(boolean.class, "booleanValue") {
             protected Object stringToObject(String in) {
                 return new Boolean(in);
@@ -150,6 +149,8 @@ public class WspConstants {
         new ArrayTypeMapping(new Object[0], "arrayValue"),
         new ArrayTypeMapping(new String[0], "stringArrayValue"),
         new MapTypeMapping(),
+        new CollectionTypeMapping(Set.class, String.class, HashSet.class, "stringSetValue"),
+        new CollectionTypeMapping(List.class, String.class, ArrayList.class, "stringListValue"),
 
         // Composite assertions
         new CompositeAssertionMapping(new OneOrMoreAssertion(), "OneOrMore"),
@@ -215,6 +216,7 @@ public class WspConstants {
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new EqualityAssertion(), "EqualityAssertion"),
         new AssertionMapping(new StealthFault(), "StealthFault"),
+        new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),
