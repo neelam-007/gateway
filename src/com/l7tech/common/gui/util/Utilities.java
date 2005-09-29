@@ -293,6 +293,31 @@ public class Utilities {
         return fc;
     }
 
+    public static void constrainTextFieldToLongRange(final JTextComponent comp, final long min, final long max) {
+        final String minStr = String.valueOf(min);
+        final String maxStr = String.valueOf(max);
+        comp.addFocusListener(new FocusListener() {
+            public void focusGained(FocusEvent e) {}
+
+            public void focusLost(FocusEvent e) {
+                String val = comp.getText();
+                if (val == null || val.length() < 1) {
+                    comp.setText(minStr);
+                    return;
+                }
+                try {
+                    long ival = Long.parseLong(val);
+                    if (ival < min)
+                        comp.setText(minStr);
+                    else if (ival > max)
+                        comp.setText(maxStr);
+                } catch (NumberFormatException nfe) {
+                    comp.setText(minStr);
+                }
+            }
+        });
+    }
+
     /**
      * Creates pop-up menus for text components.
      */
