@@ -1,31 +1,30 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SqlAttackAssertion;
-import com.l7tech.console.action.SqlAttackDialogAction;
+import com.l7tech.console.action.RequestSizeLimitDialogAction;
+import com.l7tech.policy.assertion.RequestSizeLimit;
 
 import javax.swing.*;
 
 /**
  * Created by IntelliJ IDEA.
  * User: megery
- * Date: Sep 28, 2005
- * Time: 4:08:50 PM
+ * Date: Sep 29, 2005
+ * Time: 3:52:29 PM
  * To change this template use File | Settings | File Templates.
  */
-public class SqlAttackAssertionTreeNode extends LeafAssertionTreeNode{
+public class RequestSizeLimitTreeNode extends LeafAssertionTreeNode{
     /**
      * Instantiate the new <code>LeafAssertionTreeNode</code>
      * with the given assertion.
      *
      * @param assertion the assertion
      */
-    public SqlAttackAssertionTreeNode(SqlAttackAssertion assertion) {
+    public RequestSizeLimitTreeNode(RequestSizeLimit assertion) {
         super(assertion);
     }
 
     public String getName() {
-        return "SQL Attack Protection";
+        return "Request Size Limit";
     }
 
     protected String iconResource(boolean open) {
@@ -33,11 +32,10 @@ public class SqlAttackAssertionTreeNode extends LeafAssertionTreeNode{
     }
 
     public Action getPreferredAction() {
-        return new SqlAttackDialogAction(this);
+        return new RequestSizeLimitDialogAction(this);
     }
 
     public boolean canDelete() {
         return true;
     }
-
 }

@@ -81,6 +81,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(EqualityAssertion.class, EqualityAssertionPolicyNode.class);
         assertionMap.put(StealthFault.class, StealthFaultTreeNode.class);
         assertionMap.put(SqlAttackAssertion.class, SqlAttackAssertionTreeNode.class);
+        assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
     }
 
     /**

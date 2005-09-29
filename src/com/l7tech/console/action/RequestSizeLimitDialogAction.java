@@ -1,12 +1,15 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.SqlAttackDialog;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SqlAttackAssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.RequestSizeLimitTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.panels.SqlAttackDialog;
+import com.l7tech.console.panels.RequestSizeLimitDialog;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
+import com.l7tech.policy.assertion.RequestSizeLimit;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -14,13 +17,13 @@ import java.util.logging.Level;
 /**
  * Created by IntelliJ IDEA.
  * User: megery
- * Date: Sep 28, 2005
- * Time: 4:06:44 PM
+ * Date: Sep 29, 2005
+ * Time: 3:48:22 PM
  * To change this template use File | Settings | File Templates.
  */
-public class SqlAttackDialogAction extends NodeAction {
-    private SqlAttackAssertionTreeNode treeNode;
-    public SqlAttackDialogAction(SqlAttackAssertionTreeNode node) {
+public class RequestSizeLimitDialogAction extends NodeAction{
+    private RequestSizeLimitTreeNode treeNode;
+    public RequestSizeLimitDialogAction(RequestSizeLimitTreeNode node) {
         super(node);
         treeNode = node;
     }
@@ -29,14 +32,14 @@ public class SqlAttackDialogAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "SQL Attack Protection Properties";
+        return "Request Size Limit Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View and edit SQL attack protection properties";
+        return "View and edit request size limit properties";
     }
 
     /**
@@ -50,8 +53,8 @@ public class SqlAttackDialogAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                SqlAttackDialog d = null;
-                d = new SqlAttackDialog(f, (SqlAttackAssertion)node.asAssertion(), true);
+                RequestSizeLimitDialog d = null;
+                d = new RequestSizeLimitDialog(f, (RequestSizeLimit)node.asAssertion(), true);
                 d.pack();
                 Utilities.centerOnScreen(d);
                 //d.addPolicyListener(listener);

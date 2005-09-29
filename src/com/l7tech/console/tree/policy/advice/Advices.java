@@ -104,5 +104,7 @@ public class Advices {
         advicesMap.put(ThroughputQuota.class, new Class[]{AddThroughputQuotaAssertionAdvice.class});
         advicesMap.put(CommentAssertion.class, new Class[]{CommentAssertionAdvice.class});
         advicesMap.put(EqualityAssertion.class, new Class[]{EqualityAssertionAdvice.class});
+        advicesMap.put(SqlAttackAssertion.class, new Class[]{SqlAttackAssertionAdvice.class});
+        advicesMap.put(RequestSizeLimit.class, new Class[]{RequestSizeLimitAdvice.class});
     }
 }
