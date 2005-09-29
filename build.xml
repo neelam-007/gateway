@@ -1698,7 +1698,6 @@
         </replaceregexp>
     </target>
 
-    <!--  depends="package.bridge" ?? -->
     <target name="obfuscate.bridge" depends="obfuscate.init">
         <echo>Obfuscating Bridge.jar</echo>
         <Zelix scriptFileName="etc/obfuscation/bridge_new.zkm"
@@ -1707,7 +1706,7 @@
                isParseOnly="false"
                isVerbose="true"/>
         <echo>Done obfuscating Bridge.jar</echo>
-        <!-- todo, repackage a version of Bridge-HEAD.tar.gz with this obfuscated version and put is in build/obfuscation -->
+        <copy tofile="build/Bridge.jar" file="build/obfuscation/Bridge.jar" overwrite="true"/>
     </target>
 
     <!--  depends="package.manager" ?? -->
@@ -1719,7 +1718,7 @@
                isParseOnly="false"
                isVerbose="true"/>
         <echo>Done obfuscating Manager.jar</echo>
-        <!-- todo, repackage a version of Manager-HEAD.tar.gz with this obfuscated version and put is in build/obfuscation -->
+        <copy tofile="build/Manager.jar" file="build/obfuscation/Manager.jar" overwrite="true"/>
     </target>
 
     <target name="obfuscate.gateway" depends="obfuscate.init">
@@ -1740,6 +1739,7 @@
         <echo>Cleaning up...</echo>
         <delete dir="build/ROOT_exploded"/>
         <delete dir="build/obfuscation/gatewayclasses"/>
+        <copy tofile="build/ROOT.war" file="build/obfuscation/ROOT.war" overwrite="true"/>
     </target>
 
     <target name="obfuscate.init">
