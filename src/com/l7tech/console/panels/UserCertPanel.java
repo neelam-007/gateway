@@ -2,18 +2,16 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.event.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
@@ -23,11 +21,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -38,33 +33,45 @@ import java.util.logging.Logger;
  * <p> @author fpang </p>
  * $Id$
  */
-public class UserCertPanel extends JPanel {
+public abstract class UserCertPanel extends JPanel {
     static Logger log = Logger.getLogger(UserCertPanel.class.getName());
 
-    private JButton removeCertButton;
-    private JButton importCertButton;
-    private User user;
-    private X509Certificate cert;
-    private FederatedUserPanel userPanel;
+    protected JButton removeCertButton;
+    protected JButton importCertButton;
+    protected User user;
+    protected X509Certificate cert;
+    protected UserPanel userPanel;
     private JLabel certStatusLabel;
     private JComponent certificateView = new JLabel();
-    private X509Certificate ssgcert = null;
+    protected X509Certificate ssgcert = null;
     IdentityAdmin identityAdmin = null;
     public static final GridBagConstraints CERTIFICATE_VIEW_CONSTRAINTS = new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
             GridBagConstraints.NORTHWEST,
             GridBagConstraints.BOTH,
             new Insets(15, 15, 0, 15), 0, 0);
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
+    protected final EntityListener parentListener;
 
     /**
-     * Create a new CertificatePanel
+     * Create a new NonFederatedUserCertPanel
      */
-    public UserCertPanel(FederatedUserPanel userPanel) {
+    public UserCertPanel(UserPanel userPanel, EntityListener entityListener) {
         this.userPanel = userPanel;
         this.addHierarchyListener(hierarchyListener);
+        this.parentListener = entityListener;
         initComponents();
         identityAdmin = Registry.getDefault().getIdentityAdmin();
+        applyFormSecurity();
     }
+
+    private void applyFormSecurity() {
+        // list components that are subject to security (they require the full admin role)
+        userPanel.securityFormAuthorizationPreparer.prepare(new Component[]{
+                getImportCertButton(),
+                getRemoveCertButton()
+        });
+    }
+
 
     /**
      * This method is called from within the constructor to
@@ -90,7 +97,7 @@ public class UserCertPanel extends JPanel {
                         GridBagConstraints.EAST,
                         GridBagConstraints.NONE,
                         new Insets(17, 0, 11, 10), 0, 0));
-         add(getRemoveCertButton(),
+        add(getRemoveCertButton(),
                 new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.NONE,
@@ -110,47 +117,11 @@ public class UserCertPanel extends JPanel {
     }
 
     /**
-     * Creates if needed the Ok button.
+     * Creates if needed the Remove/Revoke button.
      */
-    private JButton getRemoveCertButton() {
-        if (removeCertButton == null) {
-            removeCertButton = new JButton();
-            removeCertButton.setText("Remove");
-            removeCertButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent event) {
-                    String msg = "Are you sure you want to remove the user certificate?";
+    protected abstract JButton getRemoveCertButton();
 
-                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
-                            msg, "Remove User Certificate",
-                            JOptionPane.YES_NO_OPTION));
-                    if (answer == JOptionPane.YES_OPTION) {
-
-                        // remove the user cert
-                        try {
-                            identityAdmin.revokeCert(user);  //todo: dialog on error?
-                            // reset values and redisplay
-                            cert = null;
-                            loadCertificateInfo();
-                            userPanel.getX509SubjectNameTextField().setEditable(true);
-
-                        } catch (UpdateException e) {
-                            log.log(Level.WARNING, "ERROR Removing certificate", e);
-                        } catch (ObjectNotFoundException e) {
-                            log.log(Level.WARNING, "ERROR Removing certificate", e);
-                        } catch (RemoteException e) {
-                            log.log(Level.WARNING, "ERROR Removing certificate", e);
-                        }
-                    }
-                }
-            });
-        }
-        return removeCertButton;
-    }
-
-    /**
-     * Creates if needed the Ok button.
-     */
-    private JButton getImportCertButton() {
+    protected JButton getImportCertButton() {
         if (importCertButton == null) {
             importCertButton = new JButton();
             importCertButton.setText("Import");
@@ -186,7 +157,7 @@ public class UserCertPanel extends JPanel {
      * load certificate info and updates the data and status of the
      * form elements
      */
-    private void loadCertificateInfo() {
+    protected void loadCertificateInfo() {
         try {
             boolean enabled = cert != null;
             getRemoveCertButton().setEnabled(enabled);
@@ -205,28 +176,28 @@ public class UserCertPanel extends JPanel {
             } catch (CertificateEncodingException e) {
                 log.log(Level.WARNING, "Unable to decode this user's certificate", e);
                 JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.decode.error"),
-                                        resources.getString("load.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
+                        resources.getString("load.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
             } catch (NoSuchAlgorithmException e) {
                 log.log(Level.WARNING, "Unable to process this user's certificate", e);
                 JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.decode.error"),
-                                        resources.getString("load.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
+                        resources.getString("load.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
             }
             add(certificateView, CERTIFICATE_VIEW_CONSTRAINTS);
             getRootPane().getContentPane().invalidate();
         } catch (Exception e) {
             log.log(Level.SEVERE, "There was an error loading the certificate", e);
             JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
-                                        resources.getString("load.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
+                    resources.getString("load.error.title"),
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
     public boolean certExist() {
         user = userPanel.getUser();
         getUserCert();
-        return (cert != null) ? true : false;
+        return (cert != null);
     }
 
     // hierarchy listener
@@ -255,9 +226,9 @@ public class UserCertPanel extends JPanel {
             String certstr = identityAdmin.getUserCert(user);
             if (certstr == null) {
                 cert = null;
-            }  else {
+            } else {
                 byte[] certbytes = HexUtils.decodeBase64(certstr);
-                cert =  CertUtils.decodeCert(certbytes);
+                cert = CertUtils.decodeCert(certbytes);
             }
         } catch (FindException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
@@ -276,151 +247,67 @@ public class UserCertPanel extends JPanel {
     /**
      * The callback for saving the new cert to the database
      */
-    private WizardListener wizardListener = new WizardAdapter() {
+    protected WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
          *
          * @param we the event describing the wizard finish
          */
         public void wizardFinished(WizardEvent we) {
-
             // update the provider
-            Wizard w = (Wizard) we.getSource();
+            Wizard w = (Wizard)we.getSource();
 
             Object o = w.getWizardInput();
 
-            if (o instanceof TrustedCert) {
+            if (o == null) return;
+            if (!(o instanceof TrustedCert)) throw new IllegalStateException("Wizard returned a " + o.getClass().getName() + ", was expecting a " + TrustedCert.class.getName());
 
-                final TrustedCert tc = (TrustedCert) o;
+            final TrustedCert tc = (TrustedCert)o;
 
-                if (tc != null) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    try {
+                        if (!isCertOk(tc)) return;
 
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            boolean certImported = false;
+                        saveUserCert(tc);
 
-                            try {
+                        if (parentListener != null)
+                            parentListener.entityUpdated(new EntityEvent(this, new EntityHeader(user.getUniqueIdentifier(), EntityType.USER, user.getName(), null)));
 
-                                String subjectDNFromCert = tc.getCertificate().getSubjectDN().getName();
+                        // reset values and redisplay
+                        cert = null;
 
-                                if (userPanel instanceof FederatedUserPanel) {
-                                    if (checkCertRelatedToSSG(tc)) {
+                        getUserCert();
 
+                        loadCertificateInfo();
+                    } catch (UpdateException e) {
+                        log.log(Level.WARNING, "There was an error saving the certificate", e);
+                        JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                resources.getString("save.error.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                    } catch (IOException e) {
+                        log.log(Level.WARNING, "There was an error saving the certificate", e);
+                        JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                resources.getString("save.error.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                    } catch (CertificateException e) {
+                        String msg;
+                        if (e instanceof CertificateNotYetValidException)
+                            msg = resources.getString("cert.notyetvalid.error");
+                        else if (e instanceof CertificateExpiredException)
+                            msg = resources.getString("cert.expired.error");
+                        else
+                            msg = resources.getString("cert.save.error");
+                        log.log(Level.WARNING, "There was an error saving the certificate", e);
+                        JOptionPane.showMessageDialog(UserCertPanel.this, msg,
+                                resources.getString("save.error.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                    }
 
-                                        JOptionPane.showMessageDialog(UserCertPanel.this,
-                                                      "This cert cannot be associated to this user " +
-                                                      "because it is related to the\n" +
-                                                      "SecureSpan Gateway's root cert.",
-                                                      "Cannot add this cert",
-                                                      JOptionPane.ERROR_MESSAGE);
-                                    } else {
-                                        FederatedUserPanel fup = userPanel;
-                                        if (userPanel.getUser().getSubjectDn().length() > 0) {
-
-                                            if (subjectDNFromCert.compareToIgnoreCase(fup.getX509SubjectNameTextField().getText()) != 0) {
-                                                //prompt you if he wants to replace the subject DN name
-                                                Object[] options = {"Replace", "Cancel"};
-                                                int result = JOptionPane.showOptionDialog(fup.mainWindow,
-                                                        "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
-                                                        "<br>The user's Subject DN: " +  fup.getX509SubjectNameTextField().getText() +
-                                                        "<br>The Subject DN in the certiticate: " + subjectDNFromCert  +
-                                                        "<br>The Subject DN will be replaced with the one from the certificate" +
-                                                        "?<br>" +
-                                                        "<center>The certificate will not be added if this operation is cancelled." +
-                                                        "</center></html>",
-                                                        "Replace the Subject DN?",
-                                                        0, JOptionPane.WARNING_MESSAGE,
-                                                        null, options, options[1]);
-                                                if (result == 0) {
-                                                    fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
-                                                    certImported = true;
-                                                }
-                                            } else {
-                                                certImported = true;
-                                            }
-                                        } else {
-                                            // simply copy the dn to the user panel
-                                            fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
-                                            certImported = true;
-                                        }
-                                        if (certImported) {
-                                            fup.getX509SubjectNameTextField().setEditable(false);
-                                        }
-                                    }
-                                }
-                            } catch (IOException e) {
-                                log.log(Level.WARNING, "There was an error saving the certificate", e);
-                                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
-                                        resources.getString("save.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
-                            } catch (CertificateException e) {
-                                log.log(Level.WARNING, "There was an error saving the certificate", e);
-                                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
-                                        resources.getString("save.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
-                            }
-
-                            if (certImported) {
-                                try {
-                                    saveUserCert(tc);
-
-                                    // reset values and redisplay
-                                    cert = null;
-
-                                    getUserCert();
-
-                                    loadCertificateInfo();
-
-                                } catch (UpdateException e) {
-                                    log.log(Level.WARNING, "There was an error saving the certificate", e);
-                                    JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
-                                            resources.getString("save.error.title"),
-                                            JOptionPane.ERROR_MESSAGE);
-                                } catch (IOException e) {
-                                    log.log(Level.WARNING, "There was an error saving the certificate", e);
-                                    JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
-                                            resources.getString("save.error.title"),
-                                            JOptionPane.ERROR_MESSAGE);
-                                } catch (CertificateException e) {
-                                    log.log(Level.WARNING, "There was an error saving the certificate", e);
-                                    JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
-                                            resources.getString("save.error.title"),
-                                            JOptionPane.ERROR_MESSAGE);
-                                }
-                            }
-
-                        }
-                    });
                 }
-            }
+            });
         }
-
     };
 
-    /**
-     * Check whether or not the passed cert is related somehow to the ssg's root cert.
-     * @return true if it is
-     */
-    private boolean checkCertRelatedToSSG(TrustedCert trustedCert) throws IOException, CertificateException {
-        if (ssgcert == null) {
-            ssgcert = getTrustedCertAdmin().getSSGRootCert();
-        }
-        byte[] certbytes = HexUtils.decodeBase64(trustedCert.getCertBase64());
-        X509Certificate[] chainToVerify = CertUtils.decodeCertChain(certbytes);
-        try {
-            CertUtils.verifyCertificateChain(chainToVerify, ssgcert, chainToVerify.length);
-        } catch (CertUtils.CertificateUntrustedException e) {
-            // this is what we were hoping for
-            log.finest("the cert is not related.");
-            return false;
-        }
-        log.finest("The cert appears to be related!");
-        return true;
-    }
-
-    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
-        return tca;
-    }
-
+    protected abstract boolean isCertOk(TrustedCert tc) throws IOException, CertificateException;
 }

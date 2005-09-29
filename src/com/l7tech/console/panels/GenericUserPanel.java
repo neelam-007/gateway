@@ -61,7 +61,7 @@ public class GenericUserPanel extends UserPanel {
 
     private JTabbedPane tabbedPane;
     private UserGroupsPanel groupPanel; // membership
-    private CertificatePanel certPanel; //certificate
+    private UserCertPanel certPanel; //certificate
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
@@ -87,7 +87,7 @@ public class GenericUserPanel extends UserPanel {
         try {
             // Initialize form components
             groupPanel = new UserGroupsPanel(this, config);
-            certPanel = new CertificatePanel(this, passwordChangeListener);
+            certPanel = new NonFederatedUserCertPanel(this, passwordChangeListener);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
 
@@ -593,7 +593,7 @@ public class GenericUserPanel extends UserPanel {
             addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     new PasswordDialog(mainWindow, userPanel,
-                      user.getUserBean(), passwordChangeListener).show();
+                      user.getUserBean(), passwordChangeListener).setVisible(true);
                     // Refresh the panel (since the Bridge's cert might have been revoked)
                 }
             });
@@ -694,7 +694,6 @@ public class GenericUserPanel extends UserPanel {
         try {
             String id;
             if (userHeader.getStrId() != null) {
-                id = user.getUniqueIdentifier();
                 getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
             } else {
                 id = getIdentityAdmin().saveUser(config.getOid(), user, userGroups);

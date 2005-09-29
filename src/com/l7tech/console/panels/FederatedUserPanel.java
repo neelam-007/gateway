@@ -85,7 +85,7 @@ public class FederatedUserPanel extends UserPanel {
             // Initialize form components
             groupPanel = new UserGroupsPanel(this, config);
 
-            certPanel = new UserCertPanel(this);
+            certPanel = new FederatedUserCertPanel(this, null);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {
@@ -667,7 +667,6 @@ public class FederatedUserPanel extends UserPanel {
         try {
             String id;
             if (userHeader.getStrId() != null) {
-                id = user.getUniqueIdentifier();
                 getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
             } else {
                 id = getIdentityAdmin().saveUser(config.getOid(), user, userGroups);
