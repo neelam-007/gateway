@@ -18,7 +18,7 @@ import java.util.HashMap;
 public class SamlBrowserArtifactDialogTest {
     public static void main(String[] args)
       throws Exception {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        UIManager.setLookAndFeel(UIManager.getInstalledLookAndFeels()[0].getClassName());
         SamlBrowserArtifact sba = new SamlBrowserArtifact();
         AuthenticationProperties dap = sba.getAuthenticationProperties();
         sba.setSsoEndpointUrl("http://foo");

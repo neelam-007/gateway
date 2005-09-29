@@ -46,6 +46,7 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
         artifactQueryParamField.setText(assertion.getArtifactQueryParameter());
 
         authenticationSummaryTextArea.setDisabledTextColor(Color.BLACK);
+        authenticationSummaryTextArea.setBackground(this.getBackground());
 
         authenticationButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
@@ -138,13 +139,13 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
             summary.append(ap.isEnableCookies());
             summary.append('\n');
             summary.append("Form target:            \t");
-            summary.append(nullOrEmpty(ap.getFormTarget()) ? "<not supplied>" : ap.getFormTarget());
+            summary.append(nullOrEmpty(ap.getFormTarget()) ? "<not supplied>" : format(ap.getFormTarget(),64));
             summary.append('\n');
             summary.append("Username fieldname:     \t");
-            summary.append(nullOrEmpty(ap.getUsernameFieldname()) ? "<not supplied>" : ap.getUsernameFieldname());
+            summary.append(nullOrEmpty(ap.getUsernameFieldname()) ? "<not supplied>" : format(ap.getUsernameFieldname(),64));
             summary.append('\n');
             summary.append("Password fieldname      \t");
-            summary.append(nullOrEmpty(ap.getPasswordFieldname()) ? "<not supplied>" : ap.getPasswordFieldname());
+            summary.append(nullOrEmpty(ap.getPasswordFieldname()) ? "<not supplied>" : format(ap.getPasswordFieldname(),64));
             summary.append('\n');
             summary.append("Preserve form fields:   \t");
             summary.append(ap.isCopyFormFields());
@@ -172,6 +173,16 @@ public class SamlBrowserArtifactPropertiesDialog extends JDialog {
 
         if(text==null || text.trim().length()==0) {
             result = true;
+        }
+
+        return result;
+    }
+
+    private String format(String text, int max) {
+        String result = text;
+
+        if(result.length()>max) {
+            result = result.substring(0, max-3) + "...";
         }
 
         return result;
