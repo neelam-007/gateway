@@ -1,6 +1,5 @@
 #!/usr/bin/perl
 
-
 # Returns a list of jar files from the class path in the manifest.
 # Example:  a manifest containing a line
 #    "Class-Path: lib/ant.jar lib/commons-collections.jar lib/commons-dbcp.jar"
@@ -21,11 +20,21 @@ sub get_jarlist_from_manifest {
 	return @jars;
 }
 
+sub get_jarlist_from_directory {
+    my $dirpath = shift;
+    opendir(DIR, $dirpath) or die "Can't open $dirpath: $!\n";
+    # read file/directory names in that directory into @names
+    @names = readdir(DIR) or die "Unable to read $dirpath:$!\n";
+    closedir(DIR);
+    return map {"$dirpath$_"} grep {/\.jar/i} @names;
+}
+
 sub zkm_file_replace {
 	my $file = shift;
 	my $zkm = ${file};
 	my $new = shift;
 	my $jars = shift;
+	my $extraprefix = shift;
 	local $_;
 
 	$zkm = "${zkm}";
@@ -36,7 +45,7 @@ sub zkm_file_replace {
 		if (/%%%JARFILE_FILE_LINES%%%/) {
 		    print NEW "classpath";
 			foreach my $jar (@$jars) {
-				print NEW "     \"build/$jar\"\n" or die "unable to write $new: $!";
+				print NEW "     \"$extraprefix$jar\"\n" or die "unable to write $new: $!";
 			}
 			print NEW ";";
 		} else {
@@ -52,7 +61,14 @@ sub zkm_file_replace {
 }
 
 my @jarsbridge = get_jarlist_from_manifest("etc/Bridge.mf");
-zkm_file_replace("etc/obfuscation/bridge.zkm", "etc/obfuscation/bridge_new.zkm", \@jarsbridge);
+zkm_file_replace("etc/obfuscation/bridge.zkm", "etc/obfuscation/bridge_new.zkm", \@jarsbridge, "build/");
 
 my @jarsmanager = get_jarlist_from_manifest("etc/Manager.mf");
-zkm_file_replace("etc/obfuscation/manager.zkm", "etc/obfuscation/manager_new.zkm", \@jarsmanager);
+zkm_file_replace("etc/obfuscation/manager.zkm", "etc/obfuscation/manager_new.zkm", \@jarsmanager, "build/");
+
+my @jarsgateway = get_jarlist_from_directory("build/ROOT_exploded/WEB-INF/lib/");
+#append extra jars
+push @jarsgateway, "build/lib/servlet-api.jar";
+push @jarsgateway, "build/lib/catalina.jar";
+push @jarsgateway, "build/lib/org.mortbay.jetty.jar";
+zkm_file_replace("etc/obfuscation/ssg.zkm", "etc/obfuscation/ssg_new.zkm", \@jarsgateway, "");
