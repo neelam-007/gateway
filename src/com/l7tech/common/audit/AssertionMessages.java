@@ -318,5 +318,9 @@ public class AssertionMessages extends Messages {
     public static final M SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, "Request was flagged by SQL attack protection assertion");
     public static final M SQLATTACK_ALREADY_ROUTED          = m(7203, Level.WARNING, "Unable to protect against SQL attacks -- the request has already been routed.");
 
+    // RequestSizeLimit
+    public static final M REQUEST_BODY_TOO_LARGE            = m(7220, Level.WARNING,  "Request body size exceeds configured limit");
+    public static final M REQUEST_FIRST_PART_TOO_LARGE      = m(7221, Level.WARNING,  "Request first part size exceeds configured limit");
+
     // MAX -                                     m(7999
 }

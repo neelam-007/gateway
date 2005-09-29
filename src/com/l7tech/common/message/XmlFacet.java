@@ -94,6 +94,10 @@ public class XmlFacet extends MessageFacet {
             return pi;
         }
 
+        public void setContentLengthLimit(long sizeLimit) throws IOException {
+            mk.setContentLengthLimit(sizeLimit);
+        }
+
         public ContentTypeHeader getOuterContentType() throws IOException {
             return mk.getOuterContentType();
         }
@@ -240,7 +244,7 @@ public class XmlFacet extends MessageFacet {
             return output;
         }
 
-        public DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient) 
+        public DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient)
                                             throws IOException, CertificateException {
             if (recipient == null || recipient.localRecipient()) {
                 return getOrMakeDecorationRequirements();

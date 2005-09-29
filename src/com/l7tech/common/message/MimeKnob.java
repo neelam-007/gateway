@@ -30,6 +30,21 @@ public interface MimeKnob extends MessageKnob {
     PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException;
 
     /**
+     * Set the maximum size of the message body that the underlying MimeBody should be able to process.
+     * This can be used to abort processing early if a too-large message is encountered.  This will have no
+     * effect at all if all parts have already been read and stashed.  If it is detected that the size limit has
+     * been reached or exceeded during stream processing, further reads from the main message body input stream
+     * will be aborted.
+     * <p/>
+     * If a lower (but non-zero) limit has already been set, this call will not raise it again.
+     *
+     * @param sizeLimit the new size limit to enforce, or zero to turn off size limit enforcement.
+     * @throws IOException if this limit has already been exceeded, but it wasn't too late to cancel the read of the
+     *                     rest of the message.
+     */
+    void setContentLengthLimit(long sizeLimit) throws IOException;
+
+    /**
      * @return the outer content type of the request, or a default.  never null.
      */
     ContentTypeHeader getOuterContentType() throws IOException;

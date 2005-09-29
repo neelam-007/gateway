@@ -70,6 +70,7 @@
                 <L7p:EqualityAssertion/>
                 <L7p:StealthFault/>
                 <L7p:SqlAttackProtection/>
+                <L7p:RequestSizeLimit/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

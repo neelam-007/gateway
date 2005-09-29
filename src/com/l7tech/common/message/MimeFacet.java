@@ -36,7 +36,7 @@ class MimeFacet extends MessageFacet {
 
     private final class MimeMessageKnob implements MimeKnob {
         public boolean isMultipart() {
-            return mimeBody.isMultipart();
+            return getMimeBody().isMultipart();
         }
 
         public PartIterator getParts() {
@@ -53,6 +53,10 @@ class MimeFacet extends MessageFacet {
 
         public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException {
             return getMimeBody().getPartByContentId(contentId);
+        }
+
+        public void setContentLengthLimit(long sizeLimit) throws IOException {
+            getMimeBody().setBodyLengthLimit(sizeLimit);
         }
 
         public ContentTypeHeader getOuterContentType() {
@@ -72,7 +76,7 @@ class MimeFacet extends MessageFacet {
         }
 
         public PartInfo getFirstPart() {
-            return mimeBody.getFirstPart();
+            return getMimeBody().getFirstPart();
         }
     }
 

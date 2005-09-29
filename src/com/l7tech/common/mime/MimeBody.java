@@ -9,6 +9,7 @@ package com.l7tech.common.mime;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CausedIllegalStateException;
 import com.l7tech.common.util.HexUtils;
@@ -34,7 +35,7 @@ public class MimeBody {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
-    private final PushbackInputStream mainInputStream; // always pointed at current part's body, or just past end of message
+    private final ByteLimitInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
     private final StashManager stashManager;
     private final ContentTypeHeader outerContentType;
@@ -45,7 +46,6 @@ public class MimeBody {
 
     private final String boundaryStr; // multpart boundary not including initial dashses or any CRLFs; or null if singlepart
     private final byte[] boundary; // multipart crlfBoundary bytes including initial dashes but not including trailing CRLF; or null if singlepart.
-    private final byte[] boundaryScanbuf; // a buffer exactly crlfBoundary.length bytes long, if multipart; or null if singlepart.
 
     private boolean moreParts = true; // assume there are more parts until we find the end of the stream
 
@@ -56,7 +56,7 @@ public class MimeBody {
      * as the specified outerContentType.
      * <p>
      * When you have finished with a MimeBody, call {@link #close} to free any resources being used, including
-     * the StashManager. 
+     * the StashManager.
      *
      * @param stashManager the StashManager to use.  Must not be null.  See {@link ByteArrayStashManager} for an example.
      *                     If a MimeBody is succesfully created, it takes ownership of the stashManager.
@@ -89,9 +89,9 @@ public class MimeBody {
             boundary = ("--" + boundaryStr).getBytes(MimeHeader.ENCODING);
             if (boundary.length > BLOCKSIZE)
                 throw new IOException("This multipart message cannot be processed because it uses a multipart crlfBoundary which is more than 4kb in length");
-            boundaryScanbuf = new byte[boundary.length];
+            byte[] boundaryScanbuf = new byte[boundary.length];
             pushbackSize = BLOCKSIZE + boundaryScanbuf.length;
-            this.mainInputStream = new PushbackInputStream(mainInputStream, pushbackSize);
+            this.mainInputStream = new ByteLimitInputStream(mainInputStream, pushbackSize);
             readInitialBoundary();
             readNextPartHeaders();
             firstPart = (PartInfoImpl)partInfos.get(0);
@@ -99,9 +99,8 @@ public class MimeBody {
             // Single-part message.  Configure first and only part accordingly.
             boundaryStr = null;
             boundary = null;
-            boundaryScanbuf = null;
             pushbackSize = BLOCKSIZE;
-            this.mainInputStream = new PushbackInputStream(mainInputStream, pushbackSize);
+            this.mainInputStream = new ByteLimitInputStream(mainInputStream, pushbackSize);
             final MimeHeaders outerHeaders = new MimeHeaders();
             outerHeaders.add(outerContentType);
             // TODO refactor this to share more code with PartInfoImpl
@@ -362,7 +361,7 @@ public class MimeBody {
                     if (!sentNextPartBody) {
                         try {
                             if (stashManager.peek(nextPart)) {
-                                InputStream ret = null;
+                                final InputStream ret;
                                 try {
                                     ret = stashManager.recall(nextPart);
                                 } catch (NoSuchPartException e) {
@@ -670,6 +669,19 @@ public class MimeBody {
      */
     public void close() {
         stashManager.close();
+    }
+
+    /**
+     * Set the maximum size of the MIME body that this MimeBody should be prepared to process.
+     * This may have no effect if the parts have already all been read and stashed.
+     * If the limit has already been reached when this method is called, the stream will be closed immediately
+     * and an IOException thrown.
+     * 
+     * @param sizeLimit  the new size limit, or 0 for no limit.  Must be nonnegative.
+     * @throws IOException if the limit has already been reached.
+     */
+    public void setBodyLengthLimit(long sizeLimit) throws IOException {
+        mainInputStream.setSizeLimit(sizeLimit);
     }
 
     /** Our PartInfo implementation. */
