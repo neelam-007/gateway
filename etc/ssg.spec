@@ -103,7 +103,7 @@ else
 fi
 
 echo "** If this is a new system and this node has X Window installed, please run interactive /ssg/configwizard/ssgconfig.sh to configure this system instead ofrunning /ssg/bin/install.pl **"
-echo "** If this is an uprade and this node has X Window installed, you may re-configure this SSG by running interactive /ssg/configwizard/ssgconfig.sh **" 
+echo "** If this is an upgrade and this node has X Window installed, you may re-configure this SSG by running interactive /ssg/configwizard/ssgconfig.sh **" 
 
 echo "Layer 7 SecureSpan(tm) Gateway v3.1" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
