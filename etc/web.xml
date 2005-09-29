@@ -52,11 +52,13 @@
     </listener>
 
     <!-- class servlet registered frst, in case boot process requires it -->
+    <!--  disabled (Bug #2044)
     <servlet>
         <servlet-name>ClassServerServlet</servlet-name>
         <servlet-class>com.l7tech.spring.remoting.rmi.codebase.ClassServerServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
+    -->
 
     <!-- ssg boot servlet properties -->
     <servlet>
@@ -166,10 +168,12 @@
         <url-pattern>/ssg/csr/*</url-pattern>
     </servlet-mapping>
 
+    <!--  disabled (Bug #2044)
     <servlet-mapping>
         <servlet-name>ClassServerServlet</servlet-name>
         <url-pattern>/classserver/*</url-pattern>
     </servlet-mapping>
+    -->
 
     <servlet-mapping>
         <servlet-name>WsdlProxy</servlet-name>
