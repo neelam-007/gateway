@@ -83,6 +83,12 @@
 
     <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
 
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="lib/ant-contrib.jar"/>
+        </classpath>
+    </taskdef>
+
 <!--
        * jars that go in $TOMCAT_HOME/common/lib
        * currently in ant this is used in conjunction with
@@ -1755,6 +1761,26 @@
     </target>
 
     <target name="obfuscate"
-            depends="package, obfuscate.bridge, obfuscate.manager, obfuscate.gateway"/>
-
+            depends="package, obfuscate.bridge, obfuscate.manager, obfuscate.gateway">
+        <exec executable="find" outputproperty="bridge.tar.filename">
+            <arg line="."/>
+            <arg line="-name"/>
+            <arg line="Bridge*.tar.gz"/>
+        </exec>
+        <propertyregex property="build.number.regexed"
+              input="${bridge.tar.filename}"
+              regexp="\./installer/Bridge-([^\.]*)\.tar\.gz"
+              select="\1"
+              casesensitive="false" />
+        <untar src="installer/Bridge-${build.number.regexed}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
+        <untar src="installer/Manager-${build.number.regexed}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
+        <copy file="build/obfuscation/Bridge.jar" tofile="build/obfuscation/Bridge-${build.number.regexed}/Bridge.jar" overwrite="true"/>
+        <copy file="build/obfuscation/Manager.jar" tofile="build/obfuscation/Manager-${build.number.regexed}/Manager.jar" overwrite="true"/>
+        <tar destfile="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz" compression="gzip" basedir="build/obfuscation/Bridge-${build.number.regexed}"/>
+        <tar destfile="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz" compression="gzip" basedir="build/obfuscation/Manager-${build.number.regexed}"/>
+        <delete dir="build/obfuscation/Bridge-${build.number.regexed}"/>
+        <delete dir="build/obfuscation/Manager-${build.number.regexed}"/>
+        <copy file="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz"  tofile="installer/Bridge-${build.number.regexed}.tar.gz" overwrite="true"/>
+        <copy file="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz"  tofile="installer/Manager-${build.number.regexed}.tar.gz" overwrite="true"/>
+    </target>
 </project>
