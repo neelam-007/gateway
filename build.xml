@@ -1776,8 +1776,19 @@
         <untar src="installer/Manager-${build.number.regexed}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
         <copy file="build/obfuscation/Bridge.jar" tofile="build/obfuscation/Bridge-${build.number.regexed}/Bridge.jar" overwrite="true"/>
         <copy file="build/obfuscation/Manager.jar" tofile="build/obfuscation/Manager-${build.number.regexed}/Manager.jar" overwrite="true"/>
-        <tar destfile="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz" compression="gzip" basedir="build/obfuscation/Bridge-${build.number.regexed}"/>
-        <tar destfile="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz" compression="gzip" basedir="build/obfuscation/Manager-${build.number.regexed}"/>
+
+        <tar destfile="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz" compression="gzip">
+            <tarfileset dir="build/obfuscation/Bridge-${build.number.regexed}" prefix="Bridge-${build.number.regexed}">
+                <include name="**"/>
+            </tarfileset>
+        </tar>
+
+        <tar destfile="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz" compression="gzip">
+            <tarfileset dir="build/obfuscation/Manager-${build.number.regexed}" prefix="Manager-${build.number.regexed}">
+                <include name="**"/>
+            </tarfileset>
+        </tar>
+
         <delete dir="build/obfuscation/Bridge-${build.number.regexed}"/>
         <delete dir="build/obfuscation/Manager-${build.number.regexed}"/>
         <copy file="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz"  tofile="installer/Bridge-${build.number.regexed}.tar.gz" overwrite="true"/>
