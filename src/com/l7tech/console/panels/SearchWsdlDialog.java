@@ -145,12 +145,12 @@ public class SearchWsdlDialog extends JDialog {
                     }
 
                     public void finished() {
-                        dlg.hide();
+                        dlg.setVisible(false);
                     }
                 };
 
                 worker.start();
-                dlg.show();
+                dlg.setVisible(true);
                 worker.interrupt();
                 Object result = worker.get();
                 if (result == null)

@@ -74,7 +74,7 @@ public class GetIpDialog extends JDialog {
                     if (isValidIp(s))
                         retval = s;
                 }
-                GetIpDialog.this.hide();
+                GetIpDialog.this.setVisible(false);
             }
         };
         okButton.addActionListener(buttonAction);

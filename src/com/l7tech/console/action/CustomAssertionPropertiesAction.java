@@ -99,7 +99,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         dialog.setTitle(ca.getName());
         dialog.pack();
         Utilities.centerOnScreen(dialog);
-        dialog.show();
+        dialog.setVisible(true);
     }
 
     private AssertionEditor getCustomEditor() {

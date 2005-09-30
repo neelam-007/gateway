@@ -445,7 +445,7 @@ public class LogonDialog extends JDialog {
         } else if (actionCommand.equals(CMD_CANCEL)) {
             dispose();
         } else if (actionCommand.equals(CMD_LOGIN)) {
-            hide();
+            setVisible(false);
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     doLogon();
@@ -561,7 +561,7 @@ public class LogonDialog extends JDialog {
         LogonInProgressDialog ld = new LogonInProgressDialog(parent, sw, url);
         ld.pack();
         Utilities.centerOnScreen(ld);
-        ld.show();
+        ld.setVisible(true);
         return ld;
     }
 

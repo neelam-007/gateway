@@ -78,7 +78,7 @@ public class NewSsgDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 ssg = null;
                 confirmed = false;
-                hide();
+                setVisible(false);
                 dispose();
             }
         };
@@ -87,7 +87,7 @@ public class NewSsgDialog extends JDialog {
         createButton.addActionListener(new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 confirmed = true;
-                hide();
+                setVisible(false);
                 dispose();
             }
         });

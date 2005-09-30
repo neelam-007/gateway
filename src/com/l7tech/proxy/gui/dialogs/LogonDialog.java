@@ -314,7 +314,7 @@ public class LogonDialog extends JDialog {
               new PasswordAuthentication(userNameTextField.getText(),
                 passwordField.getPassword());
         }
-        hide();
+        setVisible(false);
     }
 
     /**
@@ -353,7 +353,7 @@ public class LogonDialog extends JDialog {
             public void windowOpened(WindowEvent e) {
                 JFrame parent = (JFrame)getParent();
                 parent.setState(Frame.NORMAL);
-                parent.show();
+                parent.setVisible(true);
                 parent.toFront();
                 LogonDialog.this.toFront();
                 //LogonDialog.this.requestFocus();

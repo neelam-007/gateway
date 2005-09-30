@@ -193,7 +193,7 @@ public class PublishServiceWizard extends Wizard {
                     SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(this, saBundle.getService());
                     dlg.pack();
                     Utilities.centerOnScreen(dlg);
-                    dlg.show();
+                    dlg.setVisible(true);
                     if (dlg.wasSubjectAffected()) {
                         completeTask();
                     } else {

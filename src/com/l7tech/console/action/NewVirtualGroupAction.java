@@ -3,7 +3,6 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.NewGroupDialog;
 import com.l7tech.console.panels.NewVirtualGroupDialog;
 
 import javax.swing.*;
@@ -55,7 +54,7 @@ public class NewVirtualGroupAction extends NodeAction {
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 NewVirtualGroupDialog dialog = new NewVirtualGroupDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
-                dialog.show();
+                dialog.setVisible(true);
             }
         });
     }

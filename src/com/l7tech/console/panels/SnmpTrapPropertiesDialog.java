@@ -69,7 +69,7 @@ public class SnmpTrapPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 if (viewToModel()) {
                     confirmed = true;
-                    hide();
+                    setVisible(false);
                     dispose();
                 }
             }
@@ -78,7 +78,7 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
-                hide();
+                setVisible(false);
                 dispose();
             }
         });

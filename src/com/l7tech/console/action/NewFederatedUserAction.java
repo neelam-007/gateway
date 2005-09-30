@@ -54,7 +54,7 @@ public class NewFederatedUserAction extends NodeAction {
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 NewFederatedUserDialog dialog = new NewFederatedUserDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
-                dialog.show();
+                dialog.setVisible(true);
             }
         });
     }

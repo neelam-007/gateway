@@ -260,7 +260,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
                 CertSearchPanel sp = new CertSearchPanel(getOwner());
                 sp.addCertListener(certListener);
-                sp.show();
+                sp.setVisible(true);
                 sp.setSize(400, 600);
 
             }
@@ -281,7 +281,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
                     CertPropertiesWindow cpw = new CertPropertiesWindow(getOwner(), (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
-                    cpw.show();
+                    cpw.setVisible(true);
                 }
             }
         });

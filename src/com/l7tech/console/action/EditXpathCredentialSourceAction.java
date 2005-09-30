@@ -50,7 +50,7 @@ public class EditXpathCredentialSourceAction extends NodeAction {
         XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(xpathCredsAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         if (dlg.isAssertionChanged()) {
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {

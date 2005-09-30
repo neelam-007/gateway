@@ -79,7 +79,7 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
                             d.pack();
                             Utilities.centerOnScreen(d);
                             d.addPolicyListener(listener);
-                            d.show();
+                            d.setVisible(true);
                         }
                     } catch (RemoteException e) {
                         log.log(Level.INFO, "Error getting Published Service", e);

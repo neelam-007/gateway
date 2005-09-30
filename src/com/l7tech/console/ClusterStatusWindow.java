@@ -9,7 +9,6 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.panels.EditGatewayNameDialog;
 import com.l7tech.console.panels.StatisticsPanel;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.util.*;
@@ -1003,7 +1002,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                 nodeId = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
 
                 EditGatewayNameDialog dialog = new EditGatewayNameDialog(getClusterStatusWindow(), clusterStatusAdmin, nodeId, nodeName);
-                dialog.show();
+                dialog.setVisible(true);
             }
         }
     }

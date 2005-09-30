@@ -5,7 +5,6 @@ import com.l7tech.console.tree.PoliciesFolderNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.Preferences;
 
 import com.l7tech.console.panels.EditPolicyTemplateNameDialog;
@@ -76,7 +75,7 @@ public class EditPolicyTemplateNameAction extends SecureAction {
 
                   EditPolicyTemplateNameDialog d =
                     new EditPolicyTemplateNameDialog(wm.getMainWindow(), nameChangeListener, node.getName());
-                  d.show();
+                  d.setVisible(true);
               }
           });
     }

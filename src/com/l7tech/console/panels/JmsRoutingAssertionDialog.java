@@ -211,7 +211,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
                     JmsConnection conn = newlyCreatedConnection;
                     JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(getOwner(), conn, ep, true);
                     Utilities.centerOnScreen(pd);
-                    pd.show();
+                    pd.setVisible(true);
                     if (!pd.isCanceled()) {
                         newlyCreatedEndpoint = pd.getEndpoint();
                         newlyCreatedConnection = pd.getConnection();

@@ -61,7 +61,7 @@ public class PolicyAttachmentKeyDialog extends JDialog {
                 result = new PolicyAttachmentKey(nsuri, sa, path);
                 result.setBeginsWithMatch(cbMatchType.getSelectedItem().equals(MATCH_STARTSWITH));
                 result.setPersistent(cbLock.isSelected());
-                hide();
+                setVisible(false);
                 dispose();
             }
         });
@@ -70,7 +70,7 @@ public class PolicyAttachmentKeyDialog extends JDialog {
         final AbstractAction closeAction = new AbstractAction() {
                     public void actionPerformed(ActionEvent e) {
                         result = null;
-                        hide();
+                        setVisible(false);
                         dispose();
                     }
                 };

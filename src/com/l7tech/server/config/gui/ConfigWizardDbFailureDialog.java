@@ -2,7 +2,6 @@ package com.l7tech.server.config.gui;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.panels.Wizard;
 import com.l7tech.server.config.DBActions;
 
 import javax.swing.*;

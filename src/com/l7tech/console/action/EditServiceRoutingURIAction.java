@@ -78,7 +78,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
         SoapServiceRoutingURIEditor dlg = new SoapServiceRoutingURIEditor(mw, svc);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         if (dlg.wasSubjectAffected()) {
             try {
                 Registry.getDefault().getServiceManager().savePublishedService(svc);

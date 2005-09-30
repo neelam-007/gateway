@@ -46,7 +46,7 @@ public class AboutBox extends JDialog implements ActionListener {
      */
     public static void showDialog(Frame Owner) {
         AboutBox box = new AboutBox(Owner);
-        box.show();
+        box.setVisible(true);
     }
 
     /**

@@ -20,6 +20,6 @@ public class ViewerCmdLine {
         ExchangerDocument ec = new ExchangerDocument(file.toURL(), false);
         ec.load();
         ViewerFrame viewer = new ViewerFrame(cp.getViewer(), ec);
-        viewer.show();
+        viewer.setVisible(true);
     }
 }

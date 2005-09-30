@@ -213,7 +213,7 @@ public class FindIdentitiesDialog extends JDialog {
      * @return
      */
     public FindResult showDialog() {
-        show();
+        setVisible(true);
         IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBoxModel.getSelectedItem();
         return new FindResult(ipc.getOid(), selections);
     }
@@ -913,7 +913,7 @@ public class FindIdentitiesDialog extends JDialog {
         EditorDialog dialog = new EditorDialog(f, panel);
         dialog.pack();
         Utilities.centerOnScreen(dialog);
-        dialog.show();
+        dialog.setVisible(true);
     }
 
     private DeleteEntityAction getDeleteAction() {

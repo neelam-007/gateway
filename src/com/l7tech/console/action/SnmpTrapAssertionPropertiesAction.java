@@ -35,7 +35,7 @@ public class SnmpTrapAssertionPropertiesAction extends SecureAction {
         SnmpTrapPropertiesDialog dlg = new SnmpTrapPropertiesDialog(f, subject.getSnmpTrapAssertion());
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
 
         if (dlg.getResult() != null) {
             JTree tree = TopComponents.getInstance().getPolicyTree();

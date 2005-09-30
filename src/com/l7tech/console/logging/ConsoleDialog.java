@@ -143,7 +143,7 @@ public class ConsoleDialog extends JFrame {
              */
             public void actionPerformed(ActionEvent e) {
                 // ConsoleDialog.this.dispose();
-                hide();
+                setVisible(false);
             }
         });
 

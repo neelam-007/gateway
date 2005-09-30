@@ -346,7 +346,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                         EditLdapObjectClassNameDialog d = new EditLdapObjectClassNameDialog(TopComponents.getInstance().getMainWindow(), objectClassNameChangeListener, objectClass.getText());
 
                         // show the dialog
-                        d.show();
+                        d.setVisible(true);
 
                     } else {
                         if (objectClass.getText().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {

@@ -30,7 +30,7 @@ public class NewSsgDialogTest {
         setLnf();
         NewSsgDialog dlg = new NewSsgDialog(new Ssg(1), new SsgManagerStub(), new JFrame("Application"), "Blah!", true);
         dlg.pack();
-        dlg.show();
+        dlg.setVisible(true);
         System.exit(0);
     }
 

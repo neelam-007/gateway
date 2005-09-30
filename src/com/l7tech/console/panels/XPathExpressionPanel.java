@@ -72,7 +72,7 @@ public class XPathExpressionPanel extends JDialog {
                                                                      null);
                 nseditor.pack();
                 Utilities.centerOnScreen(nseditor);
-                nseditor.show();
+                nseditor.setVisible(true);
                 Map newMap = nseditor.newNSMap();
                 if (newMap != null) {
                     initialNamespaces = newMap;

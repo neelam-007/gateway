@@ -29,7 +29,7 @@ public class DefaultErrorHandler implements ErrorHandler {
         ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Message", message, t, level);
         d.pack();
         Utilities.centerOnScreen(d);
-        d.show();
+        d.setVisible(true);
     }
 
     private JFrame getMainWindow() {

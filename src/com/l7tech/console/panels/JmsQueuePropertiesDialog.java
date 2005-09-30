@@ -326,7 +326,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             cancelButton = new JButton("Cancel");
             cancelButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    JmsQueuePropertiesDialog.this.hide();
+                    JmsQueuePropertiesDialog.this.setVisible(false);
                 }
             });
         }
@@ -360,7 +360,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     }
 
                     // Return from dialog
-                    JmsQueuePropertiesDialog.this.hide();
+                    JmsQueuePropertiesDialog.this.setVisible(false);
                     wasClosedByOkButton = true;
                 }
             });

@@ -77,7 +77,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                 d.pack();
                 Utilities.centerOnScreen(d);
                 d.addPolicyListener(listener);
-                d.show();
+                d.setVisible(true);
             }
         });
     }

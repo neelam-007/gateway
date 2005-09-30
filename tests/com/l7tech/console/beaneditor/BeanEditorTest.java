@@ -20,6 +20,6 @@ public class BeanEditorTest {
 
         BeanEditor be = new BeanEditor(frame, person, Object.class, bopts);
         frame.pack();
-        frame.show();
+        frame.setVisible(true);
     }
 }

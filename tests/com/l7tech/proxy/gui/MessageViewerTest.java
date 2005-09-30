@@ -41,7 +41,7 @@ public class MessageViewerTest {
         Gui.getInstance().start();
 
         MessageViewer mv = new MessageViewer("Message viewer test");
-        mv.show();
+        mv.setVisible(true);
         RequestInterceptor ri = mv.getMessageViewerModel();
         ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
         ri.onReplyError(new Exception("BlahException: Blah blah blah!"));

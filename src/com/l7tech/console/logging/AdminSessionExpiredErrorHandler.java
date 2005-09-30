@@ -29,7 +29,7 @@ public class AdminSessionExpiredErrorHandler implements ErrorHandler {
                                                     MSG, t, e.getLevel());
             d.pack();
             Utilities.centerOnScreen(d);
-            d.show();
+            d.setVisible(true);
         } else {
             e.handle();
         }

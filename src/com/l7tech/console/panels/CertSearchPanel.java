@@ -158,7 +158,7 @@ public class CertSearchPanel extends JDialog {
                     cpw = new CertPropertiesWindow(CertSearchPanel.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
                 }
 
-                cpw.show();
+                cpw.setVisible(true);
             }
         });
 

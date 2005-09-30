@@ -8,7 +8,6 @@ import com.l7tech.console.panels.RemoteIpRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RemoteIpRangeTreeNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,7 +47,7 @@ public class RemoteIpRangePropertiesAction extends SecureAction {
         dlg.addPolicyListener(listener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {

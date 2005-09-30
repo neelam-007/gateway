@@ -40,7 +40,7 @@ public class CancelableOperationDialog extends JDialog {
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                CancelableOperationDialog.this.hide();
+                CancelableOperationDialog.this.setVisible(false);
             }
         });
         p.add(cancelButton,

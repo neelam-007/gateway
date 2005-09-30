@@ -77,7 +77,7 @@ public class TrustCertificateDialog extends JDialog {
     private Action getCancelAction() {
         return new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                TrustCertificateDialog.this.hide();
+                TrustCertificateDialog.this.setVisible(false);
                 TrustCertificateDialog.this.dispose();
             }
         };
@@ -101,7 +101,7 @@ public class TrustCertificateDialog extends JDialog {
         cb.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 trusted = true;
-                TrustCertificateDialog.this.hide();
+                TrustCertificateDialog.this.setVisible(false);
                 TrustCertificateDialog.this.dispose();
             }
         });

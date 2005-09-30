@@ -133,7 +133,7 @@ public class ServicePanel extends WizardStepPanel {
                     });
                     swd.setSize(700, 500);
                     swd.setModal(true);
-                    swd.show();
+                    swd.setVisible(true);
                 } catch (RemoteException ex) {
                     JOptionPane.showMessageDialog(mainWindow,
                             ex.getMessage(),
@@ -228,11 +228,11 @@ public class ServicePanel extends WizardStepPanel {
                 }
 
                 public void finished() {
-                    dlg.hide();
+                    dlg.setVisible(false);
                 }
             };
             worker.start();
-            dlg.show();
+            dlg.setVisible(true);
             worker.interrupt();
             Object result = worker.get();
             if (result == null)
@@ -266,7 +266,7 @@ public class ServicePanel extends WizardStepPanel {
                 WSILSelectorPanel chooser = new WSILSelectorPanel(owner, resolvedDoc);
                 chooser.pack();
                 Utilities.centerOnScreen(chooser);
-                chooser.show();
+                chooser.setVisible(true);
                 if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
                     // todo, if previous url contained userinfo stuff but the wsil target does not, modify
                     // new url so the userinfo is added

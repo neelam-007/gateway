@@ -235,7 +235,7 @@ public class JmsQueuesWindow extends JDialog {
                 public void actionPerformed(ActionEvent event) {
                     JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(getOwner(), null, null, false);
                     Utilities.centerOnScreen(amew);
-                    amew.show();
+                    amew.setVisible(true);
 
                     if (!amew.isCanceled()) {
                         updateEndpointList(amew.getEndpoint());
@@ -251,7 +251,7 @@ public class JmsQueuesWindow extends JDialog {
             closeButton = new JButton("Close");
             closeButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    JmsQueuesWindow.this.hide();
+                    JmsQueuesWindow.this.setVisible(false);
                     JmsQueuesWindow.this.dispose();
                 }
             });
@@ -271,7 +271,7 @@ public class JmsQueuesWindow extends JDialog {
                             JmsQueuePropertiesDialog pd =
                               JmsQueuePropertiesDialog.createInstance(getOwner(), i.getConnection(), i.getEndpoint(), false);
                             Utilities.centerOnScreen(pd);
-                            pd.show();
+                            pd.setVisible(true);
                             if (!pd.isCanceled()) {
                                 updateEndpointList(pd.getEndpoint());
                             }

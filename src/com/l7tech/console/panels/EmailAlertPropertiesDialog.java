@@ -56,7 +56,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 viewToModel();
                 confirmed = true;
-                hide();
+                setVisible(false);
                 dispose();
             }
         });
@@ -64,7 +64,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
-                hide();
+                setVisible(false);
                 dispose();
             }
         });
@@ -143,10 +143,10 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
     public static void main(String[] args) {
         Frame f = new JFrame();
-        f.show();
+        f.setVisible(true);
         EmailAlertAssertion ass = new EmailAlertAssertion();
         EmailAlertPropertiesDialog d = new EmailAlertPropertiesDialog(f, ass);
-        d.show();
+        d.setVisible(true);
         d.dispose();
         System.out.println("Got object: " + d.getResult());
         f.dispose();

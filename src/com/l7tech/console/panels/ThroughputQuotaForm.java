@@ -268,7 +268,7 @@ public class ThroughputQuotaForm extends JDialog {
         for (int i = 0; i < 5; i++) {
             ThroughputQuotaForm me = new ThroughputQuotaForm(null, ass, null);
             me.pack();
-            me.show();
+            me.setVisible(true);
         }
         System.exit(0);
     }

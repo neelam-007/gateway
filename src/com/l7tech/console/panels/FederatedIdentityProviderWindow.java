@@ -113,7 +113,7 @@ public class FederatedIdentityProviderWindow extends JDialog {
             public void actionPerformed(ActionEvent event) {
                 CertSearchPanel sp = new CertSearchPanel(FederatedIdentityProviderWindow.this);
                 sp.addCertListener(certListener);
-                sp.show();
+                sp.setVisible(true);
                 sp.setSize(400, 600);
 
             }
@@ -134,7 +134,7 @@ public class FederatedIdentityProviderWindow extends JDialog {
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
                     CertPropertiesWindow cpw = new CertPropertiesWindow(FederatedIdentityProviderWindow.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
-                    cpw.show();
+                    cpw.setVisible(true);
                 }
             }
         });

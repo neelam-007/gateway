@@ -68,7 +68,7 @@ public class EditServiceNameAction extends NodeAction {
                       lastServiceName = svc.getName();
                       EditServiceNameDialog d =
                         new EditServiceNameDialog(wm.getMainWindow(), svc, nameChangeListener);
-                      d.show();
+                      d.setVisible(true);
                   } catch (Exception e) {
                       //todo: ErroManager someday?
                       e.printStackTrace();

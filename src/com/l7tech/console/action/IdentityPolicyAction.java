@@ -62,7 +62,7 @@ public class IdentityPolicyAction extends SecureAction {
             IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
             pw.pack();
             Utilities.centerOnScreen(pw);
-            pw.show();
+            pw.setVisible(true);
         } catch (FindException e) {
             e.printStackTrace();
         } catch (IOException e) {

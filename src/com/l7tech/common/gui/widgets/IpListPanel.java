@@ -85,7 +85,7 @@ public class IpListPanel extends JPanel {
 
                 dlg.pack();
                 Utilities.centerOnScreen(dlg);
-                dlg.show();
+                dlg.setVisible(true);
                 String addr = dlg.getAddress();
                 dlg.dispose();
                 if (addr != null) {

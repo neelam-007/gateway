@@ -32,7 +32,7 @@ public class HttpRoutingAssertionDialogTest {
     private static void realMain() throws Exception {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final JFrame owner = new JFrame("main");
-        owner.show();
+        owner.setVisible(true);
 
         HttpRoutingAssertion a = new HttpRoutingAssertion();
         StubDataStore dataStore = StubDataStore.defaultStore();
@@ -44,7 +44,7 @@ public class HttpRoutingAssertionDialogTest {
         HttpRoutingAssertionDialog d = new HttpRoutingAssertionDialog(owner, a, svc);
         d.setModal(true);
         d.pack();
-        d.show();
+        d.setVisible(true);
     }
 
 }

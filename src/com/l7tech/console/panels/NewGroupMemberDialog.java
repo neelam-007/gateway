@@ -4,7 +4,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.FilterListModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 

@@ -56,7 +56,7 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
         WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(wsTrustAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         if (dlg.isAssertionChanged()) {
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {

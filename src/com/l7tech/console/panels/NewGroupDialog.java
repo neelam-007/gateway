@@ -408,7 +408,7 @@ public class NewGroupDialog extends JDialog {
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);
-                                dialog.show();
+                                dialog.setVisible(true);
                                 insertSuccess = false;
                             }
                         });

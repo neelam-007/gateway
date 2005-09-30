@@ -26,8 +26,8 @@ public class JmsQueuesWindowTest {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final JFrame owner = new JFrame("main");
-        owner.show();
+        owner.setVisible(true);
         JmsQueuesWindow w = JmsQueuesWindow.createInstance(owner);
-        w.show();
+        w.setVisible(true);
     }
 }

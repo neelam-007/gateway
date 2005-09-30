@@ -79,13 +79,13 @@ public class PasswordDialog extends JDialog {
             buttonCancel.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     passwordValid = false;
-                    hide();
+                    setVisible(false);
                 }
             });
             Utilities.runActionOnEscapeKey(getRootPane(), new AbstractAction() {
                 public void actionPerformed(ActionEvent e) {
                     passwordValid = false;
-                    hide();
+                    setVisible(false);
                 }
             });
         }
@@ -100,7 +100,7 @@ public class PasswordDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     if (isPasswordValid()) {
                         passwordValid = true;
-                        hide();
+                        setVisible(false);
                     }
                 }
             });
@@ -200,7 +200,7 @@ public class PasswordDialog extends JDialog {
         setSize(2* fm.stringWidth(getTitle()), (int)getSize().getHeight());
         setResizable(false);
         Utilities.centerOnScreen(this);
-        show();
+        setVisible(true);
         return passwordValid ? fieldPassword.getPassword() : null;
     }
 

@@ -375,7 +375,7 @@ class UserGroupsPanel extends JPanel {
 
                     JDialog dialog = new NewGroupForUserDialog(d, UserGroupsPanel.this, ipc);
                     dialog.setResizable(false);
-                    dialog.show();
+                    dialog.setVisible(true);
 
                     // Perform necessary post-updates
                     setAddRemoveButtons();

@@ -25,7 +25,7 @@ public class TestSquiggly extends JFrame {
 //        text.setStraight();
         getContentPane().add(text);
         pack();
-        show();
+        setVisible(true);
     }
 
     public static void main(String[] args) {

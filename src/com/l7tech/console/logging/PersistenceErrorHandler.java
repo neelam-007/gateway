@@ -35,7 +35,7 @@ public class PersistenceErrorHandler implements ErrorHandler {
             ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Warning", ERROR_MESSAGE, t, Level.WARNING);
             d.pack();
             Utilities.centerOnScreen(d);
-            d.show();
+            d.setVisible(true);
         } else {
             e.handle();
         }

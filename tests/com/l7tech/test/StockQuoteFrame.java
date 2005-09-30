@@ -162,7 +162,7 @@ public class StockQuoteFrame extends javax.swing.JFrame {
     }//GEN-END:initComponents
 
     private void fileExitItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fileExitItemActionPerformed
-        hide();
+        setVisible(false);
         dispose();
         System.exit(0);
     }//GEN-LAST:event_fileExitItemActionPerformed
@@ -176,7 +176,7 @@ public class StockQuoteFrame extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        new StockQuoteFrame().show();
+        new StockQuoteFrame().setVisible(true);
     }
     
     

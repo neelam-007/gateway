@@ -45,7 +45,7 @@ public class TimeRangePropertiesAction extends SecureAction {
         dlg.addPolicyListener(listener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {

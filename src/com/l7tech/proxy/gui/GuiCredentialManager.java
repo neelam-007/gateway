@@ -286,7 +286,7 @@ class GuiCredentialManager extends CredentialManager {
                                                                       mess);
         invokeOnSwingThread(new Runnable() {
             public void run() {
-                tcd.show();
+                tcd.setVisible(true);
             }
         });
         if (!tcd.isTrusted())
@@ -306,7 +306,7 @@ class GuiCredentialManager extends CredentialManager {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 getPleaseWaitDialog().setMessage(message);
-                getPleaseWaitDialog().show();
+                getPleaseWaitDialog().setVisible(true);
             }
         });
     }
@@ -314,7 +314,7 @@ class GuiCredentialManager extends CredentialManager {
     public void notifyLengthyOperationFinished(Ssg ssg) {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                getPleaseWaitDialog().hide();
+                getPleaseWaitDialog().setVisible(false);
             }
         });
     }

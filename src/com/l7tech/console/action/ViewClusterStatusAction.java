@@ -51,7 +51,7 @@ public class ViewClusterStatusAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        getClusterStatusWindow().show();
+        getClusterStatusWindow().setVisible(true);
         getClusterStatusWindow().setState(Frame.NORMAL);
     }
 

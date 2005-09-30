@@ -107,7 +107,7 @@ public class XpathCredentialSourcePropertiesDialog extends JDialog {
         NamespaceMapEditor nseditor = new NamespaceMapEditor(this, namespaces, null);
         nseditor.pack();
         Utilities.centerOnScreen(nseditor);
-        nseditor.show();
+        nseditor.setVisible(true);
         Map newMap = nseditor.newNSMap();
         if (newMap != null) {
             namespaces = newMap;

@@ -293,7 +293,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         for (int i = 0; i < 3; i++) {
             RemoteIpRangePropertiesDialog me = new RemoteIpRangePropertiesDialog(null, true, toto);
             me.pack();
-            me.show();
+            me.setVisible(true);
         }
         System.exit(0);
     }

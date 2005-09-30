@@ -48,7 +48,7 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
         XmlSecurityRecipientContextEditor dlg = new XmlSecurityRecipientContextEditor(mw, assertion);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         if (dlg.hasAssertionChanged()) {
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {

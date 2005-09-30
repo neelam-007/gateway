@@ -291,7 +291,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             "There was problem that caused this messich. The program will now exit.",
             new Exception("Exception message"), Level.SEVERE);
         d.pack();
-        d.show();
+        d.setVisible(true);
         System.exit(-1);
 
     }

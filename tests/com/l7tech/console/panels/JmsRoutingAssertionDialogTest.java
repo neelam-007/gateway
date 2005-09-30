@@ -28,12 +28,12 @@ public class JmsRoutingAssertionDialogTest {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final JFrame owner = new JFrame("main");
-        owner.show();
+        owner.setVisible(true);
 
         JmsRoutingAssertion a = new JmsRoutingAssertion();
         JmsRoutingAssertionDialog d = new JmsRoutingAssertionDialog(owner, a);
         d.setModal(true);
         d.pack();
-        d.show();
+        d.setVisible(true);
     }
 }

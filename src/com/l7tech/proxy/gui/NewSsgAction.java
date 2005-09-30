@@ -46,7 +46,7 @@ class NewSsgAction extends AbstractAction {
                                                      "Create Gateway Account", true);
         newSsgDialog.pack();
         Utilities.centerOnScreen(newSsgDialog);
-        newSsgDialog.show();
+        newSsgDialog.setVisible(true);
         if (newSsgDialog.getSsg() == null)
             return;
 

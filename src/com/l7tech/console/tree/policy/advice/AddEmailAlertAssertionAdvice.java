@@ -26,7 +26,7 @@ public class AddEmailAlertAssertionAdvice implements Advice {
         // show the dialog
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         // check that user oked this dialog
         if (dlg.getResult() != null) {
             pc.proceed();

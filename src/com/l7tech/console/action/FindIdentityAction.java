@@ -131,6 +131,6 @@ public class FindIdentityAction extends BaseAction {
         EditorDialog dialog = new EditorDialog(f, panel);
         dialog.pack();
         Utilities.centerOnScreen(dialog);
-        dialog.show();
+        dialog.setVisible(true);
     }
 }

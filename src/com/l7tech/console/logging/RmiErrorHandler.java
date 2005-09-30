@@ -37,7 +37,7 @@ public class RmiErrorHandler implements ErrorHandler {
             ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway error", ERROR_MESSAGE, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
-            d.show();
+            d.setVisible(true);
         } else {
             e.handle();
         }

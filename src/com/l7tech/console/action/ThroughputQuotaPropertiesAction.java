@@ -44,7 +44,7 @@ public class ThroughputQuotaPropertiesAction extends SecureAction {
                                                           subject.getAssertion(), null);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         if (dlg.wasOKed()) {
             JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {

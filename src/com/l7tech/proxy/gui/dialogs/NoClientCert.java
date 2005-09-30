@@ -95,7 +95,7 @@ public class NoClientCert extends JDialog {
     public static void main(String[] args) {
         NoClientCert dlg =  new NoClientCert((Frame)null, "blah.acme.com");
         dlg.pack();
-        dlg.show();
+        dlg.setVisible(true);
         System.exit(0);
     }
 }

@@ -96,7 +96,7 @@ public abstract class PropertyDialog extends JDialog {
 
     private void doCancel() {
         userClickedOk = false;
-        PropertyDialog.this.hide();
+        PropertyDialog.this.setVisible(false);
         PropertyDialog.this.dispose();
     }
 
@@ -121,7 +121,7 @@ public abstract class PropertyDialog extends JDialog {
                 public void actionPerformed(final ActionEvent e) {
                     commitChanges();
                     userClickedOk = true;
-                    PropertyDialog.this.hide();
+                    PropertyDialog.this.setVisible(false);
                     PropertyDialog.this.dispose();
                 }
             });
@@ -135,7 +135,7 @@ public abstract class PropertyDialog extends JDialog {
      */
     public boolean runDialog() {
         Utilities.centerOnScreen(this);
-        show();
+        setVisible(true);
         return userClickedOk;
     }
 

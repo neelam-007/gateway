@@ -64,7 +64,7 @@ public class PublishServiceAction extends SecureAction {
         dialog.pack();
         dialog.setSize(750, 500);
         Utilities.centerOnScreen(dialog);
-        dialog.show();
+        dialog.setVisible(true);
     }
 
     private EntityListener listener = new EntityListenerAdapter() {

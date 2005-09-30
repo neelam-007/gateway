@@ -630,7 +630,7 @@ public class TimeRangePropertiesDialog extends JDialog {
 
             TimeRangePropertiesDialog me = new TimeRangePropertiesDialog(null, true, assertion);
             me.pack();
-            me.show();
+            me.setVisible(true);
         }
         System.exit(0);
     }

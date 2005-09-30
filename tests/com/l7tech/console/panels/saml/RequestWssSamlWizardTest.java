@@ -1,7 +1,6 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.*;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 
 import javax.swing.*;
@@ -27,7 +26,7 @@ public class RequestWssSamlWizardTest extends JFrame {
         assertion = new RequestWssSaml();
         Wizard w = new RequestWssSamlStatementWizard(assertion, frame, p);
         w.pack();
-        w.show();
+        w.setVisible(true);
         w.addWindowListener(
           new WindowAdapter() {
             public void windowClosing(WindowEvent e) {

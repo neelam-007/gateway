@@ -34,7 +34,7 @@ public class TestPauseListener extends JFrame implements PauseListener {
         cp.add( _label );
         cp.add(statusLabel,new GridBagConstraints(0,1,2,1,0,0,GridBagConstraints.NORTH,0,new Insets(0,0,0,0),0,0));
         pack();
-        show();
+        setVisible(true);
     }
 
     public static void main(String[] args) {

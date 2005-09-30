@@ -163,7 +163,7 @@ public class ClusterPropertyDialog extends JDialog {
             CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, null);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
-            dlg.show();
+            dlg.setVisible(true);
             if (!dlg.wasOked()) {
                 return;
             }
@@ -195,7 +195,7 @@ public class ClusterPropertyDialog extends JDialog {
             CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property", prop.getKey(), prop.getValue());
             dlg.pack();
             Utilities.centerOnScreen(dlg);
-            dlg.show();
+            dlg.setVisible(true);
             if (!dlg.wasOked()) {
                 return;
             }

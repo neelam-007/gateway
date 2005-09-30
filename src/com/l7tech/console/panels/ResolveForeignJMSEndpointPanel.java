@@ -5,8 +5,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.exporter.JMSEndpointReference;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
 
 import javax.swing.*;
 import java.awt.*;
@@ -83,7 +81,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
     private void manageJMSPressed() {
         JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(this.getOwner());
         Utilities.centerOnScreen(jqw);
-        jqw.show();
+        jqw.setVisible(true);
         jqw.dispose();
         populateQueueSelector();
     }

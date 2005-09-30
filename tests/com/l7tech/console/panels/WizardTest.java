@@ -23,7 +23,7 @@ public class WizardTest extends JFrame {
         WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
         Wizard w = new WsdlCreateWizard(t, p);
         w.pack();
-        w.show();
+        w.setVisible(true);
         w.addWindowListener(
           new WindowAdapter() {
               public void windowClosing(WindowEvent e) {

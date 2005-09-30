@@ -2,7 +2,6 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.NewInternalUserDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
@@ -55,7 +54,7 @@ public class NewInternalUserAction extends NodeAction {
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 NewInternalUserDialog dialog = new NewInternalUserDialog(f);
                 dialog.setResizable(false);
-                dialog.show();
+                dialog.setVisible(true);
             }
         });
     }

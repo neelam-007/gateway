@@ -55,7 +55,7 @@ public class SslPropertiesAction extends NodeAction {
      */
     protected void performAction() {
         SslAssertion sslAssertion = (SslAssertion)node.asAssertion();
-        new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(), sslAssertion).show();
+        new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(), sslAssertion).setVisible(true);
         assertionChanged();
 //
 //        String s =

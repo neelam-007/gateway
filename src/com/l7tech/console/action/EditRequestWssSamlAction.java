@@ -67,7 +67,7 @@ public class EditRequestWssSamlAction extends NodeAction {
           new RequestWssSamlPropertiesPanel(samlAuthenticationStatement, mw, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         return dlg.hasAssertionChanged();
     }
 

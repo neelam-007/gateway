@@ -36,7 +36,7 @@ public class VersionMismatchErrorHandler implements ErrorHandler {
             ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway Warning", ERROR_MESSAGE, t, Level.WARNING);
             d.pack();
             Utilities.centerOnScreen(d);
-            d.show();
+            d.setVisible(true);
         } else {
             e.handle();
         }

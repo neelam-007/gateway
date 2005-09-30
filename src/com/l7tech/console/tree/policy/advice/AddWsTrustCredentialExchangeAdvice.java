@@ -30,7 +30,7 @@ public class AddWsTrustCredentialExchangeAdvice implements Advice {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
 //        dlg.setVisible(true);
-        dlg.show();
+        dlg.setVisible(true);
         // check that user oked this dialog
         if (dlg.isAssertionChanged()) {
             pc.proceed();

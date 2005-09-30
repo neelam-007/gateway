@@ -25,7 +25,7 @@ public class TrustCertificateDialogTest {
         Gui.setInstance(Gui.createGui(null, new SsgManagerStub()));
         X509Certificate cert = TestDocuments.getDotNetServerCertificate();
         TrustCertificateDialog tcd = new TrustCertificateDialog(cert, "Blah!", "The authenticity of this Gateway server certificate could not be verified using the current username and password.  Do you want to trust the Gateway data.l7tech.com using this server certificate?  If you don't know, click Cancel.");
-        tcd.show();
+        tcd.setVisible(true);
         log.info("Trusted = " + tcd.isTrusted());
         System.exit(0);
     }

@@ -53,7 +53,7 @@ public class ManageCertificatesAction extends SecureAction {
     protected void performAction() {
         CertManagerWindow cmw = new CertManagerWindow(TopComponents.getInstance().getMainWindow());
         Utilities.centerOnScreen(cmw);
-        cmw.show();
+        cmw.setVisible(true);
         cmw.dispose();
     }
 

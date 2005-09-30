@@ -200,7 +200,7 @@ public class Gui {
             }
 
             private void doShow() {
-                Gui.this.getFrame().show();
+                Gui.this.getFrame().setVisible(true);
                 Gui.this.getFrame().setState( Frame.NORMAL );
                 Gui.this.getFrame().toFront();
             }
@@ -293,7 +293,7 @@ public class Gui {
 
                 public void windowIconified( WindowEvent e ) {
                     if ( sysTrayMenu != null ) {
-                        frame.hide();
+                        frame.setVisible(false);
                         frame.setState( Frame.NORMAL );
                         sysTrayMenu.showIcon();
                     }
@@ -301,7 +301,7 @@ public class Gui {
 
                 public void windowClosing( final WindowEvent e ) {
                     if ( sysTrayMenu != null ) {
-                        frame.hide();
+                        frame.setVisible(false);
                         frame.setState( Frame.NORMAL );
                         sysTrayMenu.showIcon();
                     } else
@@ -391,12 +391,12 @@ public class Gui {
             closeFrame();
         } else if ( MENU_MESSAGES.equals( e.getActionCommand() ) ) {
             if ( showMessages.isSelected() ) {
-                getMessageViewer().show();
+                getMessageViewer().setVisible(true);
             } else {
-                getMessageViewer().hide();
+                getMessageViewer().setVisible(false);
             }
         } else if ( MENU_HELP_ABOUT.equals( e.getActionCommand() ) ) {
-            new AboutBox().show();
+            new AboutBox().setVisible(true);
         } else if ( MENU_HELP_HELP.equals( e.getActionCommand() ) ) {
             showHelpTopics(e);
         }
@@ -424,10 +424,10 @@ public class Gui {
             throw new IllegalStateException( "Gui has already been started" );
 
         if ( sysTrayMenu != null ) {
-            getFrame().hide();
+            getFrame().setVisible(false);
             sysTrayMenu.showIcon();
         } else
-            getFrame().show();
+            getFrame().setVisible(true);
 
         if ( getSsgListPanel().getNumSsgs() < 1 )
             getSsgListPanel().getActionNewSsg().actionPerformed( new ActionEvent( this, 1, "NewDefault" ) );
@@ -466,7 +466,7 @@ public class Gui {
         d.setModal( true );
         d.pack();
         Utilities.centerOnScreen( d );
-        d.show();
+        d.setVisible(true);
     }
 
     /**

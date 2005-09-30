@@ -79,7 +79,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
                 dialog.pack();
                 dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
                 Utilities.centerOnScreen(dialog);
-                dialog.show();
+                dialog.setVisible(true);
             } else {
                 if (n instanceof RequestXpathPolicyTreeNode || n instanceof ResponseXpathPolicyTreeNode) {
                     XpathBasedAssertion xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
@@ -95,7 +95,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
                     XPathExpressionPanel panel = new XPathExpressionPanel(null, title, initialValue, xmlSecAssertion.getXpathExpression().getNamespaces());
                     panel.pack();
                     Utilities.centerOnScreen(panel);
-                    panel.show();
+                    panel.setVisible(true);
                     /*String question = "Please provide xpath value.";
 
                     String res = (String)JOptionPane.showInputDialog(null, question, title,

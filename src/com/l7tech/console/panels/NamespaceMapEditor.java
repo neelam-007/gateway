@@ -230,7 +230,7 @@ public class NamespaceMapEditor extends JDialog {
         NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
         grabber.pack();
         Utilities.centerOnScreen(grabber);
-        grabber.show();
+        grabber.setVisible(true);
 
         if (grabber.cancelled) return;
 
@@ -318,7 +318,7 @@ public class NamespaceMapEditor extends JDialog {
         forbiddenNamespaces.add("http://warehouse.acme.com/ws");
         NamespaceMapEditor blah = new NamespaceMapEditor((Frame)null, initialValues, forbiddenNamespaces);
         blah.pack();
-        blah.show();
+        blah.setVisible(true);
         System.exit(0);
     }
 }

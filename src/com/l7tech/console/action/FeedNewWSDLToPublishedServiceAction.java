@@ -106,7 +106,7 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
                     WSILSelectorPanel chooser = new WSILSelectorPanel((JFrame)null, resolvedDoc);
                     chooser.pack();
                     Utilities.centerOnScreen(chooser);
-                    chooser.show();
+                    chooser.setVisible(true);
                     if (!chooser.wasCancelled() && chooser.selectedWSDLURL() != null) {
                         URL newUrl = new URL(chooser.selectedWSDLURL());
                         // add userinfo if necessary
