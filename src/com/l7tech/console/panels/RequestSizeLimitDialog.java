@@ -31,7 +31,7 @@ public class RequestSizeLimitDialog extends JDialog {
     private boolean confirmed = false;
 
     public RequestSizeLimitDialog(Frame owner, RequestSizeLimit assertion, boolean modal) throws HeadlessException {
-        super(owner, "Configure Request Size Limit", modal);
+        super(owner, "Request Size Limit", modal);
         doInit(assertion);
     }
 
