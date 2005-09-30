@@ -1769,7 +1769,7 @@
         </exec>
         <propertyregex property="build.number.regexed"
               input="${bridge.tar.filename}"
-              regexp="\./installer/Bridge-([^\.]*)\.tar\.gz"
+              regexp="\./installer/Bridge-(.*)\.tar\.gz"
               select="\1"
               casesensitive="false" />
         <untar src="installer/Bridge-${build.number.regexed}.tar.gz" dest="build/obfuscation/" compression="gzip"/>
