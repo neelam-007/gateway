@@ -1706,6 +1706,7 @@
         </replaceregexp>
     </target>
 
+    <!-- invoked by obfuscate -->
     <target name="obfuscate.bridge" depends="obfuscate.init">
         <echo>Obfuscating Bridge.jar</echo>
         <Zelix scriptFileName="etc/obfuscation/bridge_new.zkm"
@@ -1717,7 +1718,7 @@
         <copy tofile="build/Bridge.jar" file="build/obfuscation/Bridge.jar" overwrite="true"/>
     </target>
 
-    <!--  depends="package.manager" ?? -->
+    <!-- invoked by obfuscate -->
     <target name="obfuscate.manager" depends="obfuscate.init">
         <echo>Obfuscating Manager.jar</echo>
         <Zelix scriptFileName="etc/obfuscation/manager_new.zkm"
@@ -1729,6 +1730,7 @@
         <copy tofile="build/Manager.jar" file="build/obfuscation/Manager.jar" overwrite="true"/>
     </target>
 
+    <!-- invoked by obfuscate -->
     <target name="obfuscate.gateway" depends="obfuscate.init">
         <echo>Obfuscating war classes</echo>
         <Zelix scriptFileName="etc/obfuscation/ssg_new.zkm"
@@ -1760,6 +1762,20 @@
         </exec>
     </target>
 
+    <!--
+    meant to be used as part of official build
+    this will create an obfuscated version of the following files:
+    . build/Bridge.jar
+    . build/Manager.jar
+    . build/ROOT.war
+    . installer/Bridge-VERSION.tar.gz
+    . installer/Manager-VERSION.tar.gz
+
+    when followed by ssg-install-full, the resulting build/ssg-bBUILDNUMBER.tar.gz will
+    also be obfuscated
+    when followed by a call to ./make_installers.pl -b, the resulting windows installers
+    for bridge, manager and ssg will also be obfuscated
+    -->
     <target name="obfuscate"
             depends="package, obfuscate.bridge, obfuscate.manager, obfuscate.gateway">
         <exec executable="find" outputproperty="bridge.tar.filename">
