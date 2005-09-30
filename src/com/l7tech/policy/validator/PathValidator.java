@@ -85,7 +85,14 @@ class PathValidator {
             processCustom(a);
         } else if (a instanceof UnknownAssertion){
             processUnknown((UnknownAssertion)a);
+        } else if (a instanceof SqlAttackAssertion) {
+            processSQL((SqlAttackAssertion)a);
         }
+    }
+
+    private void processSQL(SqlAttackAssertion sqlAttackAssertion) {
+        // todo check you thing
+        //result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, "Dont dot this stupid!.", null));
     }
 
     List getDeferredValidators() {
