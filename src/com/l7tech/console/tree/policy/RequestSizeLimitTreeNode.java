@@ -28,7 +28,7 @@ public class RequestSizeLimitTreeNode extends LeafAssertionTreeNode{
     }
 
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/xmlencryption.gif";
+        return "com/l7tech/console/resources/MessageLength-16x16.gif";
     }
 
     public Action getPreferredAction() {
