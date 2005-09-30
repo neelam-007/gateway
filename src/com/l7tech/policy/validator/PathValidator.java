@@ -91,6 +91,11 @@ class PathValidator {
     }
 
     private void processSQL(SqlAttackAssertion sqlAttackAssertion) {
+        if (sqlAttackAssertion != null) {
+            if (sqlAttackAssertion.getProtections().isEmpty()) {
+                result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, "No SQL protections have been specified", null));
+            }
+        }
         // todo check you thing
         //result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, "Dont dot this stupid!.", null));
     }
