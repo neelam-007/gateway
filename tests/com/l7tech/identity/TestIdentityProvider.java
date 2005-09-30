@@ -89,11 +89,11 @@ public class TestIdentityProvider implements IdentityProvider {
         usernameMap.put(username, new MyUser(user, username, password));
     }
 
-    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         MyUser mu = (MyUser)usernameMap.get(pc.getLogin());
         if (mu == null) return null;
         if (Arrays.equals(mu.password, pc.getCredentials())) {
-            return mu.user;
+            return new AuthenticationResult(mu.user);
         }
         throw new AuthenticationException("Invalid username or password");
     }
@@ -280,6 +280,10 @@ public class TestIdentityProvider implements IdentityProvider {
         }
 
         public EntityHeader userToHeader(User user) {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
+
+        public User headerToUser(EntityHeader header) {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
 

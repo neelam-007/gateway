@@ -13,10 +13,7 @@ import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -181,15 +178,15 @@ public class TokenServiceServlet extends HttpServlet {
                     for (Iterator iterator = providers.iterator(); iterator.hasNext();) {
                         IdentityProvider provider = (IdentityProvider) iterator.next();
                         try {
-                            User dude = provider.authenticate(creds);
-                            if (dude != null) {
+                            AuthenticationResult authResult = provider.authenticate(creds);
+                            if (authResult != null) {
                                 if (authenticatedUser != null) {
                                     throw new AuthenticationException("The cert used to sign this request is valid " +
                                                                       "on more than one provider. Secure conversation " +
                                                                       "contexts must be associated unambigously to one " +
                                                                       "user.");
                                 } else {
-                                    authenticatedUser = dude;
+                                    authenticatedUser = authResult.getUser();
                                 }
                             }
                         } catch (AuthenticationException e) {

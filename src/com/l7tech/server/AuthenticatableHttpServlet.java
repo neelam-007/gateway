@@ -1,5 +1,9 @@
 package com.l7tech.server;
 
+import com.l7tech.common.Feature;
+import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
@@ -14,10 +18,8 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.util.ServletUtils;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.LicenseManager;
-import com.l7tech.common.Feature;
-import com.l7tech.common.LicenseException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -29,10 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,10 +46,15 @@ import java.util.logging.Logger;
  * Date: Sep 15, 2003<br/>
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
-    public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
-    protected ServiceManager serviceManagerInstance = null;
     protected final Logger logger = Logger.getLogger(getClass().getName());
+
     private WebApplicationContext applicationContext;
+
+    protected ServiceManager serviceManager;
+    protected ClientCertManager clientCertManager;
+    protected IdentityProviderConfigManager providerConfigManager;
+    private IdentityProviderFactory identityProviderFactory;
+    private LicenseManager licenseManager;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -59,14 +63,25 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
+
+        clientCertManager = (ClientCertManager)getBean("clientCertManager");
+        providerConfigManager = (IdentityProviderConfigManager)getBean("identityProviderConfigManager");
+        identityProviderFactory = (IdentityProviderFactory)getBean("identityProviderFactory");
+        licenseManager = (LicenseManager)getBean("licenseManager");
+        serviceManager = (ServiceManager)getBean("serviceManager");
     }
 
+    private Object getBean(String name) throws ServletException {
+        Object bean = applicationContext.getBean(name);
+        if (bean == null) throw new ServletException("Configuration error; could not get " + name);
+        return bean;
+    }
 
     /**
      * Look for basic creds in the request and authenticate them against id providers available in this ssg.
      * If credentials are provided but they are invalid, this will throw a BadCredentialsException
      *
-     * @return the authenticated user, null if no creds provided
+     * @return a Map&lt;User, X509Certificate&gt; containing authenticated users, and any cert they might have presented. May be empty, but never null.
      * @throws BadCredentialsException  if authorized credentials were not presented with the request
      * @throws IssuedCertNotPresentedException  if the identity in question is recorded as possessing a client
      *                                          certificate, and the connection came in over SSL, but the
@@ -74,14 +89,13 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *                                          SSL handshake.
      * @throws LicenseException   if the currently installed license does not enable use of auxilary servlets.
      */
-    protected List authenticateRequestBasic(HttpServletRequest req) 
+    protected Map authenticateRequestBasic(HttpServletRequest req)
             throws BadCredentialsException, IssuedCertNotPresentedException, LicenseException
     {
-        LicenseManager licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
 
         licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
 
-        List users = new ArrayList();
+        Map users;
         try {
             users = getUsers(req);
             if (users.isEmpty()) {
@@ -92,102 +106,76 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             return users;
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Exception getting id providers.", e);
-            return users;
+            return Collections.EMPTY_MAP;
         }
     }
 
-    /**
-     * @return false if the user has valid cert in our db and failed to present
-     *         it to the ssl handshake. true otherwise
-     */
-    private boolean checkRequestForCert(User user, HttpServletRequest req) {
-        // this check only makes sense if the request comes over SSL
-        if (!req.isSecure()) return true;
-        // check if the user currently has a valid cert
-        ClientCertManager certman = (ClientCertManager)applicationContext.getBean("clientCertManager");
-        Certificate certindb = null;
-        try {
-            certindb = certman.getUserCert(user);
-        } catch (FindException e) {
-            // that's ok if no cert is present
-            certindb = null;
-        }
-        // there is a valid cert. make sure it was presented
-        if (certindb != null) {
-            Object param = req.getAttribute(PARAM_HTTP_X509CERT);
-            ArrayList presentedCerts = new ArrayList();
-            if (param == null) {
-                logger.warning("No client cert in that request.");
-            } else if (param instanceof Object[]) {
-                Object[] maybeCerts = (Object[])param;
-                for (int i = 0; i < maybeCerts.length; i++) {
-                    Object item = maybeCerts[i];
-                    if (item instanceof X509Certificate) {
-                        presentedCerts.add(item);
-                    } else {
-                        logger.warning("Object type not supported " + item.getClass().getName());
-                    }
-                }
-            } else if (param instanceof X509Certificate) {
-                presentedCerts.add(param);
-            } else {
-                logger.warning("Cert param present but type not suppoted " + param.getClass().getName());
-            }
-            if (presentedCerts.isEmpty()) {
-                logger.warning("the authenticated user has a valid cert but no certs were presented to the servlet");
-                return false;
-            } else {
-                for (Iterator i = presentedCerts.iterator(); i.hasNext();) {
-                    X509Certificate presentedCert = (X509Certificate)i.next();
-                    if (presentedCert.equals(certindb)) {
-                        logger.finest("Valid client cert presented as part of request.");
-                        return true;
-                    }
-                }
-                logger.warning("the authenticated user has a valid cert but he presented a different" +
-                  "cert to the servlet");
-                return false;
-            }
-
-        } else {
-            logger.finest("User " + user.getLogin() + " does not have a cert in database.");
-            return true;
-        }
-    }
-
-    private List getUsers(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
-        List users = new ArrayList();
-        IdentityProviderConfigManager configManager = getIdentityProviderConfigManager();
+    private Map getUsers(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
+        Map users = new HashMap();
         Collection providers;
-        providers = configManager.findAllIdentityProviders();
+        providers = providerConfigManager.findAllIdentityProviders();
         LoginCredentials creds = findCredentialsBasic(req);
         if (creds == null) {
             return users;
         }
+
+        if (!req.isSecure() && !isCleartextAllowed()) {
+            logger.info("HTTP Basic authentication is not allowed without SSL");
+            return users;
+        }
+
         boolean userAuthenticatedButDidNotPresentHisCert = false;
+
+        nextIdentityProvider:
         for (Iterator i = providers.iterator(); i.hasNext();) {
             IdentityProvider provider = (IdentityProvider)i.next();
             try {
-                User u = provider.authenticate(creds);
-                if (u == null) continue;
-                logger.fine("Authentication success for user " + creds.getLogin() + " on identity provider: " +
-                  provider.getConfig().getName());
+                AuthenticationResult authResult = provider.authenticate(creds);
+                if (authResult == null) continue nextIdentityProvider;
+                User u = authResult.getUser();
+                logger.fine("Authentication success for user " + creds.getLogin() +
+                        " on identity provider: " + provider.getConfig().getName());
 
                 // if this request comes through SSL, and the authenticated client possess a valid
                 // client cert, then we enforce that he USES the client cert as part of the SSL
                 // handshake (this is to prevent dictionnary attacks against accounts that possess
                 // a valid client cert)
-                if (checkRequestForCert(u, req)) {
-                    users.add(u);
+
+                if (!req.isSecure()) {
+                    logger.info("HTTP Basic is being permitted without SSL");
+                    users.put(u, null);
                 } else {
-                    logger.info("User " + creds.getLogin() + " has valid basic credentials but is " +
-                                "refused authentication because he did not prove possession of his client cert.");
-                    userAuthenticatedButDidNotPresentHisCert = true;
+                    X509Certificate requestCert = ServletUtils.getRequestCert(req);
+                    Certificate dbCert = clientCertManager.getUserCert(u);
+                    if (dbCert == null) {
+                        logger.finest("User " + u.getLogin() + " does not have a cert in database, but authenticated successfully with HTTP Basic over SSL");
+                        users.put(u, null);
+                    } else {
+                        // there is a valid cert. make sure it was presented
+                        if (requestCert == null) {
+                            logger.info("User " + creds.getLogin() + " has valid basic credentials but is " +
+                                        "refused authentication because he did not prove possession of his client cert.");
+                            userAuthenticatedButDidNotPresentHisCert = true;
+                        }
+                        X509Certificate dbCertX509;
+                        if (dbCert instanceof X509Certificate) {
+                            dbCertX509 = (X509Certificate)dbCert;
+                        } else {
+                            logger.warning("Client cert in database is not X.509");
+                            continue nextIdentityProvider;
+                        }
+                        if (CertUtils.certsAreEqual(requestCert, dbCertX509)) {
+                            logger.finest("Valid client cert presented as part of request.");
+                            users.put(u, requestCert);
+                        } else {
+                            logger.warning("the authenticated user has a valid cert but he presented a different" +
+                              "cert to the servlet");
+                        }
+                    }
                 }
             } catch (Exception e) {
                 logger.fine("Authentication failed for user " + creds.getLogin() +
                   " on identity provider: " + provider.getConfig().getName());
-                continue;
             }
         }
         if (users.isEmpty() && userAuthenticatedButDidNotPresentHisCert) {
@@ -199,8 +187,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return users;
     }
 
-    protected IdentityProviderConfigManager getIdentityProviderConfigManager() {
-        return (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
+    /**
+     * Override and return true if your implementation allows HTTP Basic without SSL
+     */
+    protected boolean isCleartextAllowed() {
+        return false;
     }
 
     /**
@@ -225,9 +216,9 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @throws com.l7tech.identity.BadCredentialsException
      *                             on invalid credentials
      */
-    protected List authenticateRequestBasic(HttpServletRequest req, PublishedService service)
+    protected Map authenticateRequestBasic(HttpServletRequest req, PublishedService service)
       throws IOException, BadCredentialsException, IssuedCertNotPresentedException {
-        List users = new ArrayList();
+        Map users = new HashMap();
         try {
             users = getUsers(req);
             if (!users.isEmpty()) {
@@ -253,7 +244,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());
                         user.setPassword(new String(creds.getCredentials()));
-                        users.add(user);
+                        users.put(user, null); // No certs for custom assertions
                         break; // enough
                     }
                 }
@@ -281,7 +272,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
 
         ServerHttpBasic httpBasic = new ServerHttpBasic(new HttpBasic(), applicationContext);
-        LoginCredentials creds = null;
+        LoginCredentials creds;
         try {
             creds = httpBasic.findCredentials(authorizationHeader);
             if (creds == null) {
@@ -316,8 +307,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 IdentityAssertion ia = (IdentityAssertion)a;
                 final String msg = "Policy refers to a nonexistent identity provider";
                 try {
-                    IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
-                    IdentityProvider provider = ipf.getProvider(ia.getIdentityProviderOid());
+                    IdentityProvider provider = identityProviderFactory.getProvider(ia.getIdentityProviderOid());
                     if (provider == null) {
                         logger.warning(msg);
                         return false;
@@ -371,20 +361,9 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return applicationContext;
     }
 
-    protected synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
-        serviceManagerInstance = (ServiceManager)applicationContext.getBean("serviceManager");
-    }
-
-    protected synchronized ServiceManager getServiceManager() {
-        if (serviceManagerInstance == null) {
-            initialiseServiceManager();
-        }
-        return serviceManagerInstance;
-    }
-
     protected PublishedService resolveService(long oid) {
         try {
-            return getServiceManager().findByPrimaryKey(oid);
+            return serviceManager.findByPrimaryKey(oid);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Cannot retrieve service " + oid, e);
             return null;

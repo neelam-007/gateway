@@ -7,6 +7,7 @@ package com.l7tech.common.util;
 import com.l7tech.common.security.CertificateExpiry;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.x509.X509Extensions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -520,6 +521,17 @@ public class CertUtils {
             return sha.digest();
         }
 
+        return unAsn1(derEncodedValue);
+    }
+
+    public static byte[] getAKIBytesFromCert(X509Certificate cert) {
+        if (cert.getVersion() < 3) return null;
+        byte[] ext = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
+        if (ext == null) return null;
+        return unAsn1(ext);
+    }
+
+    private static byte[] unAsn1(byte[] derEncodedValue) {
         /**
          * Strip away first four bytes from the DerValue (tag and length of
          * ExtensionValue OCTET STRING and KeyIdentifier OCTET STRING)

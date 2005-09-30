@@ -50,10 +50,12 @@ public class AdminLoginImpl extends ApplicationObjectSupport
         }
         try {
             LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
-            User user = getInternalIdentityProvider().authenticate(creds);
-            if (user == null) {
+            AuthenticationResult authResult = getInternalIdentityProvider().authenticate(creds);
+            if (authResult == null) {
                 throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
             }
+            User user = authResult.getUser();
+            
             String[] roles = getUserRoles(user);
             if (!containsAdminAccessRole(roles)) {
                 throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");

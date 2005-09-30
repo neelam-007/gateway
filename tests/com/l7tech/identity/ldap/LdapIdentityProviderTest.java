@@ -3,6 +3,7 @@ package com.l7tech.identity.ldap;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -205,16 +206,15 @@ public class LdapIdentityProviderTest {
             } else {
                 System.out.println("user found " + notauthenticated.getUniqueIdentifier());
             }
-            User authenticated = null;
+            AuthenticationResult authResult = null;
             try {
-                authenticated = localProvider.authenticate(
-                  new LoginCredentials(notauthenticated.getLogin(),
-                                       passwd.toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
+                authResult = localProvider.authenticate(
+                  new LoginCredentials(notauthenticated.getLogin(), passwd.toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
             } catch (Exception e) {
                 System.out.println("creds do not authenticate.");
             }
-            if (authenticated != null) {
-                System.out.println("user authenticated " + authenticated);
+            if (authResult != null) {
+                System.out.println("user authenticated " + authResult.getUser());
             }
         } catch (Exception e) {
             e.printStackTrace(System.err);

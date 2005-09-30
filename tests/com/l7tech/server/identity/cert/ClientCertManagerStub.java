@@ -74,7 +74,7 @@ public class ClientCertManagerStub implements ClientCertManager {
      * if the user has no current cert or a cert that has not been used, this will
      * return true
      */
-    public boolean userCanGenCert(User user) {
+    public boolean userCanGenCert(User user, Certificate existingCert) {
         throw new RuntimeException("Not implemented");
     }
 }

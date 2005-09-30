@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 /**
@@ -46,7 +46,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         // get credentials
-        List users;
+        Map users;
         try {
             users = authenticateRequestBasic(req);
         } catch (AuthenticationException e) {
@@ -64,7 +64,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         InternalUser internalUser = null;
-        for (Iterator i = users.iterator(); i.hasNext();) {
+        for (Iterator i = users.keySet().iterator(); i.hasNext();) {
             User u = (User)i.next();
             if (u.getProviderId() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
                 internalUser = (InternalUser)u;

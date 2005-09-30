@@ -9,8 +9,8 @@ import com.l7tech.objectmodel.UpdateException;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 import org.springframework.dao.DataAccessException;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.io.IOException;
 import java.security.cert.Certificate;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
 
-    public boolean userCanGenCert(User user) {
+    public boolean userCanGenCert(User user, Certificate existingCert) {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("userCanGenCert for " + getName(user));
         CertEntryRow userData = getFromTable(user);
@@ -75,7 +75,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         */
 
         // check if operation is permitted
-        if (!userCanGenCert(user)) {
+        if (!userCanGenCert(user, cert)) {
             String msg = "this user is currently not allowed to generate a new cert: " + getName(user);
             logger.info(msg);
             throw new UpdateException(msg);

@@ -100,8 +100,13 @@ public class SecureSpanConstants {
      */
     public static final String ADMIN_PROTOCOL_VERSION = "20040603";
 
-    public static final String INVALID = "invalid";
-    public static final String VALID = "valid";
+    public static final String CERT_INVALID = "invalid";
+    public static final String CERT_VALID = "valid";
+
+    /**
+     * @see {@link com.l7tech.identity.AuthenticationResult#isCertSignedByStaleCA()}
+     */
+    public static final String CERT_STALE = "stale";
 
     /** SOAP faultcode for a stale or invalid WS-SecureConversation Security Context Token. */
     public static final String FAULTCODE_BADCONTEXTTOKEN = "wsc:BadContextToken";

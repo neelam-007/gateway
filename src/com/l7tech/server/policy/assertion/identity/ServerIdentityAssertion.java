@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion.identity;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
@@ -56,7 +57,6 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      * authorized to make the request.
      *
      * @param context
-     * @return
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) {
         LoginCredentials pc = context.getCredentials();
@@ -90,8 +90,15 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 String name = null;
                 try {
                     IdentityProvider provider = getIdentityProvider(context);
-                    User user = provider.authenticate(pc);
-                    if (user == null) return authFailed(context, pc, null);
+                    AuthenticationResult authResult = provider.authenticate(pc);
+                    if (authResult == null) return authFailed(context, pc, null);
+
+                    if (authResult.isCertSignedByStaleCA()) {
+                        HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                        hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE);
+                    }
+
+                    User user = authResult.getUser();
 
                     name = user.getLogin();
                     if (name == null) name = user.getName();
@@ -109,7 +116,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {name});
                     // set some response header so that the CP is made aware of this situation
                     context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
-                      SecureSpanConstants.INVALID);
+                      SecureSpanConstants.CERT_INVALID);
                     return authFailed(context, pc, icce);
                 } catch (MissingCredentialsException mce) {
                     context.setAuthenticationMissing();

@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
@@ -10,10 +11,8 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.common.LicenseException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -109,8 +108,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
 
             // pass over to the service
-            PolicyService service = null;
-            service = getPolicyService();
+            PolicyService service = getPolicyService();
 
             service.respondToPolicyDownloadRequest(context, signResponse, normalPolicyGetter(), pre32PolicyCompat);
 
@@ -132,10 +130,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             // check if the response is already a soap fault
             if (isDocFault(responseDoc)) {
                 outputSoapFault(servletResponse, responseDoc);
-                return;
             } else {
                 outputPolicyDoc(servletResponse, responseDoc);
-                return;
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
@@ -201,12 +197,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
 
         // get credentials and check that they are valid for this policy
-        List users;
+        Map users;
         try {
             users = authenticateRequestBasic(req);
         } catch (AuthenticationException e) {
             logger.log(Level.FINE, "Authentication exception", e);
-            users = Collections.EMPTY_LIST;
+            users = Collections.EMPTY_MAP;
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             generateFaultAndSendAsResponse(res, "Gateway policy discovery service not enabled by license", e.getMessage());
@@ -214,16 +210,15 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
 
         // pass over to the service
-        PolicyService service = null;
-        service = getPolicyService();
-        Document response = null;
+        PolicyService service = getPolicyService();
+        Document response;
         try {
             switch (users.size()) {
                 case 0:
                     response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(), pre32PolicyCompat);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.get(0)), this.normalPolicyGetter(), pre32PolicyCompat);
+                    response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.keySet().iterator().next()), this.normalPolicyGetter(), pre32PolicyCompat);
                     break;
                 default:
                     // todo use the best response (?)
@@ -244,31 +239,25 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         if (response == null && users.size() < 1) {
             logger.finest("sending challenge");
             sendAuthChallenge(req, res);
-            return;
         } else if (response == null) {
             logger.info("this policy download is refused.");
             generateFaultAndSendAsResponse(res, "Policy not found or download unauthorized", "");
-            return;
         } else {
             logger.finest("returning policy");
             outputPolicyDoc(res, response);
-            return;
         }
     }
 
     private boolean isDocFault(Document doc) {
         if (doc == null) return false;
-        Element bodyChild = null;
+        Element bodyChild;
         try {
             bodyChild = XmlUtil.findFirstChildElement(SoapUtil.getBodyElement(doc));
         } catch (InvalidDocumentFormatException e) {
             logger.log(Level.WARNING, "cannot inspect document for fault", e);
             return false;
         }
-        if ("Fault".equals(bodyChild.getLocalName())) {
-            return true;
-        }
-        return false;
+        return "Fault".equals(bodyChild.getLocalName());
     }
 
     /**
@@ -308,7 +297,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
 
     private void generateFaultAndSendAsResponse(HttpServletResponse res, String msg, String details) throws IOException {
-        Document fault = null;
+        Document fault;
         try {
             Element exceptiondetails = null;
             if (details != null && details.length() > 0) {
@@ -322,18 +311,16 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             throw new RuntimeException(e); // should not happen
         }
         outputSoapFault(res, fault);
-        return;
     }
 
     private void generateFaultAndSendAsResponse(HttpServletResponse res, SoapFaultDetail sfd) throws IOException {
-        Document fault = null;
+        Document fault;
         try {
             fault = SoapFaultUtils.generateSoapFaultDocument(sfd, "");
         } catch (SAXException e) {
             throw new RuntimeException(e); // should not happen
         }
         outputSoapFault(res, fault);
-        return;
     }
 
     private void outputSoapFault(HttpServletResponse res, Document fault) throws IOException {
@@ -365,11 +352,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      *          if the ID Provider list could not be determined.
      */
     private Collection findCheckInfos(String username, byte[] certBytes, String nonce) throws FindException {
-        IdentityProviderConfigManager configManager = getIdentityProviderConfigManager();
         ArrayList checkInfos = new ArrayList();
         final String trimmedUsername = username.trim();
 
-        Collection idps = configManager.findAllIdentityProviders();
+        Collection idps = providerConfigManager.findAllIdentityProviders();
         for (Iterator i = idps.iterator(); i.hasNext();) {
             IdentityProvider provider = (IdentityProvider)i.next();
             try {
@@ -411,7 +397,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         // in this case, send an authentication challenge
         httpServletResponse.setHeader("WWW-Authenticate", "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
         httpServletResponse.getOutputStream().close();
-        return;
     }
 }
 

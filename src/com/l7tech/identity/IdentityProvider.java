@@ -26,7 +26,7 @@ public interface IdentityProvider {
      * @param pc an identity and a set of credentials.
      * @return an authenticated {@link User}. May be null if no user matching the specified credentials can be found for this provider.
      */
-    User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException;
+    AuthenticationResult authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException;
 
     /**
      * @return the {@link IdentityProviderConfig} for this IdentityProvider.

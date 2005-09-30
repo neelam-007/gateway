@@ -1,8 +1,8 @@
 package com.l7tech.server;
 
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.LicenseException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
-import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -28,10 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 
 
@@ -70,7 +66,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String serviceId = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
 
         // let's see if we can get credentials...
-        List users;
+        Map users;
         try {
             if (serviceId != null) {
                 users = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
@@ -103,14 +99,13 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         doAuthenticated(req, res, svcId, null);
     }
 
-    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, List users) throws IOException {
+    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, Map users) throws IOException {
         // HANDLE REQUEST FOR ONE SERVICE DESCRIPTION
         if (svcId != null && svcId.length() > 0) {
             // get this service
-            ServiceManager manager = getServiceManager();
-            PublishedService svc = null;
+            PublishedService svc;
             try {
-                svc = manager.findByPrimaryKey(Long.parseLong(svcId));
+                svc = serviceManager.findByPrimaryKey(Long.parseLong(svcId));
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "cannot find service", e);
                 svc = null;
@@ -137,7 +132,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 boolean ok = false;
                 if (!policyAllowAnonymous(svc)) {
                     User requestor = null;
-                    for (Iterator i = users.iterator(); i.hasNext();) {
+                    for (Iterator i = users.keySet().iterator(); i.hasNext();) {
                         requestor = (User)i.next();
                         if (userCanSeeThisService(requestor, svc)) ok = true;
                     }
@@ -172,7 +167,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
                     // return empty wsil
                     String emptywsil = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                      "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL(req) + "\"?>\n" +
+                      "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL() + "\"?>\n" +
                       "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
                     res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
                     res.getOutputStream().println(emptywsil);
@@ -192,13 +187,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         //res.setHeader("WWW-Authenticate", "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
         res.setHeader("WWW-Authenticate", "Basic realm=\"\"");
         res.getOutputStream().close();
-        return;
     }
 
     /**
      * this must always resolve to the http port
      */
-    private String styleURL(HttpServletRequest req) {
+    private String styleURL() {
         return "/ssg/wsil2xhtml.xml";
     }
 
@@ -231,7 +225,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (port == 8443)
             port = 8080;
         else if (port == 443) port = 80;
-        URL ssgurl = null;
+        URL ssgurl;
         String routinguri = svc.getRoutingUri();
         if (routinguri == null || routinguri.length() < 1) {
             ssgurl = new URL("http" + "://" + req.getServerName() + ":" +
@@ -256,7 +250,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) throws IOException {
         String uri = req.getRequestURI();
         uri = uri.replaceAll("wsil", "wsdl");
-        String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), uri, req);
+        String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), uri);
         res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
         ServletOutputStream os = res.getOutputStream();
         os.print(output);
@@ -272,11 +266,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return listAnonymouslyViewableAndProtectedServices(null);
     }
 
-    private ListResults listAnonymouslyViewableAndProtectedServices(List users) throws IOException, FindException {
-
-        ServiceManager manager = getServiceManager();
+    private ListResults listAnonymouslyViewableAndProtectedServices(Map users) throws IOException, FindException {
         // get all services
-        final Collection allServices = manager.findAll();
+        final Collection allServices = serviceManager.findAll();
 
         // prepare output collection
         final Collection output = new ArrayList();
@@ -292,7 +284,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 if (policyAllowAnonymous(svc)) {
                     output.add(svc);
                 } else {
-                    for (Iterator j = users.iterator(); j.hasNext();) {
+                    for (Iterator j = users.keySet().iterator(); j.hasNext();) {
                         User requestor = (User)j.next();
                         if (userCanSeeThisService(requestor, svc))
                             output.add(svc);
@@ -306,15 +298,14 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return output;
             }
             public boolean anyServices() {
-                if (allServices.size() < 1) return false;
-                return true;
+                return allServices.size() >= 1;
             }
         };
     }
 
     private boolean userCanSeeThisService(User requestor, PublishedService svc) throws IOException {
         // start at the top
-        Assertion rootassertion = null;
+        Assertion rootassertion;
         rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
         return checkForIdPotential(rootassertion, requestor);
     }
@@ -325,7 +316,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean checkForIdPotential(Assertion assertion, User requestor) {
         if (assertion instanceof IdentityAssertion) {
             try {
-                if (IdentityRule.canUserPassIDAssertion((IdentityAssertion)assertion, requestor, getIdentityProviderConfigManager())) {
+                if (IdentityRule.canUserPassIDAssertion((IdentityAssertion)assertion, requestor, providerConfigManager)) {
                     return true;
                 }
             } catch (FilteringException e) {
@@ -334,10 +325,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return false;
         } else if (assertion instanceof CustomAssertionHolder) {
             CustomAssertionHolder ch = (CustomAssertionHolder)assertion;
-            if (Category.ACCESS_CONTROL.equals(ch.getCategory())) { // bingo
-                return true;
-            }
-            return false;
+            return Category.ACCESS_CONTROL.equals(ch.getCategory());
         } else if (assertion instanceof CompositeAssertion) {
             CompositeAssertion root = (CompositeAssertion)assertion;
             Iterator i = root.getChildren().iterator();
@@ -351,7 +339,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
 
-    private String createWSILDoc(Collection services, String host, String port, String uri, HttpServletRequest req) {
+    private String createWSILDoc(Collection services, String host, String port, String uri) {
         /*  Format of document:
             <?xml version="1.0"?>
             <inspection xmlns="http://schemas.xmlsoap.org/ws/2001/10/inspection/">
@@ -364,18 +352,18 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String protocol = "http";
         if (port.equals("8443") || port.equals("443")) protocol = "https";
         StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-          "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL(req) + "\"?>\n" +
+          "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL() + "\"?>\n" +
           "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
         // for each service
         for (Iterator i = services.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
             if (svc.isSoap()) {
                 outDoc.append("\t<service>\n");
-                outDoc.append("\t\t<abstract>" + svc.getName() + "</abstract>\n");
+                outDoc.append("\t\t<abstract>").append(svc.getName()).append("</abstract>\n");
                 outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
                 outDoc.append("location=\"");
                 String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
-                outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + query);
+                outDoc.append(protocol).append("://").append(host).append(":").append(port).append(uri).append("?").append(query);
                 outDoc.append("\"/>\n");
                 outDoc.append("\t</service>\n");
             }

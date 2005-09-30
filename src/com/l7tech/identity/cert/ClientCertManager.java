@@ -27,7 +27,7 @@ public interface ClientCertManager {
      * return true
      *
      */
-    boolean userCanGenCert(User user);
+    boolean userCanGenCert(User user, Certificate requestCert);
 
     /**
      * Records new cert for the user (if user is allowed)

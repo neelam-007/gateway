@@ -14,9 +14,9 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SimpleCertificateResolver;
-import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -41,7 +41,6 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.SslUtils;
-import org.apache.commons.httpclient.Cookie;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -639,32 +638,14 @@ public class MessageProcessor {
             HttpHeaders responseHeaders = httpResponse.getHeaders();
             gatherCookies(url, responseHeaders, context);
             String certStatus = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);
-            if (SecureSpanConstants.INVALID.equalsIgnoreCase(certStatus)) {
-                log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
-                // Try to get a new client cert; if this succeeds, it'll replace the old one
-                try {
-                    if (context.getSsg().isFederatedGateway()) {
-                        final String msg = "Federated Gateway " + context.getSsg() + " is trying to " +
-                                           "tell us to destroy our Trusted client certificate; ignoring it";
-                        logResponseError(msg, httpResponse, context);
-                        throw new ConfigurationException(msg);
-                    }
-                    ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getCredentialsForTrustedSsg());
-                    throw new PolicyRetryableException(); // try again with the new cert
-                } catch (GeneralSecurityException e) {
-                    throw new ClientCertificateException("Unable to obtain new client certificate", e);
-                } catch (IOException e) {
-                    throw new ClientCertificateException("Unable to obtain new client certificate", e);
-                } catch (CertificateAlreadyIssuedException e) {
-                    // Bug #380 - if we haven't updated policy yet, try that first - mlyons
-                    if (!context.isPolicyUpdated()) {
-                        ssg.getRuntime().getPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
-                        throw new PolicyRetryableException();
-                    } else {
-                        ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
-                        throw new CertificateAlreadyIssuedException(e);
-                    }
-                }
+
+            if (SecureSpanConstants.CERT_INVALID.equalsIgnoreCase(certStatus)) {
+                // The request failed because of a bad client cert; we need to get a new cert and retry
+                handleCertStatusInvalid(context, httpResponse);
+                /* NOT REACHED */
+            } else if (SecureSpanConstants.CERT_STALE.equalsIgnoreCase(certStatus)) {
+                // The request succeeded, but the SSG hints that our client cert is stale (signed by the former occupant)
+                handleCertStatusStale(context);
             }
 
             String policyUrlStr = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
@@ -852,6 +833,77 @@ public class MessageProcessor {
                 if (httpResponse != null) {
                     httpResponse.close();
                 }
+            }
+        }
+    }
+
+    private void handleCertStatusStale(PolicyApplicationContext context) {
+        log.info("Gateway response contained a " +
+                SecureSpanConstants.HttpHeaders.CERT_STATUS + ": " + SecureSpanConstants.CERT_STALE +
+                " header.  Request succeeded, but will get new client cert.");
+        final Ssg ssg = context.getSsg();
+        try {
+            if (ssg.isFederatedGateway()) {
+                log.warning("Federated Gateway " + context.getSsg() + " is trying to " +
+                                   "tell us to destroy our Trusted client certificate; ignoring it");
+                return;
+            }
+
+            ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getCredentialsForTrustedSsg());
+        } catch (OperationCanceledException e) {
+            log.info("User cancelled certificate operation");
+        } catch (KeyStoreCorruptException e) {
+            try {
+                ssg.getRuntime().handleKeyStoreCorrupt();
+                // Fallthrough, the keystore is gone and will get remade next time it's needed
+            } catch (OperationCanceledException e1) {
+                // Fallthrough, the keystore is still here, and they'll probably get this exception again
+            }
+        } catch (GeneralSecurityException e) {
+            log.log(Level.WARNING, "Couldn't get new client certificate", e);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Couldn't get new client certificate", e);
+        } catch (BadCredentialsException e) {
+            log.log(Level.WARNING, "Couldn't get new client certificate", e);
+        } catch (CertificateAlreadyIssuedException e) {
+            log.log(Level.WARNING, "Couldn't get new client certificate", e);
+        }
+    }
+
+    /**
+     * Always throws, although no one currently ever sets this status.
+     * @return not really, it's just there to catch unwanted fallthroughs
+     */
+    private int handleCertStatusInvalid(PolicyApplicationContext context, GenericHttpResponse httpResponse)
+            throws ConfigurationException, BadCredentialsException, KeyStoreCorruptException,
+                   OperationCanceledException, PolicyRetryableException, ClientCertificateException
+    {
+        log.info("Gateway response contained a " +
+                SecureSpanConstants.HttpHeaders.CERT_STATUS + ": " + SecureSpanConstants.CERT_INVALID +
+                " header.  Will get new client cert then retry request.");
+        // Try to get a new client cert; if this succeeds, it'll replace the old one
+        final Ssg ssg = context.getSsg();
+        try {
+            if (ssg.isFederatedGateway()) {
+                final String msg = "Federated Gateway " + context.getSsg() + " is trying to " +
+                                   "tell us to destroy our Trusted client certificate; ignoring it";
+                logResponseError(msg, httpResponse, context);
+                throw new ConfigurationException(msg);
+            }
+            ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getCredentialsForTrustedSsg());
+            throw new PolicyRetryableException(); // try again with the new cert
+        } catch (GeneralSecurityException e) {
+            throw new ClientCertificateException("Unable to obtain new client certificate", e);
+        } catch (IOException e) {
+            throw new ClientCertificateException("Unable to obtain new client certificate", e);
+        } catch (CertificateAlreadyIssuedException e) {
+            // Bug #380 - if we haven't updated policy yet, try that first - mlyons
+            if (!context.isPolicyUpdated()) {
+                ssg.getRuntime().getPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
+                throw new PolicyRetryableException();
+            } else {
+                ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                throw new CertificateAlreadyIssuedException(e);
             }
         }
     }

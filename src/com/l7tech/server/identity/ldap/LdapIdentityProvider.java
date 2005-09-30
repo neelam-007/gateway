@@ -184,7 +184,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         }
     }
 
-    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         LdapUser realUser = null;
         realUser = (LdapUser)userManager.findByLogin(pc.getLogin());
         if (realUser == null) return null;
@@ -196,7 +196,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
             if (res) {
                 // success
-                return realUser;
+                return new AuthenticationResult(realUser);
             }
             logger.info("credentials did not authenticate for " + pc.getLogin());
             throw new BadCredentialsException("credentials did not authenticate");
@@ -235,7 +235,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             String login = pc.getLogin();
             if (response.equals(expectedResponse)) {
                 logger.info("User " + login + " authenticated successfully with digest credentials.");
-                return realUser;
+                return new AuthenticationResult(realUser);
             } else {
                 String msg = "User " + login + " failed to match.";
                 logger.warning(msg);
@@ -318,7 +318,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                     } catch (ObjectModelException e) {
                         logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                     }
-                    return realUser;
+                    return new AuthenticationResult(realUser);
                 } else {
                     String err = "Failed to authenticate user " + realUser.getDn() + " using a client certificate " +
                       "(request certificate doesn't match database's)";

@@ -67,11 +67,11 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         return Collections.unmodifiableSet(validTrustedCertOids);
     }
 
-    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT )
-            return x509Handler.authorize(pc);
+            return new AuthenticationResult(x509Handler.authorize(pc));
         else if ( pc.getFormat() == CredentialFormat.SAML ) {
-            return samlHandler.authorize(pc);
+            return new AuthenticationResult(samlHandler.authorize(pc));
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
@@ -92,7 +92,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         FederatedUser u = (FederatedUser)userManager.cast(user);
         final String userDn = u.getSubjectDn();
         final String clientCertDn = clientCertChain[0].getSubjectDN().getName();
-        if (userDn != clientCertDn)
+        if (!userDn.equals(clientCertDn))
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
                                                  "'doesn't match cert's Subject DN '" + clientCertDn + "'");
         if (validTrustedCertOids.isEmpty()) {

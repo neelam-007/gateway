@@ -2,14 +2,13 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.LicenseException;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.LicenseException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
-import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.RsaCertificateSigner;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
@@ -36,7 +35,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 
@@ -55,12 +54,9 @@ import java.util.logging.Level;
  * Date: Jul 25, 2003
  */
 public class CSRHandler extends AuthenticatableHttpServlet {
-
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
-        String tmp = getServletConfig().getInitParameter("RootKeyStore");
-        if (tmp == null || tmp.length() < 1) tmp = "../../kstores/ssgroot";
         KeystoreUtils ku = (KeystoreUtils)getApplicationContext().getBean("keystore");
         rootkstore = ku.getRootKeystorePath();
         rootkstorepasswd = ku.getRootKeystorePasswd();
@@ -88,7 +84,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
 
         // Authentication
-        List users = null;
+        Map users;
         try {
             users = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
@@ -117,11 +113,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
-        User authenticatedUser = null;
-        authenticatedUser = (User)users.get(0);
+        User authenticatedUser = (User)users.keySet().iterator().next();
+        X509Certificate requestCert = (X509Certificate)users.get(authenticatedUser);
 
-        ClientCertManager man = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
-        if (!man.userCanGenCert(authenticatedUser)) {
+        if (!clientCertManager.userCanGenCert(authenticatedUser, requestCert)) {
             logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
               " Contact your administrator for more info.");
@@ -129,7 +124,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
 
         byte[] csr = readCSRFromRequest(request);
-        Certificate cert = null;
+        Certificate cert;
 
         String certSubject = "cn=" + authenticatedUser.getLogin();
         // todo: perhaps we should use the real dn in the case of ldap users but then we
@@ -156,7 +151,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         // record new cert
         try {
-            man.recordNewUserCert(authenticatedUser, cert);
+            clientCertManager.recordNewUserCert(authenticatedUser, cert);
             logger.info("Issued new cert for user " + authenticatedUser.toString());
         } catch (UpdateException e) {
             String msg = "Could not record cert. " + e.getMessage();
@@ -178,7 +173,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             logger.log(Level.SEVERE, e.getMessage(), e);
-            return;
         }
     }
 
@@ -205,15 +199,13 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     private Certificate sign(byte[] csr, String subject) throws Exception {
         RsaCertificateSigner signer = getSigner();
         // todo, refactor RsaCertificateSigner to throw more precise exceptions
-        Certificate cert = signer.createCertificate(csr, subject);
-        return cert;
+        return signer.createCertificate(csr, subject);
     }
 
     private Certificate sign(byte[] csr, String subject, long expiration) throws Exception {
         RsaCertificateSigner signer = getSigner();
         // todo, refactor RsaCertificateSigner to throw more precise exceptions
-        Certificate cert = signer.createCertificate(csr, subject, expiration);
-        return cert;
+        return signer.createCertificate(csr, subject, expiration);
     }
 
     private RsaCertificateSigner getSigner() {
@@ -228,10 +220,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
     private boolean isRequestAlreadyRoutedFromOtherPeer(HttpServletRequest req) {
         String isalreadyrouted = req.getHeader(ROUTED_FROM_PEER);
-        if (isalreadyrouted != null && isalreadyrouted.length() > 0) {
-            return true;
-        }
-        return false;
+        return isalreadyrouted != null && isalreadyrouted.length() > 0;
     }
 
     private void proxyReqToSsgWithRootKStore(HttpServletRequest req, HttpServletResponse res) throws IOException {
@@ -245,7 +234,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         // look for ip address of master server
         ClusterInfoManager manager = (ClusterInfoManager)getApplicationContext().getBean("clusterInfoManager");
-        Collection clusterNodes = null;
+        Collection clusterNodes;
         try {
             clusterNodes = manager.retrieveClusterStatus();
         } catch (FindException e) {
@@ -334,8 +323,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
               "JAVA_HOME/jre/lib/security/cacerts " + e.getMessage());
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "cannot forward csr to master");
         }
-
-        return;
     }
 
     private String rootkstore = null;
