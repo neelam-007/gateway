@@ -378,7 +378,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
             accessManager.enforceAdminRole();
             checkLicense();
             // revoke the cert in internal CA
-            clientCertManager.recordNewUserCert(user, cert);
+            clientCertManager.recordNewUserCert(user, cert, false);
     }
 
     private static SecureRandom secureRandom = null;

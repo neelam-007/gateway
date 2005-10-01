@@ -3,38 +3,34 @@ package com.l7tech.server.identity.ldap;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.identity.*;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityHeaderComparator;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.identity.DigestAuthenticator;
+import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.SignatureException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
+import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.math.BigInteger;
 
 /**
  * Server-side implementation of the LDAP provider.
@@ -75,6 +71,10 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
 
     public void setKeystore(KeystoreUtils keystore) {
         this.keystore = keystore;
+    }
+
+    public void setCertificateAuthenticator(CertificateAuthenticator certificateAuthenticator) {
+        this.certificateAuthenticator = certificateAuthenticator;
     }
 
 
@@ -139,10 +139,12 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         Sync write = fallbackLock.writeLock();
         try {
             write.acquire();
+            //noinspection StringEquality
             if (urlThatFailed != lastSuccessfulLdapUrl) return lastSuccessfulLdapUrl;
             if (urlThatFailed != null) {
                 int failurePos = 0;
                 for (int i = 0; i < ldapUrls.length; i++) {
+                    //noinspection StringEquality
                     if (ldapUrls[i] == urlThatFailed) {
                         failurePos = i;
                         urlStatus[i] = new Long(System.currentTimeMillis());
@@ -192,145 +194,29 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         final CredentialFormat format = pc.getFormat();
         final Object payload = pc.getPayload();
         if (format == CredentialFormat.CLEARTEXT) {
-            // basic authentication
-            boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
-            if (res) {
-                // success
-                return new AuthenticationResult(realUser);
-            }
-            logger.info("credentials did not authenticate for " + pc.getLogin());
-            throw new BadCredentialsException("credentials did not authenticate");
+            return authenticatePasswordCredentials(pc, realUser);
         } else if (format == CredentialFormat.DIGEST) {
-            String dbPassHash = realUser.getPassword();
-            char[] credentials = pc.getCredentials();
-            Map authParams = (Map)payload;
-            if (authParams == null) {
-                String msg = "No Digest authentication parameters found in LoginCredentials payload!";
-                logger.log(Level.SEVERE, msg);
-                throw new AuthenticationException(msg);
-            }
-
-            String qop = (String)authParams.get(HttpDigest.PARAM_QOP);
-            String nonce = (String)authParams.get(HttpDigest.PARAM_NONCE);
-
-            String a2 = (String)authParams.get(HttpDigest.PARAM_METHOD) + ":" +
-              (String)authParams.get(HttpDigest.PARAM_URI);
-
-            String ha2 = HexUtils.encodeMd5Digest(HexUtils.getMd5().digest(a2.getBytes()));
-
-            String serverDigestValue;
-            if (!HttpDigest.QOP_AUTH.equals(qop))
-                serverDigestValue = dbPassHash + ":" + nonce + ":" + ha2;
-            else {
-                String nc = (String)authParams.get(HttpDigest.PARAM_NC);
-                String cnonce = (String)authParams.get(HttpDigest.PARAM_CNONCE);
-
-                serverDigestValue = dbPassHash + ":" + nonce + ":" + nc + ":"
-                  + cnonce + ":" + qop + ":" + ha2;
-            }
-
-            String expectedResponse = HexUtils.encodeMd5Digest(HexUtils.getMd5().digest(serverDigestValue.getBytes()));
-            String response = new String(credentials);
-
-            String login = pc.getLogin();
-            if (response.equals(expectedResponse)) {
-                logger.info("User " + login + " authenticated successfully with digest credentials.");
-                return new AuthenticationResult(realUser);
-            } else {
-                String msg = "User " + login + " failed to match.";
-                logger.warning(msg);
-                throw new AuthenticationException(msg);
-            }
+            return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
         } else {
             if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
-                X509Certificate dbCert = null;
-
-                // get the cert from the credentials
-                X509Certificate requestCert = null;
-                if (format == CredentialFormat.CLIENTCERT) {
-                    requestCert = (X509Certificate)payload;
-                } else if (format == CredentialFormat.SAML) {
-                    if (payload instanceof SamlAssertion) {
-                        requestCert = ((SamlAssertion)payload).getSubjectCertificate();
-                    } else
-                        throw new BadCredentialsException("Unsupported SAML Assertion type: " +
-                          payload.getClass().getName());
-                }
-
-                if (requestCert == null) {
-                    String err = "Request was supposed to contain a certificate, but does not";
-                    logger.severe(err);
-                    throw new MissingCredentialsException(err);
-                }
-                // Check whether the client cert is valid (according to our root cert)
-                // (get the root cert)
-                logger.finest("Verifying client cert against current root cert...");
-                Certificate rootcacert = null;
-                try {
-                    String rootCertLoc = keystore.getRootCertPath();
-                    InputStream certStream = new FileInputStream(rootCertLoc);
-                    byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
-                    certStream.close();
-                    rootcacert = CertUtils.decodeCert(rootcacertbytes);
-                } catch (IOException e) {
-                    String err = "Exception retrieving root cert " + e.getMessage();
-                    logger.log(Level.SEVERE, err, e);
-                    throw new AuthenticationException(err, e);
-                } catch (CertificateException e) {
-                    String err = "Exception retrieving root cert " + e.getMessage();
-                    logger.log(Level.SEVERE, err, e);
-                    throw new AuthenticationException(err, e);
-                }
-                // (we have the root cert, verify client cert with it)
-                try {
-                    requestCert.verify(rootcacert.getPublicKey());
-                } catch (SignatureException e) {
-                    String err = "client cert does not verify against current root ca cert. maybe our root cert changed since this cert was created.";
-                    logger.log(Level.WARNING, err, e);
-                    throw new BadCredentialsException(err, e);
-                } catch (GeneralSecurityException e) {
-                    String err = "Exception verifying client cert " + e.getMessage();
-                    logger.log(Level.SEVERE, err, e);
-                    throw new BadCredentialsException(err, e);
-                }
-                logger.finest("Verification OK - client cert is valid.");
-                // End of Check
-
-
-                try {
-                    dbCert = (X509Certificate)clientCertManager.getUserCert(realUser);
-                } catch (FindException e) {
-                    logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
-                    dbCert = null;
-                }
-                if (dbCert == null) {
-                    String err = "No certificate found for user " + realUser.getDn();
-                    logger.warning(err);
-                    throw new InvalidClientCertificateException(err);
-                }
-
-                logger.fine("Request cert serial# is " + requestCert.getSerialNumber().toString());
-                if (CertUtils.certsAreEqual(requestCert, dbCert)) {
-                    logger.finest("Authenticated user " + realUser.getDn() + " using a client certificate");
-                    // remember that this cert was used at least once successfully
-                    try {
-                        clientCertManager.forbidCertReset(realUser);
-                    } catch (ObjectModelException e) {
-                        logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
-                    }
-                    return new AuthenticationResult(realUser);
-                } else {
-                    String err = "Failed to authenticate user " + realUser.getDn() + " using a client certificate " +
-                      "(request certificate doesn't match database's)";
-                    logger.warning(err);
-                    throw new InvalidClientCertificateException(err);
-                }
+                return certificateAuthenticator.authenticateX509Credentials(pc, realUser);
             } else {
                 String msg = "Attempt to authenticate using unsupported method on this provider: " + pc.getFormat();
                 logger.log(Level.SEVERE, msg);
                 throw new AuthenticationException(msg);
             }
         }
+    }
+
+    private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc, LdapUser realUser) throws BadCredentialsException {
+        // basic authentication
+        boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
+        if (res) {
+            // success
+            return new AuthenticationResult(realUser);
+        }
+        logger.info("credentials did not authenticate for " + pc.getLogin());
+        throw new BadCredentialsException("credentials did not authenticate");
     }
 
     private long getMaxSearchResultSize() {
@@ -665,11 +551,11 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             error.append("The following mappings caused errors:");
             for (Iterator iterator = offensiveUserMappings.iterator(); iterator.hasNext();) {
                 UserMappingConfig userMappingConfig = (UserMappingConfig)iterator.next();
-                error.append(" User mapping " + userMappingConfig.getObjClass());
+                error.append(" User mapping ").append(userMappingConfig.getObjClass());
             }
             for (Iterator iterator = offensiveGroupMappings.iterator(); iterator.hasNext();) {
                 GroupMappingConfig groupMappingConfig = (GroupMappingConfig)iterator.next();
-                error.append(" Group mapping " + groupMappingConfig.getObjClass());
+                error.append(" Group mapping ").append(groupMappingConfig.getObjClass());
 
             }
         }
@@ -916,6 +802,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     private ClientCertManager clientCertManager;
     private LdapUserManager userManager;
     private LdapGroupManager groupManager;
+    private CertificateAuthenticator certificateAuthenticator;
     private String lastSuccessfulLdapUrl;
     private long retryFailedConnectionTimeout;
     private final ReadWriteLock fallbackLock = new WriterPreferenceReadWriteLock();

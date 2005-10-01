@@ -521,24 +521,26 @@ public class CertUtils {
             return sha.digest();
         }
 
-        return unAsn1(derEncodedValue);
+        return stripAsnPrefix(derEncodedValue, 4);
     }
 
     public static byte[] getAKIBytesFromCert(X509Certificate cert) {
         if (cert.getVersion() < 3) return null;
         byte[] ext = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
         if (ext == null) return null;
-        return unAsn1(ext);
+        return stripAsnPrefix(ext, 6);
     }
 
-    private static byte[] unAsn1(byte[] derEncodedValue) {
+    private static byte[] stripAsnPrefix(byte[] derEncodedValue, int bytesToStrip) {
+        if (derEncodedValue.length <= bytesToStrip) throw new IllegalArgumentException();
+
         /**
          * Strip away first four bytes from the DerValue (tag and length of
          * ExtensionValue OCTET STRING and KeyIdentifier OCTET STRING)
          */
-        byte abyte0[] = new byte[derEncodedValue.length - 4];
+        byte abyte0[] = new byte[derEncodedValue.length - bytesToStrip];
 
-        System.arraycopy(derEncodedValue, 4, abyte0, 0, abyte0.length);
+        System.arraycopy(derEncodedValue, bytesToStrip, abyte0, 0, abyte0.length);
         return abyte0;
     }
 

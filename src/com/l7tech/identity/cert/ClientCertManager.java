@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
@@ -30,13 +31,28 @@ public interface ClientCertManager {
     boolean userCanGenCert(User user, Certificate requestCert);
 
     /**
+     * Check if the specified user certificate looks like it was probably signed by an earlier version of the
+     * cluster CA cert.  This check will return true unless all of the following are true:
+     * <ul>
+     * <li>The specified cert DN matches the cluster CA DN;
+     * <li>The specified cert has an authority key id (AKI);
+     * <li>The cluster CA cert has a subject key identifier (SKI);
+     * <li>The specified cert AKI differs from the cluster cert SKI.
+     * </ul>
+     *
+     * @param userCert the certificate to examine
+     * @return true if and only if the cert was confirmed to be probably stale.
+     */
+    boolean isCertPossiblyStale(X509Certificate userCert);
+
+    /**
      * Records new cert for the user (if user is allowed)
      *
      * @param cert the cert to record
      * @throws UpdateException if user was not in a state that allowes the creation
      * of a cert or if an internal error occurs
      */
-    void recordNewUserCert(User user, Certificate cert) throws UpdateException;
+    void recordNewUserCert(User user, Certificate cert, boolean oldCertWasStale) throws UpdateException;
 
     /**
      * retrieves existing cert for this user

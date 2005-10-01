@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -33,6 +35,30 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
+    private X509Certificate rootCertificate = null;
+    protected byte[] rootCertSki = null;
+    protected String rootCertSubjectName = null;
+
+    public void setRootCertificate(X509Certificate rootCertificate) {
+        if (rootCertificate == null) throw new IllegalArgumentException("Root certificate must not be null");
+        this.rootCertificate = rootCertificate;
+        this.rootCertSubjectName = rootCertificate.getSubjectDN().getName();
+        this.rootCertSki = CertUtils.getSKIBytesFromCert(rootCertificate);
+    }
+
+    public boolean isCertPossiblyStale(X509Certificate userCert) {
+        if (rootCertificate == null) throw new IllegalStateException("No root certificate set");
+        if (rootCertSki == null || rootCertSubjectName == null) throw new IllegalStateException("Missing stuff");
+        String requestCertIssuerName = userCert.getIssuerDN().getName();
+
+        if (requestCertIssuerName.equals(rootCertSubjectName)) {
+            // Check whether the request cert was signed with this version of the CA cert
+            byte[] aki = CertUtils.getAKIBytesFromCert(userCert);
+            return !Arrays.equals(aki, rootCertSki);
+        }
+
+        return false;
+    }
 
     public boolean userCanGenCert(User user, Certificate existingCert) {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
@@ -42,12 +68,14 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (userData == null) return true;
         // if user has a cert he is only allowed is his counter is below 10
         if (userData.getCertBase64() != null) {
-            if (userData.getResetCounter() >= 10) return false;
-            else return true;
+            if (existingCert instanceof X509Certificate && isCertPossiblyStale((X509Certificate)existingCert))
+                return true;
+
+            return userData.getResetCounter() < 10;
         } else return true;
     }
 
-    public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
+    public void recordNewUserCert(User user, Certificate cert, boolean oldCertWasStale) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("recordNewUserCert for " + getName(user));
 
@@ -75,14 +103,21 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         */
 
         // check if operation is permitted
-        if (!userCanGenCert(user, cert)) {
+        CertEntryRow userData = getFromTable(user);
+
+        // if this user has no data at all, then he is allowed to generate a cert
+        boolean canRegenCert =
+                userData == null ||
+                userData.getCertBase64() == null ||
+                oldCertWasStale ||
+                userData.getResetCounter() < 10;
+
+        if (!canRegenCert) {
             String msg = "this user is currently not allowed to generate a new cert: " + getName(user);
             logger.info(msg);
             throw new UpdateException(msg);
         }
 
-        // prepare data
-        CertEntryRow userData = getFromTable(user);
         // this could be new entry
         boolean newentry = false;
         if (userData == null) {
@@ -133,8 +168,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             }
 
             try {
-                Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(dbcert));
-                return cert;
+                return CertUtils.decodeCert(HexUtils.decodeBase64(dbcert));
             } catch (CertificateException e) {
                 String msg = "Error in CertificateFactory.getInstance";
                 logger.log(Level.WARNING, msg, e);
@@ -234,7 +268,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
      * @return the data in the table or null if no data exist for this user
      */
     private CertEntryRow getFromTable(User user) {
-        List hibResults = null;
+        List hibResults;
         try {
             Query q = getSession().createQuery(FIND_BY_USER_ID);
             q.setLong(0, user.getProviderId());
@@ -280,4 +314,5 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     private static final String FIND_BY_LOGIN = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
                            " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
                            " and " + TABLE_NAME + "." + USER_LOGIN + " = ?";
+
 }

@@ -46,9 +46,9 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             return;
         }
         // get credentials
-        Map users;
+        final AuthenticationResult[] results;
         try {
-            users = authenticateRequestBasic(req);
+            results = authenticateRequestBasic(req);
         } catch (AuthenticationException e) {
             logger.log(Level.WARNING, "Bad credentials, returning 401", e);
             sendBackError(res, HttpServletResponse.SC_UNAUTHORIZED, "Bad credentials");
@@ -58,14 +58,15 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             sendBackError(res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway auxiliary service not enabled by license");
             return;
         }
-        if (users.isEmpty()) {
+        if (results == null || results.length < 1) {
             logger.warning("No valid credentials, returning 401.");
             sendBackError(res, HttpServletResponse.SC_UNAUTHORIZED, "No valid credentials");
             return;
         }
         InternalUser internalUser = null;
-        for (Iterator i = users.keySet().iterator(); i.hasNext();) {
-            User u = (User)i.next();
+        for (int i = 0; i < results.length; i++) {
+            AuthenticationResult result = results[i];
+            User u = result.getUser();
             if (u.getProviderId() == IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) {
                 internalUser = (InternalUser)u;
                 break;

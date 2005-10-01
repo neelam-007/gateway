@@ -5,6 +5,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -66,17 +67,17 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String serviceId = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
 
         // let's see if we can get credentials...
-        Map users;
+        AuthenticationResult[] results;
         try {
             if (serviceId != null) {
-                users = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
+                results = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
             } else {
-                users = authenticateRequestBasic(req);
+                results = authenticateRequestBasic(req);
             }
 
         } catch (AuthenticationException e) {
             logger.log(Level.INFO, "Credentials do not authenticate against any of the providers, assuming anonymous");
-            users = null;
+            results = null;
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
@@ -88,8 +89,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // NOTE: sending credentials over insecure channel is treated as an anonymous request
         // (i dont care if you send me credentials in non secure manner, that is your problem
         // however, i will not send sensitive information unless the channel is secure)
-        if (users != null && !users.isEmpty() && req.isSecure()) {
-            doAuthenticated(req, res, serviceId, users);
+        if (results != null && results.length > 0 && req.isSecure()) {
+            doAuthenticated(req, res, serviceId, results);
         } else {
             doAnonymous(req, res, serviceId);
         }
@@ -99,7 +100,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         doAuthenticated(req, res, svcId, null);
     }
 
-    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, Map users) throws IOException {
+    private void doAuthenticated(HttpServletRequest req,
+                                 HttpServletResponse res,
+                                 String svcId,
+                                 AuthenticationResult[] results)
+            throws IOException
+    {
         // HANDLE REQUEST FOR ONE SERVICE DESCRIPTION
         if (svcId != null && svcId.length() > 0) {
             // get this service
@@ -122,7 +128,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return;
             }
             // make sure this service is indeed anonymously accessible
-            if (users == null || users.isEmpty()) {
+            if (results == null || results.length < 1) {
                 if (!policyAllowAnonymous(svc)) {
                     logger.info("user denied access to service description");
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "you need to provide valid credentials to see this service's description");
@@ -132,8 +138,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 boolean ok = false;
                 if (!policyAllowAnonymous(svc)) {
                     User requestor = null;
-                    for (Iterator i = users.keySet().iterator(); i.hasNext();) {
-                        requestor = (User)i.next();
+                    for (int i = 0; i < results.length; i++) {
+                        AuthenticationResult result = results[i];
+                        requestor = result.getUser();
                         if (userCanSeeThisService(requestor, svc)) ok = true;
                     }
                     if (!ok) {
@@ -149,10 +156,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             ListResults listres;
 
             try {
-                if (users == null || users.isEmpty())
+                if (results == null || results.length < 1)
                     listres = listAnonymouslyViewableServices();
                 else
-                    listres = listAnonymouslyViewableAndProtectedServices(users);
+                    listres = listAnonymouslyViewableAndProtectedServices(results);
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "cannot list services", e);
                 res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -161,7 +168,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             // Is there anything to show?
             Collection services = listres.allowed();
             if (services.size() < 1) {
-                if (users == null && listres.anyServices() && req.isSecure()) {
+                if ((results == null || results.length < 1) && listres.anyServices() && req.isSecure()) {
                     sendAuthChallenge(res);
                 } else {
                     //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
@@ -266,7 +273,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return listAnonymouslyViewableAndProtectedServices(null);
     }
 
-    private ListResults listAnonymouslyViewableAndProtectedServices(Map users) throws IOException, FindException {
+    private ListResults listAnonymouslyViewableAndProtectedServices(AuthenticationResult[] results)
+            throws IOException, FindException
+    {
         // get all services
         final Collection allServices = serviceManager.findAll();
 
@@ -276,7 +285,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // decide which ones make the cut
         for (Iterator i = allServices.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
-            if (users == null || users.isEmpty()) {
+            if (results == null || results.length < 1) {
                 if (policyAllowAnonymous(svc)) {
                     output.add(svc);
                 }
@@ -284,8 +293,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 if (policyAllowAnonymous(svc)) {
                     output.add(svc);
                 } else {
-                    for (Iterator j = users.keySet().iterator(); j.hasNext();) {
-                        User requestor = (User)j.next();
+                    for (int j = 0; j < results.length; j++) {
+                        AuthenticationResult result = results[j];
+                        User requestor = result.getUser();
                         if (userCanSeeThisService(requestor, svc))
                             output.add(svc);
                     }

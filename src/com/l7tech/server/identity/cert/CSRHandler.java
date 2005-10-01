@@ -6,6 +6,7 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
@@ -35,7 +36,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Level;
 
 
@@ -84,9 +84,9 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
 
         // Authentication
-        Map users;
+        final AuthenticationResult[] results;
         try {
-            users = authenticateRequestBasic(request);
+            results = authenticateRequestBasic(request);
         } catch (BadCredentialsException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
             logger.log(Level.SEVERE, "Failed authentication", e);
@@ -102,19 +102,20 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
-        if (users == null || users.size() < 1) {
+        if (results == null || results.length < 1) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
             logger.warning("CSR Handler called without credentials");
             return;
-        } else if (users.size() > 1) {
+        } else if (results.length > 1) {
             String msg = "Ambiguous authentication - credentials valid in more than one identity provider.";
             response.sendError(HttpServletResponse.SC_CONFLICT, msg);
             logger.warning(msg);
             return;
         }
 
-        User authenticatedUser = (User)users.keySet().iterator().next();
-        X509Certificate requestCert = (X509Certificate)users.get(authenticatedUser);
+        AuthenticationResult authResult = results[0];
+        User authenticatedUser = authResult.getUser();
+        X509Certificate requestCert = authResult.getAuthenticatedCert();
 
         if (!clientCertManager.userCanGenCert(authenticatedUser, requestCert)) {
             logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
@@ -151,7 +152,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         // record new cert
         try {
-            clientCertManager.recordNewUserCert(authenticatedUser, cert);
+            clientCertManager.recordNewUserCert(authenticatedUser, cert, authResult.isCertSignedByStaleCA());
             logger.info("Issued new cert for user " + authenticatedUser.toString());
         } catch (UpdateException e) {
             String msg = "Could not record cert. " + e.getMessage();

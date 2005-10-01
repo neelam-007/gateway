@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
@@ -54,7 +55,7 @@ public class ClientCertManagerStub implements ClientCertManager {
      *          if user was not in a state that allowes the creation
      *          of a cert or if an internal error occurs
      */
-    public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
+    public void recordNewUserCert(User user, Certificate cert, boolean blah) throws UpdateException {
         throw new RuntimeException("Not implemented");
     }
 
@@ -76,5 +77,9 @@ public class ClientCertManagerStub implements ClientCertManager {
      */
     public boolean userCanGenCert(User user, Certificate existingCert) {
         throw new RuntimeException("Not implemented");
+    }
+
+    public boolean isCertPossiblyStale(X509Certificate userCert) {
+        return false;
     }
 }

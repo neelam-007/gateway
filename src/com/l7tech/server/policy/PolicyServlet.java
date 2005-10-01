@@ -14,6 +14,7 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
@@ -197,12 +198,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
 
         // get credentials and check that they are valid for this policy
-        Map users;
+        AuthenticationResult[] results;
         try {
-            users = authenticateRequestBasic(req);
+            results = authenticateRequestBasic(req);
         } catch (AuthenticationException e) {
             logger.log(Level.FINE, "Authentication exception", e);
-            users = Collections.EMPTY_MAP;
+            results = new AuthenticationResult[0];
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             generateFaultAndSendAsResponse(res, "Gateway policy discovery service not enabled by license", e.getMessage());
@@ -213,12 +214,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         PolicyService service = getPolicyService();
         Document response;
         try {
-            switch (users.size()) {
+            switch (results.length) {
                 case 0:
                     response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(), pre32PolicyCompat);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.keySet().iterator().next()), this.normalPolicyGetter(), pre32PolicyCompat);
+                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(), pre32PolicyCompat);
                     break;
                 default:
                     // todo use the best response (?)
@@ -236,7 +237,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         if (isDocFault(response)) {
             response = null;
         }
-        if (response == null && users.size() < 1) {
+        if (response == null && (results == null || results.length < 1)) {
             logger.finest("sending challenge");
             sendAuthChallenge(req, res);
         } else if (response == null) {
