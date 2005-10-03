@@ -207,7 +207,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         final String minor = BuildInfo.getProductVersionMinor();
         if (!license.isProductEnabled(product, major, minor))
             throw new InvalidLicenseException("License " + license + " does not grant access to this version of this product (" +
-                    product + " " + major + "." + minor);
+                    product + " " + major + "." + minor + ")");
     }
 
     private void fireEvent(AuditDetailMessage message, String suffix) {

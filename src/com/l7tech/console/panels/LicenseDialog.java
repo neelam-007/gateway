@@ -136,7 +136,7 @@ public class LicenseDialog extends JDialog {
 
                         int confResult = JOptionPane.showOptionDialog(
                                 LicenseDialog.this,
-                                "The license in the file " + file.getName() + " is not valid, but\nmight become valid in the future:\n\n\t" +
+                                "The license in the file " + file.getName() + " is not valid, but might become valid in the future:\n\n\t" +
                                 msg +
                                 "\n\n" +
                                 "Do you want to force the invalid license to be installed?",
