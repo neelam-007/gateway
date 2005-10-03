@@ -16,7 +16,9 @@ set TOMCAT_HOME=%SSG_HOME%\tomcat
 
 :: Compute the short name for the temporary folder path. This is because
 :: SafeNet Luna cmu.exe doesn't like path with spaces.
+pushd "%SSG_HOME%\bin"
 for /F "tokens=1" %%i in ('GetShortName.cmd "%TOMCAT_HOME%\temp"') do set catalina_tmpdir_shortname=%%i
+popd
 
 :: Unset environment variables that we don't want to inherit from outside.
 set CATALINA_HOME=
