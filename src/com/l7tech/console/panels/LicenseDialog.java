@@ -42,6 +42,8 @@ public class LicenseDialog extends JDialog {
     private JButton closeButton;
     private JButton installButton;
 
+    private boolean showingLicenseOrError = false;
+
     public LicenseDialog(Frame owner, String gatewayName) throws HeadlessException {
         super(owner);
         this.licensePanel = new LicensePanel(gatewayName);
@@ -95,15 +97,16 @@ public class LicenseDialog extends JDialog {
                     Registry reg = Registry.getDefault();
                     ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
 
-                    if (licensePanel.isValidLicense()) {
+                    if (showingLicenseOrError) {
                         // Last chance to confirm installation over top of an existing license
                         final String cancel = "    Cancel    ";
                         final String destroyIt = " Destroy Existing License ";
                         String options[] = { destroyIt, cancel };
+                        String valid = licensePanel.isValidLicense() ? "valid" : "invalid";
 
                         int confResult = JOptionPane.showOptionDialog(
                                 LicenseDialog.this,
-                                "Are you sure you want to REPLACE the existing valid license with the\nlicense in the file " + file.getName() + "?",
+                                "Are you sure you want to REPLACE the existing " + valid + " license with the\nlicense in the file " + file.getName() + "?",
                                 "Destroy Existing License",
                                 JOptionPane.YES_NO_CANCEL_OPTION,
                                 JOptionPane.WARNING_MESSAGE,
@@ -172,11 +175,13 @@ public class LicenseDialog extends JDialog {
 
                     try {
                         License license = admin.getCurrentLicense();
+                        showingLicenseOrError = license != null;
                         licensePanel.setLicense(license);
                         pack();
                         return;
                     } catch (InvalidLicenseException e1) {
                         licensePanel.setLicenseError(ExceptionUtils.getMessage(e1));
+                        showingLicenseOrError = true;
                         pack();
                         return;
                     }
@@ -206,9 +211,11 @@ public class LicenseDialog extends JDialog {
             ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
             License license = admin.getCurrentLicense();
             licensePanel.setLicense(license);
+            showingLicenseOrError = license != null;
             pack();
         } catch (InvalidLicenseException e) {
             licensePanel.setLicenseError(ExceptionUtils.getMessage(e));
+            showingLicenseOrError = true;
             pack();
         } catch (RemoteException e) {
             logger.log(Level.SEVERE, "Unable to get current license: " + ExceptionUtils.getMessage(e), e);
