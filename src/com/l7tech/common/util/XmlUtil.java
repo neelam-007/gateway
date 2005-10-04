@@ -851,10 +851,13 @@ public class XmlUtil {
 
             if (entries.get(attValue) != null) continue;
 
-            if ("xmlns".equals(attPrefix) && XmlUtil.XMLNS_NS.equals(attNsUri)) {
-                entries.put(attValue, attLocalName);
-            } else if ("xmlns".equals(attLocalName)) {
-                entries.put(attValue, null);
+            // Bug 2053: Avoid adding xmlns="" to the map
+            if (attValue != null && attValue.trim().length() > 0) {
+                if ("xmlns".equals(attPrefix) && XmlUtil.XMLNS_NS.equals(attNsUri)) {
+                    entries.put(attValue, attLocalName);
+                } else if ("xmlns".equals(attLocalName)) {
+                    entries.put(attValue, null);
+                }
             }
         }
     }
