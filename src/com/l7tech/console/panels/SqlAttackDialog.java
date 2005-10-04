@@ -42,7 +42,7 @@ public class SqlAttackDialog extends JDialog {
     }
 
     public SqlAttackDialog(Frame owner, SqlAttackAssertion assertion, boolean modal) throws HeadlessException {
-        super(owner, "Configure SQL Injection Protection", modal);
+        super(owner, "Configure SQL Attack Protection", modal);
         doInit(assertion);
     }
 
