@@ -10,6 +10,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.util.TreeMap;
+import java.util.Comparator;
+import java.util.Properties;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 
 /**
@@ -36,7 +40,35 @@ public class AboutBox extends JDialog implements ActionListener {
     ResourceThread rThread = new ResourceThread();
     JProgressBar resourceMeter = new JProgressBar();
     JTable systemProperties = new
-      JTable(new MapBackedTableModel("Property Name", "Value", new TreeMap(System.getProperties())));
+      JTable(new MapBackedTableModel("Property Name", "Value", new TreeMap(getWhiteListedProperties())));
+
+    private static String[] whitelistPropNames = {
+            "com.l7tech.builddate",
+            "com.l7tech.buildstring",
+            "file.encoding",
+            "inactivity.timeout",
+            "java.vendor",
+            "os.name",
+            "java.runtime.version",
+            "java.version",
+            "user.timezone",
+            "service.url",
+            "os.version",
+            "java.vm.version",
+    };
+
+    private Properties getWhiteListedProperties() {
+        Properties props = System.getProperties();
+        Properties whitelist = new Properties();
+        for (int i = 0; i < whitelistPropNames.length; i++) {
+            String whitelistPropName = whitelistPropNames[i];
+            String prop = props.getProperty(whitelistPropName);
+            if (prop != null) {
+                whitelist.setProperty(whitelistPropName, prop);
+            }
+        }
+        return whitelist;
+    }
 
     /**
      * Convenience static method. Instantiate the AboutBox
