@@ -58,8 +58,6 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
         nodeList.add(new AuditFolderNode());
         nodeList.add(new PolicyLogicFolderNode());
         nodeList.add(new ThreatProtectionFolderNode());
-        nodeList.add(new AuditFolderNode());
-        nodeList.add(new PolicyLogicFolderNode());
         nodeList.add(new PoliciesFolderNode(homePath));
 
         AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
