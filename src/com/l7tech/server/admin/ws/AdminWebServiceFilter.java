@@ -10,6 +10,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
@@ -134,6 +135,8 @@ public class AdminWebServiceFilter implements Filter {
             ? ContentTypeHeader.parseValue(rawct)
             : ContentTypeHeader.XML_DEFAULT;
 
+        servletResponse.setContentType(XmlUtil.TEXT_XML);
+
         if (!(servletRequest instanceof HttpServletRequest && servletResponse instanceof HttpServletResponse)) {
             throw new ServletException("Only HTTP requests are supported");
         }
@@ -203,6 +206,7 @@ public class AdminWebServiceFilter implements Filter {
             PrintWriter writer = null;
             try {
                 log.log(Level.WARNING, "Admin Web Service request failed", e);
+                httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 writer = servletResponse.getWriter();
                 String fault = SoapFaultUtils.generateSoapFaultXml(
                         SoapFaultUtils.FC_CLIENT,
