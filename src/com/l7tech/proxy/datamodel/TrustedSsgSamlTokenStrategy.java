@@ -14,6 +14,8 @@ import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 
 import java.io.IOException;
 import java.net.URL;
@@ -53,17 +55,22 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
         Date timestampCreatedDate = tokenServerSsg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 
-        s = TokenServiceClient.obtainSamlAssertion(tokenServerSsg.getRuntime().getHttpClient(), null, url,
-                                                   tokenServerSsg.getServerCertificateAlways(),
-                                                   timestampCreatedDate,
-                                                   tokenServerSsg.getClientCertificate(),
-                                                   tokenServerSsg.getClientCertificatePrivateKey(),
-                                                   WsTrustRequestType.ISSUE,
-                                                   SecurityTokenType.SAML_ASSERTION,
-                                                   null, // no base
-                                                   null, // no appliesTo
-                                                   null, // no wstIssuer
-                                                   true);
+        try {
+            s = TokenServiceClient.obtainSamlAssertion(tokenServerSsg.getRuntime().getHttpClient(), null, url,
+                                                       tokenServerSsg.getServerCertificateAlways(),
+                                                       timestampCreatedDate,
+                                                       tokenServerSsg.getClientCertificate(),
+                                                       tokenServerSsg.getClientCertificatePrivateKey(),
+                                                       WsTrustRequestType.ISSUE,
+                                                       SecurityTokenType.SAML_ASSERTION,
+                                                       null, // no base
+                                                       null, // no appliesTo
+                                                       null, // no wstIssuer
+                                                       true);
+        } catch (TokenServiceClient.UnrecognizedServerCertException e) {
+            CurrentSslPeer.set(tokenServerSsg);
+            throw new ServerCertificateUntrustedException(e);
+        }
         log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         return s;
     }

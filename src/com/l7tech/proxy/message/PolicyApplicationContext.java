@@ -24,6 +24,7 @@ import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import org.w3c.dom.Document;
@@ -465,15 +466,25 @@ public class PolicyApplicationContext extends ProcessingContext {
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using HTTP Basic over SSL");
             URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
-            s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, url, ssg.getServerCertificateAlways());
+            try {
+                s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, url, ssg.getServerCertificateAlways());
+            } catch (TokenServiceClient.UnrecognizedServerCertException e) {
+                CurrentSslPeer.set(ssg);
+                throw new ServerCertificateUntrustedException(e);
+            }
         } else {
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using a WS-S signed request");
             URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
             Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 
-            s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(ssg.getRuntime().getHttpClient(), url, timestampCreatedDate,
-                                                                   ssg.getServerCertificateAlways(), ssg.getClientCertificate(),
-                                                                   ssg.getClientCertificatePrivateKey());
+            try {
+                s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(ssg.getRuntime().getHttpClient(), url, timestampCreatedDate,
+                                                                                        ssg.getServerCertificateAlways(), ssg.getClientCertificate(),
+                                                                                        ssg.getClientCertificatePrivateKey());
+            } catch (TokenServiceClient.UnrecognizedServerCertException e) {
+                CurrentSslPeer.set(ssg);
+                throw new ServerCertificateUntrustedException(e);
+            }
         }
         logger.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
         ssg.getRuntime().secureConversationId(s.getSessionId());

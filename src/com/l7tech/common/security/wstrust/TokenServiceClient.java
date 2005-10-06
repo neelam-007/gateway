@@ -62,6 +62,14 @@ public class TokenServiceClient {
     private static String tscWstNs = System.getProperty(PROP_WST_NS, SoapUtil.WST_NAMESPACE2);
     private static int tscWstRequestTypeIndex = Integer.getInteger(PROP_WST_REQUESTTYPEINDEX, 1).intValue();
 
+    /** Internal checked exception for reliable handling of server cert rediscovery. */
+    public static class UnrecognizedServerCertException extends Exception {
+        UnrecognizedServerCertException() {}
+        UnrecognizedServerCertException(String message) { super(message); }
+        UnrecognizedServerCertException(String message, Throwable cause) { super(message, cause); }
+        UnrecognizedServerCertException(Throwable cause) { super(cause); }
+    }
+
     /**
      * Create a signed SOAP message containing a WS-Trust RequestSecurityToken message asking for the
      * specified token type.
@@ -244,7 +252,7 @@ public class TokenServiceClient {
             GenericHttpClient httpClient, URL url, Date timestampCreatedDate,
             X509Certificate serverCertificate, X509Certificate clientCertificate,
             PrivateKey clientPrivateKey)
-            throws IOException, GeneralSecurityException
+            throws IOException, GeneralSecurityException, UnrecognizedServerCertException
     {
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 SecurityTokenType.WSSC_CONTEXT, WsTrustRequestType.ISSUE, null, null, null, timestampCreatedDate);
@@ -261,7 +269,7 @@ public class TokenServiceClient {
     public static SecureConversationSession obtainSecureConversationSessionWithSslAndOptionalHttpBasic(
             GenericHttpClient httpClient, PasswordAuthentication httpBasicCredentials,
             URL url, X509Certificate serverCertificate)
-            throws IOException, GeneralSecurityException
+            throws IOException, GeneralSecurityException, UnrecognizedServerCertException
     {
         if (!("https".equals(url.getProtocol()))) throw new IllegalArgumentException("URL must be HTTPS");
         Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, WsTrustRequestType.ISSUE, null, null, null);
@@ -306,7 +314,7 @@ public class TokenServiceClient {
                                                     String appliesToAddress,
                                                     String wstIssuerAddress,
                                                     boolean requireWssSignedResponse)
-            throws IOException, GeneralSecurityException
+            throws IOException, GeneralSecurityException, UnrecognizedServerCertException
     {
         if (requireWssSignedResponse && serverCertificate == null)
             throw new IllegalArgumentException("requireWssSignedResponse, but no server cert provided");
@@ -335,8 +343,7 @@ public class TokenServiceClient {
                                          X509Certificate serverCertificate,
                                          PasswordAuthentication httpBasicCredentials,
                                          boolean requireWssSignedResponse)
-            throws IOException, GeneralSecurityException
-    {
+            throws IOException, GeneralSecurityException, UnrecognizedServerCertException {
         Document response = null;
         try {
             String clientName = "current user";
@@ -426,6 +433,8 @@ public class TokenServiceClient {
             throw new RuntimeException(e); // can't happen
         } catch (ProcessorException e) {
             throw new RuntimeException(e); // can't happen, server cert was null
+        } catch (UnrecognizedServerCertException e) {
+            throw new RuntimeException(e); // can't happen, server cert was null
         }
     }
 
@@ -452,7 +461,8 @@ public class TokenServiceClient {
                                                            X509Certificate clientCertificate,
                                                            PrivateKey clientPrivateKey,
                                                            X509Certificate serverCertificate)
-            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
+            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
+                   UnrecognizedServerCertException
     {
         if (clientCertificate == null || clientPrivateKey == null || serverCertificate == null) throw new NullPointerException();
         return parseRequestSecurityTokenResponse(response, clientCertificate, clientPrivateKey, serverCertificate);
@@ -462,7 +472,8 @@ public class TokenServiceClient {
                                                             X509Certificate clientCertificate,
                                                             PrivateKey clientPrivateKey,
                                                             X509Certificate serverCertificate)
-            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
+            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
+                   UnrecognizedServerCertException
     {
         Element env = response.getDocumentElement();
         if (env == null) throw new InvalidDocumentFormatException("Response had no document element"); // can't happen
@@ -520,7 +531,8 @@ public class TokenServiceClient {
                                         Document response,
                                         X509Certificate clientCertificate,
                                         PrivateKey clientPrivateKey)
-            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
+            throws InvalidDocumentFormatException, GeneralSecurityException,
+                   ProcessorException, UnrecognizedServerCertException
     {
         ProcessorResult result = null;
         try {
@@ -554,7 +566,7 @@ public class TokenServiceClient {
                 byte[] signingPublicKeyBytes = signingCert.getPublicKey().getEncoded();
                 byte[] desiredPublicKeyBytes = serverCertificate.getPublicKey().getEncoded();
                 if (!Arrays.equals(signingPublicKeyBytes, desiredPublicKeyBytes))
-                    throw new InvalidDocumentFormatException("Response body was signed with an X509 certificate, but it wasn't the server certificate.");
+                    throw new UnrecognizedServerCertException("Response body was signed with an X509 certificate, but it wasn't the server certificate.");
             }
         }
 

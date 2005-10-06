@@ -20,6 +20,7 @@ import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.*;
 import com.l7tech.proxy.util.SslUtils;
 import org.w3c.dom.Element;
@@ -96,24 +97,30 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
         final X509Certificate tokenServerCert = getTokenServerCert();
         final URL url = new URL(wsTrustUrl);
 
+        WsTrustSslPeer sslPeer = new WsTrustSslPeer(tokenServerCert, url);
         GenericHttpClient httpClient = new SslPeerHttpClient(genericHttpClient,
-                                                             new WsTrustSslPeer(tokenServerCert, url),
+                                                             sslPeer,
                                                              ClientProxySecureProtocolSocketFactory.getInstance());
 
         UsernameToken usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
         Element utElm = usernameToken.asElement();
         SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
-        s = TokenServiceClient.obtainSamlAssertion(httpClient, null, url,
-                                                   tokenServerCert,
-                                                   null, // not overriding timestamp created date
-                                                   null, // no client cert (not signing message)
-                                                   null, // no client private key (not signing message)
-                                                   WsTrustRequestType.fromString(getRequestType()),
-                                                   null, // no token type (FIM doesn't like it)
-                                                   usernameToken,
-                                                   getAppliesTo(),
-                                                   getWstIssuer(),
-                                                   false);
+        try {
+            s = TokenServiceClient.obtainSamlAssertion(httpClient, null, url,
+                                                       tokenServerCert,
+                                                       null, // not overriding timestamp created date
+                                                       null, // no client cert (not signing message)
+                                                       null, // no client private key (not signing message)
+                                                       WsTrustRequestType.fromString(getRequestType()),
+                                                       null, // no token type (FIM doesn't like it)
+                                                       usernameToken,
+                                                       getAppliesTo(),
+                                                       getWstIssuer(),
+                                                       false);
+        } catch (TokenServiceClient.UnrecognizedServerCertException e) {
+            CurrentSslPeer.set(sslPeer);
+            throw new ServerCertificateUntrustedException(e);
+        }
         log.log(Level.INFO, "Obtained SAML assertion from WS-Trust server " + wsTrustUrl);
         return s;
     }
