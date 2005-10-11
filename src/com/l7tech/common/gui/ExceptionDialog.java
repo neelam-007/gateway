@@ -47,7 +47,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
     private JButton shutdown = new JButton("Shutdown");
     private JButton ignore = new JButton("Ignore");
-    private String internalErrorLabelText = "An severe error has occurred.  You may need to restart the application";
+    private String internalErrorLabelText = "A severe error has occurred.  You may need to restart the application";
     private boolean allowShutdown = true;
 
     public ExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
