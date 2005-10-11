@@ -52,7 +52,6 @@ public class ServerRequestSizeLimit implements ServerAssertion {
             }
             return AssertionStatus.NONE;
         } else {
-            request.getMimeKnob().setContentLengthLimit(limit);
             try {
                 long xmlLen = request.getMimeKnob().getFirstPart().getActualContentLength();
                 if (xmlLen > limit) {
