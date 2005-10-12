@@ -454,7 +454,9 @@ public class MainWindow extends JFrame {
 
             editMenu.add(getManageCertificatesMenuItem());
             editMenu.add(getManageGlobalSchemasMenuItem());
-            editMenu.add(getManageClusterPropertiesActionMenuItem());
+            // Disabled for 3.4 -- there are currently no cluster properties to manage with this GUI
+            // ("license" is managed with a seperate GUI of its own, and is hidden in the cluster property list.)
+            // editMenu.add(getManageClusterPropertiesActionMenuItem());
             editMenu.add(getManageJmsEndpointsMenuItem());
 
             int mnemonic = editMenu.getText().toCharArray()[0];
