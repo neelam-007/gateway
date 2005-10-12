@@ -68,10 +68,13 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
     }
 
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
-        if ( pc.getFormat() == CredentialFormat.CLIENTCERT )
-            return new AuthenticationResult(x509Handler.authorize(pc));
+        if ( pc.getFormat() == CredentialFormat.CLIENTCERT ) {
+            User user = x509Handler.authorize(pc);
+            return user == null ? null : new AuthenticationResult(user);
+        }
         else if ( pc.getFormat() == CredentialFormat.SAML ) {
-            return new AuthenticationResult(samlHandler.authorize(pc));
+            User user = samlHandler.authorize(pc);
+            return user == null ? null : new AuthenticationResult(user);
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
