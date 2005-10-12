@@ -17,6 +17,7 @@ import java.security.cert.X509Certificate;
  */
 public class TrustedCert extends X509Entity implements Serializable, Cloneable {
     public void copyFrom(TrustedCert cert) {
+        this._name = cert._name;
         this.certBase64 = cert.certBase64;
         this.cachedCert = cert.cachedCert;
         this.subjectDn = cert.subjectDn;
