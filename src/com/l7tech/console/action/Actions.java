@@ -189,11 +189,13 @@ public class Actions {
 
     static boolean deleteAssertion(AssertionTreeNode node) {
         // Make sure
+        String nodeName = node.getName();
+        if (nodeName != null && nodeName.length() > 80) {
+            nodeName = nodeName.substring(0,76) + "...";
+        }
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you want to delete assertion " +
-          node.getName() + "?",
-          "Delete Assertion",
-          JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
+                                           "Are you sure you want to delete assertion " + nodeName + "?", "Delete Assertion",
+                                           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
         }
 
