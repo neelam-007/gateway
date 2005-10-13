@@ -230,7 +230,7 @@ public class SecureSpanBridgeOptions {
     }
 
     /** Interface implemented by API users who wish to trust new Gateway certificates at runtime. */
-    public static interface GatewayCertificateTrustManager {
+    public interface GatewayCertificateTrustManager {
         /**
          *
          * @param gatewayCertificateChain The certificate chain obtained during Gateway server certificate discovery.
