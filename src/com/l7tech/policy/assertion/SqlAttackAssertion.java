@@ -20,6 +20,10 @@ public class SqlAttackAssertion extends Assertion {
     private static final int LABEL = 1;
     private static final int DESC = 2;
     private static final int REGEX = 3;
+
+    // Regex that matches SQL metacharacters, either directly or in SQL escape character form.
+    private static final String RE_SQLMETA = "--|['#]|\\\\x27|\\\\x23";
+
     private static final String PROTS[][] = {
             { PROT_MSSQL,       "Known MS SQL Server Exploits Protection",
                                 "Blocks messages which appear to contain common MS SQL Server exploits.",
@@ -31,11 +35,13 @@ public class SqlAttackAssertion extends Assertion {
             },
             { PROT_METATEXT,    "Standard SQL Injection Attack Protection",
                                 "Blocks messages with SQL metacharacters in any XML TEXT or CDATA section.  Protects against most SQL injection attacks, but with many false positives.\n\nIn particular, any text containing a single-quote (') character will be blocked.",
-                                ">[^<]*(?:--|['#\\x27\\x23])[^>]*<|<\\s*!\\s*\\[CDATA\\s*\\[(?:(?!\\]\\s*\\]\\s*>).)*?(?:--|['#\\x27\\x23]).*?\\]\\s*\\]\\s*>",
+                                ">[^<]*(?:" + RE_SQLMETA +
+                                 ")[^>]*<|<\\s*!\\s*\\[CDATA\\s*\\[(?:(?!\\]\\s*\\]\\s*>).)*?(?:" +
+                                        RE_SQLMETA + ").*?\\]\\s*\\]\\s*>",
             },
             { PROT_META,        "Invasive SQL Injection Attack Protection",
-                                "Blocks messages with SQL metacharacters anywhere in the XML.  Protects against essentially all SQL injection attacks, but with many more false positives.\n\nIn particular, any message containing a shorthand XPointer reference will be rejected, as will most messages containing signed XML.",
-                                "--|['#\\x27\\x23]",
+                                "Blocks messages with SQL metacharacters anywhere in the XML.  Protects against more SQL injection attacks, but with many more false positives.\n\nIn particular, any message containing a shorthand XPointer reference will be rejected, as will most messages containing signed XML.",
+                                RE_SQLMETA,
             },
     };
 
