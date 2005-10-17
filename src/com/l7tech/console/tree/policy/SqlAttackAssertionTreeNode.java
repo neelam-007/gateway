@@ -5,6 +5,10 @@ import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.console.action.SqlAttackDialogAction;
 
 import javax.swing.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Arrays;
 
 /**
  * Created by IntelliJ IDEA.
@@ -38,6 +42,13 @@ public class SqlAttackAssertionTreeNode extends LeafAssertionTreeNode{
 
     public boolean canDelete() {
         return true;
+    }
+
+    public Action[] getActions() {
+        List list = new ArrayList();
+        list.add(getPreferredAction());
+        list.addAll(Arrays.asList(super.getActions()));
+        return (Action[]) list.toArray(new Action[list.size()]);
     }
 
 }
