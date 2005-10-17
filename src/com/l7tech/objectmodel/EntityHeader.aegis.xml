@@ -1,0 +1,6 @@
+<mappings>
+  <mapping uri="http://ns.l7tech.com/SecureSpan/admin/core">
+    <property name="strId" ignore="true"/>
+    <property name="type" ignore="true"/>
+  </mapping>
+</mappings>
