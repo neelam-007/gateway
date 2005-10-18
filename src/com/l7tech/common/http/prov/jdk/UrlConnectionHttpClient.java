@@ -38,6 +38,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
             if (!(conn instanceof HttpURLConnection))
                 throw new GenericHttpException("URLConnection was not an HttpURLConnection");
             final HttpURLConnection httpConn = (HttpURLConnection)conn;
+            httpConn.setInstanceFollowRedirects(params.isFollowRedirects());
             final HttpsURLConnection httpsConn;
             if (conn instanceof HttpsURLConnection) {
                 httpsConn = (HttpsURLConnection)conn;
@@ -91,8 +92,9 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                             HexUtils.copyStream(requestInputStream, conn.getOutputStream());
 
                         final int status = httpConn.getResponseCode();
-                        final String contentType = conn.getContentType();
-                        final ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(contentType);
+                        final ContentTypeHeader contentTypeHeader =
+                                status >= 300 && status <= 399 ? null :
+                                ContentTypeHeader.parseValue(conn.getContentType());
                         final List headers = new ArrayList();
                         int n = 0;
                         String value = null;
