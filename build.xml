@@ -144,9 +144,6 @@
     <target name="dev" depends="init-dev">
         <property name="dev.build" value="true"/>
         <property file="build.number"/>
-        <property name="build.version" value="HEAD"/> <!-- default build version for dev build.  Official build prompts the release engineer for a nicer one. -->
-
-        <antcall target="INTERNAL-buildinfo"/>
 
         <antcall target="compile13">
         </antcall>
@@ -1054,6 +1051,12 @@
         <antcall target="prepare.db"/>
         <antcall target="prepare.systinet"/>
 
+        <!-- default build version for dev build.  Official build prompts the release engineer for a nicer one. -->
+        <property name="build.version" value="HEAD"/>
+
+        <!-- set up build number if it isn't already set -->
+        <property file="build.number"/>
+
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <antcall target="keystore.properties"/>
 
@@ -1064,6 +1067,10 @@
         </copy>
 
         <mkdir dir="${javadoc.home}"/>
+
+        <!-- make sure BuildInfo.java is up to date -->
+        <antcall target="INTERNAL-buildinfo"/>
+
     </target>
 
     <target name="keystore.properties" if="dev.build">
@@ -1634,7 +1641,6 @@
         <buildnumber/>
 
         <antcall target="clean"/>
-        <antcall target="INTERNAL-buildinfo"/>
         <antcall target="package"/>
         <antcall target="ssm-webstart"/>
         <antcall target="testpackage"/>
