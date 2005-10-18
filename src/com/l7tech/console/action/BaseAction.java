@@ -175,9 +175,15 @@ public abstract class BaseAction extends AbstractAction {
     public abstract String getName();
 
     /**
-     * @return the aciton description
+     * Get the action description.
+     *
+     * This default implementation calls getName().
+     *
+     * @return the name.
      */
-    public abstract String getDescription();
+    public String getDescription() {
+        return getName();
+    }
 
     /**
      * subclasses override this method specifying the resource name

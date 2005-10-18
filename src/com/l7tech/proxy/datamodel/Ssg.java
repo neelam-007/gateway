@@ -69,7 +69,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private boolean useOverrideIpAddresses = false;
     private String[] overrideIpAddresses = null;
     private PersistentPolicyManager persistentPolicyManager = new PersistentPolicyManager(); // policy store that gets saved to disk
-    private WsTrustSamlTokenStrategy wsTrustSamlTokenStrategy = null; // non-default saml token strategy, or null
+    private FederatedSamlTokenStrategy fedSamlTokenStrategy = null; // non-default saml token strategy, or null
 
     private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
@@ -173,12 +173,20 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         return trustedGateway;
     }
 
-    public boolean isFederatedGateway() {
-        return trustedGateway != null || getWsTrustSamlTokenStrategy() != null;
-    }
-
     public void setTrustedGateway(Ssg trustedGateway) {
         this.trustedGateway = trustedGateway;
+    }
+
+    public boolean isFederatedGateway() {
+        return isFederatedTrusted() || getWsTrustSamlTokenStrategy() != null;
+    }
+
+    public boolean isFederatedTrusted() {
+       return trustedGateway != null;
+    }
+
+    public boolean isFederatedWsTrust() {
+        return getWsTrustSamlTokenStrategy() instanceof WsTrustSamlTokenStrategy;
     }
 
     public String getLocalEndpoint() {
@@ -442,14 +450,24 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         this.overrideIpAddresses = overrideIpAddresses;
     }
 
-    /** Non-default SAML token strategy, if any, or null to initialize with the default strategy. */
-    public WsTrustSamlTokenStrategy getWsTrustSamlTokenStrategy() {
-        return wsTrustSamlTokenStrategy;
+    /**
+     * Non-default SAML token strategy, if any.
+     *
+     * NOTE: this should really be named getFederatedSamlTokenStrategy but due to
+     * configuration file compatiblity the name is left as is.
+     */
+    public FederatedSamlTokenStrategy getWsTrustSamlTokenStrategy() {
+        return fedSamlTokenStrategy;
     }
 
-    /** Non-default SAML token strategy, if any, or null to initialize with the default strategy. */
-    public void setWsTrustSamlTokenStrategy(WsTrustSamlTokenStrategy wsTrustSamlTokenStrategy) {
-        this.wsTrustSamlTokenStrategy = wsTrustSamlTokenStrategy;
+    /**
+     * Non-default SAML token strategy, if any, or null to initialize with the default strategy.
+     *
+     * NOTE: this should really be named setFederatedSamlTokenStrategy but due to
+     * configuration file compatiblity the name is left as is.
+     */
+    public void setWsTrustSamlTokenStrategy(FederatedSamlTokenStrategy newSamlTokenStrategy) {
+        this.fedSamlTokenStrategy = newSamlTokenStrategy;
     }
 
     /** Obfuscate the password for storage to disk in plaintext. */

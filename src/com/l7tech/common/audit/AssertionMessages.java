@@ -240,7 +240,6 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_MULTI_TOKENS            = m(6206, Level.WARNING, "Multiple Security Tokens found in request");
     public static final M WSTRUST_SERVER_HTTP_FAILED      = m(6207, Level.WARNING, "HTTP failure talking to WS-Trust server");
 
-
     //ServerRegex
     public static final M REGEX_PATTERN_INVALID   = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
     public static final M REGEX_TOO_BIG           = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + 1024 * 512 + " bytes)");
@@ -321,6 +320,18 @@ public class AssertionMessages extends Messages {
     // RequestSizeLimit
     public static final M REQUEST_BODY_TOO_LARGE            = m(7220, Level.WARNING,  "Request body size exceeds configured limit");
     public static final M REQUEST_FIRST_PART_TOO_LARGE      = m(7221, Level.WARNING,  "Request first part size exceeds configured limit");
+
+    // ServerWsTrustCredentialExchange
+    public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
+    public static final M WSFEDPASS_RSTR_BAD_TYPE           = m(7301, Level.WARNING, "WS-Federation response did not contain a security token of a supported type");
+    public static final M WSFEDPASS_RSTR_STATUS_NON_200     = m(7302, Level.WARNING, "WS-Federation response had non-200 status");
+    public static final M WSFEDPASS_NON_XML_MESSAGE         = m(7303, Level.INFO, "Can't replace security token in non-XML message");
+    public static final M WSFEDPASS_DECORATION_FAILED       = m(7304, Level.WARNING, "Unable to replace security token");
+    public static final M WSFEDPASS_ORIGINAL_TOKEN_NOT_XML  = m(7305, Level.INFO, "Original security token was not XML; cannot remove from request");
+    public static final M WSFEDPASS_MULTI_TOKENS            = m(7306, Level.WARNING, "Multiple Security Tokens found in request");
+    public static final M WSFEDPASS_SERVER_HTTP_FAILED      = m(7307, Level.WARNING, "HTTP failure talking to WS-Federation server");
+    public static final M WSFEDPASS_SERVER_HTTP_ENCODING    = m(7308, Level.WARNING, "Unknown encoding from WS-Federation server");
+    public static final M WSFEDPASS_SERVER_HTML_INVALID     = m(7309, Level.WARNING, "Cannot parse HTML from WS-Federation server");
 
     // MAX -                                     m(7999
 }

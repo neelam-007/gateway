@@ -260,6 +260,7 @@
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.http.CookieTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.wsfederation.FederationPassiveClientTest" haltonfailure="no"/>
 
 <!--
              ** add policy tests into the com.l7tech.policy.AllPolicyTests class

@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -98,6 +99,7 @@ public class AllAssertions {
         new RequestWssSaml(),
         new AuditAssertion(),
         new WsTrustCredentialExchange(),
+        new WsFederationPassiveTokenRequest(),
         CUSTOM_ASSERTION_HOLDER,
         new Regex(),
         new UnknownAssertion(),
@@ -144,6 +146,7 @@ public class AllAssertions {
         new AuditAssertion(),
         new CustomAssertionHolder(),
         new WsTrustCredentialExchange(),
+        new WsFederationPassiveTokenRequest(),
         new Regex(),
         new UnknownAssertion(),
         new SnmpTrapAssertion(),
@@ -164,6 +167,7 @@ public class AllAssertions {
         new SecureConversation(),
         new RequestWssSaml(),
         new WsTrustCredentialExchange(),
+        new WsFederationPassiveTokenRequest(),
         new XpathCredentialSource(),
     };
 

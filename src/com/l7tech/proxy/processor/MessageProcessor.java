@@ -33,7 +33,7 @@ import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
+import com.l7tech.proxy.datamodel.FederatedSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -282,9 +282,9 @@ public class MessageProcessor {
     private void handleSslExceptionForWsTrustTokenService(Ssg federatedSsg, SslPeer sslPeer, Exception e)
             throws SSLException, OperationCanceledException, CertificateEncodingException
     {
-        WsTrustSamlTokenStrategy strat = federatedSsg.getWsTrustSamlTokenStrategy();
+        FederatedSamlTokenStrategy strat = federatedSsg.getWsTrustSamlTokenStrategy();
         if (strat == null)
-            throw (SSLException)new SSLException("SSL connection failure to something other than our Gateway (or its Trusted Gateway, if applicable), but no third-party WS-Trust is configured: " + e.getMessage()).initCause(e);
+            throw (SSLException)new SSLException("SSL connection failure to something other than our Gateway (or its Trusted Gateway, if applicable), but no third-party strategy (WS-Trust,WS-Federation) is configured: " + e.getMessage()).initCause(e);
         strat.handleSslException(sslPeer, e);
 
         // Update SSGs
@@ -960,6 +960,7 @@ public class MessageProcessor {
         List values = responseHeaders.getValues("Set-Cookie");
         if(!values.isEmpty()) {
             HttpCookie[] existingCookies = context.getSessionCookies();
+            if(existingCookies==null) existingCookies = new HttpCookie[0];
             Set cookieSet = new LinkedHashSet(Arrays.asList(existingCookies));
 
             for (Iterator iterator = values.iterator(); iterator.hasNext();) {

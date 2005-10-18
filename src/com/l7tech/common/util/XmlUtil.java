@@ -112,19 +112,33 @@ public class XmlUtil {
     }
 
     public static Document stringToDocument(String inputXmlNotAUrl) throws SAXException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(inputXmlNotAUrl.getBytes());
+        Reader reader = new StringReader(inputXmlNotAUrl);
         try {
-            return parse(bis);
+            return parse(reader, false);
         } catch (IOException e) {  // can't happen
             throw new SAXException("Unable to parse this XML string: " + e.getClass().getName() + ": " + e.getMessage(), e);
         }
     }
 
+    /**
+     * Create an XML document from the given InputStream. If the InputStream
+     * data does NOT contain charset information and you know the charset you
+     * should create a Reader and pass that instead.
+     *
+     * @param input the InputStream that will produce the document's bytes
+     * @return the parsed document
+     * @throws IOException if an IO error occurs
+     * @throws SAXException if there is a parsing error
+     */
     public static Document parse(InputStream input) throws IOException, SAXException {
-        return parse(input, false);
+        return parse(new InputSource(input), false);
     }
 
     /**
+     * Create an XML document from the given InputStream. If the InputStream
+     * data does NOT contain charset information and you know the charset you
+     * should create a Reader and pass that instead.
+     *
      * @param input the InputStream that will produce the document's bytes
      * @param allowDoctype true to allow DOCTYPE processing instructions. <b>NOTE</b>: Don't allow DOCTYPEs on "foreign" documents (e.g. any document received over a network interface).
      * @return the parsed DOM Document
@@ -132,10 +146,36 @@ public class XmlUtil {
      * @throws SAXException
      */
     public static Document parse(InputStream input, boolean allowDoctype) throws IOException, SAXException {
+        return parse(new InputSource(input), allowDoctype);
+    }
+
+    /**
+     * Create an XML document from the given Reader.
+     *
+     * @param input the Reader that will produce the document's characters
+     * @param allowDoctype true to allow DOCTYPE processing instructions. <b>NOTE</b>: Don't allow DOCTYPEs on "foreign" documents (e.g. any document received over a network interface).
+     * @return the parsed document
+     * @throws IOException if an IO error occurs
+     * @throws SAXException if there is a parsing error
+     */
+    public static Document parse(Reader input, boolean allowDoctype) throws IOException, SAXException {
+        return parse(new InputSource(input), allowDoctype);
+    }
+
+    /**
+     * Create an XML document from the given SAX InputSource.
+     *
+     * @param source the input source
+     * @param allowDoctype true to allow DOCTYPE processing instructions. <b>NOTE</b>: Don't allow DOCTYPEs on "foreign" documents (e.g. any document received over a network interface).
+     * @return the parsed DOM Document
+     * @throws IOException if an IO error occurs
+     * @throws SAXException if there is a parsing error
+     */
+    public static Document parse(InputSource source, boolean allowDoctype) throws IOException, SAXException {
         DocumentBuilder parser = allowDoctype
                 ? getDocumentBuilderAllowingDoctype()
                 : getDocumentBuilder();
-        return parser.parse(input); // TODO wtf is there no version that takes an encoding :(
+        return parser.parse(source);
     }
 
     private static ThreadLocal formattedXMLSerializer = new ThreadLocal() {

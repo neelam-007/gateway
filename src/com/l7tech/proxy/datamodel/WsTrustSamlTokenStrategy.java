@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 /**
  * This is the strategy for obtaining a SAML token from a third-party WS-Trust server.
  */
-public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implements Cloneable {
+public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy implements Cloneable {
     private static final Logger log = Logger.getLogger(WsTrustSamlTokenStrategy.class.getName());
     private static final SSLContext SSL_CONTEXT;
 

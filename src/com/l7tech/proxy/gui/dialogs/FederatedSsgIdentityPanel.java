@@ -4,14 +4,14 @@
 
 package com.l7tech.proxy.gui.dialogs;
 
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.gui.util.IconManager;
-
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.*;
+
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.gui.util.IconManager;
 
 /**
  * Identity panel for a Federated Ssg.
@@ -32,6 +32,14 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
     private JTextField wspAppliesToField;
     private JTextField wstIssuerField;
     private JComboBox requestTypeCombo;
+    private JTextField wsFedUrlTextField;
+    private JTextField wsFedRealmTextField;
+    private JCheckBox wsFedTimestampCheckBox;
+    private JTextField wsFedUsernameField;
+    private JButton wsFedTestButton;
+    private JButton wsFedCertButton;
+    private JPasswordField wsFedPasswordField;
+    private JPanel wsFedPanel;
 
     private final ImageIcon imageIcon;
 
@@ -42,18 +50,33 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
         if (!ssg.isFederatedGateway())
             throw new RuntimeException("Internal error - can't use Federated property pane on non-Federated Gateway");
 
-        if (ssg.getTrustedGateway() != null) {
+        if (ssg.isFederatedTrusted()) {
             trustedGatewayPanel.setVisible(true);
             wsTrustPanel.setVisible(false);
+            wsFedPanel.setVisible(false);
             clientCertButton.setVisible(true);
             trustedSsgLabel.setText(ssg.getTrustedGateway().toString());
             imageIcon = IconManager.getSmallFederatedSsgDiagram();
         } else {
             trustedGatewayPanel.setVisible(false);
-            wsTrustPanel.setVisible(true);
+            if(ssg.isFederatedWsTrust()) {
+                wsTrustPanel.setVisible(true);
+                wsFedPanel.setVisible(false);
+                imageIcon = IconManager.getSmallFederatedSsgWithTokenServiceDiagram();
+            }
+            else {
+                wsTrustPanel.setVisible(false);
+                wsFedPanel.setVisible(true);
+                imageIcon = IconManager.getSmallFederatedSsgWithFederationServiceDiagram();
+            }
             clientCertButton.setVisible(false);
 
             wsTrustUrlTextField.getDocument().addDocumentListener(new DocumentListener() {
+                public void changedUpdate(DocumentEvent e) { updateButtons(); }
+                public void insertUpdate(DocumentEvent e) { updateButtons(); }
+                public void removeUpdate(DocumentEvent e) { updateButtons(); }
+            });
+            wsFedUrlTextField.getDocument().addDocumentListener(new DocumentListener() {
                 public void changedUpdate(DocumentEvent e) { updateButtons(); }
                 public void insertUpdate(DocumentEvent e) { updateButtons(); }
                 public void removeUpdate(DocumentEvent e) { updateButtons(); }
@@ -62,7 +85,6 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
             // TODO enable this setting as soon as it is configurable
             wstSavePasswordCheckBox.setSelected(true);
             wstSavePasswordCheckBox.setVisible(false);
-            imageIcon = IconManager.getSmallFederatedSsgWithTokenServiceDiagram();
         }
 
         updateButtons();
@@ -74,6 +96,7 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
 
     private void updateButtons() {
         wsTrustTestButton.setEnabled(HexUtils.isValidUrl(wsTrustUrlTextField.getText()));
+        wsFedTestButton.setEnabled(HexUtils.isValidUrl(wsFedUrlTextField.getText()));
     }
 
     public JPasswordField getWstPasswordField() {
@@ -118,5 +141,33 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
 
     public JComboBox getRequestTypeCombo() {
         return requestTypeCombo;
+    }
+
+    public JTextField getWsFedUrlTextField() {
+        return wsFedUrlTextField;
+    }
+
+    public JTextField getWsFedRealmTextField() {
+        return wsFedRealmTextField;
+    }
+
+    public JCheckBox getWsFedTimestampCheckBox() {
+        return wsFedTimestampCheckBox;
+    }
+
+    public JTextField getWsFedUsernameField() {
+        return wsFedUsernameField;
+    }
+
+    public JPasswordField getWsFedPasswordField() {
+        return wsFedPasswordField;
+    }
+
+    public JButton getWsFedTestButton() {
+        return wsFedTestButton;
+    }
+
+    public JButton getWsFedCertButton() {
+        return wsFedCertButton;
     }
 }

@@ -1,15 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
-<<<<<<< TokenServiceClient.java
-=======
-<<<<<<< TokenServiceClient.java
-=======
- * $Id$
->>>>>>> 1.1.10.1
->>>>>>> 1.11.4.1
  */
-
 package com.l7tech.common.security.wstrust;
 
 import com.l7tech.common.http.*;

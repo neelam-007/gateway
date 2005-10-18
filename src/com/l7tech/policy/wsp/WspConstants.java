@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -204,6 +205,7 @@ public class WspConstants {
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
         new AssertionMapping(new WsTrustCredentialExchange(), "WsTrustCredentialExchange"),
+        new AssertionMapping(new WsFederationPassiveTokenRequest(), "WsFederationPassiveTokenRequest"),
         new AssertionMapping(new XpathCredentialSource(), "XpathCredentialSource"),
         new AssertionMapping(new SamlBrowserArtifact(), "SamlBrowserArtifact"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),

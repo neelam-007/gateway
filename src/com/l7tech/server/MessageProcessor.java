@@ -12,6 +12,8 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.SecurityActor;
@@ -27,6 +29,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyContextCache;
+import com.l7tech.server.message.HttpSessionPolicyContextCache;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
@@ -192,8 +196,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                 // skip the http request header version checking if it is not a Http request
                 if (context.getRequest().isHttpRequest()) {
+                    HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+                    // initialize cache
+                    if(httpRequestKnob instanceof HttpServletRequestKnob) {
+                        String cacheId = service.getOid() + "." + service.getVersion();
+                        PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest().getSession(), cacheId);
+                        context.setCache(cache);
+                    }
                     // check if requestor provided a version number for published service
-                    String requestorVersion = context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+                    String requestorVersion = httpRequestKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
                     if (requestorVersion != null && requestorVersion.length() > 0) {
                         // format is policyId|policyVersion (seperated with char '|')
                         boolean wrongPolicyVersion = false;

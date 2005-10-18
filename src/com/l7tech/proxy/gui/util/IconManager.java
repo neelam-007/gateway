@@ -26,9 +26,11 @@ public class IconManager {
     private static ImageIcon trustedSsgDiagram;
     private static ImageIcon federatedSsgDiagram;
     private static ImageIcon federatedSsgWithTokenServiceDiagram;
+    private static ImageIcon federatedSsgWithFederationServiceDiagram;
     private static ImageIcon smtrustedSsgDiagram;
     private static ImageIcon smfederatedSsgDiagram;
     private static ImageIcon smfederatedSsgWithTokenServiceDiagram;
+    private static ImageIcon smfederatedSsgWithFederationServiceDiagram;
 
     private static ImageIcon loadImageIcon(String path) {
         URL url = cl.getResource(path);
@@ -83,6 +85,22 @@ public class IconManager {
             smfederatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + path);
         }
         return smfederatedSsgWithTokenServiceDiagram;
+    }
+
+    public static ImageIcon getFederatedSsgWithFederationServiceDiagram() {
+        if (federatedSsgWithFederationServiceDiagram == null) {
+            String path = "/dia_federated_ssg_with_wsfederation.png";
+            federatedSsgWithFederationServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + path);
+        }
+        return federatedSsgWithFederationServiceDiagram;
+    }
+
+    public static ImageIcon getSmallFederatedSsgWithFederationServiceDiagram() {
+        if (smfederatedSsgWithFederationServiceDiagram == null) {
+            String path = "/dia_small_federated_ssg_with_wsfederation.png";
+            smfederatedSsgWithFederationServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + path);
+        }
+        return smfederatedSsgWithFederationServiceDiagram;
     }
 
     public static ImageIcon getAdd() {

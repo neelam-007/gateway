@@ -9,6 +9,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
+import com.l7tech.proxy.datamodel.WsFederationPRPSamlTokenStrategy;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ public class NewSsgDialog extends JDialog {
     private JRadioButton radioTokenOther;
     private JRadioButton radioTokenTrustedGateway;
     private JRadioButton radioFederatedGateway;
+    private JRadioButton radioTokenFederatedPassive;
     private JRadioButton radioTrustedGateway;
     private JLabel imageLabel;
     private JPanel imagePanel;
@@ -63,6 +65,7 @@ public class NewSsgDialog extends JDialog {
         ButtonGroup bg2 = new ButtonGroup();
         bg2.add(radioTokenOther);
         bg2.add(radioTokenTrustedGateway);
+        bg2.add(radioTokenFederatedPassive);
 
         radioTrustedGateway.setSelected(true);
         radioTokenTrustedGateway.setSelected(true);
@@ -102,6 +105,7 @@ public class NewSsgDialog extends JDialog {
         radioFederatedGateway.addActionListener(radioChanged);
         radioTokenOther.addActionListener(radioChanged);
         radioTokenTrustedGateway.addActionListener(radioChanged);
+        radioTokenFederatedPassive.addActionListener(radioChanged);
         checkButtonState();
     }
 
@@ -114,11 +118,14 @@ public class NewSsgDialog extends JDialog {
             fed = false;
         } else if (radioTokenTrustedGateway.isSelected()) {
             wantImage = IconManager.getFederatedSsgDiagram();
+        } else if (radioTokenFederatedPassive.isSelected()) {
+            wantImage = IconManager.getFederatedSsgWithFederationServiceDiagram();
         } else {
             wantImage = IconManager.getFederatedSsgWithTokenServiceDiagram();
         }
 
         radioTokenOther.setEnabled(fed);
+        radioTokenFederatedPassive.setEnabled(fed);
         radioTokenTrustedGateway.setEnabled(fed && haveTrusted);
         trustedSsgComboBox.setEnabled(radioTokenTrustedGateway.isEnabled() && radioTokenTrustedGateway.isSelected());
 
@@ -141,11 +148,18 @@ public class NewSsgDialog extends JDialog {
             if (radioTokenTrustedGateway.isSelected()) {
                 Ssg trustSsg = (Ssg)trustedSsgComboBox.getSelectedItem();
                 ssg.setTrustedGateway(trustSsg);
-            } else {
+            } else if (radioTokenOther.isSelected()){
                 ssg.setTrustedGateway(null);
                 WsTrustSamlTokenStrategy newStrat = new WsTrustSamlTokenStrategy();
                 ssg.setWsTrustSamlTokenStrategy(newStrat);
+            } else if (radioTokenFederatedPassive.isSelected()) {
+                ssg.setTrustedGateway(null);
+                WsFederationPRPSamlTokenStrategy newStrat = new WsFederationPRPSamlTokenStrategy();
+                ssg.setWsTrustSamlTokenStrategy(newStrat);
+            } else {
+                throw new IllegalStateException("Invalid radio button state!");
             }
+
         }
         return ssg;
     }

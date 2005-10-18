@@ -1,14 +1,14 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-
 import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.l7tech.console.util.Registry;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
 
 /**
@@ -61,6 +61,7 @@ public class AccessControlFolderNode extends AbstractTreeNode {
         insert(new SecureConversationNode(), index++);
         insert(new RequestWssSamlNode(), index++);
         insert(new WsTrustCredentialExchangePaletteNode(), index++);
+        insert(new WsFederationPassiveTokenRequestPaletteNode(), index++);
         insert(new XpathCredentialSourcePaletteNode(), index++);
         insert(new SamlBrowserArtifactPaletteNode(), index++);
 

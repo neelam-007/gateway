@@ -72,6 +72,8 @@ public class SamlConstants {
 
     public static final String ATTR_ASSERTION_ID = "AssertionID";
 
+    public static final String ELEMENT_AUDIENCE = "Audience";
+
     /**
      * Cannot instantiate this class
      */

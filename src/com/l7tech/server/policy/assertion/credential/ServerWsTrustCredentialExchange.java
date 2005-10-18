@@ -48,8 +48,9 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ServerWsTrustCredentialExchange implements ServerAssertion {
+public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurityTokenAssertion {
     private static final Logger logger = Logger.getLogger(ServerWsTrustCredentialExchange.class.getName());
+    private static final String CACHE_SEC_TOKEN_KEY = ServerWsTrustCredentialExchange.class.getName() + ".TOKEN";
 
     private final WsTrustCredentialExchange assertion;
     private final Auditor auditor;
@@ -60,6 +61,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
     private final CertificateResolver certificateResolver;
 
     public ServerWsTrustCredentialExchange(WsTrustCredentialExchange assertion, ApplicationContext springContext) {
+        super(CACHE_SEC_TOKEN_KEY);
         this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
         try {
@@ -133,29 +135,42 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
             return AssertionStatus.FAILED;
         }
 
-        // Create RST
-        Document rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
-                                                                               assertion.getRequestType(),
-                                                                               originalToken,
-                                                                               assertion.getAppliesTo(),
-                                                                               assertion.getIssuer());
-
-        GenericHttpRequestParams params = new GenericHttpRequestParams(tokenServiceUrl);
-        params.setContentType(ContentTypeHeader.XML_DEFAULT);
-        params.setSslSocketFactory(sslContext.getSocketFactory());
-        params.setExtraHeaders(new HttpHeader[] { new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\"") });
+        SecurityToken secTok = super.getCachedSecurityToken(context.getCache());
 
         try {
-            // Get RSTR
-            SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(params, rstDoc);
-            int status = response.getStatus();
-            if (status != 200) {
-                auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_STATUS_NON_200); // TODO use a better message
-                return AssertionStatus.AUTH_REQUIRED;
-            }
+            boolean fetched = true;
+            Object rstrObj = null;
 
-            Document rstrDoc = response.getDocument();
-            Object rstrObj = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
+            if(secTok==null) {
+                // Create RST
+                Document rstDoc = null;
+                GenericHttpRequestParams params = null;
+                rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
+                                                                              assertion.getRequestType(),
+                                                                              originalToken,
+                                                                              assertion.getAppliesTo(),
+                                                                              assertion.getIssuer());
+
+                params = new GenericHttpRequestParams(tokenServiceUrl);
+                params.setContentType(ContentTypeHeader.XML_DEFAULT);
+                params.setSslSocketFactory(sslContext.getSocketFactory());
+                params.setExtraHeaders(new HttpHeader[] { new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\"") });
+
+                // Get RSTR
+                SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(params, rstDoc);
+                int status = response.getStatus();
+                if (status != 200) {
+                    auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_STATUS_NON_200); // TODO use a better message
+                    return AssertionStatus.AUTH_REQUIRED;
+                }
+
+                Document rstrDoc = response.getDocument();
+                rstrObj = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
+            }
+            else {
+                fetched = false;
+                rstrObj = secTok;
+            }
 
             Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
             if (originalTokenElement == null) {
@@ -174,12 +189,13 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
             DecorationRequirements decoReq = new DecorationRequirements();
             WssDecorator deco = new WssDecoratorImpl();
             if (rstrObj instanceof SamlAssertion) {
-                final SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
-
+                SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
+                setCachedSecurityToken(context.getCache(), samlAssertion, getSamlAssertionExpiry(samlAssertion));
                 context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
                 decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
             } else if (rstrObj instanceof UsernameToken) {
                 UsernameToken ut = (UsernameToken) rstrObj;
+                setCachedSecurityToken(context.getCache(), ut, getUsernameTokenExpiry(ut));
                 LoginCredentials creds = ut.asLoginCredentials();
                 context.setCredentials(creds);
                 decoReq.setUsernameTokenCredentials(new UsernameTokenImpl(creds));
@@ -187,6 +203,8 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_BAD_TYPE);
                 return AssertionStatus.AUTH_REQUIRED;
             }
+
+            addCacheInvalidator(context); // remove cached credentials if routing fails
 
             try {
                 deco.decorateMessage(requestDoc, decoReq);

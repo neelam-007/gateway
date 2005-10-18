@@ -58,6 +58,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private long routingStartTime;
     private long routingEndTime;
     private boolean isStealthResponseMode = false;
+    private PolicyContextCache cache;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -211,6 +212,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public PublishedService getService() {
         return service;
+    }
+
+    public void setCache(PolicyContextCache cache) {
+        this.cache = cache;
+    }
+
+    public PolicyContextCache getCache() {
+        return cache;
     }
 
     public Set getCookies() {

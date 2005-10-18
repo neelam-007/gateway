@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.util.*;
+import java.util.logging.Logger;
 import java.text.MessageFormat;
 
 /**
@@ -16,8 +17,6 @@ import java.text.MessageFormat;
  * @version $Revision$
  */
 public abstract class AssertionDescription {
-    protected Assertion assertion;
-
     /**
      * the subclasses must implement the
      * @param assertion
@@ -39,9 +38,19 @@ public abstract class AssertionDescription {
      * @return the short description for the assertion
      */
     public String getShortDescription() {
+        String description = null;
+
         Class assertionClass = assertion.getClass();
         String key = assertionClass.getName()+ ".short";
-        return MessageFormat.format(getMessageBundle().getString(key), parameters());
+        try {
+            description = MessageFormat.format(getMessageBundle().getString(key), parameters());
+        }
+        catch(MissingResourceException mre) {
+            logger.warning("Could not access resource with key '"+key+"' from bundle '"+DESCRIPTIONS_BUNDLE+"'.");
+            description = "DESCRIPTION NOT SET";
+        }
+
+        return description;
     }
 
     /**
@@ -80,8 +89,10 @@ public abstract class AssertionDescription {
     }
 
     /** the log messages bundle */
-    private static final
-    String DESCRIPTIONS_BUNDLE = "com/l7tech/console/tree/policy/assertions";
+    private static final String DESCRIPTIONS_BUNDLE = "com/l7tech/console/tree/policy/assertions";
+    private static final Logger logger = Logger.getLogger(AssertionDescription.class.getName());
+
+    protected Assertion assertion;
 }
 
 
