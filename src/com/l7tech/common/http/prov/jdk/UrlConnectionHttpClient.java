@@ -92,9 +92,9 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                             HexUtils.copyStream(requestInputStream, conn.getOutputStream());
 
                         final int status = httpConn.getResponseCode();
+                        String ctval = conn.getContentType();
                         final ContentTypeHeader contentTypeHeader =
-                                status >= 300 && status <= 399 ? null :
-                                ContentTypeHeader.parseValue(conn.getContentType());
+                                ctval != null ? ContentTypeHeader.parseValue(ctval) : null;
                         final List headers = new ArrayList();
                         int n = 0;
                         String value = null;
