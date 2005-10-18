@@ -1,5 +1,7 @@
 package com.l7tech.spring.remoting.rmi.ssl;
 
+import sun.security.x509.X500Name;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -10,6 +12,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.KeyStore;
 import java.util.StringTokenizer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * <p>An <code>SslRMIClientSocketFactory</code> instance is used by the RMI
@@ -48,7 +54,9 @@ import java.util.StringTokenizer;
  */
 public class SslRMIClientSocketFactory
   implements RMIClientSocketFactory, Serializable {
+    private static final Logger logger = Logger.getLogger(SslRMIClientSocketFactory.class.getName());
     private static SSLTrustFailureHandler trustFailureHandler;
+    private static Map socketFactoryByHost = new HashMap();
 
     /**
      * <p>Creates a new <code>SslRMIClientSocketFactory</code>.</p>
@@ -91,7 +99,7 @@ public class SslRMIClientSocketFactory
     public Socket createSocket(String host, int port) throws IOException {
         // Retrieve the SSLSocketFactory
         //
-        final SocketFactory sslSocketFactory = getDefaultClientSocketFactory();
+        final SocketFactory sslSocketFactory = getClientSocketFactory(host);
         // Create the SSLSocket
         //
         final SSLSocket sslSocket = (SSLSocket)
@@ -147,8 +155,9 @@ public class SslRMIClientSocketFactory
         SslRMIClientSocketFactory.trustFailureHandler = trustFailureHandler;
     }
 
+    /** Release all cached socket factories. */
     public static synchronized void resetSocketFactory() {
-        SslRMIClientSocketFactory.defaultSocketFactory = null;
+        SslRMIClientSocketFactory.socketFactoryByHost = new HashMap();
     }
 
     /**
@@ -180,23 +189,23 @@ public class SslRMIClientSocketFactory
         return this.getClass().hashCode();
     }
 
-    private static SocketFactory defaultSocketFactory = null;
-
-    private synchronized SocketFactory getDefaultClientSocketFactory() {
-        if (defaultSocketFactory == null) {
+    private synchronized SocketFactory getClientSocketFactory(String serverHostname) {
+        serverHostname = serverHostname.toLowerCase();
+        SocketFactory sf = (SocketFactory)socketFactoryByHost.get(serverHostname);
+        if (sf == null) {
             String algorithm = TrustManagerFactory.getDefaultAlgorithm();
-            SSLContext sslContext = null;
             try {
                 TrustManagerFactory tmf = TrustManagerFactory.getInstance(algorithm);
                 tmf.init((KeyStore)null);
-                sslContext = SSLContext.getInstance("SSL");
-                sslContext.init(null, getTrustManagers(tmf), null);
-                defaultSocketFactory = sslContext.getSocketFactory();
+                SSLContext sslContext = SSLContext.getInstance("SSL");
+                sslContext.init(null, getTrustManagers(tmf, serverHostname), null);
+                sf = sslContext.getSocketFactory();
+                socketFactoryByHost.put(serverHostname, sf);
             } catch (Exception e) {
                 throw new RuntimeException("Error initializing the SSL socket factory", e);
             }
         }
-        return defaultSocketFactory;
+        return sf;
     }
 
 
@@ -206,14 +215,15 @@ public class SslRMIClientSocketFactory
      * {@link X509TrustManager} is replaces with <code>SSLTrustManager</code>.
      *
      * @param tmf <b>non null</b> Trust Manager Factory
+     * @param serverHostname the hostname we expect to be connecting to
      * @return the updated array of trust managers
      */
-    private static TrustManager[] getTrustManagers(TrustManagerFactory tmf) {
+    private static TrustManager[] getTrustManagers(TrustManagerFactory tmf, String serverHostname) {
         TrustManager[] trustManagers = tmf.getTrustManagers();
         for (int i = 0; i < trustManagers.length; i++) {
             TrustManager trustManager = trustManagers[i];
             if (trustManager instanceof X509TrustManager) {
-                trustManagers[i] = new SSLClientTrustManager((X509TrustManager)trustManager);
+                trustManagers[i] = new SSLClientTrustManager((X509TrustManager)trustManager, serverHostname);
                 break;
             }
         }
@@ -225,19 +235,22 @@ public class SslRMIClientSocketFactory
      * handler if it has been set
      */
     private static class SSLClientTrustManager implements X509TrustManager {
-        private X509TrustManager delegate;
+        private final X509TrustManager delegate;
+        private final String serverHostname;
 
         /**
          * Package subclassing
          *
          * @param delegate the delegating {@link X509TrustManager} instance. For example
          *                 the {@link javax.net.ssl.TrustManagerFactory#getTrustManagers()}
+         * @param serverHostname the hostname of the server we expect to be connecting to
          */
-        SSLClientTrustManager(X509TrustManager delegate) {
+        SSLClientTrustManager(X509TrustManager delegate, String serverHostname) {
             if (delegate == null) {
                 throw new IllegalArgumentException("The X509 Trust Manager is required");
             }
             this.delegate = delegate;
+            this.serverHostname = serverHostname.toLowerCase();
         }
 
         /**
@@ -270,6 +283,22 @@ public class SslRMIClientSocketFactory
                         throw new CertificateException("No trusted ");
                     }
                     delegate.checkServerTrusted(chain, authType);
+
+                    final String peerHost;
+                    try {
+                        peerHost = new X500Name(chain[0].getSubjectX500Principal().getName()).getCommonName().toLowerCase();
+                    } catch (IOException e1) {
+                        logger.log(Level.WARNING, "Could not obtain the CN from X500 Name in cert", e1);
+                        throw new RuntimeException(e1);
+                    }
+
+                    if (!serverHostname.equalsIgnoreCase(peerHost)) {
+                        String msg = "Hostname mismatch - hostname in server cert (" + peerHost +
+                                ") does not match hostname we connected to (" + serverHostname + ")";
+                        logger.log(Level.WARNING, msg);
+                        throw new CertificateException(msg);
+                    }
+
                 } catch (CertificateException e) {
                     if (!trustFailureHandler.handle(e, chain, authType)) {
                         throw e;
