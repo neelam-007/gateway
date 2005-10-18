@@ -236,6 +236,20 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     }
 
     /**
+     * Use Vector since this is what the Custom Assertions API exposes ...
+     */
+    private Vector toServletCookies(Collection cookies) {
+        Vector cookieVector = new Vector();
+
+        for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
+            HttpCookie httpCookie = (HttpCookie) iterator.next();
+            CookieUtils.toServletCookie(httpCookie);
+        }
+
+        return cookieVector;
+    }
+
+    /**
      * Wrap the HTTP Servlet Response to intercept any cookies and save them in the
      * context for later.
      */
@@ -324,11 +338,12 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
           throws IOException, SAXException {
             this.pec = pec;
             this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
-            Vector newCookies = new Vector(pec.getCookies());
+            Vector newCookies = toServletCookies(pec.getCookies());
 
             saveServletKnobs(pec, context);
 
             context.put("updatedCookies", newCookies);
+            context.put("originalCookies", Collections.unmodifiableCollection(new ArrayList(newCookies)));
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getRequest()));
             
@@ -378,11 +393,12 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
         protected void onCompletion() {
             Vector cookies = (Vector) context.get("updatedCookies");
+            Collection originals = (Collection) context.get("originalCookies");
             for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
-                HttpCookie cookie = (HttpCookie) iterator.next();
-                if(cookie.isNew()) {
+                Cookie cookie = (Cookie) iterator.next();
+                if(!originals.contains(cookie)) {
                     // doesn't really matter if this has already been added
-                    pec.addCookie(cookie);
+                    pec.addCookie(CookieUtils.fromServletCookie(cookie, true));
                 }
             }
         }

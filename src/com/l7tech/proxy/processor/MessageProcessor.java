@@ -959,14 +959,16 @@ public class MessageProcessor {
         // cookies
         List values = responseHeaders.getValues("Set-Cookie");
         if(!values.isEmpty()) {
-            HttpCookie[] existingCookies = context.getSessionCookies();
-            if(existingCookies==null) existingCookies = new HttpCookie[0];
-            Set cookieSet = new LinkedHashSet(Arrays.asList(existingCookies));
+            Set cookieSet = new LinkedHashSet();
 
             for (Iterator iterator = values.iterator(); iterator.hasNext();) {
                 String setCookieValue =  (String) iterator.next();
                 cookieSet.add(new HttpCookie(url, setCookieValue));
             }
+
+            HttpCookie[] existingCookies = context.getSessionCookies();
+            if(existingCookies==null) existingCookies = new HttpCookie[0];
+            cookieSet.addAll(Arrays.asList(existingCookies));
 
             context.setSessionCookies((HttpCookie[]) cookieSet.toArray(new HttpCookie[cookieSet.size()]));
         }

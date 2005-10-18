@@ -227,6 +227,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public void addCookie(HttpCookie cookie) {
+        cookies.remove(cookie);
         cookies.add(cookie);
     }
 
