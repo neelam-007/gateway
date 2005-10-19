@@ -209,6 +209,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
             AssertionTreeNode node = (AssertionTreeNode)path.getLastPathComponent();
             if (node == null) return;
 
+            AbstractTreeNode closestNode = null;
+            int closestRow = tree.getRowForLocation(e.getX(), e.getY());
+            if (closestRow == -1) {
+                closestNode = (AbstractTreeNode)tree.getModel().getRoot();
+                if (closestNode != node) {
+                    return;
+                }
+            }
+
             Action a = node.getPreferredAction();
             if (a != null) {
                 if (a instanceof SecureAction) {
