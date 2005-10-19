@@ -1,6 +1,17 @@
 <mappings>
-  <mapping uri="http://ns.l7tech.com/SecureSpan/admin/core">
+  <mapping xmlns:tns="http://objectmodel.l7tech.com">
+
+    <!-- Bug in XFire?
+         If an AEGIS mapping file exists, namespace must be explicitly specified
+         for properties. Otherwise, they will inherit the wrong default
+         namespace from the parent element in the SOAP response. -->
+    <property name="description" mappedName="tns:description"/>
+    <property name="name" mappedName="tns:name"/>
+    <property name="oid" mappedName="tns:oid"/>
+
+    <!-- Properties not published. -->
     <property name="strId" ignore="true"/>
     <property name="type" ignore="true"/>
+
   </mapping>
 </mappings>
