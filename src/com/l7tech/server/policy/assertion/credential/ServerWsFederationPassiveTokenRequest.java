@@ -66,11 +66,14 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerCachedS
 
         try {
             if (assertion.getIpStsUrl() == null) {
-                throw new IllegalArgumentException("Null IP/STS URL in assertion");
+                logger.warning("Null IP/STS URL, assertion is non-functional");
+                this.ipStsUrl = null;
             }
-            this.ipStsUrl = new URL(assertion.getIpStsUrl());
-            if(this.ipStsUrl.getQuery()!=null) {
-                throw new IllegalArgumentException("IP/STS URL has a query string");
+            else {
+                this.ipStsUrl = new URL(assertion.getIpStsUrl());
+                if(this.ipStsUrl.getQuery()!=null) {
+                    throw new IllegalArgumentException("IP/STS URL has a query string");
+                }
             }
         }
         catch (MalformedURLException e) {
@@ -102,6 +105,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerCachedS
         AssertionStatus result = AssertionStatus.FAILED;
 
         try {
+            if(ipStsUrl==null) throw new StopAndAuditException(AssertionMessages.WSFEDPASS_CONFIG_INVALID); 
             result = doCheckRequest(context);
         }
         catch(AuthRequiredException are) {

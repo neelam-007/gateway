@@ -332,6 +332,7 @@ public class AssertionMessages extends Messages {
     public static final M WSFEDPASS_SERVER_HTTP_FAILED      = m(7307, Level.WARNING, "HTTP failure talking to WS-Federation server");
     public static final M WSFEDPASS_SERVER_HTTP_ENCODING    = m(7308, Level.WARNING, "Unknown encoding from WS-Federation server");
     public static final M WSFEDPASS_SERVER_HTML_INVALID     = m(7309, Level.WARNING, "Cannot parse HTML from WS-Federation server");
+    public static final M WSFEDPASS_CONFIG_INVALID          = m(7310, Level.SEVERE, "Invalid IP/STS URL in policy configuration");
 
     // MAX -                                     m(7999
 }
