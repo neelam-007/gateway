@@ -109,6 +109,13 @@
         <property name="doc.root" value="${build.dir}/htdocs"/>
         <property name="build.lib" value="${build.dir}/lib"/>
         <property name="build.etc" value="${build.dir}/etc"/>
+
+        <!--Custom Assertions subproject-->
+        <property name="customassertions.src.dir" value="${src.root}/CustomAssertions"/>
+        <property name="customassertions.build.dir" value="${customassertions.src.dir}/build/output"/>
+        <property name="customassertions.jar.name" value="${customassertions.build.dir}/CustomAssertions.jar"/>
+
+
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
         <property name="app.name" value="Layer 7 SecureSpan Suite"/>
@@ -357,6 +364,10 @@
         </delete>
         <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
         <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
+        <!-- clean up the custom assertions subtree as well-->
+        <exec executable="sh" dir="${customassertions.src.dir}">
+            <arg line="./build.sh clean"/>
+        </exec>
     </target>
 
     <!-- javadoc target -->
@@ -583,6 +594,11 @@
     </target>
 
     <target name="package.manager" unless="ssg.only">
+        <exec executable="sh" dir="CustomAssertions/">
+            <arg line="./build.sh build-deployment-jar"/>
+        </exec>
+        <copy todir="${build.lib}" file="${customassertions.jar.name}"/>
+
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/internal/**/*"/>
