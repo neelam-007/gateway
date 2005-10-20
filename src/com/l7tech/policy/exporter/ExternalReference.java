@@ -74,6 +74,8 @@ public abstract class ExternalReference {
                     references.add(JMSEndpointReference.parseFromElement(refEl));
                 } else if (refType.equals(CustomAssertionReference.class.getName())) {
                     references.add(CustomAssertionReference.parseFromElement(refEl));
+                } else if (refType.equals(ExternalSchemaReference.class.getName())) {
+                    references.add(ExternalSchemaReference.parseFromElement(refEl));
                 }
             }
         }

@@ -4,6 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -20,6 +21,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Exports a Policy to an XML file that contains details of all external
@@ -31,6 +34,7 @@ import java.util.ArrayList;
  * Date: Jul 16, 2004<br/>
  */
 public class PolicyExporter {
+    private final Logger logger = Logger.getLogger(PolicyExporter.class.getName());
 
     public Document exportToDocument(Assertion rootAssertion) throws IOException, SAXException {
         // do policy to xml
@@ -90,6 +94,23 @@ public class PolicyExporter {
         } else if (assertion instanceof CustomAssertionHolder) {
             CustomAssertionHolder cahAss = (CustomAssertionHolder)assertion;
             ref = new CustomAssertionReference(cahAss.getCustomAssertion().getName());
+        } else if (assertion instanceof SchemaValidation) {
+            SchemaValidation sva = (SchemaValidation)assertion;
+            try {
+                ArrayList listOfImports = ExternalSchemaReference.listImports(XmlUtil.stringToDocument(sva.getSchema()));
+                for (Iterator iterator = listOfImports.iterator(); iterator.hasNext();) {
+                    ExternalSchemaReference.ListedImport unresolvedImport = (ExternalSchemaReference.ListedImport)iterator.next();
+                    ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name,
+                                                                                unresolvedImport.tns);
+                    if (!refs.contains(esref)) {
+                        refs.add(esref);
+                    }
+                }
+            } catch (SAXException e) {
+                logger.log(Level.WARNING, "cannot read schema doc properly");
+                // fallthrough since it's possible this assertion is just badly configured in which care we wont care
+                // about external references
+            }
         }
         // if an assertion was created and it's not already recorded, add it
         if (ref != null && !refs.contains(ref)) {
