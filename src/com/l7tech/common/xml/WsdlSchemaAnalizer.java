@@ -124,7 +124,7 @@ public class WsdlSchemaAnalizer {
         }
     }
 
-    private NodeList extractSchemaElementFromWsdl(Document wsdl)  {
+    public static NodeList extractSchemaElementFromWsdl(Document wsdl)  {
         if (wsdl == null) return null;
         NodeList potentiallists = wsdl.getDocumentElement().getElementsByTagName(WSDL_TYPES_ELNAME);
         Element typesel = null;

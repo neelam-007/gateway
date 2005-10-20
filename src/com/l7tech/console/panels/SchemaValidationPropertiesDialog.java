@@ -8,6 +8,7 @@ import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.WsdlSchemaAnalizer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
@@ -23,6 +24,7 @@ import org.apache.xml.serialize.XMLSerializer;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -52,7 +54,7 @@ import java.rmi.RemoteException;
  * Date: Feb 6, 2004<br/>
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
-
+    private static final Logger logger = Logger.getLogger(SchemaValidationPropertiesDialog.class.getName());
     /**
      * modless construction
      */
@@ -144,6 +146,19 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         String wsdlXml = service.getWsdlXml();
         if (wsdlXml == null) return false;
         analyzeWsdl(wsdlXml);
+        // bugzilla #2081, if we know we can't extract a wsdl, then let's disable feature
+
+        try {
+            NodeList wsdlschemas = WsdlSchemaAnalizer.extractSchemaElementFromWsdl(XmlUtil.stringToDocument(wsdlXml));
+            if (wsdlschemas == null || wsdlschemas.getLength() < 1) {
+                return false;
+            }
+        } catch (SAXException e) {
+            logger.log(Level.WARNING, "wsdl is not well formed?", e);
+            // here we simply return false because if wsdl is not well formed then
+            // we know for sure there is no way we can possibly extract a schema from it
+            return false;
+        }
         return wsdlBindingSoapUseIsLiteral;
     }
 
