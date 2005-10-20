@@ -212,7 +212,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
 
     private void fireEvent(AuditDetailMessage message, String suffix) {
         suffix = suffix == null ? "" : ": " + suffix;
-        getApplicationContext().publishEvent(new LicenseEvent(this, message.getLevel(), message.getMessage() + suffix));
+        getApplicationContext().publishEvent(new LicenseEvent(this, message.getLevel(), message.getMessage(), message.getMessage() + suffix));
     }
 
     private X509Certificate[] getTrustedIssuers() {

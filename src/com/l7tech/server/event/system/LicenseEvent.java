@@ -13,14 +13,14 @@ import java.util.logging.Level;
  * Event fired when license status changes.
  */
 public class LicenseEvent extends SystemEvent {
-    private final String message;
+    private final String action;
 
-    public LicenseEvent(Object source, Level level, String message) {
-        super(source, Component.GW_LICENSE_MANAGER, null, level);
-        this.message = message;
+    public LicenseEvent(Object source, Level level, String action, String message) {
+        super(source, Component.GW_LICENSE_MANAGER, null, level, message);
+        this.action = action;
     }
 
     public String getAction() {
-        return message;
+        return action;
     }
 }

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.server.event.system;
@@ -15,7 +14,6 @@ import java.util.logging.Level;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public abstract class SystemEvent extends ApplicationEvent {
     private static final String MY_IP = getIp();
@@ -33,14 +31,23 @@ public abstract class SystemEvent extends ApplicationEvent {
     }
 
     public SystemEvent(Object source, Component component, String ipAddress, Level level) {
+        this(source, component, ipAddress, level, null);
+    }
+
+    public SystemEvent(Object source, Component component, String ipAddress, Level level, String message) {
         super(source);
         this.component = component;
         this.level = level;
         if (ipAddress == null) ipAddress = MY_IP;
         this.ipAddress = ipAddress;
+        this.message = message != null ? message : component.getName() + " " + getAction();
     }
 
     public abstract String getAction();
+
+    public String getMessage() {
+        return message;
+    }
 
     public Component getComponent() {
         return component;
@@ -57,4 +64,5 @@ public abstract class SystemEvent extends ApplicationEvent {
     private final Component component;
     private final String ipAddress;
     private final Level level;
+    private final String message;
 }
