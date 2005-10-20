@@ -331,7 +331,7 @@
       ** Clean the directory structure.
       ** This is used only by developer's build.
       -->
-    <target name="clean" depends="init-dev">
+    <target name="clean" depends="init-dev,clean.ca">
         <delete dir="${build.classes}"/>
         <delete dir="${doc.root}"/>
         <delete dir="${build.lib}"/>
@@ -364,6 +364,9 @@
         </delete>
         <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
         <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
+    </target>
+
+    <target name="clean.ca" depends="ca.availablecheck" if="customassertions.available">
         <!-- clean up the custom assertions subtree as well-->
         <exec executable="sh" dir="${customassertions.src.dir}">
             <arg line="./build.sh clean"/>
@@ -592,13 +595,19 @@
             </fileset>
         </jar>
     </target>
+ 
+    <target name="ca.availablecheck">
+	<available file="CustomAssertions" property="customassertion.available"/>	
+    </target>
 
-    <target name="package.manager" unless="ssg.only">
+    <target name="package.manager.ca" depends="ca.availablecheck" if="customassertion.available">
         <exec executable="sh" dir="CustomAssertions/">
             <arg line="./build.sh build-deployment-jar"/>
         </exec>
         <copy todir="${build.lib}" file="${customassertions.jar.name}"/>
+    </target>
 
+    <target name="package.manager" unless="ssg.only" depends="package.manager.ca">
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/internal/**/*"/>
