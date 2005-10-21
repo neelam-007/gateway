@@ -101,5 +101,6 @@ public class EditSslAssertionPropertiesDialog extends JDialog {
                 dispose();
             }
         });
+        requireClientCertificateCheckBox.setEnabled(sslRequiredRadioButton.isSelected());
     }
 }
