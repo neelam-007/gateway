@@ -22,7 +22,7 @@ public class SqlAttackAssertion extends Assertion {
     private static final int REGEX = 3;
 
     // Regex that matches SQL metacharacters, either directly or in SQL escape character form.
-    private static final String RE_SQLMETA = "--|['#]|\\\\x27|\\\\x23";
+    private static final String RE_SQLMETA = "--|['#]";
 
     private static final String PROTS[][] = {
             { PROT_MSSQL,       "Known MS SQL Server Exploits Protection",
