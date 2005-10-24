@@ -51,24 +51,6 @@
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
 
-     <!--class servlet registered frst, in case boot process requires it -->
-    <!--
-    <servlet>
-        <servlet-name>ClassServerServlet</servlet-name>
-        <servlet-class>com.l7tech.spring.remoting.rmi.codebase.ClassServerServlet</servlet-class>
-        <init-param>
-    -->
-        <!--File that whitelists URIs we will allow to be downloaded, either relative to class path or absolute.
-            List of regex patterns, one per line. -->
-    <!--
-            <param-name>WhitelistFile</param-name>
-            <param-value>defaultWhitelist.dat</param-value>
-        </init-param>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-    -->
-
-
     <!-- ssg boot servlet properties -->
     <servlet>
         <servlet-name>boot</servlet-name>
@@ -176,13 +158,6 @@
         <servlet-name>CSRServlet</servlet-name>
         <url-pattern>/ssg/csr/*</url-pattern>
     </servlet-mapping>
-
-
-    <!--<servlet-mapping>
-        <servlet-name>ClassServerServlet</servlet-name>
-        <url-pattern>/classserver/*</url-pattern>
-    </servlet-mapping>-->
-
 
     <servlet-mapping>
         <servlet-name>WsdlProxy</servlet-name>
