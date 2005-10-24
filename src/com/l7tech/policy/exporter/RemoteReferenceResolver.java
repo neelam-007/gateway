@@ -28,7 +28,6 @@ import java.util.List;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 22, 2004<br/>
- * $Id$
  */
 public class RemoteReferenceResolver {
 
@@ -54,7 +53,7 @@ public class RemoteReferenceResolver {
             ResolveExternalPolicyReferencesWizard wiz =
                     ResolveExternalPolicyReferencesWizard.fromReferences(mw, unresolvedRefsArray);
             wiz.pack();
-            wiz.setSize(1000, 500);
+            wiz.setSize(1000, 560);
             Utilities.centerOnScreen(wiz);
             wiz.setModal(true);
             wiz.setVisible(true);
