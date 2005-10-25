@@ -30,6 +30,7 @@ public class ServerRequestWssConfidentiality extends ServerRequestWssOperation {
     }
 
     protected ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults) {
+        if (wssResults == null) return new ParsedElement[0];
         EncryptedElement[] elementsThatWereEncrypted = wssResults.getElementsThatWereEncrypted();
         if (elementsThatWereEncrypted.length == 0) {
             return elementsThatWereEncrypted;

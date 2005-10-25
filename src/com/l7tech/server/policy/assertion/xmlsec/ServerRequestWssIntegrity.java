@@ -78,6 +78,7 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
     }
 
     protected ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults) {
+        if (wssResults == null) return new ParsedElement[0];
         return wssResults.getElementsThatWereSigned();
     }
 
