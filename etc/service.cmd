@@ -33,7 +33,7 @@ goto end
 :doInstall
 :: Parameters are passed to PRUNSRV either by command line option or by
 :: environment variables prefixed with PR_. However, due to some suspected bug,
-:: parameters of types REG_DWORD and REG_MULTI_SZ can only be passwed by command
+:: parameters of types REG_DWORD and REG_MULTI_SZ can only be passed by command
 :: line options.
 set PR_DISPLAYNAME=SecureSpan Gateway
 set PR_DESCRIPTION=Layer 7 Technologies SecureSpan Gateway
@@ -54,7 +54,7 @@ setlocal ENABLEDELAYEDEXPANSION
 for %%i in ("%TOMCAT_HOME%\common\classpath\*.jar") do if "!PR_CLASSPATH!"=="" (set PR_CLASSPATH=%%i) else (set PR_CLASSPATH=!PR_CLASSPATH!;%%i)
 
 :: Unfortunately, we cannot use %JAVA_OPTS% composed in ssgruntimedefs.cmd
-:: because PRUNSRV wants them in forms.
+:: because PRUNSRV wants them semicolon-separated instead of space-separated.
 set JVMOPTIONS=^
 -Dcatalina.home=%TOMCAT_HOME%;^
 -Dcom.l7tech.server.home=%SSG_HOME%;^
