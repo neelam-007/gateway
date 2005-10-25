@@ -524,6 +524,11 @@ public class CertUtils {
         return stripAsnPrefix(derEncodedValue, 4);
     }
 
+    /**
+     * Get the Authority Key Identifier value for the specified X.509 certificate.
+     * @param cert the cert to examine.  Must not be null.  Must be at least X.509 version 3.
+     * @return the DER-encoded AKI bytes, or null if this cert does not have an AKI extension.
+     */
     public static byte[] getAKIBytesFromCert(X509Certificate cert) {
         if (cert.getVersion() < 3) return null;
         byte[] ext = cert.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
