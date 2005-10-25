@@ -645,7 +645,20 @@ public class MessageProcessor {
                 /* NOT REACHED */
             } else if (SecureSpanConstants.CERT_STALE.equalsIgnoreCase(certStatus)) {
                 // The request succeeded, but the SSG hints that our client cert is stale (signed by the former occupant)
-                handleCertStatusStale(context);
+                // We'll complete the request normally, and then see to our client cert
+                // Bug #2094: mlyons: postpone replacing the client cert until after we undecorate the response
+                // TODO instead of (just) doing this, we should really cache the client cert in the context
+                //      for the duration of the request.   As is, undecoration can still be screwed up
+                //      if another request in another thread gets a stale cert message while we are waiting
+                //      for a reply to our request.
+                log.info("Gateway response contained a " +
+                        SecureSpanConstants.HttpHeaders.CERT_STATUS + ": " + SecureSpanConstants.CERT_STALE +
+                        " header.  Request succeeded, but will get new client cert afterward.");
+                context.runOnClose(new Runnable() {
+                    public void run() {
+                        handleCertStatusStale(context);
+                    }
+                });
             }
 
             String policyUrlStr = responseHeaders.getOnlyOneValue(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
@@ -838,9 +851,6 @@ public class MessageProcessor {
     }
 
     private void handleCertStatusStale(PolicyApplicationContext context) {
-        log.info("Gateway response contained a " +
-                SecureSpanConstants.HttpHeaders.CERT_STATUS + ": " + SecureSpanConstants.CERT_STALE +
-                " header.  Request succeeded, but will get new client cert.");
         final Ssg ssg = context.getSsg();
         try {
             if (ssg.isFederatedGateway()) {
