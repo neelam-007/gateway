@@ -54,6 +54,10 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (requestCertIssuerName.equals(rootCertSubjectName)) {
             // Check whether the request cert was signed with this version of the CA cert
             byte[] aki = CertUtils.getAKIBytesFromCert(userCert);
+            if (aki == null) {
+                // Bug #2094: mlyons: No aki -- can't tell if cert is stale.  Assume it isn't.
+                return false;
+            }
             return !Arrays.equals(aki, rootCertSki);
         }
 
