@@ -16,7 +16,6 @@ import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.util.SslUtils;
 
-import javax.crypto.BadPaddingException;
 import java.io.*;
 import java.net.PasswordAuthentication;
 import java.security.*;
@@ -504,9 +503,13 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
                                                                 credentials.getPassword(),
                                                                 csr,
                                                                 caCert);
-        // make sure private key is stored on disk encrypted with the password that was used to obtain it
-        saveClientCertificate(keyPair.getPrivate(), cert, credentials.getPassword());
-        ssg.getRuntime().resetSslContext(); // reset cached SSL state
+        synchronized (ssg) {
+            // make sure private key is stored on disk encrypted with the password that was used to obtain it
+            // Bug #2094: mlyons: reset the SSL stuff, and then save the client cert, so that the 'have client cert'
+            // flag gets left in the correct state
+            ssg.getRuntime().resetSslContext(); // reset cached SSL state
+            saveClientCertificate(keyPair.getPrivate(), cert, credentials.getPassword());
+        }
         return;
     }
 
