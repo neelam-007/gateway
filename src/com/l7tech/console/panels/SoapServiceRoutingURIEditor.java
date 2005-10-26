@@ -73,7 +73,16 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         int pos = ssgURL.lastIndexOf(':');
         if (pos > 4) {
             ssgURL = ssgURL.substring(0, pos);
+            // todo, we need to be able to query gateway to get port instead of assuming default
             ssgURL = ssgURL + ":8080";
+        } else {
+            if (ssgURL.endsWith("/") || ssgURL.endsWith("\\")) {
+                // todo, we need to be able to query gateway to get port instead of assuming default
+                ssgURL = ssgURL.substring(0, ssgURL.length()-1) + ":8080";
+            } else {
+                // todo, we need to be able to query gateway to get port instead of assuming default
+                ssgURL = ssgURL + ":8080";
+            }
         }
         String existinguri = subject.getRoutingUri();
         if (existinguri == null) {
