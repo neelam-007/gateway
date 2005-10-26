@@ -95,21 +95,21 @@ public class ContentTypeHeader extends MimeHeader {
             if (token.getType() == HeaderTokenizer.Token.EOF)
                 throw new IOException("MIME Content-Type type missing");
             if (token.getType() != HeaderTokenizer.Token.ATOM)
-                throw new IOException("MIME Content-Type supertype is not an atom: " + token.getValue());
+                throw new IOException("MIME Content-Type supertype is not an atom: " + contentTypeHeaderValue);
 
             String type = token.getValue();
 
             // Eat slash
             token = ht.next();
             if (token.getType() != '/')
-                throw new IOException("MIME Content-Type supertype is not followed by a slash: " + token.getValue());
+                throw new IOException("MIME Content-Type supertype is not followed by a slash: " + contentTypeHeaderValue);
 
             // Get subtype
             token = ht.next();
             if (token.getType() == HeaderTokenizer.Token.EOF)
                 throw new IOException("MIME Content-Type subtype missing");
             if (token.getType() != HeaderTokenizer.Token.ATOM)
-                throw new IOException("MIME Content-Type subtype is not an atom: " + token.getValue());
+                throw new IOException("MIME Content-Type subtype is not an atom: " + contentTypeHeaderValue);
             String subtype = token.getValue();
 
             // Check for parameters
@@ -121,7 +121,7 @@ public class ContentTypeHeader extends MimeHeader {
                     break;
 
                 if (token.getType() != ';')
-                    throw new IOException("MIME Content-Type parameter is not introduced with a semicolon: " + token.getValue());
+                    throw new IOException("MIME Content-Type parameter is not introduced with a semicolon: " + contentTypeHeaderValue);
 
                 // Get name
                 token = ht.next();
@@ -129,27 +129,50 @@ public class ContentTypeHeader extends MimeHeader {
                     throw new IOException("MIME Content-Type parameter name missing");
 
                 if (token.getType() != HeaderTokenizer.Token.ATOM)
-                    throw new IOException("MIME Content-Type parameter name is not an atom: " + token.getValue());
+                    throw new IOException("MIME Content-Type parameter name is not an atom: " + contentTypeHeaderValue);
 
                 String name = token.getValue();
                 if (params.containsKey(name))
-                    throw new IOException("MIME Content-Type parameter name occurs more than once: " + token.getValue());
+                    throw new IOException("MIME Content-Type parameter name occurs more than once: " + contentTypeHeaderValue);
 
                 // eat =
                 token = ht.next();
                 if (token.getType() != '=')
-                    throw new IOException("MIME Content-Type parameter name is not followed by an equals: " + token.getValue());
+                    throw new IOException("MIME Content-Type parameter name is not followed by an equals: " + contentTypeHeaderValue);
 
                 // Get value
-                token = ht.next();
-                if (token.getType() == HeaderTokenizer.Token.EOF)
-                    throw new IOException("MIME Content-Type parameter value missing");
+                StringBuffer value = new StringBuffer();
+                boolean sawQuotedString = false;
+                for (;;) {
+                    token = ht.peek();
+                    int tokenType = token.getType();
+                    if (tokenType == HeaderTokenizer.Token.EOF || tokenType == ';')
+                        break;
 
-                if (token.getType() != HeaderTokenizer.Token.ATOM && token.getType() != HeaderTokenizer.Token.QUOTEDSTRING)
-                    throw new IOException("MIME Content-Type parameter value is not an atom or quoted string: " + token.getValue());
+                    token = ht.next();
 
-                String value = token.getValue();
-                params.put(name, value);
+                    if (tokenType == HeaderTokenizer.Token.QUOTEDSTRING) {
+                        if (sawQuotedString)
+                            throw new IOException("MIME Content-Type parameter value has more than one quoted string: " + contentTypeHeaderValue);
+                        sawQuotedString = true;
+                        value.append(token.getValue());
+                        continue;
+                    }
+
+                    if (tokenType == HeaderTokenizer.Token.ATOM) {
+                        value.append(token.getValue());
+                        continue;
+                    }
+
+                    if (tokenType > 0 && !Character.isISOControl(tokenType)) {
+                        value.append((char)tokenType);
+                        continue;
+                    }
+
+                    throw new IOException("MIME Content-Type parameter value had unexpected token: " + token.getType() + " in: " + contentTypeHeaderValue);
+                }
+
+                params.put(name, value.toString());
             }
 
             return new ContentTypeHeader(type, subtype, params);
