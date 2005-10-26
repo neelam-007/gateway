@@ -23,8 +23,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=680>
-<meta name=layout-width content=802>
+<meta name=layout-height content=658>
+<meta name=layout-width content=852>
 <meta name=x-ignored-words content="workflows;requestor;Workflow;SAML">
 
 
@@ -42,46 +42,75 @@
 
 <body>
 
-<h1>Certificates Overview</h1>
+<h1>Manage Certificates</h1>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-left: 4px;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 20px;
-	height: 18px;
-	float: none;
-	border-style: none;" width="20" height="18" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
- B&quot; references are used in the identity bridging examples, workflows, 
- and instructions. The Trusted Gateway A is the certificate authority (CA) 
- that issues and manages security credentials and that is responsible for 
- authentication. The Federated Gateway B is the Web service provider that 
- is responsible for authorization. </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;
+			x-cell-content-align: center;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The generic 
+ &quot;Trusted Gateway A&quot; and &quot;Federated Gateway B&quot; references 
+ are used in the identity bridging examples, workflows, and instructions. 
+ The Trusted Gateway A is the certificate authority (CA) that issues and 
+ manages security credentials and that is responsible for authentication. 
+ The Federated Gateway B is the Web service provider that is responsible 
+ for authorization. </td></tr>
+</table>
 
 <p>In an identity bridging configuration, certificates are imported into 
  the Federated Gateway B trust store. The combination and purpose of certificates 
  in the trust store is determined by the chosen credential source and optional 
- configuration elements defined in <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
- Bridging Workflow Using an X.509 Certificate</a> or <a href="Identity_Bridging_Workflow.htm">Identity 
- Bridging Workflow Using SAML</a>. In accordance with the workflow instructions, 
- certificates belonging to the Trusted Gateway A authentication domain 
- will typically be imported into the Federated Gateway B authorization 
- domain using the SecureSpan™ Manager's Add Certificate Wizard (see <a href="Add_Edit_Certificates.htm">Add and Edit Certificates</a>). </p>
+ configuration elements defined in <a href="Workflow_Using_an_X.509_Certificate.htm">Workflow 
+ Using an X.509 Certificate</a> or <a href="Workflow_Using_SAML.htm">Workflow 
+ Using SAML</a>. In accordance with the workflow instructions, certificates 
+ belonging to the Trusted Gateway A authentication domain will typically 
+ be imported into the Federated Gateway B authorization domain using the 
+ SecureSpan™ Manager's Add Certificate Wizard (see <a href="Add_Edit_Certificates.htm">Add 
+ and Edit Certificates</a>). </p>
 
 <p>&nbsp;</p>
 
-<p>For information on Federated Identity Providers, see <a href="Federated_Identity_Provider_Overview.htm">Federated 
- Identity Provider Overview</a>. For information on the certificates required 
- in each security domain in an identity bridging configuration, see <a href="Identity_Bridging_Requirements.htm">Identity Bridging Requirements</a>. 
- </p>
+<p>For information on Federated Identity Providers, see <a HREF="Manage_Federated_Identity_Providers.htm">Manage 
+ Federated Identity Providers</a>. For information on the certificates 
+ required in each security domain in an identity bridging configuration, 
+ see <a href="System_Requirements.htm">System Requirements</a>. </p>
 
 <p>&nbsp;</p>
 
