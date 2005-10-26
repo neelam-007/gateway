@@ -58,7 +58,7 @@ public class HttpCookie {
         }
 
         //need to split the name=value pair in fields[0]
-        String[] nameValue = EQUALS.split(fields[0]);
+        String[] nameValue = EQUALS.split(fields[0], 2);
         if(nameValue.length!=2) {
             throw new IllegalArgumentException("Cookie value is an invalid format: '" + headerFullValue + "'");
         }

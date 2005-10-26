@@ -57,6 +57,25 @@ public class CookieTest extends TestCase {
 
         assertEquals("Cookie should be new", true, cookie.isNew());
         assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+        assertEquals("No expiry set", false, cookie.hasExpiry());
+    }
+
+    public void testSetCookieHeaderValueEndsWithEquals() throws Exception {
+        String name = "test";
+        String value = "testvalue==";
+        String path = "/apath/blah";
+        String domain = "www.testdomain.com";
+        String headerValue = name + "=" + value;
+
+        HttpCookie cookie = new HttpCookie(new URL("http://"+domain+path+"/apage.html"), headerValue);
+
+        assertEquals("Cookie should be new", true, cookie.isNew());
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
