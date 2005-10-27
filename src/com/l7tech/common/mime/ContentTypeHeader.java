@@ -57,11 +57,12 @@ public class ContentTypeHeader extends MimeHeader {
      * @param params the parameters, ie {charset=>"utf-8"}.  might be null
      * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty
      * @throws IllegalArgumentException if type is multipart, but the subtype is other than "related"
+     * @throws NullPointerException if type or subtype is null
      */
     ContentTypeHeader(String type, String subtype, Map params) throws IOException {
         super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, params);
-        this.type = type;
-        this.subtype = subtype;
+        this.type = type.toLowerCase();
+        this.subtype = subtype.toLowerCase();
 
         if ("multipart".equalsIgnoreCase(type)) {
             String boundary = (String)this.params.get("boundary");
@@ -269,6 +270,8 @@ public class ContentTypeHeader extends MimeHeader {
      * @return true iff. this content type matched the specified pattern
      */
     public boolean matches(String type, String subtype) {
+        type = type == null ? null : type.toLowerCase();
+        subtype = subtype == null ? null : subtype.toLowerCase();
         if (type != null && !type.equals("*"))
             if (!getType().equals(type))
                 return false;
