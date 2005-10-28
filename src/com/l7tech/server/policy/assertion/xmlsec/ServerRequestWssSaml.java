@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.security.cert.X509Certificate;
 
 import sun.security.x509.X500Name;
@@ -125,6 +126,7 @@ public class ServerRequestWssSaml implements ServerAssertion {
                 SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_CLIENT, sb.toString(), null);
                 context.setFaultDetail(sfd);
                 auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED);
+                logger.log(Level.WARNING, "validationResults errors:" + sb.toString());
                 return AssertionStatus.FALSIFIED;
             }
 
