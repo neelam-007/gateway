@@ -115,12 +115,12 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         if (checkCount++ < CHECK_THRESHOLD) // Don't care much about out-of-date reads or lost writes here
             return;
         synchronized (this) {
-            checkCount = 0;
             long now = System.currentTimeMillis();
             if ((now - lastCheck) > CHECK_INTERVAL) {
                 reloadLicenseFromDatabase();
                 lastCheck = System.currentTimeMillis();
             }
+            checkCount = 0;
         }
     }
 
