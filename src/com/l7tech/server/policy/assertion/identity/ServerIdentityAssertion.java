@@ -27,6 +27,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
@@ -138,6 +139,8 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     }
 
     private AssertionStatus authFailed(PolicyEnforcementContext context, LoginCredentials pc, Exception e) {
+        // we were losing the details of this authentication failure. important for debugging saml stuff
+        logger.log(Level.FINE, "ServerIdentityAssertion failed", e);
         context.addResult(new AssertionResult(_data, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e));
         String name = pc.getLogin();
         if (name == null || name.length() == 0) {
