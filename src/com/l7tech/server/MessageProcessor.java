@@ -200,7 +200,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     // initialize cache
                     if(httpRequestKnob instanceof HttpServletRequestKnob) {
                         String cacheId = service.getOid() + "." + service.getVersion();
-                        PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest().getSession(), cacheId);
+                        PolicyContextCache cache = new HttpSessionPolicyContextCache(((HttpServletRequestKnob)httpRequestKnob).getHttpServletRequest(), cacheId);
                         context.setCache(cache);
                     }
                     // check if requestor provided a version number for published service
