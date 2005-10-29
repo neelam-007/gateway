@@ -50,6 +50,7 @@ public class MimeHeader implements HttpHeader {
     protected final Map params;
 
     protected byte[] serializedBytes;
+    private String fullValue = null;
 
     /**
      * Create a new MimeHeader with the specified name, main value, and parameters.
@@ -136,10 +137,12 @@ public class MimeHeader implements HttpHeader {
     }
 
     public String getFullValue() {
+        if (fullValue != null)
+            return fullValue;
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream(32);
             writeFullValue(out);
-            return out.toString(ENCODING);
+            return fullValue = out.toString(ENCODING);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         }
