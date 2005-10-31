@@ -75,7 +75,7 @@ public class StashManagerTest extends TestCase {
                 HexUtils.copyStream(new RandomInputStream(seed + i, size), out);
                 assertTrue(Arrays.equals(out.toByteArray(), got));
 
-            } else if (!byteArrayAvailable) {
+            } else {
                 try {
                     sm.recallBytes(i);
                     fail("Failed to throw on recallBytes() after isByteArrayAvailable() returned false");
