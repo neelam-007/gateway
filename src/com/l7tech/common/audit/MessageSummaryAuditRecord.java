@@ -43,6 +43,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * @param responseContentLength the length of the response, in bytes.
      * @param serviceOid the OID of the {@link PublishedService} this request was resolved to, or {@link PublishedService#DEFAULT_OID} if it could not be resolved.
      * @param serviceName the name of the {@link PublishedService} this request was resolved to, or null if it could not be resolved.
+     * @param operationNameHaver an Object on which toString() will be called if the operation name is needed, or null if one will not be provided.
      * @param authenticated true if the request was authenticated, false otherwise
      * @param identityProviderOid the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
      * @param userName the name or login of the user who was authenticated, or null if the request was not authenticated.
@@ -51,7 +52,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     public MessageSummaryAuditRecord(Level level, String nodeId, String requestId, AssertionStatus status,
                                      String clientAddr, String requestXml, int requestContentLength,
                                      String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
-                                     long serviceOid, String serviceName, String operationName,
+                                     long serviceOid, String serviceName, Object operationNameHaver,
                                      boolean authenticated, long identityProviderOid, String userName, String userId)
     {
         super(level, nodeId, clientAddr, serviceName, null);
@@ -72,7 +73,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.responseContentLength = responseContentLength;
         this.responseHttpStatus = httpRespStatus;
         this.routingLatency = routingLatency;
-        this.operationName = operationName;
+        this.operationNameHaver = operationNameHaver;
         this.serviceOid = serviceOid;
         this.authenticated = authenticated;
         this.identityProviderOid = identityProviderOid;
@@ -176,11 +177,16 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** @return the name of the operation the request was for if it's a SOAP service, or likely null otherwise */
     public String getOperationName() {
+        if (operationName == null) {
+            if (operationNameHaver != null)
+                operationName = operationNameHaver.toString();
+        }
         return operationName;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     public void setOperationName(String operationName) {
+        this.operationNameHaver = null;
         this.operationName = operationName;
     }
 
@@ -282,4 +288,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** Name of the operation the request was for if it's a SOAP service, or likely null otherwise */
     private String operationName;
+
+    /** Used to lazily populate operationName if it is not yet set. */
+    private Object operationNameHaver;
 }

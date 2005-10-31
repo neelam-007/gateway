@@ -127,13 +127,11 @@ public class MessageSummaryAuditFactory {
 
         int routingLatency = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
 
-        String operationName = null;
-        try {
-            Operation op = context.getOperation();
-            if (op != null) operationName = op.getName();
-        } catch (Exception e) {
-            logger.log(Level.INFO, "Couldn't determine operation name: " + e.toString());
-        }
+        Object operationNameHaver = new Object() {
+            public String toString() {
+                return getOperationName(context);
+            }
+        };
 
         return new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
                                              context.isAuditSaveRequest() ? requestXml : null,
@@ -142,8 +140,19 @@ public class MessageSummaryAuditFactory {
                                              responseContentLength,
                                              responseHttpStatus,
                                              routingLatency,
-                                             serviceOid, serviceName, operationName,
+                                             serviceOid, serviceName, operationNameHaver,
                                              authenticated, identityProviderOid, userName, userId);
+    }
+
+    private String getOperationName(PolicyEnforcementContext context) {
+        String operationName = null;
+        try {
+            Operation op = context.getOperation();
+            if (op != null) operationName = op.getName();
+        } catch (Exception e) {
+            logger.log(Level.INFO, "Couldn't determine operation name: " + e.toString());
+        }
+        return operationName;
     }
 
 }
