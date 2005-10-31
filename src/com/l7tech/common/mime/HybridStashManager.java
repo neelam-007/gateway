@@ -13,6 +13,7 @@ import java.io.*;
  */
 public class HybridStashManager implements StashManager {
     private final int limit;
+    private final int initialBuffer;
     private final File dir;
     private final String unique;
     private final ByteArrayStashManager ramstash = new ByteArrayStashManager();
@@ -34,6 +35,15 @@ public class HybridStashManager implements StashManager {
         this.limit = limit;
         this.dir = dir;
         this.unique = unique;
+
+        // Avoid over-allocating since allocating huge buffers up front is expensive and not needed unless the message
+        // turns out to be very large
+        if (limit < 512)
+            initialBuffer = limit;
+        else if (limit > 32768)
+            initialBuffer = 8192;
+        else
+            initialBuffer = limit / 4;
     }
 
     /** Get or create a file stash. */
@@ -57,7 +67,7 @@ public class HybridStashManager implements StashManager {
             return;
         }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(limit);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(initialBuffer);
         byte[] buff = new byte[4096];
         int got;
         while ((got = in.read(buff)) > 0) {
