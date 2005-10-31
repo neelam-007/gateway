@@ -22,11 +22,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Download a certificate from the SSG and check it for validity, if possible.
  */
 public class CertificateDownloader {
+    private static final Logger logger = Logger.getLogger(CertificateDownloader.class.getName());
+
     private final SimpleHttpClient httpClient;
     private final URL ssgUrl;
     private final String username;
@@ -76,6 +79,12 @@ public class CertificateDownloader {
         SimpleHttpClient.SimpleHttpResponse result = httpClient.get(params);
 
         certBytes = result.getBytes();
+        logger.fine("Gateway certificate discovery service returned status " + result.getStatus() + " " + result.getContentType().toString());
+
+        if (result.getStatus() != 200) {
+            String msg = new String(certBytes, 0, 400);
+            throw new IOException("Gateway certificate discovery service returned an unexpected error: " + msg);
+        }
         X509Certificate cert = CertUtils.decodeCert(certBytes);
 
         HttpHeaders headerHolder = result.getHeaders();
