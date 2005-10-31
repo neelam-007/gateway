@@ -79,9 +79,9 @@ public class FederationPassiveClientTest extends TestCase {
                                                              ,addTimestamp);
         }
         catch(InvalidHtmlException ihe) {
-            if(!ihe.getMessage().equals("Response is not text/html content.")) {
+            if(!ihe.getMessage().startsWith("Response is not text/html content")) {
                 ihe.printStackTrace();
-                fail("Expected InvalidHtmlException('Response is not text/html content.')");
+                fail("Expected InvalidHtmlException('Response is not text/html content .')");
             }
         }
     }
