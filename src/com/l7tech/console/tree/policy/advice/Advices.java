@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
@@ -95,6 +96,7 @@ public class Advices {
         advicesMap.put(RequestSwAAssertion.class, new Class[] {AddRequestSwAAssertionAdvice.class});
         advicesMap.put(RequestWssSaml.class, new Class[] {AddRequestWssSamlAdvice.class});
         advicesMap.put(WsTrustCredentialExchange.class, new Class[] {AddWsTrustCredentialExchangeAdvice.class});
+        advicesMap.put(WsFederationPassiveTokenExchange.class, new Class[] {AddWsFederationPassiveTokenExchangeAdvice.class});
         advicesMap.put(WsFederationPassiveTokenRequest.class, new Class[] {AddWsFederationPassiveTokenRequestAdvice.class});
         advicesMap.put(XpathCredentialSource.class, new Class[] {AddXpathCredentialSourceAdvice.class});
         advicesMap.put(SamlBrowserArtifact.class, new Class[] {AddSamlBrowserArtifactAdvice.class});

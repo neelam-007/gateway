@@ -1,6 +1,8 @@
 package com.l7tech.proxy.datamodel;
 
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import javax.net.ssl.SSLException;
 
 import com.l7tech.common.security.token.SecurityTokenType;
@@ -21,6 +23,23 @@ public abstract class FederatedSamlTokenStrategy extends AbstractSamlTokenStrate
     public FederatedSamlTokenStrategy(SecurityTokenType tokenType, Object lock) {
         super(tokenType, lock);
     }
+
+    /**
+     *
+     */
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
+    /**
+     *
+     */
+    public abstract X509Certificate getTokenServerCert() throws CertificateException;
+
+    /**
+     *
+     */
+    public abstract void storeTokenServerCert(X509Certificate tokenServerCert) throws CertificateEncodingException;
 
     /**
      *

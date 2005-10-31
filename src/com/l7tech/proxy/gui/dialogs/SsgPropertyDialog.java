@@ -135,136 +135,95 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return policiesPane;
     }
 
+    private ActionListener getCertActionListener(final FederatedSamlTokenStrategy strat, final String type) {
+        return new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    X509Certificate cert = strat.getTokenServerCert();
+                    if (cert == null) {
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                      "A certificate for the " + type + " server\n" +
+                                                      "was not found.",
+                                                      type + " Server Certificate Not Found",
+                                                      JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    new CertDialog(cert, type + " Server Certificate", type + " Server Certificate").setVisible(true);
+                } catch (GeneralSecurityException e1) {
+                    log.log(Level.SEVERE, "Unable to access " + type + " server certificate", e1);
+                    Gui.criticalErrorMessage("Unable to access " + type + " server certificate",
+                                     "Unable to access " + type + " server certificate",
+                                     e1);
+                }
+            }
+        };
+    }
+
+    private ActionListener getTestTokenRequestActionListener(final FederatedSsgIdentityPanel fp, final FederatedSamlTokenStrategy strat, final String type) {
+        return new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                try {
+                    FederatedSamlTokenStrategy stratCopy = (FederatedSamlTokenStrategy) strat.clone();
+                    updateStrategyFromView(stratCopy, fp);
+                    try {
+                        SecurityToken token = null;
+                        for (;;) {
+                            try {
+                                stratCopy.clearCachedToken();
+                                token = stratCopy.getOrCreate();
+                                if (token == null) throw new NullPointerException("No token was returned by the server"); // can't happen
+                                break;
+                            } catch (SSLException e) {
+                                stratCopy.handleSslException(CurrentSslPeer.get(), e);
+                                strat.storeTokenServerCert(stratCopy.getTokenServerCert()); // copy it back out
+                                /* FALLTHROUGH and try again now that cert was imported */
+                            }
+                        }
+
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                      "A " + token.getType().getName() +
+                                                      " was successfully obtained using these " + type + " settings.",
+                                                      "Success: Token Obtained",
+                                                      JOptionPane.INFORMATION_MESSAGE );
+                    } catch (Exception e) {
+                        log.log(Level.INFO, "Unable to obtain token from " + type + " server", e);
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                      "A security token could not be obtained using these " + type + " settings.\n\n" +
+                                                      "The error was: \n    " + HexUtils.wrapString(ExceptionUtils.getMessage(e), 80, 25, "\n    "),
+                                                      "Unable to Obtain Token",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                catch(CloneNotSupportedException cnse) {
+                    log.log(Level.SEVERE,"Saml strategy is not correctly implemented! (MUST support clone)", cnse);
+                }
+            }
+        };
+    }
+
     private SsgIdentityPanel getIdentityPane(final Ssg ssg) {
         if (ssgIdentityPane != null) return ssgIdentityPane;
 
         if (ssg.isFederatedGateway()) {
             final FederatedSsgIdentityPanel fp = new FederatedSsgIdentityPanel(ssg);
             ssgIdentityPane = fp;
-            //TODO [steve] clean this up ... copy/paste coding ...
             AbstractSamlTokenStrategy astrat = ssg.getWsTrustSamlTokenStrategy();
             if(astrat instanceof WsTrustSamlTokenStrategy) {
                 final WsTrustSamlTokenStrategy strat = (WsTrustSamlTokenStrategy) astrat;
                 if (strat != null) {
-                    fp.getWsTrustCertButton().addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent e) {
-                            try {
-                                X509Certificate cert = strat.getTokenServerCert();
-                                if (cert == null) {
-                                    JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                                  "A certificate for the WS-Trust server\n" +
-                                                                  "was not found.",
-                                                                  "WS-Trust Server Certificate Not Found",
-                                                                  JOptionPane.INFORMATION_MESSAGE);
-                                    return;
-                                }
-                                new CertDialog(cert, "WS-Trust Server Certificate", "WS-Trust Server Certificate").setVisible(true);
-                            } catch (GeneralSecurityException e1) {
-                                log.log(Level.SEVERE, "Unable to access WS-Trust server certificate", e1);
-                                Gui.criticalErrorMessage("Unable to access WS-Trust server certificate",
-                                                 "Unable to access WS-Trust server certificate",
-                                                 e1);
-                            }
-                        }
-                    });
+                    fp.getWsTrustCertButton().addActionListener(getCertActionListener(strat, "WS-Trust"));
 
                     fp.getRequestTypeCombo().setModel(new DefaultComboBoxModel(WsTrustRequestType.getValues()));
 
-                    fp.getWsTrustTestButton().addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent evt) {
-                            WsTrustSamlTokenStrategy stratCopy = (WsTrustSamlTokenStrategy)strat.clone();
-                            updateWsTrustStrategyFromView(stratCopy, fp);
-                            try {
-                                SecurityToken token = null;
-                                for (;;) {
-                                    try {
-                                        stratCopy.clearCachedToken();
-                                        token = stratCopy.getOrCreate();
-                                        if (token == null) throw new NullPointerException("No token was returned by the server"); // can't happen
-                                        break;
-                                    } catch (SSLException e) {
-                                        stratCopy.handleSslException(CurrentSslPeer.get(), e);
-                                        strat.storeTokenServerCert(stratCopy.getTokenServerCert()); // copy it back out
-                                        /* FALLTHROUGH and try again now that cert was imported */
-                                    }
-                                }
-
-                                JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                              "A " + token.getType().getName() +
-                                                              " was successfully obtained using these WS-Trust settings.",
-                                                              "Success: Token Obtained",
-                                                              JOptionPane.INFORMATION_MESSAGE );
-                            } catch (Exception e) {
-                                log.log(Level.INFO, "Unable to obtain token from WS-Trust server", e);
-                                JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                              "A security token could not be obtained using these WS-Trust settings.\n\n" +
-                                                              "The error was: \n    " + HexUtils.wrapString(ExceptionUtils.getMessage(e), 80, 25, "\n    "),
-                                                              "Unable to Obtain Token",
-                                                              JOptionPane.ERROR_MESSAGE);
-                            }
-                        }
-                    });
+                    fp.getWsTrustTestButton().addActionListener(getTestTokenRequestActionListener(fp, strat, "WS-Trust"));
                 }
             }
             else if(astrat instanceof WsFederationPRPSamlTokenStrategy) {
                 final WsFederationPRPSamlTokenStrategy strat = (WsFederationPRPSamlTokenStrategy) astrat;
                 if (strat != null) {
-                    fp.getWsFedCertButton().addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent e) {
-                            try {
-                                X509Certificate cert = strat.getTokenServerCert();
-                                if (cert == null) {
-                                    JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                                  "A certificate for the WS-Federation server\n" +
-                                                                  "was not found.",
-                                                                  "WS-Federation Server Certificate Not Found",
-                                                                  JOptionPane.INFORMATION_MESSAGE);
-                                    return;
-                                }
-                                new CertDialog(cert, "WS-Federation Server Certificate", "WS-Federation Server Certificate").setVisible(true);
-                            } catch (GeneralSecurityException e1) {
-                                log.log(Level.SEVERE, "Unable to access WS-Federation server certificate", e1);
-                                Gui.criticalErrorMessage("Unable to access WS-Federation server certificate",
-                                                 "Unable to access WS-Federation server certificate",
-                                                 e1);
-                            }
-                        }
-                    });
+                    fp.getWsFedCertButton().addActionListener(getCertActionListener(strat, "WS-Federation"));
 
-                    fp.getWsFedTestButton().addActionListener(new ActionListener() {
-                        public void actionPerformed(ActionEvent evt) {
-                            WsFederationPRPSamlTokenStrategy stratCopy = (WsFederationPRPSamlTokenStrategy) strat.clone();
-                            updateWsFederationPRPStrategyFromView(stratCopy, fp);
-                            try {
-                                SecurityToken token = null;
-                                for (;;) {
-                                    try {
-                                        stratCopy.clearCachedToken();
-                                        token = stratCopy.getOrCreate();
-                                        if (token == null) throw new NullPointerException("No token was returned by the server"); // can't happen
-                                        break;
-                                    } catch (SSLException e) {
-                                        stratCopy.handleSslException(CurrentSslPeer.get(), e);
-                                        strat.storeTokenServerCert(stratCopy.getTokenServerCert()); // copy it back out
-                                        /* FALLTHROUGH and try again now that cert was imported */
-                                    }
-                                }
-
-                                JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                              "A " + token.getType().getName() +
-                                                              " was successfully obtained using these WS-Federation settings.",
-                                                              "Success: Token Obtained",
-                                                              JOptionPane.INFORMATION_MESSAGE );
-                            } catch (Exception e) {
-                                log.log(Level.INFO, "Unable to obtain token from WS-Federation server", e);
-                                JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                              "A security token could not be obtained using these WS-Federation settings.\n\n" +
-                                                              "The error was: \n    " + HexUtils.wrapString(ExceptionUtils.getMessage(e), 80, 25, "\n    "),
-                                                              "Unable to Obtain Token",
-                                                              JOptionPane.ERROR_MESSAGE);
-                            }
-                        }
-                    });
+                    fp.getWsFedTestButton().addActionListener(getTestTokenRequestActionListener(fp, strat, "WS-Federation"));
                 }
             }
 
@@ -672,6 +631,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     // Federated ssg using third-party WS-Federation service
                     fp.getWsFedUrlTextField().setText(strat.getIpStsUrl());
                     fp.getWsFedRealmTextField().setText(strat.getRealm());
+                    fp.getWsFedReplyUrlTextField().setText(strat.getReplyUrl());
+                    fp.getWsFedContextTextField().setText(strat.getContext());
                     fp.getWsFedTimestampCheckBox().setSelected(strat.isTimestamp());
                     fp.getWsFedUsernameField().setText(strat.getUsername());
                     char[] pass = strat.getPassword();
@@ -776,6 +737,22 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     }
 
     /**
+     * Dispatch the update to the relevant method. 
+     */
+    private void updateStrategyFromView(AbstractSamlTokenStrategy strat, FederatedSsgIdentityPanel fp) {
+        if(strat instanceof WsTrustSamlTokenStrategy) {
+            updateWsTrustStrategyFromView((WsTrustSamlTokenStrategy)strat, fp);
+        }
+        else if(strat instanceof WsFederationPRPSamlTokenStrategy) {
+            updateWsFederationPRPStrategyFromView((WsFederationPRPSamlTokenStrategy)strat, fp);
+        }
+        else {
+            throw new IllegalArgumentException("Unsupported strategy type");
+        }
+    }
+
+
+    /**
      * Copy the information from the specified panel into the specified WS-Trust token strategy.
      */
     private void updateWsTrustStrategyFromView(WsTrustSamlTokenStrategy strat, FederatedSsgIdentityPanel fp) {
@@ -800,6 +777,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         strat.setUsername(fp.getWsFedUsernameField().getText());
         strat.setIpStsUrl(fp.getWsFedUrlTextField().getText());
         strat.setRealm(fp.getWsFedRealmTextField().getText());
+        strat.setReplyUrl(fp.getWsFedReplyUrlTextField().getText());
+        strat.setContext(fp.getWsFedContextTextField().getText());
         strat.setTimestamp(fp.getWsFedTimestampCheckBox().isSelected());
     }
 
@@ -836,10 +815,5 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (b)
             getFieldServerAddress().requestFocus();
         super.setVisible(b);
-    }
-
-    public void show() {
-        getFieldServerAddress().requestFocus();
-        super.show();
     }
 }

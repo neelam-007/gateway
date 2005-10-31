@@ -6,39 +6,54 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.message.XmlKnob;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import java.io.IOException;
+import java.util.logging.Logger;
+
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.util.logging.Logger;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 /**
+ * Base class for routing assertions.
+ *
  * @author alex
  * @version $Revision$
  */
 public abstract class ServerRoutingAssertion implements ServerAssertion {
-    public static final String ENCODING = "UTF-8";
-    private final Logger logger = Logger.getLogger(ServerRoutingAssertion.class.getName());
-    private final Auditor auditor;
 
+    //- PUBLIC
+
+    public static final String ENCODING = "UTF-8";
+
+    //- PROTECTED
+
+    // instance
+    protected final ApplicationContext applicationContext;
+
+    /**
+     *
+     */
     protected ServerRoutingAssertion(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
     
+    /**
+     *
+     */
     protected void handleProcessedSecurityHeader(PolicyEnforcementContext context,
                                                  int secHeaderHandlingOption,
                                                  String otherToPromote)
@@ -153,5 +168,11 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
         }
     }
 
-    protected ApplicationContext  applicationContext;
+    //- PRIVATE
+
+    // class
+    private static final Logger logger = Logger.getLogger(ServerRoutingAssertion.class.getName());
+
+    // instance
+    private final Auditor auditor;
 }

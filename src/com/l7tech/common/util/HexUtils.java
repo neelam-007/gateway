@@ -250,17 +250,6 @@ public class HexUtils {
             return s1.compareTo(s2);
     }
 
-    public static boolean isValidUrl(String url) {
-        try {
-            if (url == null || url.length() < 1)
-                return false;
-            new URL(url);
-            return true;
-        } catch (MalformedURLException e) {
-            return false;
-        }
-    }
-
     /**
      * Join the specified array of CharSequence into a single StringBuffer, joined with the specified delimiter.
      * @param start   a StringBuffer containing the starting text.  If null, a new StringBuffer will be created.

@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -72,6 +73,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);
         assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
         assertionMap.put(WsTrustCredentialExchange.class, WsTrustCredentialExchangeTreeNode.class);
+        assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenExchangeTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(XpathCredentialSource.class, XpathCredentialSourceTreeNode.class);
         assertionMap.put(SamlBrowserArtifact.class, SamlBrowserArtifactTreeNode.class);

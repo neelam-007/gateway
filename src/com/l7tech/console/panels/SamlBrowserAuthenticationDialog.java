@@ -1,22 +1,21 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
-import com.l7tech.common.gui.util.Utilities;
-
-import javax.swing.*;
-import javax.swing.border.LineBorder;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.HashMap;
-import java.net.URL;
-import java.net.MalformedURLException;
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.ValidationUtils;
+import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 
 /**
  * User: steve
@@ -231,25 +230,9 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
         }
     }
 
+
     private boolean validUrl(String urlText, boolean allowEmpty) {
-        boolean present = false;
-        boolean ok = false;
-
-        present = urlText != null && urlText.length() > 0;
-
-        if (present) {
-            try {
-                URL test = new URL(urlText);
-                String host = test.getHost();
-                ok = host!=null && host.length()>0;
-            } catch (MalformedURLException e) {
-            }
-        }
-        else if (allowEmpty) {
-            ok = true;
-        }
-
-        return ok;
+        return ValidationUtils.isValidUrl(urlText, allowEmpty);
     }
 
     private static class FieldInfo {

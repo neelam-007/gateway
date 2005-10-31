@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.credential;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,8 +18,6 @@ import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.UsernameToken;
-import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wsfederation.FederationPassiveClient;
 import com.l7tech.common.security.wsfederation.InvalidHtmlException;
 import com.l7tech.common.security.wsfederation.InvalidTokenException;
@@ -29,9 +26,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
@@ -41,15 +36,16 @@ import com.l7tech.server.message.PolicyEnforcementContext;
  * @author $Author$
  * @version $Revision$
  */
-public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFederationPassiveRequestProfile {
+public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFederationPassiveRequestProfile {
 
     //- PUBLIC
 
     /**
      *
      */
-    public ServerWsFederationPassiveTokenRequest(WsFederationPassiveTokenRequest assertion, ApplicationContext springContext) {
+    public ServerWsFederationPassiveTokenExchange(WsFederationPassiveTokenExchange assertion, ApplicationContext springContext) {
         super(CACHE_SAML_KEY, springContext);
+
         this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
         this.httpClient = new UrlConnectionHttpClient();
@@ -78,7 +74,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         AssertionStatus result = AssertionStatus.FAILED;
 
         try {
-            if(ipStsUrl==null) throw new StopAndAuditException(AssertionMessages.WSFEDPASS_CONFIG_INVALID);
+            if(ipStsUrl==null) throw new StopAndAuditException(AssertionMessages.WSFEDPASS_CONFIG_INVALID); 
             result = doCheckRequest(context);
         }
         catch(AuthRequiredException are) {
@@ -93,32 +89,32 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ServerWsFederationPassiveTokenRequest.class.getName());
+    private static final Logger logger = Logger.getLogger(ServerWsFederationPassiveTokenExchange.class.getName());
 
     /**
      * Key for cached SAML assertion
      */
-    private static final String CACHE_SAML_KEY = ServerWsFederationPassiveTokenRequest.class.getName() + ".SAML";
+    private static final String CACHE_SAML_KEY = ServerWsFederationPassiveTokenExchange.class.getName() + ".SAML";
 
     private final Auditor auditor;
     private final GenericHttpClient httpClient;
     private final URL ipStsUrl;
-    private final WsFederationPassiveTokenRequest assertion;
+    private final WsFederationPassiveTokenExchange assertion;
 
     /**
      *
      */
-    private UsernameToken getToken(XmlKnob xmlKnob) throws StopAndAuditException {
-        UsernameToken token = null;
+    private SamlAssertion getToken(XmlKnob xmlKnob) throws StopAndAuditException {
+        SamlAssertion token = null;
 
         ProcessorResult wssProcResult = xmlKnob.getProcessorResult();
         if (wssProcResult != null) {
             SecurityToken[] tokens = wssProcResult.getSecurityTokens();
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken currentToken = tokens[i];
-                if (currentToken instanceof UsernameToken) {
+                if (currentToken instanceof SamlAssertion) {
                     if (token == null) {
-                        token = (UsernameToken) currentToken;
+                        token = (SamlAssertion) currentToken;
                     } else {
                         throw new StopAndAuditException(AssertionMessages.WSFEDPASS_MULTI_TOKENS);
                     }
@@ -132,32 +128,14 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
     /**
      *
      */
-    private UsernameToken getToken(PolicyEnforcementContext context) {
-        UsernameToken token = null;
-
-        LoginCredentials creds = context.getCredentials();
-        if (creds != null) {
-            if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
-                token = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
-            }
-        }
-
-        return token;
-    }
-
-    /**
-     *
-     */
-    private SamlAssertion getFederationToken(LoginCredentials credentials) throws AuthRequiredException, StopAndAuditException {
+    private SamlAssertion getFederationToken(SamlAssertion partnerAssertion) throws AuthRequiredException, StopAndAuditException {
         SamlAssertion samlAssertion = null;
 
         try {
             GenericHttpRequestParams params = new GenericHttpRequestParams(ipStsUrl);
             initParams(params);
-            params.setPasswordAuthentication(new PasswordAuthentication(credentials.getLogin(),credentials.getCredentials()));
 
-            // replyUrl is the AUTH POST url not the routing url (could be the same thing)
-            SecurityToken token = FederationPassiveClient.obtainFederationToken(httpClient, params, assertion.getRealm(), assertion.getReplyUrl(), assertion.getContextUrl(), assertion.isTimestamp());
+            SecurityToken token = FederationPassiveClient.exchangeFederationToken(httpClient, params, partnerAssertion, assertion.getContext(), assertion.isTimestamp());
             if(token instanceof SamlAssertion) {
                 samlAssertion = (SamlAssertion) token;
             }
@@ -182,30 +160,28 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         return samlAssertion;
     }
 
+
     /**
      *
      */
     private void doAuth(PolicyEnforcementContext context, SamlAssertion samlAssertion, boolean allowDeferred) throws AuthRequiredException, StopAndAuditException {
-        doAuth(context, httpClient, samlAssertion, assertion.getReplyUrl(), assertion.getContextUrl(), allowDeferred);
+        doAuth(context, httpClient, samlAssertion, assertion.getReplyUrl(), assertion.getContext(), allowDeferred);
     }
 
     /**
      *
      */
-    private void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, UsernameToken existingToken, SamlAssertion samlAssertion, boolean tokenFromRequest) throws StopAndAuditException {
+    private void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, SamlAssertion existingToken, SamlAssertion samlAssertion) throws StopAndAuditException {
         try {
             Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
-            if (!tokenFromRequest) {
-                auditor.logAndAudit(AssertionMessages.WSFEDPASS_ORIGINAL_TOKEN_NOT_XML);
-            } else {
-                //TODO does this do anything? isn't the whole document replaced below?? (also in wstrust credential exchange)
-                Element tokenElement = existingToken.asElement();
-                Node securityEl = tokenElement.getParentNode();
-                securityEl.removeChild(tokenElement);
-                // Check for empty Security header, remove
-                if (securityEl.getFirstChild() == null) {
-                    securityEl.getParentNode().removeChild(securityEl);
-                }
+
+            //TODO does this do anything? isn't the whole document replaced below?? (also in wstrust credential exchange)
+            Element tokenElement = existingToken.asElement();
+            Node securityEl = tokenElement.getParentNode();
+            securityEl.removeChild(tokenElement);
+            // Check for empty Security header, remove
+            if (securityEl.getFirstChild() == null) {
+                securityEl.getParentNode().removeChild(securityEl);
             }
 
             updateRequestXml(context, requestXml, requestDoc, samlAssertion, assertion);
@@ -214,6 +190,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         }
     }
 
+
     /**
      *
      */
@@ -221,15 +198,11 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
         ensureXmlRequest(requestXml);
 
-        // Try to get credentials from WSS processor results
-        boolean tokenFromRequest = true;
-        UsernameToken existingToken = getToken(requestXml);
+        //TODO return not applicable for non-soap messages? (also wstrust credential exchange?)
+        //AssertionStatus.NOT_APPLICABLE
 
-        // Try to get non-WSS credentials
-        if (existingToken == null) {
-            tokenFromRequest = false;
-            existingToken = getToken(context);
-        }
+        // Try to get credentials from WSS processor results
+        SamlAssertion existingToken = getToken(requestXml);
 
         // Error if there is no token at all
         if (existingToken == null) {
@@ -244,7 +217,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         // Get from server if necessary
         if(samlAssertion==null) {
             usingCachedToken = false;
-            samlAssertion = getFederationToken(existingToken.asLoginCredentials());
+            samlAssertion = getFederationToken(existingToken);
             setCachedSecurityToken(cache, samlAssertion, getSamlAssertionExpiry(samlAssertion));
         }
         else {
@@ -252,7 +225,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         }
 
         // Update request XML
-        updateRequestXml(context, requestXml, existingToken, samlAssertion, tokenFromRequest);
+        updateRequestXml(context, requestXml, existingToken, samlAssertion);
 
         // POST to endpoint (AUTH), GET COOKIES
         if(assertion.isAuthenticate()) {

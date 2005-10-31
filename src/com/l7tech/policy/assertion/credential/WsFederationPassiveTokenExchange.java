@@ -8,20 +8,17 @@ import com.l7tech.policy.assertion.Assertion;
  * @author $Author$
  * @version $Revision$
  */
-public class WsFederationPassiveTokenRequest extends Assertion {
+public class WsFederationPassiveTokenExchange extends Assertion {
 
     //- PUBLIC
 
-    public WsFederationPassiveTokenRequest() {
+    public WsFederationPassiveTokenExchange() {
     }
 
-    public WsFederationPassiveTokenRequest(String url, String realm, boolean authenticate, String replyUrl, String contextUrl, boolean timestamp) {
+    public WsFederationPassiveTokenExchange(String url, String contextUrl, boolean timestamp) {
         this();
         this.ipStsUrl = url;
-        this.realm = realm;
-        this.authenticate = authenticate;
-        this.replyUrl = replyUrl;
-        this.contextUrl = contextUrl;
+        this.context = contextUrl;
         this.timestamp = timestamp;
     }
 
@@ -33,12 +30,12 @@ public class WsFederationPassiveTokenRequest extends Assertion {
         this.ipStsUrl = ipStsUrl;
     }
 
-    public String getRealm() {
-        return realm;
+    public String getContext() {
+        return context;
     }
 
-    public void setRealm(String realm) {
-        this.realm = realm;
+    public void setContext(String context) {
+        this.context = context;
     }
 
     public boolean isAuthenticate() {
@@ -57,14 +54,6 @@ public class WsFederationPassiveTokenRequest extends Assertion {
         this.replyUrl = replyUrl;
     }
 
-    public String getContextUrl() {
-        return contextUrl;
-    }
-
-    public void setContextUrl(String contextUrl) {
-        this.contextUrl = contextUrl;
-    }
-
     public boolean isTimestamp() {
         return timestamp;
     }
@@ -76,9 +65,8 @@ public class WsFederationPassiveTokenRequest extends Assertion {
     //- PRIVATE
 
     private String ipStsUrl;
-    private String realm;
+    private String context;
     private boolean authenticate;
-    private String replyUrl; // reply url, the URL on the service server to POST auth to (to get cookie)
-    private String contextUrl; // service url, the thing we will be accessing when authorized
+    private String replyUrl;
     private boolean timestamp;
 }

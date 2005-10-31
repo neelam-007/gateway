@@ -1,64 +1,64 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.http.*;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.message.TcpKnob;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.HttpResponseKnob;
-import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
-import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
-import com.l7tech.server.transport.http.SslClientTrustManager;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
+import org.apache.commons.httpclient.Cookie;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.cookie.CookiePolicy;
 import org.cyberneko.html.parsers.DOMParser;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
 
-import javax.servlet.http.HttpUtils;
-import javax.servlet.http.HttpServletRequest;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.net.URI;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.Set;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Arrays;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.html.HtmlConstants;
+import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.GenericHttpException;
+import com.l7tech.common.http.GenericHttpRequest;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.GenericHttpResponse;
+import com.l7tech.common.http.GenericHttpState;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.http.ParameterizedString;
+import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
+import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
+import com.l7tech.server.transport.http.SslClientTrustManager;
 
 /**
  * Retrieves a SAML assertion from an identity provider website according to the Browser/Artifact profile.
@@ -67,20 +67,12 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class ServerSamlBrowserArtifact implements ServerAssertion {
-    private static final Logger logger = Logger.getLogger(ServerSamlBrowserArtifact.class.getName());
+
+    //- PUBLIC
 
     /**
-     * Prefix used for any SAML Single Sign On cookies.
+     *
      */
-    private static final String COOKIE_PREFIX = CookieUtils.PREFIX_GATEWAY_MANAGED + "ssso-";
-
-    private final Auditor auditor;
-    private final SamlBrowserArtifact assertion;
-    private final URL loginUrl;
-
-    private final GenericHttpClient httpClient;
-    private final SSLContext sslContext;
-
     public ServerSamlBrowserArtifact(SamlBrowserArtifact assertion, ApplicationContext springContext) {
         this.auditor = new Auditor(this, springContext, logger);
         this.assertion = assertion;
@@ -105,11 +97,39 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
        }
     }
 
+    /**
+     *
+     */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         return doCheckRequest(context, true);
     }
 
-    public AssertionStatus doCheckRequest(PolicyEnforcementContext context, boolean passCookies) throws IOException, PolicyAssertionException {
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(ServerSamlBrowserArtifact.class.getName());
+
+    /**
+     * Prefix used for any SAML Single Sign On cookies.
+     */
+    private static final String COOKIE_PREFIX = CookieUtils.PREFIX_GATEWAY_MANAGED + "ssso-";
+
+    /**
+     * NEKO Config
+     */
+    private static final String NEKO_PROP_ELEMS = "http://cyberneko.org/html/properties/names/elems";
+    private static final Short NEKO_VALUE_LOWERCASE = new Short((short)2);
+
+    private final Auditor auditor;
+    private final SamlBrowserArtifact assertion;
+    private final URL loginUrl;
+
+    private final GenericHttpClient httpClient;
+    private final SSLContext sslContext;
+
+    /**
+     *
+     */
+    private AssertionStatus doCheckRequest(PolicyEnforcementContext context, boolean passCookies) throws IOException, PolicyAssertionException {
         AuthenticationProperties ap = assertion.getAuthenticationProperties();
         GenericHttpState httpState = null;
         if(ap.isEnableCookies()) {
@@ -203,8 +223,10 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
             loginResponse = loginRequest.getResponse();
             HttpHeaders loginResponseHeaders = loginResponse.getHeaders();
             int loginResponseStatus = loginResponse.getStatus();
-            if (loginResponseStatus == 302) {
-                String location = loginResponseHeaders.getOnlyOneValue("Location");
+            if (loginResponseStatus == HttpConstants.STATUS_FOUND
+              ||loginResponseStatus == HttpConstants.STATUS_SEE_OTHER) {
+                String location = loginResponseHeaders.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
+                if(location==null) throw new GenericHttpException("No such header: " + HttpConstants.HEADER_LOCATION);
                 URL redirectUrl = new URL(loginUrl, location);
                 context.setVariable("samlBrowserArtifact.redirectUrl", redirectUrl);
                 String query = redirectUrl.getQuery();
@@ -214,7 +236,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
 
                 Map queryParams;
                 try {
-                    queryParams = HttpUtils.parseQueryString(query);
+                    queryParams = ParameterizedString.parseQueryString(query);
                 } catch (Exception e) {
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_REDIRECT_BAD_QUERY, e);
                 }
@@ -223,11 +245,11 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
                 if (artifacts == null || artifacts.length == 0) {
                     byte[] responseBytes = HexUtils.slurpStream(loginResponse.getInputStream(), 65536);
                     logger.info(loginResponseHeaders.toString());
-                    logger.info(new String(responseBytes, "UTF-8"));
+                    logger.info(new String(responseBytes, HttpConstants.ENCODING_UTF8));
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT);
                 }
 
-                context.setVariable("samlBrowserArtifact.artifact", URLEncoder.encode(artifacts[0], "UTF-8"));
+                context.setVariable("samlBrowserArtifact.artifact", URLEncoder.encode(artifacts[0], HttpConstants.ENCODING_UTF8));
 
                 if(ap.isEnableCookies()) {
                     // pass cookies back to the bridge/client
@@ -331,7 +353,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
             loginFormRequest = httpClient.createRequest(GenericHttpClient.GET, getLoginFormParams);
             loginFormResponse = loginFormRequest.getResponse();
             int status = loginFormResponse.getStatus();
-            if (status != 200) {
+            if (status != HttpConstants.STATUS_OK) {
                 throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_NON_200);
             }
 
@@ -355,16 +377,17 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
     }
 
     private URL processForm(InputStream formHtmlIn, boolean autodetectRequired, boolean copyFields, AuthenticationProperties formProperties) throws IOException, AssertionException {
-        // parse HTML and check for form (NOTE: all HTML elements will be translated to UPPERCASE)
         DOMParser htmlparser = new DOMParser();
         try {
+            htmlparser.setProperty(NEKO_PROP_ELEMS, NEKO_VALUE_LOWERCASE); //get neko to lowercase element names
+            htmlparser.setEntityResolver(XmlUtil.getSafeEntityResolver());
             htmlparser.parse(new InputSource(formHtmlIn));
         } catch (SAXException e) {
             throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_IOEXCEPTION);
         }
 
         Element docEl = htmlparser.getDocument().getDocumentElement();
-        NodeList forms = docEl.getElementsByTagName("FORM");
+        NodeList forms = docEl.getElementsByTagName(HtmlConstants.ELE_FORM);
         if (forms == null || forms.getLength() == 0) {
             throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_NO_FORM);
         }
@@ -373,8 +396,8 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
         }
 
         Element form = (Element)forms.item(0);
-        String formAction = form.getAttribute("action");
-        String formMethod = form.getAttribute("method");
+        String formAction = form.getAttribute(HtmlConstants.ATTR_ACTION);
+        String formMethod = form.getAttribute(HtmlConstants.ATTR_METHOD);
 
         boolean foundUsernameField = false;
         boolean foundPasswordField = false;
@@ -382,20 +405,20 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
 
         // Parse form inputs (text, password, hidden and submit types only)
         if(autodetectRequired||copyFields) {
-            NodeList inputs = form.getElementsByTagName("INPUT");
+            NodeList inputs = form.getElementsByTagName(HtmlConstants.ELE_INPUT);
             for(int i=0; i<inputs.getLength(); i++) {
-                String name = ((Element)inputs.item(i)).getAttribute("name");
-                String type = ((Element)inputs.item(i)).getAttribute("type");
-                String value = ((Element)inputs.item(i)).getAttribute("value");
+                String name = ((Element)inputs.item(i)).getAttribute(HtmlConstants.ATTR_NAME);
+                String type = ((Element)inputs.item(i)).getAttribute(HtmlConstants.ATTR_TYPE);
+                String value = ((Element)inputs.item(i)).getAttribute(HtmlConstants.ATTR_VALUE);
                 if(logger.isLoggable(Level.FINEST)) {
                     logger.finest("Found form element of type '"+type+"', name='"+name+"', value='"+value+"'");
                 }
 
                 if(type==null || type.length()==0) {
-                    type = "text"; // text is the default type
+                    type = HtmlConstants.VALUE_TEXT; // text is the default type
                 }
 
-                if("text".equalsIgnoreCase(type) && autodetectRequired) {
+                if(HtmlConstants.VALUE_TEXT.equalsIgnoreCase(type) && autodetectRequired) {
                     if(foundUsernameField) {
                         throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_MULTIPLE_FIELDS);
                     }
@@ -404,7 +427,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
                         formProperties.setUsernameFieldname(name);
                     }
                 }
-                else if("password".equalsIgnoreCase(type) && autodetectRequired) {
+                else if(HtmlConstants.VALUE_PASSWORD.equalsIgnoreCase(type) && autodetectRequired) {
                     if(foundPasswordField) {
                         throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_MULTIPLE_FIELDS);
                     }
@@ -414,7 +437,8 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
                     }
                 }
                 else if(copyFields
-                        && ("hidden".equalsIgnoreCase(type) || "submit".equalsIgnoreCase(type))){
+                        && (HtmlConstants.VALUE_HIDDEN.equalsIgnoreCase(type)
+                          ||HtmlConstants.VALUE_SUBMIT.equalsIgnoreCase(type))){
                     if(name!=null && name.length()>0) {
                         formPostParams.put(name,value==null?"":value);
                     }
@@ -426,7 +450,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
             throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_CANT_FIND_FIELDS);
         }
 
-        if(formMethod==null || !formMethod.trim().equalsIgnoreCase("POST")) {
+        if(formMethod==null || !formMethod.trim().equalsIgnoreCase(HtmlConstants.VALUE_POST)) {
             throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSER_LOGINFORM_INVALID);
         }
 
@@ -454,9 +478,10 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
             formRedirectResponse = formPostRequest.getResponse();
             HttpHeaders formRedirectResponseHeaders = formRedirectResponse.getHeaders();
             int formRedirectResponseStatus = formRedirectResponse.getStatus();
-            if(formRedirectResponseStatus == 302
-            || formRedirectResponseStatus == 303){ // Should be 303 but we'll take a 302 ...
-                String location = formRedirectResponseHeaders.getOnlyOneValue("Location");
+            if(formRedirectResponseStatus == HttpConstants.STATUS_FOUND
+            || formRedirectResponseStatus == HttpConstants.STATUS_SEE_OTHER){ // Should be 303 but we'll take a 302 ...
+                String location = formRedirectResponseHeaders.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
+                if(location==null) throw new GenericHttpException("No such header: " + HttpConstants.HEADER_LOCATION);
                 URL targetUrl = loginParams.getTargetUrl();
                 URL redirectUrl = new URL(targetUrl, location);
 
@@ -493,9 +518,9 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
     private void addPostField(StringBuffer postBuf, String name, String value) throws UnsupportedEncodingException {
         if(name!=null) {
             if (postBuf.length() > 0) postBuf.append("&");
-            postBuf.append(URLEncoder.encode(name, "UTF-8"));
+            postBuf.append(URLEncoder.encode(name, HttpConstants.ENCODING_UTF8));
             postBuf.append('=');
-            postBuf.append(URLEncoder.encode(value==null?"":value, "UTF-8"));
+            postBuf.append(URLEncoder.encode(value==null?"":value, HttpConstants.ENCODING_UTF8));
         }
     }
 

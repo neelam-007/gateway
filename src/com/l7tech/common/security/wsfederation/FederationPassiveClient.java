@@ -6,8 +6,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.net.ssl.SSLException;
 import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPEnvelope;
@@ -21,30 +27,30 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.l7tech.common.html.HtmlConstants;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.http.ParameterizedString;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
-import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 
 /**
  * <p>Client implementation for WS-Federation Passive Request Profile.</p>
- *
- * TODO do we need to allow sending of wctx parameters? (opaque context values)
- * TODO ensure no network access for parsing (entity resolution?)
  *
  * @author $Author$
  * @version $Revision$
@@ -63,6 +69,8 @@ public class FederationPassiveClient {
      * @param httpClient the client to use
      * @param httpParams the params (with targetUrl, credentials and SSL context set if needed)
      * @param realm the federation realm
+     * @param replyUrl the reply url (application url) may be null
+     * @param context the context may be null
      * @param addTimestamp true to add a timestamp to the HTTP request
      * @return the SecurityToken
      * @throws IOException if an error occurs
@@ -73,6 +81,8 @@ public class FederationPassiveClient {
     public static SecurityToken obtainFederationToken(GenericHttpClient httpClient
                                                      ,GenericHttpRequestParams httpParams
                                                      ,String realm
+                                                     ,String replyUrl
+                                                     ,String context
                                                      ,boolean addTimestamp) throws IOException {
 
         if(httpClient==null) throw new IllegalArgumentException("httpClient must not be null");
@@ -83,7 +93,11 @@ public class FederationPassiveClient {
         Document result = null;
         URL ipStsUrl = httpParams.getTargetUrl();
 
-        httpParams.setTargetUrl(buildUrl(ipStsUrl.toExternalForm(), realm, addTimestamp));
+        URL targetUrl = buildUrl(ipStsUrl.toExternalForm(), realm, replyUrl, context, addTimestamp);
+        if(logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "WS-Federation token request URL: '"+targetUrl.toExternalForm()+"'.");
+        }
+        httpParams.setTargetUrl(targetUrl);
         if(httpParams.getPasswordAuthentication()!=null) {
             httpParams.setPreemptiveAuthentication(true);
         }
@@ -93,15 +107,13 @@ public class FederationPassiveClient {
             SimpleHttpClient simpleClient = new SimpleHttpClient(httpClient);
             SimpleHttpClient.SimpleHttpResponse response = simpleClient.get(httpParams);
             int status = response.getStatus();
-            if (status != 200) {
+            if (status != HttpConstants.STATUS_OK) {
                 throw new ResponseStatusException("Failure status code from server: " + status);
             }
 
             ContentTypeHeader contentType = response.getContentType();
             if(contentType==null) throw new UnsupportedEncodingException("No content type header in response");
-            String type = contentType.getType();
-            String subType = contentType.getSubtype();
-            if(!"text".equals(type) || !"html".equals(subType)) throw new InvalidHtmlException("Response is not text/html content.");
+            if(!ContentTypeHeader.HTML_DEFAULT.matches(contentType)) throw new InvalidHtmlException("Response is not text/html content " + contentType);
 
             String encoding = contentType.getEncoding();
             byte[] responseBytes = response.getBytes();
@@ -125,51 +137,48 @@ public class FederationPassiveClient {
      * <p>This method would be called to exchange a token from a requestor
      * IP/STS with one from the resource IP/STS (using a FORM/POST).</p>
      *
-     * TODO [steve] TEST THIS METHOD AGAINST ADFS SERVER
-     *
      * @param httpClient the client to use
      * @param httpParams the params (with targetUrl and SSL context set if needed)
      * @param requestorToken the token from the requestors IP/STS
+     * @param context the context for the token (end point url)
      * @param addTimestamp true to add a timestamp to the HTTP request
      * @return the SecurityToken
      * @throws IOException if an error occurs
      * @see com.l7tech.common.security.wsfederation.InvalidHtmlException
      * @see com.l7tech.common.security.wsfederation.InvalidTokenException
      * @see com.l7tech.common.security.wsfederation.ResponseStatusException
-     * /
+     */
     public static SecurityToken exchangeFederationToken(GenericHttpClient httpClient
                                                        ,GenericHttpRequestParams httpParams
                                                        ,SecurityToken requestorToken
+                                                       ,String context
                                                        ,boolean addTimestamp) throws IOException {
 
         if(httpClient==null) throw new IllegalArgumentException("httpClient must not be null");
         if(httpParams==null) throw new IllegalArgumentException("httpParams must not be null");
         if(httpParams.getTargetUrl()==null) throw new IllegalArgumentException("httpParams targetUrl must not be null");
-        if(httpParams.getTargetUrl().getQuery()!=null) throw new IllegalArgumentException("url must not have a query string");
 
         Document result = null;
         URL ipStsUrl = httpParams.getTargetUrl();
 
-        String requestBody = buildRequestBody(requestorToken, addTimestamp);
+        String requestBody = buildRequestBody(requestorToken, context, addTimestamp);
 
         try {
             // Get RSTR
-            byte[] bodyData = requestBody.getBytes("UTF-8");
+            byte[] bodyData = requestBody.getBytes(HttpConstants.ENCODING_UTF8);
             httpParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
-            httpParams.setExtraHeaders(new GenericHttpHeader[]{new GenericHttpHeader("Content-Length", Integer.toString(bodyData.length))});
+            httpParams.setExtraHeaders(new GenericHttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_CONTENT_LENGTH, Integer.toString(bodyData.length))});
             SimpleHttpClient simpleClient = new SimpleHttpClient(httpClient);
             SimpleHttpClient.SimpleHttpResponse response = simpleClient.post(httpParams, bodyData);
 
             int status = response.getStatus();
-            if (status != 200) {
+            if (status != HttpConstants.STATUS_OK) {
                 throw new ResponseStatusException("Failure status code from server: " + status);
             }
 
             ContentTypeHeader contentType = response.getContentType();
             if(contentType==null) throw new UnsupportedEncodingException("No content type header in response");
-            String type = contentType.getType();
-            String subType = contentType.getSubtype();
-            if(!"text".equals(type) || !"html".equals(subType)) throw new InvalidHtmlException("Response is not text/html content.");
+            if(!ContentTypeHeader.HTML_DEFAULT.matches(contentType)) throw new InvalidHtmlException("Response is not text/html content " + contentType);
 
             String encoding = contentType.getEncoding();
             byte[] responseBytes = response.getBytes();
@@ -186,18 +195,141 @@ public class FederationPassiveClient {
         return parseFederationToken(result);
     }
 
+    /**
+     * <p>POST a SecurityToken with a WS-Federation resource server.</p>
+     *
+     * <p>This method would be called to authenticate the caller with the
+     * resource server before routing.</p>
+     *
+     * @param httpClient the client to use
+     * @param httpParams the params (with targetUrl and SSL context set if needed)
+     * @param resourceToken the token to authenticate with
+     * @param context the context for the token (end point url)
+     * @param addTimestamp true to add a timestamp to the HTTP request
+     * @return the SecurityToken
+     * @throws IOException if an error occurs
+     * @see com.l7tech.common.security.wsfederation.ResponseStatusException
+     * @see com.l7tech.common.security.wsfederation.NotAuthorizedException
+     */
+    public static Set postFederationToken(GenericHttpClient httpClient
+                                         ,GenericHttpRequestParams httpParams
+                                         ,SecurityToken resourceToken
+                                         ,String context
+                                         ,boolean addTimestamp) throws IOException {
+
+        if(httpClient==null) throw new IllegalArgumentException("httpClient must not be null");
+        if(httpParams==null) throw new IllegalArgumentException("httpParams must not be null");
+        if(httpParams.getTargetUrl()==null) throw new IllegalArgumentException("httpParams targetUrl must not be null");
+
+        Set cookies = new LinkedHashSet();
+        URL ipStsUrl = httpParams.getTargetUrl();
+
+        String requestBody = buildRequestBody(resourceToken, context, addTimestamp);
+
+        try {
+            // POST RSTR
+            byte[] bodyData = requestBody.getBytes(HttpConstants.ENCODING_UTF8);
+            httpParams.setContentType(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+            httpParams.setExtraHeaders(new GenericHttpHeader[]{new GenericHttpHeader(HttpConstants.HEADER_CONTENT_LENGTH, Integer.toString(bodyData.length))});
+            SimpleHttpClient simpleClient = new SimpleHttpClient(httpClient);
+            SimpleHttpClient.SimpleHttpResponse response = simpleClient.post(httpParams, bodyData);
+
+            int status = response.getStatus();
+            if (status != HttpConstants.STATUS_FOUND && status != HttpConstants.STATUS_SEE_OTHER) {
+                throw new ResponseStatusException("Failure status code from server: " + status);
+            }
+
+            HttpHeaders headers = response.getHeaders();
+
+            // check redirect is not to a federation server (i.e. auth required)
+            String responseUrlStr = headers.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
+            if(responseUrlStr==null) throw new GenericHttpException("No such header: " + HttpConstants.HEADER_LOCATION);
+            URL responseUrl = new URL(ipStsUrl, responseUrlStr);
+            if(isFederationServerUrl(responseUrl)) {
+                throw new NotAuthorizedException("Redirected to federation server.");
+            }
+
+            List cookieHeaders = headers.getValues(HttpConstants.HEADER_SET_COOKIE);
+            for (Iterator iterator = cookieHeaders.iterator(); iterator.hasNext();) {
+                String value = (String) iterator.next();
+                cookies.add(new HttpCookie(ipStsUrl, value));
+            }
+
+            // assume that if we don't get cookies we're authorized in some other manner?
+        }
+        catch(GenericHttpException ghe) {
+           Throwable sslException = ExceptionUtils.getCauseIfCausedBy(ghe, SSLException.class);
+            if (sslException instanceof SSLException)
+                throw (SSLException)sslException; // rethrow as SSLException so server cert can be discovered if necessary
+            throw ghe; // let it through as-is
+        }
+
+        return Collections.unmodifiableSet(cookies);
+    }
+
+    /**
+     * Check if a URL is recognizable as a "federation server" URL.
+     *
+     * <p>Currently this just checks for a sign-in action query parameter.</p>
+     *
+     * @param url the url to check
+     * @return true if the given URL is a "federation server" URL
+     */
+    public static boolean isFederationServerUrl(URL url) {
+        boolean isFedUrl = false;
+
+        String responseUrlQuery = url.getQuery();
+        if(responseUrlQuery!=null) {
+            try {
+                ParameterizedString ps = new ParameterizedString(responseUrlQuery);
+                if(ps.parameterHasSingleValue(WSFederationConstants.PARAM_ACTION)) {
+                    WSFederationConstants.VALUE_ACTION_SIGNIN.equals(ps.getParameterValue(WSFederationConstants.PARAM_ACTION));
+                    isFedUrl = true;
+                }
+            }
+            catch(IllegalArgumentException iae) {
+                if(logger.isLoggable(Level.INFO)) logger.log(Level.INFO, "Could not parse query string: " + iae.getMessage());
+            }
+        }
+
+        return isFedUrl;
+    }
+
     //- PRIVATE
 
     /**
-     * Query String formats
+     *
      */
-    private static final String QUERY_FORMAT_NO_STAMP = "?wa=wsignin1.0&wtrealm={0}";
-    private static final String QUERY_FORMAT_STAMPED = QUERY_FORMAT_NO_STAMP + "&wct={1}";
+    private static final Logger logger = Logger.getLogger(FederationPassiveClient.class.getName());
 
     /**
      * RSTR template strings
      */
     private static final String RSTR_TEMPLATE = "<wst:RequestSecurityTokenResponse xmlns:wst=\"http://schemas.xmlsoap.org/ws/2005/02/trust\"><wst:RequestedSecurityToken></wst:RequestedSecurityToken><wsp:AppliesTo xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2004/09/policy\"><wsa:EndpointReference xmlns:wsa=\"http://schemas.xmlsoap.org/ws/2004/08/addressing\"><wsa:Address></wsa:Address></wsa:EndpointReference></wsp:AppliesTo></wst:RequestSecurityTokenResponse>";
+
+    /**
+     * NEKO Config
+     */
+    private static final String NEKO_PROP_ELEMS = "http://cyberneko.org/html/properties/names/elems";
+    private static final Short NEKO_VALUE_LOWERCASE = new Short((short)2);
+
+    /**
+     *
+     */
+    private static String getSessionCookiesHeaderValue(HttpCookie[] sessionCookies) {
+        StringBuffer sb = new StringBuffer();
+
+        if (sessionCookies != null) {
+            for (int i = 0; i < sessionCookies.length; i++) {
+                HttpCookie cook = sessionCookies[i];
+
+                if (i > 0) sb.append("; ");
+                sb.append(cook.getV0CookieHeaderPart());
+            }
+        }
+
+        return sb.toString();
+    }
 
     /**
      * Currently only SamlAssertion is supported.
@@ -245,22 +377,24 @@ public class FederationPassiveClient {
     private static Document getDocument(String html) throws IOException {
         Document document = null;
 
-        DOMParser htmlparser = new DOMParser();
 
         try {
+            DOMParser htmlparser = new DOMParser();
+            htmlparser.setProperty(NEKO_PROP_ELEMS, NEKO_VALUE_LOWERCASE); //get neko to lowercase element names
+            htmlparser.setEntityResolver(XmlUtil.getSafeEntityResolver());
             htmlparser.parse(new InputSource(new StringReader(html)));
 
             Element docEl = htmlparser.getDocument().getDocumentElement();
-            NodeList forms = docEl.getElementsByTagName("FORM"); // parser always uppercases elements
+            NodeList forms = docEl.getElementsByTagName(HtmlConstants.ELE_FORM);
 
             // DO NOT get the inputs from below the form due to a bug in ADFS (form element is empty)
             String xmlText = null;
-            NodeList inputs = docEl.getElementsByTagName("INPUT"); // parser always uppercases elements
+            NodeList inputs = docEl.getElementsByTagName(HtmlConstants.ELE_INPUT);
             for(int i=0; i<inputs.getLength(); i++) {
-                String name = ((Element)inputs.item(i)).getAttribute("name");
-                String value = ((Element)inputs.item(i)).getAttribute("value"); // decodes for you
+                String name = ((Element)inputs.item(i)).getAttribute(HtmlConstants.ATTR_NAME);
+                String value = ((Element)inputs.item(i)).getAttribute(HtmlConstants.ATTR_VALUE); // decodes for you
 
-                if("wresult".equals(name)) {
+                if(WSFederationConstants.PARAM_RESULT.equals(name)) {
                     if(xmlText!=null) { // then we have multiple wresult elements, throw an exception
                         throw new InvalidHtmlException("Multiple wresult elements in HTML/FORM");
                     }
@@ -292,14 +426,42 @@ public class FederationPassiveClient {
     /**
      *
      */
-    private static URL buildUrl(String urlBase, String realm, boolean addTimestamp) {
+    private static void appendParameter(StringBuffer buffer, char seperator, String name, String value) {
+        if(seperator>0) {
+            buffer.append(seperator);
+        }
+        buffer.append(name);
+        buffer.append('=');
+        buffer.append(value);
+    }
+
+    /**
+     * https://adserv.l7tech.com/adfs/ls/auth/integrated/?wa=wsignin1.0&wreply=http%3a%2f%2ffedserv.l7tech.com%2fACMEWarehouseWS%2fService1.asmx&whr=urn%3afederation%3aself&wct=2005-10-22T01%3a06%3a14Z
+     */
+    private static URL buildUrl(String urlBase, String realm, String reply, String context, boolean addTimestamp) {
         try {
-            Object[] formatArgs = new Object[]{URLEncoder.encode(realm, "UTF-8")
-                                              ,URLEncoder.encode(getTimestamp(), "UTF-8")};
+            // build query string based on supplied values
+            StringBuffer qsFormat = new StringBuffer(512);
+            appendParameter(qsFormat, '?', WSFederationConstants.PARAM_ACTION, WSFederationConstants.VALUE_ACTION_SIGNIN);
 
-            String format = addTimestamp ? QUERY_FORMAT_STAMPED : QUERY_FORMAT_NO_STAMP;
+            if(realm!=null && realm.trim().length()>0) {
+                appendParameter(qsFormat, '&', WSFederationConstants.PARAM_REALM, URLEncoder.encode(realm, HttpConstants.ENCODING_UTF8));
+            }
 
-            return new URL(urlBase + MessageFormat.format(format, formatArgs));
+            if(reply!=null && reply.trim().length()>0) {
+                appendParameter(qsFormat, '&', WSFederationConstants.PARAM_REPLY, URLEncoder.encode(reply, HttpConstants.ENCODING_UTF8));
+            }
+
+            // add the context (if given)
+            if(context!=null && context.trim().length()>0) {
+                appendParameter(qsFormat, '&', WSFederationConstants.PARAM_CONTEXT, URLEncoder.encode(context, HttpConstants.ENCODING_UTF8));
+            }
+
+            if(addTimestamp) {
+                appendParameter(qsFormat, '&', WSFederationConstants.PARAM_TIME, URLEncoder.encode(getTimestamp(), HttpConstants.ENCODING_UTF8));
+            }
+
+            return new URL(urlBase + qsFormat.toString());
         }
         catch(UnsupportedEncodingException uee) {
             throw new IllegalStateException(uee); // does not happen
@@ -312,17 +474,21 @@ public class FederationPassiveClient {
     /**
      * Wraps up the token as in the original RSTR and encodes with other form parameters
      */
-    private static String buildRequestBody(SecurityToken token, boolean addTimestamp) throws IOException {
+    private static String buildRequestBody(SecurityToken token, String context, boolean addTimestamp) throws IOException {
         StringBuffer bodyBuffer = new StringBuffer(512);
 
-        bodyBuffer.append("wa=wsignin1.0");
+        // add action
+        appendParameter(bodyBuffer, (char)0, WSFederationConstants.PARAM_ACTION, WSFederationConstants.VALUE_ACTION_SIGNIN);
 
+        // add timestamp if requested
         if(addTimestamp) {
-            bodyBuffer.append("&wct=");
-            bodyBuffer.append(URLEncoder.encode(getTimestamp(),"UTF-8"));
+            appendParameter(bodyBuffer, '&', WSFederationConstants.PARAM_TIME, URLEncoder.encode(getTimestamp(), HttpConstants.ENCODING_UTF8));
         }
 
-        bodyBuffer.append("&wresult=");
+        // add the context (if given)
+        if(context!=null && context.trim().length()>0) {
+            appendParameter(bodyBuffer, '&', WSFederationConstants.PARAM_CONTEXT, URLEncoder.encode(context, HttpConstants.ENCODING_UTF8));
+        }
 
         Element samlTokenElement = token.asElement();
         try {
@@ -335,10 +501,11 @@ public class FederationPassiveClient {
 
             // Add token to RSTR
             Element tokenHolder = getOneElementByTagNameNS(rstrDocEle, SoapUtil.WST_NAMESPACE_ARRAY, "RequestedSecurityToken");
-            tokenHolder.appendChild(rstrDoc.importNode(samlTokenElement, true));
+            Element imported = (Element) rstrDoc.importNode(samlTokenElement, true);
+            tokenHolder.appendChild(imported);
 
             // Encode and add to POST body
-            bodyBuffer.append(URLEncoder.encode(XmlUtil.nodeToString(rstrDoc),"UTF-8"));
+            appendParameter(bodyBuffer, '&', WSFederationConstants.PARAM_RESULT, URLEncoder.encode(XmlUtil.nodeToString(rstrDoc), HttpConstants.ENCODING_UTF8));
         }
         catch(SAXException se) {
             throw new CausedIOException("Error with RSTR template", se);

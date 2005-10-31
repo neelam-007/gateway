@@ -7,6 +7,7 @@
 package com.l7tech.common.http.prov.apache;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import org.apache.commons.httpclient.*;
@@ -215,7 +216,7 @@ public class CommonsHttpClient implements GenericHttpClient {
     private void createCookiesFromHeaders(HttpHeader[] headers, HttpState state, URL targetUrl) {
         for (int i = 0; i < headers.length; ++i) {
             HttpHeader theHeader = headers[i];
-            if ("cookie".equalsIgnoreCase(theHeader.getName())) {
+            if (HttpConstants.HEADER_COOKIE.equalsIgnoreCase(theHeader.getName())) {
                 String headerVal = theHeader.getFullValue();
                 int indexOfEquals = headerVal.indexOf('=');
                 if (indexOfEquals >= 0) {

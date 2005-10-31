@@ -36,6 +36,7 @@ public class AssertionMessages extends Messages {
     public static final M ACCESS_DENIED                        = m(4022, Level.WARNING, "Protected service denies access with current BridgeRoutingAssertion credentials");
     public static final M TOO_MANY_ROUTING_ATTEMPTS            = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
     public static final M SAML_SV_REQUEST_NOT_AUTHENTICATED    = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
+    public static final M RESPONSE_STATUS_HANDLED              = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}, retrying.");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");
@@ -333,6 +334,7 @@ public class AssertionMessages extends Messages {
     public static final M WSFEDPASS_SERVER_HTTP_ENCODING    = m(7308, Level.WARNING, "Unknown encoding from WS-Federation server");
     public static final M WSFEDPASS_SERVER_HTML_INVALID     = m(7309, Level.WARNING, "Cannot parse HTML from WS-Federation server");
     public static final M WSFEDPASS_CONFIG_INVALID          = m(7310, Level.SEVERE, "Invalid IP/STS URL in policy configuration");
+    public static final M WSFEDPASS_AUTH_FAILED             = m(7311, Level.WARNING, "Authentication with service failed");
 
     // MAX -                                     m(7999
 }

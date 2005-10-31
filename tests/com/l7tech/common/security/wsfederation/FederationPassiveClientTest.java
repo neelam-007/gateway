@@ -1,6 +1,7 @@
 package com.l7tech.common.security.wsfederation;
 
 import java.net.URL;
+import java.net.URLEncoder;
 
 import junit.framework.TestCase;
 
@@ -8,6 +9,7 @@ import com.l7tech.common.http.MockGenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.XmlUtil;
 
 /**
  * Tests for the Federation Passive Client.
@@ -33,6 +35,8 @@ public class FederationPassiveClientTest extends TestCase {
         SecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
+                                                         ,null
+                                                         ,null
                                                          ,addTimestamp);
     }
 
@@ -50,6 +54,8 @@ public class FederationPassiveClientTest extends TestCase {
         SecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
+                                                         ,null
+                                                         ,null
                                                          ,addTimestamp);
     }
 
@@ -68,6 +74,8 @@ public class FederationPassiveClientTest extends TestCase {
             SecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                              ,httpParams
                                                              ,realm
+                                                             ,null
+                                                             ,null
                                                              ,addTimestamp);
         }
         catch(InvalidHtmlException ihe) {
@@ -94,6 +102,8 @@ public class FederationPassiveClientTest extends TestCase {
             SecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
+                                                         ,null
+                                                         ,null
                                                          ,addTimestamp);
         }
         catch(InvalidHtmlException ihe) {
@@ -119,6 +129,8 @@ public class FederationPassiveClientTest extends TestCase {
             SecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
+                                                         ,null
+                                                         ,null
                                                          ,addTimestamp);
         }
         catch(InvalidHtmlException ihe) {

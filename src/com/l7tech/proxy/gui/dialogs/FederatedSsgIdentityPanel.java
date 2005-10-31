@@ -9,7 +9,8 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ValidationUtils;
+import com.l7tech.common.gui.util.RunOnChangeListener;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.gui.util.IconManager;
 
@@ -34,6 +35,8 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
     private JComboBox requestTypeCombo;
     private JTextField wsFedUrlTextField;
     private JTextField wsFedRealmTextField;
+    private JTextField wsFedReplyUrlTextField;
+    private JTextField wsFedContextTextField;
     private JCheckBox wsFedTimestampCheckBox;
     private JTextField wsFedUsernameField;
     private JButton wsFedTestButton;
@@ -71,16 +74,14 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
             }
             clientCertButton.setVisible(false);
 
-            wsTrustUrlTextField.getDocument().addDocumentListener(new DocumentListener() {
-                public void changedUpdate(DocumentEvent e) { updateButtons(); }
-                public void insertUpdate(DocumentEvent e) { updateButtons(); }
-                public void removeUpdate(DocumentEvent e) { updateButtons(); }
+            RunOnChangeListener rocl = new RunOnChangeListener(new Runnable(){
+                public void run() {
+                    updateButtons();
+                }
             });
-            wsFedUrlTextField.getDocument().addDocumentListener(new DocumentListener() {
-                public void changedUpdate(DocumentEvent e) { updateButtons(); }
-                public void insertUpdate(DocumentEvent e) { updateButtons(); }
-                public void removeUpdate(DocumentEvent e) { updateButtons(); }
-            });
+            wsTrustUrlTextField.getDocument().addDocumentListener(rocl);
+            wsFedUrlTextField.getDocument().addDocumentListener(rocl);
+            wsFedReplyUrlTextField.getDocument().addDocumentListener(rocl);
 
             // TODO enable this setting as soon as it is configurable
             wstSavePasswordCheckBox.setSelected(true);
@@ -95,8 +96,9 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
     }
 
     private void updateButtons() {
-        wsTrustTestButton.setEnabled(HexUtils.isValidUrl(wsTrustUrlTextField.getText()));
-        wsFedTestButton.setEnabled(HexUtils.isValidUrl(wsFedUrlTextField.getText()));
+        wsTrustTestButton.setEnabled(ValidationUtils.isValidUrl(wsTrustUrlTextField.getText()));
+        wsFedTestButton.setEnabled(ValidationUtils.isValidUrl(wsFedUrlTextField.getText())
+                                 &&ValidationUtils.isValidUrl(wsFedReplyUrlTextField.getText(), true));
     }
 
     public JPasswordField getWstPasswordField() {
@@ -149,6 +151,14 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
 
     public JTextField getWsFedRealmTextField() {
         return wsFedRealmTextField;
+    }
+
+    public JTextField getWsFedReplyUrlTextField() {
+        return wsFedReplyUrlTextField;
+    }
+
+    public JTextField getWsFedContextTextField() {
+        return wsFedContextTextField;
     }
 
     public JCheckBox getWsFedTimestampCheckBox() {

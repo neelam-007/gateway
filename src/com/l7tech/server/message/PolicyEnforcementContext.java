@@ -20,6 +20,8 @@ import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
+import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
 
@@ -59,6 +61,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private long routingEndTime;
     private boolean isStealthResponseMode = false;
     private PolicyContextCache cache;
+    private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -145,6 +148,18 @@ public class PolicyEnforcementContext extends ProcessingContext {
         deferredAssertions.remove(owner);
     }
 
+    public RoutingResultListener getRoutingResultListener() {
+        return routingResultListener;
+    }
+
+    public void addRoutingResultListener(RoutingResultListener listener) {
+        routingResultListener.addListener(listener);
+    }
+
+    public void removeRoutingResultListener(RoutingResultListener listener) {
+        routingResultListener.removeListener(listener);
+    }
+
     public void addResult(AssertionResult result) {
         if (assertionResults == Collections.EMPTY_LIST)
             assertionResults = new ArrayList();
@@ -227,7 +242,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public void addCookie(HttpCookie cookie) {
-        cookies.remove(cookie);
+        Set toRemove = new HashSet();
+        for(Iterator ci=cookies.iterator(); ci.hasNext(); ) {
+            HttpCookie currentCookie = (HttpCookie) ci.next();
+            if(currentCookie.getCookieName().equals(cookie.getCookieName())) {
+                toRemove.add(currentCookie);
+            }
+        }
+        cookies.removeAll(toRemove);
         cookies.add(cookie);
     }
 

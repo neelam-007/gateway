@@ -1,17 +1,17 @@
 package com.l7tech.server.policy.assertion.credential;
 
-import java.io.IOException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 /**
@@ -109,28 +109,38 @@ public abstract class AbstractServerCachedSecurityTokenAssertion implements Serv
     }
 
     /**
-     * Add the cache invalidation deferred assertion to the context.
+     * Add the cache invalidation routing result listener to the context.
      *
      * @param pec the PolicyEnforcementContext
      */
-    protected void addCacheInvalidator(PolicyEnforcementContext pec) {
-        pec.addDeferredAssertion(this, new ServerAssertion() {
-            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    protected void addCacheInvalidator(final PolicyEnforcementContext pec) {
+        pec.addRoutingResultListener(new RoutingResultListener() {
+            public boolean reroute(URL routedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
+                return false;
+            }
+
+            public void routed(URL routedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
+                if(status!=HttpConstants.STATUS_OK) {
+                    clearCache(pec);
+                }
+            }
+
+            public void failed(URL attemptedUrl, Throwable thrown, PolicyEnforcementContext context) {
+                clearCache(pec);
+            }
+
+            private void clearCache(PolicyEnforcementContext context) {
+                if(logger.isLoggable(Level.FINEST)) {
+                    logger.finest("Running cache invalidation");
+                }
+
                 PolicyContextCache cache = context.getCache();
                 if(cache!=null) {
-                    if(logger.isLoggable(Level.FINEST)) {
-                        logger.finest("Running cache invalidation");
+                    if(logger.isLoggable(Level.INFO)) {
+                        logger.info("Clearing cached SecurityToken");
                     }
-
-                    if(context.getRoutingStatus() != RoutingStatus.ROUTED) {
-                        // clear any cached assertion
-                        if(logger.isLoggable(Level.INFO)) {
-                            logger.info("Clearing cached SecurityToken");
-                        }
-                        cache.put(cacheKey, null, new PolicyContextCache.Info(1));
-                    }
+                    cache.put(cacheKey, null, new PolicyContextCache.Info(1));
                 }
-                return AssertionStatus.NONE;
             }
         });
     }

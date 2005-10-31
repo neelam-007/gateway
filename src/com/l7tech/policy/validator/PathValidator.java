@@ -7,7 +7,12 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -15,6 +20,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
+import com.l7tech.console.tree.RequestWssSamlNode;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
@@ -30,15 +36,35 @@ import java.util.*;
  * TODO: refactor this into asserton specific validators (expand the ValidatorFactory).
  */
 class PathValidator {
+
+    private static final Class ASSERTION_HTTPCREDENTIALS = HttpCredentialSourceAssertion.class;
+    private static final Class ASSERTION_HTTPBASIC = HttpBasic.class;
+    private static final Class ASSERTION_HTTPDIGEST = HttpDigest.class;
+    private static final Class ASSERTION_CUSTOM = CustomAssertionHolder.class;
+    private static final Class ASSERTION_SECURECONVERSATION = SecureConversation.class;
+    private static final Class ASSERTION_XPATHCREDENTIALS = XpathCredentialSource.class;
+    private static final Class ASSERTION_SAMLASSERTION = RequestWssSaml.class;
+    private static final Class ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
+
+
+    private static Map policyParseCache = Collections.synchronizedMap(new WeakHashMap());
+
     /**
      * result accumulator
      */
-    PolicyValidatorResult result;
-    List deferredValidators = new ArrayList();
+    private PolicyValidatorResult result;
+    private List deferredValidators = new ArrayList();
     private AssertionPath assertionPath;
     private PublishedService service;
     private Collection wsdlBindingOperations;
-    private static Map policyParseCache = Collections.synchronizedMap(new WeakHashMap());
+    private Set seenAssertionClasses = new HashSet();
+    private Map seenCredentials = new HashMap();
+    private Map seenWssSignature = new HashMap();
+    private Map seenSamlSecurity = new HashMap();
+    private boolean seenSpecificUserAssertion = false;
+
+    boolean seenAccessControl = false; 
+    boolean seenRouting = false;
 
     PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         result = r;
@@ -88,6 +114,8 @@ class PathValidator {
         } else if (a instanceof SqlAttackAssertion) {
             processSQL((SqlAttackAssertion)a);
         }
+
+        setSeen(a.getClass());
     }
 
     private void processSQL(SqlAttackAssertion sqlAttackAssertion) {
@@ -112,19 +140,19 @@ class PathValidator {
                   "authentication scheme.", null));
             } else {
                 // if the credential source is not HTTP Basic
-                if (!seenHTTPBasic) {
+                if (!haveSeen(ASSERTION_HTTPBASIC)){
                     result.addError(new PolicyValidatorResult.
                       Error(a, assertionPath, "Only HTTP Basic Authentication can be used as a authentication scheme" +
                       " when a policy involes Custom Assertion.", null));
                 }
             }
 
-            if (seenAccessControl && !seenCustomAssertion) {
+            if (seenAccessControl && !haveSeen(ASSERTION_CUSTOM)) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertion is allowed when " +
                   "a Custom Assertion is used.", null));
             }
 
-            if (seenCustomAssertion) {
+            if (haveSeen(ASSERTION_CUSTOM)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have a Custom Assertion " +
                   "in this path.", null));
             }
@@ -133,7 +161,6 @@ class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion is after route.", null));
             }
             seenAccessControl = true;
-            seenCustomAssertion = true;
         }
     }
 
@@ -151,7 +178,7 @@ class PathValidator {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath, "More than one identity in path.", null));
         }
 
-        if (seenCustomAssertion) {
+        if (haveSeen(ASSERTION_CUSTOM)) {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertions is allowed when " +
               "a Custom Assertion is used.", null));
         }
@@ -173,54 +200,42 @@ class PathValidator {
         }
 
         if (seenCredentials(a)) {
-            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have a credential assertion.", null));
+            result.addWarning(new PolicyValidatorResult.
+              Warning(a, assertionPath, "You already have a credential assertion.", null));
         }
 
-        if (a instanceof HttpDigest) {
-            seenDigestAssertion = true;
-        }
-
-
-        // new fla, those assertions cannot forbid ssl
-        if (a instanceof HttpBasic || a instanceof WssBasic) {
-            /* as per request to not enforce this rule (bugzilla 314)
-            if (sslForbidden) {
-                result.addError(
-                        new PolicyValidatorResult.Error(a,
-                        "You cannot forbid SSL and ask for basic credentials.", null)
-                );
-            }*/
-        }
-
-        if (a instanceof HttpBasic) {
-            seenHTTPBasic = true;
-        }
-
+        // Dupe checks
         if (a instanceof RequestWssX509Cert) {
             if (seenWssSignature(a)) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "WSS Signature already set.", null));
+                result.addError(new PolicyValidatorResult.
+                  Error(a, assertionPath, "WSS Signature already set.", null));
             }
             setSeenWssSignature(a, true);
         }
 
         if (a instanceof SecureConversation) {
-            if (seenSecureConversation) {
-                result.addError(new PolicyValidatorResult.Error(a,
-                  assertionPath,
-                  "Secure Conversation already specified.",
-                  null));
+            if (haveSeen(ASSERTION_SECURECONVERSATION)) {
+                result.addError(new PolicyValidatorResult.
+                  Error(a,assertionPath,"Secure Conversation already specified.", null));
             }
-            seenSecureConversation = true;
         }
 
+        if (a instanceof RequestWssSaml) {
+            if (haveSeen(ASSERTION_SAMLASSERTION)) {
+                result.addError(new PolicyValidatorResult.
+                  Error(a,assertionPath,"SAML Assertion already specified.", null));
+            }
+        }
+
+        //
         if (a instanceof RequestWssSaml)
             setSeenSamlStatement(a, true);
 
         // Custom Assertion can only be used with HTTP Basic
-        if (seenCustomAssertion && !seenHTTPBasic) {
+        if (haveSeen(ASSERTION_CUSTOM) && !haveSeen(ASSERTION_HTTPBASIC)) {
             result.addError(new PolicyValidatorResult.
               Error(a, assertionPath, "Only HTTP Basic Authentication can be used as a " +
-              "authentication scheme when the policy involes a Custom Assertion.", null));
+              "authentication scheme when the policy involves a Custom Assertion.", null));
         }
 
         setSeenCredentials(a, true);
@@ -254,7 +269,7 @@ class PathValidator {
             // the server needs to encrypt a symmetric key for the recipient
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
-            if (!seenWssSignature(a) && !seenSecureConversation && !seenSamlSecurity(a)) {
+            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a)) {
                 String actor = assertionToActor(a);
                 String msg;
                 if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
@@ -288,13 +303,31 @@ class PathValidator {
                   "after the routing assertion.", null));
             }
         } else if (a instanceof RequestWssReplayProtection) {
-            if (!seenWssSignature(a) && !seenSecureConversation && !seenSamlSecurity(a)) {
+            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion, " +
                   "a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
         }
-        seenPreconditions = true;
+        else if(a instanceof WsTrustCredentialExchange) {
+            if(!seenUsernamePasswordCredentials()
+            && !seenSamlSecurity(a)) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by a credential assertion (HTTP, XPath Credentials, WSS UsernameToken Basic or SAML).", null));
+            }
+        }
+        else if(a instanceof WsFederationPassiveTokenRequest) {
+            if(!seenUsernamePasswordCredentials()) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by a credential assertion (HTTP, XPath Credentials or WSS UsernameToken Basic).", null));
+            }
+        }
+        else if(a instanceof WsFederationPassiveTokenExchange) {
+            if(!seenSamlSecurity(a)) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by a SAML Security assertion.", null));
+            }
+        }
     }
 
     private void processRouting(RoutingAssertion a) {
@@ -416,7 +449,6 @@ class PathValidator {
         }
     }
 
-
     private void processSoapSpecific(Assertion a) {
         if (!service.isSoap()) {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
@@ -436,7 +468,6 @@ class PathValidator {
                           "This composite assertion does not contain any children and will always fail.",
                           null));
     }
-
 
     private boolean isCustom(Assertion a) {
         return a instanceof CustomAssertionHolder;
@@ -487,7 +518,10 @@ class PathValidator {
         if (a instanceof XpathBasedAssertion ||
           a instanceof XslTransformation ||
           a instanceof RequestSwAAssertion ||
-          a instanceof RequestWssReplayProtection)
+          a instanceof RequestWssReplayProtection ||
+          a instanceof WsTrustCredentialExchange ||
+          a instanceof WsFederationPassiveTokenExchange ||
+          a instanceof WsFederationPassiveTokenRequest)
             return true;
         return false;
     }
@@ -532,6 +566,32 @@ class PathValidator {
         seenSamlSecurity.put(actor, new Boolean(value));
     }
 
+    private boolean haveSeen(Class assertionClass) {
+        return seenAssertionClasses.contains(assertionClass);
+    }
+
+    private boolean haveSeenInstanceOf(Class assertionClass) {
+        boolean seen = false;
+        for (Iterator iterator = seenAssertionClasses.iterator(); iterator.hasNext();) {
+            Class currentAssertionClass = (Class) iterator.next();
+            if(assertionClass.isAssignableFrom(currentAssertionClass)) {
+                seen = true;
+                break;
+            }
+        }
+        return seen;
+    }
+
+    private void setSeen(Class assertionClass) {
+        seenAssertionClasses.add(assertionClass);
+    }
+
+    private boolean seenUsernamePasswordCredentials() {
+        return haveSeenInstanceOf(ASSERTION_HTTPCREDENTIALS)
+            || haveSeen(ASSERTION_XPATHCREDENTIALS)
+            || haveSeen(ASSERTION_WSSUSERNAMETOKENBASIC);
+    }
+
     private String assertionToActor(Assertion a) {
         String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
         if (a instanceof SecurityHeaderAddressable) {
@@ -547,16 +607,4 @@ class PathValidator {
         }
         return false;
     }
-
-    boolean seenPreconditions = false;
-    private Map seenCredentials = new HashMap();
-    boolean seenAccessControl = false;
-    boolean seenRouting = false;
-    private Map seenWssSignature = new HashMap();
-    boolean seenSecureConversation = false;
-    private Map seenSamlSecurity = new HashMap();
-    boolean seenDigestAssertion = false;
-    boolean seenSpecificUserAssertion = false;
-    boolean seenCustomAssertion = false;
-    boolean seenHTTPBasic = false;
 }

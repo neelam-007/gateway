@@ -563,8 +563,8 @@ public class MessageProcessor {
         List headers = new ArrayList();
 
         String cookieHeader = getSessionCookiesHeaderValue(context);
-        headers.add(new GenericHttpHeader("Cookie", cookieHeader));
-        headers.add(new GenericHttpHeader("User-Agent", SecureSpanConstants.USER_AGENT));
+        headers.add(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, cookieHeader));
+        headers.add(new GenericHttpHeader(HttpConstants.HEADER_USER_AGENT, SecureSpanConstants.USER_AGENT));
 
         final Message request = context.getRequest();
         final Message response = context.getResponse();
@@ -577,7 +577,7 @@ public class MessageProcessor {
 
         try {
             setAuthenticationAndBufferingState(context, params);
-            headers.add(new GenericHttpHeader("SOAPAction", context.getPolicyAttachmentKey().getSoapAction()));
+            headers.add(new GenericHttpHeader(SoapUtil.SOAPACTION, context.getPolicyAttachmentKey().getSoapAction()));
             headers.add(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString()));
 
             // Let the Gateway know what policy version we used for the request.
@@ -967,7 +967,7 @@ public class MessageProcessor {
         //get the existing cookies and update. If there are no
         // "Set-Cookie" headers returned, then this will maintain the existing
         // cookies
-        List values = responseHeaders.getValues("Set-Cookie");
+        List values = responseHeaders.getValues(HttpConstants.HEADER_SET_COOKIE);
         if(!values.isEmpty()) {
             Set cookieSet = new LinkedHashSet();
 

@@ -41,9 +41,9 @@ import java.io.StringReader;
 import java.net.URI;
 import java.rmi.RemoteException;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.LinkedHashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -797,12 +797,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private PolicyValidatorResult pruneDuplicates(PolicyValidatorResult result) {
         PolicyValidatorResult pr = new PolicyValidatorResult();
 
-        Set errors = new HashSet();
+        Set errors = new LinkedHashSet();
         errors.addAll(result.getErrors());
         for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
             pr.addError((PolicyValidatorResult.Error)iterator.next());
         }
-        Set warnings = new HashSet();
+        Set warnings = new LinkedHashSet();
         warnings.addAll(result.getWarnings());
 
         for (Iterator iterator = warnings.iterator(); iterator.hasNext();) {

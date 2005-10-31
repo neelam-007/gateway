@@ -23,6 +23,7 @@ public class ContentTypeHeader extends MimeHeader {
     private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
+    public static final ContentTypeHeader HTML_DEFAULT; // text/html; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final String CHARSET = "charset";
@@ -33,6 +34,7 @@ public class ContentTypeHeader extends MimeHeader {
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
             TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
+            HTML_DEFAULT = parseValue("text/html; charset=UTF-8");
             XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
             XML_DEFAULT.getEncoding();
             APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
@@ -262,6 +264,18 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     /**
+     * Check if this content type header matches the type and subtype of the given
+     * content type header.
+     *
+     * @param contentTypeHeader header with the type and subtype to match
+     * @return true iff. this content type matched the specified pattern
+     * @see com.l7tech.common.mime.ContentTypeHeader#matches(String,String) matches
+     */
+    public boolean matches(ContentTypeHeader contentTypeHeader) {
+        return matches(contentTypeHeader.getType(), contentTypeHeader.getSubtype());
+    }
+
+    /**
      * Check if this content type header matches the specified pattern.
      *
      * @param type     type to match, or null or "*" to match any type
@@ -284,6 +298,16 @@ public class ContentTypeHeader extends MimeHeader {
         return true;
     }
 
+    /**
+     *
+     */
+    public String toString() {
+        return "ContentTypeHeader()[type='"+type+"'; subtype='"+subtype+"']";
+    }
+
+    /**
+     *
+     */
     protected void writeParam(OutputStream os, String name, String value) throws IOException {
         if (CHARSET.equalsIgnoreCase(name)) {
             getEncoding();

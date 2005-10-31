@@ -113,7 +113,8 @@
         <!--Custom Assertions subproject-->
         <property name="customassertions.src.dir" value="${src.root}/CustomAssertions"/>
         <property name="customassertions.build.dir" value="${customassertions.src.dir}/build/output"/>
-        <property name="customassertions.jar.name" value="${customassertions.build.dir}/CustomAssertions.jar"/>
+        <property name="customassertions.jar.name" value="CustomAssertions.jar"/>
+        <property name="customassertions.jar.path" value="${customassertions.build.dir}/${customassertions.jar.name}"/>
 
 
         <!-- javadoc home -->
@@ -264,6 +265,7 @@
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.http.CookieTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.http.ParameterizedStringTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.wsfederation.FederationPassiveClientTest" haltonfailure="no"/>
 
 <!--
@@ -600,11 +602,18 @@
 	<available file="CustomAssertions" property="customassertion.available"/>	
     </target>
 
-    <target name="package.manager.ca" depends="ca.availablecheck" if="customassertion.available">
+    <!-- 
+      Target to create an empty CA jar if we're not building CA (keeps packager happy)
+    -->
+    <target name="ca.createemptyjar" unless="customassertion.available">
+        <jar jarfile="${build.lib}/${customassertions.jar.name}"/>
+    </target>
+
+    <target name="package.manager.ca" depends="ca.availablecheck, ca.createemptyjar" if="customassertion.available">
         <exec executable="sh" dir="CustomAssertions/">
             <arg line="./build.sh build-deployment-jar"/>
         </exec>
-        <copy todir="${build.lib}" file="${customassertions.jar.name}"/>
+        <copy todir="${build.lib}" file="${customassertions.jar.path}"/>
     </target>
 
     <target name="package.manager" unless="ssg.only" depends="package.manager.ca">

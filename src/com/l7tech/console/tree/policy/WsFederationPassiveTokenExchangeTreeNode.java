@@ -5,20 +5,20 @@ import java.util.Arrays;
 import java.util.List;
 import javax.swing.*;
 
-import com.l7tech.console.action.EditWsFederationPassiveTokenRequestAction;
-import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
+import com.l7tech.console.action.EditWsFederationPassiveTokenExchangeAction;
+import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 
 /**
- * Tree node for WsFederationPassiveTokenRequest ....
+ * Tree node for WsFederationPassiveTokenExchange ....
  *
  * @author $Author$
  * @version: $Revision$
  */
-public class WsFederationPassiveTokenRequestTreeNode extends LeafAssertionTreeNode {
+public class WsFederationPassiveTokenExchangeTreeNode extends LeafAssertionTreeNode {
 
     //- PUBLIC
 
-    public WsFederationPassiveTokenRequestTreeNode( WsFederationPassiveTokenRequest assertion ) {
+    public WsFederationPassiveTokenExchangeTreeNode( WsFederationPassiveTokenExchange assertion ) {
         super( assertion );
         _assertion = assertion;
     }
@@ -39,7 +39,7 @@ public class WsFederationPassiveTokenRequestTreeNode extends LeafAssertionTreeNo
     }
 
     public String getName() {
-        return "Obtain credentials using WS-Federation request to " + _assertion.getIpStsUrl();
+        return "Exchange credentials using WS-Federation request to " + _assertion.getIpStsUrl();
     }
 
     //- PROTECTED
@@ -50,7 +50,7 @@ public class WsFederationPassiveTokenRequestTreeNode extends LeafAssertionTreeNo
 
     //- PRIVATE
 
-    private WsFederationPassiveTokenRequest _assertion;
-    private EditWsFederationPassiveTokenRequestAction editAction = new EditWsFederationPassiveTokenRequestAction(this);
+    private WsFederationPassiveTokenExchange _assertion;
+    private EditWsFederationPassiveTokenExchangeAction editAction = new EditWsFederationPassiveTokenExchangeAction(this);
 
 }

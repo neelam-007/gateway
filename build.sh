@@ -72,3 +72,12 @@ if $cygwin; then
 fi
 export CLASSPATH
 $JAVA_HOME/bin/java $JAVA_OPTS org.apache.tools.ant.Main -listener net.sf.antcontrib.perf.AntPerformanceListener "-Dtomcat.home=$TOMCAT_HOME" "-Dsrc.root=$SRC_ROOT" $@
+RESULT=${?}
+if [ "${1}" == "package" ] || [ "${1}" == "compile" ] ; then
+  if [ ${RESULT} -eq 0 ] ; then
+    echo -e "BUILD SUCCESSFUL\n"
+  else 
+    echo -e "BUILD FAILED\n"
+  fi
+fi
+exit ${RESULT}

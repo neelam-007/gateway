@@ -77,6 +77,22 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
         this.realm = realm;
     }
 
+    public String getReplyUrl() {
+        return replyUrl;
+    }
+
+    public void setReplyUrl(String replyUrl) {
+        this.replyUrl = replyUrl;
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public void setContext(String context) {
+        this.context = context;
+    }
+
     public boolean isTimestamp() {
         return addTimestamp;
     }
@@ -176,7 +192,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
                                                              new WsFederationSslPeer(tokenServerCert, url),
                                                              ClientProxySecureProtocolSocketFactory.getInstance());
 
-        SecurityToken token = FederationPassiveClient.obtainFederationToken(httpClient, params, realm, addTimestamp);
+        SecurityToken token = FederationPassiveClient.obtainFederationToken(httpClient, params, realm, replyUrl, context, addTimestamp);
         if(token instanceof SamlAssertion) {
             samlAssertion = (SamlAssertion) token;
         }
@@ -222,6 +238,8 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
 
     private String ipStsUrl;
     private String realm;
+    private String replyUrl;
+    private String context;
     private boolean addTimestamp;
     private String username;
     private char[] password;
