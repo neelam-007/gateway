@@ -54,12 +54,12 @@ public class ContentTypeHeader extends MimeHeader {
      *
      * @param type   the major type, ie "text". may not be null
      * @param subtype the minor type, ie "xml". may not be null
-     * @param params the parameters, ie {charset=>"utf-8"}.  might be null
+     * @param params the parameters, ie {charset=>"utf-8"}.  must not be null.
      * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty
      * @throws IllegalArgumentException if type is multipart, but the subtype is other than "related"
-     * @throws NullPointerException if type or subtype is null
+     * @throws NullPointerException if type, subtype or param is null
      */
-    ContentTypeHeader(String type, String subtype, Map params) throws IOException {
+    private ContentTypeHeader(String type, String subtype, Map params) throws IOException {
         super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, params);
         this.type = type.toLowerCase();
         this.subtype = subtype.toLowerCase();
