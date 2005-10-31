@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=7872>
-<meta name=layout-width content=851>
+<meta name=layout-height content=4953>
+<meta name=layout-width content=951>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured;metadata;ACL;init;workflows;CN=;NameIdentifier;Format=;windowsDomain;emailAddress;DNs;O=ACME;OU=Anvils;CN=*;CN=Name;CN=user;BinarySecurityToken;AttributeStatement;CAs;DNS;IPs;failover;balancer;Failover;IV_USER;non-SecureSpan">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -44,26 +44,55 @@
 
 <h1>Configure and Edit Message Routing Assertions</h1>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The JMS Routing assertion in the Message Routing category is an optional 
- assertion that requires special configuration procedures in the SecureSpan™ 
- Gateway. See <a href="Optional_Add-On_Assertion.htm">Optional Add-On Assertions</a> 
- for more information. </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The JMS 
+ Routing assertion in the Message Routing category is an optional assertion 
+ that requires special configuration procedures in the SecureSpan™ Gateway. 
+ See <a href="Optional_Add-On_Assertion.htm">Optional Add-On Assertions</a> 
+ for more information. </td></tr>
+</table>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, three assertions 
  are available in the Message Routing category of the [Assertions] tab: 
@@ -86,7 +115,7 @@
 
 <h6 style="margin-top: 2pt;
 			margin-bottom: 10pt;
-			color: #c0c0c0;">The Message Routing Category of the [Assertions] 
+			color: #c0c0c0;">Message Routing Category of the [Assertions] 
  Tab</h6>
 
 <p>&nbsp;</p>
@@ -103,28 +132,59 @@
 <h2 style="color: #000000;"><a name=HTTP_S__Routing
 								style="color: #000000;">HTTP(S) Routing</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The HTTP(S) Routing assertion supports the HTTP 1.1 standard.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The HTTP(S) 
+ Routing assertion supports the HTTP 1.1 standard.</td></tr>
+</table>
 
 <p>The HTTP(S) Routing assertion defines where a Web service or XML application 
  message is sent and what authentication credentials it uses. If client 
  authentication is requested by a service, then the SecureSpan™ Gateway 
  will use its certificate for the SSL-TLS handshake. </p>
+
+<p>&nbsp;</p>
 
 <p>A message routing assertion is an essential policy element. When you 
  publish a service using the Publish SOAP Web Service Wizard, Create WSDL 
@@ -134,31 +194,58 @@
  on publishing a service, see <a href="Manage_Services.htm">Manage Services</a>. 
  </p>
 
-<p>&nbsp;</p>
-
 <h3 style="color: #000000;"><a name=Configure_the_HTTP_S__Routing_Assertion
 								style="color: #000000;">Configure the HTTP(S) 
  Routing Assertion</a></h3>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The HTTP(S) Routing assertion should already be present in the Policy 
- Development window. If not, then add the assertion by one of the following 
- methods: 1. Drag and drop the assertion from the [Assertions] tab into 
- the Policy Development window or, 2. Highlight the assertion in the [Assertions] 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The HTTP(S) 
+ Routing assertion should already be present in the Policy Development 
+ window. If not, then add the assertion by one of the following methods: 
+ 1. Drag and drop the assertion from the [Assertions] tab into the Policy 
+ Development window or, 2. Highlight the assertion in the [Assertions] 
  tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
 								width: 22px;
 								height: 18px;
@@ -169,8 +256,8 @@
 								float: none;
 								border-style: none;
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
- Assertion) button in the Assertion Tool Bar.</p>
-</div>
+ Assertion) button in the Assertion Tool Bar.</td></tr>
+</table>
 
 <h6>&nbsp;</h6>
 
@@ -191,24 +278,54 @@
  URL</B></span> field. </p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;TIP:</B></span> 
- Click [Default] to populate the Service URL field with the URL specified 
- during the service publication process.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="TIP.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP</B></span>: Click [Default] 
+ to populate the Service URL field with the URL specified during the service 
+ publication process.</td></tr>
+</table>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -219,29 +336,59 @@
  one or more service IPs:</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;TIP:</B></span> 
- Multiple hard-coded service IPs allow you to bypass the DNS when a host 
- name does not resolve to an appropriate service IP address. Manual IP 
- configuration can also be used for failover protection, for geographic 
- redundancy, and for clustering without a load balancer. In most cases, 
- however, it is best to get IP information from the DNS.</p>
-</div>
 
-<ul style="list-style: decimal;"
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="TIP.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP</B></span>: Multiple 
+ hard-coded service IPs allow you to bypass the DNS when a host name does 
+ not resolve to an appropriate service IP address. Manual IP configuration 
+ can also be used for failover protection, for geographic redundancy, and 
+ for clustering without a load balancer. In most cases, however, it is 
+ best to get IP information from the DNS.</td></tr>
+</table>
+
+<ol style="list-style: decimal;"
 	type=1>
 	
 	<ol style="list-style: decimal;"
@@ -288,7 +435,7 @@
  start again.</p></li>
 		</ul>
 	</ol>
-</ul>
+</ol>
 
 <ol start=4
 	style="list-style: decimal;"
@@ -299,23 +446,53 @@
  service:</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- No credentials are required for an anonymous service. </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: No credentials 
+ are required for an anonymous service. </td></tr>
+</table>
 
 <h4 style="margin-left: 40px;">Identity Authentication</h4>
 
@@ -323,7 +500,7 @@
  <a href="Configure_Edit_Access_Control_Assertions.htm">Configure and Edit 
  Access Control Assertions</a>) to a protected resource back-end: </p>
 
-<ol style="list-style: decimal;"
+<ul style="list-style: decimal;"
 	type=1>
 	
 	<ol style="list-style: decimal;"
@@ -344,7 +521,7 @@
 		
 		<li class="kadov-p"><p>Proceed to Step #5.</p></li>
 	</ol>
-</ol>
+</ul>
 
 <h4 style="margin-left: 40px;">TAI Identity Pass</h4>
 
@@ -357,31 +534,61 @@
 
 <h4 style="margin-left: 40px;">SAML Security</h4>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The SAML Security option is only enabled for SOAP Web service policies. 
- The SAML Security option in the HTTP(S) Routing assertion differs from 
- the SAML Assertion in the Access Control category of the [Assertions] 
- tab (see <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
- and Edit Access Control Assertions</a>). In the HTTP(S) Routing assertion, 
- the SAML option is being added to the outgoing message from the SecureSpan™ 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The SAML 
+ Security option is only enabled for SOAP Web service policies. The SAML 
+ Security option in the HTTP(S) Routing assertion differs from the SAML 
+ Assertion in the Access Control category of the [Assertions] tab (see 
+ <a href="Configure_Edit_Access_Control_Assertions.htm">Configure and Edit 
+ Access Control Assertions</a>). In the HTTP(S) Routing assertion, the 
+ SAML option is being added to the outgoing message from the SecureSpan™ 
  Gateway to the protected service. The SAML Assertion, however, requires 
  that SAML security be present in an incoming message from a client application 
- to the SecureSpan Gateway. </p>
-</div>
+ to the SecureSpan Gateway. </td></tr>
+</table>
 
 <p style="margin-left: 40px;">The HTTP(S) Routing assertion can optionally 
  attach a SAML sender-vouches ticket to each outgoing back-end request 
@@ -390,7 +597,7 @@
  is signed by the SecureSpan Gateway using the its SSL certificate. To 
  enable SAML authentication in the HTTP(S) Routing assertion:</p>
 
-<ol style="list-style: decimal;"
+<ul style="list-style: decimal;"
 	type=1>
 	
 	<ol style="list-style: decimal;"
@@ -405,7 +612,7 @@
 		
 		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Proceed to Step #5.</p></li>
 	</ol>
-</ol>
+</ul>
 
 <ol start=5
 	style="list-style: decimal;"
@@ -445,7 +652,7 @@
 	</ul>
 	
 	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
- The configured assertion is added to the Policy Development window.</p></li>
+ The assertion is added to the Policy Development window.</p></li>
 </ol>
 
 <h3>Edit the HTTP(S) Routing Assertion</h3>
@@ -462,7 +669,7 @@
 	type=disc>
 	
 	<li class="kadov-p"><p>The HTTP(S) Routing Properties form appears. Edit 
- the properties as outlined in <a href="#Configure_the_HTTP_S__Routing_Assertion">Configure 
+ the assertion properties as outlined in <a href="#Configure_the_HTTP_S__Routing_Assertion">Configure 
  the HTTP(S) Routing Assertion</a>.</p></li>
 </ul>
 
@@ -472,27 +679,56 @@
 								style="color: #000000;">SecureSpan Bridge 
  Routing</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The SecureSpan Bridge Routing assertion can only be used in a SOAP Web 
- service security policy. See <a href="#Limitations">Limitations and Considerations</a> 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The SecureSpan 
+ Bridge Routing assertion can only be used in a SOAP Web service security 
+ policy. See <a href="#Limitations">Limitations and Considerations</a> 
  below for more information about using the SecureSpan Bridge Routing assertion 
  is a policy. For information about the SecureSpan™ Bridge, see <a href="SecureSpan_Overview.htm">SecureSpan™ 
- Overview</a>.</p>
-</div>
+ Overview</a>.</td></tr>
+</table>
 
 <p>The SecureSpan Bridge Routing assertion allows you to use the SecureSpan™ 
  Bridge as an embedded client that behaves similar to the HTTP(S) Routing 
@@ -526,22 +762,51 @@
 
 <p>&nbsp;</p>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Message security requirements are automatically downloaded from the SecureSpan™ 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: Message 
+ security requirements are automatically downloaded from the SecureSpan™ 
  Gateway during the initial consumption of a service, or manually imported 
  from another location and stored as a partial policy in the SecureSpan™ 
  Bridge. When downloaded from the SecureSpan Gateway, the stored policy 
@@ -551,8 +816,8 @@
  the assertions applicable to the type of message decoration that will 
  be performed by the SecureSpan Bridge. For more information about service 
  policy management in the SecureSpan Bridge, see the SecureSpan Bridge 
- documentation.</p>
-</div>
+ documentation.</td></tr>
+</table>
 
 <p>&nbsp;</p>
 
@@ -561,8 +826,6 @@
 
 <p>Note the following SecureSpan Bridge Routing assertion limitations and 
  considerations before using the assertion in a policy:</p>
-
-<p>&nbsp;</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -628,32 +891,57 @@
  for instructions.</p></li>
 </ul>
 
-<p>&nbsp;</p>
-
 <h3 style="color: #000000;"><a name=Configure_the_SecureSpan_Bridge_Routing_Assertion
 								style="color: #000000;">Add and Configure 
  the SecureSpan Bridge Routing Assertion</a></h3>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Before configuring the SecureSpan Bridge Routing assertion, note the information 
- in <a href="#Limitations">Limitations and Considerations</a>.</p>
-</div>
 
-<p>&nbsp;</p>
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: Before 
+ configuring the SecureSpan Bridge Routing assertion, note the information 
+ in <a href="#Limitations">Limitations and Considerations</a>.</td></tr>
+</table>
 
 <ol style="list-style: decimal;"
 	type=1>
@@ -688,9 +976,9 @@
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>The assertion appears in the Policy Development 
- window. Right-click the &quot;Route to http using SecureSpan Bridge&quot; 
- assertion. A drop-down menu appears. Select <span style="font-weight: bold;"><B>Routing 
+	<li class="kadov-p"><p>The &quot;Route to http using SecureSpan Bridge&quot; 
+ assertion is added to the Policy Development window. Right-click the assertion. 
+ A drop-down menu appears. Select <span style="font-weight: bold;"><B>Routing 
  Properties</B></span>.</p></li>
 </ol>
 
@@ -722,25 +1010,55 @@
 	</ul>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;TIP: </B></span>You 
- can also use the SecureSpan™ Bridge's Gateway Account Properties form 
- to import the policy for the service. To do so, select the Manually Specify 
- Policy XML option, but leave the policy window blank.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 80px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="TIP.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP</B></span>: You can 
+ also use the SecureSpan™ Bridge's Gateway Account Properties form to import 
+ the policy for the service. To do so, select the Manually Specify Policy 
+ XML option, but leave the policy window blank.</td></tr>
+</table>
 
 <ol start=4
 	style="list-style: decimal;"
@@ -752,36 +1070,62 @@
  See <a href="#HTTP_S__Routing">HTTP(S) Routing</a> for configuration instructions.</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
-	margin-left: 0px;
-	margin-right: 0px;
-	margin-top: 0px;
-	margin-bottom: -.05px;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;WARNING:</B></span> 
- Do not check the TAI Identity Pass check box in the SecureSpan Bridge 
- Routing assertion HTTP(S) Routing Properties form. If TAI is enabled, 
- then the SecureSpan Bridge Routing assertion will reject all service requests.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="Warning.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>WARNING</B></span>: Do 
+ not check the TAI Identity Pass check box in the SecureSpan Bridge Routing 
+ assertion HTTP(S) Routing Properties form. If TAI is enabled, then the 
+ SecureSpan Bridge Routing assertion will reject all service requests.</td></tr>
+</table>
 
 <ol start=5
 	style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
- The configured assertion is added to the Policy Development window.</p></li>
+ Assertion changes take effect immediately.</p></li>
 </ol>
 
 <h3>Edit the SecureSpan Bridge Routing Assertion</h3>
@@ -798,7 +1142,7 @@
 	type=disc>
 	
 	<li class="kadov-p"><p>The SecureSpan Bridge Routing Properties form 
- appears. Edit the properties as outlined in <a href="#Configure_the_HTTP_S__Routing_Assertion">Add 
+ appears. Edit the assertion properties as outlined in <a href="#Configure_the_HTTP_S__Routing_Assertion">Add 
  and Configure the SecureSpan Bridge Routing Assertion</a>.</p></li>
 </ul>
 

@@ -2,7 +2,7 @@
 <!DOCTYPE toc PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp TOC Version 1.0//EN" "http://java.sun.com/products/javahelp/toc_1_0.dtd">
 <toc version="1.0">
  <tocitem text="Welcome" target="welcome_htm" />
- <tocitem text="About Version 3.3" target="about_version_3_3_htm" />
+ <tocitem text="About Version 3.4" target="about_version_3_4_htm" />
  <tocitem text="Getting Started">
   <tocitem text="SecureSpan Overview" target="securespan_overview_htm" />
   <tocitem text="Help System Navigation" target="help_system_navigation_htm" />
@@ -13,6 +13,7 @@
   <tocitem text="Interfaces" target="interfaces_htm" />
   <tocitem text="Workflow" target="general_workflow_htm" />
   <tocitem text="Connect to the SecureSpan Gateway" target="connect_to_the_securespan_gateway_htm" />
+  <tocitem text="Manage SecureSpan Gateway Licenses" target="manage_securespan_gateway_licenses_htm" />
   <tocitem text="Configure Preferences" target="configure_preferences_htm" />
   <tocitem text="Troubleshooting Mode" target="troubleshooting_mode_htm" />
   <tocitem text="Manage Identity Providers">
@@ -41,6 +42,7 @@
     <tocitem text="Service Availability Assertions" target="configure_edit_service_availability_assertions_htm" />
     <tocitem text="Logging, Auditing, and Alerts Assertions" target="configure_edit_logging,_auditing,_and_alerts_assertions_htm" />
     <tocitem text="Policy Logic Assertions" target="policy_logic_assertions_htm" />
+    <tocitem text="Threat Protection Assertions" target="configure_edit_threat_protection_assertions_htm" />
     <tocitem text="Optional Add-On Assertions">
      <tocitem text="Overview" target="optional_add-on_assertion_htm" />
      <tocitem text="SiteMinder Authentication Assertion" target="siteminder_authentication_assertion_htm" />
@@ -82,7 +84,7 @@
    </tocitem>
   <tocitem text="Consume Shared Web Services" target="consume_shared_web_service_htm" />
   </tocitem>
- <tocitem text="Support/Contacts">
+ <tocitem text="Contacts/Legal">
   <tocitem text="Technical Support" target="technical_support_htm" />
   <tocitem text="Contact Information" target="contact_information_htm" />
   <tocitem text="Copyrights" target="copyrights_htm" />

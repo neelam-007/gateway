@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=4060>
-<meta name=layout-width content=849>
+<meta name=layout-height content=4731>
+<meta name=layout-width content=800>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured;metadata;ACL;init;workflows;CN=;NameIdentifier;Format=;windowsDomain;emailAddress;DNs;O=ACME;OU=Anvils;CN=*;CN=Name;CN=user;BinarySecurityToken;AttributeStatement;CAs;DNS;IPs;failover;balancer;Failover;IV_USER;non-SecureSpan;usernametoken;Kerberos;SRP;PGP;SPKI;XKMS;SecurityContextToken;WS-SecureConversation;SAML-specified;SAML-supported;www.oasis-open.org;Manager.sh;Extranet;SandraV;SandraLV;SandraLV's;MilanV;interoperable;PKCS;WS-Trust;WS-Metadata;WS-Policy;WSRP;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;URI;xml">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -44,31 +44,59 @@
 
 <h1>Manage XML Applications</h1>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The SecureSpan™ Manager differentiates between SOAP Web services and XML 
- or non-SOAP applications. To publish, edit, or view a SOAP Web service, 
- see <a href="Manage_SOAP_Web_Services.htm">Manage SOAP Web Services</a>. 
- For information on disabling/enabling, renaming, or deleting a published 
- XML application, see <a href="Manage_Published_Services.htm">Manage Published 
- Services</a>. XML application policies do not support the message-level 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The SecureSpan™ 
+ Manager differentiates between SOAP Web services and XML or non-SOAP applications. 
+ To publish, edit, or view a SOAP Web service, see <a href="Manage_SOAP_Web_Services.htm">Manage 
+ SOAP Web Services</a>. For information on disabling/enabling, renaming, 
+ or deleting a published XML application, see <a href="Manage_Published_Services.htm">Manage 
+ Published Services</a>. XML application policies do not support the message-level 
  security assertions found in the XML Security category in the [Assertions] 
  tab (see <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
- and Edit XML Security Assertions</a>).</p>
-</div>
+ and Edit XML Security Assertions</a>).</td></tr>
+</table>
 
 <p>In the SecureSpan™ Manager, XML or non-SOAP applications are published 
  using the Publish XML Application Wizard. The Wizard guides you through 
@@ -113,24 +141,53 @@
 
 <p>&nbsp;</p>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;TIP: </B></span>&nbsp;View 
- screen-specific information and instructions in the Tips Box located near 
- the bottom of the Publish XML Application Wizard. </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="TIP.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP</B></span>: View screen-specific 
+ information and instructions in the Tips Box located near the bottom of 
+ the Publish XML Application Wizard. </td></tr>
+</table>
 
 <p>&nbsp;</p>
 
@@ -181,24 +238,54 @@
 	</ul>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Upon publication, the name entered in the Service Name field will appear 
- in the [Services] tab.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 80px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: Upon publication, 
+ the name entered in the Service Name field will appear in the [Services] 
+ tab.</td></tr>
+</table>
 
 <ul start=2
 	style="list-style: decimal;"
@@ -213,26 +300,56 @@
 	</ul>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Upon publication, the URL in the Target URL field will appear as an HTTP(S) 
- Routing assertion in the XML application's initial policy. See <a HREF="Manage_Policies.htm">Manage 
- Policies</a> and <a HREF="Configure_Edit_Message_Routing_Assertions.htm">Configure 
- and Edit Message Routing Assertions</a> for more information. &nbsp;</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 80px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: Upon publication, 
+ the URL in the Target URL field will appear as an HTTP(S) Routing assertion 
+ in the XML application's initial policy. See <a href="Manage_Policies.htm">Manage 
+ Policies</a> and <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a> for more information.</td></tr>
+</table>
 
 <ul start=2
 	style="list-style: decimal;"
@@ -253,26 +370,56 @@
 	</ul>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 84px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;WARNING:</B></span> 
- Do not duplicate Gateway URL and URI combinations. Each final URL that 
- receives requests for each individual XML application must be unique. 
- After publication, you can view or edit the Gateway URL from the [Services] 
- tab (see <a href="#Edit_the_Gateway_URL">Edit the Gateway URL</a>).</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 80px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="Warning.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>WARNING</B></span>: Do 
+ not duplicate Gateway URL and URI combinations. Each final URL that receives 
+ requests for each individual XML application must be unique. After publication, 
+ you can view or edit the Gateway URL from the [Services] tab (see <a href="#Edit_the_Gateway_URL">Edit 
+ the Gateway URL</a>).</td></tr>
+</table>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -355,28 +502,58 @@
 	</ol>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 124px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- If you specify an authentication method and one or more authorized identities 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 120px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: If you 
+ specify an authentication method and one or more authorized identities 
  in the Publish XML Application Wizard, then XML application access will 
  be restricted to those identities. The initial policy will automatically 
  be populated with an authentication assertion for each Grant Access to 
- Users/Groups assertion corresponding to each selected identity. See <a HREF="Manage_Policies.htm">Manage Policies</a> and <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
- and Edit Access Control Assertions</a> for more information. </p>
-</div>
+ Users/Groups assertion corresponding to each selected identity. See <a href="Manage_Policies.htm">Manage Policies</a> and <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a> for more information.</td></tr>
+</table>
 
 <ul start=4
 	style="list-style: decimal;"
@@ -405,26 +582,56 @@
 	</ol>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 164px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- You can give LDAP Identity Provider, Federated Identity Provider, and 
- Internal Identity Provider (see <a HREF="Manage_Identity_Providers.htm">Manage 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 160px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: You can 
+ give LDAP Identity Provider, Federated Identity Provider, and Internal 
+ Identity Provider (see <a href="Manage_Identity_Providers.htm">Manage 
  Identity Providers</a>) users and groups access to the XML application. 
- </p>
-</div>
+ </td></tr>
+</table>
 
 <ul style="list-style: decimal;"
 	type=1>
@@ -478,27 +685,57 @@
 	</ol>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 164px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- To de-authorize users and/or groups, move them from the Have Permission 
- window to the No Permission window. Select one or more users and/or groups 
- as outlined above, then click the [Remove] button to remove them from 
- the Have Permission window. To remove all users and/or groups from the 
- Have Permission window, click [Remove All].</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 160px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: To de-authorize 
+ users and/or groups, move them from the Have Permission window to the 
+ No Permission window. Select one or more users and/or groups as outlined 
+ above, then click the [Remove] button to remove them from the Have Permission 
+ window. To remove all users and/or groups from the Have Permission window, 
+ click [Remove All]. </td></tr>
+</table>
 
 <ul style="list-style: decimal;"
 	type=1>
@@ -544,8 +781,6 @@
  URL plus URI combination that receives requests for an XML application. 
  </p>
 
-<p>&nbsp;</p>
-
 <ol start=1
 	style="list-style: decimal;"
 	type=1>
@@ -553,11 +788,6 @@
 	<li class="kadov-p"><p>Right-click the XML application name in the [<span 
  style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
  </p></li>
-</ol>
-
-<ol start=2
-	style="list-style: decimal;"
-	type=1>
 	
 	<li class="kadov-p"><p>Select <span style="font-weight: bold;"><B>View Gateway 
  URL</B></span>. The View Gateway URL form appears.</p></li>
@@ -566,28 +796,58 @@
  into the field.</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- In the Gateway URL field, complete the SecureSpan™ Gateway URL provided 
- by the SecureSpan™ Manager with a unique URI that corresponds to the unique 
- address that will receive requests for the XML application. Only enter 
- a URI that completes the embedded Gateway URL into the field. Do not duplicate 
- Gateway URL and URI combinations. Each final URL that receives requests 
- for each individual XML applications must be unique.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: In the 
+ Gateway URL field, complete the SecureSpan™ Gateway URL provided by the 
+ SecureSpan™ Manager with a unique URI that corresponds to the unique address 
+ that will receive requests for the XML application. Only enter a URI that 
+ completes the embedded Gateway URL into the field. Do not duplicate Gateway 
+ URL and URI combinations. Each final URL that receives requests for each 
+ individual XML applications must be unique.</td></tr>
+</table>
 
 <ol start=4
 	style="list-style: decimal;"

@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=4346>
-<meta name=layout-width content=849>
+<meta name=layout-height content=4303>
+<meta name=layout-width content=800>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -44,26 +44,55 @@
 
 <h1>Using the JMS Message Routing Assertion</h1>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The JMS Routing assertion and queues support the JMS 1.0 standard. The 
- Administrator is responsible for installing and configuring the items 
- required for JMS routing. If you encounter errors during the execution 
- of a JMS policy, contact your Administrator.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The JMS 
+ Routing assertion and queues support the JMS 1.0 standard. The Administrator 
+ is responsible for installing and configuring the items required for JMS 
+ routing. If you encounter errors during the execution of a JMS policy, 
+ contact your Administrator.</td></tr>
+</table>
 
 <p>The JMS routing assertion — called &quot;JMS Routing&quot; in the [Assertions] 
  tab and &quot;Route to JMS Queue&quot; in the Policy Development window 
@@ -94,8 +123,6 @@
 
 <p class="quicklinks"><a href="#Edit_the_JMS_Assertion">Edit the JMS Assertion</a></p>
 
-<p>&nbsp;</p>
-
 <p class="quicklinks">&nbsp;</p>
 
 <h2 style="color: #000000;"><a name=About_JMS_Queues
@@ -121,8 +148,6 @@
  Routing assertion that specifies message forwarding using either HTTP(S) 
  or JMS, respectively. In the SecureSpan Gateway, there are three possible 
  HTTP(S) and JMS routing scenarios:</p>
-
-<p>&nbsp;</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -185,8 +210,6 @@
  in the header of the JMS message, however, then the SecureSpan Gateway 
  cannot route the reply back to the requestor.</p>
 
-<p style="margin-left: 40px;">&nbsp;</p>
-
 <ul style="list-style: disc;"
 	type=disc>
 	
@@ -248,30 +271,56 @@
  of the JMS message, however, then the SecureSpan Gateway cannot route 
  the reply back to the requestor.</p>
 
-<p>&nbsp;</p>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- When you publish a service, the SecureSpan™ Manager automatically adds 
- the service URL specified during the publication process as an HTTP(S) 
- Routing assertion (see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
- and Edit Message Routing Assertions</a>) in the policy.</p>
-</div>
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
 
-<p>&nbsp;</p>
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: When you 
+ publish a service, the SecureSpan™ Manager automatically adds the service 
+ URL specified during the publication process as an HTTP(S) Routing assertion 
+ (see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a>) in the policy.</td></tr>
+</table>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -345,27 +394,56 @@
 								style="color: #000000;">Add and Configure 
  a JMS Queue</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- For more information on the usage of inbound and outbound JMS queues in 
- the SecureSpan™ Gateway, see <a href="#About_JMS_Queues">About JMS Queues</a>. 
- To view a list of previously configured queues, access the Manage JMS 
- Queues form by selecting Tasks &gt; Manage JMS Queues from the SecureSpan™ 
- Manager Main Menu.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: For more 
+ information on the usage of inbound and outbound JMS queues in the SecureSpan™ 
+ Gateway, see <a href="#About_JMS_Queues">About JMS Queues</a>. To view 
+ a list of previously configured queues, access the Manage JMS Queues form 
+ by selecting Tasks &gt; Manage JMS Queues from the SecureSpan™ Manager 
+ Main Menu.</td></tr>
+</table>
 
 <p>An inbound queue allows the SecureSpan™ Gateway to receive messages 
  from a JMS queue, whereas an outbound queue directs the SecureSpan Gateway 
@@ -374,29 +452,58 @@
  in the JNDI directory before they can be configured in the SecureSpan™ 
  Manager. A JMS queue can be edited or deleted at any time. </p>
 
-<p class="quicklinks">&nbsp;</p>
+<p>&nbsp;</p>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- For brevity, an outbound queue is used as an example in the following 
- instructions. Repeat the instructions with the alternate selection in 
- Step #7 to configure a new inbound queue. The configuration of a new queue 
- requires the JNDI directory settings specified during the JMS configuration 
- process. Consult your Administrator for the required values. </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: For brevity, 
+ an outbound queue is used as an example in the following instructions. 
+ Repeat the instructions with the alternate selection in Step #7 to configure 
+ a new inbound queue. The configuration of a new queue requires the JNDI 
+ directory settings specified during the JMS configuration process. Consult 
+ your Administrator for the required values. </td></tr>
+</table>
 
 <p>&nbsp;</p>
 
@@ -408,25 +515,55 @@
  Main Menu. The Manage JMS Queues form appears.</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;TIP:</B></span> 
- You can also add a new queue by clicking [New Queue] in the JMS Routing 
- Properties form. To access the form, double-click a &quot;Route to JMS 
- Queue&quot; assertion in the Policy Development window.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="TIP.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP</B></span>: You can 
+ also add a new queue by clicking [New Queue] in the JMS Routing Properties 
+ form. To access the form, double-click a &quot;Route to JMS Queue&quot; 
+ assertion in the Policy Development window. </td></tr>
+</table>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -441,23 +578,53 @@
  style="font-weight: bold;"><B>Driver</B></span> drop-down list.</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The SecureSpan™ Gateway will support other JMS providers in a future version.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The SecureSpan™ 
+ Gateway will support other JMS providers in a future version.</td></tr>
+</table>
 
 <ol start=4
 	style="list-style: decimal;"
@@ -480,24 +647,54 @@
  <span style="font-weight: bold;"><B>Outbound</B></span> option. </p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- If configuring an inbound queue, select the Inbound option in the Direction 
- section of the Add JMS Queue form.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: If configuring 
+ an inbound queue, select the Inbound option in the Direction section of 
+ the Add JMS Queue form.</td></tr>
+</table>
 
 <ol start=8
 	style="list-style: decimal;"
@@ -528,25 +725,54 @@
 
 <p>&nbsp;</p>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="Warning2.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;WARNING:</B></span> 
- The JMS queue settings in the SecureSpan™ Manager must match the corresponding 
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="Warning.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>WARNING</B></span>: The 
+ JMS queue settings in the SecureSpan™ Manager must match the corresponding 
  settings in the JNDI directory in order to connect to the SecureSpan™ 
- Gateway. </p>
-</div>
+ Gateway. </td></tr>
+</table>
 
 <p>&nbsp;</p>
 
@@ -584,24 +810,53 @@
 <h2><a name=Remove_a_JMS_Queue
 		style="color: #000000;">Remove a JMS Queue</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- When you remove a queue, you unregister it from the SecureSpan™ Gateway. 
- The queue will still exist in the WebSphere® MQ server. </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: When you 
+ remove a queue, you unregister it from the SecureSpan™ Gateway. The queue 
+ will still exist in the WebSphere® MQ server. </td></tr>
+</table>
 
 <p>&nbsp;</p>
 
@@ -658,31 +913,60 @@
 								style="color: #000000;">Add and Configure 
  the JMS Assertion</a></h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 4px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Inbound JMS queues are used by published JMS services and do not require 
- an assertion. The JMS service publication process is the same as the publication 
- process for a regular service (see <a HREF="Manage_Services.htm">Manage 
- Services</a>). If publishing a service that will accept incoming messages 
- from a JMS queue, ensure that the appropriate inbound JMS queue is monitored 
- for the messages. See <a href="#About_JMS_Queues">About JMS Queues</a> 
- for more information. JMS messages will be processed according to the 
- assertions defined in the policy. Consult the rules in <a href="#JMS_Assertion_Rules">JMS 
- Assertion Rules</a> before using the JMS assertion.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: Inbound 
+ JMS queues are used by published JMS services and do not require an assertion. 
+ The JMS service publication process is the same as the publication process 
+ for a regular service (see <a href="Manage_Services.htm">Manage Services</a>). 
+ If publishing a service that will accept incoming messages from a JMS 
+ queue, ensure that the appropriate inbound JMS queue is monitored for 
+ the messages. See <a href="#About_JMS_Queues">About JMS Queues</a> for 
+ more information. JMS messages will be processed according to the assertions 
+ defined in the policy. Consult the rules in <a href="#JMS_Assertion_Rules">JMS 
+ Assertion Rules</a> before using the JMS assertion.</td></tr>
+</table>
 
 <p>The JMS routing assertion — called &quot;Route to JMS Queue&quot; — 
  appears in the Message Routing category of the [Assertions] tab in the 
@@ -691,8 +975,6 @@
  in <a href="#Add_and_Configure_a_JMS_Queue">Add and Configure a JMS Queue</a>. 
  </p>
 
-<p>&nbsp;</p>
-
 <ol style="list-style: decimal;"
 	type=1>
 	
@@ -700,28 +982,58 @@
  window for the target service by one of two methods: </p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;TIP:</B></span> 
- Disable a service while constructing its policy to prevent unsecured and 
- unauthorized access. A disabled service contains a red &quot;X&quot; through 
- its left-side icon. See <a href="Manage_Published_Services.htm">Manage 
- Published Services</a> for information.</p>
-</div>
 
-<ul style="list-style: disc;"
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="TIP.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP</B></span>: Disable 
+ a service while constructing its policy to prevent unsecured and unauthorized 
+ access. A disabled service contains a red &quot;X&quot; through its left-side 
+ icon. See <a href="Manage_Published_Services.htm">Manage Published Services</a> 
+ for information.</td></tr>
+</table>
+
+<ol style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -735,7 +1047,7 @@
 		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
  tab.</p></li>
 	</ul>
-</ul>
+</ol>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -745,7 +1057,7 @@
  JMS assertion to the policy by one of two methods: </p></li>
 </ol>
 
-<ul style="list-style: disc;"
+<ol style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -768,7 +1080,7 @@
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar.</p></li>
 	</ul>
-</ul>
+</ol>
 
 <ol start=3
 	style="list-style: decimal;"
@@ -779,25 +1091,55 @@
  Queue</B></span> drop-down list. </p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- Click [New Queue] to create a new queue. The Add JMS Queue form appears. 
- See <a href="#Add_and_Configure_a_JMS_Queue">Add and Configure a JMS Queue</a> 
- for instructions and more information. </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: Click 
+ [New Queue] to create a new queue. The Add JMS Queue form appears. See 
+ <a href="#Add_and_Configure_a_JMS_Queue">Add and Configure a JMS Queue</a> 
+ for instructions and more information. </td></tr>
+</table>
 
 <ol start=4
 	style="list-style: decimal;"

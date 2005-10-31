@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=835>
+<meta name=layout-height content=838>
 <meta name=layout-width content=849>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured;metadata;ACL;init;workflows;CN=;NameIdentifier;Format=;windowsDomain;emailAddress;DNs;O=ACME;OU=Anvils;CN=*;CN=Name;CN=user;BinarySecurityToken;AttributeStatement;CAs;DNS;IPs;failover;balancer;Failover;IV_USER;non-SecureSpan;usernametoken;Kerberos;SRP;PGP;SPKI;XKMS;SecurityContextToken;WS-SecureConversation;SAML-specified;SAML-supported;www.oasis-open.org;Manager.sh;Extranet;SandraV;SandraLV;SandraLV's;MilanV;interoperable;PKCS;WS-Trust;WS-Metadata;WS-Policy;WSRP;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;URI;xml;trustedmachinename.domain.com;federatedmachinename.domain.com;keystore;certificate(s;FIPs">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -44,27 +44,53 @@
 
 <h1>Manage Identity Providers</h1>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-left: 4px;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The term &quot;identity&quot; includes both users and groups, the term 
- &quot;user&quot; can represent an individual human or machine, the term 
- “service” includes both Web services and XML applications, and the term 
- &quot;SecureSpan™ Gateway&quot; includes all of the SecureSpan Gateway 
- products.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				border-style: none;
+				width: 32px;
+				height: 32px;
+				float: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The term 
+ &quot;identity&quot; includes both users and groups, the term &quot;user&quot; 
+ can represent an individual human or machine, the term “service” includes 
+ both Web services and XML applications, and the term &quot;SecureSpan™ 
+ Gateway&quot; includes all of the SecureSpan Gateway products.</td></tr>
+</table>
 
 <p>Three types of identity providers are used in the SecureSpan™ Manager: 
  LDAP Identity Providers, Federated Identity Providers, and an Internal 
@@ -73,35 +99,61 @@
 <h2>LDAP Identity Providers </h2>
 
 <p style="margin-left: 0px;">Users can configure and manage one or more 
- LDAP Identity Providers (LIPs). An LIP is an LDAP (Lightweight Directory 
+ LDAP Identity Providers (LIPs). A LIP is an LDAP (Lightweight Directory 
  Access Protocol) connector that is used for authentication purposes. For 
- information on configuring an LIP, see <a href="Add_Edit_LDAP_Identity_Providers.htm">Add 
+ information on configuring a LIP, see <a href="Add_Edit_LDAP_Identity_Providers.htm">Add 
  and Edit LDAP Identity Providers</a>.</p>
 
 <p style="margin-left: 0px;">&nbsp;</p>
 
 <h2>Federated Identity Providers </h2>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-left: 4px;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The documentation pertaining to Federated Identity Providers is discussed 
- in <a href="Manage_Federated_Identity_Providers.htm">Manage Federated 
- Identity Providers</a> in the Identity Bridging section of this Help System. 
- </p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				border-style: none;
+				width: 32px;
+				height: 32px;
+				float: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The documentation 
+ pertaining to Federated Identity Providers is discussed in <a href="Manage_Federated_Identity_Providers.htm">Manage 
+ Federated Identity Providers</a> in the Identity Bridging section of this 
+ Help System. </td></tr>
+</table>
 
 <p style="margin-left: 0px;">A Federated Identity Provider (FIP) is exclusively 
  used in a SecureSpan™ identity bridging-configuration. Essentially, the 

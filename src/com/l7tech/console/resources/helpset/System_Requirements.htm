@@ -23,14 +23,14 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=1138>
+<meta name=layout-height content=1136>
 <meta name=layout-width content=849>
 <meta name=x-ignored-words content="SecureSpan;Workflow;LDAP;IIP;WSS;TLS;SiteMinder;Symantec;JMS;SAML;FIP;CIDR;Namespace;EIPs;XPath;GenericLDAP;Timeout;IP;MSAD;SSL;Login;Tivoli;TivoliLDAP;Uptime;WS;WSDL;XSLT;HTTP(S;screenshots;ui;asc;desc;int;BFILENAME;FROM_TZ;NUMTODSINTERVAL;NUMTOYMINTERVAL;TO_TIMESTAMP_TZ;TZ_OFFSET;timestamp;add-ons;Netegrity;NotOnOrAfter;saml;requestor;soapenv;timestamps;uptime;Unix;cert;francis;firewall;policy.templates;exp;provider(s;assertion(s;encapsules;admin;popup;user(s;CTRL;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;tempuri.org;Name.wsdl;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;IIPs;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;workflow;detail(s;AES;node(s;Avg;min;CDE;Kunststoff;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;SNMP;ssg;conf;serverconfig_override.properties;Hostname;IANA;OID;UsernameToken;PEM;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;searchability;JGoodies;XP;connection(s;WebSphere;MQ;JNDI;requestors;JMS-to-JMS;iJMS;oJMS;Requestor;requestor-designated;JMS-to-HTTP;HTTP-to-JMS;cn=GatewayQueue;GatewayQueue;servername.company.com;dc=companydomain;QueueConnectionFactory;cn=QueueConnectionFactoryJNDIName;QueueConnectionFactoryJNDIName;com.sun.jndi.ldap.LdapCtxFactory.;unregister;Expiry;PDF;www.zvon.org;xxl;XPathTutorial;www.purpletech.com;xpe;index.jsp;xpath;pls;Stylesheet;eXtensible;elementName;attributeName;local-name(;xpath#function-local-name;examples.html;WSDL-based;namespaces;boolean(s;CID;Namespaces;attachment(s;KB;URL(s;machinename.domain.com;machinename.domain.com.;URLs;LIPs;expiry;Uncheck;Ctrl;group(s;SSL-secured;metadata;ACL;init;workflows;CN=;NameIdentifier;Format=;windowsDomain;emailAddress;DNs;O=ACME;OU=Anvils;CN=*;CN=Name;CN=user;BinarySecurityToken;AttributeStatement;CAs;DNS;IPs;failover;balancer;Failover;IV_USER;non-SecureSpan;usernametoken;Kerberos;SRP;PGP;SPKI;XKMS;SecurityContextToken;WS-SecureConversation;SAML-specified;SAML-supported;www.oasis-open.org;Manager.sh;Extranet;SandraV;SandraLV;SandraLV's;MilanV;interoperable;PKCS;WS-Trust;WS-Metadata;WS-Policy;WSRP;WS-I;BSP;XServer;XBlade;XScreen;XSpeed;firewalling;ASIC;eServer;BladeCenter;ASIC-accelerated;EAI;ESB;decouples;PKI;SSO;QoS;URI;xml;trustedmachinename.domain.com;federatedmachinename.domain.com;keystore;certificate(s;FIPs;F;untrusted;HOK;NameQualifier;oracle.companyx.com;dc=companyx;cn=manager;LDAP-type;cn;groupOfUniqueNames;uniqueMember;cn=user;name=value;firstinitiallastname;OU;organizationalUnit;ou;ou=group;inetOrgPerson;uid;userPassword;givenName;sn;type(s;source(s;Requestor-Side;OpenSSL;toolkit">
 
 
 
 
- <link rel="StyleSheet" href="JavaHelp.css">
+ <link rel="StyleSheet" href="SecureSpan.css">
 
 
 
@@ -44,28 +44,55 @@
 
 <h1>System Requirements</h1>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-left: 4px;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;NOTE:</B></span> 
- The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
- B&quot; references are used in the identity bridging examples, workflows, 
- and instructions. The Trusted Gateway A is the certificate authority (CA) 
- that issues and manages security credentials and that is responsible for 
- authentication. The Federated Gateway B is the Web service provider that 
- is responsible for authorization.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The generic 
+ &quot;Trusted Gateway A&quot; and &quot;Federated Gateway B&quot; references 
+ are used in the identity bridging examples, workflows, and instructions. 
+ The Trusted Gateway A is the certificate authority (CA) that issues and 
+ manages security credentials and that is responsible for authentication. 
+ The Federated Gateway B is the Web service provider that is responsible 
+ for authorization.</td></tr>
+</table>
 
 <p>The following items are required to configure identity bridging using 
  a SAML or X.509 certificate credential source:</p>
@@ -106,29 +133,56 @@
 	<li class="kadov-p"><p>SecureSpan™ Gateway installed and configured</p></li>
 </ul>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><b><span style="font-weight: bold;"><B><img src="TIPfinal.gif" x-maintain-ratio="TRUE" style="border: none;
-	border-style: none;
-	width: 16px;
-	height: 16px;
-	float: none;
-	border-style: none;" width="16" height="16" border="0"></b> 
- &nbsp;TIP:</B></span> 
- X.509 credentials do not have to originate from a SecureSpan™ Gateway. 
- Any certificate authority (CA) that issues certificates (such as a system 
- employing the &quot;OpenSSL&quot; toolkit) can sign client certificates. 
- When SAML is used as a credential source in an identity bridging configuration, 
- however, then the Trusted Gateway A must be another SecureSpan™ Gateway. 
- See <a href="Workflow_Using_SAML.htm">Workflow Using SAML</a> for more 
- information.</p>
-</div>
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				margin-left: 40px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="TIP.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				border-style: none;
+				width: 32px;
+				height: 32px;
+				float: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP</B></span>: X.509 credentials 
+ do not have to originate from a SecureSpan™ Gateway. Any certificate authority 
+ (CA) that issues certificates (such as a system employing the &quot;OpenSSL&quot; 
+ toolkit) can sign client certificates. When SAML is used as a credential 
+ source in an identity bridging configuration, however, then the Trusted 
+ Gateway A must be another SecureSpan™ Gateway. See <a href="Workflow_Using_SAML.htm">Workflow 
+ Using SAML</a> for more information.</td></tr>
+</table>
 
 <ul style="list-style: disc;"
 	type=disc>

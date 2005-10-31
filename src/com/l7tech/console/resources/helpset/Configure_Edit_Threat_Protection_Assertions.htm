@@ -1,0 +1,687 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Configure/Edit Threat Protection Assertions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=4922>
+<meta name=layout-width content=803>
+<meta name=x-ignored-words content="SecureSpan;metacharacters;backend;sp;Exec+XP;to_timestamp_tz;tz_offset;bfilename;CDATA;O'Reilly;XPointer;KB;uncheck;WSS;timestamp;timestamps">
+
+
+
+
+ <link rel="StyleSheet" href="SecureSpan.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Configure and Edit Threat Protection Assertions</h1>
+
+<p>In the SecureSpan™ 
+ Manager, the following assertions are available in the Threat Protection 
+ category of the [Assertions] tab:</p>
+
+<p class="space">&nbsp;</p>
+
+<p><img src="9.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 10px;
+				margin-bottom: 2px;
+				width: 306px;
+				height: 385px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="306" height="385" border="0"></p>
+
+<h6 style="margin-top: 2pt;
+			margin-bottom: 10pt;
+			color: #c0c0c0;">Threat Protection Category of the [Assertions] 
+ Tab</h6>
+
+<p>&nbsp;</p>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#SQL_Attack_Protection">SQL Attack Protection</a></p>
+
+<p class="quicklinks"><a href="#Request_Size_Limit">Request Size Limit</a></p>
+
+<p class="quicklinks"><a href="#WSS_Replay_Protection">WSS 
+ Replay Protection</a></p>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=SQL_Attack_Protection
+								style="color: #000000;">SQL Attack Protection</a></h2>
+
+<p class="quicklinks">The SQL Attack Protection assertion allows you to configure 
+ the SecureSpan™ Gateway to help protect a Web service against specific 
+ SQL injection threats. During runtime, the SecureSpan Gateway inspects 
+ the request message for the specific patterns of characters or keywords 
+ that are associated with potential SQL injection attacks. If a match is 
+ found in the message, then the request is blocked from further processing. 
+ </p>
+
+<p class="quicklinks">&nbsp;</p>
+
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="Warning.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>WARNING</B></span>: In 
+ version 3.4, the SQL Attack Protection assertion does not examine message 
+ attachments. Attachment support will be enabled in a future version. </td></tr>
+</table>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_SQL_Attack_Protection_Assertion
+								style="color: #000000;">Add and Configure 
+ the SQL Attack Protection Assertion</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The &quot;SQL Attack Protection&quot; assertion 
+ is added to the Policy Development window. Right-click the assertion. 
+ A drop-down menu appears. Select <span style="font-weight: bold;"><B>SQL 
+ Attack Protection Properties</B></span>.</p></li>
+	
+	<li class="kadov-p"><p>The Configure SQL Attack Protection form appears. 
+ Select one or more threat protection options: </p></li>
+</ol>
+
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The provided 
+ options are a minimal starting point for protecting against common SQL 
+ attacks. More effective protection with fewer false positives can be obtained 
+ by customizing the policy to the specific vulnerabilities of the service 
+ being protected. For example, schema validation (see <a href="Configure_Edit_Message_Validation_Transformation_Assertions.htm">Configure 
+ and Edit Message Validation/Transformation Assertions</a>) could be used 
+ to block SQL metacharacters only from elements that are known to be at 
+ risk of being misused by the backend service. Since each selected threat 
+ protection option results in a separate inspection of the request message, 
+ multiple selections may increase message processing time. Do not select 
+ the product-specific protections — MS SQL Server or Oracle exploit protection 
+ — unless the associated product is in use by the protected service. Partial 
+ descriptions of the threat protection options can also be viewed in the 
+ right panel of the Configure SQL Attack Protection form.</td></tr>
+</table>
+
+<h4 style="margin-left: 40px;">Known MS SQL Server Exploits Protection</h4>
+
+<p style="margin-left: 40px;">Check the <span style="font-weight: bold;"><B>Known 
+ MS SQL Server Exploits Protection</B></span> check box to block messages that 
+ contain patterns recognized as potential MS SQL Server exploits. Specifically, 
+ the SecureSpan Gateway will block messages containing strings similar 
+ to &quot;exec sp&quot; or &quot;Exec+XP&quot;.</p>
+
+<h4 style="margin-left: 40px;">Known Oracle Exploit Protection</h4>
+
+<p style="margin-left: 40px;">Check the <span style="font-weight: bold;"><B>Known 
+ Oracle Exploit Protection</B></span> check box to block messages that contain 
+ patterns recognized as potential Oracle SQL exploits. Specifically, the 
+ SecureSpan Gateway will block messages that appear to reference the commands 
+ &quot;to_timestamp_tz&quot;, &quot;tz_offset&quot;, or &quot;bfilename&quot;.</p>
+
+<h4 style="margin-left: 40px;">Standard SQL Attack Protection</h4>
+
+<p class="quicklinks" style="margin-left: 40px;">Check the <span style="font-weight: bold;"><B>Standard 
+ SQL Attack Protection</B></span> check box to block messages that contain 
+ a single-quote ('), hash mark (#), or string (--) inside the element text 
+ or CDATA section (the characters are permitted in message attributes). 
+ This option protects against some SQL injection attacks but may result 
+ in a small number of false positives that cause the SecureSpan Gateway 
+ to reject messages that do not pose a security threat. For example, a 
+ message containing the name &quot;O'Reilly&quot; will be rejected as a 
+ possible attack due to the &quot; ' &quot; character. </p>
+
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="Warning.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>WARNING</B></span>: There 
+ is a small risk inherent in permitting the single-quote ('), hash mark 
+ (#), or string (&quot;--&quot;) characters inside the message attributes. 
+ Nevertheless, the Standard SQL Attack Protection option is still ideal 
+ for blocking most SQL injections whilst allowing the use of XML features 
+ that employ attribute-based characters.</td></tr>
+</table>
+
+<h4 style="margin-left: 40px;">Invasive SQL Attack Protection</h4>
+
+<p style="margin-left: 40px;">Check the <span style="font-weight: bold;"><B>Invasive 
+ SQL Attack Protection</B></span> check box to block messages that contain 
+ a single-quote ('), hash mark (#), or string (--) anywhere within the 
+ message. This option protects against many SQL injection attacks, but 
+ will result in a large number of false positives that cause the improper 
+ rejection of messages. For example, any message containing a shorthand 
+ XPointer reference will be rejected, as will most messages containing 
+ signed XML. </p>
+
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="Warning.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>WARNING</B></span>: The 
+ Invasive SQL Attack Protection option is a brute-force approach that should 
+ only be used when a potentially vulnerable service must be well-protected 
+ at the cost of preventing the use of some XML features that employ attribute-based 
+ characters.</td></tr>
+</table>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ Assertion changes take effect immediately.</p></li>
+</ol>
+
+<h3>Edit the SQL Attack Protection Assertion</h3>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;SQL Attack Protection&quot; assertion. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>SQL Attack Protection Properties</B></span></p></li>
+</ul>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The Configure SQL Injection Protection form appears. 
+ Edit the assertion properties as outlined in <a href="#Add_and_Configure_the_SQL_Attack_Protection_Assertion">Add 
+ and Configure the SQL Attack Protection Assertion</a>.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=Request_Size_Limit
+								style="color: #000000;">Request Size Limit</a></h2>
+
+<p class="quicklinks">The Request Size Limit assertion allows you to specify 
+ a size limit for an entire message (including attachments) or just the 
+ XML portion of a message (not including attachments). When the request 
+ size exceeds the designated limit, the SecureSpan™ Gateway will reject 
+ the message and block the further processing of the policy.</p>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_Request_Size_Limit_Assertion
+								style="color: #000000;">Add and Configure 
+ the Request Size Limit Assertion</a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Request Size Limit form appears. In the <span 
+ style="font-weight: bold;"><B>Maximum Size Limit</B></span> field, enter the 
+ maximum message size that should be accepted by the SecureSpan™ Gateway 
+ in kilobytes (KB). </p></li>
+</ol>
+
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				margin-left: 40px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: Only enter 
+ positive whole numbers into the Maximum Size Limit field.</td></tr>
+</table>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The <span style="font-weight: bold;"><B>Apply the 
+ size limit to the entire message</B></span> check box is selected by default. 
+ To only apply the size limit to the XML portion of a request message — 
+ not the entire message including any attachments — uncheck the check box.</p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The assertion is added to the Policy Development window. Organize the 
+ Request Size Limit assertion anywhere before the routing assertion (see 
+ <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure and 
+ Edit Message Routing Assertions</a>) in the policy. </p></li>
+</ol>
+
+<h3>Edit the Request Size Limit Assertion</h3>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Request Size Limit&quot; assertion. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Request Size Limit Properties</B></span></p></li>
+</ul>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>The Request Size Limit form appears. Edit the 
+ assertion properties as outlined in <a href="#Add_and_Configure_the_Request_Size_Limit_Assertion">Add 
+ and Configure the Request Size Limit Assertion</a>.</p></li>
+</ul>
+
+<p class="quicklinks">&nbsp;</p>
+
+<h2 style="color: #000000;"><a name=WSS_Replay_Protection
+								style="color: #000000;">WSS Replay Protection</a> 
+ </h2>
+
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="NOTE.gif" x-maintain-ratio="TRUE" style="width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE</B></span>: The WSS 
+ Replay Protection assertion is also available from the XML Security category 
+ of the [Assertions] tab (see <a HREF="Configure_Edit_XML_Security_Assertions.htm">Configure 
+ and Edit XML Security Assertions</a>).</td></tr>
+</table>
+
+<p>The WSS Replay Protection assertion allows you to require that the Web 
+ service request message include a valid, unique, and signed timestamp. 
+ If the SecureSpan™ Gateway detects a duplicate creation timestamp in a 
+ message, if an expired timestamp is present and has already passed, or 
+ if the creation timestamp is more than 30 days old, then the message will 
+ be rejected as a possible replay. </p>
+
+<p>&nbsp;</p>
+
+
+<table x-use-null-cells
+		style="left: 0px;
+				top: 316px;
+				background-color: #ffffdf;
+				x-cell-content-align: Center;
+				width: 600px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+				border-spacing: 0px;
+				border-spacing: 0px;"
+		cellspacing=0
+		width=600
+		bgcolor=#FFFFDF>
+<col style="width: 5%;">
+<col>
+
+<tr style="x-cell-content-align: top;"
+	valign=top>
+<td style="width: 5%;
+			padding-left: 5px;
+			padding-top: 5px;
+			padding-right: 5px;
+			padding-bottom: 5px;"
+	width=5%>
+<p><img src="Warning.gif" x-maintain-ratio="TRUE" style="border-left-style: none;
+				border-top-style: none;
+				border-right-style: none;
+				border-bottom-style: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 0px;
+				margin-bottom: 0px;
+				width: 32px;
+				height: 32px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="32" height="32" border="0"></td>
+<td style="x-cell-content-align: center;
+			padding-right: 5px;
+			padding-top: 5px;
+			padding-bottom: 5px;"
+	valign=middle>
+<p class="tipsnotes"><span style="font-weight: bold;"><B>WARNING</B></span>: Since 
+ the system has to keep track of all timestamps created within the past 
+ 30 days, using the WSS Replay Protection assertion in a SecureSpan™ Gateway 
+ cluster can increase request message processing time and use more memory. 
+ Place the WSS Replay Protection assertion after a Grant Access to Users/Groups 
+ assertion (see <a href="Configure_Edit_Access_Control_Assertions.htm">Configure 
+ and Edit Access Control Assertions</a>) to help confine the protection 
+ to successfully authenticated messages, thereby reducing system processing 
+ and memory requirements. </td></tr>
+</table>
+
+<p>&nbsp;</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window.</p></li>
+</ul>
+
+<p>&nbsp;</p>
+
+</body>
+
+</html>

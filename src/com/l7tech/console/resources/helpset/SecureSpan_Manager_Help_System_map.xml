@@ -3,7 +3,7 @@
 
 <map version="1.0">
   <mapID target="welcome_htm" url="Welcome.htm" />
-  <mapID target="about_version_3_3_htm" url="About_Version_3.3.htm" />
+  <mapID target="about_version_3_4_htm" url="About_Version_3.4.htm" />
   <mapID target="securespan_overview_htm" url="SecureSpan_Overview.htm" />
   <mapID target="help_system_navigation_htm" url="Help_System_Navigation.htm" />
   <mapID target="operator_documentation_htm" url="Operator_Documentation.htm" />
@@ -11,6 +11,7 @@
   <mapID target="interfaces_htm" url="Interfaces.htm" />
   <mapID target="general_workflow_htm" url="General_Workflow.htm" />
   <mapID target="connect_to_the_securespan_gateway_htm" url="Connect_to_the_SecureSpan_Gateway.htm" />
+  <mapID target="manage_securespan_gateway_licenses_htm" url="Manage_SecureSpan_Gateway_Licenses.htm" />
   <mapID target="configure_preferences_htm" url="Configure_Preferences.htm" />
   <mapID target="troubleshooting_mode_htm" url="Troubleshooting_Mode.htm" />
   <mapID target="manage_identity_providers_htm" url="Manage_Identity_Providers.htm" />
@@ -33,6 +34,7 @@
   <mapID target="configure_edit_service_availability_assertions_htm" url="Configure_Edit_Service_Availability_Assertions.htm" />
   <mapID target="configure_edit_logging,_auditing,_and_alerts_assertions_htm" url="Configure_Edit_Logging,_Auditing,_and_Alerts_Assertions.htm" />
   <mapID target="policy_logic_assertions_htm" url="Policy_Logic_Assertions.htm" />
+  <mapID target="configure_edit_threat_protection_assertions_htm" url="Configure_Edit_Threat_Protection_Assertions.htm" />
   <mapID target="optional_add-on_assertion_htm" url="Optional_Add-On_Assertion.htm" />
   <mapID target="siteminder_authentication_assertion_htm" url="SiteMinder_Authentication_Assertion.htm" />
   <mapID target="tam_authentication_assertion_htm" url="TAM_Authentication_Assertion.htm" />
@@ -60,4 +62,5 @@
   <mapID target="technical_support_htm" url="Technical_Support.htm" />
   <mapID target="contact_information_htm" url="Contact_Information.htm" />
   <mapID target="copyrights_htm" url="Copyrights.htm" />
+  <mapID target="manage_cluster_properties_htm" url="Manage_Cluster_Properties.htm" />
 </map>
