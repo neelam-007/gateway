@@ -126,7 +126,7 @@ public class ServerRequestWssSaml implements ServerAssertion {
                 SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_CLIENT, sb.toString(), null);
                 context.setFaultDetail(sfd);
                 auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED);
-                logger.log(Level.WARNING, "validationResults errors:" + sb.toString());
+                logger.log(Level.INFO, "SAML Assertion Validation Errors:" + sb.toString());
                 return AssertionStatus.FALSIFIED;
             }
 

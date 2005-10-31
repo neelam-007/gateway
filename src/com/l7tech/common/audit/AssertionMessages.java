@@ -228,7 +228,7 @@ public class AssertionMessages extends Messages {
     public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
     public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.SEVERE, "We got a request that contained more than one SAML assertion. This is not currently supported.");
     public static final M SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION         = m(6103, Level.INFO, "This assertion did not find an acceptable SAML assertion to use as credentials.");
-    public static final M SAML_STMT_VALIDATE_FAILED                            = m(6104, Level.SEVERE, "Saml Statement validation failed");
+    public static final M SAML_STMT_VALIDATE_FAILED                            = m(6104, Level.INFO, "Saml Statement validation failed");
 
     // ServerWsTrustCredentialExchange
     public static final M WSTRUST_NO_SUITABLE_CREDENTIALS = m(6200, Level.INFO, "The current request did not contain credentials of any supported type");
