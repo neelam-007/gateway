@@ -18,6 +18,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -467,7 +468,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
             try {
-                s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, url, ssg.getServerCertificateAlways());
+                s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(getHttpClient(), pw, url, ssg.getServerCertificateAlways());
             } catch (TokenServiceClient.UnrecognizedServerCertException e) {
                 CurrentSslPeer.set(ssg);
                 throw new ServerCertificateUntrustedException(e);
@@ -478,7 +479,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 
             try {
-                s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(ssg.getRuntime().getHttpClient(), url, timestampCreatedDate,
+                s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(getHttpClient(), url, timestampCreatedDate,
                                                                                         ssg.getServerCertificateAlways(), ssg.getClientCertificate(),
                                                                                         ssg.getClientCertificatePrivateKey());
             } catch (TokenServiceClient.UnrecognizedServerCertException e) {
@@ -640,14 +641,21 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
-     *  Call through to runtime to get cookies
+     * Call through to runtime to get SimpleHttpClient (allows BRA to override)
+     */
+    public SimpleHttpClient getHttpClient() {
+        return getSsg().getRuntime().getHttpClient();
+    }
+
+    /**
+     *  Call through to runtime to get cookies (allows BRA to override)
      */
     public HttpCookie[] getSessionCookies() {
         return getSsg().getRuntime().getSessionCookies();
     }
 
     /**
-     * Call through to runtime to set cookies
+     * Call through to runtime to set cookies (allows BRA to override)
      */
     public void setSessionCookies(HttpCookie[] cookies) {
         getSsg().getRuntime().setSessionCookies(cookies);

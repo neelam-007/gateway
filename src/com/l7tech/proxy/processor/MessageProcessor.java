@@ -307,7 +307,7 @@ public class MessageProcessor {
             throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
 
         // We'll just use the CertificateDownloader for this.
-        CertificateDownloader cd = new CertificateDownloader(ssg.getRuntime().getHttpClient(),
+        CertificateDownloader cd = new CertificateDownloader(context.getHttpClient(),
                                                              ssg.getServerUrl(),
                                                              context.getUsername(),
                                                              context.getPassword());
@@ -569,7 +569,7 @@ public class MessageProcessor {
         final Message request = context.getRequest();
         final Message response = context.getResponse();
 
-        GenericHttpClient httpClient = ssg.getRuntime().getHttpClient();
+        GenericHttpClient httpClient = context.getHttpClient();
         GenericHttpRequestParams params = new GenericHttpRequestParams(url);
 
         GenericHttpRequest httpRequest = null;
@@ -614,9 +614,9 @@ public class MessageProcessor {
 
             // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
             // everything in RAM
-            if (httpRequest instanceof FailoverHttpClient.FailoverHttpRequest) {
-                FailoverHttpClient.FailoverHttpRequest failover = (FailoverHttpClient.FailoverHttpRequest)httpRequest;
-                failover.setInputStreamFactory(new FailoverHttpClient.InputStreamFactory() {
+            if (httpRequest instanceof RerunnableHttpRequest) {
+                RerunnableHttpRequest reReq = (RerunnableHttpRequest)httpRequest;
+                reReq.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
                     public InputStream getInputStream() {
                         try {
                             return request.getMimeKnob().getEntireMessageBodyAsInputStream();

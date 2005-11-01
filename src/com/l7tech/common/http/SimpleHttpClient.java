@@ -20,7 +20,8 @@ import java.io.IOException;
  * Adaptor providing a very simple interface to any generic HTTP client.
  */
 public class SimpleHttpClient implements GenericHttpClient {
-    private final GenericHttpClient client;
+
+    //- PUBLIC
 
     /**
      * Very simple interface for HTTP responses returned by the {@link SimpleHttpClient}.
@@ -46,11 +47,17 @@ public class SimpleHttpClient implements GenericHttpClient {
         Document getDocument();
     }
 
+    /**
+     *
+     */
     public SimpleHttpClient(GenericHttpClient delegate) {
         if (delegate == null) throw new NullPointerException();
         this.client = delegate;
     }
 
+    /**
+     *
+     */
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
         return client.createRequest(method, params);
     }
@@ -66,7 +73,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         GenericHttpRequest request = null;
         GenericHttpResponse response = null;
         try {
-            request = client.createRequest(GenericHttpClient.GET, params);
+            request = createRequest(GenericHttpClient.GET, params);
             response = request.getResponse();
             byte[] bodyBytes = HexUtils.slurpStream(response.getInputStream());
             return new SimpleHttpResponseImpl(response, bodyBytes);
@@ -88,9 +95,12 @@ public class SimpleHttpClient implements GenericHttpClient {
      * @throws GenericHttpException if there is a configuration, network or HTTP problem.
      */
     public GenericHttpRequest post(GenericHttpRequestParams params) throws GenericHttpException {
-        return client.createRequest(GenericHttpClient.POST, params);
+        return createRequest(GenericHttpClient.POST, params);
     }
 
+    /**
+     *
+     */
     private static class SimpleHttpResponseImpl extends GenericHttpResponseParamsImpl implements SimpleHttpResponse {
         private final byte[] bodyBytes;
 
@@ -100,19 +110,6 @@ public class SimpleHttpClient implements GenericHttpClient {
         }
         public byte[] getBytes() {
             return bodyBytes;
-        }
-    }
-
-    private static class SimpleXmlResponseImpl extends GenericHttpResponseParamsImpl implements SimpleXmlResponse {
-        private Document bodyDoc;
-
-        private SimpleXmlResponseImpl(GenericHttpResponseParams responseParams, Document bodyDoc) {
-            super(responseParams);
-            this.bodyDoc = bodyDoc;
-        }
-
-        public Document getDocument() {
-            return bodyDoc;
         }
     }
 
@@ -129,7 +126,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         GenericHttpRequest request = null;
         GenericHttpResponse response = null;
         try {
-            request = client.createRequest(GenericHttpClient.POST, params);
+            request = createRequest(GenericHttpClient.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();
             byte[] bodyBytes = HexUtils.slurpStream(response.getInputStream());
@@ -160,7 +157,7 @@ public class SimpleHttpClient implements GenericHttpClient {
             params.setContentType(ContentTypeHeader.XML_DEFAULT);
         try {
             byte[] requestBody = XmlUtil.nodeToString(doc).getBytes(params.getContentType().getEncoding());
-            request = client.createRequest(GenericHttpClient.POST, params);
+            request = createRequest(GenericHttpClient.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();
             final ContentTypeHeader contentType = response.getContentType();
@@ -173,6 +170,26 @@ public class SimpleHttpClient implements GenericHttpClient {
         } finally {
             if (response != null) response.close();
             if (request != null) request.close();
+        }
+    }
+
+    //- PRIVATE
+
+    private final GenericHttpClient client;
+
+    /**
+     *
+     */    
+    private static class SimpleXmlResponseImpl extends GenericHttpResponseParamsImpl implements SimpleXmlResponse {
+        private Document bodyDoc;
+
+        private SimpleXmlResponseImpl(GenericHttpResponseParams responseParams, Document bodyDoc) {
+            super(responseParams);
+            this.bodyDoc = bodyDoc;
+        }
+
+        public Document getDocument() {
+            return bodyDoc;
         }
     }
 }

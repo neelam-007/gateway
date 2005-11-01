@@ -74,17 +74,11 @@ public class FailoverHttpClient implements GenericHttpClient {
         return new FailoverHttpRequest(client, failoverStrategy, maxFailoverAttempts, logger, method, params);
     }
 
-    /** Produces an InputStream.  Provide one of these to {@link FailoverHttpRequest} to avoid request buffering. */
-    public static interface InputStreamFactory {
-        /** @return an InputStream ready to play back the request body for a POST request. */
-        InputStream getInputStream();
-    }
-
     /**
      * An HTTP request that is prepared to do failover.  For best results, check for instances of this and call
      * {@link #setInputStreamFactory} to prevent buffering of the entire request for failover.
      */
-    public static class FailoverHttpRequest implements GenericHttpRequest {
+    public static class FailoverHttpRequest implements RerunnableHttpRequest {
         private final GenericHttpClient client;
         private final FailoverStrategy failoverStrategy;
         private final int maxFailoverAttempts;
@@ -92,7 +86,7 @@ public class FailoverHttpClient implements GenericHttpClient {
         private final GenericHttpMethod method;
         private final GenericHttpRequestParams origParams;
 
-        private InputStreamFactory inputStreamFactory = null;
+        private RerunnableHttpRequest.InputStreamFactory inputStreamFactory = null;
         private InputStream inputStream = null;
         private String host = null;
 
@@ -112,7 +106,7 @@ public class FailoverHttpClient implements GenericHttpClient {
         }
 
         /** @param inputStreamFactory source for replacement input stream if a request needs to be resent due to failover. */
-        public void setInputStreamFactory(InputStreamFactory inputStreamFactory) {
+        public void setInputStreamFactory(RerunnableHttpRequest.InputStreamFactory inputStreamFactory) {
             this.inputStreamFactory = inputStreamFactory;
         }
         
