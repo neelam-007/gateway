@@ -63,7 +63,7 @@ ulimit -s 2048
 
 SSG_HOME=/ssg
 TOMCAT_HOME=/ssg/tomcat/
-
+CATALINA_PID=/ssg/etc/conf/ssg.pid
 
 # Under cygwin?.
 cygwin=false;
@@ -107,6 +107,7 @@ export SSG_HOME
 export JAVA_HOME
 export TOMCAT_HOME
 export JAVA_OPTS
+export CATALINA_PID
 
 # define tomcat home
 if $cygwin; then
