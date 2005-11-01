@@ -1838,11 +1838,17 @@
             <tarfileset dir="build/obfuscation/Bridge-${build.number.regexed}" prefix="Bridge-${build.number.regexed}">
                 <include name="**"/>
             </tarfileset>
+            <tarfileset dir="build/obfuscation/Bridge-${build.number.regexed}" prefix="Bridge-${build.number.regexed}" mode="755">
+                <include name="*.sh"/>
+            </tarfileset>
         </tar>
 
         <tar destfile="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz" compression="gzip">
             <tarfileset dir="build/obfuscation/Manager-${build.number.regexed}" prefix="Manager-${build.number.regexed}">
                 <include name="**"/>
+            </tarfileset>
+            <tarfileset dir="build/obfuscation/Manager-${build.number.regexed}" prefix="Manager-${build.number.regexed}" mode="755">
+                <include name="*.sh"/>
             </tarfileset>
         </tar>
 
