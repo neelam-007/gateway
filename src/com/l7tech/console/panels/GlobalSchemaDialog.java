@@ -254,13 +254,13 @@ public class GlobalSchemaDialog extends JDialog {
             String importloc = importEl.getAttribute("schemaLocation");
             try {
                 if (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) {
-                    if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
+                    //if (importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty()) {
                         if (importloc != null) {
                             unresolvedImportsList.add(importloc);
                         } else {
                             unresolvedImportsList.add(importns);
                         }
-                    }
+                    //}
                 }
             } catch (ObjectModelException e) {
                 String msg = "Error trying to look for import schema in global schema";
