@@ -47,6 +47,10 @@ public class SsgRuntime {
     // Maximum simultaneous outbound connections.  Throttled wide-open.
     public static final int MAX_CONNECTIONS = 60000;
 
+    // Maximum number of times we should show a logon dialog if the user hits cancel.
+    // note that the dialog is disabled AFTER this many displays (+1, since we start at 0)
+    public static final int MAX_LOGON_CANCEL = 1;
+
     private MultiThreadedHttpConnectionManager httpConnectionManager;
 
     private PolicyManager rootPolicyManager = null; // policy store that is not saved to disk
@@ -444,6 +448,15 @@ public class SsgRuntime {
             simpleHttpClient = null;
             httpConnectionManager = null; // bugzilla #1808
         }
+    }
+
+    /**
+     * Called after SSG properties are edited
+     */
+    public void reset() {
+        promptForUsernameAndPassword(true);
+        numTimesLogonDialogCanceled = 0;
+        resetSslContext();
     }
 
     /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */

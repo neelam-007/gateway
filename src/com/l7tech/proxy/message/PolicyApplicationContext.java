@@ -613,7 +613,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (samlAssertion != null)
             return samlAssertion;
 
-        return samlAssertion = (SamlAssertion)ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION).getOrCreate();
+        return samlAssertion = (SamlAssertion)ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION).getOrCreate(ssg);
     }
 
     /**

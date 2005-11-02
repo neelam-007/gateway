@@ -12,6 +12,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
+import com.l7tech.proxy.datamodel.SsgRuntime;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.gui.dialogs.TrustCertificateDialog;
@@ -129,7 +130,7 @@ class GuiCredentialManager extends CredentialManager {
                                                               oldOnesWereBad,
                                                               reasonHint);
                 if (pw == null) {
-                    if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() > 2) {
+                    if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() >= SsgRuntime.MAX_LOGON_CANCEL) {
                         // This is the second time we've popped up a logon dialog and the user has impatiently
                         // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
                         // restarted or the user manually changes the password.

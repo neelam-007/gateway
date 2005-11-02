@@ -103,7 +103,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
         }
     }
 
-    protected SamlAssertion acquireSamlAssertion()
+    protected SamlAssertion acquireSamlAssertion(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException,
             KeyStoreCorruptException, BadCredentialsException, IOException
     {
@@ -140,16 +140,22 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
                     Throwable cause = cioe.getCause();
                     if(cause instanceof InvalidDocumentFormatException) {
                         if(cause.getMessage() != null && cause.getMessage().startsWith("Unexpected SOAP fault from token service: p383:FailedAuthentication:")) {
-                            final String host = url.getHost();
-                            final Collection cc = new ArrayList(1);
-                            invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
-                            if(!cc.isEmpty()) {
-                                PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
-                                if(pa!=null) { //TODO if implementing (optional) persistent password for wstrust federation then save here
-                                    setUsername(pa.getUserName());
-                                    setPassword(pa.getPassword());
-                                    usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
-                                    continue;
+                            if(ssg.getRuntime().promptForUsernameAndPassword()) {
+                                final String host = url.getHost();
+                                final Collection cc = new ArrayList(1);
+                                invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
+                                if(!cc.isEmpty()) {
+                                    PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
+                                    if(pa!=null) { //TODO if implementing (optional) persistent password for wstrust federation then save here
+                                        setUsername(pa.getUserName());
+                                        setPassword(pa.getPassword());
+                                        usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
+                                        continue;
+                                    }
+                                    else if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() >= SsgRuntime.MAX_LOGON_CANCEL) {
+                                        ssg.getRuntime().promptForUsernameAndPassword(false);
+                                    }
+                                    
                                 }
                             }
                         }

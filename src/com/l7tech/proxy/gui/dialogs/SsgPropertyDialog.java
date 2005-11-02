@@ -170,7 +170,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         for (;;) {
                             try {
                                 stratCopy.clearCachedToken();
-                                token = stratCopy.getOrCreate();
+                                token = stratCopy.getOrCreate(ssg);
                                 if (token == null) throw new NullPointerException("No token was returned by the server"); // can't happen
                                 break;
                             } catch (SSLException e) {
@@ -698,7 +698,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 char[] pass = tp.getUserPasswordField().getPassword();
 
                 // Make sure prompting is enabled
-                ssg.getRuntime().promptForUsernameAndPassword(true);
                 ssg.getRuntime().setCachedPassword(pass.length > 0 ? tp.getUserPasswordField().getPassword() : null);
             } else {
                 FederatedSsgIdentityPanel fp = (FederatedSsgIdentityPanel)ssgIdentityPane;
@@ -727,7 +726,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSsgPort(referenceSsg.getSsgPort());
                 ssg.setSslPort(referenceSsg.getSslPort());
             }
-            ssg.getRuntime().resetSslContext();
+            ssg.getRuntime().reset();
         }
         setSsg(ssg);
     }

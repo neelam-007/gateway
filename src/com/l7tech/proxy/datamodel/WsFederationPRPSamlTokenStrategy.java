@@ -187,7 +187,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
 
     //- PROTECTED
 
-    protected SamlAssertion acquireSamlAssertion() throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException, BadCredentialsException, IOException {
+    protected SamlAssertion acquireSamlAssertion(Ssg ssg) throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException, BadCredentialsException, IOException {
         SamlAssertion samlAssertion = null;
 
         URL url = new URL(ipStsUrl);
@@ -207,16 +207,21 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
                 token = FederationPassiveClient.obtainFederationToken(httpClient, params, realm, replyUrl, context, addTimestamp);
             } catch(ResponseStatusException rse) {
                 if(rse.getStatus()==HttpConstants.STATUS_UNAUTHORIZED) {
-                    final String host = url.getHost();
-                    final Collection cc = new ArrayList(1);
-                    invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
-                    if(!cc.isEmpty()) {
-                        PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
-                        if(pa!=null) { //TODO if implementing (optional) persistent password for federated ssg then save here
-                            setUsername(pa.getUserName());
-                            setPassword(pa.getPassword());
-                            params.setPasswordAuthentication(pa);
-                            continue;
+                    if(ssg.getRuntime().promptForUsernameAndPassword()) {
+                        final String host = url.getHost();
+                        final Collection cc = new ArrayList(1);
+                        invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
+                        if(!cc.isEmpty()) {
+                            PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
+                            if(pa!=null) { //TODO if implementing (optional) persistent password for federated ssg then save here
+                                setUsername(pa.getUserName());
+                                setPassword(pa.getPassword());
+                                params.setPasswordAuthentication(pa);
+                                continue;
+                            }
+                            else if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() >= SsgRuntime.MAX_LOGON_CANCEL) {
+                                ssg.getRuntime().promptForUsernameAndPassword(false);
+                            }
                         }
                     }
                     throw rse;

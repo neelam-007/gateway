@@ -41,7 +41,7 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
         this.tokenServerSsg = tokenServerSsg;
     }
 
-    protected SamlAssertion acquireSamlAssertion()
+    protected SamlAssertion acquireSamlAssertion(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException,
             KeyStoreCorruptException, BadCredentialsException, IOException
     {

@@ -39,7 +39,7 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
         this.lock = lock;
     }
 
-    public SecurityToken getOrCreate()
+    public SecurityToken getOrCreate(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException,
             KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException
     {
@@ -49,7 +49,7 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
                 return cachedAssertion;
 
         }
-        SamlAssertion newone = acquireSamlAssertion();
+        SamlAssertion newone = acquireSamlAssertion(ssg);
         synchronized (lock) {
             return cachedAssertion = newone;
         }
@@ -99,7 +99,7 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
      * @throws BadCredentialsException "
      * @throws IOException "
      */
-    protected abstract SamlAssertion acquireSamlAssertion()
+    protected abstract SamlAssertion acquireSamlAssertion(Ssg ssg)
             throws OperationCanceledException, GeneralSecurityException,
             KeyStoreCorruptException, BadCredentialsException, IOException;
 }
