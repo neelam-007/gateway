@@ -147,7 +147,9 @@ public class ResolutionManager extends HibernateDaoSupport {
                 parameters.setSoapaction(soapaction);
                 parameters.setUrn((String)j.next());
                 parameters.setUri(httpuri);
-                listOfParameters.add(parameters);
+                if (!listOfParameters.contains(parameters)) {
+                    listOfParameters.add(parameters);
+                }
             }
         }
         return listOfParameters;
