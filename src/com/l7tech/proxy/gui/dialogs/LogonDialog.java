@@ -35,6 +35,9 @@ public class LogonDialog extends JDialog {
     /* Command string for a login action (e.g.,a button or menu item). */
     private String CMD_LOGIN = "cmd.login";
 
+    private static final String DEFAULT_DIALOG_TITLE = "Log On to Gateway";
+    private static final String DEFAULT_SSG_LABEL_TEXT = "for the SecureSpan Gateway:";
+
     private JButton loginButton;
     private JButton cancelButton;
     private JTextField userNameTextField;
@@ -43,6 +46,7 @@ public class LogonDialog extends JDialog {
     private boolean badPasswordMessage;
     private boolean lockUsername;
     private String ssgName;
+    private String ssgLabelText;
     private String reasonHint;
     private final JTextComponent focusComponent;
 
@@ -50,6 +54,8 @@ public class LogonDialog extends JDialog {
      * Create a new LogonDialog
      */
     public LogonDialog(JFrame parent,
+                       String title,
+                       String ssgLabel,
                        String ssgName,
                        String defaultUsername,
                        boolean lockUsername,
@@ -57,6 +63,7 @@ public class LogonDialog extends JDialog {
                        String reasonHint)
     {
         super(parent, ssgName, true);
+        this.ssgLabelText = ssgLabel;
         this.ssgName = ssgName;
         this.badPasswordMessage = badPasswordMessage;
         this.reasonHint = reasonHint;
@@ -64,11 +71,11 @@ public class LogonDialog extends JDialog {
         // Mustn't lock an empty username
         this.lockUsername = defaultUsername != null && defaultUsername.length() > 0 ? lockUsername : false;
 
-        setTitle("Log On to Gateway");
+        setTitle(title);
         initComponents();
         getRootPane().setDefaultButton(loginButton);
 
-        if (defaultUsername == null) {
+        if (defaultUsername == null || defaultUsername.length() == 0) {
             focusComponent = userNameTextField;
         } else {
             userNameTextField.setText(defaultUsername);
@@ -165,7 +172,7 @@ public class LogonDialog extends JDialog {
         contents.add(reason, constraints);
 
         // ssg name label
-        JLabel ssgNameLabel = new JLabel("for the SecureSpan Gateway:");
+        JLabel ssgNameLabel = new JLabel(ssgLabelText);
         constraints.gridx = 1;
         constraints.gridy = 2;
         constraints.gridwidth = 1;
@@ -331,7 +338,27 @@ public class LogonDialog extends JDialog {
                                                boolean badPasswordMessage,
                                                String reasonHint)
     {
-        final LogonDialog dialog = new LogonDialog(parent, ssgName, defaultUsername, lockUsername, badPasswordMessage, reasonHint);
+        return logon(parent, DEFAULT_DIALOG_TITLE, DEFAULT_SSG_LABEL_TEXT, ssgName, defaultUsername, lockUsername, badPasswordMessage, reasonHint);
+    }
+
+
+    /**
+     * invoke logon dialog
+     *
+     * @param ssgName SSG name to display in the prompt
+     * @param defaultUsername what to fill in the Username field with by default.
+     * @return PasswordAuthentication containing the username and password, or NULL if the dialog was canceled.
+     */
+    public static PasswordAuthentication logon(JFrame parent,
+                                               String title,
+                                               String ssgLabelText,
+                                               String ssgName,
+                                               String defaultUsername,
+                                               boolean lockUsername,
+                                               boolean badPasswordMessage,
+                                               String reasonHint)
+    {
+        final LogonDialog dialog = new LogonDialog(parent, title, ssgLabelText, ssgName, defaultUsername, lockUsername, badPasswordMessage, reasonHint);
         dialog.setResizable(false);
         dialog.setSize(300, 275);
 
@@ -345,22 +372,24 @@ public class LogonDialog extends JDialog {
     /**
      * Before displaying dialog, ensure that correct fields are selected.
      */
-    public void show() {
-        addWindowListener(new WindowAdapter() {
-            /**
-             * Invoked when a window has been opened.
-             */
-            public void windowOpened(WindowEvent e) {
-                JFrame parent = (JFrame)getParent();
-                parent.setState(Frame.NORMAL);
-                parent.setVisible(true);
-                parent.toFront();
-                LogonDialog.this.toFront();
-                //LogonDialog.this.requestFocus();
-                focusComponent.requestFocus();
-            }
-        });
-        super.show();
+    public void setVisible(boolean visible) {
+        if(visible) {
+            addWindowListener(new WindowAdapter() {
+                /**
+                 * Invoked when a window has been opened.
+                 */
+                public void windowOpened(WindowEvent e) {
+                    JFrame parent = (JFrame)getParent();
+                    parent.setState(Frame.NORMAL);
+                    parent.setVisible(true);
+                    parent.toFront();
+                    LogonDialog.this.toFront();
+                    //LogonDialog.this.requestFocus();
+                    focusComponent.requestFocus();
+                }
+            });
+        }
+        super.setVisible(visible);
     }
 
 
@@ -372,7 +401,7 @@ public class LogonDialog extends JDialog {
     private PasswordAuthentication getAuthentication() {
         pack();
         Utilities.centerOnScreen(this);
-        show();
+        setVisible(true);
         return authentication;
     }
 }

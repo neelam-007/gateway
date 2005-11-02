@@ -10,19 +10,39 @@ import com.l7tech.common.util.CausedIOException;
  * @version $Revision$
  */
 public class ResponseStatusException extends CausedIOException {
-    public ResponseStatusException(Throwable cause) {
+
+    //- PUBLIC
+
+    public ResponseStatusException(int status, Throwable cause) {
         super(cause);
+        this.status = status;
     }
 
-    public ResponseStatusException() {
+    public ResponseStatusException(int status) {
         super();
+        this.status = status;
     }
 
-    public ResponseStatusException(String s) {
+    public ResponseStatusException(String s, int status) {
         super(s);
+        this.status = status;
     }
 
-    public ResponseStatusException(String s, Throwable cause) {
+    public ResponseStatusException(String s, int status, Throwable cause) {
         super(s, cause);
+        this.status = status;
     }
+
+    /**
+     * Get the failure status code.
+     *
+     * @return the status code that triggered this exception
+     */
+    public int getStatus() {
+        return status;
+    }
+
+    //- PRIVATE
+
+    private final int status;
 }

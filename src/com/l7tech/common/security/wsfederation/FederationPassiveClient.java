@@ -97,18 +97,20 @@ public class FederationPassiveClient {
         if(logger.isLoggable(Level.FINE)) {
             logger.log(Level.FINE, "WS-Federation token request URL: '"+targetUrl.toExternalForm()+"'.");
         }
-        httpParams.setTargetUrl(targetUrl);
-        if(httpParams.getPasswordAuthentication()!=null) {
-            httpParams.setPreemptiveAuthentication(true);
+        GenericHttpRequestParams httpParamsCopy = new GenericHttpRequestParams(httpParams);
+
+        httpParamsCopy.setTargetUrl(targetUrl);
+        if(httpParamsCopy.getPasswordAuthentication()!=null) {
+            httpParamsCopy.setPreemptiveAuthentication(true);
         }
 
         try {
             // Get RSTR
             SimpleHttpClient simpleClient = new SimpleHttpClient(httpClient);
-            SimpleHttpClient.SimpleHttpResponse response = simpleClient.get(httpParams);
+            SimpleHttpClient.SimpleHttpResponse response = simpleClient.get(httpParamsCopy);
             int status = response.getStatus();
             if (status != HttpConstants.STATUS_OK) {
-                throw new ResponseStatusException("Failure status code from server: " + status);
+                throw new ResponseStatusException("Failure status code from server: " + status, status);
             }
 
             ContentTypeHeader contentType = response.getContentType();
@@ -173,7 +175,7 @@ public class FederationPassiveClient {
 
             int status = response.getStatus();
             if (status != HttpConstants.STATUS_OK) {
-                throw new ResponseStatusException("Failure status code from server: " + status);
+                throw new ResponseStatusException("Failure status code from server: " + status, status);
             }
 
             ContentTypeHeader contentType = response.getContentType();
@@ -236,7 +238,7 @@ public class FederationPassiveClient {
 
             int status = response.getStatus();
             if (status != HttpConstants.STATUS_FOUND && status != HttpConstants.STATUS_SEE_OTHER) {
-                throw new ResponseStatusException("Failure status code from server: " + status);
+                throw new ResponseStatusException("Failure status code from server: " + status, status);
             }
 
             HttpHeaders headers = response.getHeaders();

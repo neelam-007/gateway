@@ -15,29 +15,39 @@ import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.WsTrustRequestType;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.*;
 import com.l7tech.proxy.util.SslUtils;
+import com.l7tech.proxy.gui.dialogs.LogonDialog;
+import com.l7tech.proxy.gui.Gui;
+
 import org.w3c.dom.Element;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+import javax.swing.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.PasswordAuthentication;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * This is the strategy for obtaining a SAML token from a third-party WS-Trust server.
@@ -45,6 +55,12 @@ import java.util.logging.Logger;
 public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy implements Cloneable {
     private static final Logger log = Logger.getLogger(WsTrustSamlTokenStrategy.class.getName());
     private static final SSLContext SSL_CONTEXT;
+
+    /**
+     *
+     */
+    private static final String LOGON_DIALOG_TITLE = "Log On to Trust server";
+    private static final String LOGON_LABEL_TEXT = "for the Trust server:";
 
     // TODO parameterize the HTTP client to use
     private final UrlConnectionHttpClient genericHttpClient = new UrlConnectionHttpClient();
@@ -92,7 +108,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
             KeyStoreCorruptException, BadCredentialsException, IOException
     {
         log.log(Level.INFO, "Applying for SAML assertion from WS-Trust server " + wsTrustUrl);
-        SamlAssertion s;
+        SamlAssertion s = null;
 
         final X509Certificate tokenServerCert = getTokenServerCert();
         final URL url = new URL(wsTrustUrl);
@@ -106,17 +122,41 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
         Element utElm = usernameToken.asElement();
         SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
         try {
-            s = TokenServiceClient.obtainSamlAssertion(httpClient, null, url,
-                                                       tokenServerCert,
-                                                       null, // not overriding timestamp created date
-                                                       null, // no client cert (not signing message)
-                                                       null, // no client private key (not signing message)
-                                                       WsTrustRequestType.fromString(getRequestType()),
-                                                       null, // no token type (FIM doesn't like it)
-                                                       usernameToken,
-                                                       getAppliesTo(),
-                                                       getWstIssuer(),
-                                                       false);
+            while(s==null) {
+                try {
+                    s = TokenServiceClient.obtainSamlAssertion(httpClient, null, url,
+                                                               tokenServerCert,
+                                                               null, // not overriding timestamp created date
+                                                               null, // no client cert (not signing message)
+                                                               null, // no client private key (not signing message)
+                                                               WsTrustRequestType.fromString(getRequestType()),
+                                                               null, // no token type (FIM doesn't like it)
+                                                               usernameToken,
+                                                               getAppliesTo(),
+                                                               getWstIssuer(),
+                                                               false);
+                }
+                catch(CausedIOException cioe) {
+                    Throwable cause = cioe.getCause();
+                    if(cause instanceof InvalidDocumentFormatException) {
+                        if(cause.getMessage() != null && cause.getMessage().startsWith("Unexpected SOAP fault from token service: p383:FailedAuthentication:")) {
+                            final String host = url.getHost();
+                            final Collection cc = new ArrayList(1);
+                            invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
+                            if(!cc.isEmpty()) {
+                                PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
+                                if(pa!=null) { //TODO if implementing (optional) persistent password for wstrust federation then save here
+                                    setUsername(pa.getUserName());
+                                    setPassword(pa.getPassword());
+                                    usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    throw cioe;
+                }
+            }
         } catch (TokenServiceClient.UnrecognizedServerCertException e) {
             CurrentSslPeer.set(sslPeer);
             throw new ServerCertificateUntrustedException(e);
@@ -247,6 +287,26 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
 
         // They do; import it
         storeTokenServerCert(peerCert);
+    }
+
+    /**
+     * Invoke the specified runnable and wait for it to finish.  If this is the event dispatch thread,
+     * just runs it; otherwise uses SwingUtilities.invokeAndWait()
+     * @param runnable  code that displays a modal dialog
+     */
+    private void invokeOnSwingThread(Runnable runnable) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(runnable);
+            } catch (InterruptedException e) {
+                log.log(Level.WARNING, "Thread interrupted; reasserting interrupt and continuing");
+                Thread.currentThread().interrupt();
+            } catch (InvocationTargetException e) {
+                log.log(Level.WARNING, "Dialog code threw an exception; continuing", e);
+            }
+        }
     }
 
     private static class WsTrustSslPeer implements SslPeer {

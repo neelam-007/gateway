@@ -156,7 +156,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         if (params.getContentType() == null)
             params.setContentType(ContentTypeHeader.XML_DEFAULT);
         try {
-            byte[] requestBody = XmlUtil.nodeToString(doc).getBytes(params.getContentType().getEncoding());
+            byte[] requestBody = XmlUtil.toByteArray(doc, params.getContentType().getEncoding());
             request = createRequest(GenericHttpClient.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();

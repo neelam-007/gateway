@@ -1,6 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -12,25 +13,33 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+import javax.swing.*;
 
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.wsfederation.FederationPassiveClient;
 import com.l7tech.common.security.wsfederation.InvalidTokenException;
+import com.l7tech.common.security.wsfederation.ResponseStatusException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.gui.Gui;
+import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
@@ -192,7 +201,29 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
                                                              new WsFederationSslPeer(tokenServerCert, url),
                                                              ClientProxySecureProtocolSocketFactory.getInstance());
 
-        SecurityToken token = FederationPassiveClient.obtainFederationToken(httpClient, params, realm, replyUrl, context, addTimestamp);
+        SecurityToken token = null;
+        while(token == null) {
+            try {
+                token = FederationPassiveClient.obtainFederationToken(httpClient, params, realm, replyUrl, context, addTimestamp);
+            } catch(ResponseStatusException rse) {
+                if(rse.getStatus()==HttpConstants.STATUS_UNAUTHORIZED) {
+                    final String host = url.getHost();
+                    final Collection cc = new ArrayList(1);
+                    invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
+                    if(!cc.isEmpty()) {
+                        PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
+                        if(pa!=null) { //TODO if implementing (optional) persistent password for federated ssg then save here
+                            setUsername(pa.getUserName());
+                            setPassword(pa.getPassword());
+                            params.setPasswordAuthentication(pa);
+                            continue;
+                        }
+                    }
+                    throw rse;
+                }
+                else throw rse;
+            }
+        }
         if(token instanceof SamlAssertion) {
             samlAssertion = (SamlAssertion) token;
         }
@@ -209,6 +240,12 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
      * Logger for this class
      */
     private static final Logger logger = Logger.getLogger(WsFederationPRPSamlTokenStrategy.class.getName());
+
+    /**
+     *
+     */
+    private static final String LOGON_DIALOG_TITLE = "Log On to Federation server";
+    private static final String LOGON_LABEL_TEXT = "for the Federation server:";
 
     /**
      * SSL context to use for HTTP requests.
@@ -251,6 +288,26 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
         SSLException ssle = new SSLException(message);
         ssle.initCause(cause);
         return ssle;
+    }
+
+    /**
+     * Invoke the specified runnable and wait for it to finish.  If this is the event dispatch thread,
+     * just runs it; otherwise uses SwingUtilities.invokeAndWait()
+     * @param runnable  code that displays a modal dialog
+     */
+    private void invokeOnSwingThread(Runnable runnable) {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(runnable);
+            } catch (InterruptedException e) {
+                logger.log(Level.WARNING, "Thread interrupted; reasserting interrupt and continuing");
+                Thread.currentThread().interrupt();
+            } catch (InvocationTargetException e) {
+                logger.log(Level.WARNING, "Dialog code threw an exception; continuing", e);
+            }
+        }
     }
 
     private static class WsFederationSslPeer implements SslPeer {

@@ -23,6 +23,7 @@ public final class HttpConstants {
     public static final int STATUS_OK = 200;
     public static final int STATUS_FOUND = 302;
     public static final int STATUS_SEE_OTHER = 303;
+    public static final int STATUS_UNAUTHORIZED = 401;
     public static final int STATUS_SERVER_ERROR = 500;
 
     // encodings

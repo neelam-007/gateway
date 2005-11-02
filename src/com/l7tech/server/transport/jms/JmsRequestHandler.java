@@ -110,7 +110,7 @@ class JmsRequestHandler {
                     status = messageProcessor.processMessage(context);
                     _logger.finest("Policy resulted in status " + status);
                     if (context.getResponse().getKnob(XmlKnob.class) != null || context.getResponse().getKnob(MimeKnob.class) != null)
-                        responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
+                        responseStream = new ByteArrayInputStream(XmlUtil.toByteArray(context.getResponse().getXmlKnob().getDocumentReadOnly()));
                     else {
                         _logger.finer("No response received");
                         responseStream = null;

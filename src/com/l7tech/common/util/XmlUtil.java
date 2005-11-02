@@ -188,8 +188,19 @@ public class XmlUtil {
         }
     };
 
+    private static ThreadLocal encodingXMLSerializer = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            XMLSerializer xmlSerializer = new XMLSerializer();
+            return xmlSerializer;
+        }
+    };
+
     private static XMLSerializer getFormattedXmlSerializer() {
         return (XMLSerializer) formattedXMLSerializer.get();
+    }
+
+    private static XMLSerializer getEncodingXmlSerializer() {
+        return (XMLSerializer) encodingXMLSerializer.get();
     }
 
     private static ThreadLocal transparentXMLSerializer = new ThreadLocal() {
@@ -205,6 +216,21 @@ public class XmlUtil {
     public static void nodeToOutputStream(Node node, OutputStream os) throws IOException {
         Canonicalizer canon = getTransparentXMLSerializer();
         canon.canonicalize(node, os);
+    }
+
+    public static void nodeToOutputStream(Node node, OutputStream os, String encoding) throws IOException {
+        OutputFormat of = new OutputFormat();
+        of.setEncoding(encoding);
+
+        XMLSerializer ser = getEncodingXmlSerializer();
+        ser.setOutputFormat(of);
+        ser.setOutputByteStream(os);
+        if (node instanceof Document)
+            ser.serialize((Document)node);
+        else if (node instanceof Element)
+            ser.serialize((Element)node);
+        else
+            throw new IllegalArgumentException("Node must be either a Document or an Element");
     }
 
     public static void nodeToFormattedOutputStream(Node node, OutputStream os) throws IOException {
@@ -229,6 +255,12 @@ public class XmlUtil {
          nodeToOutputStream(node, out);
          return out.toByteArray();
      }
+
+    public static byte[] toByteArray(Node node, String encoding) throws IOException {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+        nodeToOutputStream(node, out, encoding);
+        return out.toByteArray();
+    }
 
     public static String nodeToFormattedString(Node node) throws IOException {
         final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);

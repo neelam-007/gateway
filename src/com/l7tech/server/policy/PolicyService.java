@@ -117,9 +117,10 @@ public class PolicyService extends ApplicationObjectSupport {
                 RequestWssSaml requestWssSaml = (RequestWssSaml)assertion;
                 requestWssSaml.setCheckAssertionValidity(false);
                 requestWssSaml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS);
-                final SamlAuthenticationStatement as = new SamlAuthenticationStatement();
+                SamlAuthenticationStatement as = new SamlAuthenticationStatement();
                 as.setAuthenticationMethods(SamlConstants.ALL_AUTHENTICATIONS);
                 requestWssSaml.setAuthenticationStatement(as);
+                requestWssSaml.setNoSubjectConfirmation(true);
             }
 
             allCredentialAssertions.add(assertion);

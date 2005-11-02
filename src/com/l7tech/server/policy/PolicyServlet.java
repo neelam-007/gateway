@@ -339,7 +339,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         res.setContentType(XmlUtil.TEXT_XML);
         res.setStatus(HttpServletResponse.SC_OK);
         OutputStream os = res.getOutputStream();
-        os.write(XmlUtil.nodeToString(doc).getBytes());
+        XmlUtil.nodeToOutputStream(doc,os);
         os.close();
     }
 

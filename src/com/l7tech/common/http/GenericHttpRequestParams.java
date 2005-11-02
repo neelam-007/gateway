@@ -11,6 +11,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import javax.net.ssl.SSLSocketFactory;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.util.Arrays;
 
 /**
  * Bean that provides information about a pending HTTP request. 
@@ -47,8 +48,26 @@ public class GenericHttpRequestParams {
         this.state = state;
     }
 
+    /**
+     * Create a new request description that has the same properties as the
+     * given GenericHttpRequestParams.
+     *
+     * @param template
+     */
+    public GenericHttpRequestParams(GenericHttpRequestParams template) {
+        targetUrl = template.targetUrl;
+        state = template.state;
+        passwordAuthentication = template.passwordAuthentication;
+        sslSocketFactory = template.sslSocketFactory;
+        contentType = template.contentType;
+        contentLength = template.contentLength;
+        extraHeaders = (HttpHeader[]) Arrays.asList(template.extraHeaders).toArray(new HttpHeader[template.extraHeaders.length]);
+        preemptiveAuthentication = template.preemptiveAuthentication;
+        followRedirects = template.followRedirects;
+    }
+
     public GenericHttpState getState() {
-        return state;        
+        return state;
     }
 
     /**

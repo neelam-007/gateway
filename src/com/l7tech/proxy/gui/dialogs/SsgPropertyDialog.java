@@ -185,6 +185,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                       " was successfully obtained using these " + type + " settings.",
                                                       "Success: Token Obtained",
                                                       JOptionPane.INFORMATION_MESSAGE );
+
+                        updateViewCredentialsFromStrategy(fp, stratCopy);
                     } catch (Exception e) {
                         log.log(Level.INFO, "Unable to obtain token from " + type + " server", e);
                         JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
@@ -624,7 +626,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     if (pass == null) pass = new char[0];
                     fp.getWstPasswordField().setText(new String(pass));
                     fp.getWsTrustUrlTextField().setText(strat.getWsTrustUrl());
-                    // TODO fp.getWstSavePasswordCheckBox();
+                    // TODO fp.getWstSavePasswordCheckBox() + for wsFed
                 }
                 else if (astrat instanceof WsFederationPRPSamlTokenStrategy) {
                     WsFederationPRPSamlTokenStrategy strat = (WsFederationPRPSamlTokenStrategy) astrat;
@@ -702,15 +704,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 FederatedSsgIdentityPanel fp = (FederatedSsgIdentityPanel)ssgIdentityPane;
 
                 AbstractSamlTokenStrategy astrat = ssg.getWsTrustSamlTokenStrategy();
-                if(astrat instanceof WsTrustSamlTokenStrategy) {
-                    WsTrustSamlTokenStrategy strat = (WsTrustSamlTokenStrategy) astrat;
-                    if (strat != null)
-                        updateWsTrustStrategyFromView(strat, fp);
-                }
-                else if(astrat instanceof WsFederationPRPSamlTokenStrategy) {
-                    WsFederationPRPSamlTokenStrategy strat = (WsFederationPRPSamlTokenStrategy) astrat;
-                    if (strat != null)
-                        updateWsFederationPRPStrategyFromView(strat, fp);
+                if(astrat!=null) {
+                    updateStrategyFromView(astrat, fp);
+                    astrat.clearCachedToken();
                 }
 
                 // Force chain credentials to be off if this is a fed ssg
@@ -751,6 +747,30 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
+    /**
+     * Called after a successful token request to update the username/password (if changed).
+     */
+    private void updateViewCredentialsFromStrategy(FederatedSsgIdentityPanel fp, AbstractSamlTokenStrategy strat) {
+        String username = null;
+        char[] password = null;
+
+        if(strat instanceof WsTrustSamlTokenStrategy) {
+            username = ((WsTrustSamlTokenStrategy)strat).getUsername();
+            password = ((WsTrustSamlTokenStrategy)strat).getPassword();
+        }
+        else if(strat instanceof WsFederationPRPSamlTokenStrategy) {
+            username = ((WsFederationPRPSamlTokenStrategy)strat).getUsername();
+            password = ((WsFederationPRPSamlTokenStrategy)strat).getPassword();
+        }
+        else {
+            throw new IllegalArgumentException("Unsupported strategy type");
+        }
+
+        if(password==null) password = new char[0];
+
+        fp.getWstUsernameField().setText(username);
+        fp.getWstPasswordField().setText(new String(password));
+    }
 
     /**
      * Copy the information from the specified panel into the specified WS-Trust token strategy.
