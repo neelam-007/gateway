@@ -16,6 +16,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.Templates;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
@@ -34,7 +35,8 @@ import java.util.logging.Logger;
  *
  */
 public class ServerXslTransformation implements ServerAssertion {
-    private final Auditor auditor;
+
+    //- PUBLIC
 
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) {
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
@@ -104,8 +106,10 @@ public class ServerXslTransformation implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
+    //- PACKAGE
+
     Document transform(Document source) throws TransformerException {
-        Transformer transformer = makeTransformer(subject.getXslSrc());
+        Transformer transformer = getTemplate().newTransformer();
         final DOMResult outputTarget = new DOMResult();
         transformer.transform(new DOMSource(source), outputTarget);
         final Node node = outputTarget.getNode();
@@ -118,19 +122,24 @@ public class ServerXslTransformation implements ServerAssertion {
         }
     }
 
-    /**
-     * Unfortunately, Transformer objects are not thread safe. This is why we create them for every requests.
-     * An alternative would be to maintain a pool of transformers.
-     * @param xslstr
-     * @return
-     * @throws TransformerConfigurationException
-     */
-    private Transformer makeTransformer(String xslstr) throws TransformerConfigurationException {
+    //- PRIVATE
+
+    private final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
+
+    private final Auditor auditor;
+    private Templates template;
+    private XslTransformation subject;
+
+    private Templates makeTemplate(String xslstr) throws TransformerConfigurationException {
         TransformerFactory transfoctory = TransformerFactory.newInstance();
         StreamSource xsltsource = new StreamSource(new StringReader(xslstr));
-        return transfoctory.newTransformer(xsltsource);
+        return transfoctory.newTemplates(xsltsource);
     }
 
-    private XslTransformation subject;
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private Templates getTemplate() throws TransformerConfigurationException {
+        if(template==null) {
+            template = makeTemplate(subject.getXslSrc());
+        }
+        return template;
+    }
 }
