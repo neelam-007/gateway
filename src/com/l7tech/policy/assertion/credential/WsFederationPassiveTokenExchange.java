@@ -15,11 +15,11 @@ public class WsFederationPassiveTokenExchange extends Assertion {
     public WsFederationPassiveTokenExchange() {
     }
 
-    public WsFederationPassiveTokenExchange(String url, String contextUrl, boolean timestamp) {
+    public WsFederationPassiveTokenExchange(String url, String contextUrl, String replyUrl) {
         this();
         this.ipStsUrl = url;
         this.context = contextUrl;
-        this.timestamp = timestamp;
+        this.replyUrl = replyUrl;
     }
 
     public String getIpStsUrl() {
@@ -54,19 +54,10 @@ public class WsFederationPassiveTokenExchange extends Assertion {
         this.replyUrl = replyUrl;
     }
 
-    public boolean isTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(boolean timestamp) {
-        this.timestamp = timestamp;
-    }
-
     //- PRIVATE
 
     private String ipStsUrl;
     private String context;
     private boolean authenticate;
     private String replyUrl;
-    private boolean timestamp;
 }

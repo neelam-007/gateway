@@ -39,7 +39,14 @@ public class WsFederationPassiveTokenExchangeTreeNode extends LeafAssertionTreeN
     }
 
     public String getName() {
-        return "Exchange credentials using WS-Federation request to " + _assertion.getIpStsUrl();
+        String name = null;
+        if((_assertion.getIpStsUrl()!=null && _assertion.getIpStsUrl().length()>0) || !_assertion.isAuthenticate()) {
+            name = "Exchange credentials using WS-Federation request to " + _assertion.getIpStsUrl();
+        }
+        else {
+            name = "Authenticate with WS-Federation protected service at " + _assertion.getReplyUrl();
+        }
+        return name;
     }
 
     //- PROTECTED

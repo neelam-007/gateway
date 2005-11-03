@@ -267,6 +267,7 @@
             <test name="com.l7tech.common.http.CookieTest" haltonfailure="no"/>
             <test name="com.l7tech.common.http.ParameterizedStringTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.wsfederation.FederationPassiveClientTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.util.EncryptionUtilTest" haltonfailure="no"/>
 
 <!--
              ** add policy tests into the com.l7tech.policy.AllPolicyTests class

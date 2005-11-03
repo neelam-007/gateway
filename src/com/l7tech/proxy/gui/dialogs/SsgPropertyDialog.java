@@ -622,7 +622,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     fp.getWstIssuerField().setText(strat.getWstIssuer());
                     if (strat.getRequestType() != null) fp.getRequestTypeCombo().setSelectedItem(WsTrustRequestType.fromString(strat.getRequestType()));
                     fp.getWstUsernameField().setText(strat.getUsername());
-                    char[] pass = strat.getPassword();
+                    char[] pass = strat.password();
                     if (pass == null) pass = new char[0];
                     fp.getWstPasswordField().setText(new String(pass));
                     fp.getWsTrustUrlTextField().setText(strat.getWsTrustUrl());
@@ -637,7 +637,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     fp.getWsFedContextTextField().setText(strat.getContext());
                     fp.getWsFedTimestampCheckBox().setSelected(strat.isTimestamp());
                     fp.getWsFedUsernameField().setText(strat.getUsername());
-                    char[] pass = strat.getPassword();
+                    char[] pass = strat.password();
                     if (pass == null) pass = new char[0];
                     fp.getWsFedPasswordField().setText(new String(pass));
                 }
@@ -755,11 +755,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         if(strat instanceof WsTrustSamlTokenStrategy) {
             username = ((WsTrustSamlTokenStrategy)strat).getUsername();
-            password = ((WsTrustSamlTokenStrategy)strat).getPassword();
+            password = ((WsTrustSamlTokenStrategy)strat).password();
         }
         else if(strat instanceof WsFederationPRPSamlTokenStrategy) {
             username = ((WsFederationPRPSamlTokenStrategy)strat).getUsername();
-            password = ((WsFederationPRPSamlTokenStrategy)strat).getPassword();
+            password = ((WsFederationPRPSamlTokenStrategy)strat).password();
         }
         else {
             throw new IllegalArgumentException("Unsupported strategy type");
@@ -776,7 +776,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      */
     private void updateWsTrustStrategyFromView(WsTrustSamlTokenStrategy strat, FederatedSsgIdentityPanel fp) {
         // This is a federated Ssg using a third-party Ws-Trust service
-        strat.setPassword(fp.getWstPasswordField().getPassword());
+        strat.storePassword(fp.getWstPasswordField().getPassword());
         strat.setUsername(fp.getWstUsernameField().getText());
         strat.setWsTrustUrl(fp.getWsTrustUrlTextField().getText());
         strat.setAppliesTo(fp.getWspAppliesToField().getText());
@@ -792,7 +792,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      */
     private void updateWsFederationPRPStrategyFromView(WsFederationPRPSamlTokenStrategy strat, FederatedSsgIdentityPanel fp) {
         // This is a federated Ssg using a third-party Ws-Federation service
-        strat.setPassword(fp.getWsFedPasswordField().getPassword());
+        strat.storePassword(fp.getWsFedPasswordField().getPassword());
         strat.setUsername(fp.getWsFedUsernameField().getText());
         strat.setIpStsUrl(fp.getWsFedUrlTextField().getText());
         strat.setRealm(fp.getWsFedRealmTextField().getText());

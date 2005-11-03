@@ -31,7 +31,6 @@ public class WsFederationPassiveTokenExchangePropertiesDialog extends JDialog {
         contextTextField.setText(assertion.getContext());
         authenticationCheckBox.setSelected(wsFedAssertion.isAuthenticate());
         replyUrlTextField.setText(wsFedAssertion.getReplyUrl());
-        timestampCheckBox.setSelected(assertion.isTimestamp());
 
         getContentPane().add(mainPanel);
 
@@ -41,7 +40,6 @@ public class WsFederationPassiveTokenExchangePropertiesDialog extends JDialog {
                 wsFedAssertion.setContext(contextTextField.getText());
                 wsFedAssertion.setAuthenticate(authenticationCheckBox.isSelected());
                 wsFedAssertion.setReplyUrl(replyUrlTextField.getText());
-                wsFedAssertion.setTimestamp(timestampCheckBox.isSelected());
                 assertionChanged = true;
                 dispose();
             }
@@ -80,7 +78,6 @@ public class WsFederationPassiveTokenExchangePropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JPanel mainPanel;
-    private JCheckBox timestampCheckBox;
     private JTextField contextTextField;
     private JTextField ipStsUrlTextField;
     private JCheckBox authenticationCheckBox;
@@ -92,7 +89,7 @@ public class WsFederationPassiveTokenExchangePropertiesDialog extends JDialog {
         String rurl = replyUrlTextField.getText();
         boolean auth = authenticationCheckBox.isSelected();
 
-        ok = validUrl(url, false) && validUrl(rurl, !auth);
+        ok = validUrl(url, auth) && validUrl(rurl, !auth);
 
         okButton.setEnabled(ok);
     }

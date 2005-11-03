@@ -34,6 +34,7 @@ import com.l7tech.common.security.wsfederation.InvalidTokenException;
 import com.l7tech.common.security.wsfederation.ResponseStatusException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.EncryptionUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
@@ -116,13 +117,59 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
 
     public void setUsername(String username) {
         this.username = username;
+        checkDecrypt();
     }
 
+    /**
+     * @deprecated use password/storePassword methods (leave this for xml file config)
+     */
     public char[] getPassword() {
+        return new char[0];
+    }
+
+    /**
+     * @deprecated use password/storePassword methods (leave this for xml file config)
+     */
+    public void setPassword(char[] password) {
+        this.password = password;
+    }
+
+    public String getEncryptedPassword() {
+        String encrypted = "";
+
+        if(password!=null && password.length>0 && username!=null && username.length()>0) {
+            encrypted = EncryptionUtil.encrypt(new String(password), username);
+        }
+
+        return encrypted;
+    }
+
+    public void setEncryptedPassword(String password) {
+        if(password!=null && password.length()>0) {
+            encryptedPassword = password;
+            checkDecrypt();
+        }
+    }
+
+    /**
+     * Get the password in clear text.
+     *
+     * <p>Note: this method is not a bean style accessor to avoid a clear text
+     * password in the config file.</p>
+     *
+     * @return the password
+     */
+    public char[] password() {
         return password;
     }
 
-    public void setPassword(char[] password) {
+    /**
+     * Set the password in clear text.
+     *
+     * @return the password
+     * @see #password()
+     */
+    public void storePassword(char[] password) {
         this.password = password;
     }
 
@@ -215,7 +262,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
                             PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
                             if(pa!=null) { //TODO if implementing (optional) persistent password for federated ssg then save here
                                 setUsername(pa.getUserName());
-                                setPassword(pa.getPassword());
+                                storePassword(pa.getPassword());
                                 params.setPasswordAuthentication(pa);
                                 continue;
                             }
@@ -288,6 +335,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
 
     private String tokenServerCertB64;
     private transient X509Certificate tokenServerCert = null;
+    private transient String encryptedPassword = null;
 
     private SSLException newSSLException(String message, Throwable cause) {
         SSLException ssle = new SSLException(message);
@@ -311,6 +359,21 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
                 Thread.currentThread().interrupt();
             } catch (InvocationTargetException e) {
                 logger.log(Level.WARNING, "Dialog code threw an exception; continuing", e);
+            }
+        }
+    }
+
+    /**
+     *
+     */
+    private void checkDecrypt() {
+        if(encryptedPassword!=null && encryptedPassword.length()>0
+        && username!=null && username.length()>0) {
+            try {
+                password = EncryptionUtil.decrypt(encryptedPassword, username).toCharArray();
+                encryptedPassword = null;
+            }
+            catch(IllegalArgumentException iae) {
             }
         }
     }

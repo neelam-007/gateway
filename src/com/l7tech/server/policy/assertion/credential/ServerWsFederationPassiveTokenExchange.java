@@ -51,8 +51,10 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
         this.httpClient = new UrlConnectionHttpClient();
 
         try {
-            if (assertion.getIpStsUrl() == null) {
-                logger.warning("Null IP/STS URL, assertion is non-functional");
+            if (assertion.getIpStsUrl() == null || assertion.getIpStsUrl().length()==0) {
+                if(!isAuthAssertion(assertion)) {
+                    logger.warning("Null IP/STS URL, assertion is non-functional");
+                }
                 this.ipStsUrl = null;
             }
             else {
@@ -74,7 +76,7 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
         AssertionStatus result = AssertionStatus.FAILED;
 
         try {
-            if(ipStsUrl==null) throw new StopAndAuditException(AssertionMessages.WSFEDPASS_CONFIG_INVALID); 
+            if(ipStsUrl==null && !isAuthAssertion(assertion)) throw new StopAndAuditException(AssertionMessages.WSFEDPASS_CONFIG_INVALID);
             result = doCheckRequest(context);
         }
         catch(AuthRequiredException are) {
@@ -100,6 +102,13 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
     private final GenericHttpClient httpClient;
     private final URL ipStsUrl;
     private final WsFederationPassiveTokenExchange assertion;
+
+    /**
+     * Return true if the given assertion is configured to authenticate
+     */
+    private boolean isAuthAssertion(WsFederationPassiveTokenExchange wsfedAssertion) {
+        return wsfedAssertion.isAuthenticate() && wsfedAssertion.getReplyUrl()!=null;
+    }
 
     /**
      *
@@ -135,7 +144,7 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
             GenericHttpRequestParams params = new GenericHttpRequestParams(ipStsUrl);
             initParams(params);
 
-            SecurityToken token = FederationPassiveClient.exchangeFederationToken(httpClient, params, partnerAssertion, assertion.getContext(), assertion.isTimestamp());
+            SecurityToken token = FederationPassiveClient.exchangeFederationToken(httpClient, params, partnerAssertion, assertion.getContext(), false);
             if(token instanceof SamlAssertion) {
                 samlAssertion = (SamlAssertion) token;
             }
@@ -198,9 +207,6 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
         XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
         ensureXmlRequest(requestXml);
 
-        //TODO return not applicable for non-soap messages? (also wstrust credential exchange?)
-        //AssertionStatus.NOT_APPLICABLE
-
         // Try to get credentials from WSS processor results
         SamlAssertion existingToken = getToken(requestXml);
 
@@ -209,31 +215,37 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
             throw new StopAndAuditException(AssertionMessages.WSFEDPASS_NO_SUITABLE_CREDENTIALS);
         }
 
-        // Attempt to get from cache
-        PolicyContextCache cache = context.getCache();
+        SamlAssertion samlAssertion = null;
         boolean usingCachedToken = true;
-        SamlAssertion samlAssertion = (SamlAssertion) getCachedSecurityToken(cache);
+        if(ipStsUrl!=null) { // else is auth only, no token exchange
+            // Attempt to get from cache
+            PolicyContextCache cache = context.getCache();
+            samlAssertion = (SamlAssertion) getCachedSecurityToken(cache);
 
-        // Get from server if necessary
-        if(samlAssertion==null) {
-            usingCachedToken = false;
-            samlAssertion = getFederationToken(existingToken);
-            setCachedSecurityToken(cache, samlAssertion, getSamlAssertionExpiry(samlAssertion));
+            // Get from server if necessary
+            if(samlAssertion==null) {
+                usingCachedToken = false;
+                samlAssertion = getFederationToken(existingToken);
+                setCachedSecurityToken(cache, samlAssertion, getSamlAssertionExpiry(samlAssertion));
+            }
+            else {
+                if(logger.isLoggable(Level.FINE)) logger.fine("Using cached SAML assertion");
+            }
+
+            // Update request XML
+            updateRequestXml(context, requestXml, existingToken, samlAssertion);
+
+            // add cache check to run after routing
+            addCacheInvalidator(context);
         }
         else {
-            if(logger.isLoggable(Level.FINE)) logger.fine("Using cached SAML assertion");
+            samlAssertion = existingToken;
         }
-
-        // Update request XML
-        updateRequestXml(context, requestXml, existingToken, samlAssertion);
 
         // POST to endpoint (AUTH), GET COOKIES
         if(assertion.isAuthenticate()) {
             doAuth(context, samlAssertion, usingCachedToken);
         }
-
-        // add cache check to run after routing
-        addCacheInvalidator(context);
 
         // add response fault customizer
         addResponseAuthFailureDecorator(context);

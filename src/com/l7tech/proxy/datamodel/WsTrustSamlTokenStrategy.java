@@ -16,6 +16,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.EncryptionUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -74,6 +75,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
     private String requestType = WsTrustRequestType.ISSUE.getUri();
 
     private transient X509Certificate tokenServerCert = null;
+    private transient String encryptedPassword = null;
 
     static {
         try {
@@ -118,7 +120,7 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
                                                              sslPeer,
                                                              ClientProxySecureProtocolSocketFactory.getInstance());
 
-        UsernameToken usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
+        UsernameToken usernameToken = new UsernameTokenImpl(getUsername(), password());
         Element utElm = usernameToken.asElement();
         SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
         try {
@@ -148,8 +150,8 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
                                     PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
                                     if(pa!=null) { //TODO if implementing (optional) persistent password for wstrust federation then save here
                                         setUsername(pa.getUserName());
-                                        setPassword(pa.getPassword());
-                                        usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
+                                        storePassword(pa.getPassword());
+                                        usernameToken = new UsernameTokenImpl(getUsername(), password());
                                         continue;
                                     }
                                     else if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() >= SsgRuntime.MAX_LOGON_CANCEL) {
@@ -204,13 +206,59 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
 
     public void setUsername(String username) {
         this.username = username;
+        checkDecrypt();
     }
 
+    /**
+     * @deprecated use password/storePassword methods (leave this for xml file config)
+     */
     public char[] getPassword() {
+        return new char[0];
+    }
+
+    /**
+     * @deprecated use password/storePassword methods (leave this for xml file config)
+     */
+    public void setPassword(char[] password) {
+        this.password = password;
+    }
+
+    public String getEncryptedPassword() {
+        String encrypted = "";
+
+        if(password!=null && password.length>0 && username!=null && username.length()>0) {
+            encrypted = EncryptionUtil.encrypt(new String(password), username);
+        }
+
+        return encrypted;
+    }
+
+    public void setEncryptedPassword(String password) {
+        if(password!=null && password.length()>0) {
+            encryptedPassword = password;
+            checkDecrypt();
+        }
+    }
+
+    /**
+     * Get the password in clear text.
+     *
+     * <p>Note: this method is not a bean style accessor to avoid a clear text
+     * password in the config file.</p>
+     *
+     * @return the password
+     */
+    public char[] password() {
         return password;
     }
 
-    public void setPassword(char[] password) {
+    /**
+     * Set the password in clear text.
+     *
+     * @return the password
+     * @see #password()
+     */
+    public void storePassword(char[] password) {
         this.password = password;
     }
 
@@ -311,6 +359,21 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
                 Thread.currentThread().interrupt();
             } catch (InvocationTargetException e) {
                 log.log(Level.WARNING, "Dialog code threw an exception; continuing", e);
+            }
+        }
+    }
+
+    /**
+     *
+     */
+    private void checkDecrypt() {
+        if(encryptedPassword!=null && encryptedPassword.length()>0
+        && username!=null && username.length()>0) {
+            try {
+                password = EncryptionUtil.decrypt(encryptedPassword, username).toCharArray();
+                encryptedPassword = null;
+            }
+            catch(IllegalArgumentException iae) {
             }
         }
     }
