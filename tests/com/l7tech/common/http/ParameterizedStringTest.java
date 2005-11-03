@@ -4,9 +4,8 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.net.URLDecoder;
-
-import javax.servlet.http.HttpUtils;
 
 import junit.framework.TestCase;
 
@@ -23,7 +22,7 @@ public class ParameterizedStringTest  extends TestCase {
     public void testBasic() {
         String queryString = "a=b";
         Map paramStrMap = ParameterizedString.parseQueryString(queryString);
-        Map httpUtilMap = HttpUtils.parseQueryString(queryString);
+        Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
     }
@@ -31,7 +30,7 @@ public class ParameterizedStringTest  extends TestCase {
     public void testNoName() {
         String queryString = "=b";
         Map paramStrMap = ParameterizedString.parseQueryString(queryString);
-        Map httpUtilMap = HttpUtils.parseQueryString(queryString);
+        Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
     }
@@ -39,7 +38,7 @@ public class ParameterizedStringTest  extends TestCase {
     public void testNoValue() {
         String queryString = "a=";
         Map paramStrMap = ParameterizedString.parseQueryString(queryString);
-        Map httpUtilMap = HttpUtils.parseQueryString(queryString);
+        Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
     }
@@ -47,7 +46,7 @@ public class ParameterizedStringTest  extends TestCase {
     public void testEqualsInValue() {
         String queryString = "a=b&c=d=e";
         Map paramStrMap = ParameterizedString.parseQueryString(queryString);
-        Map httpUtilMap = HttpUtils.parseQueryString(queryString);
+        Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
     }
@@ -55,7 +54,7 @@ public class ParameterizedStringTest  extends TestCase {
     public void testPercentInValue() {
         String queryString = "a=b&c=d%e";
         Map paramStrMap = ParameterizedString.parseQueryString(queryString);
-        Map httpUtilMap = HttpUtils.parseQueryString(queryString);
+        Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
     }
@@ -63,7 +62,7 @@ public class ParameterizedStringTest  extends TestCase {
     public void testEncodedName() throws Exception {
         String queryString = "a%3b=b";
         Map paramStrMap = ParameterizedString.parseQueryString(queryString);
-        Map httpUtilMap = HttpUtils.parseQueryString(queryString);
+        Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
     }
@@ -71,7 +70,7 @@ public class ParameterizedStringTest  extends TestCase {
     public void testEncodedValue() {
         String queryString = "a=b%3b";
         Map paramStrMap = ParameterizedString.parseQueryString(queryString);
-        Map httpUtilMap = HttpUtils.parseQueryString(queryString);
+        Map httpUtilMap = HttpUtils_parseQueryString(queryString);
 
         assertEquals("Test for query string '"+queryString+"'", enlist(httpUtilMap), enlist(paramStrMap));
     }
@@ -114,7 +113,7 @@ public class ParameterizedStringTest  extends TestCase {
             paramStrThrew = true;
         }
         try {
-            HttpUtils.parseQueryString(queryString);
+            HttpUtils_parseQueryString(queryString);
         }
         catch(IllegalArgumentException iae) {
             httpUtilThrew = true;
@@ -133,5 +132,10 @@ public class ParameterizedStringTest  extends TestCase {
             enlisted.put(entry.getKey(), Arrays.asList((String[])entry.getValue()));
         }
         return enlisted;
+    }
+
+    // just so we don't get as many deprecation warnings
+    private static Hashtable HttpUtils_parseQueryString(String query) {
+        return javax.servlet.http.HttpUtils.parseQueryString(query);
     }
 }
