@@ -72,8 +72,8 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
      */
     public Collection findByName(String schemaName) throws FindException {
         String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
-                          " where " + TABLE_NAME + ".name = \"" + schemaName + "\"";
-        Collection output = getHibernateTemplate().find(queryname);
+                          " where " + TABLE_NAME + ".name = ?";
+        Collection output = getHibernateTemplate().find(queryname, schemaName);
         return output;
     }
 
@@ -82,8 +82,8 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
      */
     public Collection findByTNS(String tns) throws FindException {
         String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
-                          " where " + TABLE_NAME + ".tns = \"" + tns + "\"";
-        Collection output = getHibernateTemplate().find(querytns);
+                          " where " + TABLE_NAME + ".tns = ?";
+        Collection output = getHibernateTemplate().find(querytns, tns);
         return output;
     }
 
