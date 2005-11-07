@@ -92,24 +92,26 @@ public class CounterIDManager extends HibernateDaoSupport {
         CounterIDRecord data = new CounterIDRecord();
         data.setCounterName(counterName);
 
-        String query = null;
-        if (identity != null) {
-            data.setUserId(identity.getUniqueIdentifier());
-            data.setProviderId(identity.getProviderId());
-            query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
-                    " where " + TABLE_NAME + "." + "counterName" + " = \'" + data.getCounterName() + "\'" +
-                    " and " + TABLE_NAME + "." + "userId" + " = \'" + data.getUserId() + "\'" +
-                    " and " + TABLE_NAME + "." + "providerId" + " = \'" + data.getProviderId() + "\'";
-
-        } else {
-            query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
-                    " where " + TABLE_NAME + "." + "counterName" + " = \'" + data.getCounterName() + "\'" +
-                    " and " + TABLE_NAME + "." + "userId = null" +
-                    " and " + TABLE_NAME + "." + "providerId" + " = \'" + data.getProviderId() + "\'";
-        }
         try {
+            String query = null;
+            List res = null;
+            if (identity != null) {
+                data.setUserId(identity.getUniqueIdentifier());
+                data.setProviderId(identity.getProviderId());
+                query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
+                        " where " + TABLE_NAME + "." + "counterName" + " = ?" +
+                        " and " + TABLE_NAME + "." + "userId" + " = ? and " + TABLE_NAME + "." + "providerId" + " = ?";
+                res = getHibernateTemplate().find(query, new Object[] {data.getCounterName(),
+                                                                       data.getUserId(),
+                                                                       new Long(data.getProviderId())});
+            } else {
+                query = "from " + TABLE_NAME + " in class " + CounterIDRecord.class.getName() +
+                        " where " + TABLE_NAME + "." + "counterName" + " = ? and " + TABLE_NAME + "." + "userId = null" +
+                        " and " + TABLE_NAME + "." + "providerId" + " = ?";
+                res = getHibernateTemplate().find(query, new Object[]{data.getCounterName(),
+                                                                      new Long(data.getProviderId())});
+            }
             // check whether this is already in the db
-            List res = getHibernateTemplate().find(query);
             if (res != null && !res.isEmpty()) {
                 CounterIDRecord existing = (CounterIDRecord)res.get(0);
                 return existing.getCounterId();
