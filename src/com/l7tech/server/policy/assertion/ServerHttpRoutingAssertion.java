@@ -500,16 +500,33 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         boolean responseOk = true;
         try {
             InputStream responseStream = postMethod.getResponseBodyAsStream();
-            String ctype = postMethod.getResponseHeader(HttpConstants.HEADER_CONTENT_TYPE).getValue();
-            ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(ctype);
+            Header ctheader = postMethod.getResponseHeader(HttpConstants.HEADER_CONTENT_TYPE);
+            String ctype = ctheader!=null ? ctheader.getValue() : null;
+            ContentTypeHeader outerContentType = ctype!=null ? ContentTypeHeader.parseValue(ctype) : null;
 
+            // Handle unknown or binary content type error
+            if(outerContentType==null || !(outerContentType.isXml() || outerContentType.isText())) {
+                String errMsg = outerContentType==null ? "no" : "non-text";
+
+                logger.warning("downstream service returned status (" +
+                               status + ") with " + errMsg + " content type header.");
+
+                Document faultDetails = XmlUtil.stringToDocument("<downstreamResponse><status>" +
+                                        status + "</status></downstreamResponse>");
+
+                SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER,
+                                      "downstream service returned " + errMsg + " content type.",
+                                      faultDetails.getDocumentElement());
+
+                context.setFaultDetail(sfd);
+                responseOk = false;
+            }
             // Special case for bugzilla #1406, we encapsulate downstream ugly html error pages in a neat soapfault
-            if (status != HttpConstants.STATUS_OK
+            else if (status != HttpConstants.STATUS_OK
              && outerContentType.isText()
-             && !"xml".equalsIgnoreCase(outerContentType.getSubtype())) {
+             && !outerContentType.isXml()) {
                     logger.warning("downstream service returned error (" +
-                                   status +
-                                   ") with non-xml payload; encapsulating error in soapfault");
+                                   status + ") with non-xml payload; encapsulating error in soapfault");
 
                     Document faultDetails = XmlUtil.stringToDocument("<downstreamResponse><status>" + status +
                                                                      "</status></downstreamResponse>");
@@ -537,6 +554,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             }
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);
+            responseOk = false;
         }
         return responseOk;
     }
