@@ -115,7 +115,7 @@ public class FederationPassiveClient {
 
             ContentTypeHeader contentType = response.getContentType();
             if(contentType==null) throw new UnsupportedEncodingException("No content type header in response");
-            if(!ContentTypeHeader.HTML_DEFAULT.matches(contentType)) throw new InvalidHtmlException("Response is not text/html content " + contentType);
+            if(!contentType.isHtml()) throw new InvalidHtmlException("Response is not html content " + contentType);
 
             String encoding = contentType.getEncoding();
             byte[] responseBytes = response.getBytes();
@@ -180,7 +180,7 @@ public class FederationPassiveClient {
 
             ContentTypeHeader contentType = response.getContentType();
             if(contentType==null) throw new UnsupportedEncodingException("No content type header in response");
-            if(!ContentTypeHeader.HTML_DEFAULT.matches(contentType)) throw new InvalidHtmlException("Response is not text/html content " + contentType);
+            if(!contentType.isHtml()) throw new InvalidHtmlException("Response is not html content " + contentType);
 
             String encoding = contentType.getEncoding();
             byte[] responseBytes = response.getBytes();

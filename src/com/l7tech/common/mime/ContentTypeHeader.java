@@ -23,7 +23,6 @@ public class ContentTypeHeader extends MimeHeader {
     private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
     public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
-    public static final ContentTypeHeader HTML_DEFAULT; // text/html; charset=UTF-8
     public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final String CHARSET = "charset";
@@ -34,7 +33,6 @@ public class ContentTypeHeader extends MimeHeader {
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
             TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
-            HTML_DEFAULT = parseValue("text/html; charset=UTF-8");
             XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
             XML_DEFAULT.getEncoding();
             APPLICATION_X_WWW_FORM_URLENCODED = parseValue("application/x-www-form-urlencoded");
@@ -244,7 +242,13 @@ public class ContentTypeHeader extends MimeHeader {
         return "multipart".equalsIgnoreCase(getType());
     }
 
-    /** @return true if the type is "text/xml", "application/xml" or "application/<em>anything</em>+xml*/
+    /**
+     * Check if this type is for some kind of textual XML.
+     *
+     * Note that this can be true for xhtml content.
+     *
+     * @return true if the type is "text/xml", "application/xml" or "application/<em>anything</em>+xml
+     */
     public boolean isXml() {
         if (isText() && "xml".equalsIgnoreCase(getSubtype())) return true;
         if (isApplication()) {
@@ -261,6 +265,23 @@ public class ContentTypeHeader extends MimeHeader {
         }
 
         return false;
+    }
+
+    /**
+     * Check if this type is for some kind of textual (X)HTML.
+     *
+     * <ul>
+     * <li>text/html</li>
+     * <li>application/xhtml+xml</li>
+     * </ul>
+     *
+     * Note that it is possible for isHtml and isXml to both be true.
+     *
+     * @return true if textual html content.
+     */
+    public boolean isHtml() {
+        return (isText() && "html".equalsIgnoreCase(getSubtype()))
+             ||(isApplication() && "xhtml+xml".equalsIgnoreCase(getSubtype()));
     }
 
     /**
