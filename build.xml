@@ -492,6 +492,9 @@
                 <include name="xml-apis.jar"/>
                 <include name="xss4j.jar"/>
 
+
+                <include name="xstream-1.1.2.jar"/>
+
                 <!-- Include OpenJMS on dev builds -->
                 <include name="openjms-client-0.7.6.jar" if="include.jms.openjms"/>
                 <include name="exolabcore-0.3.7.jar" if="include.jms.openjms"/>

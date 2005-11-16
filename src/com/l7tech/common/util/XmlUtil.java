@@ -11,6 +11,8 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.w3c.dom.*;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.w3c.dom.ls.LSInput;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -37,6 +39,14 @@ public class XmlUtil {
             throw new SAXException(msg);
         }
     };
+
+    private static final LSResourceResolver SAFE_LS_RESOURCE_RESOLVER = new LSResourceResolver() {
+        public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+            String msg = "Document referred to an external entity with system id '" + systemId + "' of type '" + type + "'";
+            logger.warning( msg );
+            return new LSInputImpl(); // resolve to nothing, causes error
+        }
+    };
     
     /** This is the namespace that the special namespace prefix "xmlns" logically belongs to. */
     public static final String XMLNS_NS = "http://www.w3.org/2000/xmlns/";
@@ -56,6 +66,16 @@ public class XmlUtil {
      */
     public static EntityResolver getSafeEntityResolver() {
         return SAFE_ENTITY_RESOLVER;
+    }
+
+    /**
+     * Returns a stateless, thread-safe {@link LSResourceResolver} that resolves all schema and entity
+     * references to an uninitialized LSInput implementation.
+     *
+     * @return a safe {@link LSResourceResolver} instance.
+     */
+    public static LSResourceResolver getSafeLSResourceResolver() {
+        return SAFE_LS_RESOURCE_RESOLVER;
     }
 
     private static ThreadLocal documentBuilder = new ThreadLocal() {

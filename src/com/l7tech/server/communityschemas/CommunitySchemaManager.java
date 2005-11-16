@@ -14,6 +14,8 @@ import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.apache.xmlbeans.XmlException;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.w3c.dom.ls.LSInput;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
+import java.io.StringReader;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -28,6 +31,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.server.ServerConfig;
 import com.tarari.xml.schema.SchemaResolver;
 
@@ -169,32 +174,44 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
     public EntityResolver communityEntityResolver() {
         final CommunitySchemaManager manager = this;
         return new EntityResolver () {
-            private final String HOMEDIR = System.getProperty("user.dir");
             public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-                // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
-                String schemaId = systemId;
-                if (systemId != null && HOMEDIR != null) {
-                    int pos = systemId.indexOf(HOMEDIR);
-                    if (pos > -1) {
-                        schemaId = systemId.substring(pos+HOMEDIR.length()+1);
-                    }
-                }
-                logger.info("asking for schema with systemId " + schemaId);
-                Collection matchingSchemas = null;
-                try {
-                    matchingSchemas = manager.findByName(schemaId);
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "error getting community schema with systemid " + schemaId, e);
-                }
-                if (matchingSchemas.isEmpty()) {
-                    logger.warning("there were no community schema that would resolve with the systemid " + schemaId);
+                SchemaEntry resolved = manager.getSchemaEntryFromSystemId(systemId);
+
+                if(resolved==null) {
                     // this is supposed to let sax parser resolve his own way if possible
                     return null;
                 }
-                SchemaEntry resolved = (SchemaEntry)matchingSchemas.iterator().next();
-                return new InputSource(new ByteArrayInputStream(resolved.getSchema().getBytes()));
+                else {
+                    return new InputSource(new StringReader(resolved.getSchema()));
+                }
             }
         };
+    }
+
+    /**
+     * To get an LSResourceResolver based on the community schema table. This is meant to be used in
+     * conjunction with javax.xml.validation.SchemaFactory.setResourceResolver.
+     *
+     * @return an LSResourceResolver that can be used to resolve schema import statements as part of
+     * the software implementation of schema validation. this resolver assumes that the external
+     * schemas are already populated in the community schema table and that they are identified the
+     * same way as the import statements' schemaLocation attribute value.
+     */
+    public LSResourceResolver communityLSResourceResolver() {
+        final CommunitySchemaManager manager = this;
+        return new LSResourceResolver () {
+            public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, final String baseURI) {
+                LSInput lsInput = new LSInputImpl();
+                if(XmlUtil.W3C_XML_SCHEMA.equals(type)) { // check we are resolving schema
+                    SchemaEntry resolved = manager.getSchemaEntryFromSystemId(systemId);
+                    if(resolved!=null) {
+                        lsInput.setCharacterStream(new StringReader(resolved.getSchema()));
+                    }
+                }
+                return lsInput; // if we return null the schema would be resolved over the network.
+            }
+        };
+
     }
 
     /**
@@ -248,6 +265,40 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
         defaultEntry.setName("soapenv");
         defaultEntry.setTns("http://schemas.xmlsoap.org/soap/envelope/");
         return defaultEntry;
+    }
+
+    /**
+     * Get the SchemaEntry or null if not found.
+     */
+    private SchemaEntry getSchemaEntryFromSystemId(final String systemId) {
+        SchemaEntry resolved = null;
+        String HOMEDIR = System.getProperty("user.dir");
+
+        // by default, the parser constructs a systemId in the form of a url "file:///user.dir/filename"
+        String schemaId = systemId;
+        if (systemId != null && HOMEDIR != null) {
+            int pos = systemId.indexOf(HOMEDIR);
+            if (pos > -1) {
+                schemaId = systemId.substring(pos+HOMEDIR.length()+1);
+            }
+        }
+
+        logger.info("asking for schema with systemId " + schemaId);
+        Collection matchingSchemas = null;
+        try {
+            matchingSchemas = findByName(schemaId);
+
+            if (matchingSchemas.isEmpty()) {
+                logger.warning("there were no community schema that would resolve with the systemid " + schemaId);
+            }
+            else {
+                resolved = (SchemaEntry) matchingSchemas.iterator().next();
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "error getting community schema with systemid " + schemaId, e);
+        }
+
+        return resolved;
     }
 
     private static final String TABLE_NAME = "community_schema";

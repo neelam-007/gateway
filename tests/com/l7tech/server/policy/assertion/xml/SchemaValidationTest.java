@@ -135,7 +135,7 @@ public class SchemaValidationTest extends TestCase {
         assertion.setApplyToArguments(true);
         assertion.setSchema(schema);
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus res = serverAssertion.checkRequest(XmlUtil.stringToDocument(request));
+        AssertionStatus res = serverAssertion.validateDocument(XmlUtil.stringToDocument(request));
         assertTrue(res == AssertionStatus.NONE);
     }
 
