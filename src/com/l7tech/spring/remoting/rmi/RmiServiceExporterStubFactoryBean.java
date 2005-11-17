@@ -6,7 +6,6 @@
 package com.l7tech.spring.remoting.rmi;
 
 import com.l7tech.admin.AdminLogin;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.server.admin.AdminSessionManager;
 import org.springframework.beans.factory.FactoryBean;
@@ -16,7 +15,6 @@ import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationFactory;
 
 import javax.security.auth.Subject;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
@@ -26,6 +24,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.Principal;
 
 /**
  * The {@link RmiServiceExporterStubFactoryBean } subclass that allows specifying additional properties
@@ -275,19 +274,17 @@ public class RmiServiceExporterStubFactoryBean
 
         // All other invocations must carry the session cookie established by the login
         Subject administrator = adminInvocation.getSubject();
+
         User user = (User)administrator.getPrincipals().iterator().next();
 
         String cookie = user.getLogin();
-        try {
-            HexUtils.decodeBase64(cookie);
-        } catch (IOException e) {
-            throw new IllegalStateException("Principal did not contain a valid session cookie");
-        }
+        Principal authUser = sessionManager.resumeSession(cookie);
+        if (authUser == null) throw new IllegalStateException("Session cookie did not refer to a previously-established session");
 
-        String login = sessionManager.getLogin(cookie);
-        if (login == null) throw new IllegalStateException("Session cookie did not refer to a previously-established session");
-        user.getUserBean().setLogin(login);
-        user.getUserBean().setName(login);
+        administrator.getPrincipals().clear();
+        administrator.getPrincipals().add(authUser);
+        administrator.getPrivateCredentials().clear(); // not necessary but couldn't hurt
+        administrator.getPublicCredentials().clear(); // ditto
 
         return super.invoke(adminInvocation, targetObject);
     }

@@ -69,7 +69,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             AdminContext adminContext = (AdminContext)getApplicationContext().getBean("adminContextRemote");
             getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
 
-            String cookie = sessionManager.login(user.getLogin());
+            String cookie = sessionManager.createSession(user);
 
             return new AdminLoginResult(adminContext, cookie);
         } catch (AuthenticationException e) {
