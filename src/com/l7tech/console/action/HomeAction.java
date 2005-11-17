@@ -1,8 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
@@ -114,7 +114,7 @@ public class HomeAction extends SecureAction {
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).invoke();
                     } else if (SEARCH_ID_PROVIDER.equals(url)) {
-                        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+                        Options options = new Options();
                         options.enableDeleteAction();
                         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                         new FindIdentityAction(options).invoke();

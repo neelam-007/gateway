@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
-import com.l7tech.console.panels.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -46,7 +46,7 @@ public class IdentityProviderNode extends EntityHeaderNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.add(new IdentityProviderPropertiesAction(this));
-        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+        Options options = new Options();
         options.enableDeleteAction();
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Object obj = getUserObject();
