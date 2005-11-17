@@ -6,15 +6,11 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.StringTokenizer;
@@ -116,7 +112,6 @@ public class HexUtils {
      * Convert the specified binary data into a string containing hexadecimal digits.
      * Example:  hexDump(new byte[] { (byte)0xAB, (byte)0xCD }).equals("abcd")
      * @param binaryData
-     * @return
      */
     public static String hexDump(byte[] binaryData) {
         return hexDump(binaryData, 0, binaryData.length);
@@ -149,8 +144,7 @@ public class HexUtils {
         for ( int i = 0; i < hexData.length(); i+=2 ) {
             int b1 = nybble( hexData.charAt(i) );
             int b2 = nybble( hexData.charAt(i+1) );
-            byte b = (byte)((b1 << 4) + b2);
-            bytes[i/2] = b;
+            bytes[i/2] = (byte)((b1 << 4) + b2);
         }
         return bytes;
     }
@@ -197,8 +191,7 @@ public class HexUtils {
      * @return the number of bytes read from the stream.
      */
     public static int slurpStream(InputStream stream, byte[] bb) throws IOException {
-        int maxSize = bb.length;
-        int remaining = maxSize;
+        int remaining = bb.length;
         int offset = 0;
         for (;;) {
             int n = stream.read(bb, offset, remaining);
@@ -479,4 +472,34 @@ public class HexUtils {
 
     private static ThreadLocal md5s = new ThreadLocal();
     private static ThreadLocal sha1s = new ThreadLocal();
+
+    public static boolean containsOnlyHex(String arg) {
+        if (arg == null || arg.length() != 32) return false;
+        String hexmembers = "0123456789abcdef";
+        for (int i = 0; i < arg.length(); i++) {
+            char toto = arg.charAt(i);
+            if (hexmembers.indexOf(toto) == -1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static String encodePasswd(String login, String passwd) {
+        String toEncode = login + ":" + HttpDigest.REALM + ":" + passwd;
+        try {
+            return hexDump(getMd5().digest(toEncode.getBytes("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // Can't happen
+        }
+    }
+
+    public static String encodePasswd( String login, String passwd, String realm ) {
+        String toEncode = login + ":" + realm + ":" + passwd;
+        try {
+            return hexDump(getMd5().digest(toEncode.getBytes("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // Can't happen
+        }
+    }
 }
