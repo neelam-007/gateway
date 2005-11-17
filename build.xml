@@ -55,6 +55,9 @@
            <exclude name="*xerces*"/>
            <exclude name="*xml-api*"/>
            -->
+           <!-- Exclude since this is not necessary to compile and it includes old 
+                versions of some of the xml-apis.jar classes -->
+           <exclude name="xml4j.jar"/>
         </fileset>
         <fileset dir="lib">
             <include name="*.zip"/>
@@ -206,12 +209,6 @@
                 <include name="*"/>
             </fileset>
         </delete>
-
-        <copy todir="${tomcat.home}/common/classpath">
-            <fileset dir="${build.dir}">
-                <include name="rmiannotation.jar"/>
-            </fileset>
-        </copy>
 
         <copy todir="${tomcat.home}/server/lib">
             <fileset dir="${build.dir}">
@@ -545,14 +542,6 @@
             <zipfileset dir="${src.root}/src" includes="**/*.aegis.xml" prefix="WEB-INF/classes"/>
         </war>
 
-        <jar jarfile="${build.dir}/rmiannotation.jar">
-            <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/spring/remoting/rmi/codebase/ClassSetAnnotation.class"/>
-            </fileset>
-            <zipfileset dir="${src.root}/src/com/l7tech/spring/remoting/rmi/codebase/"
-                        includes="java.rmi.server.RMIClassLoaderSpi" prefix="META-INF/services"/>
-        </jar>
-
         <jar jarfile="${build.dir}/l7valve.jar">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/server/tomcat/*.class"/>
@@ -626,7 +615,6 @@
                 <exclude name="com/l7tech/internal/**/*"/>
 
                 <include name="com/l7tech/admin/Admin*.class"/>
-                <include name="com/l7tech/admin/rmi/*Stub.class"/>
                 <exclude name="com/l7tech/logging/rmi/**/*"/>
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>
@@ -1138,7 +1126,6 @@
             </fileset>
         </copy>
         <antcall target="compile.forms"/>
-        <antcall target="compile-rmi"/>
     </target>
 
     <!--
@@ -1175,14 +1162,6 @@
     <target name="compile.forms">
         <javac2 srcdir="src" destdir="${build.classes}" debug="on" target="1.4" optimize="on" source="1.4"
                 classpathref="project.classpath"/>
-    </target>
-
-    <!-- Compile RMI stubs -->
-    <target name="compile-rmi">
-        <rmic base="${build.classes}" stubVersion="1.2">
-            <classpath refid="project.classpath"/>
-            <include name="com/l7tech/admin/rmi/AdminLoginImpl.class"/>
-        </rmic>
     </target>
 
     <target name="db.properties"
@@ -1551,12 +1530,6 @@
         it depends of the order in which the targets get called
         clara, you may want to verify this
         -->
-        <copy todir="${install.src.base}/tomcat/common/classpath">
-            <fileset dir="${build.dir}">
-                <include name="rmiannotation.jar"/>
-            </fileset>
-        </copy>
-
         <copy todir="${install.src.base}/tomcat/server/lib">
             <fileset dir="${build.dir}">
                 <include name="l7valve.jar"/>
