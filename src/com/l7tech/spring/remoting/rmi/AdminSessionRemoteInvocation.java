@@ -27,7 +27,7 @@ import java.rmi.server.ServerNotActiveException;
  */
 class AdminSessionRemoteInvocation extends RemoteInvocation {
     protected final Log logger = LogFactory.getLog(getClass());
-    private Subject subject;
+    private final Subject subject;
 
     AdminSessionRemoteInvocation(MethodInvocation methodInvocation, Subject subject) {
         super(methodInvocation);
@@ -65,6 +65,10 @@ class AdminSessionRemoteInvocation extends RemoteInvocation {
             }
             throw new RemoteAccessException("invoke error", e);
         }
+    }
+
+    public Subject getSubject() {
+        return subject;
     }
 
     private String extractPrincipalName(Subject subject) {

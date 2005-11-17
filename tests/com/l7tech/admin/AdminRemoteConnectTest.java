@@ -54,7 +54,8 @@ public class AdminRemoteConnectTest extends TestCase {
 
     public void xtestObtainAdminInterface() throws Exception {
         AdminLogin admin = (AdminLogin)context.getBean("adminLogin");
-        AdminContext ai = admin.login("admin", "password");
+        AdminLoginResult loginResult = admin.login("admin", "password");
+        AdminContext ai = loginResult.getAdminContext();
         System.out.println("the interface is "+ai);
         System.out.println("the version is "+ai.getVersion());
         System.out.println(ai.getInternalProviderConfig());

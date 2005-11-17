@@ -8,6 +8,7 @@ package com.l7tech.server;
 
 import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLogin;
+import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
@@ -70,7 +71,11 @@ public class SsgAdminSession {
         bean.setServiceUrl(adminServiceNamingURL.toString());
         bean.resetStub();
         AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
-        adminContext = adminLogin.login(adminlogin, adminpass);
+        AdminLoginResult loginResult = adminLogin.login(adminlogin, adminpass);
+
+        subject.getPrivateCredentials().clear();
+        subject.getPrivateCredentials().add(loginResult.getSessionCookie());
+        adminContext = loginResult.getAdminContext();
     }
 
     public AdminContext getAdminContext() {

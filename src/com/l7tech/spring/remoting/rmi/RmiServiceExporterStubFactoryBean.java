@@ -5,12 +5,18 @@
  */
 package com.l7tech.spring.remoting.rmi;
 
+import com.l7tech.admin.AdminLogin;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.identity.User;
+import com.l7tech.server.admin.AdminSessionManager;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.remoting.rmi.RmiServiceExporter;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationFactory;
 
+import javax.security.auth.Subject;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
@@ -51,6 +57,8 @@ public class RmiServiceExporterStubFactoryBean
     private RmiProxyStub proxyStub;
 
     private RemoteInvocationFactory stubRemoteInvocationFactory;
+
+    private AdminSessionManager sessionManager;
 
     /**
      * Set the name of the exported RMI service,
@@ -120,6 +128,11 @@ public class RmiServiceExporterStubFactoryBean
 
     public void setStubRemoteInvocationFactory(RemoteInvocationFactory stubRemoteInvocationFactory) {
         this.stubRemoteInvocationFactory = stubRemoteInvocationFactory;
+    }
+
+    public void setAdminSessionManager(AdminSessionManager sessionManager) {
+        if (sessionManager == null) throw new NullPointerException();
+        this.sessionManager = sessionManager;
     }
 
     public Object getObject() {
@@ -252,7 +265,31 @@ public class RmiServiceExporterStubFactoryBean
      */
     protected Object invoke(RemoteInvocation invocation, Object targetObject)
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        return super.invoke(invocation, targetObject);
+        AdminSessionRemoteInvocation adminInvocation = (AdminSessionRemoteInvocation)invocation;
+
+        String methodName = adminInvocation.getMethodName();
+        if ((AdminLogin.class.isAssignableFrom(targetObject.getClass()) && "login".equals(methodName))) {
+            // Only a few methods can be unauthenticated
+            return super.invoke(adminInvocation, targetObject);
+        }
+
+        // All other invocations must carry the session cookie established by the login
+        Subject administrator = adminInvocation.getSubject();
+        User user = (User)administrator.getPrincipals().iterator().next();
+
+        String cookie = user.getLogin();
+        try {
+            HexUtils.decodeBase64(cookie);
+        } catch (IOException e) {
+            throw new IllegalStateException("Principal did not contain a valid session cookie");
+        }
+
+        String login = sessionManager.getLogin(cookie);
+        if (login == null) throw new IllegalStateException("Session cookie did not refer to a previously-established session");
+        user.getUserBean().setLogin(login);
+        user.getUserBean().setName(login);
+
+        return super.invoke(adminInvocation, targetObject);
     }
 
 

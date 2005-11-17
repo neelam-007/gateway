@@ -36,12 +36,12 @@ public interface AdminLogin extends Remote {
      * the server.
      *
      * @param username The name of the user.
-     * @return A reference to a proxy of the server object.
+     * @return An {@link AdminLoginResult} if the login was successful, or throws. Never null.
      * @throws AccessControlException on access denied for the given credentials
      * @throws LoginException on failed login
      * @throws RemoteException on remote communication error
      * @param password The password of the user.
      */
-    public AdminContext login(String username, String password)
+    public AdminLoginResult login(String username, String password)
       throws RemoteException, AccessControlException, LoginException;
 }

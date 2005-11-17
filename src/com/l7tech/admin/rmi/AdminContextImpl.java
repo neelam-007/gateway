@@ -6,7 +6,7 @@
 package com.l7tech.admin.rmi;
 
 import com.l7tech.admin.AdminContext;
-import com.l7tech.admin.AdminAction;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
@@ -15,12 +15,11 @@ import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.cluster.ClusterStatusAdmin;
-import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.rmi.RemoteException;
 
@@ -38,7 +37,7 @@ public class AdminContextImpl
     private SchemaAdmin schemaAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private ClusterStatusAdmin clusterStatusAdmin;
-    
+
     public AdminContextImpl(IdentityAdmin identityAdmin, AuditAdmin auditAdmin, ServiceAdmin serviceAdmin,
                             JmsAdmin jmsAdmin, TrustedCertAdmin trustedCertAdmin, CustomAssertionsRegistrar customAssertionsRegistrar,
                             ClusterStatusAdmin clusterStatusAdmin, SchemaAdmin schemaAdmin) {
@@ -94,13 +93,6 @@ public class AdminContextImpl
 
     public ClusterStatusAdmin getClusterStatusAdmin() throws RemoteException, SecurityException {
         return clusterStatusAdmin;
-    }
-
-    public Object[] invoke(AdminAction[] actions) throws RemoteException, SecurityException {
-        if (actions == null) {
-            throw new IllegalArgumentException();
-        }
-        return new Object[0];
     }
 
     public void afterPropertiesSet() throws Exception {

@@ -113,6 +113,9 @@
         <property name="stubRemoteInvocationFactory">
             <ref bean="adminSessionInvocationFactory"/>
         </property>
+        <property name="adminSessionManager">
+            <ref bean="adminSessionManager"/>
+        </property>
     </bean>
 
     <!--    admin login exporter -->
@@ -137,6 +140,9 @@
         </property>
         <property name="serverCertificate">
             <ref bean="sslKeystoreCertificate"/>
+        </property>
+        <property name="adminSessionManager">
+            <ref bean="adminSessionManager"/>
         </property>
     </bean>
 
@@ -416,4 +422,6 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
+
+    <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager" singleton="true"/>
 </beans>

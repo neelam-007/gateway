@@ -19,7 +19,7 @@ public class SecurityProviderStub extends SecurityProvider {
      */
     public void login(PasswordAuthentication creds, String host)
       throws LoginException, VersionException {
-        setCredentials(creds);
+        setCredentials(creds.getUserName(), creds.getPassword());
     }
 
     /**

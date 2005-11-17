@@ -1,12 +1,12 @@
 package com.l7tech.console.security;
 
-import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLogin;
+import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
-import com.l7tech.identity.UserBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -16,9 +16,9 @@ import org.springframework.context.ApplicationListener;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
 /**
@@ -39,18 +39,19 @@ public class SecurityProviderImpl extends SecurityProvider
       throws LoginException, VersionException, RemoteException {
         boolean authenticated = false;
         resetCredentials();
-        setCredentials(creds);
+        setCredentials(creds.getUserName(), creds.getPassword());
 
         try {
             AdminLogin adminLogin = getAdminLoginRemoteReference(namingURL);
-            AdminContext context = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
+            AdminLoginResult result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
+            setCredentials(result.getSessionCookie(), "");
             // version check
-            String remoteVersion = context.getVersion();
+            String remoteVersion = result.getAdminContext().getVersion();
             if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
                 throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
             }
             authenticated = true;
-            LogonEvent le = new LogonEvent(context, LogonEvent.LOGON);
+            LogonEvent le = new LogonEvent(result.getAdminContext(), LogonEvent.LOGON);
             applicationContext.publishEvent(le);
         } finally {
             if (!authenticated) {
@@ -63,8 +64,7 @@ public class SecurityProviderImpl extends SecurityProvider
         ResettableRmiProxyFactoryBean bean = (ResettableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
         bean.setServiceUrl(namingURL);
         bean.resetStub();
-        AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
-        return adminLogin;
+        return (AdminLogin)applicationContext.getBean("adminLogin");
     }
 
     /**
@@ -88,7 +88,7 @@ public class SecurityProviderImpl extends SecurityProvider
         byte[] certificate = adminLogin.getServerCertificate(credentials.getUserName());
         try {
             String password = new String(credentials.getPassword());
-            String encodedPassword = UserBean.encodePasswd(credentials.getUserName(), password);
+            String encodedPassword = HexUtils.encodePasswd(credentials.getUserName(), password);
             java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
             final byte[] bytes = encodedPassword.getBytes();
             d.update(bytes);

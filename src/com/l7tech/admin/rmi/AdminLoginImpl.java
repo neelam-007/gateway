@@ -7,12 +7,14 @@ package com.l7tech.admin.rmi;
 
 import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLogin;
+import com.l7tech.admin.AdminLoginResult;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.common.audit.LogonEvent;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -24,8 +26,8 @@ import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.AccessControlException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -35,19 +37,22 @@ import java.util.List;
  * @author emil
  * @version Dec 2, 2004
  */
-public class AdminLoginImpl extends ApplicationObjectSupport
-  implements AdminLogin, InitializingBean {
+public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLogin, InitializingBean {
+    private AdminSessionManager sessionManager;
+
     //todo: consider moving to Spring bean configuration
     private final List adminGroups = Arrays.asList(new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
     private IdentityProviderConfigManager identityProviderConfigManager;
     private IdentityProviderFactory identityProviderFactory;
     private X509Certificate serverCertificate;
 
-    public AdminContext login(String username, String password)
-      throws RemoteException, AccessControlException, LoginException {
+    public AdminLoginResult login(String username, String password)
+            throws RemoteException, AccessControlException, LoginException
+    {
         if (username == null || password == null) {
             throw new AccessControlException("Illegal username or password");
         }
+
         try {
             LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
             AuthenticationResult authResult = getInternalIdentityProvider().authenticate(creds);
@@ -55,7 +60,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
                 throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
             }
             User user = authResult.getUser();
-            
+
             String[] roles = getUserRoles(user);
             if (!containsAdminAccessRole(roles)) {
                 throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
@@ -63,7 +68,10 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             logger.info("" + getHighestRole(roles) + " "+user.getLogin() + " logged in from IP " + UnicastRemoteObject.getClientHost());
             AdminContext adminContext = (AdminContext)getApplicationContext().getBean("adminContextRemote");
             getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
-            return adminContext;
+
+            String cookie = sessionManager.login(user.getLogin());
+
+            return new AdminLoginResult(adminContext, cookie);
         } catch (AuthenticationException e) {
             logger.trace("Authentication failed", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
@@ -79,6 +87,10 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             logger.warn("Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
         }
+    }
+
+    public void setAdminSessionManager(AdminSessionManager sessionManager) {
+        this.sessionManager = sessionManager;
     }
 
     /**

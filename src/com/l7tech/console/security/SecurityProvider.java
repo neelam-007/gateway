@@ -6,7 +6,6 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.UserBean;
 
 import javax.security.auth.Subject;
-import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
 import java.security.AccessController;
 import java.util.Collections;
@@ -60,9 +59,9 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
     /**
      * Subclasses update the credentials using this method.
      *
-     * @param pa the username/password instance
+     * @param login the username instance
      */
-    protected final void setCredentials(PasswordAuthentication pa) {
+    protected final void setCredentials(String login, Object creds) {
         synchronized (SecurityProvider.class) {
             Subject subject = Subject.getSubject(AccessController.getContext());
             if (subject == null) {
@@ -71,11 +70,11 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
             }
             subject.getPrincipals().clear();
             final UserBean u = new UserBean();
-            u.setLogin(pa.getUserName());
-            u.setName(pa.getUserName());
+            u.setLogin(login);
+            u.setName(login);
             subject.getPrincipals().add(u);
             subject.getPrivateCredentials().clear();
-            subject.getPrivateCredentials().add(pa.getPassword());
+            subject.getPrivateCredentials().add(creds);
         }
     }
 

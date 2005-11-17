@@ -88,12 +88,4 @@ public interface AdminContext {
      */
     ClusterStatusAdmin getClusterStatusAdmin() throws RemoteException, SecurityException;
 
-    /**
-     * Invoke admin actions with admin privileges associated with this <code>AdminCntext</code>
-     * reference.
-     *
-     * @param actions the set of actions to execute
-     * @return the action results corresponding to the actions. <b>null</b> is returned
-     */
-    Object[] invoke(AdminAction[] actions) throws RemoteException, SecurityException;
 }
