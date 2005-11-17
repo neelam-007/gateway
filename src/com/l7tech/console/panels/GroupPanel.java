@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  */
 public abstract class GroupPanel extends EntityEditorPanel {
     static Logger log = Logger.getLogger(GroupPanel.class.getName());
-    final static String GROUP_ICON_RESOURCE = "com/l7tech/console/resources/group16.png";
+    public final static String GROUP_ICON_RESOURCE = "com/l7tech/console/resources/group16.png";
 
     private JLabel nameLabel;
     private JLabel descriptionLabel;

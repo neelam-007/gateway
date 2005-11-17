@@ -6,10 +6,10 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
@@ -907,7 +907,7 @@ public class MainWindow extends JFrame {
     private Action getFindAction() {
         if (findAction != null) return findAction;
 
-        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+        Options options = new Options();
         options.enableDeleteAction();
         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 

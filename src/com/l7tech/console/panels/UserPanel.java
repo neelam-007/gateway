@@ -24,7 +24,7 @@ import java.util.Set;
  * $Id$
  */
 abstract public class UserPanel extends EntityEditorPanel {
-    final static String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
+    public final static String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
 
     // user
     protected EntityHeader userHeader;

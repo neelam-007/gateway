@@ -1,10 +1,8 @@
 package com.l7tech.console.tree;
 
-import java.awt.*;
-import java.util.ArrayList;
-
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
@@ -15,6 +13,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+
+import java.awt.*;
+import java.util.ArrayList;
 
 
 /**
@@ -37,7 +38,7 @@ public class IdentityNode extends AbstractLeafTreeNode {
      */
     public Assertion[] asAssertions() {
         Frame f = TopComponents.getInstance().getMainWindow();
-        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+        Options options = new Options();
         options.disableOpenProperties();
         options.disposeOnSelect();
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
