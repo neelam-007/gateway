@@ -4,7 +4,7 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.server.util.SetKeys;
 import org.bouncycastle.jce.X509Principal;
-import org.bouncycastle.jce.X509V3CertificateGenerator;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.File;
