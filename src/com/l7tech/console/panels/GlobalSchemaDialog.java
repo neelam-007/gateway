@@ -204,7 +204,7 @@ public class GlobalSchemaDialog extends JDialog {
         dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
         dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         if (dlg.success) {
             // save changes to gateway
             Registry reg = Registry.getDefault();
@@ -293,7 +293,7 @@ public class GlobalSchemaDialog extends JDialog {
         dim.setSize(dim.getWidth() * 2, dim.getHeight() * 4);
         dlg.setSize(dim);
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         if (dlg.success) {
             // save changes to gateway
             Registry reg = Registry.getDefault();
@@ -367,9 +367,11 @@ public class GlobalSchemaDialog extends JDialog {
         Actions.invokeHelp(GlobalSchemaDialog.this);
     }
 
-    public void show() {
-        TableUtil.adjustColumnWidth(schemaTable, 1);
-        super.show();
+    public void setVisible(boolean visible) {
+        if(visible) {
+            TableUtil.adjustColumnWidth(schemaTable, 1);
+        }
+        super.setVisible(visible);
     }
 
     public static void main(String[] args) {
@@ -381,7 +383,7 @@ public class GlobalSchemaDialog extends JDialog {
         sample.setSchema("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<schema>blah</schema>");
         me.globalSchemas.add(sample);
         me.pack();
-        me.show();
+        me.setVisible(true);
         System.exit(0);
     }
 }

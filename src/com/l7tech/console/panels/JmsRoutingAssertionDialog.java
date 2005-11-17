@@ -225,13 +225,17 @@ public class JmsRoutingAssertionDialog extends JDialog {
     }
 
     /** Force disposal after dialog has been used once. */
-    public void show() {
-        if (wasShown)
-            throw new IllegalStateException("This dialog has already been shown and/or disposed.");
-        wasShown = true;
-        super.show();
-        hide();
-        dispose();
+    public void setVisible(boolean visible) {
+        if(visible) {
+            if (wasShown)
+                throw new IllegalStateException("This dialog has already been shown and/or disposed.");
+            wasShown = true;
+        }
+        super.setVisible(visible);
+        if(visible) {
+            setVisible(false);
+            dispose();
+        }
     }
 
     /**

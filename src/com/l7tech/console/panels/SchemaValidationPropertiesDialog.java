@@ -251,7 +251,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 GlobalSchemaDialog globalSchemaManager = new GlobalSchemaDialog(this);
                 globalSchemaManager.pack();
                 Utilities.centerOnScreen(globalSchemaManager);
-                globalSchemaManager.show();
+                globalSchemaManager.setVisible(true);
             }
             return true;
         }

@@ -285,9 +285,11 @@ public class ClusterPropertyDialog extends JDialog {
         ((AbstractTableModel)propsTable.getModel()).fireTableDataChanged();
     }
 
-    public void show() {
-        TableUtil.adjustColumnWidth(propsTable, 1);
-        super.show();
+    public void setVisible(boolean visible) {
+        if(visible) {
+            TableUtil.adjustColumnWidth(propsTable, 1);
+        }
+        super.setVisible(visible);
     }
 
     public static void main(String[] args) {
@@ -301,7 +303,7 @@ public class ClusterPropertyDialog extends JDialog {
         sample.setValue("false");
         me.properties.add(sample);
         me.pack();
-        me.show();
+        me.setVisible(true);
         System.exit(0);
     }
 }

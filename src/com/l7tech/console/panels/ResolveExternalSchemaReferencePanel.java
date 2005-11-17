@@ -74,7 +74,7 @@ public class ResolveExternalSchemaReferencePanel extends WizardStepPanel {
         GlobalSchemaDialog dlg = new GlobalSchemaDialog((Wizard)component);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        dlg.show();
+        dlg.setVisible(true);
         // see if resolution is now fixed
         Registry reg = Registry.getDefault();
         if (reg == null || reg.getSchemaAdmin() == null) {

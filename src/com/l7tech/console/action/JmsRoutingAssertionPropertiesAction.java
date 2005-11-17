@@ -66,7 +66,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
                 d.addPolicyListener(listener);
                 d.pack();
                 Utilities.centerOnScreen(d);
-                d.show();
+                d.setVisible(true);
             }
         });
     }

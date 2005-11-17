@@ -9,12 +9,12 @@ package com.l7tech.common.security.prov.bc;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.RsaSignerEngine;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInputStream;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.X509KeyUsage;
-import org.bouncycastle.jce.X509V3CertificateGenerator;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -127,7 +127,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         // Add subject public key info for fingerprint (not critical)
         SubjectPublicKeyInfo spki = null;
         try {
-            spki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new DERInputStream(new ByteArrayInputStream(publicKey.getEncoded())).readObject()));
+            spki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new ASN1InputStream(new ByteArrayInputStream(publicKey.getEncoded())).readObject()));
         } catch ( IOException e ) {
             throw new RuntimeException(e);
         }
@@ -171,7 +171,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.setIssuerDN(new X509Name(caCert.getSubjectDN().getName()));
 
         // Add authority key info (fingerprint)
-        SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new DERInputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject()));
+        SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new ASN1InputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject()));
         AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier(apki);
         certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, aki);
 

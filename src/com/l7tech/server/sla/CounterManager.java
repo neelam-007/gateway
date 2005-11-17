@@ -21,7 +21,7 @@ public interface CounterManager {
     public long incrementOnlyWithinLimitAndReturnValue(long counterId,
                                                        long timestamp,
                                                        int fieldOfInterest,
-                                                       long limit) throws CounterCache.LimitAlreadyReachedException;
+                                                       long limit) throws CounterManager.LimitAlreadyReachedException;
 
     /**
      * Increment this counter, and return the specific value of interest

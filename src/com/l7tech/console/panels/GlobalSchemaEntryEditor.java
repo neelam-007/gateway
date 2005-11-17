@@ -198,11 +198,13 @@ public class GlobalSchemaEntryEditor extends JDialog {
         success = true;
     }
 
-    public void show() {
-        if (!dataloaded) {
-            resetData();
+    public void setVisible(boolean visible) {
+        if(visible) {
+            if (!dataloaded) {
+                resetData();
+            }
         }
-        super.show();
+        super.setVisible(visible);
     }
 
     private void resetData() {

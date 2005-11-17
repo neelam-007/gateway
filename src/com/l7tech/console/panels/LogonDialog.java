@@ -527,7 +527,7 @@ public class LogonDialog extends JDialog {
                               logonListener.onAuthFailure();
                           }
                           if (!progressDialog.isCancelled()) {
-                              show();
+                              setVisible(true);
                           }
                       }
                   }
@@ -553,7 +553,7 @@ public class LogonDialog extends JDialog {
         dialog.setSize(300, 275);
         dialog.pack();
         Utilities.centerOnScreen(dialog);
-        dialog.show();
+        dialog.setVisible(true);
 
     }
 
@@ -577,15 +577,17 @@ public class LogonDialog extends JDialog {
     /**
      * Before displaying dialog, ensure that correct fields are selected.
      */
-    public void show() {
-        if (rememberUser) {
-            passwordField.requestFocus();
-            passwordField.selectAll();
-        } else {
-            userNameTextField.requestFocus();
-            userNameTextField.selectAll();
+    public void setVisible(boolean visible) {
+        if(visible) {
+            if (rememberUser) {
+                passwordField.requestFocus();
+                passwordField.selectAll();
+            } else {
+                userNameTextField.requestFocus();
+                userNameTextField.selectAll();
+            }
         }
-        super.show();
+        super.setVisible(visible);
     }
 
     private static SecurityProvider getCredentialManager() {

@@ -78,7 +78,7 @@ public class AddRoutingAssertionAdvice implements Advice {
                 dialog.setModal(true);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
-                dialog.show();
+                dialog.setVisible(true);
                 if (!dialog.isCanceled())
                     pc.proceed();
             } else
