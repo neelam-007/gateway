@@ -1,7 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.console.tree.policy.PolicyTree;
@@ -79,7 +80,7 @@ public class AddIdentityAssertionAction extends SecureAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+                Options options = new Options();
                 options.disposeOnSelect();
                 options.disableOpenProperties();
                 FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);

@@ -3,7 +3,8 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.EntityEditorPanel;
-import com.l7tech.console.panels.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.FindIdentitiesDialog;
+import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class FindIdentityAction extends BaseAction {
     static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
-    FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+    Options options = new Options();
 
     private static
     ResourceBundle resapplication =
@@ -37,14 +38,14 @@ public class FindIdentityAction extends BaseAction {
      * create the action with the default find dialog options
      */
     public FindIdentityAction() {
-        this(new FindIdentitiesDialog.Options());
+        this(new Options());
     }
 
     /**
      * create the find idnetity action action with the dialog options
      * specified
      */
-    public FindIdentityAction(FindIdentitiesDialog.Options opts) {
+    public FindIdentityAction(Options opts) {
         if (opts == null) {
             throw new IllegalArgumentException();
         }
