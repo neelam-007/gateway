@@ -284,8 +284,8 @@ public class FederationPassiveClient {
         if(responseUrlQuery!=null) {
             try {
                 ParameterizedString ps = new ParameterizedString(responseUrlQuery);
-                if(ps.parameterHasSingleValue(WSFederationConstants.PARAM_ACTION)) {
-                    WSFederationConstants.VALUE_ACTION_SIGNIN.equals(ps.getParameterValue(WSFederationConstants.PARAM_ACTION));
+                if(ps.parameterHasSingleValue(WSFederationConstants.PARAM_ACTION)
+                && WSFederationConstants.VALUE_ACTION_SIGNIN.equals(ps.getParameterValue(WSFederationConstants.PARAM_ACTION))){
                     isFedUrl = true;
                 }
             }
