@@ -1,3 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ant build file for UneasyRooster
+  $Revision$
+  $Date$
+-->
 <project name="UneasyRooster" default="dev" basedir=".">
 <!-- Uncomment for jikes/emacs to be used
     <property name="build.compiler" value="jikes"/>
@@ -6,11 +12,7 @@
     <!-- Set src.root to ${basedir} if not already set -->
     <property name="src.root" value="${basedir}"/>
 
-    <!-- as the file name says -->
-    <!-- TODO delete this crap.  the file ./build.version has replaced this -->
-    <property file="${src.root}/etc/ssg.version"/>
-
-    <!-- get the REAL version -->
+    <!-- get the version -->
     <property file="${src.root}/build.version"/>
 
     <!-- override configuration with user properties -->
@@ -26,16 +28,7 @@
     <property name="dev.build.home" value="${src.root}/build"/>
 
     <!-- distribution archive names -->
-<!--
-    <property name="war" value="${app.name}.war"/>
-    -->
     <property name="war" value="ROOT.war"/>
-    <property name="tar" value="${app.name}.tar"/>
-    <property name="tar.gz" value="${app.name}_${app.version}.tar.gz"/> <!-- TODO delete this crap -->
-
-<!-- ear not used
-      <property name="ear"        value="${app.name}.ear"/>
-    -->
 
     <!-- project classpath -->
     <path id="project.classpath">
@@ -63,9 +56,12 @@
             <include name="*.zip"/>
         </fileset>
     </path>
+
     <property name="test.class.path" refid="project.classpath"/>
 
-
+    <!--
+      Classpath for Idea form compiler
+    -->
     <path id="uidesigner.classpath">
         <fileset dir="lib/tools">
             <include name="jdom.jar"/>
@@ -74,35 +70,36 @@
         </fileset>
     </path>
 
+    <!--
+      Task definition for Idea form compiler
+    -->
     <taskdef name="javac2"
              classname="com.intellij.uiDesigner.ant.Javac2"
              classpathref="uidesigner.classpath"/>
 
+    <!--
+      Classpath for obfuscation
+    -->
     <path id="zelix.classpath">
         <fileset dir="etc/obfuscation">
             <include name="ZKM.jar"/>
         </fileset>
     </path>
 
+    <!--
+      Task definition for class file obfuscation
+    -->
     <taskdef name="Zelix" classname="ZKMTask" classpathref="zelix.classpath"/>
 
+    <!--
+      Various bolt-on task definitions
+    -->
     <taskdef resource="net/sf/antcontrib/antcontrib.properties">
         <classpath>
             <pathelement location="lib/ant-contrib.jar"/>
         </classpath>
     </taskdef>
 
-<!--
-       * jars that go in $TOMCAT_HOME/common/lib
-       * currently in ant this is used in conjunction with
-       * fileset (look for patternset id usage throughout this
-       * build.xml for examples)
-    -->
-<!-- obsolete in recent Tomcat versions
-    <property name="common.lib.jars"
-              value="saaj.jar, jaxrpc.jar"/>
-
-              -->
 <!--
       ** init dev target The "dev" target depends on this target.
       -->
@@ -123,7 +120,6 @@
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
         <property name="app.name" value="Layer 7 SecureSpan Suite"/>
-        <property name="app.version" value="HEAD"/>
 
         <condition property="db.mysql">
             <equals arg1="${database.type}" arg2="mysql"/>
@@ -215,18 +211,6 @@
                 <include name="l7valve.jar"/>
             </fileset>
         </copy>
-
-<!--
-          ** Java 1.4 changed the rules as to to how packages beginning in java.* and javax.*
-          **  get loaded. Specifically, they only get loaded from endorsed directories.
-          ** jaxrpc.jar and saaj.jar contain javax packages, so may not get picked up.
-          ** Copy such libraries into $TOMCAT_HOME/common/lib
-          **  -->
-<!-- Obsolete in later Tomcat versions
-        <copy todir="${tomcat.home}/common/lib">
-            <fileset dir="${src.root}/lib" includes="${common.lib.jars}"/>
-        </copy>
-        -->
 
 <!--
           this server.xml is ready to be modified by sslGen.sh who will later
@@ -331,7 +315,7 @@
       ** Clean the directory structure.
       ** This is used only by developer's build.
       -->
-    <target name="clean" depends="init-dev,clean.ca">
+    <target name="clean" depends="init-dev,clean.ca" description="Delete all build output.">
         <delete dir="${build.classes}"/>
         <delete dir="${doc.root}"/>
         <delete dir="${build.lib}"/>
@@ -400,13 +384,33 @@
             <link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
             <link href="http://static.springframework.org/spring/docs/1.1.5/api"/>
+            <link href="http://jakarta.apache.org/commons/httpclient/2.0/apidocs"/>
+            <link href="http://www.bouncycastle.org/docs/docs1.5"/> 
+            <link href="http://jaxen.codehaus.org/apidocs"/>
+            <link href="http://www.dom4j.org/apidocs"/>
+            <link href="http://jetty.mortbay.org/javadoc"/>
+            <link href="http://tomcat.apache.org/tomcat-5.5-doc/catalina/docs/api"/>
         </javadoc>
     </target>
 
 <!--
-      ** Non 'build' targets from this point; just various helper targets.
-      ** Please do not invoke below targets as main targets.
-    -->
+      ** main compile target
+      -->
+    <target name="compile"
+            description="Compile the Java code and UI forms."
+            depends="init-dev, prepare, configure_properties.dev, compile13"
+            unless="compile.pattern">
+        <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
+               deprecation="on" depend="on" verbose="no" target="1.4" source="1.4">
+            <classpath refid="project.classpath"/>
+        </javac>
+        <copy todir="${build.classes}">
+            <fileset dir="${src.root}/etc">
+                <include name="serverconfig.properties"/>
+            </fileset>
+        </copy>
+        <antcall target="compile.forms"/>
+    </target>
 
 <!--
       ** 'package' target.
@@ -415,8 +419,13 @@
       ** This target is invoked by other targets such as deploy and dist.
       -->
     <target name="package"
-            depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz"/>
+            description="Create the SSG WAR file and SSB/SSM installers."
+            depends="compile, package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz"/>
 
+<!--
+      ** Non 'build' targets from this point; just various helper targets.
+      ** Please do not invoke below targets as main targets.
+    -->
 
     <target name="package.gateway">
         <!-- the ssg war -->
@@ -1107,27 +1116,6 @@
         </propertyfile>
     </target>
 
-<!--
-      ** main compile target
-      -->
-    <target name="compile" depends="prepare, configure_properties.dev, compile13"
-            unless="compile.pattern">
-        <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-               deprecation="on" depend="on" verbose="no" target="1.4" source="1.4">
-            <classpath refid="project.classpath"/>
-        </javac>
-        <copy todir="${build.classes}">
-            <fileset dir="${src.root}/src">
-                <!-- TODO: Emil, tell us why this is evil! -->
-                <include name="com/l7tech/common/locator/services.properties"/>
-            </fileset>
-            <fileset dir="${src.root}/etc">
-                <include name="serverconfig.properties"/>
-            </fileset>
-        </copy>
-        <antcall target="compile.forms"/>
-    </target>
-
     <!--
      ** 1.3 compile target - the files that require 1.3 source/target flags
      ** This is required by custom assertion library to support integration with components
@@ -1203,7 +1191,6 @@
         <property name="database.pingstmt" value="${oracle9.database.pingstmt}"/>
     </target>
 
-
     <target name="db.properties.oracle10" if="db.oracle10">
         <echo>Setting database properties for Oracle 10...</echo>
         <property name="database.driver" value="${oracle10.database.driver}"/>
@@ -1245,8 +1232,7 @@
     <target name="configure_properties.install" unless="dev.build">
     </target>
 
-
-    <!-- ** main compile target -->
+    <!-- ** tests compilation target -->
     <target name="compile-tests" depends="compile">
         <javac srcdir="tests" destdir="${build.classes}" debug="on" optimize="off"
                deprecation="on" depend="on" verbose="no">
@@ -1282,24 +1268,6 @@
             <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
             <arg line="start"/>
         </exec>
-
-<!--
-        <java classname="org.apache.catalina.startup.Bootstrap"
-            dir="${tomcat.home}"
-            fork="yes"
-            jvm="${java.home}/bin/java"
-            maxmemory="512m">
-            <sysproperty key="catalina.home" value="${tomcat.home}"/>
-            <sysproperty key="java.security.policy" value="${tomcat.home}/conf/catalina.policy"/>
-            <arg value="start"/>
-
-            <classpath>
-                <fileset dir="${tomcat.home}/bin">
-                    <include name="bootstrap.jar"/>
-                </fileset>
-            </classpath>
-        </java>
-        -->
     </target>
 
     <target name="stop-tomcat">
@@ -1309,20 +1277,6 @@
             <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
             <arg line="stop"/>
         </exec>
-
-<!--
-        <java classname="org.apache.catlina.startup.Bootstrap"
-            dir="${tomcat.home}"
-            fork="yes">
-            <sysproperty key="catalina.home" value="${tomcat.home}"/>
-            <arg value="stop"/>
-            <classpath>
-                <fileset dir="${tomcat.home}/bin">
-                    <include name="bootstrap.jar"/>
-                </fileset>
-            </classpath>
-        </java>
-        -->
     </target>
 
     <target name="make-install-image">
@@ -1833,7 +1787,13 @@
 
         <delete dir="build/obfuscation/Bridge-${build.number.regexed}"/>
         <delete dir="build/obfuscation/Manager-${build.number.regexed}"/>
-        <copy file="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz"  tofile="installer/Bridge-${build.number.regexed}.tar.gz" overwrite="true"/>
-        <copy file="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz"  tofile="installer/Manager-${build.number.regexed}.tar.gz" overwrite="true"/>
+
+        <copy file="build/obfuscation/Bridge-${build.number.regexed}_obfuscated.tar.gz" 
+              tofile="installer/Bridge-${build.number.regexed}.tar.gz" 
+              overwrite="true"/>
+
+        <copy file="build/obfuscation/Manager-${build.number.regexed}_obfuscated.tar.gz"
+              tofile="installer/Manager-${build.number.regexed}.tar.gz" 
+              overwrite="true"/>
     </target>
 </project>
