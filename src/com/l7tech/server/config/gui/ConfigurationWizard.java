@@ -12,6 +12,7 @@ import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
+import com.l7tech.server.config.commands.RmiConfigCommand;
 import com.l7tech.server.config.exceptions.UnsupportedOsException;
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 
@@ -134,6 +135,9 @@ public class ConfigurationWizard extends Wizard {
         //we need to add this to make sure that non clustering/db/etc. specific actions occur
         LoggingConfigCommand loggingCommand = new LoggingConfigCommand(null, osFunctions);
         commands.put(loggingCommand.getClass().getName(), loggingCommand);
+
+        RmiConfigCommand rmiCommand = new RmiConfigCommand(null, osFunctions);
+        commands.put(rmiCommand.getClass().getName(), rmiCommand);
 
         Set keys = commands.keySet();
         java.util.Iterator iterator = keys.iterator();
