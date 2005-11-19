@@ -145,7 +145,9 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
                             if(ssg.getRuntime().promptForUsernameAndPassword()) {
                                 final String host = url.getHost();
                                 final Collection cc = new ArrayList(1);
-                                invokeOnSwingThread(new Runnable(){public void run(){cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));}});
+                                invokeOnSwingThread(new Runnable(){public void run(){
+                                    cc.add(LogonDialog.logon(Gui.getInstance().getFrame(),LOGON_DIALOG_TITLE,LOGON_LABEL_TEXT,host,getUsername(),false,false,""));
+                                }});
                                 if(!cc.isEmpty()) {
                                     PasswordAuthentication pa = (PasswordAuthentication) cc.iterator().next();
                                     if(pa!=null) { //TODO if implementing (optional) persistent password for wstrust federation then save here
@@ -255,7 +257,6 @@ public class WsTrustSamlTokenStrategy extends FederatedSamlTokenStrategy impleme
     /**
      * Set the password in clear text.
      *
-     * @return the password
      * @see #password()
      */
     public void storePassword(char[] password) {
