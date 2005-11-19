@@ -100,7 +100,7 @@ public class EditServicePolicyAction extends NodeAction {
               "Try refreshing Services tree.");
         } catch (Exception e) {
             ErrorManager.getDefault().
-              notify(Level.SEVERE, e, "Unable to retrieve service properties " + serviceNode.getName());
+              notify(Level.SEVERE, e, "Unable to retrieve service properties");
         }
     }
 
