@@ -49,7 +49,7 @@ public class TestMessageProcessor extends MessageProcessor {
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException {
+            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
 
         try {
             notifyListenersBefore(context);

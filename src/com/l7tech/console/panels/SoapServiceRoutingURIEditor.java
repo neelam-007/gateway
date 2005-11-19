@@ -17,6 +17,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * A dialog to view/edit the routing URI parameter of a soap web service.
@@ -32,6 +34,10 @@ public class SoapServiceRoutingURIEditor extends JDialog {
     private JButton cancelbutton;
     private JButton helpbutton;
     private JPanel mainPanel;
+    private JCheckBox rbMethodPost;
+    private JCheckBox rbMethodGet;
+    private JCheckBox rbMethodPut;
+    private JCheckBox rbMethodDelete;
 
     private PublishedService subject;
     private boolean subjectAffected = false;
@@ -93,6 +99,11 @@ public class SoapServiceRoutingURIEditor extends JDialog {
             customURIRadio.setSelected(true);
             uriField.setText(existinguri.substring(PublishedService.ROUTINGURI_PREFIX.length()));
         }
+
+        rbMethodPost.setSelected(subject.isMethodAllowed("POST"));
+        rbMethodGet.setSelected(subject.isMethodAllowed("GET"));
+        rbMethodPut.setSelected(subject.isMethodAllowed("PUT"));
+        rbMethodDelete.setSelected(subject.isMethodAllowed("DELETE"));
     }
 
     private void updateURL() {
@@ -150,7 +161,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
                 cancel();
             }
         });
-        
+
         Actions.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 ok();
@@ -191,6 +202,12 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         } else {
             subject.setRoutingUri(PublishedService.ROUTINGURI_PREFIX + currentValue);
         }
+        Set methods = new HashSet();
+        if (rbMethodPost.isSelected()) methods.add("POST");
+        if (rbMethodGet.isSelected()) methods.add("GET");
+        if (rbMethodPut.isSelected()) methods.add("PUT");
+        if (rbMethodDelete.isSelected()) methods.add("DELETE");
+        subject.setHttpMethods(methods);
         subjectAffected = true;
         SoapServiceRoutingURIEditor.this.dispose();
     }

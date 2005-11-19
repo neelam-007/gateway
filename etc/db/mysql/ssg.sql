@@ -130,6 +130,7 @@ CREATE TABLE published_service (
   disabled TINYINT(1) NOT NULL DEFAULT 0,
   soap TINYINT(1) NOT NULL DEFAULT 1,
   routing_uri varchar(128),
+  http_methods mediumtext,
   PRIMARY KEY  (objectid)
 ) TYPE=InnoDB;
 

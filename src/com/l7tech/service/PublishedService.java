@@ -21,21 +21,25 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * A service that is published by the SecureSpan Gateway.  Primarily contains references to a WSDL and a policy.
+ * Must be treated as immutable and thread-safe from the point of view of the SSG's message processing subsystem.
  *
  * @author alex
  */
 public class PublishedService extends NamedEntityImp {
+    private static final Logger logger = Logger.getLogger(PublishedService.class.getName());
+
     public static final String ROUTINGURI_PREFIX = "/xml/";
 
-    /**
-     * Please do not change this logger type. Instead, provide the
-     * {@link java.util.logging.Handler} implementation - as governed by
-     * the JDK 1.4 logging API - if you wish to provide custom behaviour.
-     */
-    static final Logger logger = Logger.getLogger(PublishedService.class.getName());
+    public static final String METHODNAMES_SOAP = "POST";
+    public static final String METHODNAMES_REST = "POST,GET,PUT,DELETE,HEAD";
+
+    /** Used to split up the method name lists. */
+    private static final Pattern SPLIT_COMMAS = Pattern.compile("\\s*,\\s*");
 
     public PublishedService() {
         setVersion(1);
@@ -233,6 +237,7 @@ public class PublishedService extends NamedEntityImp {
         setWsdlXml(objToCopy.getWsdlXml());
         setDisabled(objToCopy.isDisabled());
         setRoutingUri(objToCopy.getRoutingUri());
+        setHttpMethods(objToCopy.getHttpMethods());
     }
 
     public boolean isDisabled() {
@@ -300,6 +305,107 @@ public class PublishedService extends NamedEntityImp {
         this.routingUri = routingUri;
     }
 
+    /**
+     * Accessor for Hibernate use only.  Returns the string name.
+     *
+     * @deprecated for persistence use only; do not call this.
+     * @return comma-separated list of HTTP method names like "GET,POST,PUT,DELETE", or null.
+     */
+    public String getHttpMethodNames() {
+        return httpMethodNames;
+    }
+
+    /**
+     * Setter for Hibernate use only.
+     *
+     * @deprecated for persistence use only; do not call this.
+     * @param httpMethodNames comma-separated list of HTTP method names like "GET,POST,PUT,DELETE", or null.
+     */
+    public void setHttpMethodNames(String httpMethodNames) {
+        if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
+        this.httpMethodNames = httpMethodNames;
+        this.httpMethods = createSetFromMethods(httpMethodNames);
+    }
+
+    /**
+     * Check if the specified HTTP method is allowed with this published service.
+     *
+     * @param methodName the method name to check.  Must not be null.
+     * @return true iff. the specified method is in the set of allowed methods for this published service.
+     */
+    public boolean isMethodAllowed(String methodName) {
+        if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
+        if (httpMethods == null) httpMethods = createSetFromMethods(httpMethodNames);
+        return httpMethods.contains(methodName.trim().toUpperCase());
+    }
+
+    /**
+     * Get a read-only copy of the set of method names supported by this published service.
+     *
+     * @return a read-only set of zero or more Strings such as "PUT", "GET", "DELETE" and "POST".  May be empty but never null.
+     */
+    public Set getHttpMethods() {
+        if (httpMethodNames == null) httpMethodNames = METHODNAMES_SOAP;
+        if (httpMethods == null) httpMethods = createSetFromMethods(httpMethodNames);
+        return Collections.unmodifiableSet(httpMethods);
+    }
+
+    /**
+     * Replace the set of method names supported by this published service.
+     * Never modify the set inside a live PublishedService instance being used by a running MessageProcessor.
+     *
+     * @param set a set of Strings such as "GET", "POST", "PUT".  Will be converted to all upper-case.
+     */
+    public void setHttpMethods(Set set) {
+        httpMethods = new HashSet();
+        if (set != null) {
+            for (Iterator i = set.iterator(); i.hasNext();) {
+                String s = (String)i.next();
+                httpMethods.add(s.trim().toUpperCase());
+            }
+        }
+        httpMethodNames = getMethodsFromSet(httpMethods);
+    }
+
+    /**
+     * Create a new set from the specified comma-delimited list of HTTP method names.
+     *
+     * @param methods  the methods to include in the set, ie "GET,PUT,POST".  Must not be null but may be empty.
+     * @return a Set containing the uppercased method names.  May be empty but never null.
+     */
+    private static Set createSetFromMethods(String methods) {
+        Set s = new HashSet();
+        addMethodsToSet(s, methods);
+        return s;
+    }
+
+    /**
+     * Add the specified methods to the specified set.
+     *
+     * @param set     the set to add the strings to.  Must not be null but may (probably often will) be empty.
+     * @param methods a comma-separated list of HTTP method names.  Will be converted to upper case.  May
+     *                not be null or empty.
+     */
+    private static void addMethodsToSet(Set set, String methods) {
+        set.addAll(Arrays.asList(SPLIT_COMMAS.split(methods.trim().toUpperCase())));
+    }
+
+    /**
+     * Convert the specified set into a comma-delimited string.
+     *
+     * @param set the set of Strings to join.  Must not be null.  Must contain only Strings.
+     * @return a comma-separated list, ie "POST,GET,PUT".  Order is not guaranteed.  Never null but may be empty.
+     */
+    private static String getMethodsFromSet(Set set) {
+        StringBuffer sb = new StringBuffer();
+        for (Iterator i = set.iterator(); i.hasNext();) {
+            String s = (String)i.next();
+            sb.append(s);
+            if (i.hasNext()) sb.append(",");
+        }
+        return sb.toString();
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -309,9 +415,11 @@ public class PublishedService extends NamedEntityImp {
     private boolean _disabled;
     private boolean soap = true;
     private String routingUri;
+    private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
 
     private transient Wsdl _parsedWsdl;
     private transient Port _wsdlPort;
     private transient URL _serviceUrl;
     private transient Assertion _rootAssertion;
+    private transient Set httpMethods; // invariants: never null, always in sync with httpMethodNames
 }

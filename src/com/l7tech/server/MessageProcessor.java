@@ -50,6 +50,7 @@ import java.security.cert.X509Certificate;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * The server side component processing messages from any transport layer.
@@ -112,13 +113,13 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException {
+            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
         context.setAuditContext(auditContext);
         return reallyProcessMessage(context);
     }
 
     private AssertionStatus reallyProcessMessage(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException {
+            throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         // License check hook
         licenseManager.requireFeature(Feature.MESSAGEPROCESSOR);
@@ -197,6 +198,16 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 // skip the http request header version checking if it is not a Http request
                 if (context.getRequest().isHttpRequest()) {
                     HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
+
+                    // Check the request method
+                    String requestMethod = httpRequestKnob.getMethod();
+                    if (!service.isMethodAllowed(requestMethod)) {
+                        String[] args = new String[]{requestMethod, service.getName()};
+                        auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, args);
+                        throw new MethodNotAllowedException(
+                                MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED.getMessage(), args));
+                    }
+
                     // initialize cache
                     if(httpRequestKnob instanceof HttpServletRequestKnob) {
                         String cacheId = service.getOid() + "." + service.getVersion();
