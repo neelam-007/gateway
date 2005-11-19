@@ -27,7 +27,7 @@ import java.security.cert.X509Certificate;
 
 /**
  * A version of the Layer 7 SecureSpan Bridge that runs as a servlet.
- *
+ * Experimental code; do not use or enable in production systems.
  */
 public class BridgeServlet extends HttpServlet {
     private SecureSpanBridge secureSpanBridge;
