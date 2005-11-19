@@ -20,7 +20,8 @@ import java.util.logging.Level;
 
 /**
  * Class ExceptionDialog is the generic eror/exception dialog for SSL
- * policy editor.
+ * policy editor.  Only one such dialog at a time can be displayed -- if an attempt is made to create
+ * a second one while the first one is up, the second dialog won't be displayed.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
@@ -28,6 +29,9 @@ import java.util.logging.Level;
 public class ExceptionDialog extends JDialog implements ActionListener {
     private static final String OPEN_HTML = "<html>";
     private static final String CLOSE_HTML = "</html>";
+
+    private static ExceptionDialog currentlyDisplayed = null;
+
     private JPanel main = new JPanel();
     private JPanel messagePanel = new JPanel();
     private JPanel internalErroLabelPanel = null;
@@ -49,8 +53,29 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private JButton ignore = new JButton("Ignore");
     private String internalErrorLabelText = "A severe error has occurred.  You may need to restart the application";
     private boolean allowShutdown = true;
+    private boolean neverDisplay = false;
 
-    public ExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
+    /** Create a neverDisplay exception dialog that never displays anything. */
+    private ExceptionDialog(Frame parent, boolean fake) {
+        super(parent, false);
+        this.neverDisplay = true;
+    }
+
+    /**
+     * Constructor ExceptionDialog
+     *
+     * @param parent
+     * @param title
+     * @param message
+     * @param throwable
+     */
+    private ExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
+        super(parent, true);
+        initialize(title, message, throwable, level);
+    }
+
+    /** Create a real exception dialog. */
+    private ExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
         super(parent, true);
         if (labelMessage != null) {
             internalErrorLabelText = labelMessage;
@@ -63,26 +88,51 @@ public class ExceptionDialog extends JDialog implements ActionListener {
      * Constructor ExceptionDialog
      *
      * @param parent
-     * @param title
      * @param message
      * @param throwable
      */
-    public ExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
-        super(parent, true);
-        initialize(title, message, throwable, level);
-    }
-
-
-    /**
-     * Constructor ExceptionDialog
-     *
-     * @param parent
-     * @param message
-     * @param throwable
-     */
-    public ExceptionDialog(Frame parent, String message, Throwable throwable, Level level) {
+    private ExceptionDialog(Frame parent, String message, Throwable throwable, Level level) {
         super(parent, true);
         initialize(getDialogTitle(level), message, throwable, level);
+    }
+
+    public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
+        // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
+        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
+        return currentlyDisplayed = new ExceptionDialog(parent, title, message, throwable, level);
+    }
+
+    public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String message, Throwable throwable, Level level) {
+        // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
+        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
+        return currentlyDisplayed = new ExceptionDialog(parent, message, throwable, level);
+    }
+
+    public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level)
+    {
+        // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
+        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
+        return currentlyDisplayed = new ExceptionDialog(parent, title, labelMessage, message, throwable, level);
+    }
+
+    private static ExceptionDialog createFakeExceptionDialog(Frame parent) {
+        // We will silently prevent a second exception dialog
+        return new ExceptionDialog(parent, true);
+    }
+
+    public void setVisible(boolean b) {
+        if (neverDisplay) {
+            // Fake dialog never displays
+            super.setVisible(false);
+            return;
+        }
+        if (!b) {
+            synchronized (ExceptionDialog.class) {
+                currentlyDisplayed = null;
+            }
+            neverDisplay = true;
+        }
+        super.setVisible(b);
     }
 
     /**
@@ -286,10 +336,9 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     }
 
     public static void main(String[] args) {
-        ExceptionDialog d = new
-          ExceptionDialog(null,
-            "There was problem that caused this messich. The program will now exit.",
-            new Exception("Exception message"), Level.SEVERE);
+        ExceptionDialog d = createExceptionDialog(null,
+                                                  "There was problem that caused this message. The program will now exit.",
+                                                  new Exception("Exception message"), Level.SEVERE);
         d.pack();
         d.setVisible(true);
         System.exit(-1);

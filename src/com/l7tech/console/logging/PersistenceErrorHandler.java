@@ -32,7 +32,7 @@ public class PersistenceErrorHandler implements ErrorHandler {
         if (throwable instanceof ObjectModelException) {
             final Throwable t = e.getThrowable();
             e.getLogger().log(Level.WARNING, ERROR_MESSAGE, t);
-            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Warning", ERROR_MESSAGE, t, Level.WARNING);
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(), "SecureSpan Manager - Warning", ERROR_MESSAGE, t, Level.WARNING);
             d.pack();
             Utilities.centerOnScreen(d);
             d.setVisible(true);

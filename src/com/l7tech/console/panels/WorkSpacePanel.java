@@ -96,6 +96,21 @@ public class WorkSpacePanel extends JPanel {
 
 
     /**
+     * Remove the active component that the workspace.  This version cannot be vetoed by the user -- use if
+     * there is a communications error talking to the SSG, for example.
+     * <p/>
+     * TODO There's no obvious reason why disconnecting from the SSG should necessarily have to require 
+     *      clearing the workspace, other than the current problem that many workspace components cannot
+     *      repaint without a working RMI connection.
+     *
+     * The {@link JComponent#getName() } sets the tab name.
+     */
+    public void clearWorkspaceUnvetoable() {
+        tabbedPane.removeAll();
+    }
+
+
+    /**
      * Adds the specified container listener to receive container events
      * from this container.
      * If l is null, no exception is thrown and no action is performed.

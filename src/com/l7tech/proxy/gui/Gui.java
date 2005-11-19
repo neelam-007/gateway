@@ -462,7 +462,7 @@ public class Gui {
      * Display an error message based on a caught exception, but without inviting the user to restart the application.
      */
     public static void errorMessage( String title, String labelMessage, String message, Throwable t ) {
-        ExceptionDialog d = new ExceptionDialog( getInstance().getFrame(), title, labelMessage, message, t, Level.SEVERE );
+        ExceptionDialog d = ExceptionDialog.createExceptionDialog( getInstance().getFrame(), title, labelMessage, message, t, Level.SEVERE );
         d.setModal( true );
         d.pack();
         Utilities.centerOnScreen( d );

@@ -1,15 +1,14 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.MainWindow;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.TopComponents;
 
-import javax.swing.*;
+import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
-import java.net.SocketException;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -28,13 +27,17 @@ public class RmiErrorHandler implements ErrorHandler {
     public void handle(ErrorEvent e) {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
         if (throwable instanceof RemoteException || throwable instanceof SocketException) {
+            if (throwable instanceof SocketException) {
+                // prevent error cascade during repaint if it's a network problem
+                getMainWindow().disconnectFromGateway();
+            }
             final Throwable t = e.getThrowable();
             Level level = e.getLevel();
             if (level != Level.SEVERE) { // bump if necessary
                 level = Level.SEVERE;
             }
             e.getLogger().log(level, ERROR_MESSAGE, t);
-            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway error", ERROR_MESSAGE, t, level);
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway error", ERROR_MESSAGE, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
             d.setVisible(true);
@@ -43,7 +46,7 @@ public class RmiErrorHandler implements ErrorHandler {
         }
     }
 
-    private JFrame getMainWindow() {
+    private MainWindow getMainWindow() {
         if (mainFrame != null) return mainFrame;
 
         TopComponents instance = TopComponents.getInstance();

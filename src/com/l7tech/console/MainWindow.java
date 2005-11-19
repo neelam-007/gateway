@@ -584,7 +584,8 @@ public class MainWindow extends JFrame {
                */
               public void actionPerformed(ActionEvent event) {
                   try {
-                      disconnectHandler(event);
+                      getWorkSpacePanel().clearWorkspace(); // vetoable
+                      disconnectFromGateway();
                   } catch (ActionVetoException e) {
                       // action vetoed
                   }
@@ -1527,12 +1528,10 @@ public class MainWindow extends JFrame {
     // --- Event listeners ---------------------------------------
 
     /**
-     * The disconnect handler.
-     *
-     * @param event ActionEvent
+     * Disconnect from the SSG.
      */
-    private void disconnectHandler(ActionEvent event) throws ActionVetoException {
-        getWorkSpacePanel().clearWorkspace();
+    public void disconnectFromGateway() {
+        getWorkSpacePanel().clearWorkspaceUnvetoable();
         getStatusMsgLeft().setText("Disconnected");
         getStatusMsgRight().setText("");
         getAssertionPaletteTree().setModel(null);
@@ -1575,7 +1574,8 @@ public class MainWindow extends JFrame {
     private void exitMenuEventHandler(ActionEvent event) {
         if (isConnected()) {
             try {
-                disconnectHandler(event);
+                getWorkSpacePanel().clearWorkspace(); // vetoable
+                disconnectFromGateway();
             } catch (ActionVetoException e) {
                 return;
             }
@@ -1767,7 +1767,8 @@ public class MainWindow extends JFrame {
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             try {
-                                MainWindow.this.disconnectHandler(null);
+                                getWorkSpacePanel().clearWorkspace();  // vetoable
+                                MainWindow.this.disconnectFromGateway();
                                 // add a top level dlg that indicates the connection was closed
                                 JOptionPane.showMessageDialog(MainWindow.this,
                                                               "The SecureSpan Manager connection has been closed due\n" +

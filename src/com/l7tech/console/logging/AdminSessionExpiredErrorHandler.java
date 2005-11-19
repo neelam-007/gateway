@@ -24,9 +24,9 @@ public class AdminSessionExpiredErrorHandler implements ErrorHandler {
         final Throwable t = e.getThrowable();
         if (isFailedLogin(t) && getMainWindow().isDisconnected()) {
             e.getLogger().log(e.getLevel(), MSG, t);
-            ExceptionDialog d = new ExceptionDialog(getMainWindow(),
-                                                    "SecureSpan Manager - Connection error",
-                                                    MSG, t, e.getLevel());
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(),
+                                                                      "SecureSpan Manager - Connection error",
+                                                                      MSG, t, e.getLevel());
             d.pack();
             Utilities.centerOnScreen(d);
             d.setVisible(true);
