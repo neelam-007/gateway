@@ -147,11 +147,7 @@ public class ServiceNode extends EntityHeaderNode {
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
-        try {
-            return !getPublishedService().isSoap();
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        return !allowsChildren;
     }
 
     /**
