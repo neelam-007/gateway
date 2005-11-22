@@ -8,17 +8,13 @@ import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.AssertionsTree;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
-import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.ObjectPermission;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
-import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.TreeModelEvent;
@@ -34,7 +30,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -60,6 +55,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private BufferedImage imgGhost;                    // The 'drag image'
     private Point ptOffset = new Point();    // Where, in the drag image, the mouse was clicked
     private Border topBorder;
+    private boolean writeAccess;
 
 
     /**
@@ -388,7 +384,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
     private boolean hasWriteAccess() {
-        Subject s = Subject.getSubject(AccessController.getContext());
+        /*Subject s = Subject.getSubject(AccessController.getContext());
         AssertionTreeNode an = (AssertionTreeNode)getModel().getRoot();
         final ServiceNode serviceNodeCookie = an.getServiceNodeCookie();
         if (serviceNodeCookie == null) {
@@ -399,9 +395,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
             return Registry.getDefault().getSecurityProvider().hasPermission(s, op);
         } catch (Exception e) {
             log.log(Level.WARNING, "Error performing permisison check", e);
-        }
+        }*/
 
-        return false;
+        return writeAccess;
+    }
+
+    public void setWriteAccess(boolean writeAccess) {
+        this.writeAccess = writeAccess;
     }
 
 

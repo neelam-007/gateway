@@ -450,9 +450,11 @@ class PathValidator {
     }
 
     private void processSoapSpecific(Assertion a) {
-        if (!service.isSoap()) {
-            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-              "This assertion only works with soap services.", null));
+        if (service != null) {
+            if (!service.isSoap()) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                  "This assertion only works with soap services.", null));
+            }
         }
     }
 

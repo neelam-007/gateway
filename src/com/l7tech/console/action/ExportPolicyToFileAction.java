@@ -32,6 +32,8 @@ import java.util.logging.Logger;
 public class ExportPolicyToFileAction extends SecureAction {
     static final Logger log = Logger.getLogger(ExportPolicyToFileAction.class.getName());
     protected AssertionTreeNode node;
+    protected String dialogTitle = "Export Policy";
+    protected File lastSavedFile;
 
     public ExportPolicyToFileAction() {
     }
@@ -75,6 +77,7 @@ public class ExportPolicyToFileAction extends SecureAction {
             throw new IllegalStateException("no node specified");
         }
 
+        lastSavedFile = null;
         File templateDir = null;
         try {
             templateDir = new File(Preferences.getPreferences().getHomePath() +
@@ -94,7 +97,7 @@ public class ExportPolicyToFileAction extends SecureAction {
         }
 
         JFileChooser chooser = new JFileChooser(templateDir);
-        chooser.setDialogTitle("Export Policy");
+        chooser.setDialogTitle(dialogTitle);
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
@@ -133,6 +136,7 @@ public class ExportPolicyToFileAction extends SecureAction {
             if (!policyFileExists && templateDir.equals(chooser.getSelectedFile().getParentFile())) {
                 insertIntoAssertionTree(policyFile);
             }
+            lastSavedFile = policyFile;
         } catch (IOException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
         } catch (SAXException e) {

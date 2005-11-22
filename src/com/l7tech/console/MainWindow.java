@@ -107,6 +107,7 @@ public class MainWindow extends JFrame {
     private ValidatePolicyAction validatePolicyAction;
     private ExportPolicyToFileAction exportPolicyAction;
     private ImportPolicyFromFileAction importPolicyAction;
+    private NewPolicyAction newPolicyAction;
     private SavePolicyAction savePolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
@@ -149,6 +150,7 @@ public class MainWindow extends JFrame {
     private JMenuItem validateMenuItem;
     private JMenuItem importMenuItem;
     private JMenuItem exportMenuItem;
+    private JMenuItem newPolicyMenuItem;
     private JMenuItem saveMenuItem;
     private boolean disconnected = false;
     private String ssgURL;
@@ -331,7 +333,7 @@ public class MainWindow extends JFrame {
             fileMenu = new JMenu();
             //fileMenu.setFocusable(false);
             fileMenu.setText(resapplication.getString("File"));
-
+            fileMenu.add(getNewPolicyMenuItem());
             fileMenu.add(getSaveMenuItem());
             fileMenu.add(getExportMenuItem());
             fileMenu.add(getImportMenuItem());
@@ -409,6 +411,18 @@ public class MainWindow extends JFrame {
         return exportPolicyAction;
     }
 
+    private JMenuItem getNewPolicyMenuItem() {
+        if (newPolicyMenuItem == null) {
+            newPolicyMenuItem = new JMenuItem(getNewAction());
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/New16.gif"));
+            newPolicyMenuItem.setIcon(icon);
+            int mnemonic = newPolicyMenuItem.getText().toCharArray()[0];
+            newPolicyMenuItem.setMnemonic(mnemonic);
+            newPolicyMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return newPolicyMenuItem;
+    }
+
     private JMenuItem getSaveMenuItem() {
         if (saveMenuItem == null) {
             saveMenuItem = new JMenuItem(getSaveAction());
@@ -419,6 +433,14 @@ public class MainWindow extends JFrame {
             saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return saveMenuItem;
+    }
+
+    private BaseAction getNewAction() {
+        if (newPolicyAction == null) {
+            newPolicyAction = new NewPolicyAction();
+            newPolicyAction.setEnabled(false);
+        }
+        return newPolicyAction;
     }
 
     private BaseAction getSaveAction() {
@@ -979,6 +1001,7 @@ public class MainWindow extends JFrame {
     private void toggleConnectedMenus(boolean connected) {
         getFindAction().setEnabled(connected);
         getDisconnectAction().setEnabled(connected);
+        getNewAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
         homeAction.setEnabled(connected);
 

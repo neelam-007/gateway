@@ -49,7 +49,7 @@ public class AddRoutingAssertionAdvice implements Advice {
                 if (null == ra.getProtectedServiceUrl()) {
                     String url = null;
                     PublishedService service = pc.getService();
-                    if (service.isSoap()) {
+                    if (service != null && service.isSoap()) {
                         Wsdl wsdl = service.parsedWsdl();
                         if (wsdl != null) {
                             url = wsdl.getServiceURI();

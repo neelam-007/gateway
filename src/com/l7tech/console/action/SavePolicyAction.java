@@ -78,13 +78,14 @@ public class SavePolicyAction extends SecureAction {
             throw new IllegalStateException("no node specified");
         }
         try {
-            ServiceNode sn = getServiceNodeCookie();
-            if (sn == null)
+            ServiceNode serviceNode = getServiceNodeCookie();
+            if (serviceNode == null) {
                 throw new IllegalArgumentException("No edited service specified");
-            PublishedService svc = sn.getPublishedService();
+            }
+            PublishedService svc = serviceNode.getPublishedService();
             svc.setPolicyXml(xml);
             Registry.getDefault().getServiceManager().savePublishedService(svc);
-            sn.clearServiceHolder();
+            serviceNode.clearServiceHolder();
         } catch (Exception e) {
             throw new RuntimeException("Error saving service and policy",e);
         }

@@ -10,12 +10,10 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.Advices;
 import com.l7tech.console.tree.policy.advice.PolicyValidatorAdvice;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.event.EventListenerList;
@@ -50,20 +48,15 @@ public class PolicyTreeModel extends DefaultTreeModel {
         super(AssertionTreeNodeFactory.asTreeNode(root));
     }
 
-    /**
-     * Creates a new instance of the PolicyTreeModel for the Published service.
-     * 
-     * @param service 
-     */
-    public static PolicyTreeModel make(PublishedService service) {
+    public static PolicyTreeModel make(Assertion policy) {
         try {
-            final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
-            Assertion policy = cr.resolvePolicy(service.getPolicyXml());
+            //final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+            //Assertion policy = cr.resolvePolicy(service.getPolicyXml());
             policy.treeChanged(); // preen policy, ensure everything is reparented and properly numbered
             PolicyTreeModel model = new PolicyTreeModel(policy);
             return model;
         } catch (Exception e) {
-            throw new RuntimeException("Error while parsing the service policy - service " + service.getName(), e);
+            throw new RuntimeException("Error while parsing the service policy", e);
         }
     }
 

@@ -6,11 +6,18 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectPermission;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
+import javax.security.auth.Subject;
 import java.util.logging.Level;
+import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.security.AccessController;
 
 /**
  * The <code>ServicePolicyPropertiesAction</code> invokes the service
@@ -87,13 +94,46 @@ public class EditServicePolicyAction extends NodeAction {
             PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
 
             policyTree.addFocusListener(topComponents.getMainWindow().getActionsFocusListener());
-
-            final PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode, policyTree, validate);
+            PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
+                public ServiceNode getServiceNode() {return serviceNode;}
+                public Assertion getRootAssertion() {
+                    try {
+                        return serviceNode.getPublishedService().rootAssertion();
+                    } catch (IOException e) {
+                        log.log(Level.SEVERE, "cannot get service", e);
+                        throw new RuntimeException(e);
+                    } catch (FindException e) {
+                        log.log(Level.SEVERE, "cannot get service", e);
+                        throw new RuntimeException(e);
+                    }
+                }
+                public String getName() {
+                    return serviceNode.getName();
+                }
+                public void addPropertyChangeListener(PropertyChangeListener servicePropertyChangeListener) {
+                    serviceNode.addPropertyChangeListener(servicePropertyChangeListener);
+                }
+                public void removePropertyChangeListener(PropertyChangeListener servicePropertyChangeListener) {
+                    serviceNode.removePropertyChangeListener(servicePropertyChangeListener);
+                }
+                public boolean hasWriteAccess() {
+                    try {
+                        ObjectPermission op = new ObjectPermission(serviceNode.getPublishedService(), ObjectPermission.WRITE);
+                        Subject s = Subject.getSubject(AccessController.getContext());
+                        return Registry.getDefault().getSecurityProvider().hasPermission(s, op);
+                    } catch (Exception e) {
+                        log.log(Level.WARNING, "Error performing permisison check", e);
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            final PolicyEditorPanel pep = new PolicyEditorPanel(subject, policyTree, validate);
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
             TopComponents.getInstance().getMainWindow().firePolicyEdit(pep);
         } catch (ActionVetoException e) {
             // action vetoed
+            log.log(Level.WARNING, "vetoed!", e);
         } catch (FindException e) {
             // refresh the service list
             JOptionPane.showMessageDialog(null, "Unable to retrieve service. " +
