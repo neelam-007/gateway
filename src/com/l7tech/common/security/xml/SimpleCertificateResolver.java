@@ -88,7 +88,7 @@ public class SimpleCertificateResolver implements CertificateResolver {
         for (int i = 0; i < certs.length; i++) {
             Cert cert = certs[i];
             String ski = cert.getSki();
-            if (ski != null && ski.equals(ski))
+            if (ski != null && ski.equals(targetSki))
                 return cert.cert;
         }
         return null;
