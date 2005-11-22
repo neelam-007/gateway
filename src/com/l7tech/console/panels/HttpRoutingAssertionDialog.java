@@ -229,7 +229,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 updateEnableDisable();
             }
         });
-        if (!service.isSoap()) {
+        if (service != null && !service.isSoap()) {
             samlMethod.setEnabled(false);
             promoteActorRadio.setEnabled(false);
             removeSecHeaderRadio.setEnabled(false);

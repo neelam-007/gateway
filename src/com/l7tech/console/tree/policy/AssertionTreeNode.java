@@ -303,6 +303,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
 
     public PublishedService getService() throws RemoteException, FindException {
         ServiceNode sn = getServiceNodeCookie();
+        if (sn == null) return null;
         return sn.getPublishedService();
     }
 

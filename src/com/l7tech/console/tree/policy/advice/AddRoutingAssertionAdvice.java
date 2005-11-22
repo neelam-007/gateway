@@ -56,7 +56,7 @@ public class AddRoutingAssertionAdvice implements Advice {
                         }
                     }
 
-                    if (url == null) {
+                    if (url == null /*&& service != null*/) {
                         url = JOptionPane.showInputDialog(
                                 TopComponents.getInstance().getPolicyTree(),
                                 "The Protected Service URL cannot be determined automatically.\nPlease enter the URL:",

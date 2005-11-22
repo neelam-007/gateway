@@ -74,14 +74,14 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
         XpathBasedAssertionTreeNode n = (XpathBasedAssertionTreeNode)node;
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
         try {
-            if (n.getService().isSoap()) {
+            if (n.getService() != null && n.getService().isSoap()) {
                 XpathBasedAssertionPropertiesDialog dialog = new XpathBasedAssertionPropertiesDialog(mw, false, n, okListener);
                 dialog.pack();
                 dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
                 Utilities.centerOnScreen(dialog);
                 dialog.setVisible(true);
             } else {
-                if (n instanceof RequestXpathPolicyTreeNode || n instanceof ResponseXpathPolicyTreeNode) {
+                if (n instanceof RequestXpathPolicyTreeNode || n instanceof ResponseXpathPolicyTreeNode || n.getService() == null) {
                     XpathBasedAssertion xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
                     String title = null;
                     if (this instanceof RequestXpathPropertiesAction) {

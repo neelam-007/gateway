@@ -11,6 +11,7 @@ import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import java.rmi.RemoteException;
@@ -65,7 +66,11 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
                 HttpRoutingAssertionDialog d =
                         null;
                 try {
-                    d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), getServiceNodeCookie().getPublishedService());
+                    PublishedService svc = null;
+                    if (getServiceNodeCookie() != null) {
+                        svc = getServiceNodeCookie().getPublishedService();
+                    }
+                    d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), svc);
                 } catch (FindException e) {
                     log.log(Level.WARNING, e.getMessage(), e);
                     throw new RuntimeException(e);

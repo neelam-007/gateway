@@ -142,7 +142,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      * @return true if 'document' stle supported, false otherwise
      */
     private boolean wsdlExtractSupported() {
-        if (!service.isSoap()) return false;
+        if (service == null || !service.isSoap()) return false;
         String wsdlXml = service.getWsdlXml();
         if (wsdlXml == null) return false;
         analyzeWsdl(wsdlXml);
