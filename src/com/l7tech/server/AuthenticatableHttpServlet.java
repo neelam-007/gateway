@@ -224,10 +224,13 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @throws java.io.IOException on io error
      * @throws com.l7tech.identity.BadCredentialsException
      *                             on invalid credentials
+     * @throws LicenseException   if the currently installed license does not enable use of auxilary servlets.
      */
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req, PublishedService service)
-      throws IOException, BadCredentialsException, IssuedCertNotPresentedException
+            throws IOException, BadCredentialsException, IssuedCertNotPresentedException, LicenseException
     {
+        licenseManager.requireFeature(Feature.AUXILIARY_SERVLETS);
+
         // Try to authenticate against identity providers
         try {
             AuthenticationResult[] results = authenticateRequestAgainstAllIdProviders(req);
