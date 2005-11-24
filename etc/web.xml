@@ -27,7 +27,7 @@
         <filter-class>com.l7tech.server.transport.http.HttpNamespaceFilter</filter-class>
         <init-param>
             <param-name>passthroughPrefixes</param-name>
-            <param-value>/, /ssg, /index.html, result.xml</param-value>
+            <param-value>/, /ssg, /index.html, /favicon.ico, result.xml</param-value>
         </init-param>
     </filter>
 
