@@ -259,14 +259,10 @@ public class WssDecoratorImpl implements WssDecorator {
                 String keyInfoKeyIdValue = dreq.getEncryptedKeySha1();
                 String keyInfoValueTypeURI = SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1;
                 final SecretKey key = dreq.getEncryptedKey();
-                final String alg;
-                switch (key.getEncoded().length) {
-                    case 256 / 8: alg = XencUtil.AES_256_CBC; break;
-                    case 192 / 8: alg = XencUtil.AES_192_CBC; break;
-                    case 128 / 8: alg = XencUtil.AES_128_CBC; break;
-                    default: throw new DecoratorException("Unsupported AES key length: " + key.getEncoded().length);
-                }
-                XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(alg, key);
+
+                String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
+                XencUtil.XmlEncKey encKey = generate(encryptionAlgorithm, c);
+                encKey = new XencUtil.XmlEncKey(encKey.getAlgorithm(), key);
                 addEncryptedReferenceList(c,
                                           securityHeader,
                                           encKey,

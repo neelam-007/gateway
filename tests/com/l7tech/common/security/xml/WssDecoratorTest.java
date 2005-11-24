@@ -718,23 +718,28 @@ public class WssDecoratorTest extends TestCase {
                                        4,55,33,22,
                                        28,55,-25,33,
                                        -120,55,66,33,
-                                       83,22,44,55};
+                83,22,44,55};
 
-        return new TestDocument(c,
-                                (Element)null,
-                                (X509Certificate)null,
-                                (PrivateKey)null,
-                                (X509Certificate)null,
-                                (PrivateKey)null,
-                                true,
-                                new Element[]{ c.body },
-                                (String)null,
-                                new Element[]{ c.body },
-                                new AesKey(keyBytes, 256),
-                                false,
-                                false,
-                                "abc11EncryptedKeySHA1Value11blahblahblah11==",
-                                "abc11SignatureConfirmationValue11blahblahblah11==",
-                                ACTOR_NONE);
+        TestDocument testDocument =
+                new TestDocument(c,
+                                 (Element)null,
+                                 (X509Certificate)null,
+                                 (PrivateKey)null,
+                                 (X509Certificate)null,
+                                 (PrivateKey)null,
+                                 true,
+                                 new Element[]{c.body},
+                                 (String)null,
+                                 new Element[]{c.body},
+                                 new AesKey(keyBytes, 256),
+                                 false,
+                                 false,
+                                 "abc11EncryptedKeySHA1Value11blahblahblah11==",
+                                 "abc11SignatureConfirmationValue11blahblahblah11==",
+                                 ACTOR_NONE);
+
+        testDocument.encryptionAlgorithm = XencAlgorithm.AES_256_CBC.getXEncName(); 
+
+        return testDocument;
     }
 }
