@@ -642,7 +642,7 @@ public class XmlUtil {
                 }
             }
             if (element == element.getOwnerDocument().getDocumentElement())
-                return desiredPrefix;
+                break;
             element = element.getParentNode();
         }
 
