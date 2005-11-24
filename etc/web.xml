@@ -59,6 +59,11 @@
     </servlet>
 
     <servlet>
+        <servlet-name>error</servlet-name>
+        <servlet-class>com.l7tech.server.ErrorServlet</servlet-class>
+    </servlet>
+
+    <servlet>
         <servlet-name>ping</servlet-name>
         <servlet-class>com.l7tech.server.PingServlet</servlet-class>
     </servlet>
@@ -107,6 +112,11 @@
         <servlet-name>xfire</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
     </servlet>
+
+    <servlet-mapping>
+        <servlet-name>error</servlet-name>
+        <url-pattern>/ssg/error</url-pattern>
+    </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>xfire</servlet-name>
@@ -176,6 +186,119 @@
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
+
+    <error-page>
+        <error-code>400</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>401</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>402</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>403</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>404</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>405</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>406</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>407</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>408</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>409</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>410</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>411</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>412</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>413</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>414</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>415</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>416</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>417</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>422</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>423</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>500</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>501</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>502</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>503</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>504</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>505</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <error-code>507</error-code>
+        <location>/ssg/error</location>
+    </error-page>
+    <error-page>
+        <exception-type>java.lang.Exception</exception-type>
+        <location>/ssg/error</location>
+    </error-page>
 
     <!-- uncomment login-config to enable (currently not used)
     <login-config>
