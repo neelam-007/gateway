@@ -143,7 +143,7 @@ public class XmlUtil {
     /**
      * Create an XML document from the given InputStream. If the InputStream
      * data does NOT contain charset information and you know the charset you
-     * should create a Reader and pass that instead.
+     * should call the parse method that takes an encoding argument.
      *
      * @param input the InputStream that will produce the document's bytes
      * @return the parsed document
@@ -152,6 +152,22 @@ public class XmlUtil {
      */
     public static Document parse(InputStream input) throws IOException, SAXException {
         return parse(new InputSource(input), false);
+    }
+
+    /**
+     * Create an XML document from the given InputStream. If the InputStream
+     * data contains charset information this SHOULD be ignored by the parser
+     * and the specified one used.
+     *
+     * @param input the InputStream that will produce the document's bytes
+     * @return the parsed document
+     * @throws IOException if an IO error occurs
+     * @throws SAXException if there is a parsing error
+     */
+    public static Document parse(InputStream input, String encoding) throws IOException, SAXException {
+        InputSource is = new InputSource(input);
+        is.setEncoding(encoding);
+        return parse(is, false);
     }
 
     /**
@@ -171,6 +187,10 @@ public class XmlUtil {
 
     /**
      * Create an XML document from the given Reader.
+     *
+     * <p>This method is intended to be used when you have character data to
+     * parse. If you know the encoding but have binary data, call the method
+     * that takes an InputStream and an encoding.</p>
      *
      * @param input the Reader that will produce the document's characters
      * @param allowDoctype true to allow DOCTYPE processing instructions. <b>NOTE</b>: Don't allow DOCTYPEs on "foreign" documents (e.g. any document received over a network interface).
