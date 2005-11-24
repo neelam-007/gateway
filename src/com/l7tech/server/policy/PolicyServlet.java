@@ -93,10 +93,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 pre32PolicyCompat = true;
             }
 
-            // Build a processing context including request and response messages
-            //boolean signResponse = !req.isSecure(); // TODO figure out why this is failing to sign when SSL not used
-            boolean signResponse = true;
-
             Message request = new Message();
             request.initialize(new ByteArrayStashManager(),
                                ContentTypeHeader.parseValue(servletRequest.getContentType()),
@@ -111,28 +107,35 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             // pass over to the service
             PolicyService service = getPolicyService();
 
-            service.respondToPolicyDownloadRequest(context, signResponse, normalPolicyGetter(), pre32PolicyCompat);
+            try {
+                service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(), pre32PolicyCompat);
+            }
+            catch(IllegalStateException ise) { // throw by policy getter on policy not found
+                generateFaultAndSendAsResponse(servletResponse, "Service not found", ise.getMessage());
+            }
 
             Document responseDoc = null;
             try {
                 responseDoc = response.getXmlKnob().getDocumentReadOnly();
             } catch (SAXException e) {
                 generateFaultAndSendAsResponse(servletResponse, "No response available", e.getMessage());
+                return;
             }
+
             if (response == null) {
                 if (context.getFaultDetail() != null) {
                     generateFaultAndSendAsResponse(servletResponse, context.getFaultDetail());
-                    return;
                 } else {
                     generateFaultAndSendAsResponse(servletResponse, "No response available", "");
                 }
             }
-
-            // check if the response is already a soap fault
-            if (isDocFault(responseDoc)) {
-                outputSoapFault(servletResponse, responseDoc);
-            } else {
-                outputPolicyDoc(servletResponse, responseDoc);
+            else {
+                // check if the response is already a soap fault
+                if (isDocFault(responseDoc)) {
+                    outputSoapFault(servletResponse, responseDoc);
+                } else {
+                    outputPolicyDoc(servletResponse, responseDoc);
+                }
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
@@ -147,9 +150,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     protected PolicyService.PolicyGetter normalPolicyGetter() {
         return new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
-                final PublishedService targetService = resolveService(Long.parseLong(serviceId));
-                if (targetService == null) return null;
                 try {
+                    final PublishedService targetService = resolveService(Long.parseLong(serviceId));
+                    if (targetService == null) throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
+
                     final Assertion policy = targetService.rootAssertion();
                     return new PolicyService.ServiceInfo() {
                         public Assertion getPolicy() {
@@ -163,6 +167,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 } catch (IOException e) {
                     logger.log(Level.SEVERE, "cannot parse policy", e);
                     return null;
+                } catch (NumberFormatException e) {
+                    logger.log(Level.INFO, "cannot parse service id: " + serviceId);
+                    throw new IllegalStateException("Service not found ("+serviceId+")"); // caught by us in doGet and doPost
                 }
             }
         };
@@ -202,7 +209,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             results = authenticateRequestBasic(req);
         } catch (AuthenticationException e) {
-            logger.log(Level.FINE, "Authentication exception", e);
+            logger.log(Level.FINE, "Authentication exception: " + e.getMessage());
             results = new AuthenticationResult[0];
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
@@ -212,7 +219,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         // pass over to the service
         PolicyService service = getPolicyService();
-        Document response;
+        Document response = null;
         try {
             switch (results.length) {
                 case 0:
@@ -233,10 +240,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "Error in PolicyService", e);
             generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
             return;
+        } catch(IllegalStateException ise) { // invalid service
+            generateFaultAndSendAsResponse(res, "Service not found.", ise.getMessage());
+            return;
+        } catch(UnsupportedOperationException uoe) {
+            generateFaultAndSendAsResponse(res, "internal error", "");
+            return;
         }
-        if (isDocFault(response)) {
-            response = null;
-        }
+
         if (response == null && (results == null || results.length < 1)) {
             logger.finest("sending challenge");
             sendAuthChallenge(req, res);
@@ -251,14 +262,17 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     private boolean isDocFault(Document doc) {
         if (doc == null) return false;
-        Element bodyChild;
+        Element bodyChild = null;
         try {
-            bodyChild = XmlUtil.findFirstChildElement(SoapUtil.getBodyElement(doc));
+            Element body = SoapUtil.getBodyElement(doc);
+            if(body!=null) {
+                bodyChild = XmlUtil.findFirstChildElement(body);
+            }
         } catch (InvalidDocumentFormatException e) {
             logger.log(Level.WARNING, "cannot inspect document for fault", e);
             return false;
         }
-        return "Fault".equals(bodyChild.getLocalName());
+        return bodyChild!=null && "Fault".equals(bodyChild.getLocalName());
     }
 
     /**

@@ -64,17 +64,35 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        String serviceId = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
+        // resolve service if given
+        String serviceStr = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
+        PublishedService ps = null;
+        try {
+            Long serviceId = parseLong(serviceStr);
+
+            if(serviceStr!=null && serviceId==null) {
+                throw new FindException();
+            }
+
+            if (serviceId != null) {
+                ps = resolveService(serviceId.longValue());
+                if(ps==null) throw new FindException();
+            }
+        } catch(FindException fe) {
+            // if they ask for an invalid services WSDL return 404 since that WSDL doc does not exist
+            logger.log(Level.INFO, "Invalid service requested '" + serviceStr + "'.");
+            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
 
         // let's see if we can get credentials...
         AuthenticationResult[] results;
         try {
-            if (serviceId != null) {
-                results = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
+            if (ps != null) {
+                results = authenticateRequestBasic(req, ps);
             } else {
                 results = authenticateRequestBasic(req);
             }
-
         } catch (AuthenticationException e) {
             logger.log(Level.INFO, "Credentials do not authenticate against any of the providers, assuming anonymous");
             results = null;
@@ -90,40 +108,26 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // (i dont care if you send me credentials in non secure manner, that is your problem
         // however, i will not send sensitive information unless the channel is secure)
         if (results != null && results.length > 0 && req.isSecure()) {
-            doAuthenticated(req, res, serviceId, results);
+            doAuthenticated(req, res, ps, results);
         } else {
-            doAnonymous(req, res, serviceId);
+            doAnonymous(req, res, ps);
         }
     }
 
-    private void doAnonymous(HttpServletRequest req, HttpServletResponse res, String svcId) throws IOException {
-        doAuthenticated(req, res, svcId, null);
+    private void doAnonymous(HttpServletRequest req, HttpServletResponse res, PublishedService ps) throws IOException {
+        doAuthenticated(req, res, ps, null);
     }
 
     private void doAuthenticated(HttpServletRequest req,
                                  HttpServletResponse res,
-                                 String svcId,
+                                 PublishedService svc,
                                  AuthenticationResult[] results)
             throws IOException
     {
         // HANDLE REQUEST FOR ONE SERVICE DESCRIPTION
-        if (svcId != null && svcId.length() > 0) {
-            // get this service
-            PublishedService svc;
-            try {
-                svc = serviceManager.findByPrimaryKey(Long.parseLong(svcId));
-            } catch (FindException e) {
-                logger.log(Level.SEVERE, "cannot find service", e);
-                svc = null;
-            } catch (NumberFormatException e) {
-                logger.log(Level.SEVERE, "cannot parse service id", e);
-                res.sendError(HttpServletResponse.SC_BAD_REQUEST, "wrong service id: " + svcId);
-                return;
-            }
-            if (svc == null) {
-                res.sendError(HttpServletResponse.SC_NOT_FOUND, "service does not exist or not authorized");
-                return;
-            } else if (!svc.isSoap()) {
+        if (svc != null) {
+            // check svc type
+            if (!svc.isSoap()) {
                 res.sendError(HttpServletResponse.SC_NOT_FOUND, "service has no wsdl");
                 return;
             }
@@ -151,7 +155,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 }
             }
             outputServiceDescription(req, res, svc);
-            logger.info("Returned description for service, " + svcId);
+            logger.info("Returned description for service, " + svc.getOid());
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             ListResults listres;
 
@@ -380,5 +384,19 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
         outDoc.append("</inspection>");
         return outDoc.toString();
+    }
+
+    private Long parseLong(String longStr) {
+        Long result = null;
+
+        if(longStr!=null){
+            try {
+                result = Long.valueOf(longStr);
+            }
+            catch(NumberFormatException nfe) {
+            }
+        }
+
+        return result;
     }
 }
