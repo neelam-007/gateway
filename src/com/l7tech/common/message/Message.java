@@ -84,7 +84,7 @@ public final class Message {
     {
         HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
         HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
-        rootFacet = null;
+        rootFacet = null; // TODO close knobs we aren't preserving
         rootFacet = new MimeFacet(this, sm, outerContentType, body);
         if (reqKnob != null) attachHttpRequestKnob(reqKnob);
         if (respKnob != null) attachHttpResponseKnob(respKnob);
@@ -130,6 +130,8 @@ public final class Message {
      */
     public void initialize(Message msg)
     {
+        if (rootFacet != null)
+            close();
         rootFacet = msg.rootFacet;
     }
 
