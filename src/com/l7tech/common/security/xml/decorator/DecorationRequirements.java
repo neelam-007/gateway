@@ -92,7 +92,25 @@ public class DecorationRequirements {
      * Envelope signature.<p>
      */
     public void setSignTimestamp() {
+        setIncludeTimestamp();
         this.signTimestamp = true;
+    }
+
+    /**
+     * If this is true, we'll always include a timestamp in the decorated message.
+     * It won't be signed unless signTimestamp is set (or anything else is signed, in which
+     * case a signed timestamp will always be included regardless).
+     */
+    public void setIncludeTimestamp() {
+        this.includeTimestamp = true;
+    }
+
+    /**
+     * @see #setIncludeTimestamp
+     * @return true if a timestamp will be included always; false if a timestamp won't be included unless necessary
+     */
+    public boolean isIncludeTimestamp() {
+        return includeTimestamp;
     }
 
     /**
@@ -369,6 +387,7 @@ public class DecorationRequirements {
     private UsernameToken usernameTokenCredentials = null;
     private Element senderSamlToken = null;
     private SecureConversationSession secureConversationSession = null;
+    private boolean includeTimestamp = true;
     private boolean signTimestamp;
     private Set elementsToEncrypt = new LinkedHashSet();
     private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
