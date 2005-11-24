@@ -83,15 +83,23 @@ public class WssDecoratorImpl implements WssDecorator {
             dreq.getSecurityHeaderActor());
         Set signList = dreq.getElementsToSign();
 
-        // If we aren't signing the entire message, find extra elements to sign
-        if (dreq.isSignTimestamp() || !signList.isEmpty()) {
-            int timeoutMillis = dreq.getTimestampTimeoutMillis();
-            if (timeoutMillis < 1)
-                timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
-            Element timestamp = SoapUtil.addTimestamp(securityHeader,
+        Element timestamp = null;
+        int timeoutMillis = dreq.getTimestampTimeoutMillis();
+        if (timeoutMillis < 1)
+            timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
+        if (dreq.isIncludeTimestamp())
+            timestamp = SoapUtil.addTimestamp(securityHeader,
                 c.wsuNS,
                 dreq.getTimestampCreatedDate(), // null ok
                 timeoutMillis);
+
+        // If we aren't signing the entire message, find extra elements to sign
+        if (dreq.isSignTimestamp() || !signList.isEmpty()) {
+            if (timestamp == null)
+                timestamp = SoapUtil.addTimestamp(securityHeader,
+                    c.wsuNS,
+                    dreq.getTimestampCreatedDate(), // null ok
+                    timeoutMillis);
             signList.add(timestamp);
         }
 
