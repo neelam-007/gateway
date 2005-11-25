@@ -259,7 +259,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         UserBean user = new UserBean();
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());
-                        user.setPassword(new String(creds.getCredentials()));
+                        user.setPassword(new String(creds.getCredentials()), true);
                         return new AuthenticationResult[] { new AuthenticationResult(user) };
                     }
                 }

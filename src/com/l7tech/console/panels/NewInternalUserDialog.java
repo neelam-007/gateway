@@ -476,7 +476,7 @@ public class NewInternalUserDialog extends JDialog {
     private void insertUser() {
         user.setName(idTextField.getText());
         user.setLogin(idTextField.getText());
-        user.setPassword(new String(passwordField.getPassword()));
+        user.setPassword(new String(passwordField.getPassword()), true);
         SwingUtilities.invokeLater(
                 new Runnable() {
                     public void run() {

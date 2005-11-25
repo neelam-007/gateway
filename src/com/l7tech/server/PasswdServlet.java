@@ -100,7 +100,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         UserBean tmpUser = new UserBean();
         tmpUser.setLogin(internalUser.getLogin());
         try {
-            tmpUser.setPassword(str_newpasswd);
+            tmpUser.setPassword(str_newpasswd, true);
         } catch (IllegalStateException e) {
             logger.log(Level.SEVERE, "could not compare password", e);
             sendBackError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -116,7 +116,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             InternalUser newInternalUser = new InternalUser();
             newInternalUser.copyFrom(internalUser);
             newInternalUser.setVersion(internalUser.getVersion());
-            newInternalUser.setPassword(str_newpasswd);
+            newInternalUser.setPassword(str_newpasswd, true);
             IdentityProviderFactory ipf = (IdentityProviderFactory)getApplicationContext().getBean("identityProviderFactory");
             IdentityProvider provider = ipf.getProvider(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             UserManager userManager = provider.getUserManager();

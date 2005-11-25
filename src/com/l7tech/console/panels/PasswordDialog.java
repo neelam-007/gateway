@@ -339,7 +339,7 @@ public class PasswordDialog extends JDialog {
                 }
             }
 
-            user.getUserBean().setPassword(new String(newPass));
+            user.getUserBean().setPassword(new String(newPass), true);
             Registry.getDefault().getIdentityAdmin().saveUser(
                     IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, user, null); // TODO make sure passing null here won't clear group memberships
             dispose();

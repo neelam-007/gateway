@@ -51,14 +51,25 @@ public class InternalUser extends PersistentUser {
     }
 
     public void setPassword(String password) throws InvalidPasswordException {
+        setPassword(password, false);
+    }
+
+    /**
+     * Set the password for this user
+     * 
+     * @param password the password (clear or encoded)
+     * @param hintIsClear true if you want to communicate that the password is in clear text
+     * @throws InvalidPasswordException
+     */
+    public void setPassword(String password, boolean hintIsClear) throws InvalidPasswordException {
         if (password == null) throw new InvalidPasswordException("Empty password is not valid");
-        if (!UserBean.isAlreadyEncoded(password)) {
+        if (hintIsClear || !UserBean.isAlreadyEncoded(password)) {
             if (password.length() < 6) throw new InvalidPasswordException("Password must be at least 6 " +
                                                                           "characters long");
             if (password.length() > 32) throw new InvalidPasswordException("Password must be no longer " +
                                                                            "than 32 characters long");
         }
-        bean.setPassword(password);
+        bean.setPassword(password, hintIsClear);
     }
 
     /**

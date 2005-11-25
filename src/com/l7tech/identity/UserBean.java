@@ -66,7 +66,17 @@ public class UserBean implements User, Serializable {
     }
 
     public void setPassword(String password) throws IllegalStateException {
-        if ( password != null && !isAlreadyEncoded(password)) {
+        setPassword(password, false);
+    }
+
+    /**
+     * Set the password for this user
+     *
+     * @param password the password (clear or encoded)
+     * @param hintIsClear true if you want to communicate that the password is in clear text
+     */
+    public void setPassword(String password, boolean hintIsClear) throws IllegalStateException {
+        if ( password != null && (hintIsClear || !isAlreadyEncoded(password))) {
             if (_login == null) throw new IllegalStateException("login must be set prior to encoding the password");
             _password = encodePasswd(_login, password);
         }
