@@ -16,6 +16,8 @@ import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -28,6 +30,7 @@ import org.w3c.dom.Element;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  * @author mike
@@ -63,6 +66,10 @@ public class WssProcessorTest extends TestCase {
                                                                 recipientPrivateKey,
                                                                 testDocument.securityContextFinder,
                                                                 certificateResolver);
+        checkProcessorResult(request, result);
+    }
+
+    private void checkProcessorResult(Document request, ProcessorResult result) throws IOException {
         assertTrue(result != null);
 
         ParsedElement[] encrypted = result.getElementsThatWereEncrypted();
@@ -353,4 +360,46 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
+
+    public static final String INDIGO_PING_RESPONSE = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:u=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\"><s:Header><ActivityId xmlns=\"http://schemas.microsoft.com/2004/09/ServiceModel/Diagnostics\">78f13fbd-8484-4ae4-b3e3-185b52f9608b</ActivityId><o:Security xmlns:o=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" s:mustUnderstand=\"1\"><u:Timestamp u:Id=\"uuid-f7c80253-34a1-4b59-acf2-27240cc2fb4e-12\"><u:Created>2005-11-08T17:34:37.508Z</u:Created><u:Expires>2005-11-08T17:39:37.508Z</u:Expires></u:Timestamp><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></CanonicalizationMethod><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"></SignatureMethod><Reference URI=\"#_0\"><Transforms><Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></Transform></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"></DigestMethod><DigestValue>gVc0sw3s6TrTsaGKKLQxYp/X+jY=</DigestValue></Reference><Reference URI=\"#uuid-f7c80253-34a1-4b59-acf2-27240cc2fb4e-12\"><Transforms><Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></Transform></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"></DigestMethod><DigestValue>HBFdY75N1LYFI301jYhlAAoEUSU=</DigestValue></Reference></SignedInfo><SignatureValue>pW/nCS3BchGqMSwQA/0VzyhjeAZem9AqlgjW3xMuHiwr3ZP0GxmXiMV5g/S6kd1itPs1d5OV6alqQGKa1SN1vh23SRenpdaUWrUg0oQgpIOrHuiP08DqNwXegJC2xIzRoXLW+wSKbiBC6zsRSNYVveo0+yE/+FzagbTzz9iN/0E=</SignatureValue><KeyInfo><o:SecurityTokenReference><o:KeyIdentifier EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier\">Xeg55vRyK3ZhAEhEf+YT0z986L0=</o:KeyIdentifier></o:SecurityTokenReference></KeyInfo></Signature></o:Security></s:Header><s:Body u:Id=\"_0\"><PingResponse xmlns=\"http://xmlsoap.org/Ping\">Ping</PingResponse></s:Body></s:Envelope>";
+    public static final String INDIGO_CERT = "MIIDDDCCAfSgAwIBAgIQb6U6bec4ZHW96T5N2A/NdTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQK\n" +
+            "DAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MTAyNzAwMDAwMFoX\n" +
+            "DTE4MTAyNzIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsTF09BU0lTIEludGVyb3Ag\n" +
+            "VGVzdCBDZXJ0MQ4wDAYDVQQDDAVXc3NJUDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2X9Z\n" +
+            "Wiek/59vvg+l/lmzWjBYiqoOuSI+ms3ief7RyhPNh/IrGE3VwU67HsygNeavE06S6xNfcNWUNLqE\n" +
+            "dRmd/29WnubNH7hWJsqp7rn8g/mxNVkynCkJ1saKuD8ILiKfNg0e8UUE9QzwEz1fxw81OR0SbDit\n" +
+            "fTrDj8Q/ouCgEaUCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8v\n" +
+            "aW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQb\n" +
+            "1AYE+P8ue/8qbgUJOKoyDXFqaTAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkq\n" +
+            "hkiG9w0BAQUFAAOCAQEAeltzyUHj+/0i3Hsj5XvWrJ7mF+zBFwp7E6CPLP/urfMdl1VFaBttOCcd\n" +
+            "WRrm8GI3KsGQMV6dpzAykl1JDO7T6IMSMYA1/YTsSH9S8xoubL/7IGYj3izKZ9LrV7fJJOHOerKL\n" +
+            "gIk/0X8DzH15jwel271s6Nh6DiXqU2Hf0YUmauLAH+rbiuNLlUKM5UkP4BtGqPw+6tvyaUOa3fzJ\n" +
+            "s92WB+j5x91/xmvNg+ZTp+TEfyINM3wZAHwoIzXtEViopCRsXkmLr+IBGszmUpZnPd2QuqDSSkQh\n" +
+            "lZmUAuNVPCTBoNuWBX/tvvAw3a3jl+DXB+Fn2JbRpoUdvkgAWCAJ6hrKgA==";
+
+    public void testIndigoPingResponse() throws Exception {
+
+        X509Certificate aliceCert = TestDocuments.getWssInteropAliceCert();
+        X509Certificate bobCert = TestDocuments.getWssInteropBobCert();
+        byte[] icbytes = HexUtils.decodeBase64(INDIGO_CERT);
+        X509Certificate indigoCert = CertUtils.decodeCert(icbytes);
+        log.info("Indigo cert DN: " + indigoCert.getSubjectDN());
+        log.info("Indigo cert issuer: " + indigoCert.getIssuerDN());
+        log.info("Indigo cert SKI: " + CertUtils.getSki(indigoCert));
+        log.info("Alice cert SKI: " + CertUtils.getSki(aliceCert));
+        log.info("Bob cert SKI: " + CertUtils.getSki(bobCert));
+
+        Document d = XmlUtil.stringToDocument(INDIGO_PING_RESPONSE);
+        log.info("Input decorated message (reformatted): \n" + XmlUtil.nodeToFormattedString(d));
+        WssProcessor p = new WssProcessorImpl();
+
+        ProcessorResult got = p.undecorateMessage(new Message(d),
+                null,
+                aliceCert,
+                TestDocuments.getWssInteropAliceKey(),
+                null,
+                new SimpleCertificateResolver(bobCert));
+
+        checkProcessorResult(d, got);
+    }
 }
