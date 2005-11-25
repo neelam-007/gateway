@@ -110,5 +110,6 @@ public class Advices {
         advicesMap.put(EqualityAssertion.class, new Class[]{EqualityAssertionAdvice.class});
         advicesMap.put(SqlAttackAssertion.class, new Class[]{SqlAttackAssertionAdvice.class});
         advicesMap.put(RequestSizeLimit.class, new Class[]{RequestSizeLimitAdvice.class});
+        advicesMap.put(HardcodedResponseAssertion.class, new Class[]{HardcodedResponseAssertionAdvice.class});
     }
 }

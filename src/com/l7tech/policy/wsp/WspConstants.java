@@ -222,6 +222,7 @@ public class WspConstants {
         new AssertionMapping(new StealthFault(), "StealthFault"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
         new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),
+        new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),
