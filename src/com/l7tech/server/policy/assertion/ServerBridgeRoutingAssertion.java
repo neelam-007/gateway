@@ -8,36 +8,22 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.http.FailoverHttpClient;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.RerunnableHttpRequest;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.GenericHttpHeader;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.common.message.*;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HttpResponseKnob;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
-import com.l7tech.common.util.CausedIllegalStateException;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
@@ -58,22 +44,14 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
+import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * SSG implementation of a routing assertion that uses the SSB.
@@ -99,8 +77,15 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         try {
             url = getUrl();
             hardcodedPolicy = getHardCodedPolicy();
-        }
-        catch(IllegalStateException ise) {
+
+            String serverCertBase64 = assertion.getServerCertBase64();
+            if (serverCertBase64 != null) {
+                serverCertBase64 = serverCertBase64.replaceAll("----+\\s*BEGIN (TRUSTED )?CERTIFICATE----+\\s*", "");
+                serverCertBase64 = serverCertBase64.replaceAll("----+\\s*END (TRUSTED )?CERTIFICATE----+\\s*", "");
+                byte[] serverCertBytes = HexUtils.decodeBase64(serverCertBase64, true);
+                serverCert = CertUtils.decodeCert(serverCertBytes);
+            }
+        } catch(Exception ise) {
             logger.log(Level.WARNING, ise.getMessage(), ise.getCause());
             ssg = null;
             messageProcessor = null;
@@ -730,6 +715,18 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
         public void importClientCertificate(File certFile, char[] pass, AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException("Gateway is unable to import a client certificate");
+        }
+
+        public void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException {
+            if (bridgeRoutingAssertion.getServerCertBase64() == null) {
+                super.installSsgServerCertificate(ssg, credentials);
+                return;
+            }
+
+            if (serverCert == null)
+                throw new CertificateException("Hardcoded server cert was not trusted by the Bridge Routing Assertion"); // shouldn't be possible
+
+            saveSsgCertificate(serverCert);
         }
     }
 }
