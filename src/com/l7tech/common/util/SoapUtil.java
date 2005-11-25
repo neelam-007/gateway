@@ -41,6 +41,7 @@ public class SoapUtil {
         ENVELOPE_URIS.add(SOAPConstants.URI_NS_SOAP_ENVELOPE);
         ENVELOPE_URIS.add("http://www.w3.org/2001/06/soap-envelope");
         ENVELOPE_URIS.add("http://www.w3.org/2001/09/soap-envelope");
+        ENVELOPE_URIS.add("http://www.w3.org/2003/05/soap-envelope");         
         ENVELOPE_URIS.add("urn:schemas-xmlsoap-org:soap.v1");
     }
 
@@ -55,7 +56,8 @@ public class SoapUtil {
     public static final String SECURITY_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2002/07/secext";
     public static final String SECURITY_NAMESPACE4 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE5 = "http://schemas.xmlsoap.org/ws/2003/06/secext";
-    public static final String SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd";
+    public static final String SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd";
+    //public static final String OLD_SECURITY11_NAMESPACE = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-wssecurity-secext-1.1.xsd";
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
@@ -159,9 +161,9 @@ public class SoapUtil {
     public static final String VALUETYPE_X509 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#" + VALUETYPE_X509_SUFFIX;
     public static final String VALUETYPE_X509_2 = SECURITY_NAMESPACE_PREFIX + ":" + VALUETYPE_X509_SUFFIX;
     public static final String VALUETYPE_X509_THUMB_SHA1_SUFFIX = "ThumbprintSHA1";
-    public static final String VALUETYPE_X509_THUMB_SHA1 =        "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-soap-message-security-1.1#ThumbprintSHA1";
+    public static final String VALUETYPE_X509_THUMB_SHA1 =        "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1";
     public static final String VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX = "EncryptedKeySHA1";
-    public static final String VALUETYPE_ENCRYPTED_KEY_SHA1 = "http://docs.oasis-open.org/wss/2005/xx/oasis-2005xx-wss-soap-message-security-1.1#EncryptedKeySHA1";
+    public static final String VALUETYPE_ENCRYPTED_KEY_SHA1 = "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#EncryptedKeySHA1";
     public static final String VALUETYPE_SAML = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertion-1.0"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
     public static final String VALUETYPE_SAML_ASSERTIONID = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
     public static final String VALUETYPE_SAML_ASSERTION1_1 = "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-saml-token-profile-1.0#SAMLAssertion-1.1"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
