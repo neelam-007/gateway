@@ -30,6 +30,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * A servlet that answers REST queries of the form GET /ssg/management/-n/.1.3.6.1.4.1.17304.7.1.1.1 with SNMP answers
@@ -61,6 +63,16 @@ public class SnmpQueryServlet extends HttpServlet {
     private final Pattern match2 = Pattern.compile("^\\.(\\d+)\\.(\\d+)$");
 
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        try {
+            if(!InetAddress.getByName(request.getRemoteAddr()).isLoopbackAddress()){
+                throw new UnknownHostException();
+            }
+        }
+        catch(UnknownHostException uhe) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+
         String uri = request.getRequestURI();
         final Matcher matcher = urlParser.matcher(uri);
         if (!matcher.matches()) {
