@@ -32,9 +32,31 @@
     </filter>
 
     <filter>
+        <filter-name>input-timeout</filter-name>
+        <filter-class>com.l7tech.server.transport.http.InputTimeoutFilter</filter-class>
+        <init-param> <!-- how long to wait on a read -->
+            <param-name>blocked-read-timeout</param-name>
+            <param-value>30000</param-value>
+        </init-param>
+        <init-param> <!-- milliseconds before slow read check comes into effect -->
+            <param-name>slow-read-timeout</param-name>
+            <param-value>30000</param-value>
+        </init-param> 
+        <init-param><!-- in bytes per second -->
+            <param-name>slow-read-throughput</param-name>
+            <param-value>1024</param-value>
+        </init-param>
+    </filter>
+
+    <filter>
         <filter-name>adminWebService</filter-name>
         <filter-class>com.l7tech.server.admin.ws.AdminWebServiceFilter</filter-class>
     </filter>
+
+    <filter-mapping>
+        <filter-name>input-timeout</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
     <filter-mapping>
         <filter-name>namespace</filter-name>

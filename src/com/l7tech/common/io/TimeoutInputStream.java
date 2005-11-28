@@ -1,12 +1,13 @@
 package com.l7tech.common.io;
 
-import java.io.InputStream;
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.Iterator;
-import java.util.Set;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.logging.Logger;
+import javax.servlet.ServletInputStream;
 
 import EDU.oswego.cs.dl.util.concurrent.ReentrantLock;
 
@@ -17,10 +18,14 @@ import com.l7tech.common.util.CausedIOException;
  *
  * <p>There is also a minimum thoughput to prevent "slow-write" attacks.</p>
  *
+ * <p>Note that although this class extends ServletInputStream, you can only
+ * use the {@link #readLine(byte[],int,int) readLine} method if the wrapped
+ * stream is a ServletInputStream (else you will get an exception)</p>
+ *
  * @author $Author$
  * @version $Revision$
  */
-public class TimeoutInputStream extends InputStream {
+public class TimeoutInputStream extends ServletInputStream {
 
     //- PUBLIC
 
@@ -111,6 +116,29 @@ public class TimeoutInputStream extends InputStream {
     }
 
     /**
+     * Read a line of input into a (portion of a) byte array.
+     *
+     * @param b the byte array
+     * @param off the offset
+     * @param len  the length
+     * @return the number of bytes, etc
+     * @throws IOException if an underlying error occurs or if there is a timeout
+     * @throws UnsupportedOperationException if the wrapped stream is not a ServletInputStream
+     */
+    public int readLine(byte[] b, int off, int len) throws IOException {
+        enterBlocking();
+        try {
+            return trackBytes(((ServletInputStream)in).readLine(b, off, len));
+        }
+        catch(ClassCastException cce) {
+            throw new UnsupportedOperationException("The underlying stream does not support readLine!");
+        }
+        finally {
+            exitBlocking();
+        }
+    }
+
+    /**
      * Skip bytes from the input stream.
      *
      * @param n the number of bytes to skip
@@ -172,6 +200,72 @@ public class TimeoutInputStream extends InputStream {
      */
     public boolean markSupported() {
         return in.markSupported();
+    }
+
+    /**
+     * Called to indicate that this stream is no longer in use (but the underlying
+     * stream may or may not be closed / read completely)
+     *
+     * You must not read from the stream after calling this method.
+     */
+    public final void done() {
+        bin.readComplete = true;
+    }
+
+    //- PROTECTED
+
+    /**
+     * Called on entry to a blocking section (activate timeout)
+     */
+    private final void enterBlocking() throws IOException {
+        acquireLock();
+        checkTimeout();
+        if(isOuterLock()) {
+            bin.enter();
+        }
+    }
+
+    /**
+     * Called on exit from a blocking section (deactivate timeout)
+     */
+    protected final void exitBlocking() throws IOException {
+        try {
+            if(isOuterLock()) {
+                bin.exit();
+            }
+            checkTimeout();
+        }
+        finally {
+            releaseLock();
+        }
+    }
+
+    /**
+     * Record a number of bytes read. If -1 is passed then the stream is
+     * flagged as fully read.
+     */
+    protected final int trackBytes(int bytes) {
+        if(bytes>0) {
+            bin.bytesRead += bytes;
+        }
+        else if(bytes<0) {
+            bin.readComplete = true;
+        }
+        return bytes;
+    }
+
+    /**
+     * Record a number of bytes read. If -1 is passed then the stream is
+     * flagged as fully read.
+     */
+    protected final long trackBytes(long bytes) {
+        if(bytes>0) {
+            bin.bytesRead += bytes;
+        }
+        else if(bytes<0) {
+            bin.readComplete = true;
+        }
+        return bytes;
     }
 
     //- PRIVATE
@@ -255,58 +349,6 @@ public class TimeoutInputStream extends InputStream {
      */
     private void checkTimeout() throws IOException {
         if(bin.timedOut) throw new IOException("Stream timeout");
-    }
-
-    /**
-     * Called on entry to a blocking section (activate timeout)
-     */
-    private void enterBlocking() throws IOException {
-        acquireLock();
-        checkTimeout();
-        if(isOuterLock()) {
-            bin.enter();
-        }
-    }
-
-    /**
-     * Called on exit from a blocking section (deactivate timeout)
-     */
-    private void exitBlocking() throws IOException {
-        try {
-            if(isOuterLock()) {
-                bin.exit();
-            }
-            checkTimeout();
-        }
-        finally {
-            releaseLock();
-        }
-    }
-
-    /**
-     *
-     */
-    private int trackBytes(int bytes) {
-        if(bytes>0) {
-            bin.bytesRead += bytes;
-        }
-        else if(bytes<0) {
-            bin.readComplete = true;
-        }
-        return bytes;
-    }
-
-    /**
-     *
-     */
-    private long trackBytes(long bytes) {
-        if(bytes>0) {
-            bin.bytesRead += bytes;
-        }
-        else if(bytes<0) {
-            bin.readComplete = true;
-        }
-        return bytes;
     }
 
     /**
