@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.rmi.NoSuchObjectException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
@@ -231,9 +232,9 @@ public class RmiServiceExporterStubFactoryBean
             } else {
                 registry = LocateRegistry.getRegistry(null, registryPort, registryClientSocketFactory);
             }
-            registry.list();
+            registry.list(); // this will throw a NoSuchObjectException if the registry is not yet created.
         } catch (RemoteException ex) {
-            logger.debug("RMI registry access threw exception", ex);
+            if(!(ex instanceof NoSuchObjectException)) logger.warn("RMI registry access threw exception", ex);
             logger.debug("Could not detect RMI registry - creating new one");
             if (registryClientSocketFactory == null) {
                 registry = LocateRegistry.createRegistry(registryPort);
