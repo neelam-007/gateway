@@ -118,7 +118,11 @@ public class UnsynchronizedNamingProperties extends Properties {
         throw new UnsupportedOperationException();
     }
 
-    /** Throws UnsupportedOperationException unconditionally. */
+    /**
+     * Throws UnsupportedOperationException unconditionally.
+     *  
+     * @deprecated
+     */
     public void save( OutputStream out, String header ) {
         throw new UnsupportedOperationException();
     }

@@ -262,6 +262,27 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             public void addCookie(Cookie cookie) {
                 pec.addCookie(CookieUtils.fromServletCookie(cookie, true));
             }
+
+            /**
+             * @deprecated
+             */
+            public void setStatus(int i, String string) {
+                super.setStatus(i, string);
+            }
+
+            /**
+             * @deprecated
+             */
+            public String encodeRedirectUrl(String string) {
+                return super.encodeRedirectUrl(string);
+            }
+
+            /**
+             * @deprecated
+             */
+            public String encodeUrl(String string) {
+                return super.encodeUrl(string);
+            }
         };
     }
 

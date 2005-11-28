@@ -355,4 +355,18 @@ public class ExchangerElement extends DefaultElement implements XElement {
 
         return result;
     }
+
+    /**
+     * @deprecated
+     */
+    public void setAttributeValue(String string, String string1) {
+        super.setAttributeValue(string, string1);
+    }
+
+    /**
+     * @deprecated
+     */
+    public void setAttributeValue(QName qName, String string) {
+        super.setAttributeValue(qName, string);
+    }
 } 

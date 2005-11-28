@@ -187,6 +187,20 @@ public class AdminWebServiceFilter implements Filter {
                             throw new IOException("Couldn't get InputStream"); // Very unlikely
                         }
                     }
+
+                    /**
+                     * @deprecated
+                     */
+                    public boolean isRequestedSessionIdFromUrl() {
+                        return super.isRequestedSessionIdFromUrl();
+                    }
+
+                    /**
+                     * @deprecated
+                     */
+                    public String getRealPath(String string) {
+                        return super.getRealPath(string);
+                    }                    
                 };
 
                 filterChain.doFilter(wrapper, servletResponse);

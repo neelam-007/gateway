@@ -51,6 +51,9 @@
            <!-- Exclude since this is not necessary to compile and it includes old 
                 versions of some of the xml-apis.jar classes -->
            <exclude name="xml4j.jar"/>
+           <!-- Exclude build related classes -->
+           <exclude name="ant.jar"/>
+           <exclude name="optional.jar"/>
         </fileset>
         <fileset dir="lib">
             <include name="*.zip"/>
@@ -401,7 +404,10 @@
             depends="init-dev, prepare, configure_properties.dev, compile13"
             unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-               deprecation="on" depend="on" verbose="no" target="1.4" source="1.4">
+               deprecation="on" verbose="no" target="1.4" source="1.4">
+            <compilerarg value="-Xlint" compiler="modern"/>
+            <compilerarg value="-Xlint:-serial" compiler="modern"/>
+            <compilerarg value="-Xlint:-path" compiler="modern"/>
             <classpath refid="project.classpath"/>
         </javac>
         <copy todir="${build.classes}">
