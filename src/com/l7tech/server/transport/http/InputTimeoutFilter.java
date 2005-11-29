@@ -8,12 +8,9 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.FilterChain;
-import javax.servlet.ServletRequestWrapper;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
-
-import com.l7tech.common.io.TimeoutInputStream;
 
 /**
  * Filter that wraps the input stream for http requests that (may) have a body.

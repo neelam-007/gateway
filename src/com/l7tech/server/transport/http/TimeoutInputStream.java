@@ -1,4 +1,4 @@
-package com.l7tech.common.io;
+package com.l7tech.server.transport.http;
 
 import java.io.IOException;
 import java.io.InputStream;
