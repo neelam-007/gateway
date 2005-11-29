@@ -103,6 +103,7 @@ public class ConsoleDialog extends JFrame {
                     switch (value) {
                         case 0:
                             adjustHandlerLevel(Level.ALL);
+                            break;
                         case 30:
                             adjustHandlerLevel(Level.FINEST);
                             break;
