@@ -29,12 +29,21 @@ import java.util.logging.Logger;
  */
 public class CommonsHttpClient implements GenericHttpClient {
     private static final Logger logger = Logger.getLogger(CommonsHttpClient.class.getName());
-    final HttpConnectionManager cman;
     public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
 
+    private final HttpConnectionManager cman;
+    private final int connectionTimeout;
+    private final int timeout;
+
     public CommonsHttpClient(HttpConnectionManager cman) {
+        this(cman,0,0); // no timeouts
+    }
+
+    public CommonsHttpClient(HttpConnectionManager cman, int connectTimeout, int timeout) {
         this.cman = cman;
+        this.connectionTimeout = connectTimeout;
+        this.timeout = timeout;
     }
 
     public static MultiThreadedHttpConnectionManager newConnectionManager(int maxConnectionsPerHost, int maxTotalConnections) {
@@ -66,6 +75,9 @@ public class CommonsHttpClient implements GenericHttpClient {
             hconf = null;
 
         final HttpClient client = new HttpClient(cman);
+        client.setConnectionTimeout(connectionTimeout);
+        client.setTimeout(timeout);
+
         final HttpState state = getHttpState(client, params);
 
         final HttpMethod httpMethod = method == POST ? new PostMethod(targetUrl.toString())

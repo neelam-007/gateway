@@ -405,7 +405,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
     private SimpleHttpClient newHttpClient() {
         // Set up HTTP client (use commons client)
-        GenericHttpClient client = new CommonsHttpClient(ssg.getRuntime().getHttpConnectionManager());
+        GenericHttpClient client = new CommonsHttpClient(ssg.getRuntime().getHttpConnectionManager(), getConnectionTimeout(), getTimeout());
 
         // Attach SSL support
         client = new SslPeerHttpClient(client,

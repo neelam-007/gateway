@@ -229,6 +229,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         Throwable thrown = null;
         try {
             HttpClient client = new HttpClient(connectionManager);
+            client.setConnectionTimeout(getConnectionTimeout());
+            client.setTimeout(getTimeout());
             HostConfiguration hconf = null;
 
             if ("https".equals(url.getProtocol())) {

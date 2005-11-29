@@ -49,6 +49,8 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
     protected ServerRoutingAssertion(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         this.auditor = new Auditor(this, applicationContext, logger);
+        this.timeout = -1;
+        this.connectionTimeout = -1;
     }
     
     /**
@@ -168,11 +170,74 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
         }
     }
 
+    /**
+     * Get the connection timeout to use (set using a system property)
+     *
+     * @return the configured or default timeout.
+     */
+    protected int getConnectionTimeout() {
+        if(connectionTimeout == -1) {
+            connectionTimeout = getIntProperty(PROPERTY_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
+        }
+        return connectionTimeout;
+    }
+
+    /**
+     * Get the timeout to use (set using a system property)
+     *
+     * @return the configured or default timeout.
+     */
+    protected int getTimeout() {
+        if(timeout == -1) {
+            timeout = getIntProperty(PROPERTY_TIMEOUT,0,Integer.MAX_VALUE,0);
+        }
+        return timeout;
+    }
+
     //- PRIVATE
 
     // class
     private static final Logger logger = Logger.getLogger(ServerRoutingAssertion.class.getName());
 
+    private static final String PROPERTY_CONNECTION_TIMEOUT = ServerRoutingAssertion.class.getName() + ".connectionTimeout";
+    private static final String PROPERTY_TIMEOUT = ServerRoutingAssertion.class.getName() + ".timeout";
+
     // instance
     private final Auditor auditor;
+    private int connectionTimeout;
+    private int timeout;
+
+    /**
+     * Get a system property using the configured min, max and default values.
+     */
+    private int getIntProperty(String propName, int min, int max, int defaultValue) {
+        int value = defaultValue;
+
+        try {
+            String configuredValue = System.getProperty(propName);
+            if(configuredValue!=null) {
+                value = Integer.parseInt(configuredValue);
+
+                boolean useDefault = false;
+                if(value<min) {
+                    useDefault = true;
+                    logger.warning("Configured value for property '"+propName+"', is BELOW the minimum '"+min+"', using default value '"+defaultValue+"'.");
+                }
+                else if(value>max) {
+                    useDefault = true;
+                    logger.warning("Configured value for property '"+propName+"', is ABOVE the maximum '"+max+"', using default value '"+defaultValue+"'.");
+                }
+
+                if(useDefault) value = defaultValue;
+            }
+        }
+        catch(SecurityException se) {
+            logger.warning("Cannot access property '"+propName+"', using default value '"+defaultValue+"', error is: " + se.getMessage());
+        }
+        catch(NumberFormatException nfe) {
+            logger.warning("Cannot parse property '"+propName+"', using default value '"+defaultValue+"', error is: " + nfe.getMessage());
+        }
+
+        return value;
+    }
 }
