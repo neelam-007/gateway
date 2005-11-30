@@ -7,7 +7,6 @@ package com.l7tech.server;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.Message;
@@ -62,7 +61,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final WssDecorator wssDecorator;
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCertificate;
-    private final AuditContext auditContext;
     private final CertificateResolver certificateResolver;
     private final LicenseManager licenseManager;
 
@@ -82,7 +80,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             WssDecorator wssd,
                             PrivateKey pkey,
                             X509Certificate cert,
-                            AuditContext auditContext,
                             CertificateResolver certificateResolver,
                             LicenseManager licenseManager)
       throws IllegalArgumentException {
@@ -98,23 +95,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (cert == null) {
             throw new IllegalArgumentException("Server Certificate is required");
         }
-        if (auditContext == null) {
-            throw new IllegalArgumentException("Audit Context is required");
-        }
         if (licenseManager == null)
             throw new IllegalArgumentException("License Manager is required");
         this.serviceManager = sm;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
-        this.auditContext = auditContext;
         this.certificateResolver = certificateResolver;
         this.licenseManager = licenseManager;
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
-        context.setAuditContext(auditContext);
         return reallyProcessMessage(context);
     }
 

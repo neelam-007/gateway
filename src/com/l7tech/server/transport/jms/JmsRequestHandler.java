@@ -14,6 +14,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -37,13 +38,15 @@ import java.util.logging.Logger;
 class JmsRequestHandler {
     final private ApplicationContext springContext;
     final private MessageProcessor messageProcessor;
+    final private AuditContext auditContext;
 
     public JmsRequestHandler(ApplicationContext ctx) {
         this.springContext = ctx;
         if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
-        messageProcessor = (MessageProcessor)ctx.getBean("messageProcessor");
+        messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
+        auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
     }
 
     /**
@@ -94,6 +97,8 @@ class JmsRequestHandler {
             String faultCode = null;
 
             try {
+                context.setAuditContext(auditContext);
+
                 // WebSphere MQ doesn't like this with AUTO_ACKNOWLEDGE
                 // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
 
@@ -160,11 +165,16 @@ class JmsRequestHandler {
             } catch (JMSException e) {
                 _logger.log( Level.WARNING, "Couldn't acknowledge message!", e );
             } finally {
-                if (context != null) {
-                    try {
-                        context.close();
-                    } catch (Throwable t) {
-                        _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
+                try {
+                    auditContext.flush();
+                }
+                finally {
+                    if (context != null) {
+                        try {
+                            context.close();
+                        } catch (Throwable t) {
+                            _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
+                        }
                     }
                 }
             }

@@ -110,6 +110,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final StashManager stashManager = StashManagerFactory.createStashManager();
 
         try {
+            context.setAuditContext(auditContext);
+
             // Process message
             request.initialize(stashManager, ctype, hrequest.getInputStream());
             AssertionStatus status = AssertionStatus.UNDEFINED;
