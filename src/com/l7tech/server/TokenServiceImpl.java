@@ -129,10 +129,14 @@ public class TokenServiceImpl implements TokenService {
         }
 
         // at this point, we should have credentials
-        User authenticatedUser = authenticator.authenticate(context.getCredentials());
-        if (authenticatedUser != null) {
-            context.setAuthenticated(true);
-            context.setAuthenticatedUser(authenticatedUser);
+        LoginCredentials creds = context.getCredentials();
+        User authenticatedUser = null;
+        if(creds!=null) {
+            authenticatedUser = authenticator.authenticate(creds);
+            if (authenticatedUser != null) {
+                context.setAuthenticated(true);
+                context.setAuthenticatedUser(authenticatedUser);
+            }
         }
 
         if (authenticatedUser == null) {
