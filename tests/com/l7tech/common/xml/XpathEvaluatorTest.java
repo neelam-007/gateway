@@ -219,6 +219,26 @@ public class XpathEvaluatorTest extends TestCase {
         }
     }
 
+    public void testXPathStringNumber() throws Exception {
+        Document doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\">123</s0:blah>");
+        System.out.println(XmlUtil.nodeToFormattedString(doc));
+        HashMap namesapces = new HashMap();
+        namesapces.put("s0", "http://grrr.com/nsblah");
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namesapces);
+        List nodes = xe.select("/s0:blah=\"123\"");
+        assertTrue("Size should have been > 0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Boolean bool = (Boolean)iterator.next();
+            assertTrue(bool.booleanValue());
+        }
+        nodes = xe.select("/s0:blah=123");
+        assertTrue("Size should have been > 0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Boolean bool = (Boolean)iterator.next();
+            assertTrue(bool.booleanValue());
+        }
+    }
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
