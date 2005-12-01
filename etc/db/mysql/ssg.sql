@@ -352,6 +352,9 @@ CREATE TABLE audit_main (
   name varchar(255),
   message varchar(255) NOT NULL,
   ip_address varchar(32),
+  user_name varchar(255),
+  user_id varchar(255),
+  provider_oid bigint(20) NOT NULL DEFAULT -1,
   PRIMARY KEY  (objectid),
   KEY idx_nodeid (nodeid),
   KEY idx_time (time),
@@ -366,7 +369,6 @@ CREATE TABLE audit_main (
 DROP TABLE IF EXISTS audit_admin;
 CREATE TABLE audit_admin (
   objectid bigint(20) NOT NULL,
-  admin_login varchar(255) NOT NULL,
   entity_class varchar(255),
   entity_id bigint(20),
   action char(1),
@@ -387,10 +389,7 @@ CREATE TABLE audit_message (
   request_id varchar(40) NOT NULL,
   service_oid bigint(20),
   operation_name varchar(255),
-  user_name varchar(64),
   authenticated tinyint(1) default '0',
-  provider_oid bigint(20),
-  user_id varchar(128),
   request_length int(11) NOT NULL,
   response_length int(11),
   request_xml mediumtext,

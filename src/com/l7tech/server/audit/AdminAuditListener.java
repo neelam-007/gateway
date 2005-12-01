@@ -10,6 +10,7 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.EntityChangeSet;
@@ -202,13 +203,13 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             AdminInfo info = getAdminInfo();
             if (info == null) return null;
 
-            return new AdminAuditRecord(level(event), nodeId, entityOid, entityClassname, name, action, msg.toString(), info.login, info.ip);
+            return new AdminAuditRecord(level(event), nodeId, entityOid, entityClassname, name, action, msg.toString(), info.identityProviderOid, info.login, info.id, info.ip);
         } else if (genericEvent instanceof AdminEvent) {
             AdminEvent event = (AdminEvent)genericEvent;
             AdminInfo info = getAdminInfo();
             if (info == null) return null;
 
-            return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", 'D', event.getNote(), info.login, info.ip);
+            return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", 'D', event.getNote(), info.identityProviderOid, info.login, info.id, info.ip);
         } else if (genericEvent instanceof LogonEvent) {
             LogonEvent le = (LogonEvent)genericEvent;
             User admin = (User)le.getSource();
@@ -219,7 +220,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 logger.log(Level.WARNING, "cannot get remote ip", e);
             }
             return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
-                                        "Administrator logged in", admin.getLogin(),ip);
+                                        "Administrator logged in", admin.getProviderId(), admin.getLogin(), admin.getUniqueIdentifier(), ip);
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());
         }
@@ -234,7 +235,9 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
     private AdminInfo getAdminInfo() {
         Subject clientSubject = null;
         String login = null;
+        String uniqueId = null;
         String address = null;
+        long providerOid = IdentityProviderConfig.DEFAULT_OID;
         try {
             address = UnicastRemoteObject.getClientHost();
             clientSubject = Subject.getSubject(AccessController.getContext());
@@ -248,22 +251,32 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             Set principals = clientSubject.getPrincipals();
             if (principals != null && !principals.isEmpty()) {
                 Principal p = (Principal)principals.iterator().next();
-                if (p instanceof User) login = ((User)p).getLogin();
+                if (p instanceof User) {
+                    User u = (User) p;
+                    login = u.getLogin();
+                    uniqueId = u.getUniqueIdentifier();
+                    providerOid = u.getProviderId();
+                }
                 if (login == null) login = p.getName();
+                if (uniqueId == null) uniqueId = "principal:"+login;
             }
         }
 
-        //return new AdminInfo(address, login);
-        return new AdminInfo(login, address);
+        //return new AdminInfo(...);
+        return new AdminInfo(login, uniqueId, providerOid, address);
     }
 
     private static class AdminInfo {
-        public AdminInfo(String login, String ip) {
+        public AdminInfo(String login, String id, long ipOid, String ip) {
             this.ip = ip;
+            this.id = id;
+            this.identityProviderOid = ipOid;
             this.login = login;
         }
 
         private final String login;
+        private final String id;
+        private final long identityProviderOid;
         private final String ip;
     }
 

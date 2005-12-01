@@ -2,6 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SecurityToken;
@@ -19,6 +21,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -38,12 +41,17 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.event.system.TokenServiceEvent;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.crypto.SecretKey;
 import javax.xml.soap.SOAPConstants;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -66,7 +74,20 @@ import java.util.regex.Pattern;
  * User: flascell<br/>
  * Date: Aug 6, 2004<br/>
  */
-public class TokenServiceImpl implements TokenService {
+public class TokenServiceImpl  extends ApplicationObjectSupport implements TokenService {
+
+    /**
+     * specify the server key and cert at construction time instead of letting the object try to retreive them
+     */
+    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, CertificateResolver certificateResolver) {
+        if (privateServerKey == null || serverCert == null) {
+            throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+        }
+        this.privateServerKey = privateServerKey;
+        this.serverCert = serverCert;
+        this.policyFactory = policyFactory;
+        this.certificateResolver = certificateResolver;
+    }
 
     public class TokenServiceException extends Exception {
         public TokenServiceException(Throwable cause) {
@@ -100,73 +121,104 @@ public class TokenServiceImpl implements TokenService {
                                                                 BadSecurityContextException,
                                                                 GeneralSecurityException,
                                                                 AuthenticationException {
-        try {
-            WssProcessor trogdor = new WssProcessorImpl();
-            final XmlKnob reqXml = context.getRequest().getXmlKnob();
-            X509Certificate serverSSLcert = getServerCert();
-            PrivateKey sslPrivateKey = getServerKey();
-            ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
-                                                                  null,
-                                                                  serverSSLcert,
-                                                                  sslPrivateKey,
-                                                                  SecureConversationContextManager.getInstance(),
-                                                                  certificateResolver);
-            reqXml.setProcessorResult(wssOutput);
-        } catch (IOException e) {
-            throw new ProcessorException(e);
-        } catch (SAXException e) {
-            throw new InvalidDocumentFormatException(e);
-        }
-
         AssertionStatus status = AssertionStatus.UNDEFINED;
-        ServerAssertion policy = getGenericEnforcementPolicy();
+        Throwable toAudit = null;
         try {
-            status = policy.checkRequest(context);
-        } catch (IOException e) {
-            throw new ProcessorException(e);
-        } catch (PolicyAssertionException e) {
-            throw new ProcessorException(e);
-        }
-
-        // at this point, we should have credentials
-        LoginCredentials creds = context.getCredentials();
-        User authenticatedUser = null;
-        if(creds!=null) {
-            authenticatedUser = authenticator.authenticate(creds);
-            if (authenticatedUser != null) {
-                context.setAuthenticated(true);
-                context.setAuthenticatedUser(authenticatedUser);
+            try {
+                WssProcessor trogdor = new WssProcessorImpl();
+                final XmlKnob reqXml = context.getRequest().getXmlKnob();
+                X509Certificate serverSSLcert = getServerCert();
+                PrivateKey sslPrivateKey = getServerKey();
+                ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
+                                                                      null,
+                                                                      serverSSLcert,
+                                                                      sslPrivateKey,
+                                                                      SecureConversationContextManager.getInstance(),
+                                                                      certificateResolver);
+                reqXml.setProcessorResult(wssOutput);
+            } catch (IOException e) {
+                status = AssertionStatus.BAD_REQUEST;
+                throw new ProcessorException(e);
+            } catch (SAXException e) {
+                status = AssertionStatus.BAD_REQUEST;
+                throw new InvalidDocumentFormatException(e);
             }
-        }
 
-        if (authenticatedUser == null) {
-            String msg = "The request for a token was not authenticated";
-            logger.info(msg);
-            context.setFaultDetail(new SoapFaultDetailImpl("l7:noauthentication", msg, null));
-            return AssertionStatus.AUTH_FAILED;
-        }
-
-        if (status != AssertionStatus.NONE) {
-            String msg = "The internal policy was not respected " + status;
-            logger.info(msg);
-            if (context.getFaultDetail() == null) {
-                context.setFaultDetail(new SoapFaultDetailImpl("l7:" + status.getMessage(), msg, null));
+            ServerAssertion policy = getGenericEnforcementPolicy();
+            try {
+                status = policy.checkRequest(context);
+            } catch (IOException e) {
+                throw new ProcessorException(e);
+            } catch (PolicyAssertionException e) {
+                status = AssertionStatus.FAILED;
+                throw new ProcessorException(e);
             }
+
+            // at this point, we should have credentials
+            LoginCredentials creds = context.getCredentials();
+            User authenticatedUser = null;
+            if(creds!=null) {
+                authenticatedUser = authenticator.authenticate(creds);
+                if (authenticatedUser != null) {
+                    context.setAuthenticated(true);
+                    context.setAuthenticatedUser(authenticatedUser);
+                }
+            }
+
+            if (authenticatedUser == null) {
+                status = AssertionStatus.AUTH_FAILED;
+                String msg = "The request for a token was not authenticated";
+                logger.info(msg);
+                context.setFaultDetail(new SoapFaultDetailImpl("l7:noauthentication", msg, null));
+                return status;
+            }
+
+            if (status != AssertionStatus.NONE) {
+                String msg = "The internal policy was not respected " + status;
+                logger.info(msg);
+                if (context.getFaultDetail() == null) {
+                    context.setFaultDetail(new SoapFaultDetailImpl("l7:" + status.getMessage(), msg, null));
+                }
+                return status;
+            }
+
+            Document response = null;
+            if (isRequestForSecureConversationContext(context)) {
+                response = handleSecureConversationContextRequest(context, authenticatedUser);
+            } else if (isRequestForSAMLToken(context)) {
+                response = handleSamlRequest(context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
+            } else {
+                status = AssertionStatus.BAD_REQUEST;
+                throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
+                                                         "RequestSecurityToken");
+            }
+            // put response document back into context
+            context.getResponse().initialize(response);
             return status;
         }
-
-        Document response = null;
-        if (isRequestForSecureConversationContext(context)) {
-            response = handleSecureConversationContextRequest(context, authenticatedUser);
-        } else if (isRequestForSAMLToken(context)) {
-            response = handleSamlRequest(context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
-        } else {
-            throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
-                                                     "RequestSecurityToken");
+        catch(GeneralSecurityException gse) {
+            toAudit = gse;
+            throw gse;
         }
-        // put response document back into context
-        context.getResponse().initialize(response);
-        return AssertionStatus.NONE;
+        catch(TokenServiceException tse) {
+            toAudit = tse;
+            throw tse;
+        }
+        finally {
+            try {
+                String message = toAudit==null && status==AssertionStatus.NONE ? "Security Token Issued" : "Security Token Error";
+                if(toAudit instanceof TokenServiceException) message += ": " + toAudit.getMessage();
+                else if(status!=AssertionStatus.NONE) message += ": " + status.getMessage();
+                else message += ": processing error";
+                User user = getUser(context);
+                getApplicationContext().publishEvent(new TokenServiceEvent(this, Level.INFO, getRemoteAddress(context)
+                                                    , message, user.getProviderId()
+                                                    , getName(user), user.getUniqueIdentifier()));
+            }
+            catch(Exception e) {
+                logger.log(Level.WARNING, "Error dispatching event", e);
+            }
+        }
     }
 
     /**
@@ -222,19 +274,6 @@ public class TokenServiceImpl implements TokenService {
             tokenServicePolicy = policyFactory.makeServerPolicy(base);
         }
         return tokenServicePolicy;
-    }
-
-    /**
-     * specify the server key and cert at construction time instead of letting the object try to retreive them
-     */
-    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, CertificateResolver certificateResolver) {
-        if (privateServerKey == null || serverCert == null) {
-            throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
-        }
-        this.privateServerKey = privateServerKey;
-        this.serverCert = serverCert;
-        this.policyFactory = policyFactory;
-        this.certificateResolver = certificateResolver;
     }
 
     private Document handleSamlRequest(PolicyEnforcementContext context, boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws TokenServiceException,
@@ -532,6 +571,37 @@ public class TokenServiceImpl implements TokenService {
 
     private synchronized X509Certificate getServerCert() {
         return serverCert;
+    }
+
+    private String getRemoteAddress(PolicyEnforcementContext pec) {
+        String ip = null;
+
+        if(pec!=null) {
+            Message message = pec.getRequest();
+            if(message.isHttpRequest()) {
+                ip = message.getHttpRequestKnob().getRemoteAddress();
+            }
+        }
+
+        return ip;
+    }
+
+    private User getUser(PolicyEnforcementContext context) {
+        User user = null;
+
+        if(context.isAuthenticated()) {
+            user = context.getAuthenticatedUser();
+        }
+
+        if(user==null) {
+            user = new UserBean();
+        }
+
+        return user;
+    }
+
+    private String getName(User user) {
+        return user.getName()!=null ? user.getName() : user.getLogin();      
     }
 
     private PrivateKey privateServerKey = null;

@@ -1,6 +1,5 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
@@ -103,7 +102,6 @@ public class PolicyService extends ApplicationObjectSupport {
                          X509Certificate serverCert, 
                          ServerPolicyFactory policyFactory, 
                          FilterManager filterManager, 
-                         AuditContext auditContext,
                          CertificateResolver certificateResolver)
     {
         // populate all possible credentials sources
@@ -144,11 +142,6 @@ public class PolicyService extends ApplicationObjectSupport {
             throw new IllegalArgumentException("Filter Manager is required");
         }
         this.filterManager = filterManager;
-
-        if (auditContext == null) {
-            throw new IllegalArgumentException("Audit Context is required");
-        }
-        this.auditContext = auditContext;
         this.certificateResolver = certificateResolver;
     }
 
@@ -267,7 +260,6 @@ public class PolicyService extends ApplicationObjectSupport {
             logger.fine("Running meta-policy.");
             ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
             try {
-                context.setAuditContext(auditContext);
                 status = policyPolicy.checkRequest(context);
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));
@@ -502,7 +494,6 @@ public class PolicyService extends ApplicationObjectSupport {
     private final PrivateKey privateServerKey;
     private final X509Certificate serverCert;
     private final ServerPolicyFactory policyFactory;
-    private final AuditContext auditContext;
     private final FilterManager filterManager;
     private final CertificateResolver certificateResolver;
     private final Logger logger = Logger.getLogger(PolicyService.class.getName());

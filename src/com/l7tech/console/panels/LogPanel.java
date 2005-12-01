@@ -146,7 +146,7 @@ public class LogPanel extends JPanel {
                 if (arec instanceof AdminAuditRecord) {
                     AdminAuditRecord aarec = (AdminAuditRecord)arec;
                     msg += "Event Type : Administrator Action" + "\n";
-                    msg += "Admin user : " + aarec.getAdminLogin() + "\n";
+                    msg += "Admin user : " + aarec.getUserName() + "\n";
                     msg += "Admin IP   : " + arec.getIpAddress() + "\n";
                     msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
                     msg += "Entity name: " + arec.getName() + "\n";
@@ -178,9 +178,18 @@ public class LogPanel extends JPanel {
                 } else if (arec instanceof SystemAuditRecord) {
                     SystemAuditRecord sys = (SystemAuditRecord)arec;
                     msg += "Event Type : System Message" + "\n";
-                    msg += "Node IP    : " + arec.getIpAddress() + "\n";
+                    if(arec.getUserId()==null) {
+                        msg += "Node IP    : " + arec.getIpAddress() + "\n";
+                    }
+                    else {
+                        msg += "Client IP  : " + arec.getIpAddress() + "\n";
+                    }
                     msg += "Action     : " + sys.getAction() + "\n";
                     msg += "Component  : " + fixComponent(sys.getComponentId()) + "\n";
+                    if(arec.getUserId()!=null) {
+                        msg += "User ID    : " + arec.getUserId() + "\n";
+                        msg += "User Name  : " + arec.getUserName() + "\n";
+                    }
                     msg += "Entity name: " + arec.getName() + "\n";
                 } else {
                     msg += "Event Type : Unknown" + "\n";

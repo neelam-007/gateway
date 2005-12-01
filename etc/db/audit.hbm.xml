@@ -22,6 +22,9 @@
         <property name="message" column="message" type="string"/>
         <property name="ipAddress" column="ip_address" type="string"/>
         <property name="name" column="name" type="string"/>
+        <property name="identityProviderOid" column="provider_oid" type="long"/>
+        <property name="userId" column="user_id" type="string"/>
+        <property name="userName" column="user_name" type="string"/>
 
         <set name="details" lazy="false" inverse="true" cascade="all">
             <key column="audit_oid"/>
@@ -34,9 +37,6 @@
             <property name="strRequestId" column="request_id" type="string"/>
             <property name="serviceOid" column="service_oid" type="long"/>
             <property name="operationName" column="operation_name" type="string"/>
-            <property name="identityProviderOid" column="provider_oid" type="long"/>
-            <property name="userId" column="user_id" type="string"/>
-            <property name="userName" column="user_name" type="string"/>
             <property name="authenticated" column="authenticated" type="boolean"/>
             <property name="requestXml" column="request_xml" type="text"/>
             <property name="requestContentLength" column="request_length" type="int"/>
@@ -48,7 +48,6 @@
 
         <joined-subclass name="com.l7tech.common.audit.AdminAuditRecord" table="audit_admin">
             <key column="objectid"/>
-            <property name="adminLogin" column="admin_login" type="string"/>
             <property name="entityClassname" column="entity_class" type="string"/>
             <property name="entityOid" column="entity_id" type="long"/>
             <property name="action" column="action" type="char"/>

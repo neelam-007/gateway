@@ -127,7 +127,7 @@ public class PolicyServiceTest extends TestCase {
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
                                              TestDocuments.getDotNetServerCertificate(),
                                              (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
-          (FilterManager)applicationContext.getBean("policyFilterManager"), new AuditContextStub(),
+          (FilterManager)applicationContext.getBean("policyFilterManager"),
           (CertificateResolver)applicationContext.getBean("certificateResolver"));
         ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
@@ -145,6 +145,7 @@ public class PolicyServiceTest extends TestCase {
             }
         };
 
+        context.setAuditContext(new AuditContextStub());
         ps.respondToPolicyDownloadRequest(context, true, policyGetter, pre32PolicyCompat);
         Document response = context.getResponse().getXmlKnob().getDocumentReadOnly();
         assertNotNull(response);

@@ -27,18 +27,30 @@ public class AdminAuditRecord extends AuditRecord {
      * Constructs a new AdminAuditRecord.
      * @param level the java.util.logging.Level of this record.
      * @param nodeId the ID of the cluster node from which this AuditRecord originates (see com.l7tech.cluster.ClusterStatusAdmin.getClusterStatus())
-     * @param ip the IP address of the management workstation that was used to trigger the event that caused this AuditRecord to be created
-     * @param name the name of the service or system affected by event that generated the AuditRecord
-     * @param msg a short description of the event that generated the AuditRecord
      * @param entityOid the OID of the entity that this record concerns
      * @param entityClassname the classname of the entity that this record concerns
+     * @param name the name of the service or system affected by event that generated the AuditRecord
      * @param action a character indicating the type of event that generated this record. See {@link #ACTION_CREATED}, {@link #ACTION_UPDATED} and {@link #ACTION_DELETED}
+     * @param msg a short description of the event that generated the AuditRecord
+     * @param identityProviderOid the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the administrator authenticated
      * @param adminLogin the login ID of the administrator who triggered the event
+     * @param adminId  userId the OID or DN of the administrator
+     * @param ip the IP address of the management workstation that was used to trigger the event that caused this AuditRecord to be created
      */
-    public AdminAuditRecord(Level level, String nodeId, long entityOid, String entityClassname, String name, char action, String msg, String adminLogin, String ip) {
-        super(level, nodeId, ip, name, msg);
+    public AdminAuditRecord(
+            Level level,
+            String nodeId,
+            long entityOid,
+            String entityClassname,
+            String name,
+            char action,
+            String msg,
+            long identityProviderOid,
+            String adminLogin,
+            String adminId,
+            String ip) {
+        super(level, nodeId, ip, identityProviderOid, adminLogin, adminId, name, msg);
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
-        this.adminLogin = adminLogin;
         this.entityOid = entityOid;
         this.entityClassname = entityClassname;
         this.action = action;
@@ -47,15 +59,6 @@ public class AdminAuditRecord extends AuditRecord {
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     public AdminAuditRecord() {
-    }
-
-    /**
-     * The login ID of the administrator who triggered the event
-     * @return the login ID of the administrator who triggered the event
-     * @see com.l7tech.identity.IdentityAdmin#findUserByLogin(long, String)
-     */
-    public String getAdminLogin() {
-        return adminLogin;
     }
 
     /**
@@ -83,11 +86,6 @@ public class AdminAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setAdminLogin( String adminLogin ) {
-        this.adminLogin = adminLogin;
-    }
-
-    /** @deprecated to be called only for serialization and persistence purposes! */
     public void setEntityClassname(String entityClassname) {
         this.entityClassname = entityClassname;
     }
@@ -102,8 +100,6 @@ public class AdminAuditRecord extends AuditRecord {
         this.action = action;
     }
 
-    /** the login ID of the administrator who triggered the event */
-    protected String adminLogin;
     /** the classname of the entity that this record concerns */
     protected String entityClassname;
     /** the OID of the entity that this record concerns */

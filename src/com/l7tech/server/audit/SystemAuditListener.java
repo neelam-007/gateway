@@ -38,7 +38,7 @@ public class SystemAuditListener implements ApplicationListener {
             } if (se.getComponent() == Component.GW_AUDIT_SYSTEM) {
                 level = Level.SEVERE;
             }
-            auditContext.setCurrentRecord(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getMessage(), se.getAction(), se.getIpAddress()));
+            auditContext.setCurrentRecord(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getMessage(), se.getIdentityProviderOid(), se.getUserName(), se.getUserId(), se.getAction(), se.getIpAddress()));
             auditContext.flush();
         }
     }

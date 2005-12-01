@@ -384,9 +384,6 @@
             <ref bean="policyFilterManager"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="auditContext"/>
-        </constructor-arg>
-        <constructor-arg>
             <ref bean="certificateResolver"/>
         </constructor-arg>
     </bean>

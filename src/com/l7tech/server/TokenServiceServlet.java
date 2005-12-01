@@ -21,6 +21,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.beans.BeansException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -60,8 +61,13 @@ public class TokenServiceServlet extends HttpServlet {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        tokenService = (TokenService)applicationContext.getBean("tokenService");
-        auditContext = (AuditContext)applicationContext.getBean("auditContext");
+        try {
+            tokenService = (TokenService)applicationContext.getBean("tokenService", TokenService.class);
+            auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+        }
+        catch(BeansException be) {
+            throw new ServletException("Configuration error; could not get required beans.", be);
+        }
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -69,23 +75,23 @@ public class TokenServiceServlet extends HttpServlet {
     }
 
     public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        final Message response = new Message();
+        final Message request = new Message();
+
+        final String rawct = req.getContentType();
+        ContentTypeHeader ctype = rawct != null && rawct.length() > 0
+          ? ContentTypeHeader.parseValue(rawct)
+          : ContentTypeHeader.XML_DEFAULT;
+
+        final HttpRequestKnob reqKnob = new HttpServletRequestKnob(req);
+        request.attachHttpRequestKnob(reqKnob);
+
+        final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(res);
+        response.attachHttpResponseKnob(respKnob);
+
+        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+
         try {
-            final Message response = new Message();
-            final Message request = new Message();
-
-            final String rawct = req.getContentType();
-            ContentTypeHeader ctype = rawct != null && rawct.length() > 0
-              ? ContentTypeHeader.parseValue(rawct)
-              : ContentTypeHeader.XML_DEFAULT;
-
-            final HttpRequestKnob reqKnob = new HttpServletRequestKnob(req);
-            request.attachHttpRequestKnob(reqKnob);
-
-            final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(res);
-            response.attachHttpResponseKnob(respKnob);
-
-            final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-
             context.setAuditContext(auditContext);
 
             AssertionStatus status = AssertionStatus.UNDEFINED;
@@ -161,6 +167,17 @@ public class TokenServiceServlet extends HttpServlet {
             logger.log(Level.SEVERE, msg, e);
             sendBackSoapFault(req, res, msg, e);
             return;
+        }
+        finally {
+            try {
+                //note that the system audit record is already written at this point
+                //this just ensures that we log a warning if any details are left in
+                //the context
+                auditContext.flush();
+            }
+            finally {
+                context.close();
+            }
         }
     }
 

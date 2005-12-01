@@ -55,7 +55,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                                      long serviceOid, String serviceName, Object operationNameHaver,
                                      boolean authenticated, long identityProviderOid, String userName, String userId)
     {
-        super(level, nodeId, clientAddr, serviceName, null);
+        super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);
         StringBuffer msg = new StringBuffer("Message ");
         if (status == AssertionStatus.NONE) {
             msg.append("processed successfully");
@@ -76,9 +76,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.operationNameHaver = operationNameHaver;
         this.serviceOid = serviceOid;
         this.authenticated = authenticated;
-        this.identityProviderOid = identityProviderOid;
-        this.userName = userName;
-        this.userId = userId;
     }
 
     /**
@@ -95,30 +92,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      */
     public long getServiceOid() {
         return serviceOid;
-    }
-
-    /**
-     * Gets the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
-     * @return the OID of the {@link IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.
-     */
-    public long getIdentityProviderOid() {
-        return identityProviderOid;
-    }
-
-    /**
-     * Gets the name or login of the user who was authenticated, or null if the request was not authenticated.
-     * @return the name or login of the user who was authenticated, or null if the request was not authenticated.
-     */
-    public String getUserName() {
-        return userName;
-    }
-
-    /**
-     * Gets the OID or DN of the user who was authenticated, or null if the request was not authenticated.
-     * @return the OID or DN of the user who was authenticated, or null if the request was not authenticated.
-     */
-    public String getUserId() {
-        return userId;
     }
 
     /**
@@ -211,21 +184,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setIdentityProviderOid( long identityProviderOid ) {
-        this.identityProviderOid = identityProviderOid;
-    }
-
-    /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setUserName( String userName ) {
-        this.userName = userName;
-    }
-
-    /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setUserId( String userId ) {
-        this.userId = userId;
-    }
-
-    /** @deprecated to be called only for serialization and persistence purposes! */
     public void setAuthenticated( boolean authenticated ) {
         this.authenticated = authenticated;
     }
@@ -261,15 +219,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** OID of the PublishedService that this request was resolved to, or -1 if it has not yet been successfully resolved. */
     protected long serviceOid = PublishedService.DEFAULT_OID;
-
-    /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
-    protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
-
-    /** Login or name of the user that is making the request if known, or null otherwise. */
-    protected String userName;
-
-    /** Unique ID of the user that is making the request (if known), or null otherwise. */
-    protected String userId;
 
     /** <code>true</code> indicates that the request was successfully authenticated, or <code>false</code> otherwise. */
     protected boolean authenticated;

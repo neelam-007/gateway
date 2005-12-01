@@ -12,10 +12,13 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -32,10 +35,14 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.event.system.AdminWebServiceEvent;
+
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -56,6 +63,8 @@ import java.util.logging.Logger;
  * and does basic WSS processing and policy enforcement before passing them along
  */
 public class AdminWebServiceFilter implements Filter {
+    private WebApplicationContext applicationContext;
+    private AuditContext auditContext;
     private ServerAssertion adminPolicy;
     private X509Certificate serverCertificate;
     private PrivateKey serverPrivateKey;
@@ -64,24 +73,30 @@ public class AdminWebServiceFilter implements Filter {
     private static final Logger log = Logger.getLogger(AdminWebServiceFilter.class.getName());
     private static final String ERR_PREFIX = "Configuration error; could not get ";
 
-    private Object getBean(ApplicationContext context, String name, String desc) throws ServletException {
-        Object bean = context.getBean(name);
-        if (bean == null) throw new ServletException(ERR_PREFIX + desc);
-        return bean;
+    private Object getBean(ApplicationContext context, String name, String desc, Class clazz) throws ServletException {
+        try {
+            Object bean = context.getBean(name, clazz);
+            if (bean == null) throw new ServletException(ERR_PREFIX + desc);
+            return bean;
+        }
+        catch(BeansException be) {
+            throw new ServletException(ERR_PREFIX + desc, be);
+        }
     }
 
     public void init(FilterConfig filterConfig) throws ServletException {
         // Constructs a policy for all admin web services.
-        WebApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
         if (applicationContext == null) {
             throw new ServletException(ERR_PREFIX + "application context");
         }
 
-        serverPrivateKey = (PrivateKey)getBean(applicationContext, "sslKeystorePrivateKey", "server private key");
-        serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate");
-        certificateResolver = (CertificateResolver)getBean(applicationContext, "certificateResolver", "certificate resolver");
+        auditContext = (AuditContext)getBean(applicationContext, "auditContext", "audit context", AuditContext.class);
+        serverPrivateKey = (PrivateKey)getBean(applicationContext, "sslKeystorePrivateKey", "server private key", PrivateKey.class);
+        serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate", X509Certificate.class);
+        certificateResolver = (CertificateResolver)getBean(applicationContext, "certificateResolver", "certificate resolver", CertificateResolver.class);
 
-        IdentityProviderFactory ipf = (IdentityProviderFactory)getBean(applicationContext, "identityProviderFactory", "Identity Provider Factory");
+        IdentityProviderFactory ipf = (IdentityProviderFactory)getBean(applicationContext, "identityProviderFactory", "Identity Provider Factory", IdentityProviderFactory.class);
 
         final Group adminGroup;
         final Group operatorGroup;
@@ -135,7 +150,7 @@ public class AdminWebServiceFilter implements Filter {
             ? ContentTypeHeader.parseValue(rawct)
             : ContentTypeHeader.XML_DEFAULT;
 
-        servletResponse.setContentType(XmlUtil.TEXT_XML);
+        servletResponse.setContentType(ContentTypeHeader.XML_DEFAULT.getFullValue());
 
         if (!(servletRequest instanceof HttpServletRequest && servletResponse instanceof HttpServletResponse)) {
             throw new ServletException("Only HTTP requests are supported");
@@ -143,9 +158,15 @@ public class AdminWebServiceFilter implements Filter {
 
         HttpServletRequest httpServletRequest = (HttpServletRequest)servletRequest;
         HttpServletResponse httpServletResponse = (HttpServletResponse)servletResponse;
-        if ("get".equalsIgnoreCase(httpServletRequest.getMethod()) && "wsdl".equalsIgnoreCase(httpServletRequest.getQueryString())) {
-            filterChain.doFilter(servletRequest, servletResponse);
-            return;
+        if("get".equalsIgnoreCase(httpServletRequest.getMethod())) {
+            if ("wsdl".equalsIgnoreCase(httpServletRequest.getQueryString())) {
+                filterChain.doFilter(servletRequest, servletResponse);
+                return;
+            }
+            else { // only allow GET for WSDL
+                httpServletResponse.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+                return;
+            }
         }
 
         final HttpRequestKnob reqKnob = new HttpServletRequestKnob(httpServletRequest);
@@ -156,13 +177,15 @@ public class AdminWebServiceFilter implements Filter {
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setReplyExpected(true); // HTTP always expects to receive a reply
+        context.setAuditContext(auditContext);
 
+        AssertionStatus polStatus = null;
         try {
             request.initialize(StashManagerFactory.createStashManager(), ctype, servletRequest.getInputStream());
 
             trogdor(context, request);
 
-            final AssertionStatus status = adminPolicy.checkRequest(context);
+            final AssertionStatus status = polStatus = adminPolicy.checkRequest(context);
             if (status == AssertionStatus.NONE) {
                 // TODO support admin services that requre Gateway Administrators membership
                 // Pass it along to XFire
@@ -217,25 +240,35 @@ public class AdminWebServiceFilter implements Filter {
                 }
             }
         } catch (Exception e) {
-            PrintWriter writer = null;
+            ServletOutputStream out = null;
             try {
                 log.log(Level.WARNING, "Admin Web Service request failed", e);
                 httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                writer = servletResponse.getWriter();
-                String fault = SoapFaultUtils.generateSoapFaultXml(
+                out = servletResponse.getOutputStream();
+                Document fault = SoapFaultUtils.generateSoapFaultDocument(
                         SoapFaultUtils.FC_CLIENT,
                         e.getMessage(),
                         null,
                         ((HttpServletRequest)servletRequest).getRequestURL().toString());
-                writer.print(fault);
+                XmlUtil.nodeToOutputStream(fault.getDocumentElement(), out, ContentTypeHeader.XML_DEFAULT.getEncoding());
             } catch (SAXException e1) {
                 throw new ServletException(e1); // Can't happen really
             } finally {
-                if (writer != null) writer.close();
+                if (out != null) try{ out.close(); }catch(Exception ex){}
             }
-            throw new ServletException(e);
         } finally {
-            context.close();
+            try {
+                String message = "Administration Web Service";
+                if(polStatus!=null && polStatus!=AssertionStatus.NONE) message += ": " + polStatus.getMessage();
+                User user = getUser(context);
+                applicationContext.publishEvent(new AdminWebServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getUniqueIdentifier()));
+            }
+            catch(Exception se) {
+                log.log(Level.WARNING, "Error dispatching event.", se);
+            }
+            finally {
+                context.close();
+            }
         }
     }
 
@@ -263,6 +296,24 @@ public class AdminWebServiceFilter implements Filter {
                 throw new ProcessorException(e);
             }
         }
+    }
+
+    private User getUser(PolicyEnforcementContext context) {
+        User user = null;
+
+        if(context.isAuthenticated()) {
+            user = context.getAuthenticatedUser();
+        }
+
+        if(user==null) {
+            user = new UserBean();
+        }
+
+        return user;
+    }
+
+    private String getName(User user) {
+        return user.getName()!=null ? user.getName() : user.getLogin();
     }
 
     public void destroy() {

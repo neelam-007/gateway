@@ -31,16 +31,31 @@ public abstract class SystemEvent extends ApplicationEvent {
     }
 
     public SystemEvent(Object source, Component component, String ipAddress, Level level) {
-        this(source, component, ipAddress, level, null);
+        this(source, component, ipAddress, level, null, -1, null, null);
     }
 
     public SystemEvent(Object source, Component component, String ipAddress, Level level, String message) {
+        this(source, component, ipAddress, level, message, -1, null, null);
+    }
+
+    public SystemEvent(
+            Object source,
+            Component component,
+            String ipAddress,
+            Level level,
+            String message,
+            long identityProviderOid,
+            String userName,
+            String userId) {
         super(source);
         this.component = component;
         this.level = level;
         if (ipAddress == null) ipAddress = MY_IP;
         this.ipAddress = ipAddress;
         this.message = message != null ? message : component.getName() + " " + getAction();
+        this.identityProviderOid = identityProviderOid;
+        this.userName = userName;
+        this.userId = userId;
     }
 
     public abstract String getAction();
@@ -61,8 +76,23 @@ public abstract class SystemEvent extends ApplicationEvent {
         return level;
     }
 
+    public long getIdentityProviderOid() {
+        return identityProviderOid;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
     private final Component component;
     private final String ipAddress;
     private final Level level;
     private final String message;
+    private final long identityProviderOid;
+    private final String userName;
+    private final String userId;
 }
