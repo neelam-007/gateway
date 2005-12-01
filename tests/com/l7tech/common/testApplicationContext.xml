@@ -169,9 +169,6 @@
         <constructor-arg>
             <ref bean="sslKeystoreCertificate"/>
         </constructor-arg>
-        <constructor-arg>
-            <ref bean="auditContext"/>
-        </constructor-arg>
     </bean>
 
     <!-- server side policy filter manager  -->
