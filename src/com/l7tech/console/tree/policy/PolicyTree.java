@@ -825,7 +825,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 // scroll zone.
 
     public void autoscroll(Point pt) {
-        // Figure out which row we�re on.
+        // Figure out which row we're on.
         int nRow = getRowForLocation(pt.x, pt.y);
 
         // If we are not on a row then ignore this autoscroll request
