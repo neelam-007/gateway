@@ -43,9 +43,9 @@ public class TestMessageProcessor extends MessageProcessor {
      * @param auditContext the audit context
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, AuditContext auditContext)
+    public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
       throws IllegalArgumentException {
-        super(sm, wssd, pkey, cert, auditContext, null, new TestLicenseManager());
+        super(sm, wssd, pkey, cert, null, new TestLicenseManager());
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
