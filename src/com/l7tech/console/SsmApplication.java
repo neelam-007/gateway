@@ -63,7 +63,13 @@ public class SsmApplication
             public void windowOpened(WindowEvent e) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        mainWindow.activateLogonDialog();
+                        try {
+                            Thread.sleep(100);
+                            mainWindow.activateLogonDialog();
+                        }
+                        catch(InterruptedException ie) {
+                            // die
+                        }
                     }
                 });
             }
