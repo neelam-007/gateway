@@ -139,7 +139,7 @@ public class SsgPropertyDialogTest {
         ClientProxy clientProxy = new ClientProxyStub(9797);
         Gui.setInstance(Gui.createGui(clientProxy, new SsgManagerStub()));
         Gui.getInstance().start();
-        SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).show();
+        SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).setVisible(true);
         System.exit(0);
     }
 }
