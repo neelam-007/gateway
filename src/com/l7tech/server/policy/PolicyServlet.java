@@ -1,6 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
@@ -15,11 +16,13 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.AuthenticationResult;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
@@ -27,6 +30,8 @@ import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -59,6 +64,7 @@ import java.util.logging.Level;
  * Date: Jun 11, 2003
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
+    private AuditContext auditContext;
     private byte[] serverCertificate;
 
     /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
@@ -66,10 +72,16 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        KeystoreUtils ku = (KeystoreUtils)getApplicationContext().getBean("keystore");
         try {
+            ApplicationContext applicationContext = getApplicationContext();
+            auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+            KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
             serverCertificate = ku.readSSLCert();
-        } catch (IOException e) {
+        }
+        catch (BeansException be) {
+            throw new ServletException(be);
+        }
+        catch (IOException e) {
             throw new ServletException(e);
         }
     }
@@ -103,38 +115,56 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
 
             PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-
-            // pass over to the service
-            PolicyService service = getPolicyService();
+            context.setAuditContext(auditContext);
+            boolean success = false;
 
             try {
-                service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(), pre32PolicyCompat);
-            }
-            catch(IllegalStateException ise) { // throw by policy getter on policy not found
-                generateFaultAndSendAsResponse(servletResponse, "Service not found", ise.getMessage());
-            }
+                // pass over to the service
+                PolicyService service = getPolicyService();
 
-            Document responseDoc = null;
-            try {
-                responseDoc = response.getXmlKnob().getDocumentReadOnly();
-            } catch (SAXException e) {
-                generateFaultAndSendAsResponse(servletResponse, "No response available", e.getMessage());
-                return;
-            }
+                try {
+                    service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(), pre32PolicyCompat);
+                }
+                catch(IllegalStateException ise) { // throw by policy getter on policy not found
+                    generateFaultAndSendAsResponse(servletResponse, "Service not found", ise.getMessage());
+                }
 
-            if (response == null) {
-                if (context.getFaultDetail() != null) {
-                    generateFaultAndSendAsResponse(servletResponse, context.getFaultDetail());
-                } else {
-                    generateFaultAndSendAsResponse(servletResponse, "No response available", "");
+                Document responseDoc = null;
+                try {
+                    responseDoc = response.getXmlKnob().getDocumentReadOnly();
+                } catch (SAXException e) {
+                    generateFaultAndSendAsResponse(servletResponse, "No response available", e.getMessage());
+                    return;
+                }
+
+                if (response == null) {
+                    if (context.getFaultDetail() != null) {
+                        generateFaultAndSendAsResponse(servletResponse, context.getFaultDetail());
+                    } else {
+                        generateFaultAndSendAsResponse(servletResponse, "No response available", "");
+                    }
+                }
+                else {
+                    // check if the response is already a soap fault
+                    if (isDocFault(responseDoc)) {
+                        outputSoapFault(servletResponse, responseDoc);
+                    } else {
+                        outputPolicyDoc(servletResponse, responseDoc);
+                        success = true;
+                    }
                 }
             }
-            else {
-                // check if the response is already a soap fault
-                if (isDocFault(responseDoc)) {
-                    outputSoapFault(servletResponse, responseDoc);
-                } else {
-                    outputPolicyDoc(servletResponse, responseDoc);
+            finally {
+                try {
+                    String message = success ? "Policy Service: Success" : "Policy Service: Failed";
+                    User user = getUser(context);
+                    getApplicationContext().publishEvent(new PolicyServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getUniqueIdentifier()));
+                }
+                catch(Exception e) {
+                    logger.log(Level.WARNING, "Error publishing event", e);
+                }
+                finally {
+                    context.close();
                 }
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
@@ -412,6 +442,25 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         // in this case, send an authentication challenge
         httpServletResponse.setHeader("WWW-Authenticate", "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
         httpServletResponse.getOutputStream().close();
+    }
+
+
+    private User getUser(PolicyEnforcementContext context) {
+        User user = null;
+
+        if(context.isAuthenticated()) {
+            user = context.getAuthenticatedUser();
+        }
+
+        if(user==null) {
+            user = new UserBean();
+        }
+
+        return user;
+    }
+
+    private String getName(User user) {
+        return user.getName()!=null ? user.getName() : user.getLogin();
     }
 }
 
