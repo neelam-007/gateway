@@ -466,6 +466,7 @@ public class CertUtils {
         if (principal == null)
             throw new IllegalArgumentException("Cert contains no issuer DN");
         String ret = extractCommonName(principal);
+        if (ret == null) ret = principal.getName();
         return ret == null ? "" : ret;
     }
 
@@ -479,6 +480,7 @@ public class CertUtils {
         String dn = principal.getName();
         Map dnParts = CertUtils.dnToAttributeMap(dn);
         List cns = (List)dnParts.get("CN");
+        if (cns == null) return null;
         switch(cns.size()) {
             case 0:
                 return null;
