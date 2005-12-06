@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 import java.util.Properties;
 import java.io.*;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -25,7 +27,8 @@ public class NewDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_USERNAME_KEY = "hibernate.connection.username";
     private static final String HIBERNATE_PASSWORD_KEY = "hibernate.connection.password";
     private static final String HIBERNATE_PROPERTY_COMMENTS = "This hibernate configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
-
+    public static final String HIBERNATE_DEFAULT_CONNECTION_URL="jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8";
+    public static final String HIBERNATE_URL_AUTORECONNECTPOOLS_PATTERN="autoReconnectForPools=true(&*)";
 
 //    private DBActions dbActions;
 
@@ -91,6 +94,10 @@ public class NewDatabaseConfigCommand extends BaseConfigurationCommand {
             fis = null;
 
             String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);
+            if (StringUtils.isEmpty(origUrl)) {
+                origUrl = HIBERNATE_DEFAULT_CONNECTION_URL;
+            }
+            origUrl = origUrl.replaceAll(HIBERNATE_URL_AUTORECONNECTPOOLS_PATTERN, "");
 
             String newUrlString = origUrl.replaceFirst(urlPattern.pattern(), "$1" + dbUrl + "$2" + dbName + "$3");
             dbProps.setProperty(HIBERNATE_URL_KEY, newUrlString);
