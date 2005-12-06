@@ -62,7 +62,7 @@ public class ConfigurationWizard extends Wizard {
     private int clusteringType;
     private String keystoreType;
 
-    private final String currentVersion = "3.4";
+    private final String currentVersion = "4.0";
 
     static {
         try {
