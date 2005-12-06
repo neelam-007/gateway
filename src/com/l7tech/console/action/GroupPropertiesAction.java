@@ -64,7 +64,7 @@ public class GroupPropertiesAction extends NodeAction {
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 GroupPanel panel = GroupPanel.newInstance(config, header);
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                EditorDialog dialog = new EditorDialog(f, panel);
+                EditorDialog dialog = new EditorDialog(f, panel, true);
                 try {
                     panel.edit(header, config);
                     dialog.pack();

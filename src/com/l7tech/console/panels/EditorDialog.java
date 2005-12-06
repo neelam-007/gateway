@@ -15,14 +15,18 @@ public class EditorDialog extends JDialog {
   private JPanel panel;
   
   public EditorDialog(JFrame parentFrame, JPanel panel) {
+    this(parentFrame, panel, false);
+  }
+
+  public EditorDialog(JFrame parentFrame, JPanel panel, boolean resizable) {
     super(parentFrame, true);
     this.panel = panel;
     
-    initEditorDialog();
+    initEditorDialog(resizable);
   }
 
-  private void initEditorDialog() {
-    setResizable(false);
+  private void initEditorDialog(boolean resizable) {
+    setResizable(resizable);
     Actions.setEscKeyStrokeDisposes(this);  
     getContentPane().setLayout(new GridBagLayout());
     GridBagConstraints constraints

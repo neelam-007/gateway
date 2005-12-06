@@ -72,7 +72,7 @@ public class UserPropertiesAction extends NodeAction {
                 }
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                EditorDialog dialog = new EditorDialog(f, panel);
+                EditorDialog dialog = new EditorDialog(f, panel, true);
                 try {
                     panel.edit(header, config);
                     dialog.pack();

@@ -40,7 +40,11 @@ public class VirtualGroupDetailsPanel extends JPanel {
      * initialize the dialog.
      */
     private void initComponents() {
-        this.add(mainPanel);
+        this.setLayout(new GridBagLayout());
+        this.add(mainPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.BOTH,
+                new Insets(0, 0, 0, 0), 0, 0));
 
         // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0        
         emailTextField.setEnabled(false);
