@@ -52,7 +52,7 @@ public class ServerXslTransformation implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         // 1. Get document to transform
-        Message msgtotransform = null;
+        Message msgtotransform;
         try {
             int whichMimePart = subject.getWhichMimePart();
             if (whichMimePart <= 0) whichMimePart = 0;
@@ -98,7 +98,7 @@ public class ServerXslTransformation implements ServerAssertion {
             }
 
             // 2. Apply the transformation
-            Document output = null;
+            Document output;
             try {
                 // todo, invoke the tarari xsl transformation if we detect that it is available
                 output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
