@@ -76,6 +76,12 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             return AssertionStatus.BAD_REQUEST;
         }
 
+        ParsedElement[] elements = getElementsFoundByProcessor(wssResults);
+
+        if(!elementsFoundByProcessorAreValid(wssResults, elements)) {
+            return AssertionStatus.FALSIFIED;
+        }
+
         ProcessorResultUtil.SearchResult result = null;
         try {
             result = ProcessorResultUtil.searchInResult(logger,
@@ -83,7 +89,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
                                                         data.getXpathExpression().getExpression(),
                                                         data.getXpathExpression().getNamespaces(),
                                                         isAllowIfEmpty(),
-                                                        getElementsFoundByProcessor(wssResults),
+                                                        elements,
                                                         getPastTenseOperationName());
         } catch (ProcessorException e) {
             throw new PolicyAssertionException(e);
@@ -98,6 +104,18 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             default:
                 return AssertionStatus.SERVER_ERROR;
         }
+    }
+
+    /**
+     * Check that the ParsedElements are valid.
+     *
+     * @param wssResults the processor results
+     * @param elements the parsed elements to check.
+     * @return true if valid, false to falsify this assertion.
+     * @see #getElementsFoundByProcessor(ProcessorResult)
+     */
+    protected boolean elementsFoundByProcessorAreValid(ProcessorResult wssResults, ParsedElement[] elements) {
+        return true;
     }
 
     /** @return the operation name as a past-tense verb, either "encrypted" or "signed". */

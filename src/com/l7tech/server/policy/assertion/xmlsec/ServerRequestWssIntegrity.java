@@ -3,6 +3,9 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.token.ParsedElement;
+import com.l7tech.common.security.token.SigningSecurityToken;
+import com.l7tech.common.security.token.SignedElement;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
@@ -16,6 +19,8 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Enforces that a specific element in a request is signed.
@@ -82,7 +87,63 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
         return wssResults.getElementsThatWereSigned();
     }
 
+    /**
+     * Ensure that any signed elements that not security tokens are signed by
+     * the same key.
+     */
+    protected boolean elementsFoundByProcessorAreValid(ProcessorResult wssResults, ParsedElement[] elements) {
+        boolean valid = true;
+
+        if(elements.length>0) {
+            SigningSecurityToken sst = null;
+            Set securityTokenElements = getSecurityTokenElements(wssResults);
+
+            for (int i = 0; i < elements.length; i++) {
+                ParsedElement element = elements[i];
+                if(element instanceof SignedElement) {
+                    SignedElement signedElement = (SignedElement) element;
+                    if(!securityTokenElements.contains(signedElement.asElement())) {
+                        if(sst==null) {
+                            sst = signedElement.getSigningSecurityToken();
+                        }
+                        else {
+                            if(sst!=signedElement.getSigningSecurityToken()) {
+                                //auditor.logAndAudit(AssertionMessages.REQUEST_WSS_INT_REQUEST_MULTI_SIGNED);
+                                valid = false;
+                                break;
+                            }
+                        }
+                    }
+                    else {
+                        logger.fine("Not checking single signature source for signed security token.");
+                    }
+                }
+                else {
+                    // Can't happen; log and ignore.
+                    logger.info("Unable to check element (not signed)");
+                }
+            }
+        }
+
+        return valid;
+    }
+
     protected boolean isAllowIfEmpty() {
         return false;
+    }
+
+    private Set getSecurityTokenElements(ProcessorResult wssResults) {
+        Set tokenElements = new HashSet();
+        SecurityToken[] sts = wssResults.getSecurityTokens();
+        if(sts!=null) {
+            for (int i = 0; i < sts.length; i++) {
+                SecurityToken st = sts[i];
+                if(st instanceof SigningSecurityToken) {
+                    SigningSecurityToken sst = (SigningSecurityToken) st;
+                    tokenElements.add(sst.asElement());
+                }
+            }
+        }
+        return tokenElements;
     }
 }
