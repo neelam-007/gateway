@@ -59,9 +59,25 @@ public class XslTransformation extends Assertion {
         transformName = name;
     }
 
+    /**
+     * @return the zero-based index of the MIME part to which the transformation should be applied
+     */
+    public int getWhichMimePart() {
+        return whichMimePart;
+    }
+
+    /**
+     * @param whichMimePart the zero-based index of the MIME part to which the transformation should be applied           
+     */
+    public void setWhichMimePart(int whichMimePart) {
+        this.whichMimePart = whichMimePart;
+    }
+
     private int direction;
     private String xslSrc;
     private String transformName;
+    private int whichMimePart = 0;
+
     public static final int APPLY_TO_REQUEST = 1;
     public static final int APPLY_TO_RESPONSE = 2;
 }

@@ -2,6 +2,9 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -19,6 +22,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.InputStream;
 import java.util.logging.Logger;
 
 /**
@@ -48,8 +52,10 @@ public class ServerXslTransformation implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         // 1. Get document to transform
-        Document doctotransform = null;
+        Message msgtotransform = null;
         try {
+            int whichMimePart = subject.getWhichMimePart();
+            if (whichMimePart <= 0) whichMimePart = 0;
             switch (subject.getDirection()) {
                 case XslTransformation.APPLY_TO_REQUEST:
                     if (!context.getRequest().isXml()) {
@@ -58,7 +64,7 @@ public class ServerXslTransformation implements ServerAssertion {
                     }
 
                     auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST);
-                    doctotransform = context.getRequest().getXmlKnob().getDocumentWritable();
+                    msgtotransform = context.getRequest();
                     break;
                 case XslTransformation.APPLY_TO_RESPONSE:
                     if (!context.getResponse().isXml()) {
@@ -67,12 +73,28 @@ public class ServerXslTransformation implements ServerAssertion {
                     }
 
                     auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE);
-                    doctotransform = context.getResponse().getXmlKnob().getDocumentWritable();
+                    msgtotransform = context.getResponse();
                     break;
                 default:
                     // should not get here!
                     auditor.logAndAudit(AssertionMessages.XSL_TRAN_CONFIG_ISSUE);
                     return AssertionStatus.SERVER_ERROR;
+            }
+
+            Document doctotransform = null;
+            if (whichMimePart == 0) {
+                doctotransform = msgtotransform.getXmlKnob().getDocumentWritable();
+            } else {
+                try {
+                    PartInfo mimePart = msgtotransform.getMimeKnob().getPart(whichMimePart);
+                    if (mimePart.getContentType().isXml()) {
+                        InputStream is = mimePart.getInputStream(false);
+                        doctotransform = XmlUtil.parse(is, false);
+                    }
+                } catch (NoSuchPartException e) {
+                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart)});
+                    return AssertionStatus.BAD_REQUEST;
+                }
             }
 
             // 2. Apply the transformation
