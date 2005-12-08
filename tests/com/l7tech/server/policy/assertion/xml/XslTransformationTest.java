@@ -1,20 +1,19 @@
 package com.l7tech.server.policy.assertion.xml;
 
-import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.xml.XslTransformation;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.util.logging.Logger;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -27,6 +26,7 @@ import java.io.InputStream;
  *
  */
 public class XslTransformationTest extends TestCase {
+    private static Logger logger = Logger.getLogger(XslTransformationTest.class.getName());
 
     public static void main(String[] args) throws Throwable {
         junit.textui.TestRunner.run(suite());
@@ -38,47 +38,69 @@ public class XslTransformationTest extends TestCase {
         return suite;
     }
 
+    private Document transform(String xslt, String src) throws Exception {
+        TransformerFactory transfoctory = TransformerFactory.newInstance();
+        StreamSource xsltsource = new StreamSource(new StringReader(xslt));
+        Transformer transformer = transfoctory.newTemplates(xsltsource).newTransformer();
+        Document srcdoc = XmlUtil.stringToDocument(src);
+        return XmlUtil.softXSLTransform(srcdoc, transformer);
+    }
+
     public void testMaskWsse() throws Exception {
         String xslStr = getResAsString(XSL_MASK_WSSE);
-        XslTransformation assertion = new XslTransformation();
-        assertion.setXslSrc(xslStr);
-        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
-        ServerXslTransformation transformer = new ServerXslTransformation(assertion, ApplicationContexts.getTestApplicationContext());
-        String res = XmlUtil.nodeToString(transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE)));
-        // visual inspection - todo automate the verification of the transformation
-        System.out.println(res);
+        String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
+        String res = XmlUtil.nodeToString(transform(xslStr, xmlStr));
+        String expected = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "\n" +
+                "    <soap:Header xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/04/secext\">\n" +
+                "        <!--a wsse:Security element was stripped out-->\n" +
+                "    </soap:Header>\n" +
+                "\n" +
+                "    <soap:Body>\n" +
+                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+                "    </soap:Body>\n" +
+                "    \n" +
+                "</soap:Envelope>";
+        if (!expected.equals(res)) {
+            logger.severe("result of transformation not as expected\nresult:\n" + res + "\nexpected:\n" + expected);
+        } else {
+            logger.fine("transformation ok");
+        }
+        assertTrue(expected.equals(res));
     }
 
     public void testSsgComment() throws Exception {
         String xslStr = getResAsString(XSL_SSGCOMMENT);
-        XslTransformation assertion = new XslTransformation();
-        assertion.setXslSrc(xslStr);
-        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
-        ServerXslTransformation transformer = new ServerXslTransformation(assertion, ApplicationContexts.getTestApplicationContext());
-        String res = XmlUtil.nodeToString(transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE)));
-        // visual inspection - todo automate the verification of the transformation
-        System.out.println(res);
+        String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
+        String res = XmlUtil.nodeToString(transform(xslStr, xmlStr));
+        String expected = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                "\n" +
+                "    <soap:Header xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/04/secext\">\n" +
+                "        <wsse:Security>\n" +
+                "            <wsse:UsernameToken Id=\"MyID\">\n" +
+                "                    <wsse:Username>Zoe</wsse:Username>\n" +
+                "                    <Password Type=\"wsse:PasswordText\">ILoveLlamas</Password>\n" +
+                "            </wsse:UsernameToken>\n" +
+                "        </wsse:Security>\n" +
+                "    </soap:Header>\n" +
+                "\n" +
+                "    <soap:Body>\n" +
+                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+                "    </soap:Body><!--SSG WAS HERE-->\n" +
+                "    \n" +
+                "</soap:Envelope>";
+        if (!expected.equals(res)) {
+            logger.severe("result of transformation not as expected\nresult:\n" + res + "\nexpected:\n" + expected);
+        } else {
+            logger.fine("transformation ok");
+        }
+        assertTrue(expected.equals(res));
     }
 
     private String getResAsString(String path) throws IOException {
         InputStream is = getClass().getResourceAsStream(path);
         byte[] resbytes = HexUtils.slurpStream(is, 20000);
         return new String(resbytes);
-    }
-
-    private InputSource getRes(String path) throws IOException {
-        InputStream is = getClass().getResourceAsStream(path);
-        if (is == null) {
-            throw new IOException("\ncannot load resource " + path + ".\ncheck your runtime properties.\n");
-        }
-        return new InputSource(is);
-    }
-
-    private Document getResAsDoc(String path) throws IOException, ParserConfigurationException,
-            SAXException, IllegalArgumentException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        return dbf.newDocumentBuilder().parse(getRes(path));
     }
 
     private static final String RESOURCE_PATH = "/com/l7tech/server/policy/assertion/xml/";

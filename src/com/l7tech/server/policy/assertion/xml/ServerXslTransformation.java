@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -9,16 +10,12 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
-import javax.xml.transform.Transformer;
+import javax.xml.transform.Templates;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Templates;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.StringReader;
@@ -81,7 +78,9 @@ public class ServerXslTransformation implements ServerAssertion {
             // 2. Apply the transformation
             Document output = null;
             try {
-                output = transform(doctotransform);
+                // todo, invoke the tarari xsl transformation if we detect that it is available
+                output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
+                //output = transform(doctotransform);
             } catch (TransformerException e) {
                 String msg = "error transforming document";
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
@@ -106,8 +105,7 @@ public class ServerXslTransformation implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
-    //- PACKAGE
-
+    /*
     Document transform(Document source) throws TransformerException {
         Transformer transformer = getTemplate().newTransformer();
         final DOMResult outputTarget = new DOMResult();
@@ -120,9 +118,7 @@ public class ServerXslTransformation implements ServerAssertion {
         } else {
             return null;
         }
-    }
-
-    //- PRIVATE
+    }*/
 
     private final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
 

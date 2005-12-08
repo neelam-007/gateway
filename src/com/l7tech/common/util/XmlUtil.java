@@ -20,6 +20,10 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -1013,6 +1017,19 @@ public class XmlUtil {
                 default:
                     lastWasText = false;
             }
+        }
+    }
+
+    public static Document softXSLTransform(Document source, Transformer transformer) throws TransformerException {
+        final DOMResult outputTarget = new DOMResult();
+        transformer.transform(new DOMSource(source), outputTarget);
+        final Node node = outputTarget.getNode();
+        if (node instanceof Document) {
+            return (Document)node;
+        } else if (node != null) {
+            return node.getOwnerDocument();
+        } else {
+            return null;
         }
     }
 }
