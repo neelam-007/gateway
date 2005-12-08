@@ -202,6 +202,7 @@ public class AssertionMessages extends Messages {
     public static final M XSL_TRAN_RESPONSE_NOT_XML                       = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
     public static final M XSL_TRAN_RESPONSE                               = m(5903, Level.FINEST, "Transforming response");
     public static final M XSL_TRAN_CONFIG_ISSUE                           = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
+    public static final M XSL_TRAN_NO_SUCH_PART                           = m(5905, Level.WARNING, "Assertion specifies MIME part {0}, but it does not exist");
 
     // ServerJmsRoutingAssertion
     public static final M JMS_ROUTING_CONNECT_FAILED                      = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
