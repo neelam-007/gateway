@@ -6,12 +6,11 @@
 
 package com.l7tech.common.http;
 
-import java.io.IOException;
-import java.util.regex.Pattern;
-import java.util.Locale;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 /**
  * <p>Represents a cookie. Can be used on the client side (bridge) or server side (gateway).</p>
@@ -37,7 +36,7 @@ public class HttpCookie {
      *
      * @param headerFullValue the value of a Set-Cookie header, ie:
      *    "PREF=ID=e51:TM=686:LM=86:S=BL-w0; domain=.google.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT; secure".
-     * @throws IllegalAgumentException if the header is invalid
+     * @throws IllegalArgumentException if the header is invalid
      */
     public HttpCookie(String requestDomain, String requestPath, String headerFullValue) {//throws IOException {
         // Parse cookie
