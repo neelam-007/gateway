@@ -3,8 +3,8 @@ package com.l7tech.server.policy.assertion.xml;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
-import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
@@ -22,9 +22,10 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.logging.Logger;
 
 /**
@@ -56,28 +57,15 @@ public class ServerXslTransformation implements ServerAssertion {
      * @param context
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-
         // 1. Get document to transform
-        Message msgtotransform;
+        final Message msgtotransform;
         try {
-            int whichMimePart = subject.getWhichMimePart();
-            if (whichMimePart <= 0) whichMimePart = 0;
             switch (subject.getDirection()) {
                 case XslTransformation.APPLY_TO_REQUEST:
-                    if (!context.getRequest().isXml()) {
-                        auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST_NOT_XML);
-                        return AssertionStatus.NOT_APPLICABLE;
-                    }
-
                     auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST);
                     msgtotransform = context.getRequest();
                     break;
                 case XslTransformation.APPLY_TO_RESPONSE:
-                    if (!context.getResponse().isXml()) {
-                        auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE_NOT_XML);
-                        return AssertionStatus.NOT_APPLICABLE;
-                    }
-
                     auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE);
                     msgtotransform = context.getResponse();
                     break;
@@ -87,16 +75,23 @@ public class ServerXslTransformation implements ServerAssertion {
                     return AssertionStatus.SERVER_ERROR;
             }
 
-            Document doctotransform = null;
+            int whichMimePart = subject.getWhichMimePart();
+            if (whichMimePart <= 0) whichMimePart = 0;
+
+            final Document doctotransform;
+
+            PartInfo mimePart = null;
             if (whichMimePart == 0) {
+                if (!msgtotransform.isXml()) return notXml();
+
                 doctotransform = msgtotransform.getXmlKnob().getDocumentWritable();
             } else {
                 try {
-                    PartInfo mimePart = msgtotransform.getMimeKnob().getPart(whichMimePart);
-                    if (mimePart.getContentType().isXml()) {
-                        InputStream is = mimePart.getInputStream(false);
-                        doctotransform = XmlUtil.parse(is, false);
-                    }
+                    mimePart = msgtotransform.getMimeKnob().getPart(whichMimePart);
+                    if (!mimePart.getContentType().isXml()) return notXml();
+
+                    InputStream is = mimePart.getInputStream(false);
+                    doctotransform = XmlUtil.parse(is, false);
                 } catch (NoSuchPartException e) {
                     auditor.logAndAudit(AssertionMessages.XSL_TRAN_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart)});
                     return AssertionStatus.BAD_REQUEST;
@@ -112,24 +107,19 @@ public class ServerXslTransformation implements ServerAssertion {
                     // output = something tarari
                 }
                 // fallback on software when necessary
-                if (output == null) {
-                    output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
-                }
+                output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
             } catch (TransformerException e) {
                 String msg = "error transforming document";
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
                 throw new PolicyAssertionException(msg, e);
             }
 
-            // 3. Replace original document with output from transformation
-            // todo, alex, you may want to apply result of transformation to the appropriate msg part here
-            switch (subject.getDirection()) {
-                case XslTransformation.APPLY_TO_REQUEST:
-                    context.getRequest().getXmlKnob().setDocument(output);
-                    break;
-                case XslTransformation.APPLY_TO_RESPONSE:
-                    context.getResponse().getXmlKnob().setDocument(output);
-                    break;
+            if (whichMimePart == 0) {
+                msgtotransform.getXmlKnob().setDocument(output);
+            } else {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                XmlUtil.nodeToOutputStream(output, baos);
+                mimePart.setBodyBytes(baos.toByteArray());
             }
         } catch (SAXException e) {
             String msg = "cannot get document to tranform";
@@ -139,6 +129,26 @@ public class ServerXslTransformation implements ServerAssertion {
 
         return AssertionStatus.NONE;
     }
+
+    private AssertionStatus notXml() {
+        auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST_NOT_XML);
+        return AssertionStatus.NOT_APPLICABLE;
+    }
+
+    /*
+    Document transform(Document source) throws TransformerException {
+        Transformer transformer = getTemplate().newTransformer();
+        final DOMResult outputTarget = new DOMResult();
+        transformer.transform(new DOMSource(source), outputTarget);
+        final Node node = outputTarget.getNode();
+        if (node instanceof Document) {
+            return (Document)node;
+        } else if (node != null) {
+            return node.getOwnerDocument();
+        } else {
+            return null;
+        }
+    }*/
 
     private Templates makeTemplate(String xslstr) throws TransformerConfigurationException {
         TransformerFactory transfoctory = TransformerFactory.newInstance();
