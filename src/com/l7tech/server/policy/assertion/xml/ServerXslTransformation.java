@@ -107,7 +107,9 @@ public class ServerXslTransformation implements ServerAssertion {
                     // output = something tarari
                 }
                 // fallback on software when necessary
-                output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
+                if (output == null) {
+                    output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
+                }
             } catch (TransformerException e) {
                 String msg = "error transforming document";
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
@@ -134,21 +136,6 @@ public class ServerXslTransformation implements ServerAssertion {
         auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST_NOT_XML);
         return AssertionStatus.NOT_APPLICABLE;
     }
-
-    /*
-    Document transform(Document source) throws TransformerException {
-        Transformer transformer = getTemplate().newTransformer();
-        final DOMResult outputTarget = new DOMResult();
-        transformer.transform(new DOMSource(source), outputTarget);
-        final Node node = outputTarget.getNode();
-        if (node instanceof Document) {
-            return (Document)node;
-        } else if (node != null) {
-            return node.getOwnerDocument();
-        } else {
-            return null;
-        }
-    }*/
 
     private Templates makeTemplate(String xslstr) throws TransformerConfigurationException {
         TransformerFactory transfoctory = TransformerFactory.newInstance();
