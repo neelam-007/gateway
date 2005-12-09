@@ -12,6 +12,11 @@ import java.io.*;
  * A StashManager that stashes parts in RAM at first, but moves them into a FileStashManager if they exceed a certain size.
  */
 public class HybridStashManager implements StashManager {
+    private static final int DEFAULT_MAX_INITIAL_BUFFER = 8192;
+    private static final String MAX_INITIAL_BUFFER_PROPERTY = HybridStashManager.class.getName() + ".maxInitialBuffer";
+    private static final int MAX_INITIAL_BUFFER = Integer.getInteger(MAX_INITIAL_BUFFER_PROPERTY,
+                                                                     DEFAULT_MAX_INITIAL_BUFFER).intValue();
+
     private final int limit;
     private final int initialBuffer;
     private final File dir;
@@ -41,7 +46,7 @@ public class HybridStashManager implements StashManager {
         if (limit < 512)
             initialBuffer = limit;
         else if (limit > 32768)
-            initialBuffer = 8192;
+            initialBuffer = MAX_INITIAL_BUFFER;
         else
             initialBuffer = limit / 4;
     }
