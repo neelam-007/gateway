@@ -122,6 +122,7 @@ public class ServerXslTransformation implements ServerAssertion {
             }
 
             // 3. Replace original document with output from transformation
+            // todo, alex, you may want to apply result of transformation to the appropriate msg part here
             switch (subject.getDirection()) {
                 case XslTransformation.APPLY_TO_REQUEST:
                     context.getRequest().getXmlKnob().setDocument(output);
