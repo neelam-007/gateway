@@ -6,6 +6,8 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -32,17 +34,21 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 10, 2004<br/>
- * $Id$<br/>
  *
  */
 public class ServerXslTransformation implements ServerAssertion {
+    private final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
 
-    //- PUBLIC
+    private final Auditor auditor;
+    private Templates template;
+    private XslTransformation subject;
+    private final GlobalTarariContext tarariContext;
 
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) {
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
         subject = assertion;
         auditor = new Auditor(this, springContext, logger);
+        tarariContext = TarariLoader.getGlobalContext();
     }
 
     /**
@@ -98,10 +104,17 @@ public class ServerXslTransformation implements ServerAssertion {
             }
 
             // 2. Apply the transformation
-            Document output;
+            Document output = null;
             try {
-                // todo, invoke the tarari xsl transformation if we detect that it is available
-                output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
+                if (tarariContext != null) {
+                    logger.warning("TODO, tarari accelerated xslt");
+                    // todo, invoke the tarari xsl transformation
+                    // output = something tarari
+                }
+                // fallback on software when necessary
+                if (output == null) {
+                    output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
+                }
             } catch (TransformerException e) {
                 String msg = "error transforming document";
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
@@ -125,12 +138,6 @@ public class ServerXslTransformation implements ServerAssertion {
 
         return AssertionStatus.NONE;
     }
-
-    private final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
-
-    private final Auditor auditor;
-    private Templates template;
-    private XslTransformation subject;
 
     private Templates makeTemplate(String xslstr) throws TransformerConfigurationException {
         TransformerFactory transfoctory = TransformerFactory.newInstance();
