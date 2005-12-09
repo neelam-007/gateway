@@ -6,8 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.*;
 

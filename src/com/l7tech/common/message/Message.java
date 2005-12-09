@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.message;
@@ -177,6 +175,16 @@ public final class Message {
             }
         }
         return xmlKnob;
+    }
+
+    public SecurityKnob getSecurityKnob() {
+        SecurityKnob secKnob = (SecurityKnob)getKnob(SecurityKnob.class);
+        if (secKnob == null) {
+            rootFacet = new SecurityFacet(this, rootFacet);
+            secKnob = (SecurityKnob)getKnob(SecurityKnob.class);
+            if (secKnob == null) throw new IllegalStateException();
+        }
+        return secKnob;
     }
 
     /**

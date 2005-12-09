@@ -165,9 +165,9 @@ public class WspConstants {
 
         // Leaf assertions expressible using standard WS-Policy vocabulary
         new SecurityTokenAssertionMapping(new WssBasic(), "WssBasic",
-                                          SecurityTokenType.USERNAME), // freeze WssBasic as SecurityToken or pre32 form; thaw pre32 form
+                                          SecurityTokenType.WSS_USERNAME), // freeze WssBasic as SecurityToken or pre32 form; thaw pre32 form
         new SecurityTokenAssertionMapping(new RequestWssX509Cert(), "RequestWssX509Cert",
-                                          SecurityTokenType.X509), // freeze RequestWssX509Cert as SecurityToken or pre32 form; thaw pre32 form
+                                          SecurityTokenType.WSS_X509_BST), // freeze RequestWssX509Cert as SecurityToken or pre32 form; thaw pre32 form
         new SecurityTokenAssertionMapping(new SecureConversation(), "SecureConversation",
                                           SecurityTokenType.WSSC_CONTEXT), // freeze SecureConversation as SecurityToken or pre32 form; thaw pre32 form
         new SamlSecurityTokenAssertionMapping(), // freeze RequestWssSaml as SecurityToken or pre32 form; thaw pre32 form

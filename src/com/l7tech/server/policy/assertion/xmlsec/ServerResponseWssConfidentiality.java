@@ -98,11 +98,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             return AssertionStatus.NONE;
         } else {
             ProcessorResult wssResult;
-            try {
-                wssResult = context.getRequest().getXmlKnob().getProcessorResult();
-            } catch (SAXException e) {
-                throw new CausedIOException(e);
-            }
+            wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
 
             if (wssResult == null) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_NO_WSS_SECURITY);
@@ -116,7 +112,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             X509Certificate clientCert = null;
             SecurityContextToken secConvContext = null;
             EncryptedKey encryptedKey = null;
-            SecurityToken[] tokens = wssResult.getSecurityTokens();
+            XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken token = tokens[i];
                 if (token instanceof X509SecurityToken) {
@@ -126,7 +122,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                             auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
                             return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                         }
-                        clientCert = x509token.asX509Certificate();
+                        clientCert = x509token.getCertificate();
                     }
                 } else if (token instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken)token;

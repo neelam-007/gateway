@@ -1,28 +1,10 @@
 package com.l7tech.server.policy.assertion.credential;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-
 import EDU.oswego.cs.dl.util.concurrent.CopyOnWriteArraySet;
-import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.HttpHeaders;
+import com.l7tech.common.http.*;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.wsfederation.FederationPassiveClient;
 import com.l7tech.common.security.wsfederation.ResponseStatusException;
@@ -41,6 +23,19 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Base class for WsFederation server assertions.
@@ -88,6 +83,12 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         }
     }
 
+    protected void ensureSecurityKnob(SecurityKnob knob) throws StopAndAuditException {
+        if (knob == null) {
+            throw new StopAndAuditException(AssertionMessages.WSFEDPASS_NO_SUITABLE_CREDENTIALS);
+        }
+    }
+
     /**
      * Get the cause if there is one, else return the given throwable
      */
@@ -111,7 +112,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     /**
      *
      */
-    protected void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, Document requestDoc, SamlAssertion samlAssertion, Assertion credSource) throws Exception {
+    protected void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, SecurityKnob requestSec, Document requestDoc, SamlAssertion samlAssertion, Assertion credSource) throws Exception {
         WssDecorator deco = new WssDecoratorImpl();
         context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, credSource.getClass()));
 
@@ -119,7 +120,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
         deco.decorateMessage(requestDoc, decoReq);
         requestXml.setDocument(requestDoc);
-        requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, certificateResolver));
+        requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, certificateResolver));
     }
 
     /**
@@ -259,8 +260,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     private void doAuthNow(final PolicyEnforcementContext context, final GenericHttpClient httpClient, final SamlAssertion samlAssertion, final String replyUrl, final String contextUrl) throws AuthRequiredException, StopAndAuditException {
         try {
-            String url = replyUrl;
-            URL endpoint = new URL(url);
+            URL endpoint = new URL(replyUrl);
             GenericHttpRequestParams params = new GenericHttpRequestParams(endpoint);
             initParams(params);
 

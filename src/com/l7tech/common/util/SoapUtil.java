@@ -71,6 +71,9 @@ public class SoapUtil {
         WST_NAMESPACE,
         WST_NAMESPACE2,   // Seen in Tivoli Fim example messages
     };
+    public static final String WST_REQUESTSECURITYTOKEN = "RequestSecurityToken";
+    public static final String WST_TOKENTYPE = "TokenType";
+    public static final String WST_REQUESTTYPE = "RequestType";
 
     public static final String WSX_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/mex";
 

@@ -11,12 +11,11 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.UnsupportedDocumentFormatException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
+import java.net.PasswordAuthentication;
 import java.util.Date;
 
 /**
@@ -25,19 +24,19 @@ import java.util.Date;
  */
 public class UsernameTokenImpl implements UsernameToken {
     private Element element;
-    private LoginCredentials creds;
+    private PasswordAuthentication passwordAuth;
     private String elementId;
 
     /** Create a UsernameTokenImpl from the given credentials, which must be cleartext. */
-    public UsernameTokenImpl(LoginCredentials pc) {
+    public UsernameTokenImpl(PasswordAuthentication pc) {
         this.element = null;
         this.elementId = null;
-        this.creds = pc;
+        this.passwordAuth = pc;
     }
 
     /** Create a UsernameTokenImpl from the given username and password. */
     public UsernameTokenImpl(String username, char[] password) {
-        this(new LoginCredentials(username, password, null));
+        this(new PasswordAuthentication(username, password));
     }
 
     /** Create a UsernameTokenImpl from the given Element.  The Element will be parsed during the construction. */
@@ -76,20 +75,16 @@ public class UsernameTokenImpl implements UsernameToken {
         }
         // Remember this as a security token
         this.element = usernameTokenElement;
-        this.creds = new LoginCredentials(username, passwd == null ? null : passwd.toCharArray(), WssBasic.class);
+        this.passwordAuth = new PasswordAuthentication(username, passwd == null ? null : passwd.toCharArray());
         this.elementId = null;
     }
 
     public String getUsername() {
-        return creds.getLogin();
-    }
-
-    public LoginCredentials asLoginCredentials() {
-        return creds;
+        return passwordAuth.getUserName();
     }
 
     public SecurityTokenType getType() {
-        return SecurityTokenType.USERNAME;
+        return SecurityTokenType.WSS_USERNAME;
     }
 
     public String getElementId() {
@@ -107,15 +102,15 @@ public class UsernameTokenImpl implements UsernameToken {
         // attach them
         untokEl.appendChild(usernameEl);
         // fill in username value
-        Text txtNode = XmlUtil.createTextNode(nodeFactory, creds.getLogin());
+        Text txtNode = XmlUtil.createTextNode(nodeFactory, passwordAuth.getUserName());
         usernameEl.appendChild(txtNode);
         // fill in password value and type
-        char[] pass = creds.getCredentials();
+        char[] pass = passwordAuth.getPassword();
         if (pass != null) {
             Element passwdEl = nodeFactory.createElementNS(securityNs, "Password");
             passwdEl.setPrefix(untokEl.getPrefix());
             untokEl.appendChild(passwdEl);
-            txtNode = XmlUtil.createTextNode(nodeFactory, new String(creds.getCredentials()));
+            txtNode = XmlUtil.createTextNode(nodeFactory, new String(pass));
             passwdEl.appendChild(txtNode);
             passwdEl.setAttribute("Type",
                               "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText");
@@ -150,6 +145,10 @@ public class UsernameTokenImpl implements UsernameToken {
     }
 
     public String toString() {
-        return "UsernameToken: " + creds.getLogin();
+        return "UsernameToken: " + passwordAuth.getUserName();
+    }
+
+    public char[] getPassword() {
+        return passwordAuth.getPassword();
     }
 }

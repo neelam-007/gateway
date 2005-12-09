@@ -4,6 +4,7 @@
 
 package com.l7tech.server.admin.ws;
 
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -12,13 +13,7 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.audit.AuditContext;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -29,27 +24,25 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.event.system.AdminWebServiceEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
-import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.event.system.AdminWebServiceEvent;
-
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
-import org.xml.sax.SAXException;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -223,7 +216,7 @@ public class AdminWebServiceFilter implements Filter {
                      */
                     public String getRealPath(String string) {
                         return super.getRealPath(string);
-                    }                    
+                    }
                 };
 
                 filterChain.doFilter(wrapper, servletResponse);
@@ -283,13 +276,13 @@ public class AdminWebServiceFilter implements Filter {
         if (isSoap && hasSecurity) {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             try {
-                final XmlKnob reqXml = request.getXmlKnob();
+                final SecurityKnob reqSec = request.getSecurityKnob();
                 ProcessorResult wssOutput = trogdor.undecorateMessage(request,
                                                       null, serverCertificate,
                                                       serverPrivateKey,
                                                       SecureConversationContextManager.getInstance(),
                                                       certificateResolver);
-                reqXml.setProcessorResult(wssOutput);
+                reqSec.setProcessorResult(wssOutput);
             } catch (GeneralSecurityException e) {
                 throw new ProcessorException(e);
             } catch (BadSecurityContextException e) {

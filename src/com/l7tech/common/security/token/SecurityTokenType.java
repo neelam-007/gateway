@@ -52,14 +52,35 @@ public class SecurityTokenType implements Serializable {
             new SecurityTokenType(n++, "WS-SC SecurityContextToken", SECURECONVESATIONTOKEN_URI, SoapUtil.WSSC_NAMESPACE, SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME, SecurityContextToken.class);
     public static final SecurityTokenType WSSC_DERIVED_KEY =
             new SecurityTokenType(n++, "WS-SC DerivedKeyToken", null, SoapUtil.WSSC_NAMESPACE, SoapUtil.WSSC_DK_EL_NAME, DerivedKeyToken.class);
-    public static final SecurityTokenType USERNAME =
+    public static final SecurityTokenType WSS_USERNAME =
             new SecurityTokenType(n++, "WS-S UsernameToken", SoapUtil.SECURITY_NAMESPACE + "#UsernameToken", SoapUtil.SECURITY_NAMESPACE, "UsernameToken", UsernameToken.class);
-    public static final SecurityTokenType X509 =
+    public static final SecurityTokenType WSS_X509_BST =
             new SecurityTokenType(n++, "WS-S X.509 BinarySecurityToken", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3", SoapUtil.SECURITY_NAMESPACE, "BinarySecurityToken", X509SecurityToken.class);// TODO look up proper token type URI
-    public static final SecurityTokenType ENCRYPTEDKEY =
+    public static final SecurityTokenType WSS_ENCRYPTEDKEY =
             new SecurityTokenType(n++, "WS-S EncryptedKey", SoapUtil.XMLENC_NS + "EncryptedKey", SoapUtil.XMLENC_NS,  "EncryptedKey", EncryptedKey.class);
 
-    private static final SecurityTokenType[] VALUES = { SAML_ASSERTION, WSSC_CONTEXT, USERNAME, X509 };
+    public static final SecurityTokenType HTTP_BASIC =
+            new SecurityTokenType(n++, "HTTP Basic", null, null, null, UsernameToken.class);
+    public static final SecurityTokenType HTTP_DIGEST =
+            new SecurityTokenType(n++, "HTTP Digest", null, null, null, UsernameToken.class);
+    public static final SecurityTokenType HTTP_CLIENT_CERT =
+            new SecurityTokenType(n++, "HTTPS Client Cert", null, null, null, X509SecurityToken.class);
+
+    public static final SecurityTokenType UNKNOWN =
+            new SecurityTokenType(n++, "Unknown", null, null, null, SecurityToken.class);
+
+    private static final SecurityTokenType[] VALUES = {
+        SAML_ASSERTION,
+        WSSC_CONTEXT,
+        WSSC_DERIVED_KEY,
+        WSS_USERNAME,
+        WSS_X509_BST,
+        WSS_ENCRYPTEDKEY,
+        HTTP_BASIC,
+        HTTP_DIGEST,
+        HTTP_CLIENT_CERT,
+        UNKNOWN
+    };
 
     private SecurityTokenType(int num, String name, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class interfaceClass) {
         this.num = num;
@@ -68,7 +89,7 @@ public class SecurityTokenType implements Serializable {
         this.wstPrototypeElementNs = prototypeElementNs;
         this.wstPrototypeElementName = prototypeElementName;
         this.interfaceClass = interfaceClass;
-        if (!SecurityToken.class.isAssignableFrom(interfaceClass) || SecurityToken.class == interfaceClass)
+        if (!SecurityToken.class.isAssignableFrom(interfaceClass))
             throw new IllegalArgumentException("interfaceClass must be derived from " + SecurityToken.class.getName());
     }
 

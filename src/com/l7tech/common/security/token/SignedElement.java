@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.security.token;
@@ -12,7 +10,6 @@ package com.l7tech.common.security.token;
 public interface SignedElement extends ParsedElement {
     /**
      * @return either a X509SecurityToken or a DerivedKeyToken
-     * TODO this should return SigningSecurityToken
      */
     SigningSecurityToken getSigningSecurityToken();
 }

@@ -6,7 +6,7 @@
 package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.security.token.ParsedElement;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 
 /**
  * @author mike
@@ -15,5 +15,5 @@ public interface WssTimestamp extends ParsedElement {
     WssTimestampDate getCreated();
     WssTimestampDate getExpires();
     boolean isSigned();
-    SecurityToken[] getSigningSecurityTokens();
+    XmlSecurityToken[] getSigningSecurityTokens(); // TODO WHAT
 }

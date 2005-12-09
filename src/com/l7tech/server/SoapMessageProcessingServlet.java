@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server;
@@ -51,7 +49,6 @@ import java.util.logging.Logger;
  * The name of this class has not been accurate since non-SOAP web services were added in SecureSpan version 3.0.
  *
  * @author alex
- * @version $Revision$
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
@@ -114,8 +111,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             // Process message
             request.initialize(stashManager, ctype, hrequest.getInputStream());
-            AssertionStatus status = AssertionStatus.UNDEFINED;
-            status = messageProcessor.processMessage(context);
+
+            AssertionStatus status = messageProcessor.processMessage(context);
 
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
@@ -166,21 +163,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.fine("servlet transport returned status " + routeStat +
                             ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
 
-                return;
             } else if (context.getFaultDetail() != null) {
                 logger.fine("returning special soap fault");
                 sendFault(context, context.getFaultDetail(), hrequest, hresponse);
-                return;
             } else if (respKnob.hasChallenge()) {
                 logger.fine("servlet transport returning challenge");
                 respKnob.beginChallenge();
                 sendChallenge(context, hrequest, hresponse);
-                return;
             } else {
                 logger.fine("servlet transport returning 500");
                 sendFault(context, hrequest, hresponse,
                   status.getSoapFaultCode(), status.getMessage());
-                return;
             }
         } catch (Throwable e) {
             // if the policy throws AND the stealth flag is set, drop connection
@@ -197,23 +190,19 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     sendFault(context, hrequest, hresponse,
                               SoapFaultUtils.FC_SERVER, e.toString());
-                    return;
                 } else if (e instanceof PolicyVersionException) {
                     String msg = "Request referred to an outdated version of policy";
                     logger.log(Level.INFO, msg);
                     sendFault(context, hrequest, hresponse,
                               SoapFaultUtils.FC_CLIENT, msg);
-                    return;
                 } else if (e instanceof NoSuchPartException) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     sendFault(context, hrequest, hresponse,
                               SoapFaultUtils.FC_CLIENT, e.toString());
-                    return;
                 } else if (e instanceof MethodNotAllowedException) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     sendFault(context, hrequest, hresponse,
                               SoapFaultUtils.FC_CLIENT, "Method not supported");
-                    return;
                 } else {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     //? if (e instanceof Error) throw (Error)e;
@@ -334,10 +323,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         String requestorVersion = context.getRequest().
                                         getHttpRequestKnob().
                                             getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
-        if (requestorVersion == null || requestorVersion.length() < 1) {
-            return true;
-        }
-        return false;
+        return requestorVersion == null || requestorVersion.length() < 1;
     }
 
     private void sendChallenge(PolicyEnforcementContext context,
@@ -347,7 +333,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // the challenge http header is supposed to already been appended at that point-ah
             hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             PublishedService pserv = context.getService();
-            String purl = "";
+            String purl;
             if (pserv != null && shouldSendBackPolicyUrl(context)) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
@@ -364,10 +350,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         // serverConfig properties are already cached so no need to cache here
         String property = serverConfig.getProperty("noServiceResolvedStealthResponse");
         logger.finest("noServiceResolvedStealthResponse has value " + property);
-        if (property != null && Boolean.parseBoolean(property)) {
-            return true;
-        }
-        return false;
+        return property != null && Boolean.parseBoolean(property);
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());

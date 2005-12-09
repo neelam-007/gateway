@@ -1,15 +1,12 @@
 package com.l7tech.common.security.wsfederation;
 
-import java.net.URL;
-import java.net.URLEncoder;
-
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.MockGenericHttpClient;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import junit.framework.TestCase;
 
-import com.l7tech.common.http.MockGenericHttpClient;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.util.XmlUtil;
+import java.net.URL;
 
 /**
  * Tests for the Federation Passive Client.
@@ -32,7 +29,7 @@ public class FederationPassiveClientTest extends TestCase {
         String realm = "blah";
         boolean addTimestamp = false;
 
-        SecurityToken token = FederationPassiveClient.obtainFederationToken(client
+        XmlSecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
                                                          ,null
@@ -51,7 +48,7 @@ public class FederationPassiveClientTest extends TestCase {
         String realm = "blah";
         boolean addTimestamp = false;
 
-        SecurityToken token = FederationPassiveClient.obtainFederationToken(client
+        XmlSecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
                                                          ,null
@@ -71,7 +68,7 @@ public class FederationPassiveClientTest extends TestCase {
         boolean addTimestamp = false;
 
         try {
-            SecurityToken token = FederationPassiveClient.obtainFederationToken(client
+            XmlSecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                              ,httpParams
                                                              ,realm
                                                              ,null
@@ -99,7 +96,7 @@ public class FederationPassiveClientTest extends TestCase {
         boolean addTimestamp = false;
 
         try {
-            SecurityToken token = FederationPassiveClient.obtainFederationToken(client
+            XmlSecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
                                                          ,null
@@ -126,7 +123,7 @@ public class FederationPassiveClientTest extends TestCase {
         boolean addTimestamp = false;
 
         try {
-            SecurityToken token = FederationPassiveClient.obtainFederationToken(client
+            XmlSecurityToken token = FederationPassiveClient.obtainFederationToken(client
                                                          ,httpParams
                                                          ,realm
                                                          ,null

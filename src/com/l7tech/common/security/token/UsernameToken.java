@@ -6,16 +6,13 @@
 
 package com.l7tech.common.security.token;
 
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
  * @author mike
  */
-public interface UsernameToken extends SecurityToken {
-    LoginCredentials asLoginCredentials();
-
+public interface UsernameToken extends XmlSecurityToken, HasUsernameAndPassword {
     /** @return XML serialized version of this SecurityToken using the specified Security namespace and owner document. */
     Element asElement(Document factory, String securityNs, String securityPrefix);
 

@@ -7,7 +7,7 @@
 package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.security.token.EncryptedElement;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.SigningSecurityToken;
 import com.l7tech.common.security.xml.SecurityActor;
@@ -32,8 +32,8 @@ public class ProcessorResultWrapper implements ProcessorResult {
         return delegate.getElementsThatWereEncrypted();
     }
 
-    public SecurityToken[] getSecurityTokens() {
-        return delegate.getSecurityTokens();
+    public XmlSecurityToken[] getXmlSecurityTokens() {
+        return delegate.getXmlSecurityTokens();
     }
 
     public WssTimestamp getTimestamp() {

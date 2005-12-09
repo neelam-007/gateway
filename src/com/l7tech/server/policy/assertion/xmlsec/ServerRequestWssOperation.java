@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
+ * Copyright (C) 2004-5 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.policy.assertion.xmlsec;
@@ -54,7 +54,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
 
                 return AssertionStatus.BAD_REQUEST;
             }
-            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -68,7 +68,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         */
 
         // get the document
-        Document soapmsg = null;
+        Document soapmsg;
         try {
             soapmsg = context.getRequest().getXmlKnob().getDocumentReadOnly();
         } catch (SAXException e) {
@@ -82,7 +82,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             return AssertionStatus.FALSIFIED;
         }
 
-        ProcessorResultUtil.SearchResult result = null;
+        ProcessorResultUtil.SearchResult result;
         try {
             result = ProcessorResultUtil.searchInResult(logger,
                                                         soapmsg,

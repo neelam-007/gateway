@@ -2,8 +2,8 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -52,7 +52,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NON_SOAP);
                 return AssertionStatus.BAD_REQUEST;
             }
-            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -63,7 +63,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
             return AssertionStatus.FALSIFIED;
         }
 
-        SecurityToken[] tokens = wssResults.getSecurityTokens();
+        XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         if (tokens == null) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_TOKEN);
             context.setAuthenticationMissing();
@@ -71,11 +71,11 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         }
         X509Certificate gotACertAlready = null;
         for (int i = 0; i < tokens.length; i++) {
-            SecurityToken tok = tokens[i];
+            XmlSecurityToken tok = tokens[i];
             if (tok instanceof X509SecurityToken) {
                 X509SecurityToken x509Tok = (X509SecurityToken)tok;
                 if (x509Tok.isPossessionProved()) {
-                    X509Certificate okCert = x509Tok.asX509Certificate();
+                    X509Certificate okCert = x509Tok.getCertificate();
                     // todo, it is possible that a request has more than one signature by more than one
                     // identity. we should refactor request.setPrincipalCredentials to be able to remember
                     // more than one proven identity.

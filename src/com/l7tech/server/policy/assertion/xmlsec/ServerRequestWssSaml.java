@@ -3,10 +3,11 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.security.token.SamlSecurityToken;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.token.SamlSecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
@@ -20,16 +21,15 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
+import sun.security.x509.X500Name;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.security.cert.X509Certificate;
-
-import sun.security.x509.X500Name;
+import java.util.logging.Logger;
 
 /**
  * Class <code>ServerRequestWssSaml</code> represents the server
@@ -76,19 +76,20 @@ public class ServerRequestWssSaml implements ServerAssertion {
 
         try {
             final XmlKnob xmlKnob = context.getRequest().getXmlKnob();
+            final SecurityKnob secKnob = context.getRequest().getSecurityKnob();
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
-            ProcessorResult wssResults = xmlKnob.getProcessorResult();
+            ProcessorResult wssResults = secKnob.getProcessorResult();
             if (wssResults == null) {
                 auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED);
                 context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }
 
-            SecurityToken[] tokens = wssResults.getSecurityTokens();
+            XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
             if (tokens == null) {
                 auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED);
                 context.setAuthenticationMissing();
@@ -96,7 +97,7 @@ public class ServerRequestWssSaml implements ServerAssertion {
             }
             SamlSecurityToken samlAssertion = null;
             for (int i = 0; i < tokens.length; i++) {
-                SecurityToken tok = tokens[i];
+                XmlSecurityToken tok = tokens[i];
                 if (tok instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken)tok;
                     if (samlAssertion != null) {

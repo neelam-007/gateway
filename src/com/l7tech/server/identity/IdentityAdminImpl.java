@@ -335,8 +335,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
             Certificate cert = clientCertManager.getUserCert(user);
             if (cert == null) return null;
 
-            String encodedcert = HexUtils.encodeBase64(cert.getEncoded());
-            return encodedcert;
+        return HexUtils.encodeBase64(cert.getEncoded());
     }
 
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
@@ -356,7 +355,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
                 UserManager userManager = provider.getUserManager();
                 InternalUser dbuser = (InternalUser)userManager.findByLogin(user.getLogin());
                 // maybe a new password is already provided?
-                String newPasswd = null;
+                String newPasswd;
                 if (!dbuser.getPassword().equals(user.getPassword())) {
                     newPasswd = user.getPassword();
                 } else {
@@ -520,7 +519,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
 
     private UserManager retrieveUserManager(long cfgid)
       throws RemoteException {
-        UserManager ret = null;
+        UserManager ret;
         try {
             IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
@@ -534,7 +533,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
 
     private GroupManager retrieveGroupManager(long cfgid)
       throws RemoteException {
-        GroupManager ret = null;
+        GroupManager ret;
         try {
             IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
@@ -546,22 +545,6 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
         return ret;
     }
 
-
-    /**
-     * Parse the String service ID to long (database format). Throws runtime exc
-     *
-     * @param ID the ID, must not be null, and .
-     * @return the ID representing <code>long</code>
-     * @throws IllegalArgumentException if service ID is null
-     * @throws NumberFormatException    on parse error
-     */
-    private long toLong(String ID)
-      throws IllegalArgumentException, NumberFormatException {
-        if (ID == null) {
-            throw new IllegalArgumentException();
-        }
-        return Long.parseLong(ID);
-    }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;
     private IdentityProviderFactory identityProviderFactory = null;

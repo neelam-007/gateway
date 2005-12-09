@@ -1,18 +1,18 @@
 package com.l7tech.server.policy.assertion.credential;
 
-import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpHeaders;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+
+import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>Abstract base class for server assertions that cache security tokens.</p>

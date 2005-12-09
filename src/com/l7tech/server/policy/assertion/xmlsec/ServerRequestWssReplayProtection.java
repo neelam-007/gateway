@@ -3,10 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.token.SamlSecurityToken;
-import com.l7tech.common.security.token.SecurityContextToken;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.X509SecurityToken;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssTimestamp;
 import com.l7tech.common.util.CausedIOException;
@@ -57,7 +54,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NON_SOAP);
                 return AssertionStatus.BAD_REQUEST;
             }
-            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
             if (wssResults == null) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY);
                 context.setRequestPolicyViolated();
@@ -109,10 +106,10 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             throw new IOException("Request timestamp contained Created older than the maximum message age hard cap");
         }
 
-        SecurityToken[] signingTokens = timestamp.getSigningSecurityTokens();
+        XmlSecurityToken[] signingTokens = timestamp.getSigningSecurityTokens();
 
         for (int i = 0; i < signingTokens.length; i++) {
-            SecurityToken signingToken = signingTokens[i];
+            XmlSecurityToken signingToken = signingTokens[i];
 
             String messageIdStr = null;
             if (signingToken instanceof X509SecurityToken || signingToken instanceof SamlSecurityToken) {
@@ -120,7 +117,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
                 if (signingToken instanceof X509SecurityToken) {
                     // It was signed by a client certificate
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
-                    signingCert = ((X509SecurityToken)signingToken).asX509Certificate();
+                    signingCert = ((X509SecurityToken)signingToken).getCertificate();
                 } else {
                     // It was signed by a SAML holder-of-key assertion
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SAML_HOK);

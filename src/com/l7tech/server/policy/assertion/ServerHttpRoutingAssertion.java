@@ -6,22 +6,18 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.CookieUtils;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.GenericHttpHeaders;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.http.*;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.common.message.*;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HttpResponseKnob;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
@@ -40,17 +36,10 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.Header;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -65,16 +54,8 @@ import java.io.InputStream;
 import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -260,10 +241,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             httpHeaders.add(new GenericHttpHeader(HOST, hostValue.toString()));
 
             HttpRequestKnob httpRequestKnob = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
-            if (httpRequestKnob == null) {
+            String soapAction = httpRequestKnob == null ? null : httpRequestKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
+            if (httpRequestKnob == null || soapAction == null) {
                 httpHeaders.add(new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\""));
             } else {
-                httpHeaders.add(new GenericHttpHeader(SoapUtil.SOAPACTION, httpRequestKnob.getHeaderSingleValue(SoapUtil.SOAPACTION)));
+                httpHeaders.add(new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction));
             }
 
             if (httpRoutingAssertion.isTaiCredentialChaining()) {

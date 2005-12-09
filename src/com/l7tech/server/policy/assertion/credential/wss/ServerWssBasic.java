@@ -8,14 +8,12 @@ package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.UsernameToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -49,7 +47,7 @@ public class ServerWssBasic implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException("Request declared as XML but is not well-formed", e);
         }
@@ -59,15 +57,10 @@ public class ServerWssBasic implements ServerAssertion {
             context.setRequestPolicyViolated();
             return AssertionStatus.AUTH_REQUIRED;
         }
-        SecurityToken[] tokens = wssResults.getSecurityTokens();
+        XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
             if (tokens[i] instanceof UsernameToken) {
-                LoginCredentials creds = ((UsernameToken)tokens[i]).asLoginCredentials();
-                if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
-                    creds.setCredentialSourceAssertion(WssBasic.class);
-                    context.setCredentials(creds);
-                    return AssertionStatus.NONE;
-                }
+                return AssertionStatus.NONE;
             }
         }
         auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_CREDENTIALS);

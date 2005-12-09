@@ -6,10 +6,7 @@
 package com.l7tech.skunkworks.fim;
 
 import com.l7tech.common.message.Message;
-import com.l7tech.common.security.token.SamlSecurityToken;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.UsernameToken;
-import com.l7tech.common.security.token.UsernameTokenImpl;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
@@ -17,8 +14,6 @@ import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.WsTrustRequestType;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -62,7 +57,7 @@ public class FimWorkshopTest extends TestCase {
         Document clientRst = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_CLIENT_RST);
 
         String appliesTo = "http://s.example.com/services/EchoService";
-        SecurityToken usernameToken = new UsernameTokenImpl("testuser", "password".toCharArray());
+        XmlSecurityToken usernameToken = new UsernameTokenImpl("testuser", "password".toCharArray());
         Document got = TokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                             WsTrustRequestType.VALIDATE,
                                                                             usernameToken,
@@ -105,13 +100,13 @@ public class FimWorkshopTest extends TestCase {
 
         ProcessorResult result = processor.undecorateMessage(reqMess, null, null, null, null, null);
 
-        SecurityToken[] tokens = result.getSecurityTokens();
+        XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
         assertNotNull(tokens);
         assertTrue(tokens.length > 0);
 
         SamlSecurityToken saml = null;
         for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
+            XmlSecurityToken token = tokens[i];
             if (token instanceof SamlSecurityToken) {
                 if (saml != null) fail("More than one SamlSecurityToken found in request message");
                 saml = (SamlSecurityToken)token;
@@ -156,11 +151,9 @@ public class FimWorkshopTest extends TestCase {
 
         UsernameToken ut = (UsernameToken)got;
 
-        LoginCredentials pc = ut.asLoginCredentials();
-        assertNotNull(pc);
-        assertEquals("testuser", pc.getLogin());
-        assertNull(pc.getCredentials());
-        assertEquals(WssBasic.class, pc.getCredentialSourceAssertion());
+        assertEquals("testuser", ut.getUsername());
+        assertNull(ut.getPassword());
+        assertEquals(SecurityTokenType.WSS_USERNAME, ut.getType());
         log.info("Got username token: " + XmlUtil.nodeToFormattedString(ut.asElement()));
     }
 }

@@ -1,25 +1,14 @@
 package com.l7tech.common.security.wsfederation;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.net.ssl.SSLException;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
-
+import com.l7tech.common.html.HtmlConstants;
+import com.l7tech.common.http.*;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.wstrust.TokenServiceClient;
+import com.l7tech.common.util.*;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import org.cyberneko.html.parsers.DOMParser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -27,27 +16,20 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.l7tech.common.html.HtmlConstants;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.ParameterizedString;
-import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.wstrust.TokenServiceClient;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.ISO8601Date;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.saml.SamlAssertion;
+import javax.net.ssl.SSLException;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p>Client implementation for WS-Federation Passive Request Profile.</p>
@@ -78,7 +60,7 @@ public class FederationPassiveClient {
      * @see com.l7tech.common.security.wsfederation.InvalidTokenException
      * @see com.l7tech.common.security.wsfederation.ResponseStatusException
      */
-    public static SecurityToken obtainFederationToken(GenericHttpClient httpClient
+    public static XmlSecurityToken obtainFederationToken(GenericHttpClient httpClient
                                                      ,GenericHttpRequestParams httpParams
                                                      ,String realm
                                                      ,String replyUrl
@@ -150,9 +132,9 @@ public class FederationPassiveClient {
      * @see com.l7tech.common.security.wsfederation.InvalidTokenException
      * @see com.l7tech.common.security.wsfederation.ResponseStatusException
      */
-    public static SecurityToken exchangeFederationToken(GenericHttpClient httpClient
+    public static XmlSecurityToken exchangeFederationToken(GenericHttpClient httpClient
                                                        ,GenericHttpRequestParams httpParams
-                                                       ,SecurityToken requestorToken
+                                                       , XmlSecurityToken requestorToken
                                                        ,String context
                                                        ,boolean addTimestamp) throws IOException {
 
@@ -215,7 +197,7 @@ public class FederationPassiveClient {
      */
     public static Set postFederationToken(GenericHttpClient httpClient
                                          ,GenericHttpRequestParams httpParams
-                                         ,SecurityToken resourceToken
+                                         , XmlSecurityToken resourceToken
                                          ,String context
                                          ,boolean addTimestamp) throws IOException {
 
@@ -476,7 +458,7 @@ public class FederationPassiveClient {
     /**
      * Wraps up the token as in the original RSTR and encodes with other form parameters
      */
-    private static String buildRequestBody(SecurityToken token, String context, boolean addTimestamp) throws IOException {
+    private static String buildRequestBody(XmlSecurityToken token, String context, boolean addTimestamp) throws IOException {
         StringBuffer bodyBuffer = new StringBuffer(512);
 
         // add action

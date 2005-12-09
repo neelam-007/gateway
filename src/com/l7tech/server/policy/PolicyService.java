@@ -2,6 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
@@ -71,19 +72,28 @@ import java.util.logging.Logger;
  * Date: Aug 23, 2004<br/>
  */
 public class PolicyService extends ApplicationObjectSupport {
+    private static final Logger logger = Logger.getLogger(PolicyService.class.getName());
+
+    private final List allCredentialAssertions;
+    private final PrivateKey privateServerKey;
+    private final X509Certificate serverCert;
+    private final ServerPolicyFactory policyFactory;
+    private final FilterManager filterManager;
+    private final CertificateResolver certificateResolver;
+
     /**
-         * The supported credential sources used to determine whether the requester is
-         * allowd to download the policy
-         */
-    private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[]{
-          RequestWssSaml.newHolderOfKey(),
-          new RequestWssX509Cert(),
-          new SecureConversation(),
-          new HttpDigest(),
-          new WssBasic(),
-          new HttpBasic(),
-          new SslAssertion(true),
-        };
+     * The supported credential sources used to determine whether the requester is
+     * allowed to download the policy
+     */
+    private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
+        RequestWssSaml.newHolderOfKey(),
+        new RequestWssX509Cert(),
+        new SecureConversation(),
+        new HttpDigest(),
+        new WssBasic(),
+        new HttpBasic(),
+        new SslAssertion(true),
+    };
 
     public interface ServiceInfo {
         Assertion getPolicy();
@@ -104,8 +114,24 @@ public class PolicyService extends ApplicationObjectSupport {
                          FilterManager filterManager, 
                          CertificateResolver certificateResolver)
     {
+        if (privateServerKey == null || serverCert == null) {
+            throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+        }
+        if (policyFactory == null) {
+            throw new IllegalArgumentException("Policy Factory is required");
+        }
+        if (filterManager == null) {
+            throw new IllegalArgumentException("Filter Manager is required");
+        }
+
+        this.privateServerKey = privateServerKey;
+        this.serverCert = serverCert;
+        this.policyFactory = policyFactory;
+        this.filterManager = filterManager;
+        this.certificateResolver = certificateResolver;
+
         // populate all possible credentials sources
-        allCredentialAssertions = new ArrayList();
+        this.allCredentialAssertions = new ArrayList();
         for (int i = 0; i < ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
             Assertion assertion = ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
 
@@ -123,26 +149,6 @@ public class PolicyService extends ApplicationObjectSupport {
 
             allCredentialAssertions.add(assertion);
         }
-        if (privateServerKey == null || serverCert == null) {
-            throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
-        }
-        this.privateServerKey = privateServerKey;
-        if (privateServerKey == null) {
-            throw new IllegalArgumentException("Private Key is required");
-        }
-        this.serverCert = serverCert;
-        if (serverCert == null) {
-            throw new IllegalArgumentException("Server Certificate is required");
-        }
-        this.policyFactory = policyFactory;
-        if (policyFactory == null) {
-            throw new IllegalArgumentException("Policy Factory is required");
-        }
-        if (filterManager == null) {
-            throw new IllegalArgumentException("Filter Manager is required");
-        }
-        this.filterManager = filterManager;
-        this.certificateResolver = certificateResolver;
     }
 
 
@@ -152,9 +158,8 @@ public class PolicyService extends ApplicationObjectSupport {
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
                                                    PolicyGetter policyGetter,
-                                                   boolean pre32PolicyCompat) throws FilteringException,
-      IOException,
-      SAXException 
+                                                   boolean pre32PolicyCompat)
+            throws FilteringException, IOException, SAXException
     {
         WspWriter wspWriter = new WspWriter();
         wspWriter.setPre32Compat(pre32PolicyCompat);
@@ -190,17 +195,18 @@ public class PolicyService extends ApplicationObjectSupport {
                                                boolean signResponse,
                                                PolicyGetter policyGetter,
                                                boolean pre32PolicyCompat)
-      throws IOException, SAXException
+        throws IOException, SAXException
     {
         final XmlKnob reqXml = context.getRequest().getXmlKnob();
+        final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
         final Message response = context.getResponse();
 
         // We need a Document
-        Document requestDoc = null;
+        Document requestDoc;
         requestDoc = reqXml.getDocumentWritable();
 
         // Process request for message level security stuff
-        ProcessorResult wssOutput = null;
+        ProcessorResult wssOutput;
         try {
             WssProcessor trogdor = new WssProcessorImpl();
             wssOutput = trogdor.undecorateMessage(context.getRequest(),
@@ -208,15 +214,15 @@ public class PolicyService extends ApplicationObjectSupport {
                                                   privateServerKey,
                                                   SecureConversationContextManager.getInstance(),
                                                   certificateResolver);
-            reqXml.setProcessorResult(wssOutput);
+            reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));
             return;
         }
 
         // Which policy is requested?
-        String policyId = null;
-        String relatesTo = null;
+        String policyId;
+        String relatesTo;
         try {
             policyId = getRequestedPolicyId(requestDoc);
             relatesTo = SoapUtil.getL7aMessageId(requestDoc);
@@ -231,7 +237,7 @@ public class PolicyService extends ApplicationObjectSupport {
         Assertion targetPolicy = si.getPolicy();
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
-            Document fault = null;
+            Document fault;
             try {
                 fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
                                                                  "policy " + policyId + " not found",
@@ -270,7 +276,7 @@ public class PolicyService extends ApplicationObjectSupport {
             }
         }
 
-        Document policyDoc = null;
+        Document policyDoc;
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
                 policyDoc = respondToPolicyDownloadRequest(policyId, context.getAuthenticatedUser(), policyGetter, pre32PolicyCompat);
@@ -299,16 +305,13 @@ public class PolicyService extends ApplicationObjectSupport {
             response.initialize(wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, signResponse));
         } catch (GeneralSecurityException e) {
             response.initialize(exceptionToFault(e));
-            return;
         } catch (DecoratorException e) {
             response.initialize(exceptionToFault(e));
-            return;
         }
-        return;
     }
 
     private Document makeUnauthorizedPolicyDownloadFault(String msg, SoapFaultDetail faultDetail) {
-        Document fault = null;
+        Document fault;
         try {
             Element detailEl = null;
             if (msg != null) {
@@ -490,11 +493,4 @@ public class PolicyService extends ApplicationObjectSupport {
         return false;
     }
 
-    private final List allCredentialAssertions;
-    private final PrivateKey privateServerKey;
-    private final X509Certificate serverCert;
-    private final ServerPolicyFactory policyFactory;
-    private final FilterManager filterManager;
-    private final CertificateResolver certificateResolver;
-    private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }

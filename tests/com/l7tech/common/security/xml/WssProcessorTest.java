@@ -1,10 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
-<<<<<<< WssProcessorTest.java
-=======
- *
- * $Id$
->>>>>>> 1.37.4.3
  */
 
 package com.l7tech.common.security.xml;
@@ -95,7 +90,7 @@ public class WssProcessorTest extends TestCase {
             log.info("No elements were signed.");
 
 
-        SecurityToken[] tokens = result.getSecurityTokens();
+        XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
         assertTrue(tokens != null);
         if (tokens.length > 0) {
             log.info("The following security tokens were found:");

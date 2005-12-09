@@ -49,9 +49,9 @@ class SecurityTokenTypeMapping implements TypeMapping {
         String uri = XmlUtil.getTextValue(source).trim();
 
         if (PX509.matcher(uri).find())
-            return new TypedReference(getMappedClass(), SecurityTokenType.X509);
+            return new TypedReference(getMappedClass(), SecurityTokenType.WSS_X509_BST);
         if (PUT.matcher(uri).find())
-            return new TypedReference(getMappedClass(), SecurityTokenType.USERNAME);
+            return new TypedReference(getMappedClass(), SecurityTokenType.WSS_USERNAME);
         if (PSCT.matcher(uri).find())
             return new TypedReference(getMappedClass(), SecurityTokenType.WSSC_CONTEXT);
         if (PSAML.matcher(uri).find())

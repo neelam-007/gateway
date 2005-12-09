@@ -10,6 +10,6 @@ import javax.crypto.SecretKey;
 /**
  * @author mike
  */
-public interface SecretKeyToken extends SecurityToken {
+public interface SecretKeyToken extends XmlSecurityToken {
     SecretKey getSecretKey();
 }

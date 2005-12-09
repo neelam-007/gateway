@@ -261,6 +261,7 @@ public class SamlAssertionGenerator {
                                                            Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
         final String id = assertionDoc.getDocumentElement().getAttribute(SamlConstants.ATTR_ASSERTION_ID);
         template.setPrefix("ds");
+        template.setIndentation(false);
         Reference ref = template.createReference("#" + id);
         ref.addTransform(Transform.ENVELOPED);
         ref.addTransform(Transform.C14N_EXCLUSIVE);

@@ -6,7 +6,6 @@ package com.l7tech.common.message;
 
 import com.l7tech.common.mime.*;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -29,7 +28,6 @@ import java.util.Set;
 public class XmlFacet extends MessageFacet {
     private Document originalDocument = null;  // the original Document
     private Document workingDocument = null;  // the working Document
-    private ProcessorResult processorResult = null;
     private DecorationRequirements decorationRequirements = null;
     private Map decorationRequirementsForAlternateRecipients = new HashMap();
 
@@ -212,14 +210,6 @@ public class XmlFacet extends MessageFacet {
             TarariKnob.invalidate(getMessage());
         }
 
-        public ProcessorResult getProcessorResult() {
-            return processorResult;
-        }
-
-        public void setProcessorResult(ProcessorResult pr) {
-            processorResult = pr;
-        }
-
         /**
          * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements
          * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
@@ -234,8 +224,7 @@ public class XmlFacet extends MessageFacet {
             DecorationRequirements[] output = new DecorationRequirements[arraysize];
             int i = 0;
             for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-                DecorationRequirements dr = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(iterator.next());
-                output[i] = dr;
+                output[i] = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(iterator.next());
                 i++;
             }
             if (decorationRequirements != null) {

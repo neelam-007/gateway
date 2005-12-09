@@ -3,7 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.SecurityContextToken;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
@@ -47,7 +47,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.SC_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -59,9 +59,9 @@ public class ServerSecureConversation implements ServerAssertion {
             return AssertionStatus.FALSIFIED;
         }
 
-        SecurityToken[] tokens = wssResults.getSecurityTokens();
+        XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
+            XmlSecurityToken token = tokens[i];
             if (token instanceof SecurityContextToken) {
                 SecurityContextToken secConTok = (SecurityContextToken)token;
                 if (!secConTok.isPossessionProved()) {

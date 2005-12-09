@@ -8,10 +8,12 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
@@ -29,7 +31,6 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.springframework.context.ApplicationContext;
@@ -96,15 +97,20 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             auditor.logAndAudit(AssertionMessages.WSTRUST_NON_XML_MESSAGE);
             return AssertionStatus.FAILED;
         }
+        SecurityKnob requestSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
+        if (requestSec == null) {
+            auditor.logAndAudit(AssertionMessages.WSTRUST_NO_SUITABLE_CREDENTIALS);
+            return AssertionStatus.FAILED;
+        }
 
         // Try to get credentials from WSS processor results
-        SecurityToken originalToken = null;
+        XmlSecurityToken originalToken = null;
         Element originalTokenElement = null;
-        ProcessorResult wssProcResult = requestXml.getProcessorResult();
+        ProcessorResult wssProcResult = requestSec.getProcessorResult();
         if (wssProcResult != null) {
-            SecurityToken[] tokens = wssProcResult.getSecurityTokens();
+            XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
             for (int i = 0; i < tokens.length; i++) {
-                SecurityToken token = tokens[i];
+                XmlSecurityToken token = tokens[i];
                 if (token instanceof SamlAssertion || token instanceof UsernameToken) {
                     if (originalToken == null) {
                         originalToken = token;
@@ -122,8 +128,8 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             LoginCredentials creds = context.getCredentials();
             if (creds != null) {
                 Object payload = creds.getPayload();
-                if (payload instanceof SecurityToken) {
-                    originalToken = (SecurityToken)payload;
+                if (payload instanceof XmlSecurityToken) {
+                    originalToken = (XmlSecurityToken)payload;
                 } else if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
                     originalToken = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
                 }
@@ -196,9 +202,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             } else if (rstrObj instanceof UsernameToken) {
                 UsernameToken ut = (UsernameToken) rstrObj;
                 setCachedSecurityToken(context.getCache(), ut, getUsernameTokenExpiry(ut));
-                LoginCredentials creds = ut.asLoginCredentials();
-                context.setCredentials(creds);
-                decoReq.setUsernameTokenCredentials(new UsernameTokenImpl(creds));
+                decoReq.setUsernameTokenCredentials(new UsernameTokenImpl(ut.getUsername(), ut.getPassword()));
             } else {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_BAD_TYPE);
                 return AssertionStatus.AUTH_REQUIRED;
@@ -210,7 +214,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 deco.decorateMessage(requestDoc, decoReq);
                 requestXml.setDocument(requestDoc);
 
-                requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, certificateResolver));
+                requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, certificateResolver));
                 return AssertionStatus.NONE;
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);

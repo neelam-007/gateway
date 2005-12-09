@@ -5,7 +5,7 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -36,7 +36,7 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
 
     /** Create a mapping for parsing wsse:SecurityToken elements. */
     public SecurityTokenAssertionMapping() {
-        super(SecurityToken.class, "SecurityToken");
+        super(XmlSecurityToken.class, "SecurityToken");
         this.tokenType = null;
     }
 
@@ -70,11 +70,11 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
 
         if (SecurityTokenType.SAML_ASSERTION.equals(tokenType))
             return samlMapper.thawRequestWssSaml(source, visitor);
-        if (SecurityTokenType.USERNAME.equals(tokenType))
+        if (SecurityTokenType.WSS_USERNAME.equals(tokenType))
             return new TypedReference(WssBasic.class, new WssBasic());
         if (SecurityTokenType.WSSC_CONTEXT.equals(tokenType))
             return new TypedReference(SecureConversation.class,  new SecureConversation());
-        if (SecurityTokenType.X509.equals(tokenType))
+        if (SecurityTokenType.WSS_X509_BST.equals(tokenType))
             return new TypedReference(RequestWssX509Cert.class, new RequestWssX509Cert());
 
         throw new InvalidPolicyStreamException("Unsupported wsse:SecurityToken TokenType " + tokenType);

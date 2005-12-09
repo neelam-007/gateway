@@ -804,7 +804,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /**
      * Find the SSG name to display.  Uses the name from the SSG, if any; otherwise, the typed
      * in name; otherwise the string "&lt;New Gateway&gt;".
-     * @return
      */
     private String ssgName() {
         String result =  ssg.getSsgAddress();

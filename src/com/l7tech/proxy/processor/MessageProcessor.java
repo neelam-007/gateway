@@ -832,7 +832,7 @@ public class MessageProcessor {
             }
 
             response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(responseHeaders));
-            response.getXmlKnob().setProcessorResult(processorResult);
+            response.getSecurityKnob().setProcessorResult(processorResult);
             response.getHttpResponseKnob().setStatus(status);
             checkStatus(status, responseHeaders, url, ssg);
         } catch (WrappedInputStreamFactoryException e) {

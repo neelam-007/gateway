@@ -4,7 +4,7 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.token.EncryptedKey;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
@@ -66,7 +66,7 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResult = context.getRequest().getXmlKnob().getProcessorResult();
+            wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -137,9 +137,9 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     // which is expensive.
                     if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
                         // No EncryptedKeySHA1 reference on response yet; create one
-                        SecurityToken[] tokens = wssResult.getSecurityTokens();
+                        XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
                         for (int i = 0; i < tokens.length; i++) {
-                            SecurityToken token = tokens[i];
+                            XmlSecurityToken token = tokens[i];
                             if (token instanceof EncryptedKey) {
                                 // We'll just use the first one we see
                                 EncryptedKey ek = (EncryptedKey)token;

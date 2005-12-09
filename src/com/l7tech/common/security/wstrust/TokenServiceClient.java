@@ -78,7 +78,7 @@ public class TokenServiceClient {
                                                              PrivateKey clientPrivateKey,
                                                              SecurityTokenType desiredTokenType,
                                                              WsTrustRequestType requestType,
-                                                             SecurityToken base,
+                                                             XmlSecurityToken base,
                                                              String appliesToAddress,
                                                              String wstIssuerAddress,
                                                              Date timestampCreatedDate)
@@ -121,7 +121,7 @@ public class TokenServiceClient {
     private static Document requestSecurityTokenMessageTemplate(SecurityTokenType desiredTokenType,
                                                                 WsTrustRequestType requestType,
                                                                 String appliesToAddress,
-                                                                String wstIssuerAddress, SecurityToken base)
+                                                                String wstIssuerAddress, XmlSecurityToken base)
             throws IOException, SAXException
     {
         // TODO fix or remove this hack: if a saml: qname will be used, declare saml NS in root element
@@ -215,7 +215,7 @@ public class TokenServiceClient {
         return msg;
     }
 
-    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, WsTrustRequestType requestType, SecurityToken base, String appliesToAddress, String wstIssuerAddress) {
+    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, WsTrustRequestType requestType, XmlSecurityToken base, String appliesToAddress, String wstIssuerAddress) {
         try {
             return requestSecurityTokenMessageTemplate(desiredTokenType,
                     requestType,
@@ -301,7 +301,7 @@ public class TokenServiceClient {
                                                     PrivateKey clientPrivateKey,
                                                     WsTrustRequestType requestType,
                                                     SecurityTokenType tokenType,
-                                                    SecurityToken base,
+                                                    XmlSecurityToken base,
                                                     String appliesToAddress,
                                                     String wstIssuerAddress,
                                                     boolean requireWssSignedResponse)
@@ -553,7 +553,7 @@ public class TokenServiceClient {
                     throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
                 X509SecurityToken x509Token = null;
                 x509Token = (X509SecurityToken)signingSecurityToken;
-                X509Certificate signingCert = x509Token.asX509Certificate();
+                X509Certificate signingCert = x509Token.getCertificate();
                 byte[] signingPublicKeyBytes = signingCert.getPublicKey().getEncoded();
                 byte[] desiredPublicKeyBytes = serverCertificate.getPublicKey().getEncoded();
                 if (!Arrays.equals(signingPublicKeyBytes, desiredPublicKeyBytes))

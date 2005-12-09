@@ -1,15 +1,15 @@
 package com.l7tech.server;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -22,6 +22,7 @@ import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -35,23 +36,20 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.server.event.system.TokenServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.event.system.TokenServiceEvent;
-
+import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.beans.factory.InitializingBean;
 
 import javax.crypto.SecretKey;
 import javax.xml.soap.SOAPConstants;
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -74,7 +72,14 @@ import java.util.regex.Pattern;
  * User: flascell<br/>
  * Date: Aug 6, 2004<br/>
  */
-public class TokenServiceImpl  extends ApplicationObjectSupport implements TokenService {
+public class TokenServiceImpl extends ApplicationObjectSupport implements TokenService {
+    private static final SecureRandom rand = new SecureRandom();
+    private static final Logger logger = Logger.getLogger(TokenServiceImpl.class.getName());
+
+    private final PrivateKey serverPrivateKey;
+    private final X509Certificate serverCert;
+    private final ServerAssertion tokenServicePolicy;
+    private final CertificateResolver certificateResolver;
 
     /**
      * specify the server key and cert at construction time instead of letting the object try to retreive them
@@ -83,10 +88,11 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
         if (privateServerKey == null || serverCert == null) {
             throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         }
-        this.privateServerKey = privateServerKey;
+
+        this.serverPrivateKey = privateServerKey;
         this.serverCert = serverCert;
-        this.policyFactory = policyFactory;
         this.certificateResolver = certificateResolver;
+        this.tokenServicePolicy = policyFactory.makeServerPolicy(getGenericEnforcementPolicy());
     }
 
     public class TokenServiceException extends Exception {
@@ -126,16 +132,14 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
         try {
             try {
                 WssProcessor trogdor = new WssProcessorImpl();
-                final XmlKnob reqXml = context.getRequest().getXmlKnob();
-                X509Certificate serverSSLcert = getServerCert();
-                PrivateKey sslPrivateKey = getServerKey();
+                final SecurityKnob reqSec = context.getRequest().getSecurityKnob();
                 ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
                                                                       null,
-                                                                      serverSSLcert,
-                                                                      sslPrivateKey,
+                                                                      serverCert,
+                                                                      serverPrivateKey,
                                                                       SecureConversationContextManager.getInstance(),
                                                                       certificateResolver);
-                reqXml.setProcessorResult(wssOutput);
+                reqSec.setProcessorResult(wssOutput);
             } catch (IOException e) {
                 status = AssertionStatus.BAD_REQUEST;
                 throw new ProcessorException(e);
@@ -144,9 +148,8 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
                 throw new InvalidDocumentFormatException(e);
             }
 
-            ServerAssertion policy = getGenericEnforcementPolicy();
             try {
-                status = policy.checkRequest(context);
+                status = tokenServicePolicy.checkRequest(context);
             } catch (IOException e) {
                 throw new ProcessorException(e);
             } catch (PolicyAssertionException e) {
@@ -182,7 +185,7 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
                 return status;
             }
 
-            Document response = null;
+            Document response;
             if (isRequestForSecureConversationContext(context)) {
                 response = handleSecureConversationContextRequest(context, authenticatedUser);
             } else if (isRequestForSAMLToken(context)) {
@@ -241,39 +244,36 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
      *         HttpClientCert
      * </pre>
      */
-    private ServerAssertion getGenericEnforcementPolicy() {
-        if (tokenServicePolicy == null) {
-            AllAssertion base = new AllAssertion();
-            OneOrMoreAssertion root = new OneOrMoreAssertion();
+    private Assertion getGenericEnforcementPolicy() {
+        AllAssertion base = new AllAssertion();
+        OneOrMoreAssertion root = new OneOrMoreAssertion();
 
-            AllAssertion msgLvlBranch = new AllAssertion();
-            OneOrMoreAssertion validCredsOverMsgLvlSec = new OneOrMoreAssertion();
-            validCredsOverMsgLvlSec.addChild(new RequestWssX509Cert());
-            validCredsOverMsgLvlSec.addChild(new RequestWssSaml());
-            validCredsOverMsgLvlSec.addChild(new SecureConversation());
-            msgLvlBranch.addChild(validCredsOverMsgLvlSec);
-            msgLvlBranch.addChild(new RequestWssIntegrity());
+        AllAssertion msgLvlBranch = new AllAssertion();
+        OneOrMoreAssertion validCredsOverMsgLvlSec = new OneOrMoreAssertion();
+        validCredsOverMsgLvlSec.addChild(new RequestWssX509Cert());
+        validCredsOverMsgLvlSec.addChild(new RequestWssSaml());
+        validCredsOverMsgLvlSec.addChild(new SecureConversation());
+        msgLvlBranch.addChild(validCredsOverMsgLvlSec);
+        msgLvlBranch.addChild(new RequestWssIntegrity());
 
-            AllAssertion sslBranch = new AllAssertion();
-            sslBranch.addChild(new SslAssertion());
-            OneOrMoreAssertion validCredsOverSSL = new OneOrMoreAssertion();
-            validCredsOverSSL.addChild(new HttpBasic());
-            validCredsOverSSL.addChild(new WssBasic());
-            validCredsOverSSL.addChild(new HttpDigest());
-            validCredsOverSSL.addChild(new SslAssertion(true));
-            RequestWssSaml samlBearerToken = new RequestWssSaml();
-            validCredsOverSSL.addChild(samlBearerToken);
-            sslBranch.addChild(validCredsOverSSL);
+        AllAssertion sslBranch = new AllAssertion();
+        sslBranch.addChild(new SslAssertion());
+        OneOrMoreAssertion validCredsOverSSL = new OneOrMoreAssertion();
+        validCredsOverSSL.addChild(new HttpBasic());
+        validCredsOverSSL.addChild(new WssBasic());
+        validCredsOverSSL.addChild(new HttpDigest());
+        validCredsOverSSL.addChild(new SslAssertion(true));
+        RequestWssSaml samlBearerToken = new RequestWssSaml();
+        validCredsOverSSL.addChild(samlBearerToken);
+        sslBranch.addChild(validCredsOverSSL);
 
-            root.addChild(msgLvlBranch);
-            root.addChild(sslBranch);
+        root.addChild(msgLvlBranch);
+        root.addChild(sslBranch);
 
-            base.addChild(root);
+        base.addChild(root);
 
-            logger.fine("TokenService enforcing policy: " + base.toString());
-            tokenServicePolicy = policyFactory.makeServerPolicy(base);
-        }
-        return tokenServicePolicy;
+        logger.fine("TokenService enforcing policy: " + base.toString());
+        return base;
     }
 
     private Document handleSamlRequest(PolicyEnforcementContext context, boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws TokenServiceException,
@@ -291,7 +291,7 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
             if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
             options.setUseThumbprintForSignature(useThumbprintForSignature);
             options.setSignAssertion(true);
-            SignerInfo signerInfo = new SignerInfo(getServerKey(), new X509Certificate[] { getServerCert() });
+            SignerInfo signerInfo = new SignerInfo(serverPrivateKey, new X509Certificate[] { serverCert });
             SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);
             SamlAssertionGenerator generator = new SamlAssertionGenerator(signerInfo);
             Document signedAssertionDoc = generator.createAssertion(subjectStatement, options);
@@ -311,21 +311,17 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
 
     private Document handleSecureConversationContextRequest(PolicyEnforcementContext context, User requestor)
                                                                 throws TokenServiceException, GeneralSecurityException {
-        SecureConversationSession newSession = null;
+        SecureConversationSession newSession;
         try {
             newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor, context.getCredentials());
         } catch (DuplicateSessionException e) {
             throw new TokenServiceException(e);
         }
 
-        ProcessorResult wssOutput = null;
-        try {
-            wssOutput = context.getRequest().getXmlKnob().getProcessorResult();
-        } catch (SAXException e) {
-            throw new TokenServiceException(e); // should no happen at this point
-        }
+        ProcessorResult wssOutput;
+        wssOutput = context.getRequest().getSecurityKnob().getProcessorResult();
 
-        SecurityToken[] tokens = wssOutput.getSecurityTokens();
+        SecurityToken[] tokens = wssOutput.getXmlSecurityTokens();
         X509Certificate clientCert = null;
         for (int i = 0; i < tokens.length; i++) {
             SecurityToken token = tokens[i];
@@ -338,17 +334,17 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
                         logger.log(Level.WARNING,  msg);
                         throw new TokenServiceException(msg);
                     }
-                    clientCert = x509token.asX509Certificate();
+                    clientCert = x509token.getCertificate();
                 }
             }
         }
 
         // different response formats based on whether the request should be encrypted against a requesting cert
         // or whether the response's secret should be in clear and encrypted at transport level.
-        Document response = null;
+        Document response;
         Calendar exp = Calendar.getInstance();
         exp.setTimeInMillis(newSession.getExpiration());
-        String secretXml = null; // either an encryptedkey element or a binarysecret element
+        String secretXml; // either an encryptedkey element or a binarysecret element
         if (clientCert != null) {
             secretXml = produceEncryptedKeyXml(newSession.getSharedSecret(), clientCert);
         } else {
@@ -375,21 +371,18 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
     }
 
     private Document prepareSignedResponse( Document response ) throws TokenServiceException {
-        Element body = null;
+        Element body;
         try {
             body = SoapUtil.getBodyElement(response);
         } catch (InvalidDocumentFormatException e) {
             throw new TokenServiceException(e);
         }
 
-        X509Certificate serverSSLcert = getServerCert();
-        PrivateKey sslPrivateKey = getServerKey();
-
         WssDecorator wssDecorator = new WssDecoratorImpl();
         DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp();
-        req.setSenderMessageSigningCertificate(serverSSLcert);
-        req.setSenderMessageSigningPrivateKey(sslPrivateKey);
+        req.setSenderMessageSigningCertificate(serverCert);
+        req.setSenderMessageSigningPrivateKey(serverPrivateKey);
         req.getElementsToSign().add(body);
 
         try {
@@ -455,7 +448,7 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
      */
     private boolean isRequestForSecureConversationContext(PolicyEnforcementContext context)
                                                                         throws InvalidDocumentFormatException {
-        Document doc = null;
+        Document doc;
         try {
             XmlKnob reqXml = context.getRequest().getXmlKnob();
             doc = reqXml.getDocumentReadOnly();
@@ -472,8 +465,13 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
         Element body = SoapUtil.getBodyElement(doc);
         // body must include wst:RequestSecurityToken element
         Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
-        if (!maybeRSTEl.getLocalName().equals(RST_ELNAME)) {
-            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
+        if (maybeRSTEl == null) {
+            logger.warning("No " + SoapUtil.WST_REQUESTSECURITYTOKEN + " found.");
+            return false;
+        }
+        String rstName = maybeRSTEl.getLocalName();
+        if (!SoapUtil.WST_REQUESTSECURITYTOKEN.equals(rstName)) {
+            logger.fine("Body's child does not seem to be a RST (" + rstName + ")");
             return false;
         }
         if (!Arrays.asList(SoapUtil.WST_NAMESPACE_ARRAY).contains(maybeRSTEl.getNamespaceURI())) {
@@ -481,17 +479,17 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
             return false;
         }
         // validate <wst:TokenType>http://schemas.xmlsoap.org/ws/2004/04/sct</wst:TokenType>
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, TOKTYPE_ELNAME);
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_TOKENTYPE);
         if (tokenTypeEl == null) {
             logger.warning("Token type not specified. This is not supported.");
             return false;
         }
         String value = XmlUtil.getTextValue(tokenTypeEl);
-        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct")) {
+        if (!"http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct".equals(value)) {
             return false;
         }
         // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, REQTYPE_ELNAME);
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_REQUESTTYPE);
         if (reqTypeEl == null) {
             logger.warning("Request type not specified. This is not supported.");
             return false;
@@ -513,7 +511,7 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
      * responsibility of the policy
      */
     private boolean isRequestForSAMLToken(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
-        Document doc = null;
+        Document doc;
         try {
             XmlKnob reqXml = context.getRequest().getXmlKnob();
             doc = reqXml.getDocumentReadOnly();
@@ -531,7 +529,7 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
         Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
 
         // body must include wst:RequestSecurityToken element
-        if (!maybeRSTEl.getLocalName().equals(RST_ELNAME)) {
+        if (!maybeRSTEl.getLocalName().equals(SoapUtil.WST_REQUESTSECURITYTOKEN)) {
             logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
             return false;
         }
@@ -539,14 +537,14 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
             logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
             return false;
         }
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, TOKTYPE_ELNAME);
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_TOKENTYPE);
         if (tokenTypeEl == null) {
             logger.warning("Token type not specified. This is not supported.");
             return false;
         }
 
         // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, REQTYPE_ELNAME);
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_REQUESTTYPE);
         if (reqTypeEl == null) {
             logger.warning("Request type not specified. This is not supported.");
             return false;
@@ -563,14 +561,6 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
             return true;
         logger.warning("TokenType '" + tokenType + "' is not recognized as calling for a saml:Assertion");
         return false;
-    }
-
-    private synchronized PrivateKey getServerKey() {
-        return privateServerKey;
-    }
-
-    private synchronized X509Certificate getServerCert() {
-        return serverCert;
     }
 
     private String getRemoteAddress(PolicyEnforcementContext pec) {
@@ -604,28 +594,18 @@ public class TokenServiceImpl  extends ApplicationObjectSupport implements Token
         return user.getName()!=null ? user.getName() : user.getLogin();      
     }
 
-    private PrivateKey privateServerKey = null;
-    private X509Certificate serverCert = null;
-    private ServerAssertion tokenServicePolicy = null;
-    private ServerPolicyFactory policyFactory = null;
-    private CertificateResolver certificateResolver = null;
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private final static String RST_ELNAME = "RequestSecurityToken";
-    private final static String TOKTYPE_ELNAME = "TokenType";
-    private final static String REQTYPE_ELNAME = "RequestType";
-    private final static SecureRandom rand = new SecureRandom();
-
-    private final String WST_RST_RESPONSE_PREFIX = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
-                                    "<soap:Body>" +
-                                      "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\" " +
-                                                                        "xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE + "\" " +
-                                                                        "xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\" " +
-                                                                        "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
-                                        "<wst:RequestedSecurityToken>";
-
-    private static final String WST_RST_RESPONSE_INFIX = "</wst:RequestedSecurityToken>";
-    private static final String WST_RST_RESPONSE_SUFFIX = "</wst:RequestSecurityTokenResponse>" +
-                                                "</soap:Body>" +
-                                            "</soap:Envelope>";
+    private final String WST_RST_RESPONSE_PREFIX =
+            "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+              "<soap:Body>" +
+                "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\" " +
+                  "xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE + "\" " +
+                  "xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\" " +
+                  "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
+                  "<wst:RequestedSecurityToken>";
+    private static final String WST_RST_RESPONSE_INFIX =
+                  "</wst:RequestedSecurityToken>";
+    private static final String WST_RST_RESPONSE_SUFFIX =
+                "</wst:RequestSecurityTokenResponse>" +
+              "</soap:Body>" +
+            "</soap:Envelope>";
 }

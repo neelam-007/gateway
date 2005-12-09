@@ -5,8 +5,11 @@
  */
 package com.l7tech.policy.assertion.credential;
 
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -23,7 +26,10 @@ import java.util.Map;
  *
  * @author alex
  */
-public class LoginCredentials {
+public class LoginCredentials implements SecurityToken {
+    private String elementId;
+    private Element element;
+
     public static LoginCredentials makeCertificateCredentials(X509Certificate cert, Class credentialSource) {
         String login = getCn(cert);
 
@@ -67,6 +73,7 @@ public class LoginCredentials {
         this.format = format;
         this.credentialSourceAssertion = credentialSource;
         this.payload = payload;
+
         if (format.isClientCert() && !(payload instanceof X509Certificate))
             throw new IllegalArgumentException("Must provide a certificate when creating client cert credentials");
     }
@@ -94,8 +101,6 @@ public class LoginCredentials {
 
     /**
      * Could be null.
-     *
-     * @return
      */
     public String getRealm() {
         return realm;
@@ -107,8 +112,6 @@ public class LoginCredentials {
 
     /**
      * Could be null.
-     *
-     * @return
      */
     public Object getPayload() {
         return payload;
@@ -159,4 +162,18 @@ public class LoginCredentials {
     private CredentialFormat format;
     private Object payload;
     private long authInstant;
+
+    public SecurityTokenType getType() {
+        if (format == CredentialFormat.CLIENTCERT) {
+            return SecurityTokenType.HTTP_CLIENT_CERT;
+        } else if (format == CredentialFormat.SAML) {
+            return SecurityTokenType.SAML_ASSERTION;
+        } else if (format == CredentialFormat.DIGEST) {
+            return SecurityTokenType.HTTP_DIGEST;
+        } else if (format == CredentialFormat.CLEARTEXT) {
+            return SecurityTokenType.HTTP_BASIC;
+        } else {
+            return SecurityTokenType.UNKNOWN;
+        }
+    }
 }

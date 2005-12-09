@@ -7,7 +7,6 @@
 package com.l7tech.common.message;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -17,6 +16,8 @@ import java.security.cert.CertificateException;
 
 /**
  * Aspect of Message that contains an XML document.
+ * <p>
+ * TODO investigate employing {@link org.apache.xerces.dom.NodeImpl#isReadOnly()} 
  */
 public interface XmlKnob extends MessageKnob {
     /**
@@ -84,20 +85,6 @@ public interface XmlKnob extends MessageKnob {
      * @param document the new Document.  Must not be null.
      */
     void setDocument(Document document);
-
-    /**
-     * Obtain the undecoration results for this Message, if it was undecorated.
-     *
-     * @return the ProcessorResult, or null if this Message has not been undecorated.
-     */
-    ProcessorResult getProcessorResult();
-
-    /**
-     * Store the undecoration results for this Message, if it has been undecorated.
-     *
-     * @param pr the results of undecorating this message, or null to remove any existing results.
-     */
-    void setProcessorResult(ProcessorResult pr);
 
     /**
      * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements

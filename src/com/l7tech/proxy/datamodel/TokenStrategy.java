@@ -6,17 +6,17 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.proxy.datamodel.exceptions.*;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 /**
- * Interface for classes that retrieve {@link SecurityToken}s.
+ * Interface for classes that retrieve {@link com.l7tech.common.security.token.XmlSecurityToken}s.
  * <p>
- * This class uses the term "immediately available" to denote whether a {@link SecurityToken}
+ * This class uses the term "immediately available" to denote whether a {@link com.l7tech.common.security.token.XmlSecurityToken}
  * is present or easy to acquire:
  * <p>
  * Tokens should be considered to be Immediately Available if they are:
@@ -53,7 +53,7 @@ public interface TokenStrategy {
     SecurityToken getIfPresent();
 
     /**
-     * @return the {@link SecurityTokenType} of the token that would be returned from {@link #getIfPresent} and {@link #getOrCreate()}.
+     * @return the {@link SecurityTokenType} of the token that would be returned from {@link #getIfPresent} and {@link #getOrCreate(Ssg)}.
      */
     SecurityTokenType getType();
 

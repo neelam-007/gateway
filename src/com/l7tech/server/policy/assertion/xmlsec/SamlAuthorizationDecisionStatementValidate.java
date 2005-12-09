@@ -92,9 +92,14 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
 
         for (int i = 0; i < actionArray.length; i++) {
             ActionType actionType = actionArray[i];
-            if (constraintsAction.equals(actionType.getStringValue())) {
-                logger.finer("Matched Action " + constraintsAction);
-                if (isNullOrEmpty(constraintsActionNameSpace)) {
+            if (!isNullOrEmpty(constraintsAction) || constraintsAction.equals(actionType.getStringValue())) {
+                if (isNullOrEmpty(constraintsAction)) {
+                    logger.finer("Matched empty Action");
+                } else {
+                    logger.finer("Matched Action " + constraintsAction);
+                }
+
+                if (!isNullOrEmpty(constraintsActionNameSpace)) {
                     if (!constraintsActionNameSpace.equals(actionType.getNamespace())) {
                         continue;
                     }
@@ -103,7 +108,7 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
                 return;
             }
         }
-        if (isNullOrEmpty(constraintsActionNameSpace)) {
+        if (!isNullOrEmpty(constraintsActionNameSpace)) {
             validationResults.add(new SamlAssertionValidate.Error("No match action/namespace: {0}/{1}", authorizationDecisionStatementType.toString(),
                                                                                        new Object[]{constraintsAction, constraintsActionNameSpace}, null));
         } else {
@@ -112,6 +117,6 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
     }
 
     private boolean isNullOrEmpty(String s) {
-        return s != null && !"".equals(s);
+        return s == null || "".equals(s);
     }
 }

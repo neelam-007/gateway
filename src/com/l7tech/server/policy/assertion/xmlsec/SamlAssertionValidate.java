@@ -78,7 +78,7 @@ public class SamlAssertionValidate {
         try {
 
             SamlAssertion assertion = null;
-            SecurityToken[] tokens = wssResults.getSecurityTokens();
+            XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
             for (int i = 0; i < tokens.length; i++) {
                 SecurityToken token = tokens[i];
                 if (token.getType() == SecurityTokenType.SAML_ASSERTION) {
@@ -240,7 +240,7 @@ public class SamlAssertionValidate {
                 if (!(signingSecurityToken instanceof X509SecurityToken)) {
                     throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
                 }
-                return ((X509SecurityToken)signingSecurityToken).asX509Certificate();
+                return ((X509SecurityToken)signingSecurityToken).getCertificate();
             }
         }
         return null;

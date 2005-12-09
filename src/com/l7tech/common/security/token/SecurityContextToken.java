@@ -11,7 +11,7 @@ import com.l7tech.common.security.xml.processor.SecurityContext;
 /**
  * Represents a WS-SecureConversation SecurityContextToken.
  */
-public interface SecurityContextToken extends SecurityToken {
+public interface SecurityContextToken extends XmlSecurityToken {
     SecurityContext getSecurityContext();
     String getContextIdentifier();
     boolean isPossessionProved();

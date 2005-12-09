@@ -6,10 +6,10 @@ import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SamlSecurityToken;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.SimpleCertificateResolver;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
@@ -151,10 +151,10 @@ public class SamlProcessingTest extends TestCase {
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
                 ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
-                SecurityToken[] tokens = result.getSecurityTokens();
+                XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
-                    SecurityToken token = tokens[k];
+                    XmlSecurityToken token = tokens[k];
                     if (token instanceof SamlSecurityToken) {
                         found = true;
                     }
@@ -196,10 +196,10 @@ public class SamlProcessingTest extends TestCase {
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
                 ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
-                SecurityToken[] tokens = result.getSecurityTokens();
+                XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
-                    SecurityToken token = tokens[k];
+                    XmlSecurityToken token = tokens[k];
                     if (token instanceof SamlSecurityToken) {
                         found = true;
                     }
@@ -241,10 +241,10 @@ public class SamlProcessingTest extends TestCase {
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
                 ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
-                SecurityToken[] tokens = result.getSecurityTokens();
+                XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
-                    SecurityToken token = tokens[k];
+                    XmlSecurityToken token = tokens[k];
                     if (token instanceof SamlSecurityToken) {
                         found = true;
                     }
@@ -285,10 +285,10 @@ public class SamlProcessingTest extends TestCase {
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
                 ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
-                SecurityToken[] tokens = result.getSecurityTokens();
+                XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
-                    SecurityToken token = tokens[k];
+                    XmlSecurityToken token = tokens[k];
                     if (token instanceof SamlSecurityToken) {
                         found = true;
                     }

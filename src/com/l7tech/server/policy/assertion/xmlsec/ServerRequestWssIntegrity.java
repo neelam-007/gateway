@@ -1,7 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.token.ParsedElement;
 import com.l7tech.common.security.token.SigningSecurityToken;
 import com.l7tech.common.security.token.SignedElement;
@@ -44,17 +43,9 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus result =  super.checkRequest(context);
         if (result == AssertionStatus.NONE) {
-            XmlKnob reqXml = null;
-            ProcessorResult wssResults = null;
-            try {
-                reqXml = context.getRequest().getXmlKnob();
-                wssResults = reqXml.getProcessorResult();
-                if (wssResults != null && wssResults.isWsse11Seen() && wssResults.getLastSignatureValue() != null) {
-                    context.addDeferredAssertion(this, deferredSignatureConfirmation(wssResults.getLastSignatureValue()));
-                }
-            } catch (SAXException e) {
-                // Can't heppen; log and ignore.
-                logger.info("Signature check succeeded, but request not parsed");
+            ProcessorResult wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            if (wssResults != null && wssResults.isWsse11Seen() && wssResults.getLastSignatureValue() != null) {
+                context.addDeferredAssertion(this, deferredSignatureConfirmation(wssResults.getLastSignatureValue()));
             }
         }
         return result;
@@ -63,7 +54,7 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
     // A deferred job that tries to attach a SignatureConfirmation to the response, if the response is SOAP.
     private ServerAssertion deferredSignatureConfirmation(final String signatureConfirmation) {
         return new ServerAssertion() {
-            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 
                 try {
@@ -134,7 +125,7 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
 
     private Set getSecurityTokenElements(ProcessorResult wssResults) {
         Set tokenElements = new HashSet();
-        SecurityToken[] sts = wssResults.getSecurityTokens();
+        SecurityToken[] sts = wssResults.getXmlSecurityTokens();
         if(sts!=null) {
             for (int i = 0; i < sts.length; i++) {
                 SecurityToken st = sts[i];

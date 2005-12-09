@@ -1,7 +1,7 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.token.SecurityContextToken;
-import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -71,15 +71,15 @@ public class ClientSecureConversation extends ClientAssertion {
             PolicyAssertionException, InvalidDocumentFormatException
     {
         // Make sure the response's WssProcessor.Results contain a reference to the Secure Conversation
-        ProcessorResult pr = context.getResponse().getXmlKnob().getProcessorResult();
+        ProcessorResult pr = context.getResponse().getSecurityKnob().getProcessorResult();
         if (pr == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;
         }
-        SecurityToken[] tokens = pr.getSecurityTokens();
+        XmlSecurityToken[] tokens = pr.getXmlSecurityTokens();
         SecurityContextToken sct = null;
         for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
+            XmlSecurityToken token = tokens[i];
             if (token instanceof SecurityContextToken) {
                 SecurityContextToken checkSct = (SecurityContextToken)token;
                 if (!checkSct.isPossessionProved()) {

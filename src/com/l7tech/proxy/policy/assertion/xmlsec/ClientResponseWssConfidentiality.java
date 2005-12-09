@@ -54,13 +54,13 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
             return AssertionStatus.NONE;
         }
         Document soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
-        ProcessorResult wssRes = context.getResponse().getXmlKnob().getProcessorResult();
+        ProcessorResult wssRes = context.getResponse().getSecurityKnob().getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;
         }
 
-        ProcessorResultUtil.SearchResult result = null;
+        ProcessorResultUtil.SearchResult result;
         try {
             EncryptedElement[] elementsThatWereEncrypted = wssRes.getElementsThatWereEncrypted();
             String xEncAlgorithm = data.getXEncAlgorithm();

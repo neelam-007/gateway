@@ -61,7 +61,7 @@ public class WssDecoratorImpl implements WssDecorator {
         String wsuNS = SoapUtil.WSU_NAMESPACE;
 
         String getBase64EncodingTypeUri() {
-            return wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)
+            return SoapUtil.SECURITY_NAMESPACE.equals(wsseNS)
                     ? SoapUtil.ENCODINGTYPE_BASE64BINARY
                     : SoapUtil.ENCODINGTYPE_BASE64BINARY_2;     // lyonsm: ??? what is this for?  It hardcodes wsse: prefix!
         }
@@ -156,11 +156,11 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         }
 
-        Element signature = null;
+        Element signature;
         Element addedEncKey = null;
         XencUtil.XmlEncKey addedEncKeyXmlEncKey = null;
         if (dreq.getElementsToSign().size() > 0) {
-            Key senderSigningKey = null;
+            Key senderSigningKey;
             Element keyInfoReferenceTarget = null;
             String keyInfoKeyIdValue = null;
             String keyInfoValueTypeURI = null;
@@ -234,13 +234,12 @@ public class WssDecoratorImpl implements WssDecorator {
         if (dreq.getElementsToEncrypt().size() > 0) {
             if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
                 // Encrypt using the EncryptedKey we already added
-                Element keyInfoReferenceTarget = addedEncKey;
                 addEncryptedReferenceList(c,
                                           securityHeader,
                                           addedEncKeyXmlEncKey,
                                           (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
                                           xencDesiredNextSibling,
-                                          keyInfoReferenceTarget,
+                                          addedEncKey,
                                           null,
                                           null);
             } else if (sct != null) {
@@ -443,7 +442,7 @@ public class WssDecoratorImpl implements WssDecorator {
             signedIds[i] = getOrCreateWsuId(c, elementsToSign[i], null);
         }
 
-        String signaturemethod = null;
+        String signaturemethod;
         if (senderSigningKey instanceof RSAPrivateKey)
             signaturemethod = SignatureMethod.RSA;
         else if (senderSigningKey instanceof DSAPrivateKey)
@@ -458,6 +457,7 @@ public class WssDecoratorImpl implements WssDecorator {
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementsToSign[0].getOwnerDocument(),
             XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
+        template.setIndentation(false);
         template.setPrefix("ds");
         final Map strTransformsNodeToNode = new HashMap();
         for (int i = 0; i < elementsToSign.length; i++) {
@@ -639,7 +639,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 continue;
             }
 
-            Element encryptedElement = null;
+            Element encryptedElement;
             try {
                 encryptedElement = XencUtil.encryptElement(element, encKey);
             } catch (XencUtil.XencException e) {
@@ -708,13 +708,13 @@ public class WssDecoratorImpl implements WssDecorator {
 
         byte[] recipSki = CertUtils.getSKIBytesFromCert(recipientCertificate);
         if (recipSki != null) {
-            if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+            if (SoapUtil.SECURITY_NAMESPACE.equals(c.wsseNS)) {
                 addKeyInfoToEncryptedKey(encryptedKey, recipSki, SoapUtil.VALUETYPE_SKI, c);
             } else {
                 addKeyInfoToEncryptedKey(encryptedKey, recipSki, SoapUtil.VALUETYPE_SKI_2, c);
             }
         } else {
-            if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+            if (SoapUtil.SECURITY_NAMESPACE.equals(c.wsseNS)) {
                 addKeyInfoToEncryptedKey(encryptedKey, recipientCertificate.getEncoded(), SoapUtil.VALUETYPE_X509, c);
             } else {
                 addKeyInfoToEncryptedKey(encryptedKey, recipientCertificate.getEncoded(), SoapUtil.VALUETYPE_X509_2, c);
@@ -733,7 +733,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
             }
-            Element encryptedElement = null;
+            Element encryptedElement;
             try {
                 encryptedElement = XencUtil.encryptElement(element, encKey);
             } catch (XencUtil.XencException e) {
@@ -808,7 +808,7 @@ public class WssDecoratorImpl implements WssDecorator {
             SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
         element.setPrefix(securityHeader.getPrefix());
 
-        if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
+        if (SoapUtil.SECURITY_NAMESPACE.equals(c.wsseNS)) {
             element.setAttribute("ValueType", SoapUtil.VALUETYPE_X509);
             element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
         } else {
@@ -837,7 +837,7 @@ public class WssDecoratorImpl implements WssDecorator {
             throw new InvalidDocumentFormatException(error);
         }
 
-        Element securityHeader = null;
+        Element securityHeader;
         if (oldSecurity == null) {
             securityHeader = SoapUtil.makeSecurityElement(message, wsseNS, actor);
         } else {

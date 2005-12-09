@@ -9,5 +9,6 @@ package com.l7tech.common.security.token;
 /**
  * @author mike
  */
-public interface X509SecurityToken extends SigningSecurityToken, HasCertificate {
+public interface XmlSecurityToken extends ParsedElement, SecurityToken {
+    String getElementId();
 }

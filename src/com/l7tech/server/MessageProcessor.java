@@ -9,10 +9,7 @@ import com.l7tech.common.LicenseManager;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.message.HttpRequestKnob;
-import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.SecurityActor;
@@ -73,7 +70,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
          * @param wssd         the Wss Decorator
          * @param pkey         the server private key
          * @param pkey         the server certificate
-         * @param auditContext the audit context
          * @throws IllegalArgumentException if any of the arguments is null
          */
     public MessageProcessor(ServiceManager sm,
@@ -139,13 +135,13 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             if (isSoap && hasSecurity) {
                 WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
                 try {
-                    final XmlKnob reqXml = request.getXmlKnob();
+                    final SecurityKnob reqSec = request.getSecurityKnob();
                     wssOutput = trogdor.undecorateMessage(request,
                                                           null, serverCertificate,
                                                           serverPrivateKey,
                                                           SecureConversationContextManager.getInstance(),
                                                           certificateResolver);
-                    reqXml.setProcessorResult(wssOutput);
+                    reqSec.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {
                     auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
                     // this shouldn't be possible now
@@ -273,6 +269,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         final XmlKnob respXml = response.getXmlKnob();
                         DecorationRequirements[] allrequirements = respXml.getDecorationRequirements();
                         XmlKnob reqXml = request.getXmlKnob();
+                        SecurityKnob reqSec = request.getSecurityKnob();
                         doc = respXml.getDocumentWritable(); // writable, we are about to decorate it
                         if (request.isSoap()) {
                             final String messageId = SoapUtil.getL7aMessageId(reqXml.getDocumentReadOnly());
@@ -283,9 +280,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                         // if the request was processed on the noactor sec header instead of the l7 sec actor, then
                         // the response's decoration requirements should map this (if applicable)
-                        if (reqXml.getProcessorResult() != null &&
-                              reqXml.getProcessorResult().getProcessedActor() != null &&
-                              reqXml.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
+                        if (reqSec.getProcessorResult() != null &&
+                              reqSec.getProcessorResult().getProcessedActor() != null &&
+                              reqSec.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
                             // go find the l7 decoreq and adjust the actor
                             for (int i = 0; i < allrequirements.length; i++) {
                                 if (SecurityActor.L7ACTOR.getValue().equals(allrequirements[i].getSecurityHeaderActor())) {

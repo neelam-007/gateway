@@ -10,10 +10,7 @@ import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.security.token.ParsedElement;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SignedElement;
-import com.l7tech.common.security.token.X509SecurityToken;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -177,16 +174,16 @@ public class PolicyServiceClient {
             throw new ProcessorException(e); // can't happen
         }
 
-        SecurityToken[] tokens = result.getSecurityTokens();
+        XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
         X509Certificate signingCert = null;
         for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
+            XmlSecurityToken token = tokens[i];
             if (token instanceof X509SecurityToken) {
                 X509SecurityToken x509Token = (X509SecurityToken)token;
                 if (x509Token.isPossessionProved()) {
                     if (signingCert != null)
                         throw new InvalidDocumentFormatException("Policy server response contained multiple proved X509 security tokens.");
-                    signingCert = x509Token.asX509Certificate();
+                    signingCert = x509Token.getCertificate();
                     if (!CertUtils.certsAreEqual(signingCert, serverCertificate)) {
                         throw new ServerCertificateUntrustedException("Policy server response was signed, but not by the server certificate we expected.");
                     }

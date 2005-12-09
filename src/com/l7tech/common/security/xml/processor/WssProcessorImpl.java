@@ -774,7 +774,7 @@ public class WssProcessorImpl implements WssProcessor {
               "referenced properly by a subsequent signature.");
         }
         final X509Certificate finalcert = referencedCert;
-        SecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(finalcert,
+        XmlSecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(finalcert,
                                                                            binarySecurityTokenElement);
         cntx.securityTokens.add(rememberedSecToken);
         cntx.x509TokensById.put(wsuId, rememberedSecToken);
@@ -790,7 +790,7 @@ public class WssProcessorImpl implements WssProcessor {
                 samlToken.verifyEmbeddedIssuerSignature();
 
                 class EmbeddedSamlSignatureToken implements X509SecurityToken {
-                    public X509Certificate asX509Certificate() {
+                    public X509Certificate getCertificate() {
                         return samlToken.getIssuerCertificate();
                     }
 
@@ -820,7 +820,7 @@ public class WssProcessorImpl implements WssProcessor {
                     }
 
                     public SecurityTokenType getType() {
-                        return SecurityTokenType.X509;
+                        return SecurityTokenType.WSS_X509_BST;
                     }
 
                     public String getElementId() {
@@ -1251,8 +1251,8 @@ public class WssProcessorImpl implements WssProcessor {
                 return (EncryptedElement[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
             }
 
-            public SecurityToken[] getSecurityTokens() {
-                return (SecurityToken[])cntx.securityTokens.toArray(PROTOTYPE_SECURITYTOKEN_ARRAY);
+            public XmlSecurityToken[] getXmlSecurityTokens() {
+                return (XmlSecurityToken[])cntx.securityTokens.toArray(PROTOTYPE_SECURITYTOKEN_ARRAY);
             }
 
             public WssTimestamp getTimestamp() {
@@ -1272,7 +1272,7 @@ public class WssProcessorImpl implements WssProcessor {
                     return cntx.timestamp.asElement().getNamespaceURI();
                 } else if (cntx.securityTokens != null && !cntx.securityTokens.isEmpty()) {
                     for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
-                        SecurityToken token = (SecurityToken)i.next();
+                        XmlSecurityToken token = (XmlSecurityToken)i.next();
                         NamedNodeMap attributes = token.asElement().getAttributes();
                         for (int ii = 0; ii < attributes.getLength(); ii++) {
                             Attr n = (Attr)attributes.item(ii);
@@ -1408,7 +1408,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public SecurityTokenType getType() {
-            return SecurityTokenType.X509;
+            return SecurityTokenType.WSS_X509_BST;
         }
 
         public String getElementId() {
@@ -1419,7 +1419,7 @@ public class WssProcessorImpl implements WssProcessor {
             return finalcert;
         }
 
-        public X509Certificate asX509Certificate() {
+        public X509Certificate getCertificate() {
             return finalcert;
         }
 
@@ -1437,7 +1437,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public SecurityTokenType getType() {
-            return SecurityTokenType.X509;
+            return SecurityTokenType.WSS_X509_BST;
         }
 
         public String getElementId() {
@@ -1448,7 +1448,7 @@ public class WssProcessorImpl implements WssProcessor {
             return finalcert;
         }
 
-        public X509Certificate asX509Certificate() {
+        public X509Certificate getCertificate() {
             return finalcert;
         }
 
@@ -1480,18 +1480,18 @@ public class WssProcessorImpl implements WssProcessor {
             return !signingSecurityTokens.isEmpty();
         }
 
-        public SecurityToken[] getSigningSecurityTokens() {
-            return (SecurityToken[])signingSecurityTokens.toArray(new SecurityToken[0]);
+        public XmlSecurityToken[] getSigningSecurityTokens() {
+            return (XmlSecurityToken[])signingSecurityTokens.toArray(new XmlSecurityToken[0]);
         }
 
-        private void addSigningSecurityToken(SecurityToken token) {
+        private void addSigningSecurityToken(XmlSecurityToken token) {
             signingSecurityTokens.add(token);
         }
     }
 
     private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new EncryptedElement[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
-    private static final SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new SecurityToken[0];
+    private static final XmlSecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new XmlSecurityToken[0];
 
     private static class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
         private final SecretKey finalKey;

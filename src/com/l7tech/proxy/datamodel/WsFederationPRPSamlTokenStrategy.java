@@ -1,15 +1,37 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
+import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.wsfederation.FederationPassiveClient;
+import com.l7tech.common.security.wsfederation.InvalidTokenException;
+import com.l7tech.common.security.wsfederation.ResponseStatusException;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.EncryptionUtil;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.gui.Gui;
+import com.l7tech.proxy.gui.dialogs.LogonDialog;
+import com.l7tech.proxy.ssl.*;
+import com.l7tech.proxy.util.SslUtils;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
+import javax.swing.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -17,36 +39,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
-import javax.swing.*;
-
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SecurityTokenType;
-import com.l7tech.common.security.wsfederation.FederationPassiveClient;
-import com.l7tech.common.security.wsfederation.InvalidTokenException;
-import com.l7tech.common.security.wsfederation.ResponseStatusException;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.EncryptionUtil;
-import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.gui.Gui;
-import com.l7tech.proxy.gui.dialogs.LogonDialog;
-import com.l7tech.proxy.ssl.ClientProxyKeyManager;
-import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
-import com.l7tech.proxy.ssl.ClientProxyTrustManager;
-import com.l7tech.proxy.ssl.SslPeer;
-import com.l7tech.proxy.ssl.SslPeerHttpClient;
-import com.l7tech.proxy.util.SslUtils;
 
 /**
  * Strategy for obtaining a SAML token from a third party WS-Federation server using
@@ -166,7 +158,6 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
     /**
      * Set the password in clear text.
      *
-     * @return the password
      * @see #password()
      */
     public void storePassword(char[] password) {
@@ -248,7 +239,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
                                                              new WsFederationSslPeer(tokenServerCert, url),
                                                              ClientProxySecureProtocolSocketFactory.getInstance());
 
-        SecurityToken token = null;
+        XmlSecurityToken token = null;
         while(token == null) {
             try {
                 token = FederationPassiveClient.obtainFederationToken(httpClient, params, realm, replyUrl, context, addTimestamp);

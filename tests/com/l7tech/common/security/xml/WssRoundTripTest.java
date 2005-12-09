@@ -276,9 +276,9 @@ public class WssRoundTripTest extends TestCase {
         assertNotNull(signed);
 
         // Output security tokens
-        SecurityToken[] tokens = r.getSecurityTokens();
+        XmlSecurityToken[] tokens = r.getXmlSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
+            XmlSecurityToken token = tokens[i];
             log.info("Got security token: " + token.getClass() + " type=" + token.getType());
             if (token instanceof SigningSecurityToken) {
                 SigningSecurityToken signingSecurityToken = (SigningSecurityToken)token;
@@ -294,14 +294,14 @@ public class WssRoundTripTest extends TestCase {
         // If timestamp was supposed to be signed, make sure it actually was
         if (td.signTimestamp) {
             assertTrue("Timestamp was supposed to have been signed", r.getTimestamp().isSigned());
-            SecurityToken[] signers = r.getTimestamp().getSigningSecurityTokens();
+            XmlSecurityToken[] signers = r.getTimestamp().getSigningSecurityTokens();
             assertNotNull(signers);
             // Martha can currently only produce messages with a single timestamp-covering signature in the default sec header
             assertTrue(signers.length == 1);
-            SecurityToken signer = signers[0];
+            XmlSecurityToken signer = signers[0];
             if (signer instanceof X509SecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((X509SecurityToken)signer).asX509Certificate().equals(td.senderCert));
+                           ((X509SecurityToken)signer).getCertificate().equals(td.senderCert));
             } else if (signer instanceof SamlSecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
                            ((SamlSecurityToken)signer).getSubjectCertificate().equals(new SamlAssertion(td.senderSamlAssertion).getSubjectCertificate()));

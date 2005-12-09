@@ -6,16 +6,9 @@
 
 package com.l7tech.server.policy.assertion;
 
-import java.io.IOException;
-import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -25,6 +18,13 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * Base class for routing assertions.
@@ -63,11 +63,12 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
     {
         if (context.getService().isSoap()) {
             final XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
+            final SecurityKnob requestSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
             if (requestXml == null) {
                 logger.finest("skipping this because the message isn't XML");
                 return;
             }
-            if (requestXml.getProcessorResult() == null) {
+            if (requestSec == null || requestSec.getProcessorResult() == null) {
                 logger.finest("skipping this because no security header were processed");
                 return;
             }
@@ -75,9 +76,9 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
             if (secHeaderHandlingOption == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER ||
                 secHeaderHandlingOption == RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER) {
                 Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
-                Element defaultSecHeader = null;
+                Element defaultSecHeader;
                 try {
-                    ProcessorResult pr = context.getRequest().getXmlKnob().getProcessorResult();
+                    ProcessorResult pr = requestSec.getProcessorResult();
                     if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
                         defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
                     } else {
@@ -93,7 +94,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                     defaultSecHeader.getParentNode().removeChild(defaultSecHeader);
 
                     // we should not leave an empty header element
-                    Element header = null;
+                    Element header;
                     try {
                         header = SoapUtil.getHeaderElement(doc);
                     } catch (InvalidDocumentFormatException e) {
@@ -111,7 +112,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
             } else if (secHeaderHandlingOption == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
                 Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
                 try {
-                    ProcessorResult pr = context.getRequest().getXmlKnob().getProcessorResult();
+                    ProcessorResult pr = requestSec.getProcessorResult();
                     // leaving the processed security header for passthrough means that if the processed
                     // actor was l7, we need to promote to default (unless there is a default present)
                     if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
@@ -145,7 +146,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
             if (secHeaderHandlingOption == RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER && otherToPromote != null) {
                 Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
                 // check if that actor is present
-                Element secHeaderToPromote = null;
+                Element secHeaderToPromote;
                 try {
                     secHeaderToPromote = SoapUtil.getSecurityElement(doc, otherToPromote);
                 } catch (InvalidDocumentFormatException e) {
