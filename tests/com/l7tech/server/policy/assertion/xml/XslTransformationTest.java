@@ -2,6 +2,12 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.ApplicationContexts;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -13,6 +19,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.io.ByteArrayInputStream;
 import java.util.logging.Logger;
 
 /**
@@ -27,6 +34,17 @@ import java.util.logging.Logger;
  */
 public class XslTransformationTest extends TestCase {
     private static Logger logger = Logger.getLogger(XslTransformationTest.class.getName());
+    private static final String EXPECTED = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            "\n" +
+            "    <soap:Header xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/04/secext\">\n" +
+            "        <!--a wsse:Security element was stripped out-->\n" +
+            "    </soap:Header>\n" +
+            "\n" +
+            "    <soap:Body>\n" +
+            "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+            "    </soap:Body>\n" +
+            "    \n" +
+            "</soap:Envelope>";
 
     public static void main(String[] args) throws Throwable {
         junit.textui.TestRunner.run(suite());
@@ -46,27 +64,33 @@ public class XslTransformationTest extends TestCase {
         return XmlUtil.softXSLTransform(srcdoc, transformer);
     }
 
+    public void testServerAssertion() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setXslSrc(getResAsString(XSL_MASK_WSSE));
+        ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        ass.setWhichMimePart(0);
+        
+        ServerXslTransformation serverAss = new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
+
+        Message req = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+        Message res = new Message();
+        PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
+
+        serverAss.checkRequest(context);
+        String after = XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
+        assertEquals(after, EXPECTED);
+    }
+
     public void testMaskWsse() throws Exception {
         String xslStr = getResAsString(XSL_MASK_WSSE);
         String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
         String res = XmlUtil.nodeToString(transform(xslStr, xmlStr));
-        String expected = "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-                "\n" +
-                "    <soap:Header xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/04/secext\">\n" +
-                "        <!--a wsse:Security element was stripped out-->\n" +
-                "    </soap:Header>\n" +
-                "\n" +
-                "    <soap:Body>\n" +
-                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
-                "    </soap:Body>\n" +
-                "    \n" +
-                "</soap:Envelope>";
-        if (!expected.equals(res)) {
-            logger.severe("result of transformation not as expected\nresult:\n" + res + "\nexpected:\n" + expected);
+        if (!EXPECTED.equals(res)) {
+            logger.severe("result of transformation not as expected\nresult:\n" + res + "\nexpected:\n" + EXPECTED);
         } else {
             logger.fine("transformation ok");
         }
-        assertTrue(expected.equals(res));
+        assertTrue(EXPECTED.equals(res));
     }
 
     public void testSsgComment() throws Exception {
