@@ -359,7 +359,8 @@ CREATE TABLE audit_main (
   KEY idx_nodeid (nodeid),
   KEY idx_time (time),
   KEY idx_ip_address (ip_address),
-  KEY idx_level (audit_level)
+  KEY idx_level (audit_level),
+  KEY idx_prov_user (provider_oid, user_id)
 ) TYPE=InnoDB;
 
 --
@@ -400,8 +401,6 @@ CREATE TABLE audit_message (
   KEY idx_status (status),
   KEY idx_request_id (request_id),
   KEY idx_service_oid (service_oid),
-  KEY idx_provider_oid (provider_oid),
-  KEY idx_user_id (user_id),
   FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
