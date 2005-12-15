@@ -28,6 +28,15 @@ public final class Message {
     private boolean enableOriginalDocument = false; // enable this to enable XmlKnob.getOriginalDocument().
                                                     // This is off by default since only certain messages need this.
 
+    // Quick lookup knob cache
+    private HttpRequestKnob httpRequestKnob;
+    private HttpServletRequestKnob httpServletRequestKnob;
+    private HttpResponseKnob httpResponseKnob;
+    private HttpServletResponseKnob httpServletResponseKnob;
+    private TcpKnob tcpKnob;
+    private XmlKnob xmlKnob;
+
+
     /**
      * Create a Message with no facets.
      */
@@ -84,6 +93,7 @@ public final class Message {
         HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
         rootFacet = null; // TODO close knobs we aren't preserving
         rootFacet = new MimeFacet(this, sm, outerContentType, body);
+        invalidateCachedKnobs();
         if (reqKnob != null) attachHttpRequestKnob(reqKnob);
         if (respKnob != null) attachHttpResponseKnob(respKnob);
     }
@@ -105,6 +115,7 @@ public final class Message {
             rootFacet = null;
             rootFacet = new MimeFacet(this, new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
             rootFacet = new XmlFacet(this, rootFacet);
+            invalidateCachedKnobs();
             if (reqKnob != null) attachHttpRequestKnob(reqKnob);
             if (respKnob != null) attachHttpResponseKnob(respKnob);
             getXmlKnob().setDocument(body);
@@ -131,6 +142,7 @@ public final class Message {
         if (rootFacet != null)
             close();
         rootFacet = msg.rootFacet;
+        invalidateCachedKnobs();
     }
 
     public void setEnableOriginalDocument() {
@@ -168,6 +180,7 @@ public final class Message {
         if (xmlKnob == null) {
             try {
                 rootFacet = new XmlFacet(this, rootFacet);
+                invalidateCachedKnobs();
                 xmlKnob = (XmlKnob)getKnob(XmlKnob.class);
                 if (xmlKnob == null) throw new IllegalStateException(); // can't happen, we just made one
             } catch (IOException e) {
@@ -181,6 +194,7 @@ public final class Message {
         SecurityKnob secKnob = (SecurityKnob)getKnob(SecurityKnob.class);
         if (secKnob == null) {
             rootFacet = new SecurityFacet(this, rootFacet);
+            invalidateCachedKnobs();
             secKnob = (SecurityKnob)getKnob(SecurityKnob.class);
             if (secKnob == null) throw new IllegalStateException();
         }
@@ -281,6 +295,7 @@ public final class Message {
             return false;
 
         rootFacet = new SoapFacet(this, rootFacet, info);
+        invalidateCachedKnobs();
         return true;
     }
 
@@ -307,6 +322,7 @@ public final class Message {
         if (getKnob(HttpRequestKnob.class) != null)
             throw new IllegalStateException("This Message is already configured as an HTTP request");
         rootFacet = new HttpRequestFacet(this, rootFacet, httpRequestKnob);
+        invalidateCachedKnobs();
     }
 
     /**
@@ -320,6 +336,7 @@ public final class Message {
         if (getKnob(JmsKnob.class) != null)
             throw new IllegalStateException("This Message is already configured as a JMS Message");
         rootFacet = new JmsFacet(this, rootFacet, jmsKnob);
+        invalidateCachedKnobs();
     }
 
     /**
@@ -348,6 +365,7 @@ public final class Message {
         if (getKnob(HttpResponseKnob.class) != null)
             throw new IllegalStateException("This Message is already configured as an HTTP response");
         rootFacet = new HttpResponseFacet(this, rootFacet, httpResponseKnob);
+        invalidateCachedKnobs();
     }
 
     /**
@@ -423,9 +441,48 @@ public final class Message {
      * @return the requested MessageKnob, if its facet is installed on this Message, or null.
      */
     public MessageKnob getKnob(Class c) {
+        // These knobs account for at least 2/3rds of the dozens of calls to this method that are made
+        // per request.
+        if (c == HttpRequestKnob.class && httpRequestKnob != null)
+            return httpRequestKnob;
+        if (c == HttpServletRequestKnob.class && httpServletRequestKnob != null)
+            return httpServletRequestKnob;
+        if (c == HttpResponseKnob.class && httpResponseKnob != null)
+            return httpResponseKnob;
+        if (c == HttpServletResponseKnob.class && httpServletResponseKnob != null)
+            return httpServletResponseKnob;
+        if (c == TcpKnob.class && tcpKnob != null)
+            return tcpKnob;
+        if (c == XmlKnob.class && xmlKnob != null)
+            return xmlKnob;
+
         if (c == null) throw new NullPointerException();
         if (rootFacet == null) return null;
-        return rootFacet.getKnob(c);
+        final MessageKnob got = rootFacet.getKnob(c);
+
+        if (c == HttpRequestKnob.class && httpRequestKnob == null)
+            return httpRequestKnob = (HttpRequestKnob)got;
+        if (c == HttpServletRequestKnob.class && httpServletRequestKnob == null)
+            return httpServletRequestKnob = (HttpServletRequestKnob)got;
+        if (c == HttpResponseKnob.class && httpResponseKnob == null)
+            return httpResponseKnob = (HttpResponseKnob)got;
+        if (c == HttpServletResponseKnob.class && httpServletResponseKnob == null)
+            return httpServletResponseKnob = (HttpServletResponseKnob)got;
+        if (c == TcpKnob.class && tcpKnob == null)
+            return tcpKnob = (TcpKnob)got;
+        if (c == XmlKnob.class && xmlKnob == null)
+            return xmlKnob = (XmlKnob)got;
+
+        return got;
+    }
+
+    private void invalidateCachedKnobs() {
+        httpRequestKnob = null;
+        httpServletRequestKnob = null;
+        httpResponseKnob = null;
+        httpServletResponseKnob = null;
+        tcpKnob = null;
+        xmlKnob = null;
     }
 
     /**
@@ -437,6 +494,7 @@ public final class Message {
                 rootFacet.close();
         } finally {
             rootFacet = null;
+            invalidateCachedKnobs();
         }
     }
 

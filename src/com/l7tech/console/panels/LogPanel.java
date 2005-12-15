@@ -235,8 +235,8 @@ public class LogPanel extends JPanel {
                 while(associatedLogsItr.hasNext()) {
                     AuditDetail ad = (AuditDetail) associatedLogsItr.next();
 
-                    String associatedLogMessage = MessageMap.getInstance().getMessageById(ad.getMessageId());
-                    String associatedLogLevel = MessageMap.getInstance().getSeverityLevelNameById(ad.getMessageId());
+                    String associatedLogMessage = Messages.getMessageById(ad.getMessageId());
+                    String associatedLogLevel = Messages.getSeverityLevelNameById(ad.getMessageId());
 
                     MessageFormat mf = new MessageFormat(associatedLogMessage);
                     StringBuffer result = new StringBuffer();

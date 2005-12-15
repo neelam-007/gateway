@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.server.audit;
@@ -30,7 +29,6 @@ import java.util.logging.Logger;
  * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} regardless of their level.
  *
  * @author alex
- * @version $Revision$
  */
 public class AuditContextImpl implements AuditContext {
 
@@ -68,7 +66,7 @@ public class AuditContextImpl implements AuditContext {
     public void addDetail(AuditDetail detail) {
         if (detail == null) throw new NullPointerException();
 
-        Level severity = MessageMap.getInstance().getSeverityLevelById(detail.getMessageId());
+        Level severity = Messages.getSeverityLevelById(detail.getMessageId());
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
         if(severity.intValue() >= currentAssociatedLogsThreshold.intValue()) {
             // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)

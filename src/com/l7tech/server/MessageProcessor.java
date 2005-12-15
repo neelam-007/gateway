@@ -262,8 +262,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                 // Run response through WssDecorator if indicated
                 if (status == AssertionStatus.NONE &&
-                      response.isSoap() &&
-                      response.getXmlKnob().getDecorationRequirements().length > 0) {
+                      response.isXml() &&
+                      response.getXmlKnob().getDecorationRequirements().length > 0 &&
+                      response.isSoap())
+                {
                     Document doc;
                     try {
                         final XmlKnob respXml = response.getXmlKnob();
