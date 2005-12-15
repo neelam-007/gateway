@@ -145,8 +145,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         }
     }
 
-    private static String headersToString(Object headers) {
-        return headers == null ? "" : headers.toString();
+    private static String headersToString(HttpHeaders headers) {
+        return headers == null ? "" : headers.toExternalForm();
     }
 
     /**
