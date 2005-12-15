@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 package com.l7tech.common.audit;
 
@@ -14,7 +13,6 @@ import java.util.logging.Level;
  * The ID range 0001-0999 inclusive is reserved for these messages.
  *
  * @author alex
- * @version $Revision$
  */
 public class Messages {
     /**
@@ -29,7 +27,7 @@ public class Messages {
      *
      */
 
-    private static Map messagesById = new HashMap();
+    private static final Map messagesById = new HashMap();
 
     // must appear after the instantiation of messageById HaspMap.
     // NOTE: *_SEVERE is the same as *_WARNING since you should never log at SEVERE anything except "audits flushed"
@@ -44,7 +42,7 @@ public class Messages {
 
     protected Messages() { }
 
-    protected static final M m(int id, Level level, String msg) {
+    protected static M m(int id, Level level, String msg) {
         M adm = new M(id, level, msg);
         Object o = messagesById.put(new Integer(id), adm);
         if (o != null) throw new IllegalArgumentException("A message with id #" + id + " already exists!");
@@ -57,15 +55,21 @@ public class Messages {
         }
     }
 
-    public String getMessageById(int id) {
+    public static String getMessageById(int id) {
         M message = (M) messagesById.get(new Integer(id));
         if(message != null) return message.getMessage();
         return null;
     }
 
-    public Level getSeverityLevelById(int id) {
+    public static Level getSeverityLevelById(int id) {
         M message = (M) messagesById.get(new Integer(id));
         if(message != null) return message.getLevel();
+        return null;
+    }
+
+    public static String getSeverityLevelNameById(int id) {
+        M message = (M) messagesById.get(new Integer(id));
+        if(message != null) return message.getLevel().getName();
         return null;
     }
 }
