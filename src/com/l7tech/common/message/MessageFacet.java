@@ -27,7 +27,7 @@ abstract class MessageFacet {
         return message;
     }
 
-    public MessageKnob getKnob(Class c) {
+    MessageKnob getKnob(Class c) {
         if (delegate != null)
             return delegate.getKnob(c);
         return null; // END OF LINE
