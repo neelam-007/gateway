@@ -83,12 +83,11 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
                     SamlBrowserAuthenticationDialog.this.authProps.setRequestForm(requestBeforeSubmitCheckbox.isSelected());
                     if(requestBeforeSubmitCheckbox.isSelected()) {
                         SamlBrowserAuthenticationDialog.this.authProps.setCopyFormFields(preserveFormFieldsCheckbox.isSelected());
-                        SamlBrowserAuthenticationDialog.this.authProps.setEnableCookies(enableCookiesCheckbox.isSelected());
                     }
                     else {
                         SamlBrowserAuthenticationDialog.this.authProps.setCopyFormFields(false);
-                        SamlBrowserAuthenticationDialog.this.authProps.setEnableCookies(false);
                     }
+                    SamlBrowserAuthenticationDialog.this.authProps.setEnableCookies(enableCookiesCheckbox.isSelected());
                     SamlBrowserAuthenticationDialog.this.authProps.setRedirectAfterSubmit(redirectAfterSubmitCheckbox.isSelected());
                     SamlBrowserAuthenticationDialog.this.authProps.setFormTarget(formTargetTextfield.getText());
                     SamlBrowserAuthenticationDialog.this.authProps.setUsernameFieldname(usernameTextfield.getText());
@@ -193,15 +192,14 @@ public class SamlBrowserAuthenticationDialog extends JDialog {
         boolean ok = false;
 
         boolean formSelected = formAuthRadioButton.isSelected();
-        boolean canRemoveOrModify = formSelected && fieldList.getSelectedValue() != null;
+        doEnable(formAuthPanel, formSelected);
+
+        boolean canRemoveOrModify = formSelected && (fieldList.getSelectedValue() != null);
         fieldRemoveButton.setEnabled(canRemoveOrModify);
         fieldModifyButton.setEnabled(canRemoveOrModify);
 
         boolean requestForm = requestBeforeSubmitCheckbox.isSelected();
-        enableCookiesCheckbox.setEnabled(requestForm);
         preserveFormFieldsCheckbox.setEnabled(requestForm);
-
-        doEnable(formAuthPanel, formSelected);
 
         boolean usernameFieldSupplied = usernameTextfield.getText()!=null && usernameTextfield.getText().length()>0;
         boolean passwordFieldSupplied = passwordTextfield.getText()!=null && passwordTextfield.getText().length()>0;

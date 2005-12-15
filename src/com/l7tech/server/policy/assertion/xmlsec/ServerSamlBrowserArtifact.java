@@ -131,13 +131,10 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
      */
     private AssertionStatus doCheckRequest(PolicyEnforcementContext context, boolean passCookies) throws IOException, PolicyAssertionException {
         AuthenticationProperties ap = assertion.getAuthenticationProperties();
-        GenericHttpState httpState = null;
-        if(ap.isEnableCookies()) {
-            httpState = new GenericHttpState();
-            HttpState state = new HttpState();
-            state.setCookiePolicy(CookiePolicy.COMPATIBILITY);
-            httpState.setStateObject(state);
-        }
+        GenericHttpState httpState = new GenericHttpState();
+        HttpState state = new HttpState();
+        state.setCookiePolicy(CookiePolicy.COMPATIBILITY);
+        httpState.setStateObject(state);
         GenericHttpRequestParams loginParams = new GenericHttpRequestParams(loginUrl, httpState);
         loginParams.setSslSocketFactory(sslContext.getSocketFactory());
         loginParams.setFollowRedirects(false);
@@ -167,7 +164,6 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
                     // then grab any cookies off of the request (from bridge)
                     usingCache = addCookies(context, (HttpState) httpState.getStateObject(), loginUrl.getHost(), inCookies);
                 }
-
 
                 if(usingCache) {
                     // then just request the page
