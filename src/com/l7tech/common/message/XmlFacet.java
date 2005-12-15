@@ -32,7 +32,7 @@ public class XmlFacet extends MessageFacet {
     private Map decorationRequirementsForAlternateRecipients = new HashMap();
 
     /** Can be assumed to be true if {@link #workingDocument} == null */
-    private boolean firstPartValid;
+    private boolean firstPartValid = true;
 
     /**
      * Create a new XML message facet.
