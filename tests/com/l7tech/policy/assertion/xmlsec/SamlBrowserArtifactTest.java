@@ -34,7 +34,7 @@ public class SamlBrowserArtifactTest extends TestCase {
 
     public void testStuff() throws Exception {
         SamlBrowserArtifact sba = new SamlBrowserArtifact();
-            sba.setSsoEndpointUrl("https://redroom.l7tech.com/FIM/sps/l7fed/saml/login?TARGET=https://redroom.l7tech.com/FIM/sps/l7fed-sp/saml/login");
+            sba.setSsoEndpointUrl("http://192.168.1.80/FIM/sps/l7fed/saml/login?TARGET=https://redroom.l7tech.com/FIM");
 //        HashMap extraFields = new HashMap();
 //        extraFields.put("login-form-type", "pwd");
 //        sba.setExtraFields(extraFields);
