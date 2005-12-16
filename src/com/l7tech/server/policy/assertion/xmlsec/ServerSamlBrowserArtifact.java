@@ -219,6 +219,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
             loginResponse = loginRequest.getResponse();
             HttpHeaders loginResponseHeaders = loginResponse.getHeaders();
             int loginResponseStatus = loginResponse.getStatus();
+            logger.finest("The response returned code " + String.valueOf(loginResponseStatus) + "\n" + "-- response content --\n" + new String(HexUtils.slurpStream(loginResponse.getInputStream(), 65536)));
             if (loginResponseStatus == HttpConstants.STATUS_FOUND
               ||loginResponseStatus == HttpConstants.STATUS_SEE_OTHER) {
                 String location = loginResponseHeaders.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
