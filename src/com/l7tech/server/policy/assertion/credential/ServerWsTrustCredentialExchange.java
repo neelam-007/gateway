@@ -9,6 +9,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.message.SecurityKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.UsernameToken;
@@ -98,26 +99,24 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             return AssertionStatus.FAILED;
         }
         SecurityKnob requestSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
-        if (requestSec == null) {
-            auditor.logAndAudit(AssertionMessages.WSTRUST_NO_SUITABLE_CREDENTIALS);
-            return AssertionStatus.FAILED;
-        }
 
         // Try to get credentials from WSS processor results
         XmlSecurityToken originalToken = null;
         Element originalTokenElement = null;
-        ProcessorResult wssProcResult = requestSec.getProcessorResult();
-        if (wssProcResult != null) {
-            XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
-            for (int i = 0; i < tokens.length; i++) {
-                XmlSecurityToken token = tokens[i];
-                if (token instanceof SamlAssertion || token instanceof UsernameToken) {
-                    if (originalToken == null) {
-                        originalToken = token;
-                        originalTokenElement = token.asElement();
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.WSTRUST_MULTI_TOKENS);
-                        return AssertionStatus.FAILED;
+        if(requestSec!=null) {
+            ProcessorResult wssProcResult = requestSec.getProcessorResult();
+            if (wssProcResult != null) {
+                XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
+                for (int i = 0; i < tokens.length; i++) {
+                    XmlSecurityToken token = tokens[i];
+                    if (token instanceof SamlAssertion || token instanceof UsernameToken) {
+                        if (originalToken == null) {
+                            originalToken = token;
+                            originalTokenElement = token.asElement();
+                        } else {
+                            auditor.logAndAudit(AssertionMessages.WSTRUST_MULTI_TOKENS);
+                            return AssertionStatus.FAILED;
+                        }
                     }
                 }
             }
@@ -214,7 +213,9 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 deco.decorateMessage(requestDoc, decoReq);
                 requestXml.setDocument(requestDoc);
 
-                requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, certificateResolver));
+                Message reqMessage = context.getRequest();
+                SecurityKnob secKnob = requestSec!=null ? requestSec : reqMessage.getSecurityKnob();
+                secKnob.setProcessorResult(trogdor.undecorateMessage(reqMessage, null, null, null, null, certificateResolver));
                 return AssertionStatus.NONE;
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);

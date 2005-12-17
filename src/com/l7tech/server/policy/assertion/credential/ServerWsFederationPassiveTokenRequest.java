@@ -109,20 +109,24 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
     private UsernameToken getToken(SecurityKnob secKnob) throws StopAndAuditException {
         UsernameToken token = null;
 
-        ProcessorResult wssProcResult = secKnob.getProcessorResult();
-        if (wssProcResult != null) {
-            XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
-            for (int i = 0; i < tokens.length; i++) {
-                XmlSecurityToken currentToken = tokens[i];
-                if (currentToken instanceof UsernameToken) {
-                    if (token == null) {
-                        token = (UsernameToken) currentToken;
-                    } else {
-                        throw new StopAndAuditException(AssertionMessages.WSFEDPASS_MULTI_TOKENS);
+        if(secKnob!=null) {
+            ProcessorResult wssProcResult = secKnob.getProcessorResult();
+            if (wssProcResult != null) {
+                XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
+                for (int i = 0; i < tokens.length; i++) {
+                    XmlSecurityToken currentToken = tokens[i];
+                    if (currentToken instanceof UsernameToken) {
+                        if (token == null) {
+                            token = (UsernameToken) currentToken;
+                        } else {
+                            throw new StopAndAuditException(AssertionMessages.WSFEDPASS_MULTI_TOKENS);
+                        }
                     }
                 }
             }
         }
+
+        if(logger.isLoggable(Level.FINEST)) logger.finest("Got XML security token?: " + (token!=null));
 
         return token;
     }
@@ -138,7 +142,12 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
                 token = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
             }
+            else {
+                if(logger.isLoggable(Level.FINEST)) logger.finest("Credentials are not clear text, ignoring.");
+            }
         }
+
+        if(logger.isLoggable(Level.FINEST)) logger.finest("Got non-XML security token?: " + (token!=null));
 
         return token;
     }
@@ -200,7 +209,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
     /**
      *
      */
-    private void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, SecurityKnob requestSec, UsernameToken existingToken, SamlAssertion samlAssertion, boolean tokenFromRequest) throws StopAndAuditException {
+    private void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, UsernameToken existingToken, SamlAssertion samlAssertion, boolean tokenFromRequest) throws StopAndAuditException {
         try {
             Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
             if (!tokenFromRequest) {
@@ -216,7 +225,9 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
                 }
             }
 
-            updateRequestXml(context, requestXml, requestSec, requestDoc, samlAssertion, assertion);
+            // create the security knob if it did not previously exist
+            SecurityKnob secKnob = context.getRequest().getSecurityKnob();
+            updateRequestXml(context, requestXml, secKnob, requestDoc, samlAssertion, assertion);
         } catch (Exception e) {
             throw new StopAndAuditException(AssertionMessages.WSFEDPASS_DECORATION_FAILED, e);
         }
@@ -229,7 +240,6 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
         ensureXmlRequest(requestXml);
         SecurityKnob requestSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
-        ensureSecurityKnob(requestSec);
 
         // Try to get credentials from WSS processor results
         boolean tokenFromRequest = true;
@@ -262,7 +272,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         }
 
         // Update request XML
-        updateRequestXml(context, requestXml, requestSec, existingToken, samlAssertion, tokenFromRequest);
+        updateRequestXml(context, requestXml, existingToken, samlAssertion, tokenFromRequest);
 
         // POST to endpoint (AUTH), GET COOKIES
         if(assertion.isAuthenticate()) {
