@@ -41,7 +41,6 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -84,44 +83,25 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     private HttpHeaders gatherHeaders(final HttpRequest request) {
-        // Since the request headers are only used rarely for logging, and since reconstructing the original headers
-        // is surprisingly difficult and expensive with Jetty, we'll defer the actual creation
-        // of the GenericHttpHeaders until the first time they are actually used (if ever).
-        HttpHeaders headers = new HttpHeaders() {
-            private GenericHttpHeaders gen = null;
-
-            private GenericHttpHeaders gen() {
-                if (gen != null) return gen;
-                return gen = new GenericHttpHeaders(makeArray());
+        List got = new ArrayList();
+        Iterator names = new EnumerationIterator(request.getFieldNames());
+        while (names.hasNext()) {
+            String name = (String)names.next();
+            Iterator values = new EnumerationIterator(request.getFieldValues(name));
+            StringBuffer sb = new StringBuffer();
+            boolean isFirst = true;
+            while (values.hasNext()) {
+                String value = (String)values.next();
+                if (!isFirst)
+                    sb.append("; ");
+                sb.append(value);
+                isFirst = false;
             }
+            got.add(new GenericHttpHeader(name, sb.toString()));
+        }
+        HttpHeader[] headers = (HttpHeader[])got.toArray(new HttpHeader[0]);
 
-            private HttpHeader[] makeArray() {
-                List got = new ArrayList();
-                Enumeration names = request.getFieldNames();
-                while (names.hasMoreElements()) {
-                    String name = (String)names.nextElement();
-                    Enumeration values = request.getFieldValues(name);
-                    StringBuffer sb = new StringBuffer();
-                    boolean isFirst = true;
-                    while (values.hasMoreElements()) {
-                        String value = (String)values.nextElement();
-                        if (!isFirst)
-                            sb.append("; ");
-                        sb.append(value);
-                        isFirst = false;
-                    }
-                    got.add(new GenericHttpHeader(name, sb.toString()));
-                }
-                return (HttpHeader[])got.toArray(new HttpHeader[0]);
-            }
-
-            public String getFirstValue(String name) { return gen().getFirstValue(name); }
-            public String getOnlyOneValue(String name) throws GenericHttpException { return gen().getOnlyOneValue(name); }
-            public List getValues(String name) { return gen().getValues(name); }
-            public HttpHeader[] toArray() { return gen().toArray(); }
-            public String toExternalForm() { return gen().toExternalForm(); }
-        };
-        return headers;
+        return new GenericHttpHeaders(headers);
     }
 
     private ContentTypeHeader gatherContentTypeHeader(HttpRequest request) {
