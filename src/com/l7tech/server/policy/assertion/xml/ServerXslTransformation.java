@@ -154,8 +154,9 @@ public class ServerXslTransformation implements ServerAssertion {
                 XmlResult result = new XmlResult(output);
                 XmlSource source = new XmlSource(msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false));
                 transformer.transform(source, result);
-                msgtotransform.getMimeKnob().getPart(whichMimePart).setBodyBytes(output.toByteArray());
-                logger.finest("tarari xsl transformation completed");
+                byte[] transformedmessage = output.toByteArray();
+                msgtotransform.getMimeKnob().getPart(whichMimePart).setBodyBytes(transformedmessage);
+                logger.finest("tarari xsl transformation completed. result: " + new String(transformedmessage));
                 return AssertionStatus.NONE;
             } catch (NoSuchPartException e) {
                 logger.log(Level.WARNING, "Cannot operate on mime part " + whichMimePart +
