@@ -13,6 +13,12 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.tarari.xml.xslt11.Stylesheet;
+import com.tarari.xml.xslt11.XsltException;
+import com.tarari.xml.xslt11.parser.XsltParseException;
+import com.tarari.xml.XmlSource;
+import com.tarari.xml.XmlResult;
+import com.tarari.xml.XmlParseException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -27,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Server side class that executes an XslTransformation assertion within a policy tree.
@@ -43,13 +50,31 @@ public class ServerXslTransformation implements ServerAssertion {
     private final Auditor auditor;
     private Templates template;
     private XslTransformation subject;
-    private final GlobalTarariContext tarariContext;
+    private GlobalTarariContext tarariContext;
+    private Stylesheet master;
 
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) {
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
         subject = assertion;
         auditor = new Auditor(this, springContext, logger);
         tarariContext = TarariLoader.getGlobalContext();
+        // if we're in tarari mode, prepare a stylesheet object
+        if (tarariContext != null) {
+            try {
+                master = Stylesheet.create(new XmlSource(subject.getXslSrc().getBytes()));
+            } catch (XsltParseException e) {
+                logger.log(Level.SEVERE, "cannot create tarari stylesheet, will operate in software mode", e);
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "cannot create tarari stylesheet, will operate in software mode", e);
+            } catch (XmlParseException e) {
+                logger.log(Level.SEVERE, "cannot create tarari stylesheet, will operate in software mode", e);
+            } catch (UnsatisfiedLinkError e) {
+                logger.log(Level.SEVERE, "cannot create tarari stylesheet, will operate in software mode", e);
+            }
+            if (master == null) {
+                tarariContext = null;
+            }
+        }
     }
 
     /**
@@ -59,77 +84,91 @@ public class ServerXslTransformation implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // 1. Get document to transform
         final Message msgtotransform;
-        try {
-            switch (subject.getDirection()) {
-                case XslTransformation.APPLY_TO_REQUEST:
-                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST);
-                    msgtotransform = context.getRequest();
-                    break;
-                case XslTransformation.APPLY_TO_RESPONSE:
-                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE);
-                    msgtotransform = context.getResponse();
-                    break;
-                default:
-                    // should not get here!
-                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_CONFIG_ISSUE);
-                    return AssertionStatus.SERVER_ERROR;
-            }
 
-            int whichMimePart = subject.getWhichMimePart();
-            if (whichMimePart <= 0) whichMimePart = 0;
+        switch (subject.getDirection()) {
+            case XslTransformation.APPLY_TO_REQUEST:
+                auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST);
+                msgtotransform = context.getRequest();
+                break;
+            case XslTransformation.APPLY_TO_RESPONSE:
+                auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE);
+                msgtotransform = context.getResponse();
+                break;
+            default:
+                // should not get here!
+                auditor.logAndAudit(AssertionMessages.XSL_TRAN_CONFIG_ISSUE);
+                return AssertionStatus.SERVER_ERROR;
+        }
 
+        int whichMimePart = subject.getWhichMimePart();
+        if (whichMimePart <= 0) whichMimePart = 0;
+
+        // 2. Apply the transformation
+        if (tarariContext == null) {
             final Document doctotransform;
 
             PartInfo mimePart = null;
-            if (whichMimePart == 0) {
-                if (!msgtotransform.isXml()) return notXml();
-
-                doctotransform = msgtotransform.getXmlKnob().getDocumentWritable();
-            } else {
-                try {
-                    mimePart = msgtotransform.getMimeKnob().getPart(whichMimePart);
-                    if (!mimePart.getContentType().isXml()) return notXml();
-
-                    InputStream is = mimePart.getInputStream(false);
-                    doctotransform = XmlUtil.parse(is, false);
-                } catch (NoSuchPartException e) {
-                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart)});
-                    return AssertionStatus.BAD_REQUEST;
-                }
-            }
-
-            // 2. Apply the transformation
-            Document output = null;
             try {
-                if (tarariContext != null) {
-                    logger.warning("TODO, tarari accelerated xslt");
-                    // todo, invoke the tarari xsl transformation
-                    // output = something tarari
+                if (whichMimePart == 0) {
+                    if (!msgtotransform.isXml()) return notXml();
+                    doctotransform = msgtotransform.getXmlKnob().getDocumentWritable();
+                } else {
+                    try {
+                        mimePart = msgtotransform.getMimeKnob().getPart(whichMimePart);
+                        if (!mimePart.getContentType().isXml()) return notXml();
+
+                        InputStream is = mimePart.getInputStream(false);
+                        doctotransform = XmlUtil.parse(is, false);
+                    } catch (NoSuchPartException e) {
+                        auditor.logAndAudit(AssertionMessages.XSL_TRAN_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart)});
+                        return AssertionStatus.BAD_REQUEST;
+                    }
                 }
-                // fallback on software when necessary
-                if (output == null) {
+                Document output;
+                try {
                     output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
+                } catch (TransformerException e) {
+                    String msg = "error transforming document";
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
+                    throw new PolicyAssertionException(msg, e);
                 }
-            } catch (TransformerException e) {
-                String msg = "error transforming document";
+                if (whichMimePart == 0) {
+                    msgtotransform.getXmlKnob().setDocument(output);
+                } else {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    XmlUtil.nodeToOutputStream(output, baos);
+                    mimePart.setBodyBytes(baos.toByteArray());
+                }
+                logger.finest("software xsl transformation completed");
+                return AssertionStatus.NONE;
+            } catch (SAXException e) {
+                String msg = "cannot get document to tranform";
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-                throw new PolicyAssertionException(msg, e);
             }
-
-            if (whichMimePart == 0) {
-                msgtotransform.getXmlKnob().setDocument(output);
-            } else {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                XmlUtil.nodeToOutputStream(output, baos);
-                mimePart.setBodyBytes(baos.toByteArray());
+            return AssertionStatus.FAILED;
+        } else { // tarari-style xslt
+            try {
+                Stylesheet transformer = new Stylesheet(master);
+                transformer.setValidate(false);
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                XmlResult result = new XmlResult(output);
+                XmlSource source = new XmlSource(msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false));
+                transformer.transform(source, result);
+                msgtotransform.getMimeKnob().getPart(whichMimePart).setBodyBytes(output.toByteArray());
+                logger.finest("tarari xsl transformation completed");
+                return AssertionStatus.NONE;
+            } catch (NoSuchPartException e) {
+                logger.log(Level.WARNING, "Cannot operate on mime part " + whichMimePart +
+                                          " while trying to xsl transform in tarari mode", e);
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Tarari exception when attempting xsl transformation", e);
+            } catch (XmlParseException e) {
+                logger.log(Level.WARNING, "Tarari exception when attempting xsl transformation", e);
+            } catch (XsltException e) {
+                logger.log(Level.WARNING, "Tarari exception when attempting xsl transformation", e);
             }
-        } catch (SAXException e) {
-            String msg = "cannot get document to tranform";
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-            throw new PolicyAssertionException(msg, e);
+            return AssertionStatus.FAILED;
         }
-
-        return AssertionStatus.NONE;
     }
 
     private AssertionStatus notXml() {
@@ -144,7 +183,7 @@ public class ServerXslTransformation implements ServerAssertion {
     }
 
     private Templates getTemplate() throws TransformerConfigurationException {
-        if(template==null) {
+        if (template == null) {
             template = makeTemplate(subject.getXslSrc());
         }
         return template;

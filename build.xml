@@ -445,6 +445,7 @@
 
                 <include name="tarari_xcx.jar"/>
                 <include name="tarari_xpath.jar"/>
+                <include name="tarari_raxj.jar"/>
                 <include name="antlr.jar"/>
                 <include name="activation.jar"/>
                 <include name="mailapi-1.3.2.jar"/>
