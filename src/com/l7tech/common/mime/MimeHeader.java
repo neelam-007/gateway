@@ -61,6 +61,7 @@ public class MimeHeader implements HttpHeader {
      *               May be empty, but must not be null.
      * @param params the parameters, ie {charset=>"utf-8"}.  May be empty or null.
      *               Caller must not modify this map after giving it to this constructor.
+     *               Caller is responsible for ensuring that, if a map is provided, lookups in the map are case-insensitive.
      *
      */
     protected MimeHeader(String name, String value, Map params) {

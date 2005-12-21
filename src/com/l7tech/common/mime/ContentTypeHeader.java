@@ -54,6 +54,8 @@ public class ContentTypeHeader extends MimeHeader {
      * @param type   the major type, ie "text". may not be null
      * @param subtype the minor type, ie "xml". may not be null
      * @param params the parameters, ie {charset=>"utf-8"}.  must not be null.
+     *               Caller must not modify this map after giving it to this constructor.
+     *               Caller is responsible for ensuring that lookups in the map are case-insensitive.
      * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty
      * @throws IllegalArgumentException if type is multipart, but the subtype is other than "related"
      * @throws NullPointerException if type, subtype or param is null
