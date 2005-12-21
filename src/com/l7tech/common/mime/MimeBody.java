@@ -39,6 +39,7 @@ public class MimeBody {
     private final int pushbackSize;
     private final StashManager stashManager;
     private final ContentTypeHeader outerContentType;
+    private final String start; // outer content type "start" parameter.  May be null.
 
     private final List partInfos = new ArrayList(); // our PartInfo instances.  current part is (partInfos.size() - 1)
     private final PartInfoImpl firstPart; // equivalent to (PartInfo)partInfos.get(0)
@@ -82,6 +83,8 @@ public class MimeBody {
 
         this.outerContentType = outerContentType;
         this.stashManager = stashManager;
+        this.start = outerContentType.getParam("start");
+        if (start != null && start.length() < 1) throw new IOException("Multipart content type has a \"start\" parameter but it is empty");
 
         if (outerContentType.isMultipart()) {
             // Multipart message.  Prepare the first part for reading.
@@ -95,6 +98,8 @@ public class MimeBody {
             readInitialBoundary();
             readNextPartHeaders();
             firstPart = (PartInfoImpl)partInfos.get(0);
+            if (start != null && !(start.equals(firstPart.getContentId())))
+                throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");            
         } else {
             // Single-part message.  Configure first and only part accordingly.
             boundaryStr = null;

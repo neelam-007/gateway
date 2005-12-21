@@ -328,6 +328,15 @@ public class MimeBodyTest extends TestCase {
         }
     }
 
+    public void testFailureToStartAtPartZero() throws Exception {
+        try {
+            makeMessage(MESS3, MESS3_CONTENT_TYPE);
+            fail("Failed to detect multipart content type start parameter that points somewhere other than the first part");
+        } catch (IOException e) {
+            // Ok
+        }
+    }
+
     public final String MESS_SOAPCID = "-76394136.15558";
     public final String MESS_RUBYCID = "-76392836.15558";
     public static final String MESS_BOUNDARY = "----=Part_-763936460.407197826076299";
@@ -428,4 +437,53 @@ public class MimeBodyTest extends TestCase {
             "\n" +
             "\r\n" +
             "------=Part_-763936460.00306951464153826--\r\n";
+
+    // A test message with a start parameter pointing at the second attachment
+    public static final String MESS3_BOUNDARY = "----=Part_-763936460.00306951464153826";
+    public static final String MESS3_CONTENT_TYPE = "multipart/related; type=\"text/xml\"; boundary=\"" +
+            MESS2_BOUNDARY + "\"; start=\"-76392836.13454\"";
+    public static final String MESS3 = "------=Part_-763936460.00306951464153826\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: text/xml; charset=utf-8\r\n" +
+            "Content-ID: -76394136.13454\r\n" +
+            "\r\n" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+            "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
+            "    xmlns:env=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+            "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            "  <env:Body>\n" +
+            "    <n1:echoOne xmlns:n1=\"urn:EchoAttachmentsService\"\n" +
+            "        env:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" +
+            "      <file href=\"cid:-76392836.13454\"></file>\n" +
+            "    </n1:echoOne>\n" +
+            "  </env:Body>\n" +
+            "</env:Envelope>\n" +
+            "\r\n" +
+            "------=Part_-763936460.00306951464153826\r\n" +
+            "Content-Transfer-Encoding: 8bit\r\n" +
+            "Content-Type: application/octet-stream\r\n" +
+            "Content-ID: <-76392836.13454>\r\n" +
+            "\r\n" +
+            "require 'soap/rpc/driver'\n" +
+            "require 'soap/attachment'\n" +
+            "\n" +
+            "attachment = ARGV.shift || __FILE__\n" +
+            "\n" +
+            "#server = 'http://localhost:7700/'\n" +
+            "server = 'http://data.l7tech.com:80/'\n" +
+            "\n" +
+            "driver = SOAP::RPC::Driver.new(server, 'urn:EchoAttachmentsService')\n" +
+            "driver.wiredump_dev = STDERR\n" +
+            "driver.add_method('echoOne', 'file')\n" +
+            "\n" +
+            "File.open(attachment)  do |fin|\n" +
+            "  File.open('attachment.out', 'w') do |fout|\n" +
+            ".fout << driver.echoOne(SOAP::Attachment.new(fin))\n" +
+            "  end      \n" +
+            "end\n" +
+            "\n" +
+            "\n" +
+            "\r\n" +
+            "------=Part_-763936460.00306951464153826--\r\n";
+
 }
