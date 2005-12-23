@@ -27,10 +27,10 @@ class DeleteSsgAction extends AbstractAction {
     private final ClientProxy clientProxy;
 
     public DeleteSsgAction(SsgListPanel ssgListPanel, ClientProxy clientProxy) {
-        super("Remove", IconManager.getRemove());
+        super("Delete Account", IconManager.getRemove());
         this.ssgListPanel = ssgListPanel;
         this.clientProxy = clientProxy;
-        putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway Account");
+        putValue(Action.SHORT_DESCRIPTION, "Delete this Gateway Account");
         putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
     }
 
@@ -62,17 +62,17 @@ class DeleteSsgAction extends AbstractAction {
                 }
             }
             String msg = "The following Federated Gateways are using this as a Trusted Gateway:\n\n" +
-                    sb.toString() + "\nThese Federated Gateways must be removed before this Trusted Gateway can be removed.";
+                    sb.toString() + "\nThese Federated Gateways must be deleted before this Trusted Gateway can be deleted.";
             Gui.errorMessage(msg);
             return;
         }
 
-        Object[] options = { "Remove", "Cancel" };
+        Object[] options = { "Delete", "Cancel" };
         int result = JOptionPane.showOptionDialog(null,
-                                                  "Are you sure you want to remove the " +
-                                                  "Gateway Account " + ssg + "?\n" +
-                                                  "This action cannot be undone.",
-                                                  "Delete Gateway?",
+                                                  "Warning: Deleting the Gateway Account for " + ssg + "\n" +
+                                                  "will delete any associated certificate and policies from the SecureSpan Bridge.\n" +
+                                                  "The action cannot be undone.",
+                                                  "Delete Gateway Account",
                                                   0, JOptionPane.WARNING_MESSAGE,
                                                   null, options, options[1]);
         if (result == 0) {
