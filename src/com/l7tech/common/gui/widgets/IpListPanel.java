@@ -54,6 +54,7 @@ public class IpListPanel extends JPanel {
         rbSpecify.addChangeListener(changeListener);
         ipBg.add(rbSpecify);
 
+        ipList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         ipList.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 updateEnableState();
