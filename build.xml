@@ -1093,9 +1093,6 @@
         <antcall target="prepare.db"/>
         <antcall target="prepare.systinet"/>
 
-        <!-- default build version for dev build.  Official build prompts the release engineer for a nicer one. -->
-        <property name="build.version" value="HEAD"/>
-
         <!-- set up build number if it isn't already set -->
         <property file="build.number"/>
 
@@ -1621,14 +1618,10 @@
         <cvs command="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
     </target>
 
-    <target name="INTERNAL-buildinfo">
-        <property name="hostname" value="buildmachine.l7tech.com"/>
-
-        <tstamp>
-            <format property="build.date" pattern="yyyyMMdd"/>
-            <format property="build.time" pattern="HHmmss"/>
-        </tstamp>
-
+    <!--
+      Target that only runs if build.version if being re-defined
+    -->
+    <target name="INTERNAL-buildinfo-version" if="build.version">
         <echo>Setting version in Nullsoft Installer source files to ${build.version}</echo>
         <replaceregexp match='define MUI_VERSION ".*"' replace='define MUI_VERSION "${build.version}"'>
             <fileset dir="${src.root}">
@@ -1639,12 +1632,22 @@
         </replaceregexp>
 
         <antcall target="INTERNAL-buildinfo-replace">
-            <param name="param_name" value="BUILD_NUMBER"/>
-            <param name="param_value" value="${build.number}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo-replace">
             <param name="param_name" value="PRODUCT_VERSION"/>
             <param name="param_value" value="${build.version}"/>
+        </antcall>
+    </target>
+
+    <target name="INTERNAL-buildinfo" depends="INTERNAL-buildinfo-version">
+        <property name="hostname" value="buildmachine.l7tech.com"/>
+
+        <tstamp>
+            <format property="build.date" pattern="yyyyMMdd"/>
+            <format property="build.time" pattern="HHmmss"/>
+        </tstamp>
+
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="BUILD_NUMBER"/>
+            <param name="param_value" value="${build.number}"/>
         </antcall>
         <antcall target="INTERNAL-buildinfo-replace">
             <param name="param_name" value="PRODUCT_VERSION_MAJOR"/>
