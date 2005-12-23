@@ -266,20 +266,9 @@ public class EditGatewayNameDialog extends JDialog {
                     TopComponents.getInstance().getMainWindow().updateNodeNameInStatusMessage(oldGatewayName, newName);
 
                 } catch (UpdateException e) {
-                    logger.warning("Cannot rename the node: " + oldGatewayName);
-                    JOptionPane.
-                            showMessageDialog(EditGatewayNameDialog.this,
-                                    resources.getString("newGatewayNameField.error.update"),
-                                    resources.getString("newGatewayNameField.error.title"),
-                                    JOptionPane.ERROR_MESSAGE);
-
+                    throw new RuntimeException("Cannot rename the node: " + oldGatewayName, e);
                 } catch (RemoteException e) {
-                    logger.warning("Remote Exception. Cannot rename the node: " + oldGatewayName);
-                    JOptionPane.
-                            showMessageDialog(EditGatewayNameDialog.this,
-                                    resources.getString("newGatewayNameField.error.remote.exception"),
-                                    resources.getString("newGatewayNameField.error.title"),
-                                    JOptionPane.ERROR_MESSAGE);
+                    throw new RuntimeException("Remote Exception. Cannot rename the node: " + oldGatewayName, e);
                 } finally {
                     dispose();
                 }
