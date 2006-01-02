@@ -96,7 +96,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
         try {
             distributedMessageIdManager.close();
         } catch ( Exception e ) {
-            throw new LifecycleException("DistributedMessageIdManager couldn't shut down properly");
+            throw new LifecycleException("DistributedMessageIdManager couldn't shut down properly", e);
         }
     }
 

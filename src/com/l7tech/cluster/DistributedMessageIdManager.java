@@ -230,6 +230,12 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         PreparedStatement ps = null;
         ResultSet rs = null;
         UserTransaction tx = null;
+
+        if(tree==null) {
+            logger.warning("Not initialized, skipping shutdown.");
+            return;
+        }
+
         try {
             // save message ids to database
             conn = session.connection();
