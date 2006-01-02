@@ -374,7 +374,7 @@ public class RmiServiceExporterStubFactoryBean
                 Object refOrObject = iterator.next();
                 Remote exported = null;
                 if(refOrObject instanceof WeakReference) {
-                    WeakReference weakReference = (WeakReference) iterator.next();
+                    WeakReference weakReference = (WeakReference) refOrObject;
                     exported = (Remote) weakReference.get();
                 }
                 else {
