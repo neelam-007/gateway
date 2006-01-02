@@ -16,6 +16,7 @@ import org.springframework.remoting.support.RemoteInvocationFactory;
 
 import javax.security.auth.Subject;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.ref.WeakReference;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -26,13 +27,16 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.Principal;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Iterator;
 
 /**
  * The {@link RmiServiceExporterStubFactoryBean } subclass that allows specifying additional properties
  * such as the registry socket factory.
  *
- * @author emil
- * @version Dec 2, 2004
+ * @author emil, $Author$
+ * @version Dec 2, 2004, $Revision$
  */
 public class RmiServiceExporterStubFactoryBean
   extends RmiServiceExporter implements FactoryBean, InitializingBean {
@@ -47,18 +51,27 @@ public class RmiServiceExporterStubFactoryBean
 
     private RMIServerSocketFactory serverSocketFactory;
 
-    private Remote exportedObject;
-
     private RMIClientSocketFactory registryClientSocketFactory;
 
     private RMIServerSocketFactory registryServerSocketFactory;
     private boolean singleton = true;
 
-    private RmiProxyStub proxyStub;
+    private RmiProxyStub proxyStub; // proxy stub for singletons
 
     private RemoteInvocationFactory stubRemoteInvocationFactory;
 
     private AdminSessionManager sessionManager;
+
+    private final List exportedObjects;
+
+    // TODO - when we upgrade Spring (1.2.3+) we can use that to do the registry cleanup, until then ...
+    private static Registry theRegistryICreated = null;
+    private static int rmiServiceExporterStubFactoryBeanCount = 0; // The last one to leave turns out the lights.
+    private static int rmiExportCount = 0;
+
+    public RmiServiceExporterStubFactoryBean() {
+        exportedObjects = new LinkedList();
+    }
 
     /**
      * Set the name of the exported RMI service,
@@ -172,37 +185,43 @@ public class RmiServiceExporterStubFactoryBean
             throw new IllegalArgumentException("Both RMIClientSocketFactory and RMIServerSocketFactory or none required");
         }
         if (singleton) {
-            exportService();
+            proxyStub = exportService();
         }
-
+        synchronized(RmiServiceExporterStubFactoryBean.class) {
+            rmiServiceExporterStubFactoryBeanCount++;
+        }
     }
 
     private RmiProxyStub exportService() throws RemoteException {
-        this.exportedObject = getObjectToExport();
+        Remote exportedObject = getObjectToExport();
+
+        // then track the exported object for cleanup on shutdown.
+        recordExport(exportedObject);
 
         Remote objectStub;
         if (this.clientSocketFactory != null) {
-            objectStub = UnicastRemoteObject.exportObject(this.exportedObject, this.servicePort, this.clientSocketFactory, this.serverSocketFactory);
+            objectStub = UnicastRemoteObject.exportObject(exportedObject, this.servicePort, this.clientSocketFactory, this.serverSocketFactory);
         } else {
-            objectStub = UnicastRemoteObject.exportObject(this.exportedObject, this.servicePort);
+            objectStub = UnicastRemoteObject.exportObject(exportedObject, this.servicePort);
         }
+        rmiExportCount++;
         if (this.serviceName != null) {
             logger.info("Binding RMI service '" + this.serviceName +  "' exported object '" + getDisplayServiceName() +
-              "' to registry at port '" + this.registryPort + "'");
+              "' to registry at port '" + this.registryPort + "', export count is: " + rmiExportCount);
             Registry registry = getRegistry(this.registryPort);
-            registry.rebind(this.serviceName, this.exportedObject);
+            registry.rebind(this.serviceName, exportedObject);
         } else {
             logger.info("Unbound RMI service; exported object '" + getDisplayServiceName() +
-              "' to registry at port '" + this.registryPort + "'");
+              "' to registry at port '" + this.registryPort + "', export count is: " + rmiExportCount);
         }
         try {
-            proxyStub = new RmiProxyStub(objectStub, getServiceInterface());
+            RmiProxyStub stub = new RmiProxyStub(objectStub, getServiceInterface());
             if (stubRemoteInvocationFactory !=null) {
-                proxyStub.setRemoteInvocationFactory(stubRemoteInvocationFactory);
+                stub.setRemoteInvocationFactory(stubRemoteInvocationFactory);
             }
-            return proxyStub;
+            return stub;
         } catch (Exception e) {
-            throw new RemoteException("Error exporting service ", e);
+            throw new RemoteException("Error exporting service '"+this.serviceName+"'.", e);
         }
     }
 
@@ -241,6 +260,8 @@ public class RmiServiceExporterStubFactoryBean
             } else {
                 registry = LocateRegistry.createRegistry(registryPort, registryClientSocketFactory, registryServerSocketFactory);
             }
+            rmiExportCount++;
+            theRegistryICreated = registry;
         }
         return registry;
     }
@@ -290,23 +311,80 @@ public class RmiServiceExporterStubFactoryBean
         return super.invoke(adminInvocation, targetObject);
     }
 
-
     /**
      * Unbind the RMI service from the registry at bean factory shutdown.
      */
     public void destroy() throws RemoteException, NotBoundException {
-        if (!singleton) { // non singleton services are handed directly by client and handled by dgc
-            return;
+        boolean shutdownRegistry = false;
+        synchronized(RmiServiceExporterStubFactoryBean.class) {
+            rmiServiceExporterStubFactoryBeanCount--;
+            if(rmiServiceExporterStubFactoryBeanCount==0) {
+                shutdownRegistry = true;
+            }
         }
-        if (logger.isInfoEnabled()) {
-            logger.info("Unbinding RMI service '" + getDisplayServiceName() +
-              "' from registry at port '" + this.registryPort + "'");
+        try {
+            if (!singleton) {
+                unexportObjects();
+                return;
+            }
+            if (logger.isInfoEnabled()) {
+                logger.info("Unbinding RMI service '" + getDisplayServiceName() +
+                  "' from registry at port '" + this.registryPort + "', export count is: " + (rmiExportCount-1));
+            }
+            if (this.serviceName != null) {
+                Registry registry = getRegistry(this.registryPort);
+                registry.unbind(this.serviceName);
+            }
+            unexportObjects();
         }
-        if (this.serviceName != null) {
-            Registry registry = getRegistry(this.registryPort);
-            registry.unbind(this.serviceName);
+        finally {
+            if(shutdownRegistry && theRegistryICreated!=null) {
+                logger.info("Shutting down the registry.");
+                UnicastRemoteObject.unexportObject(theRegistryICreated, true);
+                rmiExportCount--;
+
+                logger.info("Registry shutdown, export count is: " + rmiExportCount);
+            }
         }
-        UnicastRemoteObject.unexportObject(this.exportedObject, true);
+    }
+
+    /**
+     * Remove any old references and add the new one
+     */
+    private void recordExport(Remote exportedObject) {
+        synchronized(exportedObjects) {
+            for (Iterator iterator = exportedObjects.iterator(); iterator.hasNext();) {
+                WeakReference weakReference = (WeakReference) iterator.next();
+                if(weakReference.get()==null) {
+                    iterator.remove();
+                    rmiExportCount--;
+                }
+            }
+            exportedObjects.add(new WeakReference(exportedObject));
+        }
+    }
+
+    private void unexportObjects() {
+        synchronized(exportedObjects) {
+            for (Iterator iterator = exportedObjects.iterator(); iterator.hasNext();) {
+                WeakReference weakReference = (WeakReference) iterator.next();
+                Remote exported = (Remote) weakReference.get();
+                if(exported!=null) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Unbinding RMI object '" + getDisplayServiceName() +
+                          "' from registry at port '" + this.registryPort + "', export count is: " + (rmiExportCount-1));
+                    }
+                    try {
+                        UnicastRemoteObject.unexportObject(exported, true);
+                    }
+                    catch(NoSuchObjectException nsoe) {
+                        logger.warn("Error when unexporting object", nsoe);
+                    }
+                }
+                rmiExportCount--;
+                iterator.remove();
+            }
+        }
     }
 
     private String getDisplayServiceName() {
