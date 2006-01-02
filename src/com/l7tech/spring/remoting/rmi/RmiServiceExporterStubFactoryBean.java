@@ -196,7 +196,7 @@ public class RmiServiceExporterStubFactoryBean
         Remote exportedObject = getObjectToExport();
 
         // then track the exported object for cleanup on shutdown.
-        recordExport(exportedObject);
+        recordExport(exportedObject, singleton);
 
         Remote objectStub;
         if (this.clientSocketFactory != null) {
@@ -351,24 +351,35 @@ public class RmiServiceExporterStubFactoryBean
     /**
      * Remove any old references and add the new one
      */
-    private void recordExport(Remote exportedObject) {
+    private void recordExport(Remote exportedObject, boolean singleton) {
         synchronized(exportedObjects) {
             for (Iterator iterator = exportedObjects.iterator(); iterator.hasNext();) {
-                WeakReference weakReference = (WeakReference) iterator.next();
-                if(weakReference.get()==null) {
-                    iterator.remove();
-                    rmiExportCount--;
+                Object refOrObject = iterator.next();
+                if(refOrObject instanceof WeakReference) {
+                    WeakReference weakReference = (WeakReference) refOrObject;
+                    if(weakReference.get()==null) {
+                        iterator.remove();
+                        rmiExportCount--;
+                    }
                 }
             }
-            exportedObjects.add(new WeakReference(exportedObject));
+            Object refOrObject = singleton ? exportedObject : (Object) new WeakReference(exportedObject);
+            exportedObjects.add(refOrObject);
         }
     }
 
     private void unexportObjects() {
         synchronized(exportedObjects) {
             for (Iterator iterator = exportedObjects.iterator(); iterator.hasNext();) {
-                WeakReference weakReference = (WeakReference) iterator.next();
-                Remote exported = (Remote) weakReference.get();
+                Object refOrObject = iterator.next();
+                Remote exported = null;
+                if(refOrObject instanceof WeakReference) {
+                    WeakReference weakReference = (WeakReference) iterator.next();
+                    exported = (Remote) weakReference.get();
+                }
+                else {
+                    exported = (Remote) refOrObject;
+                }
                 if(exported!=null) {
                     if (logger.isInfoEnabled()) {
                         logger.info("Unbinding RMI object '" + getDisplayServiceName() +
