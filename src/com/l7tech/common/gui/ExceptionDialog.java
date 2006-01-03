@@ -300,7 +300,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private String stackTrace(Throwable throwable) {
         String value = null;
         if (throwable == null) {
-            value = "There are no additional mesaage details.";
+            value = "There are no additional message details.";
             return value;
         }
         Throwable cause = ExceptionUtils.unnestToRoot(throwable);

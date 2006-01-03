@@ -8,6 +8,7 @@ import com.l7tech.console.util.TopComponents;
 
 import java.net.SocketException;
 import java.rmi.RemoteException;
+import java.rmi.NoSuchObjectException;
 import java.util.logging.Level;
 
 /**
@@ -27,17 +28,21 @@ public class RmiErrorHandler implements ErrorHandler {
     public void handle(ErrorEvent e) {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
         if (throwable instanceof RemoteException || throwable instanceof SocketException) {
-            if (throwable instanceof SocketException) {
+            if (throwable instanceof SocketException
+             || throwable instanceof NoSuchObjectException) {
                 // prevent error cascade during repaint if it's a network problem
                 getMainWindow().disconnectFromGateway();
             }
-            final Throwable t = e.getThrowable();
-            Level level = e.getLevel();
-            if (level != Level.SEVERE) { // bump if necessary
-                level = Level.SEVERE;
+            Throwable t = e.getThrowable();
+            String message = ERROR_MESSAGE;
+            e.getLogger().log(Level.SEVERE, message, t);
+            Level level = Level.SEVERE;
+            if(throwable instanceof NoSuchObjectException) {
+                message = "Server restart, please log in again.";
+                level = Level.WARNING;
+                t = null;
             }
-            e.getLogger().log(level, ERROR_MESSAGE, t);
-            ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway error", ERROR_MESSAGE, t, level);
+            ExceptionDialog d = ExceptionDialog.createExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway error", message, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
             d.setVisible(true);
