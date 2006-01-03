@@ -52,7 +52,10 @@ COMMIT
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 4160 -j portdrop
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 3306 -j portdrop
 
-# leave this in, its for Remote Assertion Server
+# leave this in, its for Remote Assertion Server (uses loopback)
+[0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 7001 -j portdrop
+[0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 7100 -j portdrop
+[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 7001 -j portdrop
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 7100 -j portdrop
 
 # allow in only the client software
