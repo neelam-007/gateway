@@ -61,6 +61,7 @@ public class UsernameTokenImpl implements UsernameToken {
                                                                  SoapUtil.UNTOK_PASSWORD_EL_NAME);
         String passwd = null;
         if (passwdEl != null) {
+            //TODO [WS-I BSP] password text should be base64 encoded? (check usernameTokenElement EncodingType)
             passwd = XmlUtil.getTextValue(passwdEl).trim();
             if (passwd.length() < 1) {
                 throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
@@ -115,6 +116,7 @@ public class UsernameTokenImpl implements UsernameToken {
             passwdEl.setAttribute("Type",
                               "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText");
         }
+        //TODO [WS-I BSP] do we need to check that this is signed (ref: Section 13.7)
         Element createdEl = XmlUtil.createAndAppendElementNS(untokEl, "Created", SoapUtil.WSU_NAMESPACE, "wsu");
         createdEl.appendChild(XmlUtil.createTextNode(untokEl, ISO8601Date.format(new Date())));
     }

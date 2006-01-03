@@ -34,6 +34,8 @@ import java.util.Iterator;
 
 /**
  * Utility class to help with XML digital signatures.
+ *
+ * TODO [WS-I BSP] Check requirement that Xpath sigs use XPath Filter 2.0 Transform [ref: section 8.2.2]
  */
 public class DsigUtil {
     /** @noinspection UNUSED_SYMBOL*/
@@ -111,8 +113,9 @@ public class DsigUtil {
             Element str = factory.createElementNS(wsseNs, "wsse:SecurityTokenReference");
             str.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsse", wsseNs);
             Element keyId = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, "wsse");
-            keyId.setAttribute("ValueType", SoapUtil.VALUETYPE_X509_THUMB_SHA1);
-            XmlUtil.setTextContent(keyId, CertUtils.getThumbprintSHA1(senderSigningCert));
+            keyId.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
+            keyId.setAttribute("ValueType", SoapUtil.VALUETYPE_SKI);
+            XmlUtil.setTextContent(keyId, CertUtils.getSki(senderSigningCert));
             keyInfo.setUnknownChildren(new Element[] { str });
         } else {
             //keyInfo.setKeyValue(senderSigningCert.getPublicKey());
@@ -151,7 +154,8 @@ public class DsigUtil {
                                                                        "InclusiveNamespaces",
                                                                        Transform.C14N_EXCLUSIVE,
                                                                        "c14n");
-        inclusiveNamespaces.setAttribute("PrefixList", "");
+        // omit prefix list attribute if empty (WS-I BSP R5410)
+        //inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 
     /**

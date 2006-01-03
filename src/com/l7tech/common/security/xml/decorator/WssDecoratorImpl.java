@@ -368,6 +368,7 @@ public class WssDecoratorImpl implements WssDecorator {
         // we may want to support different methods based on the user agent
         // the alternative would be : ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
         ref.setAttribute("URI", session.getId());
+        // TODO [WS-I BSP] SecurityTokenReference must have a valueType [ref: section 5.2.13], is this SC token type valid?
         ref.setAttribute("ValueType", SoapUtil.VALUETYPE_SECURECONV);
 
         // Gather derived key params
@@ -741,6 +742,7 @@ public class WssDecoratorImpl implements WssDecorator {
             }
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
+            // TODO [WS-I BSP] encryptedData must have an Id attribute [ref: section 9.2.4 also section 9.3.1]
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
             numElementsEncrypted++;
         }

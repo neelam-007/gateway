@@ -36,6 +36,9 @@ import java.util.logging.Logger;
 
 /**
  * Utility methods to support XML Encryption, specifically EncryptedKey elements.
+ *
+ * TODO [WS-I BSP] requires support for http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p key transport [ref: section 9.4.2]
+ * TODO [WS-I BSP] We need to support these Key Wrap Algorithms kw-tripledes, kw-aes128, kw-aes256 (presumably for derived keys?) [ref: section 9.4.3]
  */
 public class XencUtil {
     private static final Logger logger = Logger.getLogger(XencUtil.class.getName());
@@ -161,6 +164,8 @@ public class XencUtil {
         Element encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedType,
                                                                            SoapUtil.XMLENC_NS,
                                                                            "EncryptionMethod");
+
+        //TODO [WS-I BSP] must support http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p key encryption
         if (encryptionMethodEl != null) {
             String encMethodValue = encryptionMethodEl.getAttribute("Algorithm");
             if (encMethodValue == null || encMethodValue.length() < 1) {
