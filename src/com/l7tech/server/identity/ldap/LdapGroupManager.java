@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.*;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
+import javax.naming.SizeLimitExceededException;
 import javax.naming.directory.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -260,6 +261,7 @@ public class LdapGroupManager implements GroupManager {
         if (somethingToSearchFor) {
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            sc.setCountLimit(identityProvider.getMaxSearchResultSize());
             DirContext context = null;
             try {
                 context = identityProvider.getBrowseContext();
@@ -294,11 +296,23 @@ public class LdapGroupManager implements GroupManager {
                             output.addAll(getSubGroups(context, dn));
                         }
                     }
+                } catch (SizeLimitExceededException e) {
+                    // add something to the result that indicates the fact that the search criteria is too wide
+                    logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
+                                           "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
+                                           e);
+                    EntityHeader maxExceeded = new EntityHeader("noid",
+                                                                EntityType.MAXED_OUT_SEARCH_RESULT,
+                                                                "Too Many Entries",
+                                                                "This search yields too many entities. " +
+                                                                "Please narrow your search criterion.");
+                    output.add(maxExceeded);
+                    // dont throw here, we still want to return what we got
                 } catch (NamingException e) {
                     String msg = "error getting next answer";
                     logger.log(Level.WARNING, msg, e);
                     throw new FindException(msg, e);
-                } finally {
+                }finally {
                     try {
                         answer.close();
                     } catch (NamingException e) {
@@ -375,6 +389,7 @@ public class LdapGroupManager implements GroupManager {
         if (filter != null) {
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            sc.setCountLimit(identityProvider.getMaxSearchResultSize());
             NamingEnumeration answer = null;
             try {
                 answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter, sc);
@@ -389,6 +404,18 @@ public class LdapGroupManager implements GroupManager {
                         output.addAll(getSubGroups(context, subgroupdn));
                     }
                 }
+            } catch (SizeLimitExceededException e) {
+                // add something to the result that indicates the fact that the search criteria is too wide
+                logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
+                                       "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
+                                       e);
+                EntityHeader maxExceeded = new EntityHeader("noid",
+                                                            EntityType.MAXED_OUT_SEARCH_RESULT,
+                                                            "Too Many Entries",
+                                                            "This search yields too many entities. " +
+                                                            "Please narrow your search criterion.");
+                output.add(maxExceeded);
+                // dont throw here, we still want to return what we got
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "naming exception with filter " + filter, e);
             } finally {
@@ -470,9 +497,7 @@ public class LdapGroupManager implements GroupManager {
             for (int i = 0; i < groupTypes.length; i++) {
                 String grpclass = groupTypes[i].getObjClass();
                 if (LdapIdentityProvider.attrContainsCaseIndependent(objectclasses, grpclass)) {
-                    if (groupTypes[i].getMemberStrategy().equals(MemberStrategy.MEMBERS_BY_OU)) {
-                        collectOUGroupMembers(context, dn, headers);
-                    } else if (groupTypes[i].getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_LOGIN)) {
+                    if (groupTypes[i].getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_LOGIN)) {
                         Attribute memberAttribute = attributes.get(groupTypes[i].getMemberAttrName());
                         if (memberAttribute != null) {
                             for (int ii = 0; ii < memberAttribute.size(); ii++) {
@@ -486,6 +511,8 @@ public class LdapGroupManager implements GroupManager {
                                 }
                             }
                         }
+                    } else if (groupTypes[i].getMemberStrategy().equals(MemberStrategy.MEMBERS_BY_OU)) {
+                        collectOUGroupMembers(context, dn, headers);
                     } else {
                         Attribute memberAttribute = attributes.get(groupTypes[i].getMemberAttrName());
                         // for some reason, oracle directory specifies his members more than one (?!)
@@ -645,45 +672,79 @@ public class LdapGroupManager implements GroupManager {
     }
 
     private void collectOUGroupMembers(DirContext context, String dn, Set memberHeaders) throws NamingException {
+        long maxSize = identityProvider.getMaxSearchResultSize();
+        if (memberHeaders.size() >= maxSize) return;
         // build group memberships
         NamingEnumeration answer = null;
         String filter = identityProvider.userSearchFilterWithParam("*");
         SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        sc.setCountLimit(maxSize);
         // use dn of group as base
         answer = context.search(dn, filter, sc);
-        while (answer.hasMore()) {
-            String entitydn = null;
-            SearchResult sr = (SearchResult)answer.next();
-            entitydn = sr.getName() + "," + dn;
-            EntityHeader header = identityProvider.searchResultToHeader(sr, entitydn);
-            memberHeaders.add(header);
+        try {
+            while (answer.hasMore()) {
+                String entitydn = null;
+                SearchResult sr = (SearchResult)answer.next();
+                entitydn = sr.getName() + "," + dn;
+                EntityHeader header = identityProvider.searchResultToHeader(sr, entitydn);
+                memberHeaders.add(header);
+            }
+        } catch (SizeLimitExceededException e) {
+            // add something to the result that indicates the fact that the search criteria is too wide
+            logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
+                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
+                                   e);
+            EntityHeader maxExceeded = new EntityHeader("noid",
+                                                        EntityType.MAXED_OUT_SEARCH_RESULT,
+                                                        "Too Many Entries",
+                                                        "This search yields too many entities. " +
+                                                        "Please narrow your search criterion.");
+            memberHeaders.add(maxExceeded);
+            // dont throw here, we still want to return what we got
         }
         if (answer != null) answer.close();
-
+        if (memberHeaders.size() >= maxSize) return;
+        // sub group search
         filter = identityProvider.groupSearchFilterWithParam("*");
         // use dn of group as base
         answer = context.search(dn, filter, sc);
-        while (answer.hasMore()) {
-            String entitydn = null;
-            SearchResult sr = (SearchResult)answer.next();
-            if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
-                entitydn = sr.getName() + "," + dn;
-                try {
-                    Group subGroup = this.findByPrimaryKey(entitydn);
-                    if (subGroup != null) {
-                        Set subGroupMembers = getUserHeaders(subGroup);
-                        memberHeaders.addAll(subGroupMembers);
+        try {
+            while (answer.hasMore()) {
+                String entitydn = null;
+                SearchResult sr = (SearchResult)answer.next();
+                if (sr != null && sr.getName() != null && sr.getName().length() > 0) {
+                    entitydn = sr.getName() + "," + dn;
+                    try {
+                        Group subGroup = this.findByPrimaryKey(entitydn);
+                        if (subGroup != null) {
+                            Set subGroupMembers = getUserHeaders(subGroup);
+                            memberHeaders.addAll(subGroupMembers);
+                        }
+                    } catch (FindException e) {
+                        logger.log(Level.FINE, "error looking for sub-group" + entitydn, e);
                     }
-                } catch (FindException e) {
-                    logger.log(Level.FINE, "error looking for sub-group" + entitydn, e);
                 }
             }
+        } catch (SizeLimitExceededException e) {
+            // add something to the result that indicates the fact that the search criteria is too wide
+            logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
+                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
+                                   e);
+            EntityHeader maxExceeded = new EntityHeader("noid",
+                                                        EntityType.MAXED_OUT_SEARCH_RESULT,
+                                                        "Too Many Entries",
+                                                        "This search yields too many entities. " +
+                                                        "Please narrow your search criterion.");
+            memberHeaders.add(maxExceeded);
+            // dont throw here, we still want to return what we got
         }
         if (answer != null) answer.close();
     }
 
     private void nvSearchForUser(DirContext context, String nvhint, Set memberHeaders) throws NamingException {
+        long maxSize = identityProvider.getMaxSearchResultSize();
+        if (memberHeaders.size() >= maxSize) return;
         StringBuffer filter = new StringBuffer("(|");
         UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
         for (int i = 0; i < userTypes.length; i++) {
@@ -696,6 +757,7 @@ public class LdapGroupManager implements GroupManager {
 
         SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        sc.setCountLimit(maxSize);
         NamingEnumeration answer = null;
         try {
             answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter.toString(), sc);

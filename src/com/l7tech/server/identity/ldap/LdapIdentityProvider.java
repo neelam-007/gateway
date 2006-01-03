@@ -219,7 +219,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         throw new BadCredentialsException("credentials did not authenticate");
     }
 
-    private long getMaxSearchResultSize() {
+    long getMaxSearchResultSize() {
         if (maxSearchResultSize <= 0) {
             String tmp = serverConfig.getProperty(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE);
             if (tmp == null) {

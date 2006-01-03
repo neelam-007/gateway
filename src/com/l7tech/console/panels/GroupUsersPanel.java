@@ -6,6 +6,7 @@ import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -468,9 +469,13 @@ class GroupUsersPanel extends JPanel {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(new ImageIcon(ImageCache.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE)));
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
+            if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(eh.getType())) {
+                setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Stop16.gif")));
+            } else {
+                setIcon(new ImageIcon(ImageCache.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE)));
+            }
 
             return this;
         }
