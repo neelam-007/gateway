@@ -6,7 +6,6 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
@@ -20,7 +19,6 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
-import com.l7tech.console.tree.RequestWssSamlNode;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
@@ -39,7 +37,6 @@ class PathValidator {
 
     private static final Class ASSERTION_HTTPCREDENTIALS = HttpCredentialSourceAssertion.class;
     private static final Class ASSERTION_HTTPBASIC = HttpBasic.class;
-    private static final Class ASSERTION_HTTPDIGEST = HttpDigest.class;
     private static final Class ASSERTION_CUSTOM = CustomAssertionHolder.class;
     private static final Class ASSERTION_SECURECONVERSATION = SecureConversation.class;
     private static final Class ASSERTION_XPATHCREDENTIALS = XpathCredentialSource.class;
@@ -113,6 +110,9 @@ class PathValidator {
             processUnknown((UnknownAssertion)a);
         } else if (a instanceof SqlAttackAssertion) {
             processSQL((SqlAttackAssertion)a);
+        } else if (a instanceof SamlBrowserArtifact) {
+            seenAccessControl = true;
+            setSeenCredentials(a, true);
         }
 
         setSeen(a.getClass());
@@ -541,7 +541,7 @@ class PathValidator {
 
     private void setSeenCredentials(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenCredentials.put(actor, new Boolean(value));
+        seenCredentials.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
     }
 
     private boolean seenWssSignature(Assertion context) {
@@ -553,7 +553,7 @@ class PathValidator {
 
     private void setSeenWssSignature(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenWssSignature.put(actor, new Boolean(value));
+        seenWssSignature.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
     }
 
     private boolean seenSamlSecurity(Assertion context) {
@@ -565,7 +565,7 @@ class PathValidator {
 
     private void setSeenSamlStatement(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenSamlSecurity.put(actor, new Boolean(value));
+        seenSamlSecurity.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
     }
 
     private boolean haveSeen(Class assertionClass) {
@@ -604,9 +604,6 @@ class PathValidator {
 
     private boolean isDefaultActor(Assertion a) {
         String actor = assertionToActor(a);
-        if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
-            return true;
-        }
-        return false;
+        return actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE);
     }
 }
