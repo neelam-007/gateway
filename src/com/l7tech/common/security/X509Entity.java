@@ -9,6 +9,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Abstract superclass of entities that have certs, like {@link com.l7tech.server.identity.cert.CertEntryRow}
@@ -16,6 +18,7 @@ import java.security.cert.X509Certificate;
  */
 public abstract class X509Entity extends NamedEntityImp {
     protected transient X509Certificate cachedCert;
+    private static final Logger logger = Logger.getLogger(X509Entity.class.getName());
     protected String certBase64;
     protected String thumbprintSha1;
     protected String ski;
@@ -29,7 +32,16 @@ public abstract class X509Entity extends NamedEntityImp {
     public synchronized X509Certificate getCertificate() throws CertificateException, IOException {
         if ( cachedCert == null ) {
             if (certBase64 == null) return null;
-            cachedCert = CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
+            // note fla: this class is called by hibernate which does not know how to handle the thrown exceptions
+            // is in some instances it causes the ssg to not boot (e.g. if the db is somehow corrupted as per
+            // bugzilla 2162)
+            // will catch this indirectly in the boot process
+            try {
+                cachedCert = CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
+            } catch (CertificateException e) {
+                logger.warning("Following cert cannot be decoded and may be corrupted: " + certBase64);
+                throw e;
+            }
         }
         return cachedCert;
     }

@@ -21,12 +21,14 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.dao.DataAccessException;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -225,17 +227,24 @@ public class BootProcess extends ApplicationObjectSupport
             serviceManager.initiateServiceCache();
 
             // Make sure certs without thumbprints get them
-            TrustedCertManager tcm = (TrustedCertManager)getApplicationContext().getBean("trustedCertManager");
-            tcm.findByThumbprint(null);
-            tcm.findByThumbprint("");
-            tcm.findBySki(null);
-            tcm.findBySki("");
+            try {
+                TrustedCertManager tcm = (TrustedCertManager)getApplicationContext().getBean("trustedCertManager");
+                tcm.findByThumbprint(null);
+                tcm.findByThumbprint("");
+                tcm.findBySki(null);
+                tcm.findBySki("");
 
-            ClientCertManager ccm = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
-            ccm.findByThumbprint(null);
-            ccm.findByThumbprint("");
-            ccm.findBySki(null);
-            ccm.findBySki("");
+                ClientCertManager ccm = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
+                ccm.findByThumbprint(null);
+                ccm.findByThumbprint("");
+                ccm.findBySki(null);
+                ccm.findBySki("");
+            } catch (DataAccessException e) {
+                // see bugzilla 2162, if a bad cert somehow makes it in the db, we should not prevent the gateway to boot
+                logger.log(Level.WARNING, "Could not thumbprint certs. Something " +
+                                          "corrupted in trusted_cert or client_cert table.",
+                                          e);
+            }
 
             logger.info("Initialized server");
         } catch (IOException e) {
