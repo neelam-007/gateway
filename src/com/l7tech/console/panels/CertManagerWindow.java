@@ -58,7 +58,7 @@ public class CertManagerWindow extends JDialog {
      *
      * @param owner The parent component
      */
-    public CertManagerWindow(Frame owner) {
+    public CertManagerWindow(Frame owner) throws RemoteException {
         super(owner, resources.getString("dialog.title"), true);
 
         final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
@@ -209,7 +209,7 @@ public class CertManagerWindow extends JDialog {
     /**
      * Load the certs from the database
      */
-    private void loadTrustedCerts() {
+    private void loadTrustedCerts() throws RemoteException {
 
         java.util.List certList = null;
         try {
@@ -217,21 +217,13 @@ public class CertManagerWindow extends JDialog {
 
             Vector certs = new Vector();
             for (int i = 0; i < certList.size(); i++) {
-                Object o = (Object)certList.get(i);
+                Object o = certList.get(i);
                 certs.add(o);
             }
 
             trustedCertTable.getTableSorter().setData(certs);
             trustedCertTable.getTableSorter().getRealModel().setRowCount(certs.size());
             trustedCertTable.getTableSorter().fireTableDataChanged();
-
-
-        } catch (RemoteException re) {
-            String msg = resources.getString("cert.remote.exception");
-            logger.log(Level.WARNING, msg, re);
-            JOptionPane.showMessageDialog(CertManagerWindow.this, msg,
-                                          resources.getString("load.error.title"),
-                                          JOptionPane.ERROR_MESSAGE);
         } catch (FindException e) {
             String msg = resources.getString("cert.find.error");
             logger.log(Level.WARNING, msg, e);
