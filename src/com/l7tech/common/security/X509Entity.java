@@ -10,7 +10,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * Abstract superclass of entities that have certs, like {@link com.l7tech.server.identity.cert.CertEntryRow}
