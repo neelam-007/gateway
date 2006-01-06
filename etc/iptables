@@ -22,8 +22,8 @@ COMMIT
 # fast forward established connections, no need to have them traverse the rules
 [0:0] -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-# allow all input on private and localhost drop public (eth1)
-[0:0] -A INPUT -i ! eth1 -m state --state NEW -j ACCEPT
+# allow all input on localhost 
+[0:0] -A INPUT -i lo -m state --state NEW -j ACCEPT
 
 # Block bad tcp flags
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j badflags

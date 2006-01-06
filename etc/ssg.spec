@@ -38,7 +38,6 @@ mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
 mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
-mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 rm -f %{buildroot}/ssg/dist/*
@@ -50,7 +49,6 @@ chmod 755 %{buildroot}/ssg/configwizard/*.sh
 %defattr(-,root,root)
 /etc/init.d/ssg 
 /etc/init.d/tarari
-/etc/init.d/back_route
 /etc/init.d/tcp_tune
 /etc/snmp/snmpd.conf_example
 /etc/profile.d/ssgruntimedefs.sh

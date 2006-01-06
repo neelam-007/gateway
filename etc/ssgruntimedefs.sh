@@ -33,11 +33,10 @@ system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
 
 multiplier="2/3"
 let java_ram="$system_ram*$multiplier" 
-let maxnewsize="$java_ram/2"
+let newsize="$java_ram*7/10"
 
-default_java_opts="-Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30 -Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server -Djava.awt.headless=true -XX:CompileThreshold=1500 "
+default_java_opts="-Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30 -Xms${java_ram}k -Xmx${java_ram}k -Xmn${newsize} -Xss128k -server -Djava.awt.headless=true -XX:CompileThreshold=1500 "
 default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
-default_java_opts="$default_java_opts -XX:NewSize=${maxnewsize}k -XX:MaxNewSize=${maxnewsize}k "
 
 
 if [ -e /ssg/etc/conf/JVM ]; then
@@ -50,12 +49,16 @@ if [ $cpucount = 1 ]; then
 	# single cpu
 	default_java_opts="$default_java_opts -XX:+DisableExplicitGC "
 else
+	let gcthreads="$cpucount-1"
 	if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
-		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$gcthreads "
 		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
 		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
 	else 
-		default_java_opts="$default_java_opts -XX:+DisableExplicitGC -XX:+UseParallelGC"
+		#default_java_opts="$default_java_opts -XX:+DisableExplicitGC -XX:+UseParallelGC"
+		default_java_opts="$default_java_opts -XX:+DisableExplicitGC"
+		# previous one. Added new options below:
+		default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15 -XX:+AggressiveOpts -XX:+UseBiasedLocking "
 	fi
 fi
 
