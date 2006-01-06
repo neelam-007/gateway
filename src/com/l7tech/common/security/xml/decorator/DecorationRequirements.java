@@ -381,6 +381,22 @@ public class DecorationRequirements {
         this.suppressBst = suppressBst;
     }
 
+    public byte[] getKerberosTicket() {
+        return kerberosTicket;
+    }
+
+    public void setKerberosTicket(byte[] kerberosTicket) {
+        this.kerberosTicket = kerberosTicket;
+    }
+
+    public boolean isIncludeKerberosTicket() {
+        return includeKerberosTicket;
+    }
+
+    public void setIncludeKerberosTicket(boolean includeKerberosTicket) {
+        this.includeKerberosTicket = includeKerberosTicket;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -403,4 +419,6 @@ public class DecorationRequirements {
     private SecretKey encryptedKey = null;
     private String encryptedKeySha1 = null;
     private String signatureConfirmation = null;
+    private byte[] kerberosTicket = null;
+    private boolean includeKerberosTicket = false;
 }

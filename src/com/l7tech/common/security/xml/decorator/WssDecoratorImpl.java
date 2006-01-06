@@ -122,7 +122,7 @@ public class WssDecoratorImpl implements WssDecorator {
             createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
 
         byte[] senderSki = null;
-        Element bst = null;
+        Element x509Bst = null;
         if (dreq.getSenderMessageSigningCertificate() != null && !signList.isEmpty()) {
             if (dreq.isSuppressBst()) {
                 // Use keyinfo reference target of a SKI
@@ -134,9 +134,16 @@ public class WssDecoratorImpl implements WssDecorator {
                 }
             } else {
                 // Use keyinfo reference target of a BinarySecurityToken
-                bst = addX509BinarySecurityToken(securityHeader, dreq.getSenderMessageSigningCertificate(), c);
+                x509Bst = addX509BinarySecurityToken(securityHeader, dreq.getSenderMessageSigningCertificate(), c);
             }
         }
+
+        // Add Kerberos ticket
+        Element kerbBst = null;
+        if (dreq.isIncludeKerberosTicket() && dreq.getKerberosTicket() != null && dreq.getKerberosTicket().length > 0) {
+            kerbBst = addKerberosBinarySecurityToken(securityHeader, dreq.getKerberosTicket(), c);
+        }
+
         // At this point, if we are signing using a sender cert, we have either recipSki or bst but not both
 
         Element sct = null;
@@ -184,9 +191,9 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
-            } else if (bst != null) {
+            } else if (x509Bst != null) {
                 // sign with X509 Binary Security Token
-                keyInfoReferenceTarget = bst;
+                keyInfoReferenceTarget = x509Bst;
                 if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
                     keyInfoValueTypeURI = SoapUtil.VALUETYPE_X509;
                 } else {
@@ -195,6 +202,18 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
+            } else if (kerbBst != null) {
+                // TODO sign with GSS!
+                // TODO sign with GSS!
+                // TODO sign with GSS!
+                // TODO sign with GSS!
+                senderSigningKey = null;
+                // TODO sign with GSS!
+                // TODO sign with GSS!
+                // TODO sign with GSS!
+                // TODO sign with GSS!
+                //if (senderSigningKey == null)
+                //   throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
             } else if (saml != null) {
                 // sign with SAML token
                 keyInfoReferenceTarget = saml;
@@ -818,6 +837,20 @@ public class WssDecoratorImpl implements WssDecorator {
             element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY_2);
         }
         element.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(certificate.getEncoded(), true)));
+        securityHeader.appendChild(element);
+        return element;
+    }
+
+    private Element addKerberosBinarySecurityToken(Element securityHeader, byte[] kerberosTicket, Context c) {
+        Document factory = securityHeader.getOwnerDocument();
+        Element element = factory.createElementNS(securityHeader.getNamespaceURI(),
+            SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
+        element.setPrefix(securityHeader.getPrefix());
+
+        element.setAttribute("ValueType", SoapUtil.VALUETYPE_KERBEROS_GSS_AP_REQ);
+        element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
+
+        element.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(kerberosTicket, true)));
         securityHeader.appendChild(element);
         return element;
     }
