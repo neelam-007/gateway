@@ -47,6 +47,7 @@ public class PingServlet extends HttpServlet {
             Session s = sessionFactory.openSession();
             if ( s.isOpen() ) {
                 response.setStatus( HttpServletResponse.SC_OK );
+                response.setContentType("text/html; charset=utf-8");
                 out = response.getWriter();
                 writePage( out, OK_TITLE, OK_MESSAGE );
             } else {
