@@ -253,7 +253,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         PartInfo attachment =  pi.next();
                         if (attachment.getPosition() == 0)
                             continue; // skip over SOAP part
-                        String attachmentName = attachment.getContentId();
+                        String attachmentName = attachment.getContentId(true);
                         if (attachmentName == null || attachmentName.length() < 1)
                             attachmentName = "in position #" + attachment.getPosition();
                         if (!attachment.isValidated()) {

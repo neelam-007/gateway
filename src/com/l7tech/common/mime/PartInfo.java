@@ -87,8 +87,13 @@ public interface PartInfo {
     /** @return the ContentTypeHeader, or a default value.  Never null. */
     public ContentTypeHeader getContentType();
 
-    /** @return the Content-ID value with any enclosing &lt; &gt; characters removed; or null if there isn't one. */
-    public String getContentId();
+    /**
+     * Get the Content-ID value, optionally stripping enclosing angle brackets.
+     *
+     * @param stripAngleBrackets true to strip angle brackets, or false to get the raw value.
+     * @return the Content-ID value, possibly with any enclosing &lt; &gt; characters removed; or null if there isn't one.
+     */
+    public String getContentId(boolean stripAngleBrackets);
 
     /**
      * @return true if this PartInfo was previously tagged as valid with setValidated(true).

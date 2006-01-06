@@ -313,8 +313,8 @@ public class XmlFacet extends MessageFacet {
             return delegate.getContentType();
         }
 
-        public String getContentId() {
-            return delegate.getContentId();
+        public String getContentId(boolean stripAngleBrackets) {
+            return delegate.getContentId(stripAngleBrackets);
         }
 
         public boolean isValidated() {

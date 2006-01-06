@@ -265,14 +265,14 @@ public class MimeBodyTest extends TestCase {
         for (PartIterator i = mm.iterator(); i.hasNext(); ) {
             PartInfo partInfo = i.next();
             parts.add(partInfo);
-            log.info("Saw part: " + partInfo.getContentId());
+            log.info("Saw part: " + partInfo.getContentId(true));
             // Force body to be stashed
             partInfo.getInputStream(false).close();
         }
 
         assertEquals(2, parts.size());
-        assertEquals(MESS_SOAPCID, ((PartInfo)parts.get(0)).getContentId());
-        assertEquals(MESS_RUBYCID, ((PartInfo)parts.get(1)).getContentId());
+        assertEquals(MESS_SOAPCID, ((PartInfo)parts.get(0)).getContentId(true));
+        assertEquals(MESS_RUBYCID, ((PartInfo)parts.get(1)).getContentId(true));
     }
 
     public void testIterator2() throws Exception {
@@ -290,7 +290,7 @@ public class MimeBodyTest extends TestCase {
             if (partInfo.getPosition() == 0)
                 continue;
             parts.add(partInfo);
-            log.info("Saw part: " + partInfo.getContentId());
+            log.info("Saw part: " + partInfo.getContentId(true));
             partInfo.getPosition();
             // Force body to be stashed
             //partInfo.getInputStream(false).close();
@@ -335,6 +335,10 @@ public class MimeBodyTest extends TestCase {
         } catch (IOException e) {
             // Ok
         }
+    }
+
+    public void testBug2180() throws Exception {
+        makeMessage(BUG_2180, MESS_BUG_2180_CTYPE);
     }
 
     public final String MESS_SOAPCID = "-76394136.15558";
@@ -485,5 +489,31 @@ public class MimeBodyTest extends TestCase {
             "\n" +
             "\r\n" +
             "------=Part_-763936460.00306951464153826--\r\n";
+
+
+    private static final String MESS_BUG_2180_CTYPE = "multipart/related; type=\"text/xml\"; start=\"<40080056B6C225289B8E845639E05547>\"; \tboundary=\"----=_Part_4_20457766.1136482180671\"";
+    public static final String BUG_2180 =
+            "------=_Part_4_20457766.1136482180671\r\n" +
+            "Content-Type: text/xml; charset=UTF-8\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "Content-Id: <40080056B6C225289B8E845639E05547>\r\n" +
+            "\r\n" +
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+            " <soapenv:Body>\n" +
+            "  <ns1:echoDir soapenv:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:ns1=\"urn:EchoAttachmentsService\">\n" +
+            "   <source xsi:type=\"soapenc:Array\" soapenc:arrayType=\"ns1:DataHandler[1]\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" +
+            "    <item href=\"cid:5DE0F2F64B5AFDB73D4C8FF242FABEE6\"/>\n" +
+            "   </source>\n" +
+            "  </ns1:echoDir>\n" +
+            " </soapenv:Body>\n" +
+            "</soapenv:Envelope>\n" +
+            "------=_Part_4_20457766.1136482180671\r\n" +
+            "Content-Type: text/plain\r\n" +
+            "Content-Transfer-Encoding: binary\r\n" +
+            "Content-Id: <5DE0F2F64B5AFDB73D4C8FF242FABEE6>\r\n" +
+            "\r\n" +
+            "abc123\n" +
+            "------=_Part_4_20457766.1136482180671--";
 
 }

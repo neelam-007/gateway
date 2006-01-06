@@ -98,8 +98,8 @@ public class MimeBody {
             readInitialBoundary();
             readNextPartHeaders();
             firstPart = (PartInfoImpl)partInfos.get(0);
-            if (start != null && !(start.equals(firstPart.getContentId())))
-                throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");            
+            if (start != null && !(start.equals(firstPart.getContentId(false))))
+                throw new IOException("Multipart content type has a \"start\" parameter, but it doesn't match the cid of the first MIME part.");
         } else {
             // Single-part message.  Configure first and only part accordingly.
             boundaryStr = null;
@@ -137,7 +137,7 @@ public class MimeBody {
             partInfos.add(mainPartInfo);
             firstPart = mainPartInfo;
 
-            final String mainContentId = mainPartInfo.getContentId();
+            final String mainContentId = mainPartInfo.getContentId(true);
             if (mainContentId != null)
                 partInfosByCid.put(mainContentId, mainPartInfo);
         }
@@ -176,7 +176,7 @@ public class MimeBody {
         MimeHeaders headers = MimeUtil.parseHeaders(mainInputStream);
         final PartInfoImpl partInfo = new PartInfoImpl(partInfos.size(), headers);
         partInfos.add(partInfo);
-        final String cid = partInfo.getContentId();
+        final String cid = partInfo.getContentId(true);
         if (cid != null)
             partInfosByCid.put(cid, partInfo);
 
@@ -681,7 +681,7 @@ public class MimeBody {
      * This may have no effect if the parts have already all been read and stashed.
      * If the limit has already been reached when this method is called, the stream will be closed immediately
      * and an IOException thrown.
-     * 
+     *
      * @param sizeLimit  the new size limit, or 0 for no limit.  Must be nonnegative.
      * @throws IOException if the limit has already been reached.
      */
@@ -876,8 +876,8 @@ public class MimeBody {
             return headers.getContentType();
         }
 
-        public String getContentId() {
-            return headers.getContentId();
+        public String getContentId(boolean stripAngleBrackets) {
+            return headers.getContentId(stripAngleBrackets);
         }
 
         public boolean isValidated() {

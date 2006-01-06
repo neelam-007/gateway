@@ -108,19 +108,22 @@ public class MimeHeaders {
     /**
      * Get the value of the Content-ID header with any enclosing angle brackets removed.
      *
+     * @param stripAngleBrackets true to strip angle brackets, or false to get the raw value.
      * @return the Content-ID, or null if it was missing or empty.
      */
-    public String getContentId() {
+    public String getContentId(boolean stripAngleBrackets) {
         MimeHeader cid = get(MimeUtil.CONTENT_ID);
         if (cid == null)
             return null;
         String value = cid.getMainValue().trim();
         if (value.length() < 1)
             return null;
-        if (value.startsWith("<") && value.length() > 1)
-            value = value.substring(1);
-        if (value.endsWith(">") && value.length() > 1)
-            value = value.substring(0, value.length() - 1);
+        if (stripAngleBrackets) {
+            if (value.startsWith("<") && value.length() > 1)
+                value = value.substring(1);
+            if (value.endsWith(">") && value.length() > 1)
+                value = value.substring(0, value.length() - 1);
+        }
         return value;
     }
 
