@@ -45,6 +45,8 @@ class SecurityTokenTypeMapping implements TypeMapping {
     private final Pattern PUT   = Pattern.compile("[:#]UsernameToken$");
     private final Pattern PSCT  = Pattern.compile("/sc/sct$");
     private final Pattern PSAML = Pattern.compile("[:#]Assertion$|^SAML$");
+    private final Pattern PKERB = Pattern.compile("[:#]#GSS_Kerberosv5_AP_REQ$");
+
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         String uri = XmlUtil.getTextValue(source).trim();
 
@@ -56,6 +58,8 @@ class SecurityTokenTypeMapping implements TypeMapping {
             return new TypedReference(getMappedClass(), SecurityTokenType.WSSC_CONTEXT);
         if (PSAML.matcher(uri).find())
             return new TypedReference(getMappedClass(), SecurityTokenType.SAML_ASSERTION);
+        if (PKERB.matcher(uri).find())
+                return new TypedReference(getMappedClass(), SecurityTokenType.WSS_KERBEROS_BST);
 
         throw new InvalidPolicyStreamException("wsse:SecurityToken has unsupported TokenType: " + uri);
     }
