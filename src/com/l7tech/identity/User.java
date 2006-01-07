@@ -1,7 +1,5 @@
 package com.l7tech.identity;
 
-import java.security.Principal;
-
 /**
  * Read-only interface for a User either from the internal identity provider or a ldap directory.
  * In the case of ldap, the uniqueIdentifier property contains the dn.
@@ -15,28 +13,7 @@ import java.security.Principal;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
-public interface User extends Principal {
-    /**
-     * This method should return an identifier for this User that is unique within its IdentityProvider.
-     * For internal users, this can be a String representation of the OID.
-     * For LDAP, it should be the DN.
-     */
-    String getUniqueIdentifier();
-
-    /**
-     * Gets the OID of the {@link IdentityProviderConfig} to which this User belongs. This is only persisted for {@link com.l7tech.identity.fed.FederatedUser}s.
-     * @return the OID of the {@link IdentityProviderConfig} to which this User belongs.
-     *
-     * For internal users, the provider ID is {@link IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID}
-     */
-    long getProviderId();
-
-    /**
-     * Sets the OID of the {@link IdentityProviderConfig} to which this User belongs. This is only persisted for {@link com.l7tech.identity.fed.FederatedUser}s.
-     * @param providerId the OID of the {@link IdentityProviderConfig} to which this User belongs.
-     */
-    void setProviderId(long providerId);
-
+public interface User extends Identity {
     /**
      * Gets the user's login ID
      * @return the user's login ID. May be null.
