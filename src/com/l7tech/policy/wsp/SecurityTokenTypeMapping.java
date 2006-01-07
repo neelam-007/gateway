@@ -59,7 +59,7 @@ class SecurityTokenTypeMapping implements TypeMapping {
         if (PSAML.matcher(uri).find())
             return new TypedReference(getMappedClass(), SecurityTokenType.SAML_ASSERTION);
         if (PKERB.matcher(uri).find())
-                return new TypedReference(getMappedClass(), SecurityTokenType.WSS_KERBEROS_BST);
+            return new TypedReference(getMappedClass(), SecurityTokenType.WSS_KERBEROS_BST);
 
         throw new InvalidPolicyStreamException("wsse:SecurityToken has unsupported TokenType: " + uri);
     }
