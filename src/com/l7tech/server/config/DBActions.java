@@ -166,10 +166,15 @@ public class DBActions {
                         //then this is a 3.3+ database
 
                         try {
-                            stmt.execute("select ski from client_cert");
-                            dbVersion = "3.4";
+                            stmt.execute("select http_methods from published_service");
+                            dbVersion = "4.0";
                         } catch (SQLException e1) {
-                            dbVersion = "3.3";
+                            try {
+                                stmt.execute("select ski from client_cert");
+                                dbVersion = "3.4";
+                            } catch (SQLException e2) {
+                                dbVersion = "3.3";
+                            }
                         }
                     } else {
                         //check the contents of the audit_message table to see if this is a 3.2 or a 3.1 db
@@ -438,7 +443,16 @@ public class DBActions {
                 }
             }
         } catch (SQLException e) {
-
+            String sqlState = e.getSQLState();
+            if (ERROR_CODE_AUTH_FAILURE.equals(sqlState)) {
+                status = DB_AUTHORIZATION_FAILURE;
+            }
+            else if (ERROR_CODE_UNKNOWNDB.equals(sqlState)) {
+                status = DB_UNKNOWNDB_FAILURE;
+            }
+            else {
+                status = DB_UNKNOWN_FAILURE;
+            }
         } finally {
             if (stmt != null) {
                 try {

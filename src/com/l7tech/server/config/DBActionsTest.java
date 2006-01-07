@@ -8,15 +8,15 @@ import com.l7tech.server.config.exceptions.UnsupportedOsException;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
- * User: megery
- * Date: Sep 23, 2005
- * Time: 12:40:39 PM
- * To change this template use File | Settings | File Templates.
+ Tests the DBActions class
+ Specifically, this tests the version check and upgrade methods
+
+ NOTE: requires the ssg.sql file for each of the versions below in the classpath, named as follows:
+        ssg[version].sql, where version is the version number with dots. Ex ssg3.4.sql
  */
 public class DBActionsTest extends TestCase {
-    private final String currentVersion = "3.4";
-    String[] versions = new String[] {"3.1", "3.2", "3.3", "3.4"};
+    private final String currentVersion = "4.0";
+    String[] versions = new String[] {"3.1", "3.2", "3.3", "3.4", "4.0"};
 
     private String hostname = "localhost";
     private String dbName = "ssg";
@@ -74,7 +74,7 @@ public class DBActionsTest extends TestCase {
                 try {
                     upgradeStatus = dbActions.upgradeDbSchema(hostname, privUsername, privPassword, dbName+versionName, dbVersion, currentVersion, osFunctions);
                     assertEquals("Failed upgrade procedure!!", upgradeStatus, DBActions.DB_SUCCESS);
-                    System.out.println("Checking version again");
+                    System.out.println("Checking version again - no message beyond here means success");
                     dbVersion = dbActions.checkDbVersion(hostname, dbName+versionName, username, password);
                     assertEquals("The version of the upgraded DB is incorrect", dbVersion, currentVersion);
                 } catch (IOException e) {
@@ -92,10 +92,12 @@ public class DBActionsTest extends TestCase {
             System.out.println("Creating database - version " + realVersion);
             success = dbActions.createDb(privUsername, privPassword, hostname, dbName+versionName, username, password, "ssg"+realVersion +".sql", windows, true);
             if (success == DBActions.DB_SUCCESS) {
-                System.out.println("Success creating database - version " + realVersion);
+                System.out.println("Success creating database - version " + realVersion +
+                        "\n----------------------------------------\n");
             }
             else {
-                System.out.println("Could not create database realVersion: " + realVersion);
+                System.out.println("Could not create database realVersion: " + realVersion +
+                    "\n----------------------------------------\n");
                 success = DBActions.DB_UNKNOWN_FAILURE;
             }
         }
