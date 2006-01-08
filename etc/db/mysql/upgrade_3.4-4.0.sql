@@ -27,3 +27,4 @@ alter table audit_message drop column user_id;
 alter table audit_message drop column provider_oid;
 alter table audit_admin drop column admin_login;
 
+alter table community_schemas change schema schema_xml mediumtext default '';

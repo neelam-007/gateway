@@ -299,7 +299,7 @@
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
-        <property name="schema" column="schema" type="string"/>
+        <property name="schema_xml" column="schema" type="string"/>
         <property name="name" column="name" type="string"/>
         <property name="tns" column="tns" type="string"/>
     </class>
