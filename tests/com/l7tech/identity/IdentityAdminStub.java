@@ -112,7 +112,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         final StubDataStore store = StubDataStore.defaultStore();
         if (user.getUniqueIdentifier() == null)
             user.getUserBean().setUniqueIdentifier(Long.toString(store.nextObjectId()));
-        user.setProviderId(idProvCfgId);
+        user.getUserBean().setProviderId(idProvCfgId);
         store.getUsers().put(user.getUniqueIdentifier(), user);
         if (groupHeaders != null) {
             // Clear existing memberships

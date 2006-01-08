@@ -72,7 +72,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
             if ( g == null ) {
                 g = (PersistentGroup)findByPrimaryKey(VirtualGroup.class, Long.parseLong(oid));
                 if (g != null) {
-                    g.setProviderId(providerConfig.getOid());
+                    g.getGroupBean().setProviderId(providerConfig.getOid());
                 }
             }
             return g;

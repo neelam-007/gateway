@@ -254,7 +254,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
-            user.setProviderId(identityProviderConfigId);
+            user.getUserBean().setProviderId(identityProviderConfigId);
 
             String id = user.getUniqueIdentifier();
             if (id == null || id.equals(Long.toString(Entity.DEFAULT_OID))) {
@@ -311,7 +311,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityA
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
-            group.setProviderId(identityProviderConfigId);
+            group.getGroupBean().setProviderId(identityProviderConfigId);
 
             String id = group.getUniqueIdentifier();
             if (id == null || id.equals(Long.toString(Entity.DEFAULT_OID))) {

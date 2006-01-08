@@ -8,14 +8,21 @@ import com.l7tech.common.security.saml.SamlConstants;
 import java.io.Serializable;
 
 /**
- * null SAML URIs are assumed to be equivalent to the "unspecified" format
+ * Typesafe enum for name formats.
+ *
+ * The values are a very slight superset of the formats known from SAML 1.1 and 2.0.
+ *
+ * Notes on SAML URIs:
+ * <ul>
+ * <li>A null URI in the {@link #saml11Uri} field will be reported as "unspecified"
  * (see {@link SamlConstants#NAMEIDENTIFIER_UNSPECIFIED}).
+ * <li>A null URI in the {@link #saml20Uri} field will result in falling back to the {@link #getSaml11Uri()} value.
+ * </ul>
  */
 public final class NameFormat implements Serializable {
     private static int n = 0;
 
-    public static final NameFormat LOGIN = new NameFormat(n++, "Login",
-            null, null);
+    public static final NameFormat LOGIN = new NameFormat(n++, "Login", null, null);
 
     public static final NameFormat EMAIL = new NameFormat(n++, "Email Address",
             SamlConstants.NAMEIDENTIFIER_EMAIL, null);

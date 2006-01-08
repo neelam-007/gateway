@@ -18,12 +18,6 @@ public interface Identity extends Principal {
     long getProviderId();
 
     /**
-     * Sets the OID of the {@link com.l7tech.identity.IdentityProviderConfig} to which this User belongs. This is only persisted for {@link com.l7tech.identity.fed.FederatedUser}s.
-     * @param providerId the OID of the {@link com.l7tech.identity.IdentityProviderConfig} to which this User belongs.
-     */
-    void setProviderId(long providerId);
-
-    /**
      * Returns a String that uniquely identifies this Identity within its {@link IdentityProvider}.
      * For internal and federated identities, this will be a String representation of the OID.
      * For LDAP identities, this will be the DN.
