@@ -15,9 +15,18 @@ import java.util.Set;
  * {@link #securityTokenMappings} linked from this record.
  */
 public class AttributeConfig extends NamedEntityImp {
+    private String shortName;
     private String description;
     private Set securityTokenMappings;
     private Set identityMappings;
+
+    public String getShortName() {
+        return shortName;
+    }
+
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
 
     public String getDescription() {
         return description;

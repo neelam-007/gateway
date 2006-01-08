@@ -1051,6 +1051,7 @@
             <fileset dir="${src.root}/etc/db">
                 <include name="SSG.hbm.xml"/>
                 <include name="audit.hbm.xml"/>
+                <include name="identityMapping.hbm.xml"/>
                 <include name="c3p0.properties"/>
             </fileset>
 
