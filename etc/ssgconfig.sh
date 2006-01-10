@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#set the current working directory to where this script lives
+cd `dirname $0`
 pushd ..
 SSG_ROOT=`pwd`
 popd
