@@ -1327,6 +1327,8 @@
                  token="DB_PINGSTMT" value="${database.pingstmt}"/>
 
         <copy file="${src.root}/etc/system.properties" todir="${install.src.conf}"/>
+        <copy file="${src.root}/etc/krb5.conf" todir="${install.src.conf}"/>
+        <copy file="${src.root}/etc/login.config" todir="${install.src.conf}"/>
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>

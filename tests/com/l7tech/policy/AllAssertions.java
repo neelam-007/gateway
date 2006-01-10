@@ -58,6 +58,7 @@ public class AllAssertions {
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
+        new RequestWssKerberos(),
     };
 
     private static CustomAssertionHolder CUSTOM_ASSERTION_HOLDER = new CustomAssertionHolder();
@@ -113,6 +114,7 @@ public class AllAssertions {
         new StealthFault(),
         new SqlAttackAssertion(),
         new RequestSizeLimit(),
+        new RequestWssKerberos(),
     };
 
 
@@ -160,6 +162,7 @@ public class AllAssertions {
         new StealthFault(),
         new SqlAttackAssertion(),
         new RequestSizeLimit(),
+        new RequestWssKerberos(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
@@ -173,6 +176,7 @@ public class AllAssertions {
         new WsFederationPassiveTokenExchange(),
         new WsFederationPassiveTokenRequest(),
         new XpathCredentialSource(),
+        new RequestWssKerberos(),
     };
 
 }

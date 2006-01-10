@@ -7,6 +7,7 @@ package com.l7tech.common.security.xml.decorator;
 
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Element;
 
@@ -381,11 +382,11 @@ public class DecorationRequirements {
         this.suppressBst = suppressBst;
     }
 
-    public byte[] getKerberosTicket() {
+    public KerberosGSSAPReqTicket getKerberosTicket() {
         return kerberosTicket;
     }
 
-    public void setKerberosTicket(byte[] kerberosTicket) {
+    public void setKerberosTicket(KerberosGSSAPReqTicket kerberosTicket) {
         this.kerberosTicket = kerberosTicket;
     }
 
@@ -419,6 +420,6 @@ public class DecorationRequirements {
     private SecretKey encryptedKey = null;
     private String encryptedKeySha1 = null;
     private String signatureConfirmation = null;
-    private byte[] kerberosTicket = null;
+    private KerberosGSSAPReqTicket kerberosTicket = null;
     private boolean includeKerberosTicket = false;
 }

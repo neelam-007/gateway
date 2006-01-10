@@ -87,6 +87,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SqlAttackAssertion.class, SqlAttackAssertionTreeNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);        
         assertionMap.put(HardcodedResponseAssertion.class, HardcodedResponseTreeNode.class);
+        assertionMap.put(RequestWssKerberos.class, KerberosTreeNode.class);
     }
 
     /**

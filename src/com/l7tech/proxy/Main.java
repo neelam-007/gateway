@@ -60,6 +60,20 @@ public class Main {
         JceProvider.init();
     }
 
+    /**
+     *
+     */
+    protected static void initConfig() {
+        File configDir = new File(Ssg.PROXY_CONFIG);
+        File loginConfig = new File(configDir, "login.config");
+        File kerberosConfig = new File(configDir, "krb5.conf");
+
+        if(loginConfig.isFile() && kerberosConfig.isFile()) {
+            System.setProperty("java.security.auth.login.config", loginConfig.getAbsolutePath());
+            System.setProperty("java.security.krb5.conf", kerberosConfig.getAbsolutePath());
+        }
+    }
+
     private static void deleteOldAttachments(File attachmentDir) {
         File[] goners = attachmentDir.listFiles(new FileFilter() {
 
@@ -115,6 +129,7 @@ public class Main {
      */
     public static void main(final String[] argv) {
         initLogging();
+        initConfig();
         log.info("Starting SecureSpan Bridge in non-interactive mode; " + BuildInfo.getLongBuildString());
 
         createClientProxy(SsgFinderImpl.getSsgFinderImpl());

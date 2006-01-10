@@ -654,6 +654,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     tp.getUsernameTextField().setText(clientCertUsername);
                     tp.getUsernameTextField().setEditable(false);
                 }
+                if(System.getProperty("java.security.auth.login.config")!=null) {
+                    tp.getUseKerberosCredentialCheckbox().setSelected(ssg.isEnableKerberosCredentials());
+                }
+                else {
+                    tp.getUseKerberosCredentialCheckbox().setEnabled(false);    
+                }
             }
 
             updateIdentityEnableState();
@@ -691,6 +697,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setUsername(tp.getUsernameTextField().getText().trim());
                 ssg.setSavePasswordToDisk(tp.getSavePasswordCheckBox().isSelected());
                 ssg.setChainCredentialsFromClient(tp.getUseClientCredentialCheckBox().isSelected());
+                ssg.setEnableKerberosCredentials(tp.getUseKerberosCredentialCheckbox().isSelected());
 
                 // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
                 // a blank password to access a service, he can leave the password field blank in the logon

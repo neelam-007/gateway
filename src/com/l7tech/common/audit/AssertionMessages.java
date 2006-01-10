@@ -338,5 +338,14 @@ public class AssertionMessages extends Messages {
     public static final M WSFEDPASS_CONFIG_INVALID          = m(7310, Level.SEVERE, "Invalid IP/STS URL in policy configuration");
     public static final M WSFEDPASS_AUTH_FAILED             = m(7311, Level.WARNING, "Authentication with service failed");
 
+    // ServerRequestWssKerberos messages
+    public static final M REQUEST_WSS_KERBEROS_NON_SOAP               = m(7401, Level.INFO, "Request not SOAP; unable to check for WS-Security Binary Security Token");
+    public static final M REQUEST_WSS_KERBEROS_NO_WSS_LEVEL_SECURITY  = m(7402, Level.INFO, "This request did not contain any WSS level security.");
+    public static final M REQUEST_WSS_KERBEROS_NO_TOKEN               = m(7403, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
+    public static final M REQUEST_WSS_KERBEROS_NO_TICKET              = m(7404, Level.INFO, "This assertion did not find a Kerberos Binary Security Token to use as credentials. Returning AUTH_REQUIRED.");
+    public static final M REQUEST_WSS_KERBEROS_GOT_TICKET             = m(7405, Level.FINE, "Kerberos ticket processed, principal is:{0}");
+    public static final M REQUEST_WSS_KERBEROS_INVALID_CONFIG         = m(7406, Level.SEVERE, "Server Kerberos configuration is invalid or KDC unreachable.");
+    public static final M REQUEST_WSS_KERBEROS_INVALID_TICKET         = m(7407, Level.WARNING, "Could not process Kerberos ticket (not for this service?).");
+
     // MAX -                                     m(7999
 }

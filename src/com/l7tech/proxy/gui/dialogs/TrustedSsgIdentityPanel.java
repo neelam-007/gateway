@@ -21,6 +21,7 @@ public class TrustedSsgIdentityPanel extends SsgIdentityPanel {
     private JButton clientCertButton;
     private JButton ssgCertButton;
     private JCheckBox useClientCredentialCheckBox;
+    private JCheckBox useKerberosCredentialsCheckBox;
     private JCheckBox savePasswordCheckBox;
 
     public TrustedSsgIdentityPanel(Ssg ssg) {
@@ -42,6 +43,10 @@ public class TrustedSsgIdentityPanel extends SsgIdentityPanel {
 
     public JCheckBox getUseClientCredentialCheckBox() {
         return useClientCredentialCheckBox;
+    }
+
+    public JCheckBox getUseKerberosCredentialCheckbox() {
+        return useKerberosCredentialsCheckBox;   
     }
 
     public JCheckBox getSavePasswordCheckBox() {

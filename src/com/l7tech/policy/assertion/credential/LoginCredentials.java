@@ -172,6 +172,8 @@ public class LoginCredentials implements SecurityToken {
             return SecurityTokenType.HTTP_DIGEST;
         } else if (format == CredentialFormat.CLEARTEXT) {
             return SecurityTokenType.HTTP_BASIC;
+        } else if (format == CredentialFormat.KERBEROSTICKET) {
+            return SecurityTokenType.WSS_KERBEROS_BST;
         } else {
             return SecurityTokenType.UNKNOWN;
         }

@@ -63,6 +63,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private String trustStorePath = null;
     private boolean defaultSsg = false;
     private boolean chainCredentialsFromClient = false;
+    private boolean enableKerberosCredentials = false;
     private boolean useSslByDefault = true;
     private boolean savePasswordToDisk = false;
     private byte[] persistPassword = null;
@@ -424,6 +425,14 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     public void setChainCredentialsFromClient(boolean chainCredentialsFromClient) {
         this.chainCredentialsFromClient = chainCredentialsFromClient;
+    }
+
+    public boolean isEnableKerberosCredentials() {
+        return this.enableKerberosCredentials;
+    }
+
+    public void setEnableKerberosCredentials(boolean enableKerberosCredentials) {
+        this.enableKerberosCredentials = enableKerberosCredentials;
     }
 
     public boolean isUseSslByDefault() {

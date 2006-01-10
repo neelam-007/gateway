@@ -36,7 +36,12 @@ public class CredentialFormat {
     /**
      * Credentials are a SAML token.  It might have a reference to an X.509 cert as well.
      */
-    public static final CredentialFormat SAML = new CredentialFormat( "SAML Token", false );
+    public static final CredentialFormat SAML = new CredentialFormat( "SAML Token");
+
+    /**
+     * The credentials are a kerberos ticket
+     */
+    public static final CredentialFormat KERBEROSTICKET = new CredentialFormat( "Kerberos Ticket");
 
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";

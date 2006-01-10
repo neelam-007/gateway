@@ -9,6 +9,7 @@ import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.DesKey;
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.DsigUtil;
@@ -140,7 +141,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // Add Kerberos ticket
         Element kerbBst = null;
-        if (dreq.isIncludeKerberosTicket() && dreq.getKerberosTicket() != null && dreq.getKerberosTicket().length > 0) {
+        if (dreq.isIncludeKerberosTicket() && dreq.getKerberosTicket() != null) {
             kerbBst = addKerberosBinarySecurityToken(securityHeader, dreq.getKerberosTicket(), c);
         }
 
@@ -841,7 +842,7 @@ public class WssDecoratorImpl implements WssDecorator {
         return element;
     }
 
-    private Element addKerberosBinarySecurityToken(Element securityHeader, byte[] kerberosTicket, Context c) {
+    private Element addKerberosBinarySecurityToken(Element securityHeader, KerberosGSSAPReqTicket kerberosTicket, Context c) {
         Document factory = securityHeader.getOwnerDocument();
         Element element = factory.createElementNS(securityHeader.getNamespaceURI(),
             SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
@@ -850,7 +851,7 @@ public class WssDecoratorImpl implements WssDecorator {
         element.setAttribute("ValueType", SoapUtil.VALUETYPE_KERBEROS_GSS_AP_REQ);
         element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
 
-        element.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(kerberosTicket, true)));
+        element.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(kerberosTicket.toByteArray(), true)));
         securityHeader.appendChild(element);
         return element;
     }

@@ -77,5 +77,6 @@ public class HideUnsupportedClientAssertions implements Filter {
         //ResponseXpathAssertion.class, fla, please leave commented - this is causing mucho problems
         RequestWssReplayProtection.class,
         RequestWssSaml.class,
+        RequestWssKerberos.class
     };
 }

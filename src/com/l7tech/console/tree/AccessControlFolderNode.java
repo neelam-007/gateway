@@ -65,6 +65,7 @@ public class AccessControlFolderNode extends AbstractTreeNode {
         insert(new WsFederationPassiveTokenExchangePaletteNode(), index++);
         insert(new XpathCredentialSourcePaletteNode(), index++);
         insert(new SamlBrowserArtifactPaletteNode(), index++);
+        insert(new KerberosPaletteNode(), index++);
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {

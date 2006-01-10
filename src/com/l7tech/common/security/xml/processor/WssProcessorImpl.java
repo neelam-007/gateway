@@ -8,6 +8,8 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.security.kerberos.KerberosSecurityTokenImpl;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.*;
@@ -746,7 +748,7 @@ public class WssProcessorImpl implements WssProcessor {
         String encodingType = binarySecurityTokenElement.getAttribute("EncodingType");
 
         // todo use proper qname comparator rather than this hacky suffix check
-        if (!valueType.endsWith("X509v3"))
+        if (!valueType.endsWith("X509v3") && !valueType.endsWith("GSS_Kerberosv5_AP_REQ"))
             throw new ProcessorException("BinarySecurityToken has unsupported ValueType " + valueType);
         if (!encodingType.endsWith("Base64Binary"))
             throw new ProcessorException("BinarySecurityToken has unsupported EncodingType " + encodingType);
@@ -764,20 +766,26 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (IOException e) {
             throw new InvalidDocumentFormatException("Unable to parse base64 BinarySecurityToken", e);
         }
-        // create the x509 binary cert based on it
-        X509Certificate referencedCert = CertUtils.decodeCert(decodedValue);
 
-        // remember this cert
-        final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
-        if (wsuId == null) {
-            logger.warning("This BinarySecurityToken does not have a recognized wsu:Id and may not be " +
-              "referenced properly by a subsequent signature.");
+        if(valueType.endsWith("X509v3")) {
+            // create the x509 binary cert based on it
+            X509Certificate referencedCert = CertUtils.decodeCert(decodedValue);
+
+            // remember this cert
+            final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
+            if (wsuId == null) {
+                logger.warning("This BinarySecurityToken does not have a recognized wsu:Id and may not be " +
+                  "referenced properly by a subsequent signature.");
+            }
+            final X509Certificate finalcert = referencedCert;
+            XmlSecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(finalcert,
+                                                                               binarySecurityTokenElement);
+            cntx.securityTokens.add(rememberedSecToken);
+            cntx.x509TokensById.put(wsuId, rememberedSecToken);
         }
-        final X509Certificate finalcert = referencedCert;
-        XmlSecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(finalcert,
-                                                                           binarySecurityTokenElement);
-        cntx.securityTokens.add(rememberedSecToken);
-        cntx.x509TokensById.put(wsuId, rememberedSecToken);
+        else {
+            cntx.securityTokens.add(new KerberosSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue)));
+        }
     }
 
     private void processSamlSecurityToken(final Element securityTokenElement, ProcessingStatusHolder context)

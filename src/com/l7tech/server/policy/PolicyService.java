@@ -18,6 +18,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathResult;
@@ -36,6 +37,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -93,6 +95,7 @@ public class PolicyService extends ApplicationObjectSupport {
         new WssBasic(),
         new HttpBasic(),
         new SslAssertion(true),
+        new RequestWssKerberos()
     };
 
     public interface ServiceInfo {
@@ -135,7 +138,6 @@ public class PolicyService extends ApplicationObjectSupport {
         for (int i = 0; i < ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
             Assertion assertion = ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
 
-            // TODO confirm this change
             if (assertion instanceof RequestWssSaml) {
                 // Lighed saml requirements for policy download
                 RequestWssSaml requestWssSaml = (RequestWssSaml)assertion;
@@ -150,7 +152,6 @@ public class PolicyService extends ApplicationObjectSupport {
             allCredentialAssertions.add(assertion);
         }
     }
-
 
     /**
      * @return the filtered policy or null if the target policy does not exist or the requestor should not see it
@@ -279,7 +280,14 @@ public class PolicyService extends ApplicationObjectSupport {
         Document policyDoc;
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
-                policyDoc = respondToPolicyDownloadRequest(policyId, context.getAuthenticatedUser(), policyGetter, pre32PolicyCompat);
+                User user = context.getAuthenticatedUser();
+                //TODO fix Kerberos hackery
+                if(user==null && context.isAuthenticated() && context.getCredentials().getLogin()!=null) {
+                    UserBean ub = new UserBean();
+                    ub.setLogin(context.getCredentials().getLogin());
+                    user = ub;
+                }
+                policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, pre32PolicyCompat);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(e));
                 return;
@@ -476,6 +484,7 @@ public class PolicyService extends ApplicationObjectSupport {
         }
     }
 
+    //TODO fix Kerberos hackery (add Kerberos ID provider?)
     private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) {
         PolicyPathResult paths = PolicyPathBuilder.getDefault().generate(rootAssertion);
         for (Iterator iterator = paths.paths().iterator(); iterator.hasNext();) {
@@ -484,7 +493,7 @@ public class PolicyService extends ApplicationObjectSupport {
             boolean pathContainsIdAssertion = false;
             for (int i = 0; i < path.length; i++) {
                 Assertion a = path[i];
-                if (a instanceof IdentityAssertion) {
+                if (a instanceof IdentityAssertion || a instanceof RequestWssKerberos) {
                     pathContainsIdAssertion = true;
                 }
             }

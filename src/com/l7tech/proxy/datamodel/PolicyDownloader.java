@@ -105,6 +105,13 @@ public class PolicyDownloader {
                                                                                 useSsl,
                                                                                 clientCert,
                                                                                 key);
+                } else if(ssg.isEnableKerberosCredentials()) {
+                    log.info("Trying Kerberos-over-SSL authenticated policy download from Trusted Gateway " + ssg);
+                    policy = PolicyServiceClient.downloadPolicyWithKerberos(ssg.getRuntime().getHttpClient(),
+                                                                            ssg,
+                                                                            serviceId,
+                                                                            serverCert,
+                                                                            request.getKerberosGSSAPReqTicket());
                 } else {
                     // Trusted SSG, but with no client cert -- use HTTP Basic over SSL for authentication.
                     log.info("Trying HTTP Basic-over-SSL authenticated policy download from Trusted Gateway " + ssg);

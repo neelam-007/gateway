@@ -11,6 +11,10 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.kerberos.KerberosClient;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
@@ -42,6 +46,11 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.NameCallback;
 
 /**
  * Holds message processing state needed by policy application point (SSB) message processor and policy assertions.
@@ -80,10 +89,10 @@ public class PolicyApplicationContext extends ProcessingContext {
         private Map downstreamRecipientWSSRequirements = new HashMap();
         private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
-    }    
-    
+    }
+
     private PolicySettings policySettings = new PolicySettings();
-    
+
     /**
      * Create a new policy application context.  This holds information not specific to the request or response
      * message -- which is in the request and response -- but that will be needed by the policy application
@@ -121,7 +130,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         this.requestInterceptor = requestInterceptor;
         this.policyAttachmentKey = policyAttachmentKey;
     }
-    
+
     private URL makeFakeOriginalUrl() {
         URL origUrl;
         try {
@@ -614,6 +623,38 @@ public class PolicyApplicationContext extends ProcessingContext {
             return samlAssertion;
 
         return samlAssertion = (SamlAssertion)ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION).getOrCreate(ssg);
+    }
+
+    /**
+     * Get a valid Kerberos GSS AP-REQ Ticket.
+     *
+     * @return the ticket
+     * @throws GeneralSecurityException is a ticket could not be obtained.
+     */
+    public KerberosGSSAPReqTicket getKerberosGSSAPReqTicket() throws GeneralSecurityException {
+        try {
+            KerberosClient client = new KerberosClient();
+            client.setCallbackHandler(new CallbackHandler(){
+                public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+                    for (int i = 0; i < callbacks.length; i++) {
+                        Callback callback = callbacks[i];
+                        if(callback instanceof PasswordCallback) {
+                            PasswordCallback pc = (PasswordCallback) callback;
+                            pc.setPassword(ssg.getRuntime().getCredentials().getPassword());
+                        }
+                        else if(callback instanceof NameCallback) {
+                            NameCallback nc = (NameCallback) callback;
+                            nc.setName(ssg.getRuntime().getCredentials().getUserName());
+                        }
+                    }
+                }
+            });
+            KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getGSSServiceName());
+            return kst.getGSSAPReqTicket();
+        }
+        catch(KerberosException ke) {
+            throw new GeneralSecurityException("Could not get Kerberos Ticket", ke);
+        }
     }
 
     /**

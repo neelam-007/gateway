@@ -16,6 +16,8 @@ import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.kerberos.KerberosClient;
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -88,6 +90,24 @@ public class PolicyServiceClient {
                 req.getElementsToSign().add(mid);
             }
             req.setTimestampCreatedDate(timestampCreatedDate);
+            decorator.decorateMessage(msg, req);
+        } catch (InvalidDocumentFormatException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (DecoratorException e) {
+            throw new RuntimeException(e); // shouldn't happen
+        }
+        return msg;
+    }
+
+    public static Document createDecoratedGetPolicyRequest(String serviceId, KerberosGSSAPReqTicket kerberosTicket)
+            throws GeneralSecurityException
+    {
+        Document msg = createGetPolicyRequest(serviceId);
+        WssDecorator decorator = new WssDecoratorImpl();
+        DecorationRequirements req = new DecorationRequirements();
+        try {
+            req.setIncludeKerberosTicket(true);
+            req.setKerberosTicket(kerberosTicket);
             decorator.decorateMessage(msg, req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
@@ -424,6 +444,18 @@ public class PolicyServiceClient {
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createDecoratedGetPolicyRequest(serviceId, null, clientCert, clientKey, timestampCreatedDate);
         return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
+    }
+
+    public static Policy downloadPolicyWithKerberos(GenericHttpClient httpClient,
+                                                    Ssg ssg,
+                                                    String serviceId,
+                                                    X509Certificate serverCertificate,
+                                                    KerberosGSSAPReqTicket kerberosTicket)
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+    {
+        URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), ssg.getRuntime().getPolicyServiceFile());
+        Document requestDoc = createDecoratedGetPolicyRequest(serviceId, kerberosTicket);
+        return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, null, null);
     }
 
     /**

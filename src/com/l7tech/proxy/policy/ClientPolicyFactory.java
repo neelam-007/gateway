@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.proxy.policy.assertion.*;
 import com.l7tech.proxy.policy.assertion.composite.ClientAllAssertion;
 import com.l7tech.proxy.policy.assertion.composite.ClientExactlyOneAssertion;
@@ -26,6 +27,7 @@ import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpDigest;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssBasic;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity;
+import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssKerberos;
 
 /**
  * @author alex
@@ -83,7 +85,8 @@ public class ClientPolicyFactory extends PolicyFactory {
         new ClientTrueAssertion(new TrueAssertion()),
         new ClientResponseWssIntegrity(new ResponseWssIntegrity()),
         new ClientRequestWssIntegrity(new RequestWssIntegrity()),
-        new ClientRequestXpathAssertion(new RequestXpathAssertion())
+        new ClientRequestXpathAssertion(new RequestXpathAssertion()),
+        new ClientRequestWssKerberos(new RequestWssKerberos())
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),

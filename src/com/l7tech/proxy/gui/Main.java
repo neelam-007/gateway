@@ -26,6 +26,7 @@ public final class Main extends com.l7tech.proxy.Main {
      */
     public static void main(final String[] argv) {
         initLogging();
+        initConfig();        
         log.info("Starting SecureSpan Bridge in GUI mode; " + BuildInfo.getLongBuildString());
 
         final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
