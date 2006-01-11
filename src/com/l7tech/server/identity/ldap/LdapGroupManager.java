@@ -65,6 +65,7 @@ public class LdapGroupManager implements GroupManager {
                         LdapGroup out = new LdapGroup();
                         out.setProviderId(ldapIdentityProviderConfig.getOid());
                         out.setDn(dn);
+                        out.setAttributes(attributes);
                         Object tmp = LdapIdentityProvider.extractOneAttributeValue(attributes,
                           groupTypes[i].getNameAttrName());
                         if (tmp != null) out.setCn(tmp.toString());

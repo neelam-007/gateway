@@ -9,29 +9,45 @@ import java.util.Set;
  * (e.g. email address, membership status, account balance...)
  * <p>
  * Mappings of this attribute to fields that might be found in users or groups
- * can be found in the {@link #identityMappings} linked from this record.
+ * can be found in the {@link #identityMappings} belonging to this object.
  * <p>
  * Mappings of this attribute to values derived from security tokens can be found in the
- * {@link #securityTokenMappings} linked from this record.
+ * {@link #securityTokenMappings} belonging to this object.
  */
 public class AttributeConfig extends NamedEntityImp {
-    private String shortName;
+    private String variableName;
     private String description;
     private Set securityTokenMappings;
     private Set identityMappings;
 
-    public String getShortName() {
-        return shortName;
+    /**
+     * A short, unique and unambiguous name for this attribute, for use in
+     * {@link com.l7tech.policy.ExpandVariables} expressions.  Required.
+     * @return the variable name.
+     */
+    public String getVariableName() {
+        return variableName;
     }
 
-    public void setShortName(String shortName) {
-        this.shortName = shortName;
+    /**
+     * A short, unique and unambiguous name for this attribute, for use in
+     * {@link com.l7tech.policy.ExpandVariables} expressions.  Required.
+     * @param variableName the variable name
+     */
+    public void setVariableName(String variableName) {
+        this.variableName = variableName;
     }
 
+    /**
+     * @return optional, human-readable text describing this attribute and its uses.
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * @param description optional, human-readable text describing this attribute and its uses.
+     */
     public void setDescription(String description) {
         this.description = description;
     }

@@ -73,6 +73,7 @@ public class LdapUserManager implements UserManager {
                     LdapUser out = new LdapUser();
                     out.setProviderId(ldapIdentityProviderConfig.getOid());
                     out.setDn(dn);
+                    out.setAttributes(attributes);
                     Object tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getEmailNameAttrName());
                     if (tmp != null) out.setEmail(tmp.toString());
                     tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getFirstNameAttrName());

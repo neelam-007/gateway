@@ -3,34 +3,40 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 
+import javax.naming.directory.Attributes;
 import java.io.Serializable;
 
-public class LdapGroup implements Group, Serializable {
+public class LdapGroup implements Group, Serializable, LdapIdentity {
     public static final int OU_GROUP = 0;
     public static final int NORMAL_GROUP = 1;
 
+    private String dn;
+    private GroupBean groupBean;
+    private long providerId;
+    private Attributes attributes;
+
     public LdapGroup( GroupBean bean ) {
-        _groupBean = bean;
+        groupBean = bean;
     }
 
     public LdapGroup() {
-        _groupBean = new GroupBean();
+        groupBean = new GroupBean();
     }
 
     public String getDescription() {
-        return _groupBean.getDescription();
+        return groupBean.getDescription();
     }
 
     public String getName() {
-        return _groupBean.getName();
+        return groupBean.getName();
     }
 
     public void setDescription(String description) {
-        _groupBean.setDescription( description );
+        groupBean.setDescription( description );
     }
 
     public String getUniqueIdentifier() {
-        return _dn;
+        return dn;
     }
 
     /**
@@ -48,20 +54,30 @@ public class LdapGroup implements Group, Serializable {
     }
 
     public String getDn() {
-        return _dn;
+        return dn;
     }
 
     public void setDn(String dn) {
-        _dn = dn;
-        _groupBean.setUniqueIdentifier(dn);
+        if (dn == null) throw new NullPointerException();
+        this.dn = dn;
+        groupBean.setUniqueIdentifier(dn);
     }
 
     public String getCn() {
-        return _groupBean.getName();
+        return groupBean.getName();
+    }
+
+    public Attributes getAttributes() {
+        return attributes;
+    }
+
+
+    public void setAttributes(Attributes attributes) {
+        this.attributes = attributes;
     }
 
     public void setCn(String cn) {
-        _groupBean.setName( cn );
+        groupBean.setName( cn );
     }
 
     public String toString() {
@@ -76,14 +92,14 @@ public class LdapGroup implements Group, Serializable {
         if (!(o instanceof LdapGroup)) return false;
         final LdapGroup groupImp = (LdapGroup) o;
         if ( providerId != groupImp.providerId ) return false;
-        if ( !_dn.equals(groupImp._dn) ) return false;
+        if ( !dn.equals(groupImp.dn) ) return false;
         return true;
     }
 
     public int hashCode() {
-        if ( _dn == null ) return System.identityHashCode( this );
+        if ( dn == null ) return System.identityHashCode( this );
 
-        int hash = _dn.hashCode();
+        int hash = dn.hashCode();
         hash += 29 * (int)providerId;
 
         return hash;
@@ -98,15 +114,11 @@ public class LdapGroup implements Group, Serializable {
         setCn(imp.getCn());
         setDescription(imp.getDescription());
         setProviderId(imp.getProviderId());
+        setAttributes(imp.getAttributes());
     }
 
     public GroupBean getGroupBean() {
-        return _groupBean;
+        return groupBean;
     }
 
-    private String _dn;
-
-    private GroupBean _groupBean;
-
-    private long providerId;
 }
