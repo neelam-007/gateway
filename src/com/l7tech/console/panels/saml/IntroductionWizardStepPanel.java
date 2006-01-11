@@ -19,6 +19,7 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JPanel greetingPanel;
     private JLabel titleLabel;
+    private JLabel descriptionLabel;
 
     /**
      * Creates new form WizardPanel
@@ -35,6 +36,7 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
 
     private void initialize() {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        descriptionLabel.setText("<html>This wizard assists in specifying a SAML assertion and any associated requirements and/or conditions against <br> which the assertion is validated.</html>");
     }
 
     /**
