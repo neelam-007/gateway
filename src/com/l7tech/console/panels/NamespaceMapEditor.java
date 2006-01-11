@@ -84,7 +84,7 @@ public class NamespaceMapEditor extends JDialog {
         }
         forbiddenNamespaces = forcedNamespaces;
         setContentPane(mainPanel);
-        setTitle("Edit namespaces and prefixes");
+        setTitle("Edit Namespaces and Prefixes");
         setTableModel();
         TableUtil.adjustColumnWidth(table1, 1);
         setListeners();
