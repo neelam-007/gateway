@@ -92,9 +92,13 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private void doSaveManualSteps() {
         File selectedFile = getUserSelectedFile("save", "html", "HTML files");
         if (selectedFile != null) {
+            String selectedFileName = selectedFile.getPath();
+            if (!selectedFileName.endsWith(".html")) {
+                selectedFileName = selectedFileName + ".html";
+            }
             PrintStream ps = null;
             try {
-                ps = new PrintStream(new FileOutputStream(selectedFile));
+                ps = new PrintStream(new FileOutputStream(selectedFileName));
                 String line = stepsBuffer.toString();
                 ps.println(line);
             } catch (FileNotFoundException e) {
@@ -146,9 +150,13 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private void doSaveLogs() {
         File selectedFile = getUserSelectedFile("save");
         if (selectedFile != null) {
+            String selectedFileName = selectedFile.getPath();
+            if (!selectedFileName.endsWith(".log")) {
+                selectedFileName = selectedFileName + ".log";
+            }
             PrintStream ps = null;
             try {
-                ps = new PrintStream(new FileOutputStream(selectedFile));
+                ps = new PrintStream(new FileOutputStream(selectedFileName));
 
                 ps.print(logsView.getText());
 
