@@ -4,6 +4,8 @@ import java.security.Principal;
 import java.io.Serializable;
 
 /**
+ * A Principal that holds the current username.
+ *
  * @author emil
  * @version 3-Jun-2004
  */

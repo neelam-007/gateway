@@ -48,7 +48,7 @@
            <exclude name="*xerces*"/>
            <exclude name="*xml-api*"/>
            -->
-           <!-- Exclude since this is not necessary to compile and it includes old 
+           <!-- Exclude since this is not necessary to compile and it includes old
                 versions of some of the xml-apis.jar classes -->
            <exclude name="xml4j.jar"/>
            <!-- Exclude build related classes -->
@@ -388,7 +388,7 @@
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
             <link href="http://static.springframework.org/spring/docs/1.1.5/api"/>
             <link href="http://jakarta.apache.org/commons/httpclient/2.0/apidocs"/>
-            <link href="http://www.bouncycastle.org/docs/docs1.5"/> 
+            <link href="http://www.bouncycastle.org/docs/docs1.5"/>
             <link href="http://jaxen.codehaus.org/apidocs"/>
             <link href="http://www.dom4j.org/apidocs"/>
             <link href="http://jetty.mortbay.org/javadoc"/>
@@ -606,12 +606,12 @@
             </fileset>
         </jar>
     </target>
- 
+
     <target name="ca.availablecheck">
-	<available file="CustomAssertions" property="customassertion.available"/>	
+	<available file="CustomAssertions" property="customassertion.available"/>
     </target>
 
-    <!-- 
+    <!--
       Target to create an empty CA jar if we're not building CA (keeps packager happy)
     -->
     <target name="ca.createemptyjar" unless="customassertion.available">
@@ -842,13 +842,15 @@
         <javadoc
                 destdir="${build.dir}/docs/layer7-api"
                 version="true"
+                author="false"
                 use="true"
                 windowtitle="Layer 7 External API">
 
             <fileset dir="${src.root}/src/" defaultexcludes="yes">
-                <include name="com/l7tech/policy/assertion/Assertion.java"/>
-                <include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
-                <include name="com/l7tech/policy/assertion/composite/CompositeAssertion.java"/>
+                <!-- Leave some classes undocumented; they appear in the api jar, but aren't supposed to be used by 3rd party devlopers-->
+                <!--<include name="com/l7tech/policy/assertion/Assertion.java"/> -->
+                <!--<include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>-->
+                <!--<include name="com/l7tech/policy/assertion/composite/CompositeAssertion.java"/>-->
                 <include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
                 <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.java"/>
