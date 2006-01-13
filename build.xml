@@ -833,6 +833,35 @@
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
             <fileset dir="${build.dir}" includes="layer7-api.jar"/>
         </signjar>
+
+        <mkdir dir="${build.dir}/docs">
+
+        </mkdir>
+
+        <!--produce accompanying javadoc for layer7-api-->
+        <javadoc
+                destdir="${build.dir}/docs/layer7-api"
+                version="true"
+                use="true"
+                windowtitle="Layer 7 External API">
+
+            <fileset dir="${src.root}/src/" defaultexcludes="yes">
+                <include name="com/l7tech/policy/assertion/Assertion.java"/>
+                <include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
+                <include name="com/l7tech/policy/assertion/composite/CompositeAssertion.java"/>
+                <include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
+                <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
+                <include name="com/l7tech/policy/assertion/ext/Category.java"/>
+                <include name="com/l7tech/policy/assertion/ext/CustomAssertion.java"/>
+                <include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>
+                <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
+                <include name="com/l7tech/policy/assertion/ext/EditListener.java"/>
+                <include name="com/l7tech/policy/assertion/ext/SecurityContext.java"/>
+                <include name="com/l7tech/policy/assertion/ext/ServiceRequest.java"/>
+                <include name="com/l7tech/policy/assertion/ext/ServiceResponse.java"/>
+                <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>
+            </fileset>
+        </javadoc>
     </target>
 
 
