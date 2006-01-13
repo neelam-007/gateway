@@ -9,13 +9,16 @@
 <xsl:transform version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                              xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                              xmlns:acme="http://warehouse.acme.com/ws">
-	<xsl:template match="acme:productid">
+	<!--<xsl:template match="acme:productid">
 		<xsl:element name="productid" namespace="http://warehouse.acme.com/ws">
 			<xsl:text>192822745</xsl:text>
 		</xsl:element>
+	</xsl:template>-->
+    <xsl:template match="acme:productid/text()">
+        <xsl:text>192822745</xsl:text>
 	</xsl:template>
-	
-	<xsl:template match="node()|@*">
+
+    <xsl:template match="node()|@*">
 		<xsl:copy>
 			<xsl:apply-templates select="node()|@*" />
 		</xsl:copy>
