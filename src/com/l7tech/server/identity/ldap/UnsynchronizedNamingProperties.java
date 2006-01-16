@@ -200,7 +200,12 @@ public class UnsynchronizedNamingProperties extends Properties {
 
     /** Throws UnsupportedOperationException unconditionally. */
     public Object remove( Object key ) {
-        throw new UnsupportedOperationException();
+        if ( locked ) {
+            logger.warning("remove(\"" + key + "\")");
+            return null;
+        } else {
+            return properties.remove(key);
+        }
     }
 
     public static final String ORG_APACHE_NAMING = "org.apache.naming";

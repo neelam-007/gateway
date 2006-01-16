@@ -6,17 +6,17 @@
 
 package com.l7tech.server.identity;
 
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.attribute.IdentityMapping;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.util.KeystoreUtils;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.util.Collection;
 import java.util.TreeSet;
-
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 /**
  * @author alex
@@ -46,6 +46,10 @@ public abstract class PersistentIdentityProvider extends HibernateDaoSupport imp
         if (wantUsers) searchResults.addAll(getUserManager().search(searchString));
         if (wantGroups) searchResults.addAll(getGroupManager().search(searchString));
         return searchResults;
+    }
+
+    public Collection search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
+        throw new UnsupportedOperationException();
     }
 
     public void setClientCertManager(ClientCertManager clientCertManager) {

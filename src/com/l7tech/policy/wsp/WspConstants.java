@@ -27,6 +27,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -224,6 +225,7 @@ public class WspConstants {
         new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),
         new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),
+        new AssertionMapping(new MappingAssertion(), "IdentityMapping"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

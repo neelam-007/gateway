@@ -153,6 +153,11 @@
              <idref bean="communitySchemaManager"/>
              <idref bean="clusterPropertyManager"/>
              <idref bean="sampleMessageManager"/>
+
+             <!-- Identity mapping stuff -->
+             <idref bean="attributeConfigManager"/>
+             <idref bean="identityMappingManager"/>
+             <idref bean="securityTokenMappingManager"/>
          </list>
      </property>
  </bean>

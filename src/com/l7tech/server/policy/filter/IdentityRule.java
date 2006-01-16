@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -176,7 +177,11 @@ public class IdentityRule implements Filter {
                 }
             }
             return false;
-        } else throw new FilteringException("unsupported IdentityAssertion type " + idassertion.getClass().getName());
+        } else if (idassertion instanceof MappingAssertion) {
+            return true; // TODO ???
+        } else {
+            throw new FilteringException("unsupported IdentityAssertion type " + idassertion.getClass().getName());
+        }
     }
 
     private User requestor = null;

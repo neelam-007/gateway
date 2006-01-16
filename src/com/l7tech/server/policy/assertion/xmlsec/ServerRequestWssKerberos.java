@@ -1,12 +1,5 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import java.io.IOException;
-import java.util.logging.Logger;
-import javax.security.auth.login.LoginException;
-
-import org.springframework.context.ApplicationContext;
-import org.xml.sax.SAXException;
-
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.kerberos.KerberosClient;
@@ -24,6 +17,12 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
+
+import javax.security.auth.login.LoginException;
+import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * Server side processing for Kerberos Binary Security Tokens.
@@ -77,7 +76,7 @@ public class ServerRequestWssKerberos implements ServerAssertion {
             try {
                 KerberosClient client = new KerberosClient();
                 KerberosServiceTicket kerberosServiceTicket = client.getKerberosServiceTicket(requestWssKerberos.getServicePrincipalName(), kerberosTicket);
-
+                kerberosTicket.setServiceTicket(kerberosServiceTicket);
                 context.setCredentials(new LoginCredentials(kerberosServiceTicket.getClientPrincipalName(),
                                                             null,
                                                             CredentialFormat.KERBEROSTICKET,

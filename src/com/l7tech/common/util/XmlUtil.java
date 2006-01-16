@@ -11,8 +11,8 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.w3c.dom.*;
-import org.w3c.dom.ls.LSResourceResolver;
 import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -1020,8 +1020,17 @@ public class XmlUtil {
         }
     }
 
-    public static Document softXSLTransform(Document source, Transformer transformer) throws TransformerException {
+    public static Document softXSLTransform(Document source, Transformer transformer, Map params) throws TransformerException {
         final DOMResult outputTarget = new DOMResult();
+        if (params != null && !params.isEmpty()) {
+            for (Iterator i = params.keySet().iterator(); i.hasNext();) {
+                String name = (String) i.next();
+                if (name == null) continue;
+                Object value = params.get(name);
+                if (value == null) continue;
+                transformer.setParameter(name, value);
+            }
+        }
         transformer.transform(new DOMSource(source), outputTarget);
         final Node node = outputTarget.getNode();
         if (node instanceof Document) {

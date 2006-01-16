@@ -192,10 +192,10 @@ public class SslRMIClientSocketFactory
     private synchronized SocketFactory getClientSocketFactory(String serverHostname) {
         serverHostname = serverHostname.toLowerCase();
         SocketFactory sf = (SocketFactory)socketFactoryByHost.get(serverHostname);
+        String tmalg = System.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
         if (sf == null) {
-            String algorithm = TrustManagerFactory.getDefaultAlgorithm();
             try {
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance(algorithm);
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
                 tmf.init((KeyStore)null);
                 SSLContext sslContext = SSLContext.getInstance("SSL");
                 sslContext.init(null, getTrustManagers(tmf, serverHostname), null);

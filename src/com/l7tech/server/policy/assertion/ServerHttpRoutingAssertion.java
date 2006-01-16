@@ -32,6 +32,7 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.ExpandVariables;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
@@ -69,6 +70,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private SignerInfo senderVouchesSignerInfo;
     private final Auditor auditor;
     private final FailoverStrategy failoverStrategy;
+    private final ExpandVariables vars = new ExpandVariables();
+
     private final int maxFailoverAttempts;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
@@ -258,6 +261,14 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             boolean doAuth = false;
             if (login != null && login.length() > 0
               && password != null && password.length() > 0) {
+                try {
+                    login = vars.process(login, context.getVariables());
+                    password = vars.process(password, context.getVariables());
+                } catch (ExpandVariables.VariableNotFoundException e) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NO_SUCH_VAR, new String[] { e.getVariable() });
+                    return AssertionStatus.FAILED;
+                }
+
                 auditor.logAndAudit(AssertionMessages.LOGIN_INFO, new String[] {login});
                 HttpState state = client.getState();
                 doAuth = true;

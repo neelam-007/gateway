@@ -38,14 +38,16 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public abstract class ServerIdentityAssertion implements ServerAssertion {
-    private final ApplicationContext applicationContext;
-    private final Auditor auditor;
     private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
 
+    private final Auditor auditor;
+    private final ApplicationContext applicationContext;
+    protected IdentityAssertion identityAssertion;
+
     public ServerIdentityAssertion(IdentityAssertion data, ApplicationContext ctx) {
-        _data = data;
+        identityAssertion = data;
         if (ctx == null) {
-            throw new IllegalArgumentException("Application Conext is required");
+            throw new IllegalArgumentException("Application Context is required");
         }
         this.auditor = new Auditor(this, ctx, Logger.getLogger(getClass().getName()));
         this.applicationContext = ctx;
@@ -68,7 +70,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 throw new IllegalStateException("Request is authenticated but request has no LoginCredentials!");
             } else {
                 // Authentication is required for any IdentityAssertion
-                context.addResult(new AssertionResult(_data, AssertionStatus.AUTH_REQUIRED));
+                context.addResult(new AssertionResult(identityAssertion, AssertionStatus.AUTH_REQUIRED));
                 // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
                 context.setAuthenticationMissing();
                 auditor.logAndAudit(AssertionMessages.CREDENTIALS_NOT_FOUND);
@@ -77,44 +79,22 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         } else {
             // A CredentialFinder has already run.
 
-            if (context.isAuthenticated()) {
+            if (context.isAuthenticated() && context.getAuthenticatedUser() != null) {
                 User user = context.getAuthenticatedUser();
                 // The user was authenticated by a previous IdentityAssertion.
                 auditor.logAndAudit(AssertionMessages.ALREADY_AUTHENTICATED);
                 return checkUser(user, context);
             } else {
-                if (_data.getIdentityProviderOid() == Entity.DEFAULT_OID) {
+                if (identityAssertion.getIdentityProviderOid() == Entity.DEFAULT_OID) {
                     auditor.logAndAudit(AssertionMessages.ID_PROVIDER_ID_NOT_SET);
                     throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
                 }
 
-                String name = null;
                 try {
                     IdentityProvider provider = getIdentityProvider(context);
-                    AuthenticationResult authResult = provider.authenticate(pc);
-                    if (authResult == null) return authFailed(context, pc, null);
-
-                    if (authResult.isCertSignedByStaleCA()) {
-                        HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
-                        hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE);
-                    }
-
-                    User user = authResult.getUser();
-
-                    name = user.getLogin();
-                    if (name == null) name = user.getName();
-                    if (name == null) name = user.getSubjectDn();
-                    if (name == null) name = user.getUniqueIdentifier();
-
-                    // Authentication succeeded
-                    context.setAuthenticated(true);
-                    context.setAuthenticatedUser(user);
-                    auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
-
-                    // Make sure this guy matches our criteria
-                    return checkUser(user, context);
+                    return validateCredentials(provider, pc, context);
                 } catch (InvalidClientCertificateException icce) {
-                    auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {name});
+                    auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
                     // set some response header so that the CP is made aware of this situation
                     context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
                       SecureSpanConstants.CERT_INVALID);
@@ -125,7 +105,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 } catch (AuthenticationException ae) {
                     return authFailed(context, pc, ae);
                 } catch (FindException fe) {
-                    auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[] {name}, fe);
+                    auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], fe);
                     // fla fix, allow the policy to continue in case the credentials be valid for
                     // another id assertion down the road (fix for bug 374)
                     // throw new IdentityAssertionException( err, fe );
@@ -138,10 +118,42 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         }
     }
 
+    /**
+     * Authenticates and calls {@link #checkUser}.  Override at will.
+     */
+    protected AssertionStatus validateCredentials(IdentityProvider provider,
+                                                  LoginCredentials pc,
+                                                  PolicyEnforcementContext context)
+            throws AuthenticationException, FindException, IOException
+    {
+        AuthenticationResult authResult = provider.authenticate(pc);
+        if (authResult == null) return authFailed(context, pc, null);
+
+        if (authResult.isCertSignedByStaleCA()) {
+            HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+            hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE);
+        }
+
+        User user = authResult.getUser();
+
+        String name = user.getLogin();
+        if (name == null) name = user.getName();
+        if (name == null) name = user.getSubjectDn();
+        if (name == null) name = user.getUniqueIdentifier();
+
+        // Authentication succeeded
+        context.setAuthenticated(true);
+        context.setAuthenticatedUser(user);
+        auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
+
+        // Make sure this guy matches our criteria
+        return checkUser(user, context);
+    }
+
     private AssertionStatus authFailed(PolicyEnforcementContext context, LoginCredentials pc, Exception e) {
         // we were losing the details of this authentication failure. important for debugging saml stuff
         logger.log(Level.FINE, "ServerIdentityAssertion failed", e);
-        context.addResult(new AssertionResult(_data, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e));
+        context.addResult(new AssertionResult(identityAssertion, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e));
         String name = pc.getLogin();
         if (name == null || name.length() == 0) {
             X509Certificate cert = pc.getClientCert();
@@ -149,16 +161,16 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         }
 
         String identityToAssert = null;
-        if (_data instanceof SpecificUser) {
-            SpecificUser su = (SpecificUser)_data;
+        if (identityAssertion instanceof SpecificUser) {
+            SpecificUser su = (SpecificUser)identityAssertion;
             String idtomatch = su.getUserLogin();
             if (idtomatch == null) {
                 idtomatch = su.getUserName();
             }
             identityToAssert = idtomatch;
             logger.info("could not verify identity " + idtomatch + " with credentials from " + name);
-        } else if (_data instanceof MemberOfGroup) {
-            MemberOfGroup mog = (MemberOfGroup)_data;
+        } else if (identityAssertion instanceof MemberOfGroup) {
+            MemberOfGroup mog = (MemberOfGroup)identityAssertion;
             String groupname = mog.getGroupName();
             identityToAssert = groupname;
             logger.info("cound not verify membership of group " + groupname + " with credentials from " + name);
@@ -178,7 +190,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      */
     protected IdentityProvider getIdentityProvider(PolicyEnforcementContext context) throws FindException {
         IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
-        IdentityProvider provider = ipf.getProvider(_data.getIdentityProviderOid());
+        IdentityProvider provider = ipf.getProvider(identityAssertion.getIdentityProviderOid());
         if (provider == null) {
             auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST);
             throw new FindException("id assertion refers to an id provider which does not exist anymore");
@@ -187,6 +199,11 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         }
     }
 
-    protected abstract AssertionStatus checkUser(User u, PolicyEnforcementContext context);
-    protected IdentityAssertion _data;
+    /**
+     * Override to decide whether the authenticated user is acceptable.
+     */
+    protected AssertionStatus checkUser(User u, PolicyEnforcementContext context) {
+        return AssertionStatus.NONE;
+    }
+
 }

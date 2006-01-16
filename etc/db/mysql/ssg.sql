@@ -496,4 +496,50 @@ CREATE TABLE sample_messages (
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB;
 
+DROP TABLE IF EXISTS map_attributes;
+CREATE TABLE map_attributes (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  var_name varchar(64) NOT NULL,
+  description text,
+  PRIMARY KEY (objectid),
+  INDEX i_map_attr_var (var_name)
+) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS map_identity;
+CREATE TABLE map_identity (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  map_attributes_oid bigint(20) NOT NULL,
+  provider_oid bigint(20) NOT NULL,
+  users tinyint(1) NOT NULL,
+  groups tinyint(1) NOT NULL,
+  is_unique tinyint(1) NOT NULL,
+  searchable tinyint(1) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (map_attributes_oid) REFERENCES map_attributes (objectid) ON DELETE CASCADE
+  INDEX i_map_id_prov (provider_oid)
+) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS map_identity_ldap;
+CREATE TABLE map_identity_ldap (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  map_id_oid bigint(20) NOT NULL,
+  attr_name varchar(128) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (map_id_oid) REFERENCES map_identity (objectid) ON DELETE CASCADE
+) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS map_token;
+CREATE TABLE map_token (
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  map_id_oid bigint(20) NOT NULL,
+  token_type int(11) NOT NULL,
+  PRIMARY KEY (objectid),
+  FOREIGN KEY (map_id_oid) REFERENCES map_id (objectid) ON DELETE CASCADE
+) TYPE=InnoDB;
+
+
 SET FOREIGN_KEY_CHECKS = 1;

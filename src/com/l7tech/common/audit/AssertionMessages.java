@@ -37,6 +37,7 @@ public class AssertionMessages extends Messages {
     public static final M TOO_MANY_ROUTING_ATTEMPTS            = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
     public static final M SAML_SV_REQUEST_NOT_AUTHENTICATED    = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
     public static final M RESPONSE_STATUS_HANDLED              = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}, retrying.");
+    public static final M HTTPROUTE_NO_SUCH_VAR                = m(4026, Level.WARNING, "No such variable: {0}");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");
@@ -346,6 +347,13 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_KERBEROS_GOT_TICKET             = m(7405, Level.FINE, "Kerberos ticket processed, principal is:{0}");
     public static final M REQUEST_WSS_KERBEROS_INVALID_CONFIG         = m(7406, Level.SEVERE, "Server Kerberos configuration is invalid or KDC unreachable.");
     public static final M REQUEST_WSS_KERBEROS_INVALID_TICKET         = m(7407, Level.WARNING, "Could not process Kerberos ticket (not for this service?).");
+
+    // ServerMappingAssertion messages
+    public static final M MAPPING_NO_IDMAP    = m(7500, Level.WARNING, "No IdentityMapping for provider #{0} found in Attribute #{1}");
+    public static final M MAPPING_NO_TOKMAP   = m(7501, Level.WARNING, "No SecurityTokenMapping for provider #{0} found in Attribute #{1}");
+    public static final M MAPPING_NO_TOKVALUE = m(7502, Level.WARNING, "No suitable value could be found in any SecurityToken");
+    public static final M MAPPING_NO_IDENTS   = m(7503, Level.WARNING, "No matching identities could be found");
+    public static final M MAPPING_NO_IDVALUE  = m(7504, Level.WARNING, "No value could be found from any matching identity");
 
     // MAX -                                     m(7999
 }

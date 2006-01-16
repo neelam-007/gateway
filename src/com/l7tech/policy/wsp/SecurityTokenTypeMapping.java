@@ -45,7 +45,7 @@ class SecurityTokenTypeMapping implements TypeMapping {
     private final Pattern PUT   = Pattern.compile("[:#]UsernameToken$");
     private final Pattern PSCT  = Pattern.compile("/sc/sct$");
     private final Pattern PSAML = Pattern.compile("[:#]Assertion$|^SAML$");
-    private final Pattern PKERB = Pattern.compile("[:#]#GSS_Kerberosv5_AP_REQ$");
+    private final Pattern PKERB = Pattern.compile("[:#]GSS_Kerberosv5_AP_REQ$");
 
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         String uri = XmlUtil.getTextValue(source).trim();

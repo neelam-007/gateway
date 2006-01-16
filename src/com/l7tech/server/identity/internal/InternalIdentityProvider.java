@@ -1,6 +1,7 @@
 package com.l7tech.server.identity.internal;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.attribute.IdentityMapping;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
 
 /**
  * IdentityProvider implementation for the internal identity provider.
@@ -49,6 +51,10 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
 
     public GroupManager getGroupManager() {
         return groupManager;
+    }
+
+    public Collection search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
+        throw new UnsupportedOperationException();
     }
 
     public AuthenticationResult authenticate( LoginCredentials pc )

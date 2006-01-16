@@ -115,7 +115,6 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      *
      * @param oid      The objectId of the User to query
      * @param getfield the (aliased) name of the field to return
-     * @return
      */
     protected String getFieldQuery(String oid, String getfield) {
         String alias = getTableName();
@@ -138,7 +137,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     }
 
     public void checkUpdate(Entity ent) throws UpdateException {
-        String stmt = getFieldQuery(new Long(ent.getOid()).toString(), F_VERSION);
+        String stmt = getFieldQuery(Long.toString(ent.getOid()), F_VERSION);
 
         try {
             Session s = getSession();
@@ -199,8 +198,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             Session s = getSession();
             Criteria allHeadersCriteria = s.createCriteria(getImpClass());
             addFindAllCriteria(allHeadersCriteria);
-            List entities = allHeadersCriteria.list();
-            return entities;
+            return allHeadersCriteria.list();
         } catch (HibernateException e) {
             throw new FindException(e.toString(), e);
         }
@@ -220,15 +218,40 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         delete(getImpClass(), oid);
     }
 
+    public boolean isCacheCurrent(long objectid, int maxAge) throws FindException {
+        Long oid = new Long(objectid);
+        Sync read = cacheLock.readLock();
+        CacheInfo cacheInfo = null;
+        try {
+            read.acquire();
+            cacheInfo = (CacheInfo)cache.get(oid);
+            read.release();
+            if (cacheInfo == null) return false;
+
+            return cacheInfo.timestamp + maxAge >= System.currentTimeMillis();
+        } catch (InterruptedException e) {
+            logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
+            Thread.currentThread().interrupt();
+            return false;
+        }
+
+    }
+
     /**
-     * @param o
-     * @param maxAge
-     * @return
+     * Gets the {@link Entity} with the specified name from a cache where possible.  If the
+     * entity is not present in the cache, it will be retrieved from the database.  If the entity
+     * is present in the cache but was cached too long ago, checks whether the cached entity
+     * is stale by looking up its {@link Entity#getVersion}.  If the cached entity has the same
+     * version as the database, the cached version is marked fresh.
+     *
+     * @param objectid the OID of the object to get
+     * @param maxAge the age, in milliseconds, that a cached entity must attain before it is considered stale
+     * @return the object with the specified ID, from a cache if possible.
      * @throws FindException
      * @throws CacheVeto
      */
-    public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
-        Long oid = new Long(o);
+    public Entity getCachedEntity(long objectid, int maxAge) throws FindException, CacheVeto {
+        Long oid = new Long(objectid);
         Entity entity;
 
         Sync read = cacheLock.readLock();
@@ -241,7 +264,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             read = null;
             if (cacheInfo == null) {
                 // Might be new, or might be first run
-                entity = findEntity(o);
+                entity = findEntity(objectid);
                 if (entity == null) return null; // Doesn't exist
 
                 // New
@@ -263,18 +286,17 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         try {
             if (cacheInfo.timestamp + maxAge < System.currentTimeMillis()) {
                 // Time for a version check (getVersion() always goes to the database)
-                Integer currentVersion = getVersion(o);
+                Integer currentVersion = getVersion(objectid);
                 if (currentVersion == null) {
                     // BALEETED
                     write.acquire();
                     cacheRemove(cacheInfo.entity);
-                    cacheInfo = null;
                     write.release();
                     write = null;
                     return null;
                 } else if (currentVersion.intValue() != cacheInfo.version) {
                     // Updated
-                    entity = findEntity(o);
+                    entity = findEntity(objectid);
                     write.acquire();
                     cacheInfo = checkAndCache(entity);
                     write.release();

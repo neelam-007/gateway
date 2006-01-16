@@ -7,6 +7,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.attribute.IdentityMapping;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
@@ -112,6 +113,10 @@ public class TestIdentityProvider implements IdentityProvider {
 
     public Collection search(EntityType[] types, String searchString) throws FindException {
         return Collections.EMPTY_LIST;
+    }
+
+    public Collection search(boolean users, boolean groups, IdentityMapping mapping, Object value) throws FindException {
+        throw new UnsupportedOperationException();
     }
 
     public String getAuthRealm() {

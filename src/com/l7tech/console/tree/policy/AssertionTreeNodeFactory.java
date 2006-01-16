@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -88,6 +89,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);        
         assertionMap.put(HardcodedResponseAssertion.class, HardcodedResponseTreeNode.class);
         assertionMap.put(RequestWssKerberos.class, KerberosTreeNode.class);
+        assertionMap.put(MappingAssertion.class, MappingAssertionPolicyNode.class);
     }
 
     /**

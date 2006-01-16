@@ -15,17 +15,18 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
-import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.service.PublishedService;
 import org.springframework.beans.factory.InitializingBean;
 import org.w3c.dom.Document;
@@ -35,7 +36,6 @@ import org.xml.sax.SAXException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * Performs server side policy validation.
@@ -267,6 +267,8 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     if (g != null) {
                         idexists = true;
                     }
+                } else if (identityAssertion instanceof MappingAssertion) {
+                    idexists = true;
                 } else {
                     throw new RuntimeException("Type not supported " + identityAssertion.getClass().getName());
                 }

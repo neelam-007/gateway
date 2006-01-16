@@ -112,9 +112,6 @@
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
-        <property name="keystore">
-            <ref local='keystore'/>
-        </property>
         <property name="serverConfig">
             <ref local="serverConfig"/>
         </property>
@@ -557,4 +554,24 @@
             <ref bean="clientCertManager"/>
         </constructor-arg>
     </bean>
+
+    <!-- Identity mapping stuff -->
+    <bean id="identityMappingManager" class="com.l7tech.server.identity.mapping.IdentityMappingManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
+    <bean id="attributeConfigManager" class="com.l7tech.server.identity.mapping.AttributeConfigManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
+    <bean id="securityTokenMappingManager" class="com.l7tech.server.identity.mapping.SecurityTokenMappingManager">
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+    </bean>
+
 </beans>

@@ -1,12 +1,12 @@
 package com.l7tech.common.security.kerberos;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.Oid;
 import sun.security.jgss.GSSHeader;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Represents a Kerberos BST (GSS AP REQ)
@@ -15,7 +15,6 @@ import sun.security.jgss.GSSHeader;
  * @version $Revision$
  */
 public final class KerberosGSSAPReqTicket {
-
     //- PUBLIC
 
     /**
@@ -40,6 +39,14 @@ public final class KerberosGSSAPReqTicket {
         return bytes;
     }
 
+    public KerberosServiceTicket getServiceTicket() {
+        return serviceTicket;
+    }
+
+    public void setServiceTicket(KerberosServiceTicket kerberosServiceTicket) {
+        this.serviceTicket = kerberosServiceTicket;
+    }
+
     //- PACKAGE
 
     /**
@@ -57,4 +64,6 @@ public final class KerberosGSSAPReqTicket {
     //- PRIVATE
 
     private final byte[] ticketBytes;
+    private KerberosServiceTicket serviceTicket;
+
 }

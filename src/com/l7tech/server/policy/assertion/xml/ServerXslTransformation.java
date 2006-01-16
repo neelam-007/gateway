@@ -34,6 +34,8 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Server side class that executes an XslTransformation assertion within a policy tree.
@@ -104,6 +106,7 @@ public class ServerXslTransformation implements ServerAssertion {
         if (whichMimePart <= 0) whichMimePart = 0;
 
         // 2. Apply the transformation
+        final Map vars = context.getVariables();
         if (tarariContext == null) {
             final Document doctotransform;
 
@@ -126,7 +129,7 @@ public class ServerXslTransformation implements ServerAssertion {
                 }
                 Document output;
                 try {
-                    output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer());
+                    output = XmlUtil.softXSLTransform(doctotransform, getTemplate().newTransformer(), vars);
                 } catch (TransformerException e) {
                     String msg = "error transforming document";
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
@@ -149,6 +152,13 @@ public class ServerXslTransformation implements ServerAssertion {
         } else { // tarari-style xslt
             try {
                 Stylesheet transformer = new Stylesheet(master);
+
+                for (Iterator i = vars.keySet().iterator(); i.hasNext();) {
+                    String name = (String)i.next();
+                    Object value = vars.get(name);
+                    transformer.setParameter(name, value);
+                }
+                
                 transformer.setValidate(false);
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
                 XmlResult result = new XmlResult(output);

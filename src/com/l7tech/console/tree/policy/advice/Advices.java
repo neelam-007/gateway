@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.identity.MappingAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
@@ -111,5 +112,6 @@ public class Advices {
         advicesMap.put(SqlAttackAssertion.class, new Class[]{SqlAttackAssertionAdvice.class});
         advicesMap.put(RequestSizeLimit.class, new Class[]{RequestSizeLimitAdvice.class});
         advicesMap.put(HardcodedResponseAssertion.class, new Class[]{HardcodedResponseAssertionAdvice.class});
+        advicesMap.put(MappingAssertion.class, new Class[] {MappingAssertionAdvice.class});
     }
 }
