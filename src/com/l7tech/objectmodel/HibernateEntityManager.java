@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.objectmodel;
@@ -20,7 +18,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public abstract class HibernateEntityManager extends HibernateDaoSupport implements EntityManager {
     public static final String EMPTY_STRING = "";
@@ -221,7 +218,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     public boolean isCacheCurrent(long objectid, int maxAge) throws FindException {
         Long oid = new Long(objectid);
         Sync read = cacheLock.readLock();
-        CacheInfo cacheInfo = null;
+        CacheInfo cacheInfo;
         try {
             read.acquire();
             cacheInfo = (CacheInfo)cache.get(oid);
