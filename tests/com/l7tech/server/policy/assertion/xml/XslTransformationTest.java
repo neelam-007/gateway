@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.io.ByteArrayInputStream;
 import java.util.logging.Logger;
+import java.util.Collections;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -61,7 +62,7 @@ public class XslTransformationTest extends TestCase {
         StreamSource xsltsource = new StreamSource(new StringReader(xslt));
         Transformer transformer = transfoctory.newTemplates(xsltsource).newTransformer();
         Document srcdoc = XmlUtil.stringToDocument(src);
-        return XmlUtil.softXSLTransform(srcdoc, transformer);
+        return XmlUtil.softXSLTransform(srcdoc, transformer, Collections.EMPTY_MAP);
     }
 
     public void testServerAssertion() throws Exception {
@@ -69,7 +70,7 @@ public class XslTransformationTest extends TestCase {
         ass.setXslSrc(getResAsString(XSL_MASK_WSSE));
         ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ass.setWhichMimePart(0);
-        
+
         ServerXslTransformation serverAss = new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
 
         Message req = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
