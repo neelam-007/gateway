@@ -353,7 +353,7 @@
         <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
     </target>
 
-    <target name="clean.ca" depends="ca.availablecheck" if="customassertions.available">
+    <target name="clean.ca" depends="ca.availablecheck" if="customassertion.available">
         <!-- clean up the custom assertions subtree as well-->
         <exec executable="sh" dir="${customassertions.src.dir}">
             <arg line="./build.sh clean"/>
@@ -605,7 +605,7 @@
     </target>
 
     <target name="ca.availablecheck">
-	<available file="CustomAssertions" property="customassertion.available"/>
+	<available file="${customassertions.src.dir}" property="customassertion.available"/>
     </target>
 
     <!--
@@ -616,7 +616,7 @@
     </target>
 
     <target name="package.manager.ca" depends="ca.availablecheck, ca.createemptyjar" if="customassertion.available">
-        <exec executable="sh" dir="CustomAssertions/">
+        <exec executable="sh" dir="${customassertions.src.dir}">
             <arg line="./build.sh build-deployment-jar"/>
         </exec>
         <copy todir="${build.lib}" file="${customassertions.jar.path}"/>
