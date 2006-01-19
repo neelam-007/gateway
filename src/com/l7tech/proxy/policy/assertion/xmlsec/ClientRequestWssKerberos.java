@@ -48,39 +48,25 @@ public class ClientRequestWssKerberos extends ClientAssertion {
     {
         final Ssg ssg = context.getSsg();
 
+        final String kerberosId = context.getKerberosServiceTicketId();
+        final KerberosServiceTicket ticket = kerberosId!=null ? context.getExistingKerberosServiceTicket() : context.getKerberosServiceTicket();
+
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException
             {
                 DecorationRequirements wssReqs = context.getDefaultWssRequirements();
 
-                try {
-                    KerberosClient client = new KerberosClient();
-                    client.setCallbackHandler(new CallbackHandler(){
-                        public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-                            for (int i = 0; i < callbacks.length; i++) {
-                                Callback callback = callbacks[i];
-                                if(callback instanceof PasswordCallback) {
-                                    PasswordCallback pc = (PasswordCallback) callback;
-                                    pc.setPassword(ssg.getRuntime().getCredentials().getPassword());
-                                }
-                                else if(callback instanceof NameCallback) {
-                                    NameCallback nc = (NameCallback) callback;
-                                    nc.setName(ssg.getRuntime().getCredentials().getUserName());
-                                }
-                            }
-                        }
-                    });
-                    KerberosServiceTicket kst = client.getKerberosServiceTicket(requestKerberos.getServicePrincipalName());
-
+                if(kerberosId!=null) {
+                    wssReqs.setIncludeKerberosTicketId(true);
+                    wssReqs.setKerberosTicketId(kerberosId);
+                    wssReqs.setKerberosTicket(ticket); // needed if signing or encrypting
+                }
+                else {
                     wssReqs.setIncludeKerberosTicket(true);
-                    wssReqs.setKerberosTicket(kst.getGSSAPReqTicket());
-                    return AssertionStatus.NONE;
+                    wssReqs.setKerberosTicket(ticket);
                 }
-                catch(KerberosException ke) {
-                    logger.log(Level.WARNING, "Error getting ticket", ke);
-                    return AssertionStatus.FALSIFIED;
-                }
+                return AssertionStatus.NONE;
             }
         });
 

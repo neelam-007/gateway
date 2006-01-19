@@ -6,9 +6,12 @@ import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
+import com.l7tech.common.security.kerberos.KerberosSecurityTokenImpl;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.token.SecurityContextToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -17,12 +20,19 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.DuplicateSessionException;
+
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.security.auth.login.LoginException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Server side processing for Kerberos Binary Security Tokens.
@@ -65,27 +75,68 @@ public class ServerRequestWssKerberos implements ServerAssertion {
         }
 
         KerberosGSSAPReqTicket kerberosTicket = null;
+        SecureConversationSession kerberosSession = null;
         for (int i = 0; i < tokens.length; i++) {
             XmlSecurityToken tok = tokens[i];
             if (tok instanceof KerberosSecurityToken) {
                 kerberosTicket = ((KerberosSecurityToken) tok).getTicket();
             }
+            else if(tok instanceof SecurityContextToken) {
+                SecurityContext securityContext = ((SecurityContextToken)tok).getSecurityContext();
+                if(securityContext instanceof SecureConversationSession) {
+                    kerberosSession = (SecureConversationSession) securityContext;
+                }
+                else {
+                    logger.warning("Found security context of incorrect type '"+(securityContext==null ? "null" : securityContext.getClass().getName())+"'.");
+                }
+            }
         }
 
-        if (kerberosTicket != null) {
+        if (kerberosSession !=null ) { // process reference to previously sent ticket
+            LoginCredentials creds = kerberosSession.getCredentials();
+            if(kerberosSession.getExpiration() < System.currentTimeMillis()) {
+                logger.info("Ignoring expired Kerberos session.");
+            }
+            else {
+                KerberosServiceTicket kerberosServiceTicket = (KerberosServiceTicket) creds.getPayload();
+                if(!requestWssKerberos.getServicePrincipalName().equals(kerberosServiceTicket.getServicePrincipalName())) {
+                    logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+kerberosServiceTicket.getServicePrincipalName()+"').");
+                }
+                else {
+                    context.setCredentials(creds);
+                    context.setAuthenticated(true);
+
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
+
+                    return AssertionStatus.NONE;
+                }
+            }
+        }
+        else if (kerberosTicket != null) { // process ticket
             try {
                 KerberosClient client = new KerberosClient();
                 KerberosServiceTicket kerberosServiceTicket = client.getKerberosServiceTicket(requestWssKerberos.getServicePrincipalName(), kerberosTicket);
                 kerberosTicket.setServiceTicket(kerberosServiceTicket);
-                context.setCredentials(new LoginCredentials(kerberosServiceTicket.getClientPrincipalName(),
+                LoginCredentials loginCreds = new LoginCredentials(kerberosServiceTicket.getClientPrincipalName(),
                                                             null,
                                                             CredentialFormat.KERBEROSTICKET,
                                                             KerberosSecurityToken.class,
                                                             null,
-                                                            kerberosServiceTicket));
+                                                            kerberosServiceTicket);
+                context.setCredentials(loginCreds);
                 context.setAuthenticated(true);
 
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
+
+                // stash for later reference
+                SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
+                try {
+                    sccm.createContextForUser(KerberosSecurityTokenImpl.getSessionIdentifier(kerberosTicket), kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
+                }
+                catch(DuplicateSessionException dse) {
+                    //can't happen since duplicate tickets are detected by kerberos.
+                    logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
+                }
 
                 return AssertionStatus.NONE;
             }

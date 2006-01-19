@@ -35,6 +35,13 @@ public class SecureConversationContextManager implements SecurityContextFinder {
     }
 
     /**
+     * For use by the WssProcessor on the ssg.
+     */
+    public SecurityContext getSecurityContext(String securityContextIdentifier) {
+        return getSession(securityContextIdentifier);
+    }
+
+    /**
      * Retrieve a session previously recorded.
      */
     public SecureConversationSession getSession(String identifier) {
@@ -43,11 +50,14 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         Sync readlock = rwlock.readLock();
         try {
             readlock.acquire();
-            output = (SecureConversationSession)sessions.get(identifier);
+            try {
+                output = (SecureConversationSession)sessions.get(identifier);
+            }
+            finally {
+                readlock.release(); // only release if successfully acquired.
+            }
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "Read lock interrupted", e);
-        } finally {
-            readlock.release();
         }
         return output;
     }
@@ -59,20 +69,23 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         Sync writelock = rwlock.writeLock();
         try {
             writelock.acquire();
-            // Two sessions with same id is not allowed. ever (even if one is expired)
-            SecureConversationSession alreadyExistingOne =
-                    (SecureConversationSession)sessions.get(newSession.getIdentifier());
-            if (alreadyExistingOne != null) {
-                throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
+            try {
+                // Two sessions with same id is not allowed. ever (even if one is expired)
+                SecureConversationSession alreadyExistingOne =
+                        (SecureConversationSession) sessions.get(newSession.getIdentifier());
+                if (alreadyExistingOne != null) {
+                    throw new DuplicateSessionException("Session already exists with id " + newSession.getIdentifier());
+                }
+                sessions.put(newSession.getIdentifier(), newSession);
+                logger.finest("Saved SC context " + newSession.getIdentifier());
             }
-            sessions.put(newSession.getIdentifier(), newSession);
-            logger.finest("Saved SC context " + newSession.getIdentifier());
+            finally {
+                writelock.release();
+            }
         } catch (InterruptedException e) {
-            String msg = "Write lock interrupted. Session might not have been saved";
+            String msg = "Write lock interrupted. Session not saved";
             logger.log(Level.WARNING, msg, e);
             throw new RuntimeException(e);
-        } finally {
-            writelock.release();
         }
     }
 
@@ -107,30 +120,53 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         return session;
     }
 
+    /**
+     * Creates a new session and saves it.
+     *
+     * @param sessionId the session identifier, you should use your own "namespace"
+     * @param expiryTime the expiry in millis
+     * @param sessionOwner the user
+     * @param credentials the users creds
+     * @param sharedKey the key for the session
+     * @return the newly created session
+     */
+    public SecureConversationSession createContextForUser(String sessionId, long expiryTime, User sessionOwner, LoginCredentials credentials, SecretKey sharedKey) throws DuplicateSessionException {
+        long expires = expiryTime > 0 ? expiryTime : System.currentTimeMillis() + DEFAULT_SESSION_DURATION;
+        SecureConversationSession session = new SecureConversationSession();
+        session.setCreation(System.currentTimeMillis());
+        session.setExpiration(expires);
+        session.setIdentifier(sessionId);
+        session.setCredentials(credentials);
+        session.setSharedSecret(sharedKey);
+        session.setUsedBy(sessionOwner);
+        saveSession(session);
+        return session;
+    }
+
     private void checkExpiriedSessions() {
         long now = System.currentTimeMillis();
         if ((now - lastExpirationCheck) > SESSION_CHECK_INTERVAL) {
             Sync writelock = rwlock.writeLock();
             try {
                 writelock.acquire();
-                // check expired sessions
-                logger.finest("Checking for expired sessions");
-                Collection sessionsCol = sessions.values();
-                for (Iterator iterator = sessionsCol.iterator(); iterator.hasNext();) {
-                    SecureConversationSession sess = (SecureConversationSession)iterator.next();
-                    if (sess.getExpiration() <= now) {
-                        // delete the session
-                        logger.info("Deleting secure conversation session because expired: " + sess.getIdentifier());
-                        sessions.remove(sess.getIdentifier());
-                        // reset the traversor
-                        sessionsCol = sessions.values();
-                        iterator = sessionsCol.iterator();
+                try {
+                    // check expired sessions
+                    logger.finest("Checking for expired sessions");
+                    Collection sessionsCol = sessions.values();
+                    for (Iterator iterator = sessionsCol.iterator(); iterator.hasNext();) {
+                        SecureConversationSession sess = (SecureConversationSession)iterator.next();
+                        if (sess.getExpiration() <= now) {
+                            // delete the session
+                            logger.info("Deleting secure conversation session because expired: " + sess.getIdentifier());
+                            iterator.remove();
+                        }
                     }
+                }
+                finally {
+                    writelock.release();
                 }
             } catch (InterruptedException e) {
                 logger.log(Level.WARNING, "this check was interrupted", e);
-            } finally {
-                writelock.release();
             }
             lastExpirationCheck = now;
         }
@@ -148,13 +184,6 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         byte[] output = new byte[20];
         random.nextBytes(output);
         return HexUtils.hexDump(output);
-    }
-
-    /**
-     * For use by the WssProcessor on the ssg.
-     */
-    public SecurityContext getSecurityContext(String securityContextIdentifier) {
-        return getSession(securityContextIdentifier);
     }
 
     private SecureConversationContextManager() {

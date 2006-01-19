@@ -17,7 +17,7 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.security.kerberos.KerberosClient;
-import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -99,7 +99,7 @@ public class PolicyServiceClient {
         return msg;
     }
 
-    public static Document createDecoratedGetPolicyRequest(String serviceId, KerberosGSSAPReqTicket kerberosTicket)
+    public static Document createDecoratedGetPolicyRequest(String serviceId, KerberosServiceTicket kerberosTicket)
             throws GeneralSecurityException
     {
         Document msg = createGetPolicyRequest(serviceId);
@@ -450,7 +450,7 @@ public class PolicyServiceClient {
                                                     Ssg ssg,
                                                     String serviceId,
                                                     X509Certificate serverCertificate,
-                                                    KerberosGSSAPReqTicket kerberosTicket)
+                                                    KerberosServiceTicket kerberosTicket)
             throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
     {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), ssg.getRuntime().getPolicyServiceFile());

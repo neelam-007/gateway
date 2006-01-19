@@ -23,10 +23,11 @@ public final class KerberosServiceTicket {
      * @param key the sub or session key
      * @param ticket the ticket bytes
      */
-    public KerberosServiceTicket(String client, String service, byte[] key, KerberosGSSAPReqTicket ticket) {
+    public KerberosServiceTicket(String client, String service, byte[] key, long expiry, KerberosGSSAPReqTicket ticket) {
         clientPrincipalName = client;
         servicePrincipalName = service;
         sessionOrSubKey = key;
+        expires = expiry;
         gssApReqTicket = ticket;
     }
 
@@ -58,6 +59,15 @@ public final class KerberosServiceTicket {
     }
 
     /**
+     * Get the expiry time for this ticket.
+     *
+     * @return the time.
+     */
+    public long getExpiry() {
+        return expires;
+    }
+
+    /**
      * Get the kerberos AP REQ GSS ticket for this principal for the client/service.
      *
      * @return the ticket
@@ -78,5 +88,6 @@ public final class KerberosServiceTicket {
     private final String clientPrincipalName;
     private final String servicePrincipalName;
     private final byte[] sessionOrSubKey;
+    private final long expires;
     private final KerberosGSSAPReqTicket gssApReqTicket;
 }

@@ -189,7 +189,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITYTOKENREFERENCE_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
-                    processSecurityTokenReference(securityChildToProcess, cntx);
+                    processSecurityTokenReference(securityChildToProcess, securityContextFinder, cntx);
                 } else {
                     logger.fine("Encountered SecurityTokenReference element but not of expected namespace (" +
                       securityChildToProcess.getNamespaceURI() + ")");
@@ -280,19 +280,25 @@ public class WssProcessorImpl implements WssProcessor {
      * TODO this should be merged into KeyInfoElement
      *
      * @param str  the SecurityTokeReference element
+     * @param securityContextFinder the context finder to perform lookups with (may be null)
      * @param cntx thge processing status holder/accumulator
      * @throws InvalidDocumentFormatException
      */
-    private void processSecurityTokenReference(Element str, ProcessingStatusHolder cntx) throws InvalidDocumentFormatException {
+    private void processSecurityTokenReference(Element str, SecurityContextFinder securityContextFinder, ProcessingStatusHolder cntx) throws InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
         String id = SoapUtil.getElementWsuId(str);
+        boolean noId = false;
         if (id == null || id.length() < 1) {
-            logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
-            return;
+            noId = true;
+            id = "<noid>";
         }
 
         Element keyid = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
         String value = null;
         if (keyid == null) {
+            if(noId) {
+                logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
+                return;
+            }
             keyid = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "Reference");
             if (keyid == null) { //try reference
                 logger.warning("Ignoring SecurityTokenReference ID=" + id + " with no KeyIdentifier or Reference");
@@ -305,11 +311,6 @@ public class WssProcessorImpl implements WssProcessor {
             }
         } else {
             value = XmlUtil.getTextValue(keyid).trim();
-            String encodingType = keyid.getAttribute("EncodingType");
-            if (encodingType != null && encodingType.length() > 0) {
-                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with non-empty KeyIdentifier/@EncodingType=" + encodingType);
-                return;
-            }
         }
         if (value == null) {
             final String msg = "Rejecting SecurityTokenReference ID=" + id + " as the target reference ID is missing or could not be determined.";
@@ -319,6 +320,15 @@ public class WssProcessorImpl implements WssProcessor {
 
         String valueType = keyid.getAttribute("ValueType");
         if (SoapUtil.isValueTypeSaml(valueType)) {
+            if(noId) {
+                logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
+                return;
+            }
+            String encodingType = keyid.getAttribute("EncodingType");
+            if (encodingType != null && encodingType.length() > 0) {
+                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with non-empty KeyIdentifier/@EncodingType=" + encodingType);
+                return;
+            }
             Element target = (Element)cntx.elementsByWsuId.get(value);
             if (target == null || !target.getLocalName().equals("Assertion") || !target.getNamespaceURI().equals(SamlConstants.NS_SAML)) {
                 final String msg = "Rejecting SecurityTokenReference ID=" + id + " with ValueType of " + valueType + " because its target is either missing or not a SAML assertion";
@@ -327,6 +337,25 @@ public class WssProcessorImpl implements WssProcessor {
             }
             logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
             cntx.securityTokenReferenceElementToTargetElement.put(str, target);
+        } if (SoapUtil.isValueTypeKerberos(valueType)) {
+            String encodingType = keyid.getAttribute("EncodingType");
+            if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
+                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
+                return;
+            }
+
+            String identifier = KerberosSecurityTokenImpl.getSessionIdentifier(value);
+
+            if (securityContextFinder == null)
+                throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not provide a SecurityContextFinder");
+            SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+            if (secContext == null) {
+                throw new BadSecurityContextException(identifier); //TODO kerberosize
+            }
+            SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
+                                                                              keyid,
+                                                                              identifier);
+            cntx.securityTokens.add(secConTok);
         } else {
             logger.warning("Ignoring SecurityTokenReference ID=" + id + " with unsupported ValueType of " + valueType);
             return;

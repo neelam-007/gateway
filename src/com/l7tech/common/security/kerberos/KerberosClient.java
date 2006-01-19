@@ -112,8 +112,9 @@ public class KerberosClient {
                     KerberosTicket ticket = getTicket(kerberosSubject.getPrivateCredentials(), serviceName, manager);
 
                     return new KerberosServiceTicket(ticket.getClient().getName(),
-                                                     ticket.getServer().getName(),
+                                                     servicePrincipalName,
                                                      ticket.getSessionKey().getEncoded(),
+                                                     System.currentTimeMillis() + (context.getLifetime() * 1000L),
                                                      new KerberosGSSAPReqTicket(bytes));
                 }
             });
@@ -162,8 +163,9 @@ public class KerberosClient {
                     byte[] keyBytes = (subKey==null ? sessionKey : subKey).getBytes();
 
                     return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
-                                                     apReq.getCreds().getServer().getName(),
+                                                     servicePrincipalName,
                                                      keyBytes,
+                                                     apReq.getCreds().getEndTime().getTime(),
                                                      gssAPReqTicket);
                 }
             });

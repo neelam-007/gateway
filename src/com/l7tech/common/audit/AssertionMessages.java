@@ -345,8 +345,9 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_KERBEROS_NO_TOKEN               = m(7403, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
     public static final M REQUEST_WSS_KERBEROS_NO_TICKET              = m(7404, Level.INFO, "This assertion did not find a Kerberos Binary Security Token to use as credentials. Returning AUTH_REQUIRED.");
     public static final M REQUEST_WSS_KERBEROS_GOT_TICKET             = m(7405, Level.FINE, "Kerberos ticket processed, principal is:{0}");
-    public static final M REQUEST_WSS_KERBEROS_INVALID_CONFIG         = m(7406, Level.SEVERE, "Server Kerberos configuration is invalid or KDC unreachable.");
-    public static final M REQUEST_WSS_KERBEROS_INVALID_TICKET         = m(7407, Level.WARNING, "Could not process Kerberos ticket (not for this service?).");
+    public static final M REQUEST_WSS_KERBEROS_GOT_SESSION            = m(7406, Level.FINE, "Kerberos session processed, principal is:{0}");
+    public static final M REQUEST_WSS_KERBEROS_INVALID_CONFIG         = m(7407, Level.SEVERE, "Server Kerberos configuration is invalid or KDC unreachable.");
+    public static final M REQUEST_WSS_KERBEROS_INVALID_TICKET         = m(7408, Level.WARNING, "Could not process Kerberos ticket (not for this service?).");
 
     // ServerMappingAssertion messages
     public static final M MAPPING_NO_IDMAP    = m(7500, Level.WARNING, "No IdentityMapping for provider #{0} found in Attribute #{1}");

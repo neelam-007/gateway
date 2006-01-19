@@ -139,10 +139,14 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         }
 
+        // Add kerberos ticket reference
+        if (dreq.isIncludeKerberosTicketId() && dreq.getKerberosTicketId() != null) {
+            addKerberosSecurityTokenReference(securityHeader, dreq.getKerberosTicketId());
+        }
+
         // Add Kerberos ticket
-        Element kerbBst = null;
         if (dreq.isIncludeKerberosTicket() && dreq.getKerberosTicket() != null) {
-            kerbBst = addKerberosBinarySecurityToken(securityHeader, dreq.getKerberosTicket(), c);
+            addKerberosBinarySecurityToken(securityHeader, dreq.getKerberosTicket().getGSSAPReqTicket(), c);
         }
 
         // At this point, if we are signing using a sender cert, we have either recipSki or bst but not both
@@ -203,7 +207,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
-            } else if (kerbBst != null) {
+            } else if (dreq.getKerberosTicket() != null) {
                 // TODO sign with GSS!
                 // TODO sign with GSS!
                 // TODO sign with GSS!
@@ -840,6 +844,17 @@ public class WssDecoratorImpl implements WssDecorator {
         element.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(certificate.getEncoded(), true)));
         securityHeader.appendChild(element);
         return element;
+    }
+
+    private Element addKerberosSecurityTokenReference(Element securityHeader, String kerberosTicketId) {
+        String wsseNs = securityHeader.getNamespaceURI();
+        String wsse = securityHeader.getPrefix();
+        Element str = XmlUtil.createAndAppendElementNS(securityHeader, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
+        Element keyid = XmlUtil.createAndAppendElementNS(str, SoapUtil.KEYIDENTIFIER_EL_NAME, wsseNs, wsse);
+        keyid.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
+        keyid.setAttribute("ValueType", SoapUtil.VALUETYPE_KERBEROS_APREQ_SHA1);
+        keyid.appendChild(XmlUtil.createTextNode(keyid, kerberosTicketId));
+        return str;
     }
 
     private Element addKerberosBinarySecurityToken(Element securityHeader, KerberosGSSAPReqTicket kerberosTicket, Context c) {

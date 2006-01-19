@@ -7,7 +7,7 @@ package com.l7tech.common.security.xml.decorator;
 
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Element;
 
@@ -382,11 +382,11 @@ public class DecorationRequirements {
         this.suppressBst = suppressBst;
     }
 
-    public KerberosGSSAPReqTicket getKerberosTicket() {
+    public KerberosServiceTicket getKerberosTicket() {
         return kerberosTicket;
     }
 
-    public void setKerberosTicket(KerberosGSSAPReqTicket kerberosTicket) {
+    public void setKerberosTicket(KerberosServiceTicket kerberosTicket) {
         this.kerberosTicket = kerberosTicket;
     }
 
@@ -396,6 +396,22 @@ public class DecorationRequirements {
 
     public void setIncludeKerberosTicket(boolean includeKerberosTicket) {
         this.includeKerberosTicket = includeKerberosTicket;
+    }
+
+    public String getKerberosTicketId() {
+        return kerberosTicketId;
+    }
+
+    public void setKerberosTicketId(String kerberosTicketId) {
+        this.kerberosTicketId = kerberosTicketId;
+    }
+
+    public boolean isIncludeKerberosTicketId() {
+        return includeKerberosTicketId;
+    }
+
+    public void setIncludeKerberosTicketId(boolean includeKerberosTicketId) {
+        this.includeKerberosTicketId = includeKerberosTicketId;
     }
 
     private X509Certificate recipientCertificate = null;
@@ -420,6 +436,8 @@ public class DecorationRequirements {
     private SecretKey encryptedKey = null;
     private String encryptedKeySha1 = null;
     private String signatureConfirmation = null;
-    private KerberosGSSAPReqTicket kerberosTicket = null;
+    private KerberosServiceTicket kerberosTicket = null;
     private boolean includeKerberosTicket = false;
+    private String kerberosTicketId = null;
+    private boolean includeKerberosTicketId = false;
 }

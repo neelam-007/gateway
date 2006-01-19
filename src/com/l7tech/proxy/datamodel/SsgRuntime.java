@@ -15,6 +15,7 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.DateTranslator;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
@@ -71,6 +72,7 @@ public class SsgRuntime {
     private byte[] secureConversationSharedSecret = null;
     private String secureConversationId = null;
     private Calendar secureConversationExpiryDate = null;
+    private KerberosServiceTicket kerberosTicket = null;
     private long timeOffset = 0;
     private Map tokenStrategiesByType;
     private SimpleHttpClient simpleHttpClient = null;
@@ -231,6 +233,20 @@ public class SsgRuntime {
      */
     public void secureConversationExpiryDate(Calendar secureConversationExpiryDate) {
         this.secureConversationExpiryDate = secureConversationExpiryDate;
+    }
+
+    /**
+     * Get the Kerberos ticket if set.
+     */
+    public KerberosServiceTicket kerberosTicket() {
+        return kerberosTicket;
+    }
+
+    /**
+     * Set the Kerberos ticket. 
+     */
+    public void kerberosTicket(KerberosServiceTicket kerberosTicket) {
+        this.kerberosTicket = kerberosTicket;
     }
 
     public boolean promptForUsernameAndPassword() {

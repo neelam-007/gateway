@@ -532,7 +532,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                     Calendar ssgDate = ssg.getRuntime().secureConversationExpiryDate();
                     if (ssgDate == secureConversationExpiryDate || (ssgDate != null && !ssgDate.after(now))) {
                         logger.log(Level.INFO, "Our WS-SecureConversation session has expired or will do so within the next " +
-                          WSSC_PREEXPIRE_SEC + "seconds.  Will throw it away and get a new one.");
+                          WSSC_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
                         ssg.getRuntime().secureConversationId(null);
                         ssg.getRuntime().secureConversationSharedSecret(null);
                         ssg.getRuntime().secureConversationExpiryDate(null);
@@ -626,31 +626,81 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
+     * Clear the Kerberos ticket.
+     */
+    public void clearKerberosServiceTicket() {
+        ssg.getRuntime().kerberosTicket(null);
+    }
+
+    /**
+     * Get the id of a previously issued GSS AP-REQ Ticket.
+     *
+     * @return the id or null.
+     */
+    public String getKerberosServiceTicketId() {
+        String id = null;
+
+        KerberosServiceTicket kst = ssg.getRuntime().kerberosTicket();
+        if(kst!=null) {
+            Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+            now.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
+
+            if(kst.getExpiry() <= now.getTime().getTime()) {
+                logger.log(Level.INFO, "Our Kerberos session has expired or will do so within the next " +
+                          WSSC_PREEXPIRE_SEC + " seconds. Will throw it away and get a new one.");
+            }
+            else {
+                id = HexUtils.encodeBase64(HexUtils.getSha1().digest(kst.getGSSAPReqTicket().toByteArray()));
+            }
+        }
+
+        return id;
+    }
+
+    /**
+     * Get the Kerberos ticket for the existing session (if any)
+     *
+     * <p>Before calling this method call getKerberosServiceTicketId(), if is it null then
+     * get a new ticket (dont call this method).</p>
+     *
+     * @return the ticket or null.
+     */
+    public KerberosServiceTicket getExistingKerberosServiceTicket() {
+        return ssg.getRuntime().kerberosTicket();
+    }
+
+    /**
      * Get a valid Kerberos GSS AP-REQ Ticket.
      *
      * @return the ticket
      * @throws GeneralSecurityException is a ticket could not be obtained.
      */
-    public KerberosGSSAPReqTicket getKerberosGSSAPReqTicket() throws GeneralSecurityException {
+    public KerberosServiceTicket getKerberosServiceTicket() throws GeneralSecurityException {
         try {
             KerberosClient client = new KerberosClient();
             client.setCallbackHandler(new CallbackHandler(){
                 public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+                    PasswordAuthentication pa = ssg.getRuntime().getCredentials();
                     for (int i = 0; i < callbacks.length; i++) {
                         Callback callback = callbacks[i];
                         if(callback instanceof PasswordCallback) {
                             PasswordCallback pc = (PasswordCallback) callback;
-                            pc.setPassword(ssg.getRuntime().getCredentials().getPassword());
+                            if(pa!=null) pc.setPassword(pa.getPassword());
+                            else pc.setPassword(new char[]{' '});
                         }
                         else if(callback instanceof NameCallback) {
                             NameCallback nc = (NameCallback) callback;
-                            nc.setName(ssg.getRuntime().getCredentials().getUserName());
+                            if(pa!=null) nc.setName(pa.getUserName());
+                            else nc.setName(System.getProperty("user.name", ""));
                         }
                     }
                 }
             });
             KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getGSSServiceName());
-            return kst.getGSSAPReqTicket();
+
+            ssg.getRuntime().kerberosTicket(kst);
+
+            return kst;
         }
         catch(KerberosException ke) {
             throw new GeneralSecurityException("Could not get Kerberos Ticket", ke);
