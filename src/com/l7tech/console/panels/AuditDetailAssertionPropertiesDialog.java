@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.AuditAssertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,6 +47,18 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
             }
         });
         cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                cancel();
+            }
+        });
+
+        Actions.setEnterAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ok();
+            }
+        });
+
+        Actions.setEscAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }

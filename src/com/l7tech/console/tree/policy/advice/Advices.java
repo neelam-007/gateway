@@ -113,5 +113,6 @@ public class Advices {
         advicesMap.put(RequestSizeLimit.class, new Class[]{RequestSizeLimitAdvice.class});
         advicesMap.put(HardcodedResponseAssertion.class, new Class[]{HardcodedResponseAssertionAdvice.class});
         advicesMap.put(MappingAssertion.class, new Class[] {MappingAssertionAdvice.class});
+        advicesMap.put(AuditDetailAssertion.class, new Class[] {AddAuditAdviceAssertion.class});
     }
 }
