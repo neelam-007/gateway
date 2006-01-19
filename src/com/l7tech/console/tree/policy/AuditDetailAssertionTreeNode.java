@@ -80,7 +80,9 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
             }
 
             protected void performAction() {
-                AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow());
+                AuditDetailAssertionPropertiesDialog aad =
+                        new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(),
+                                                                 getAssertion());
                 aad.pack();
                 Utilities.centerOnScreen(aad);
                 Actions.setEscKeyStrokeDisposes(aad);
