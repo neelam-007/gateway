@@ -72,6 +72,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RemoteIpRange.class, RemoteIpRangeTreeNode.class);
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
         assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);
+        assertionMap.put(AuditDetailAssertion.class, AuditDetailAssertionTreeNode.class);
         assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
         assertionMap.put(WsTrustCredentialExchange.class, WsTrustCredentialExchangeTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenExchangeTreeNode.class);

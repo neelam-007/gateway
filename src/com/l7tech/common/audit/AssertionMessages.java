@@ -356,5 +356,5 @@ public class AssertionMessages extends Messages {
     public static final M MAPPING_NO_IDENTS   = m(7503, Level.WARNING, "No matching identities could be found");
     public static final M MAPPING_NO_IDVALUE  = m(7504, Level.WARNING, "No value could be found from any matching identity");
 
-    // MAX -                                     m(7999
+    public static final M USERDETAIL  = m(7999, Level.INFO, "{0}");
 }
