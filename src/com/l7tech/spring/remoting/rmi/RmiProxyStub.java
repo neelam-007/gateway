@@ -1,97 +1,74 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 package com.l7tech.spring.remoting.rmi;
 
-import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.remoting.rmi.RmiClientInterceptor;
-import org.springframework.remoting.support.RemoteInvocationFactory;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.rmi.Remote;
 
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.remoting.rmi.RmiInvocationHandler;
+import org.springframework.remoting.support.RemoteInvocation;
+import org.springframework.remoting.support.RemoteInvocationFactory;
+
 /**
- * @author emil
- * @version Dec 6, 2004
+ * RMI Stub object which backs the Dynamic Proxy passed to the client.
+ *
+ * @author $Author$
+ * @version $Revision$
  */
-final class RmiProxyStub extends RmiClientInterceptor implements Serializable {
-    private Object serviceProxy;
-    private Remote serviceStub;
-    private Class remoteInvocationFactoryClass;
+final class RmiProxyStub implements InvocationHandler, Serializable {
 
-    RmiProxyStub(Remote stub, Class serviceInterface) throws Exception {
-        this.serviceStub = stub;
-        this.setServiceInterface(serviceInterface);
-        initialize();
-    }
+    //- PUBLIC
 
+    public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+        Object result = null;
+        if(serviceStub instanceof RmiInvocationHandler) {
+            RemoteInvocation ri = remoteInvocationFactory.createRemoteInvocation(new MethodInvocation(){
+                //
+                public Method getMethod() {return method;}
+                public Object[] getArguments() {return args;}
 
-    private void initialize() throws Exception {
-        String memoServiceUrl = getServiceUrl();
-        try {
-            if (memoServiceUrl == null) {
-                setServiceUrl(getServiceInterface().getName()); //todo: submit Spring feature request for this
-            }
-            super.afterPropertiesSet();
-            this.serviceProxy = ProxyFactory.getProxy(getServiceInterface(), this);
-        } finally {
-            setServiceUrl(memoServiceUrl);
+                // not used by spring
+                public Object proceed() throws Throwable {return null;}
+                public Object getThis() {return null;}
+                public AccessibleObject getStaticPart() {return null;}
+            });
+            result = ((RmiInvocationHandler)serviceStub).invoke(ri);
         }
+        else {
+            result = method.invoke(serviceStub, args);
+        }
+        return result;
     }
 
     public Object getServiceProxy() {
         return serviceProxy;
     }
 
+    //- PROTECTED
+
     protected synchronized Remote lookupStub() throws Exception {
         return this.serviceStub;
     }
 
-    /**
-     * Saves its own fields by calling defaultWriteObject and then explicitly
-     * saves the fields of its superclass
-     */
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        RemoteInvocationFactory remoteInvocationFactory = getRemoteInvocationFactory();
-        remoteInvocationFactoryClass = remoteInvocationFactory.getClass();
+    //- PACKAGE
 
-        // Take care of this class's field first by calling defaultWriteObject
-        out.defaultWriteObject();
-
-        /*
-         * Since the superclass does not implement the Serializable interface
-         * we explicitly do the saving...
-         */
-        if (Serializable.class.isAssignableFrom(remoteInvocationFactoryClass)) {
-            out.writeObject(remoteInvocationFactory);
-        }
+    RmiProxyStub(Object exported, Remote stub, Class serviceInterface, RemoteInvocationFactory factory) throws Exception {
+        this.exported = exported; // HOLD a reference to this until we are Serialized (to prevend DGC reaping)
+        this.serviceStub = stub;
+        this.serviceProxy = Proxy.newProxyInstance(RmiProxyStub.class.getClassLoader(), new Class[]{serviceInterface}, this);
+        this.remoteInvocationFactory = factory;
     }
 
-    /**
-     * Restores its own fields by calling defaultReadObject and then explicitly
-     * restores the fields of its superclass.
-     */
-    private void readObject(ObjectInputStream in)
-      throws IOException, ClassNotFoundException {
+    //- PRIVATE
 
-        /*
-         * Take care of this class's fields first by calling
-         * defaultReadObject
-         */
-        in.defaultReadObject();
-
-
-        /*
-         * Since the superclass does not implement the Serializable
-         * interface we explicitly do the restoring...
-         */
-        if (Serializable.class.isAssignableFrom(remoteInvocationFactoryClass)) {
-            setRemoteInvocationFactory((RemoteInvocationFactory)in.readObject());
-        }
-    }
+    private final transient Object exported; // only hold until serialized
+    private final Object serviceProxy;
+    private final Remote serviceStub;
+    private final RemoteInvocationFactory remoteInvocationFactory;
 }

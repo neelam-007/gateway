@@ -1,45 +1,41 @@
 /*
- * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 package com.l7tech.spring.remoting.rmi;
 
-import com.l7tech.admin.AdminLogin;
-import com.l7tech.identity.User;
-import com.l7tech.server.admin.AdminSessionManager;
-import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.remoting.rmi.RmiServiceExporter;
-import org.springframework.remoting.support.RemoteInvocation;
-import org.springframework.remoting.support.RemoteInvocationFactory;
-
-import javax.security.auth.Subject;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.rmi.NoSuchObjectException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
-import java.security.Principal;
-import java.util.List;
-import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.remoting.rmi.RmiInvocationHandler;
+import org.springframework.remoting.support.DefaultRemoteInvocationFactory;
+import org.springframework.remoting.support.RemoteInvocation;
+import org.springframework.remoting.support.RemoteInvocationBasedExporter;
+import org.springframework.remoting.support.RemoteInvocationFactory;
 
 /**
- * The {@link RmiServiceExporterStubFactoryBean } subclass that allows specifying additional properties
- * such as the registry socket factory.
+ * This is not really an Exporter, it is a Factory that returns proxies backed
+ * by remote references.
  *
  * @author emil, $Author$
  * @version Dec 2, 2004, $Revision$
  */
 public class RmiServiceExporterStubFactoryBean
-  extends RmiServiceExporter implements FactoryBean, InitializingBean {
+    extends RemoteInvocationBasedExporter implements FactoryBean, InitializingBean, DisposableBean {
 
     private String serviceName;
 
@@ -59,8 +55,6 @@ public class RmiServiceExporterStubFactoryBean
     private RmiProxyStub proxyStub; // proxy stub for singletons
 
     private RemoteInvocationFactory stubRemoteInvocationFactory;
-
-    private AdminSessionManager sessionManager;
 
     private final List exportedObjects;
 
@@ -84,7 +78,6 @@ public class RmiServiceExporterStubFactoryBean
      */
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
-        super.setServiceName(this.serviceName);
     }
 
     /**
@@ -95,7 +88,6 @@ public class RmiServiceExporterStubFactoryBean
      */
     public void setServicePort(int servicePort) {
         this.servicePort = servicePort;
-        super.setServicePort(this.servicePort);
     }
 
     /**
@@ -107,7 +99,6 @@ public class RmiServiceExporterStubFactoryBean
      */
     public void setRegistryPort(int registryPort) {
         this.registryPort = registryPort;
-        super.setRegistryPort(this.registryPort);
     }
 
     /**
@@ -143,11 +134,6 @@ public class RmiServiceExporterStubFactoryBean
         this.stubRemoteInvocationFactory = stubRemoteInvocationFactory;
     }
 
-    public void setAdminSessionManager(AdminSessionManager sessionManager) {
-        if (sessionManager == null) throw new NullPointerException();
-        this.sessionManager = sessionManager;
-    }
-
     public Object getObject() {
         if (!singleton) {
             try {
@@ -160,7 +146,8 @@ public class RmiServiceExporterStubFactoryBean
     }
 
     public Class getObjectType() {
-        return getObjectToExport().getClass();
+        checkService();
+        return getService().getClass();
     }
 
     public void setSingleton(boolean singleton) {
@@ -184,6 +171,9 @@ public class RmiServiceExporterStubFactoryBean
           (this.clientSocketFactory == null && this.serverSocketFactory != null)) {
             throw new IllegalArgumentException("Both RMIClientSocketFactory and RMIServerSocketFactory or none required");
         }
+        if(this.stubRemoteInvocationFactory==null) {
+            this.stubRemoteInvocationFactory = new DefaultRemoteInvocationFactory();
+        }
         if (singleton) {
             proxyStub = exportService();
         }
@@ -193,7 +183,14 @@ public class RmiServiceExporterStubFactoryBean
     }
 
     private RmiProxyStub exportService() throws RemoteException {
-        Remote exportedObject = getObjectToExport();
+        Object service = getService();
+        Remote exportedObject = null;
+        if(exportedObject instanceof Remote) {
+            exportedObject = (Remote) service;
+        }
+        else {
+            exportedObject = remoteWrapper(service);
+        }
 
         // then track the exported object for cleanup on shutdown.
         recordExport(exportedObject, singleton);
@@ -215,14 +212,26 @@ public class RmiServiceExporterStubFactoryBean
               "' to registry at port '" + this.registryPort + "', export count is: " + rmiExportCount);
         }
         try {
-            RmiProxyStub stub = new RmiProxyStub(objectStub, getServiceInterface());
-            if (stubRemoteInvocationFactory !=null) {
-                stub.setRemoteInvocationFactory(stubRemoteInvocationFactory);
-            }
+            RmiProxyStub stub = new RmiProxyStub(exportedObject, objectStub, getServiceInterface(), stubRemoteInvocationFactory);
             return stub;
         } catch (Exception e) {
             throw new RemoteException("Error exporting service '"+this.serviceName+"'.", e);
         }
+    }
+
+    /**
+     * Create an invoking remote wrapper for the exported service.
+     *
+     * @param wrappedObject the object to wrap
+     * @return the rmi invoker remote.
+     */
+    private Remote remoteWrapper(final Object wrappedObject) {
+        return new RmiInvocationHandler() {
+            public Object invoke(RemoteInvocation invocation)
+                throws RemoteException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+                    return RmiServiceExporterStubFactoryBean.this.invoke(invocation, wrappedObject);
+            }
+        };
     }
 
     /**
@@ -264,51 +273,6 @@ public class RmiServiceExporterStubFactoryBean
             theRegistryICreated = registry;
         }
         return registry;
-    }
-
-    /**
-     * Overriden to shows a bit cleaner loggin ()see super.getObjectToExport())
-     * @return the RMI object to export
-     */
-    protected Remote getObjectToExport() {
-        String sn = this.serviceName;
-        try {
-            setServiceName(getDisplayServiceName());
-            return super.getObjectToExport();
-        } finally {
-           setServiceName(sn);
-        }
-    }
-
-    /**
-     * Redefined here to be visible to RmiInvocationWrapper.
-     * Simply delegates to the corresponding superclass method.
-     */
-    protected Object invoke(RemoteInvocation invocation, Object targetObject)
-      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        AdminSessionRemoteInvocation adminInvocation = (AdminSessionRemoteInvocation)invocation;
-
-        String methodName = adminInvocation.getMethodName();
-        if ((AdminLogin.class.isAssignableFrom(targetObject.getClass()) && "login".equals(methodName))) {
-            // Only a few methods can be unauthenticated
-            return super.invoke(adminInvocation, targetObject);
-        }
-
-        // All other invocations must carry the session cookie established by the login
-        Subject administrator = adminInvocation.getSubject();
-
-        User user = (User)administrator.getPrincipals().iterator().next();
-
-        String cookie = user.getLogin();
-        Principal authUser = sessionManager.resumeSession(cookie);
-        if (authUser == null) throw new IllegalStateException("Session cookie did not refer to a previously-established session");
-
-        administrator.getPrincipals().clear();
-        administrator.getPrincipals().add(authUser);
-        administrator.getPrivateCredentials().clear(); // not necessary but couldn't hurt
-        administrator.getPublicCredentials().clear(); // ditto
-
-        return super.invoke(adminInvocation, targetObject);
     }
 
     /**

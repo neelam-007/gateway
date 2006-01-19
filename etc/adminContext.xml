@@ -88,8 +88,12 @@
         <property name="stubRemoteInvocationFactory">
             <ref bean="adminSessionInvocationFactory"/>
         </property>
-        <property name="adminSessionManager">
-            <ref bean="adminSessionManager"/>
+        <property name="remoteInvocationExecutor">
+            <bean class="com.l7tech.spring.remoting.rmi.SecureRemoteInvocationExecutor">
+                <property name="adminSessionManager">
+                    <ref bean="adminSessionManager"/>
+                </property>
+            </bean>
         </property>
     </bean>
 
