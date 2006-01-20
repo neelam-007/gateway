@@ -44,7 +44,8 @@ public final class SecureRemoteInvocationExecutor implements RemoteInvocationExe
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
 
         String methodName = invocation.getMethodName();
-        if ((AdminLogin.class.isAssignableFrom(targetObject.getClass()) && "login".equals(methodName))) {
+        if ((AdminLogin.class.isAssignableFrom(targetObject.getClass())
+           && ("login".equals(methodName) || "getServerCertificate".equals(methodName)))) {
             // Only a few methods can be unauthenticated
             return invocation.invoke(targetObject);
         }
