@@ -13,14 +13,14 @@ import java.util.logging.Level;
  * Date: Jan 19, 2006<br/>
  */
 public class AuditDetailAssertion extends Assertion {
-    private Level level = Level.INFO;
+    private String level = Level.INFO.toString();
     private String detail;
 
-    public Level getLevel() {
+    public String getLevel() {
         return level;
     }
 
-    public void setLevel(Level level) {
+    public void setLevel(String level) {
         this.level = level;
     }
 

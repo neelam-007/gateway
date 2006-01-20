@@ -40,6 +40,14 @@ public class Messages {
     public static final M EXCEPTION_INFO_WITH_MORE_INFO     = m(6, Level.INFO, "{0}. Exception caught! ");
     // MAX -                                                  m(0999)
 
+    private static final Class[] SUBCLASSES = {
+        // Make sure these always get loaded, so the static intializers run
+        AssertionMessages.class,
+        BootMessages.class,
+        MessageProcessingMessages.class,
+        SystemMessages.class
+    };
+
     protected Messages() { }
 
     protected static M m(int id, Level level, String msg) {

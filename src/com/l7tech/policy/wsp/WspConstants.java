@@ -206,6 +206,7 @@ public class WspConstants {
         new AssertionMapping(new TimeRange(), "TimeRange"),
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
+        new AssertionMapping(new AuditDetailAssertion(), "AuditDetailAssertion"),
         new AssertionMapping(new WsTrustCredentialExchange(), "WsTrustCredentialExchange"),
         new AssertionMapping(new WsFederationPassiveTokenExchange(), "WsFederationPassiveTokenExchange"),
         new AssertionMapping(new WsFederationPassiveTokenRequest(), "WsFederationPassiveTokenRequest"),

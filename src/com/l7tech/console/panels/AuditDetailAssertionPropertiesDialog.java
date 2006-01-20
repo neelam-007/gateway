@@ -38,7 +38,7 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
         setContentPane(mainPanel);
         setTitle("Audit Detail Properties");
         levelComboBox.setModel(new DefaultComboBoxModel(AuditAssertion.ALLOWED_LEVELS));
-        levelComboBox.setSelectedItem(subject.getLevel().toString());
+        levelComboBox.setSelectedItem(subject.getLevel());
         detailTextField.setText(subject.getDetail());
 
         okButton.addActionListener(new ActionListener() {
@@ -75,7 +75,7 @@ public class AuditDetailAssertionPropertiesDialog extends JDialog {
             return;
         }
         subject.setDetail(detailTextField.getText());
-        subject.setLevel(Level.parse((String)levelComboBox.getSelectedItem()));
+        subject.setLevel((String)levelComboBox.getSelectedItem());
         cancel();
     }
 

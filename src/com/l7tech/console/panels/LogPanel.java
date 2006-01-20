@@ -235,8 +235,11 @@ public class LogPanel extends JPanel {
                 while(associatedLogsItr.hasNext()) {
                     AuditDetail ad = (AuditDetail) associatedLogsItr.next();
 
-                    String associatedLogMessage = Messages.getMessageById(ad.getMessageId());
-                    String associatedLogLevel = Messages.getSeverityLevelNameById(ad.getMessageId());
+
+                    int id = ad.getMessageId();
+                    // TODO get the CellRenderer to display the user messages differently when id < 0 (add field to AssociatedLog class?)
+                    String associatedLogMessage = Messages.getMessageById(id);
+                    String associatedLogLevel = Messages.getSeverityLevelNameById(id);
 
                     MessageFormat mf = new MessageFormat(associatedLogMessage);
                     StringBuffer result = new StringBuffer();
