@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
@@ -33,8 +34,12 @@ public class ServerAuditDetailAssertion implements ServerAssertion {
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         String detail = subject.getDetail();
-        
-        // todo, resolve potential "parametrisation"
+        ExpandVariables vars = new ExpandVariables();
+        try {
+            detail = vars.process(detail, context.getVariables());
+        } catch (ExpandVariables.VariableNotFoundException e) {
+            logger.log(Level.WARNING, "cannot expand all variables", e);
+        }
 
         if (Level.FINEST.toString().equals(subject.getLevel())) {
             auditor.logAndAudit(AssertionMessages.USERDETAIL_FINEST, new String[] {detail});
