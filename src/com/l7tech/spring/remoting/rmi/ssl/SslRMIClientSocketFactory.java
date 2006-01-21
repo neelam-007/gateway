@@ -6,6 +6,7 @@ import javax.net.SocketFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.ObjectStreamException;
 import java.net.Socket;
 import java.rmi.server.RMIClientSocketFactory;
 import java.security.cert.CertificateException;
@@ -20,28 +21,22 @@ import java.util.logging.Level;
 /**
  * <p>An <code>SslRMIClientSocketFactory</code> instance is used by the RMI
  * runtime in order to obtain client sockets for RMI calls via SSL.</p>
- * <p/>
+ *
  * <p>This class implements <code>RMIClientSocketFactory</code> over
  * the Secure Sockets Layer (SSL) or Transport Layer Security (TLS)
  * protocols.</p>
- * <p/>
+ *
  * <p>This class creates SSL sockets using the default
  * <code>SSLSocketFactory</code> (see {@link
- * SSLSocketFactory#getDefault}).  All instances of this class are
- * functionally equivalent.  In particular, they all share the same
- * truststore, and the same keystore when client authentication is
- * required by the server.  This behavior can be modified in
- * subclasses by overriding the {@link #createSocket(String,int)}
- * method; in that case, {@link #equals(Object) equals} and {@link
- * #hashCode() hashCode} may also need to be overridden.</p>
- * <p/>
+ * SSLSocketFactory#getDefault}).<p/>
+ *
  * <p>If the system property
  * <code>javax.rmi.ssl.client.enabledCipherSuites</code> is specified,
  * the {@link #createSocket(String,int)} method will call {@link
  * SSLSocket#setEnabledCipherSuites(String[])} before returning the
  * socket.  The value of this system property is a string that is a
  * comma-separated list of SSL/TLS cipher suites to enable.</p>
- * <p/>
+ *
  * <p>If the system property
  * <code>javax.rmi.ssl.client.enabledProtocols</code> is specified,
  * the {@link #createSocket(String,int)} method will call {@link
@@ -52,11 +47,20 @@ import java.util.logging.Level;
  * @see SSLSocketFactory
  * @see SslRMIServerSocketFactory
  */
-public class SslRMIClientSocketFactory
-  implements RMIClientSocketFactory, Serializable {
-    private static final Logger logger = Logger.getLogger(SslRMIClientSocketFactory.class.getName());
-    private static SSLTrustFailureHandler trustFailureHandler;
-    private static Map socketFactoryByHost = new HashMap();
+public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, Serializable {
+
+    //- PUBLIC
+
+    /**
+     * Sets the <code>SSLFailureHandler</code> to be called if the server trust
+     * failed. If <b>null</b> clears the existing handler.
+     *
+     * @param trustFailureHandler the new SSL failure handler
+     * @see SSLTrustFailureHandler
+     */
+    public static void setTrustFailureHandler(SSLTrustFailureHandler trustFailureHandler) {
+        SslRMIClientSocketFactory.currentTrustFailureHandler = trustFailureHandler;
+    }
 
     /**
      * <p>Creates a new <code>SslRMIClientSocketFactory</code>.</p>
@@ -79,7 +83,7 @@ public class SslRMIClientSocketFactory
 
     /**
      * <p>Creates an SSL socket.</p>
-     * <p/>
+     *
      * <p>If the system property
      * <code>javax.rmi.ssl.client.enabledCipherSuites</code> is
      * specified, this method will call {@link
@@ -87,7 +91,7 @@ public class SslRMIClientSocketFactory
      * the socket. The value of this system property is a string that
      * is a comma-separated list of SSL/TLS cipher suites to
      * enable.</p>
-     * <p/>
+     *
      * <p>If the system property
      * <code>javax.rmi.ssl.client.enabledProtocols</code> is
      * specified, this method will call {@link
@@ -97,6 +101,8 @@ public class SslRMIClientSocketFactory
      * enable.</p>
      */
     public Socket createSocket(String host, int port) throws IOException {
+        checkInit();
+
         // Retrieve the SSLSocketFactory
         //
         final SocketFactory sslSocketFactory = getClientSocketFactory(host);
@@ -145,37 +151,32 @@ public class SslRMIClientSocketFactory
     }
 
     /**
-     * Sets the <code>SSLFailureHandler</code> to be called if the server trust
-     * failed. If <b>null</b> clears the existing handler
-     *
-     * @param trustFailureHandler the new SSL failure handler
-     * @see SSLTrustFailureHandler
-     */
-    public static synchronized void setTrustFailureHandler(SSLTrustFailureHandler trustFailureHandler) {
-        SslRMIClientSocketFactory.trustFailureHandler = trustFailureHandler;
-    }
-
-    /** Release all cached socket factories. */
-    public static synchronized void resetSocketFactory() {
-        SslRMIClientSocketFactory.socketFactoryByHost = new HashMap();
-    }
-
-    /**
      * <p>Indicates whether some other object is "equal to" this one.</p>
-     * <p/>
-     * <p>Because all instances of this class are functionally equivalent
-     * (they all use the default
-     * <code>SSLSocketFactory</code>), this method simply returns
-     * <code>this.getClass().equals(obj.getClass())</code>.</p>
-     * <p/>
-     * <p>A subclass should override this method (as well
-     * as {@link #hashCode()}) if its instances are not all
-     * functionally equivalent.</p>
+     *
+     * <p>This factory is equal to another instance of the same class if the
+     * instances share the same trust failure handler.</p>
+     *
+     * @param obj the object to check
+     * @return true if equal
      */
     public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (obj == this) return true;
-        return this.getClass().equals(obj.getClass());
+        boolean equal = false;
+
+        if(obj!=null) {
+            if (obj == this) {
+                equal = true;
+            }
+            else {
+                if(obj instanceof SslRMIClientSocketFactory) {
+                    SslRMIClientSocketFactory other = (SslRMIClientSocketFactory) obj;
+                    if(other.trustFailureHandler == this.trustFailureHandler) {
+                        equal = true;
+                    }
+                }
+            }
+        }
+
+        return equal;
     }
 
     /**
@@ -186,49 +187,19 @@ public class SslRMIClientSocketFactory
      *         <code>SslRMIClientSocketFactory</code>.
      */
     public int hashCode() {
-        return this.getClass().hashCode();
+        return 17 * (trustFailureHandler==null ? SslRMIClientSocketFactory.class.hashCode() : trustFailureHandler.hashCode());
     }
 
-    private synchronized SocketFactory getClientSocketFactory(String serverHostname) {
-        serverHostname = serverHostname.toLowerCase();
-        SocketFactory sf = (SocketFactory)socketFactoryByHost.get(serverHostname);
-        String tmalg = System.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
-        if (sf == null) {
-            try {
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
-                tmf.init((KeyStore)null);
-                SSLContext sslContext = SSLContext.getInstance("SSL");
-                sslContext.init(null, getTrustManagers(tmf, serverHostname), null);
-                sf = sslContext.getSocketFactory();
-                socketFactoryByHost.put(serverHostname, sf);
-            } catch (Exception e) {
-                throw new RuntimeException("Error initializing the SSL socket factory", e);
-            }
-        }
-        return sf;
-    }
+    //- PRIVATE
 
+    private static final long serialVersionUID = -8310631444933958385L;
+    private static final Logger logger = Logger.getLogger(SslRMIClientSocketFactory.class.getName());
 
-    /**
-     * Update and return the array of the {@link TrustManager} instances created
-     * by the {@link TrustManagerFactory} where the first instance of a
-     * {@link X509TrustManager} is replaces with <code>SSLTrustManager</code>.
-     *
-     * @param tmf <b>non null</b> Trust Manager Factory
-     * @param serverHostname the hostname we expect to be connecting to
-     * @return the updated array of trust managers
-     */
-    private static TrustManager[] getTrustManagers(TrustManagerFactory tmf, String serverHostname) {
-        TrustManager[] trustManagers = tmf.getTrustManagers();
-        for (int i = 0; i < trustManagers.length; i++) {
-            TrustManager trustManager = trustManagers[i];
-            if (trustManager instanceof X509TrustManager) {
-                trustManagers[i] = new SSLClientTrustManager((X509TrustManager)trustManager, serverHostname);
-                break;
-            }
-        }
-        return trustManagers;
-    }
+    private static SSLTrustFailureHandler currentTrustFailureHandler;
+
+    //
+    private transient SSLTrustFailureHandler trustFailureHandler;
+    private transient Map socketFactoryByHost;
 
     /**
      * The internal <code>X509TrustManager</code> that invokes the trust failure
@@ -236,6 +207,7 @@ public class SslRMIClientSocketFactory
      */
     private static class SSLClientTrustManager implements X509TrustManager {
         private final X509TrustManager delegate;
+        private final SSLTrustFailureHandler trustFailureHandler;
         private final String serverHostname;
 
         /**
@@ -245,11 +217,12 @@ public class SslRMIClientSocketFactory
          *                 the {@link javax.net.ssl.TrustManagerFactory#getTrustManagers()}
          * @param serverHostname the hostname of the server we expect to be connecting to
          */
-        SSLClientTrustManager(X509TrustManager delegate, String serverHostname) {
+        SSLClientTrustManager(X509TrustManager delegate, SSLTrustFailureHandler trustFailureHandler, String serverHostname) {
             if (delegate == null) {
                 throw new IllegalArgumentException("The X509 Trust Manager is required");
             }
             this.delegate = delegate;
+            this.trustFailureHandler = trustFailureHandler;
             this.serverHostname = serverHostname.toLowerCase();
         }
 
@@ -273,32 +246,20 @@ public class SslRMIClientSocketFactory
          */
         public void checkServerTrusted(X509Certificate[] chain, String authType)
           throws CertificateException {
-            SSLTrustFailureHandler trustFailureHandler = SslRMIClientSocketFactory.trustFailureHandler;
 
             if (trustFailureHandler == null) {  // not specified
                 delegate.checkServerTrusted(chain, authType);
             } else {
                 try {
+                    // we call the failure handler here to allow it to object to the host
+                    // name by throwing an exception, this is is bit of a hack and can
+                    // be removed if we don't want to check the host name for trusted
+                    // certificates.
+                    trustFailureHandler.handle(null, chain, authType);
                     if (delegate.getAcceptedIssuers().length == 0) {
-                        throw new CertificateException("No trusted ");
+                        throw new CertificateException("No trusted issuers.");
                     }
                     delegate.checkServerTrusted(chain, authType);
-
-                    final String peerHost;
-                    try {
-                        peerHost = new X500Name(chain[0].getSubjectX500Principal().getName()).getCommonName().toLowerCase();
-                    } catch (IOException e1) {
-                        logger.log(Level.WARNING, "Could not obtain the CN from X500 Name in cert", e1);
-                        throw new RuntimeException(e1);
-                    }
-
-                    if (!serverHostname.equalsIgnoreCase(peerHost)) {
-                        String msg = "Hostname mismatch - hostname in server cert (" + peerHost +
-                                ") does not match hostname we connected to (" + serverHostname + ")";
-                        logger.log(Level.WARNING, msg);
-                        throw new CertificateException(msg);
-                    }
-
                 } catch (CertificateException e) {
                     if (!trustFailureHandler.handle(e, chain, authType)) {
                         throw e;
@@ -308,5 +269,63 @@ public class SslRMIClientSocketFactory
         }
     }
 
-    private static final long serialVersionUID = -8310631444933958385L;
+    private void checkInit() {
+        if(socketFactoryByHost==null) {
+            socketFactoryByHost = new HashMap();
+            trustFailureHandler = currentTrustFailureHandler;
+        }
+    }
+
+    private Object readResolve() throws ObjectStreamException {
+        SslRMIClientSocketFactory resolved = this;
+
+        if(resolved.trustFailureHandler != currentTrustFailureHandler) {
+            // if the trust failure handler has changed we must create a new factory.
+            resolved = new SslRMIClientSocketFactory();
+        }
+
+        return resolved;
+    }
+
+    private SocketFactory getClientSocketFactory(String serverHostname) {
+        synchronized(socketFactoryByHost) {
+            serverHostname = serverHostname.toLowerCase();
+            SocketFactory sf = (SocketFactory) socketFactoryByHost.get(serverHostname);
+            String tmalg = System.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm", TrustManagerFactory.getDefaultAlgorithm());
+            if (sf == null) {
+                try {
+                    TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
+                    tmf.init((KeyStore)null);
+                    SSLContext sslContext = SSLContext.getInstance("SSL");
+                    sslContext.init(null, getTrustManagers(tmf, serverHostname), null);
+                    sf = sslContext.getSocketFactory();
+                    socketFactoryByHost.put(serverHostname, sf);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error initializing the SSL socket factory", e);
+                }
+            }
+            return sf;
+        }
+    }
+
+    /**
+     * Update and return the array of the {@link TrustManager} instances created
+     * by the {@link TrustManagerFactory} where the first instance of a
+     * {@link X509TrustManager} is replaces with <code>SSLTrustManager</code>.
+     *
+     * @param tmf <b>non null</b> Trust Manager Factory
+     * @param serverHostname the hostname we expect to be connecting to
+     * @return the updated array of trust managers
+     */
+    private TrustManager[] getTrustManagers(TrustManagerFactory tmf, String serverHostname) {
+        TrustManager[] trustManagers = tmf.getTrustManagers();
+        for (int i = 0; i < trustManagers.length; i++) {
+            TrustManager trustManager = trustManagers[i];
+            if (trustManager instanceof X509TrustManager) {
+                trustManagers[i] = new SSLClientTrustManager((X509TrustManager) trustManager, trustFailureHandler, serverHostname);
+                break;
+            }
+        }
+        return trustManagers;
+    }
 }

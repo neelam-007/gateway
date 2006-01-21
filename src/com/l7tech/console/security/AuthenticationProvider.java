@@ -20,24 +20,18 @@ import java.security.cert.X509Certificate;
  * @version Sep 7, 2004
  */
 public interface AuthenticationProvider {
+
     /**
      * Subclasses implement this method to provide the concrete login implementation.
      *
      * @param creds the credentials to authenticate
-     * @see com.l7tech.console.security.SecurityProviderImpl
-     * @param namingURL the service naming URL
-     */
-    void login(PasswordAuthentication creds, String namingURL)
-      throws LoginException, VersionException, RemoteException;
-
-    /**
-     * Validate the server, using the server certificate
+     * @param host the host to authenticate with
+     * @param validateHost true to validate the hosts name against its certificate
      *
-     * @param serverCertificate
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
-    void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
-      throws RemoteException, SecurityException;
+    void login(PasswordAuthentication creds, String host, boolean validateHost)
+      throws LoginException, VersionException, RemoteException;
 
     /**
      * Logoff the session

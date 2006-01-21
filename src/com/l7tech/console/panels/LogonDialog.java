@@ -7,16 +7,13 @@ import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.security.AuthenticationProvider;
+import com.l7tech.console.security.InvalidHostNameException;
+import com.l7tech.console.security.InvalidHostCertificateException;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
-import com.l7tech.spring.remoting.rmi.NamingURL;
-import com.l7tech.spring.remoting.rmi.ssl.SSLTrustFailureHandler;
-import com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory;
 import com.l7tech.identity.BadCredentialsException;
 
 import javax.security.auth.login.FailedLoginException;
@@ -30,18 +27,14 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.net.*;
 import java.rmi.RemoteException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import sun.security.x509.X500Name;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -59,8 +52,10 @@ public class LogonDialog extends JDialog {
      */
     private boolean rememberUser = false;
 
-    private boolean sslHostNameMismatchUserNotified = false;
-
+    /**
+     *
+     */
+    private Set acceptedInvalidHosts = new HashSet();
 
     /**
      * Resource bundle with default locale
@@ -86,10 +81,12 @@ public class LogonDialog extends JDialog {
      * username text field
      */
     private JTextField userNameTextField = null;
+
     /**
      * password text field
      */
     private JPasswordField passwordField = null;
+
     /**
      * the server combo box *
      */
@@ -99,15 +96,6 @@ public class LogonDialog extends JDialog {
     private History serverUrlHistory;
     private Preferences preferences;
     private LogonListener logonListener;
-
-    /**
-     * holds the scheme://host:port the user dialog is attempting the connection to
-     */
-    private NamingURL adminServiceNamingURL;
-    private X509Certificate[] serverCertificateChain = null;
-
-    /** context field (company.realm)
-     private JTextField contextField = null;*/
 
     /**
      * Create a new LogonDialog
@@ -458,36 +446,25 @@ public class LogonDialog extends JDialog {
         authenticationCredentials = new PasswordAuthentication(userNameTextField.getText(), passwordField.getPassword());
         Container parentContainer = getParent();
         // service URL
-        final String selectedURL = (String)serverComboBox.getSelectedItem();
-        final String sNamingUrl = selectedURL;
-        try {
-            adminServiceNamingURL = NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + selectedURL + "/AdminLogin");
-        } catch (MalformedURLException e) {
-            String msg = resources.getString("logon.invalid.service.url");
-            JOptionPane.showMessageDialog(this, msg, "Warning", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        final String sHost = (String) serverComboBox.getSelectedItem();;
 
         try {
-            initializeSslTrustHandler();
-            sslHostNameMismatchUserNotified = false;
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
             final SecurityProvider securityProvider = getCredentialManager();
 
             // fla change: remember this url even if the login wont be successfull (requirement #729)
-            serverUrlHistory.add(sNamingUrl);
-
+            serverUrlHistory.add(sHost);
 
             final SwingWorker sw =
               new SwingWorker() {
                   private Throwable memoException = null;
-                  private LogonInProgressDialog progressDialog = showLogonInProgressDialog(this, LogonDialog.this, sNamingUrl);
+                  private LogonInProgressDialog progressDialog = showLogonInProgressDialog(this, LogonDialog.this, sHost);
 
                   public Object construct() {
                       try {
-                          securityProvider.getAuthenticationProvider().login(authenticationCredentials, adminServiceNamingURL.toString());
+                          securityProvider.getAuthenticationProvider().login(authenticationCredentials, sHost, !acceptedInvalidHosts.contains(sHost));
                       } catch (Throwable e) {
                           if (!Thread.currentThread().isInterrupted()) {
                               memoException = e;
@@ -502,7 +479,7 @@ public class LogonDialog extends JDialog {
                   public void finished() {
                       progressDialog.dispose();
                       if (memoException != null) {
-                          handleLogonThrowable(memoException, adminServiceNamingURL);
+                          handleLogonThrowable(memoException, sHost);
                       }
                       if (get() != null) {
                           dispose();
@@ -512,17 +489,11 @@ public class LogonDialog extends JDialog {
                               log.log(Level.WARNING, "error saving properties", e);
                           }
                           preferences.updateSystemProperties();
-                          try {
-                              sslPostLogin();
-                          } catch (Exception e) {
-                              handleLogonThrowable(memoException, adminServiceNamingURL);
-                          }
                           // invoke the listener
                           if (logonListener != null) {
-                              logonListener.onAuthSuccess(authenticationCredentials.getUserName(), sNamingUrl);
+                              logonListener.onAuthSuccess(authenticationCredentials.getUserName(), sHost);
                           }
                       } else {
-                          serverCertificateChain = null; // reset if we recorded something
                           if (logonListener != null) {
                               logonListener.onAuthFailure();
                           }
@@ -535,7 +506,7 @@ public class LogonDialog extends JDialog {
 
             sw.start();
         } catch (Exception e) {
-            handleLogonThrowable(e, adminServiceNamingURL);
+            handleLogonThrowable(e, sHost);
         } finally {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
@@ -554,7 +525,6 @@ public class LogonDialog extends JDialog {
         dialog.pack();
         Utilities.centerOnScreen(dialog);
         dialog.setVisible(true);
-
     }
 
     private static LogonInProgressDialog showLogonInProgressDialog(SwingWorker sw, JDialog parent, String url) {
@@ -593,74 +563,6 @@ public class LogonDialog extends JDialog {
     private static SecurityProvider getCredentialManager() {
         SecurityProvider credentialManager = Registry.getDefault().getSecurityProvider();
         return credentialManager;
-    }
-
-    /**
-     * Initialize the SSL logic arround login. This register the trust failure handler
-     * that will be invoked if the server cert is not yet present. We just record it here
-     * as we do not know yet whether this is is ssg. Only after the successful login, the
-     * sslPostLogin() handler will import the cert and reset the ssl.
-     */
-    private void initializeSslTrustHandler() {
-        SslRMIClientSocketFactory.resetSocketFactory();
-        SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
-            public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
-                if (chain == null || chain.length == 0) {
-                    return false;
-                }
-                final AuthenticationProvider authenticationProvider = getCredentialManager().getAuthenticationProvider();
-                try {
-                    // temp failure handler to obtain the server cert
-                    SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
-                        public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
-                            if (chain == null || chain.length == 0) {
-                                return false;
-                            }
-                            String peerHost = null;
-                            try {
-                                peerHost = new X500Name(chain[0].getSubjectX500Principal().getName()).getCommonName();
-                            } catch (IOException e1) {
-                                log.log(Level.WARNING, "Could not obtain the CN from X500 Name in cert", e);
-                                throw new RuntimeException(e1);
-                            }
-                            String host = adminServiceNamingURL.getHost();
-                            if (host.equals(peerHost)) return true;
-                            String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
-                                                              new Object[]{host, peerHost});
-                            sslHostNameMismatchUserNotified = true;
-                            JOptionPane.showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
-                            return false;
-                        }
-                    });
-                    authenticationProvider.validateServer(authenticationCredentials,
-                                                          chain[0],
-                                                          adminServiceNamingURL.toString());
-                } catch (RemoteException rex) {
-                    log.log(Level.SEVERE, "Remote error validating the server certificate", e);
-                    return false;
-                } catch (SecurityException sex) {
-                    log.log(Level.SEVERE, "Error validating the server certificate " + chain[0], e);
-                    return false;
-                } finally {
-                    SslRMIClientSocketFactory.setTrustFailureHandler(this);
-                }
-                serverCertificateChain = chain;
-                return true;
-            }
-        });
-    }
-
-    /**
-     * Invoked after the successful login
-     */
-    private void sslPostLogin()
-      throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException {
-        if (serverCertificateChain == null) {
-            return; // nothing to do, cert has been imported earlier
-        }
-        ImportCertificateAction.importSsgCertificate(serverCertificateChain[0]);
-        SslRMIClientSocketFactory.resetSocketFactory();
-
     }
 
     private static class LogonInProgressDialog extends JDialog {
@@ -733,8 +635,7 @@ public class LogonDialog extends JDialog {
      *
      * @param e
      */
-    private void handleLogonThrowable(Throwable e, NamingURL serviceUrl) {
-        if (sslHostNameMismatchUserNotified) return;
+    private void handleLogonThrowable(Throwable e, String host) {
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             VersionException versionex = (VersionException)cause;
@@ -753,25 +654,43 @@ public class LogonDialog extends JDialog {
                                                BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
             }
             JOptionPane.showMessageDialog(this, msg, "Warning", JOptionPane.ERROR_MESSAGE);
-        } else if (cause instanceof ConnectException ||
+        }
+        else if (cause instanceof ConnectException ||
           cause instanceof UnknownHostException) {
             log.log(Level.WARNING, "logon()", e);
             String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{
-                serviceUrl.getHost()});
+                host});
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        } else
-        if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
+        }
+        else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
             log.log(Level.WARNING, "logon()", e);
             showInvalidCredentialsMessage();
-        } else if (cause instanceof RemoteException || cause instanceof IOException) {
+        }
+        else if (cause instanceof MalformedURLException) {
+            String msg = resources.getString("logon.invalid.service.url");
+            JOptionPane.showMessageDialog(this, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+        }
+        else if (cause instanceof RemoteException || cause instanceof IOException) {
             log.log(Level.WARNING, "Could not connect to admin service server", e);
             String msg = MessageFormat.format(resources.getString("service.unavailable.error"), new Object[]{
-                serviceUrl.getHost()});
+                host});
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        } else {
+        }
+        else if (cause instanceof InvalidHostNameException) {
+            InvalidHostNameException ihne = (InvalidHostNameException) cause;
+            String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
+                                              new Object[]{ihne.getExpectedHost(), ihne.getActualHost()});
+            JOptionPane.showMessageDialog(LogonDialog.this, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+            acceptedInvalidHosts.add(ihne.getExpectedHost());
+        }
+        else if (cause instanceof InvalidHostCertificateException) {
+            String msg = MessageFormat.format(resources.getString("logon.certificate.problem"),
+                                              new Object[]{host});
+            JOptionPane.showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        else {
             log.log(Level.WARNING, "logon()", e);
-            String msg =
-              MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{serviceUrl.getHost()});
+            String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{host});
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
