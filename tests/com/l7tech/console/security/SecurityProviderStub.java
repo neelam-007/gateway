@@ -17,19 +17,8 @@ public class SecurityProviderStub extends SecurityProvider {
     /**
      * Stub mode login. Set the new credenitals with what was passed
      */
-    public void login(PasswordAuthentication creds, String host)
+    public void login(PasswordAuthentication creds, String host, boolean validateHost)
       throws LoginException, VersionException {
         setCredentials(creds.getUserName(), creds.getPassword());
-    }
-
-    /**
-     * Retrieve the targewt server certificate
-     *
-     * @param serverCertificate
-     * @see SecurityProviderImpl
-     */
-    public void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
-      throws RemoteException, SecurityException {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 }
