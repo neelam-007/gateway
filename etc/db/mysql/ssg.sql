@@ -517,7 +517,7 @@ CREATE TABLE map_identity (
   is_unique tinyint(1) NOT NULL,
   searchable tinyint(1) NOT NULL,
   PRIMARY KEY (objectid),
-  FOREIGN KEY (map_attributes_oid) REFERENCES map_attributes (objectid) ON DELETE CASCADE
+  FOREIGN KEY (map_attributes_oid) REFERENCES map_attributes (objectid) ON DELETE CASCADE,
   INDEX i_map_id_prov (provider_oid)
 ) TYPE=InnoDB;
 
