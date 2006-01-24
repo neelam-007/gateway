@@ -5,10 +5,21 @@
  */
 package com.l7tech.policy;
 
+import com.l7tech.common.message.TcpKnob;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.server.message.PolicyEnforcementContext;
+
+import javax.wsdl.Operation;
+import javax.wsdl.WSDLException;
 import java.util.Map;
 import java.util.Collections;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.io.IOException;
+
+import org.xml.sax.SAXException;
 
 /**
  * The class replaces the variables placeholders in the string that is passed to the
@@ -23,6 +34,12 @@ import java.util.regex.Matcher;
  * @version Apr 8, 2005
  */
 public class ExpandVariables {
+    public static final String COMMON_VAR_REMOTEIP = "request.tcp.remoteip";
+    public static final String COMMON_VAR_OPERATIONNAME = "request.soap.operationname";
+    // todo, add common variables as needed here
+
+    private static final Logger logger = Logger.getLogger(ExpandVariables.class.getName());
+
     public static final String DEF_PREFIX = "(?:\\$\\{)";
     public static final String DEF_SUFFIX = "(?:\\})";
     private final Pattern regexPattern;
@@ -88,9 +105,9 @@ public class ExpandVariables {
                 throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
             }
             String var = matcher.group(1);
-            String replacement = (String)userVariables.get(var);
+            String replacement = userVariables.get(var).toString();
             if (replacement == null) {
-                replacement = (String)defaultVariables.get(var);
+                replacement = defaultVariables.get(var).toString();
             }
             if (replacement == null) {
                 throw new VariableNotFoundException(var);
@@ -121,6 +138,41 @@ public class ExpandVariables {
         public String getVariable() {
             return variable;
         }
+    }
+
+    public static void populateLazyRequestVariables(final PolicyEnforcementContext cntx) {
+        // remote address variable
+        final TcpKnob tcp = (TcpKnob)cntx.getRequest().getKnob(TcpKnob.class);
+        if (tcp == null) {
+            logger.info("This context's request has no TcpKnob. No remoteIp variable can be populated.");
+        } else {//
+            cntx.setVariable(COMMON_VAR_REMOTEIP, new Object() {
+                public String toString() {
+                    return tcp.getRemoteAddress();
+                }
+            });
+        }
+
+        cntx.setVariable(COMMON_VAR_OPERATIONNAME, new Object() {
+                public String toString() {
+                    try {
+                        Operation op = cntx.getOperation();
+                        if (op != null) {
+                            return op.getName();
+                        }
+                    } catch (IOException e) {
+                        logger.log(Level.INFO, "cannot get operation name", e);
+                    } catch (SAXException e) {
+                        logger.log(Level.INFO, "cannot get operation name", e);
+                    } catch (WSDLException e) {
+                        logger.log(Level.INFO, "cannot get operation name", e);
+                    } catch (InvalidDocumentFormatException e) {
+                        logger.log(Level.INFO, "cannot get operation name", e);
+                    }
+                    return "[unknown]";
+                }
+            });
+        // todo, other common variables as needed.
     }
 
 }

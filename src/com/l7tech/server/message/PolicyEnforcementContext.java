@@ -9,10 +9,8 @@ package com.l7tech.server.message;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.audit.AuditContext;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
-import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -20,7 +18,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.ExpandVariables;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -33,18 +31,12 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  * TODO write some farking javadoc
  */
 public class PolicyEnforcementContext extends ProcessingContext {
-    private static final Logger logger = Logger.getLogger(PolicyEnforcementContext.class.getName());
-
-    public static final String COMMON_VAR_REMOTEIP = "remoteip";
-    // todo, add common variables as needed here
-
     private final RequestId requestId;
     private ArrayList incrementedCounters = new ArrayList();
     private final Map deferredAssertions = new LinkedHashMap();
@@ -72,7 +64,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
         this.requestId = RequestIdGenerator.next();
-        populateSupportedVariables();
+        ExpandVariables.populateLazyRequestVariables(this);
     }
 
     public boolean isAuthenticated() {
@@ -328,18 +320,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
      */
     public void setStealthResponseMode(boolean stealthResponseMode) {
         isStealthResponseMode = stealthResponseMode;
-    }
-
-    private void populateSupportedVariables() {
-        // get remote address
-        TcpKnob tcp = (TcpKnob)getRequest().getKnob(TcpKnob.class);
-        if (tcp == null) {
-            logger.info("This context's request has no TcpKnob. No remoteIp variable can be populated.");
-        } else {
-            variables.put(COMMON_VAR_REMOTEIP, tcp.getRemoteAddress());
-        }
-        
-        // todo, other common variables as needed.
     }
 
     private boolean operationAttempted = false;
