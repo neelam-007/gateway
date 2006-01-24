@@ -11,6 +11,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
+import com.l7tech.policy.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Server side implementation of assertion that sends an email alert.
@@ -105,7 +107,14 @@ public class ServerEmailAlertAssertion implements ServerAssertion {
             message.addRecipient(javax.mail.Message.RecipientType.TO, address);
             message.setFrom(fromAddress);
             message.setSubject(ass.getSubject());
-            message.setText(ass.getMessage());
+            String body = ass.getMessage();
+            ExpandVariables vars = new ExpandVariables();
+            try {
+                body = vars.process(body, context.getVariables());
+            } catch (ExpandVariables.VariableNotFoundException e) {
+                logger.log(Level.WARNING, "cannot expand all variables", e);
+            }
+            message.setText(body);
             Transport.send(message);
         } catch (MessagingException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to send email: " + e.getMessage()}, e);

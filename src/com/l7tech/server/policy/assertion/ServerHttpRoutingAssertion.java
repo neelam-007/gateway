@@ -416,6 +416,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
             postMethod.setRequestBody(bodyInputStream);
 
+            long latencyTimerStart = System.currentTimeMillis();
             if (hconf == null) {
                 client.executeMethod(postMethod);
             } else {
@@ -425,6 +426,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             int status = postMethod.getStatusCode();
 
             boolean readOk = readResponse(context, postMethod, status);
+            long latencyTimerEnd = System.currentTimeMillis();
+            if (readOk) {
+                long latency = latencyTimerEnd - latencyTimerStart;
+                context.setVariable("routing.latency", ""+latency);
+            }
 
             RoutingResultListener rrl = context.getRoutingResultListener();
             boolean retryRequested = allowRetry && rrl.reroute(url, status, toHeaders(postMethod.getResponseHeaders()), context); // only call listeners if retry is allowed

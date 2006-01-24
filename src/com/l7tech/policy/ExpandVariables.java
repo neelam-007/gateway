@@ -7,6 +7,7 @@ package com.l7tech.policy;
 
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.wsdl.Operation;
@@ -36,6 +37,7 @@ import org.xml.sax.SAXException;
 public class ExpandVariables {
     public static final String COMMON_VAR_REMOTEIP = "request.tcp.remoteip";
     public static final String COMMON_VAR_OPERATIONNAME = "request.soap.operationname";
+    public static final String COMMON_VAR_OPERATIONURN = "request.soap.urn";
     // todo, add common variables as needed here
 
     private static final Logger logger = Logger.getLogger(ExpandVariables.class.getName());
@@ -153,6 +155,7 @@ public class ExpandVariables {
             });
         }
 
+        // operation name variable
         cntx.setVariable(COMMON_VAR_OPERATIONNAME, new Object() {
                 public String toString() {
                     try {
@@ -172,7 +175,23 @@ public class ExpandVariables {
                     return "[unknown]";
                 }
             });
+
+        // operation urn variable
+        cntx.setVariable(COMMON_VAR_OPERATIONURN, new Object() {
+                public String toString() {
+                    try {
+                        return cntx.getRequest().getSoapKnob().getPayloadNamespaceUri();
+                    } catch (IOException e) {
+                        logger.log(Level.INFO, "cannot get operation urn", e);
+                    } catch (SAXException e) {
+                        logger.log(Level.INFO, "cannot get operation urn", e);
+                    } catch (MessageNotSoapException e) {
+                        logger.log(Level.INFO, "cannot get operation urn", e);
+                    }
+                    return "[unknown]";
+                }
+            });
+
         // todo, other common variables as needed.
     }
-
 }
