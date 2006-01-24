@@ -1,4 +1,3 @@
-
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.FontUtil;
@@ -6,18 +5,21 @@ import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.event.WsdlEvent;
+import com.l7tech.console.event.WsdlListener;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.WsdlListener;
-import com.l7tech.console.event.WsdlEvent;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,19 +28,15 @@ import javax.swing.event.DocumentListener;
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.io.StringReader;
+import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 /**
  *
@@ -223,6 +221,8 @@ public class ServicePanel extends WizardStepPanel {
                     } catch (MalformedURLException e) {
                         return e;
                     } catch (IOException e) {
+                        return e;
+                    } catch (Exception e) {
                         return e;
                     }
                 }
