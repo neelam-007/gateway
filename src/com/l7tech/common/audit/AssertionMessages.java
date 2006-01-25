@@ -148,6 +148,7 @@ public class AssertionMessages extends Messages {
     public static final M WSS_BASIC_NOT_SOAP                                = m(5201, Level.INFO, "Request not SOAP: Cannot check for WS-Security UsernameToken");
     public static final M WSS_BASIC_NO_CREDENTIALS                          = m(5202, Level.INFO, "Request did not include WSS Basic credentials.");
     public static final M WSS_BASIC_CANNOT_FIND_CREDENTIALS                 = m(5203, Level.INFO, "cannot find credentials");
+    public static final M WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS             = m(5204, Level.INFO,  "Request did not include an encrypted UsernameToken");
 
     // ServerSslAssertion
     public static final M SSL_REQUIRED_PRESENT                              = m(5300, Level.FINE, "SSL required and present");
