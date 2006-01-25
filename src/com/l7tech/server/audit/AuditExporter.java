@@ -45,8 +45,8 @@ public class AuditExporter extends HibernateDaoSupport {
     private static final Pattern badCharPattern = Pattern.compile("([^\\040-\\0176]|\\\\|\\" + DELIM + ")");
 
     private long highestTime;
-    private long numExportedSoFar = 0;
-    private long approxNumToExport = 1;
+    private volatile long numExportedSoFar = 0;
+    private volatile long approxNumToExport = 1;
 
     public AuditExporter() {
     }
