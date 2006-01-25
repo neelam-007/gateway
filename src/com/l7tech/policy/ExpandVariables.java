@@ -107,8 +107,11 @@ public class ExpandVariables {
                 throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
             }
             String var = matcher.group(1);
-            String replacement = userVariables.get(var).toString();
-            if (replacement == null) {
+            String replacement = null;
+            if (userVariables.get(var) != null) {
+                replacement = userVariables.get(var).toString();
+            }
+            if (replacement == null && defaultVariables.get(var) != null) {
                 replacement = defaultVariables.get(var).toString();
             }
             if (replacement == null) {
