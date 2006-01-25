@@ -108,11 +108,15 @@ public class ExpandVariables {
             }
             String var = matcher.group(1);
             String replacement = null;
-            if (userVariables.get(var) != null) {
-                replacement = userVariables.get(var).toString();
+            Object varval = userVariables.get(var);
+            if (varval != null) {
+                replacement = varval.toString();
             }
-            if (replacement == null && defaultVariables.get(var) != null) {
-                replacement = defaultVariables.get(var).toString();
+            if (replacement == null) {
+                varval = defaultVariables.get(var);
+                if (varval != null) {
+                    replacement = varval.toString();
+                }
             }
             if (replacement == null) {
                 throw new VariableNotFoundException(var);
