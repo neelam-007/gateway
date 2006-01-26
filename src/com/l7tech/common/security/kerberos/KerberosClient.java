@@ -97,25 +97,33 @@ public class KerberosClient {
                     Oid kerberos5Oid = getKerberos5Oid();
                     GSSManager manager = GSSManager.getInstance();
 
-                    GSSCredential credential = manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, kerb5Oid, GSSCredential.INITIATE_ONLY);
-                    GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
+                    GSSCredential credential = null;
+                    GSSContext context = null;
+                    try {
+                        credential = manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, kerb5Oid, GSSCredential.INITIATE_ONLY);
+                        GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
 
-                    GSSContext context = manager.createContext(serviceName, kerb5Oid, credential, GSSContext.DEFAULT_LIFETIME);
-                    context.requestMutualAuth(false);
-                    context.requestAnonymity(false);
-                    context.requestConf(false);
-                    context.requestInteg(true);
-                    context.requestCredDeleg(false);
+                        context = manager.createContext(serviceName, kerb5Oid, credential, GSSContext.DEFAULT_LIFETIME);
+                        context.requestMutualAuth(false);
+                        context.requestAnonymity(false);
+                        context.requestConf(false);
+                        context.requestInteg(true);
+                        context.requestCredDeleg(false);
 
-                    byte[] bytes = context.initSecContext(new byte[0], 0, 0);
+                        byte[] bytes = context.initSecContext(new byte[0], 0, 0);
 
-                    KerberosTicket ticket = getTicket(kerberosSubject.getPrivateCredentials(), serviceName, manager);
+                        KerberosTicket ticket = getTicket(kerberosSubject.getPrivateCredentials(), serviceName, manager);
 
-                    return new KerberosServiceTicket(ticket.getClient().getName(),
-                                                     servicePrincipalName,
-                                                     ticket.getSessionKey().getEncoded(),
-                                                     System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                     new KerberosGSSAPReqTicket(bytes));
+                        return new KerberosServiceTicket(ticket.getClient().getName(),
+                                                         servicePrincipalName,
+                                                         ticket.getSessionKey().getEncoded(),
+                                                         System.currentTimeMillis() + (context.getLifetime() * 1000L),
+                                                         new KerberosGSSAPReqTicket(bytes));
+                    }
+                    finally {
+                        if(context!=null) context.dispose();
+                        if(credential!=null) credential.dispose();
+                    }
                 }
             });
             try{
@@ -150,23 +158,31 @@ public class KerberosClient {
                 public Object run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
                     GSSManager manager = GSSManager.getInstance();
-                    GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
-                    GSSCredential scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerb5Oid, GSSCredential.ACCEPT_ONLY);
-                    GSSContext scontext = manager.createContext(scred);
+                    GSSCredential scred = null;
+                    GSSContext scontext = null;
+                    try {
+                        GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
+                        scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerb5Oid, GSSCredential.ACCEPT_ONLY);
+                        scontext = manager.createContext(scred);
 
-                    byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
-                    KerberosKey key = getKey(kerberosSubject.getPrivateCredentials());
-                    KrbApReq apReq = new KrbApReq(apReqBytes, new EncryptionKey[]{new EncryptionKey(key.getKeyType(),key.getEncoded())});
-                    EncryptionKey sessionKey = (EncryptionKey) apReq.getCreds().getSessionKey();
-                    EncryptionKey subKey = apReq.getSubKey();
+                        byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
+                        KerberosKey key = getKey(kerberosSubject.getPrivateCredentials());
+                        KrbApReq apReq = new KrbApReq(apReqBytes, new EncryptionKey[]{new EncryptionKey(key.getKeyType(),key.getEncoded())});
+                        EncryptionKey sessionKey = (EncryptionKey) apReq.getCreds().getSessionKey();
+                        EncryptionKey subKey = apReq.getSubKey();
 
-                    byte[] keyBytes = (subKey==null ? sessionKey : subKey).getBytes();
+                        byte[] keyBytes = (subKey==null ? sessionKey : subKey).getBytes();
 
-                    return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
-                                                     servicePrincipalName,
-                                                     keyBytes,
-                                                     apReq.getCreds().getEndTime().getTime(),
-                                                     gssAPReqTicket);
+                        return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
+                                                         servicePrincipalName,
+                                                         keyBytes,
+                                                         apReq.getCreds().getEndTime().getTime(),
+                                                         gssAPReqTicket);
+                    }
+                    finally {
+                        if(scontext!=null) scontext.dispose();
+                        if(scred!=null) scred.dispose();
+                    }
                 }
             });
             try{
@@ -293,7 +309,7 @@ public class KerberosClient {
      *
      * @param args
      * @throws Exception
-     */
+     * /
     public static void main(String[] args) throws Exception {
 
         KerberosClient client = new KerberosClient();
@@ -309,7 +325,7 @@ public class KerberosClient {
 
     /**
      * Debug function, remove later
-     */
+     * /
     private static void dumpCreds(String name, Set creds) {
         System.out.println(name + " credentials.");
         if(creds.isEmpty()) System.out.println("NO CREDS!");
@@ -328,4 +344,6 @@ public class KerberosClient {
             }
         }
     }
+
+    /* */
 }

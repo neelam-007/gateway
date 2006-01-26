@@ -15,6 +15,7 @@ import java.io.InputStream;
  * @version $Revision$
  */
 public final class KerberosGSSAPReqTicket {
+
     //- PUBLIC
 
     /**
@@ -39,10 +40,20 @@ public final class KerberosGSSAPReqTicket {
         return bytes;
     }
 
+    /**
+     * Get the decrypted ticket (if any)
+     *
+     * @return the ticket if available (may be null)
+     */
     public KerberosServiceTicket getServiceTicket() {
         return serviceTicket;
     }
 
+    /**
+     * Set the decrypted ticket.
+     *
+     * @param kerberosServiceTicket the ticket
+     */
     public void setServiceTicket(KerberosServiceTicket kerberosServiceTicket) {
         this.serviceTicket = kerberosServiceTicket;
     }
@@ -54,16 +65,34 @@ public final class KerberosGSSAPReqTicket {
      */
     InputStream getTicketBody() throws IOException, GSSException, KerberosException {
         InputStream is = new ByteArrayInputStream(ticketBytes,0,ticketBytes.length);
-        GSSHeader header = new GSSHeader(is); // skip header bytes
-        if(!new Oid(header.getOid().toString()).equals(KerberosClient.getKerberos5Oid())) throw new GSSException(GSSException.BAD_MECH, -1, "Expected Kerberos v5 mechanism '"+header.getOid()+"'");
+
+        // Skip header bytes and check mechanism
+        GSSHeader header = new GSSHeader(is);
+        if(!new Oid(header.getOid().toString()).equals(KerberosClient.getKerberos5Oid())) {
+            throw new GSSException(GSSException.BAD_MECH, -1, "Expected Kerberos v5 mechanism '"
+                    +header.getOid()+"'");
+        }
+
+        // Process the GSS token type
         int identifier = ((is.read() << 8) | is.read());
-        if (identifier != 256) throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1, "Incorrect token type '"+identifier+"' (expected AP REQ)");
+        if (identifier != 256) {
+            throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1, "Incorrect token type '"
+                    +identifier+"' (expected AP REQ)");
+        }
+
         return is;
     }
 
     //- PRIVATE
 
+    /**
+     * The GSS wrapped request ticket / packet
+     */
     private final byte[] ticketBytes;
+
+    /**
+     * The decrypted ticket
+     */
     private KerberosServiceTicket serviceTicket;
 
 }

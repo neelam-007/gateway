@@ -10,6 +10,7 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosSecurityTokenImpl;
+import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.*;
@@ -264,27 +265,31 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     /**
-     * Process a free-floating SecurityTokeReference. different mechanisms for referencing security tokens using the
+     * Process a free-floating SecurityTokenReference. different mechanisms for referencing security tokens using the
      * <wsse:SecurityTokenReference> exist, and currently the supported are:
      * <ul>
-     * <li> Key Identifier <wsse:KeyIdentifier>
-     * <li> Security Token Reference <wsse:Reference>
+     * <li> Key Identifier <wsse:KeyIdentifier></li>
+     * <li> Security Token Reference <wsse:Reference></li>
      * </ul>
-     * The usupported SecurityTokeReference types are:
+     * The unsupported SecurityTokeReference types are:
      * <ul>
-     * <li> X509 issuer name and issuer serial <ds:X509IssuerName>,  <ds:X509SerialNumber>
-     * <li> Embedded token <wsse:Embedded>
-     * <li> Key Name <ds:KeyName>
+     * <li> X509 issuer name and issuer serial <ds:X509IssuerName>,  <ds:X509SerialNumber></li>
+     * <li> Embedded token <wsse:Embedded></li>
+     * <li> Key Name <ds:KeyName></li>
      * </ul>
      * This is as per <i>Web Services Security: SOAP Message Security 1.0 (WS-Security 2004) OASIS standard</i>
      * TODO this should be merged into KeyInfoElement
      *
-     * @param str  the SecurityTokeReference element
+     * @param str  the SecurityTokenReference element
      * @param securityContextFinder the context finder to perform lookups with (may be null)
-     * @param cntx thge processing status holder/accumulator
+     * @param cntx the processing status holder/accumulator
      * @throws InvalidDocumentFormatException
      */
-    private void processSecurityTokenReference(Element str, SecurityContextFinder securityContextFinder, ProcessingStatusHolder cntx) throws InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
+    private void processSecurityTokenReference(Element str,
+                                               SecurityContextFinder securityContextFinder,
+                                               ProcessingStatusHolder cntx)
+            throws InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
+        // Get identifier
         String id = SoapUtil.getElementWsuId(str);
         boolean noId = false;
         if (id == null || id.length() < 1) {
@@ -292,72 +297,91 @@ public class WssProcessorImpl implements WssProcessor {
             id = "<noid>";
         }
 
-        Element keyid = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
+        // Reference or KeyIdentifier values
+        boolean isKeyIdentifier = false;
+        boolean isReference = false;
         String value = null;
-        if (keyid == null) {
-            if(noId) {
-                logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
-                return;
-            }
-            keyid = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "Reference");
-            if (keyid == null) { //try reference
-                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with no KeyIdentifier or Reference");
-                return;
-            } else {
-                value = keyid.getAttribute("URI");
+        String valueType = null;
+        String encodingType = null;
+
+        // Process KeyIdentifier
+        Element keyIdentifierElement = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
+        if (keyIdentifierElement != null) {
+            isKeyIdentifier = true;
+            value = XmlUtil.getTextValue(keyIdentifierElement).trim();
+            valueType = keyIdentifierElement.getAttribute("ValueType");
+            encodingType = keyIdentifierElement.getAttribute("EncodingType");
+        }
+        else {
+            // Process Reference
+            Element referenceElement = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "Reference");
+            if (referenceElement != null) {
+                isReference = true;
+                value = referenceElement.getAttribute("URI");
                 if (value != null && value.charAt(0) == '#') {
                     value = value.substring(1);
                 }
+                valueType = keyIdentifierElement.getAttribute("ValueType");
             }
-        } else {
-            value = XmlUtil.getTextValue(keyid).trim();
         }
+
+        if(!(isReference || isKeyIdentifier)) {
+            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with no KeyIdentifier or Reference");
+            return;
+        }
+
         if (value == null) {
-            final String msg = "Rejecting SecurityTokenReference ID=" + id + " as the target reference ID is missing or could not be determined.";
+            String msg = "Rejecting SecurityTokenReference ID=" + id
+                       + " as the target Reference ID/KeyIdentifier is missing or could not be determined.";
             logger.warning(msg);
             throw new InvalidDocumentFormatException(msg);
         }
 
-        String valueType = keyid.getAttribute("ValueType");
+        // Process KeyIdentifier or Reference
         if (SoapUtil.isValueTypeSaml(valueType)) {
             if(noId) {
                 logger.warning("Ignoring SecurityTokenReference with no wsu:Id");
                 return;
             }
-            String encodingType = keyid.getAttribute("EncodingType");
             if (encodingType != null && encodingType.length() > 0) {
-                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with non-empty KeyIdentifier/@EncodingType=" + encodingType);
+                logger.warning("Ignoring SecurityTokenReference ID='" + id
+                        + "' with non-empty KeyIdentifier/@EncodingType='" + encodingType + "'.");
                 return;
             }
             Element target = (Element)cntx.elementsByWsuId.get(value);
-            if (target == null || !target.getLocalName().equals("Assertion") || !target.getNamespaceURI().equals(SamlConstants.NS_SAML)) {
-                final String msg = "Rejecting SecurityTokenReference ID=" + id + " with ValueType of " + valueType + " because its target is either missing or not a SAML assertion";
+            if (target == null
+                    || !target.getLocalName().equals("Assertion")
+                    || !target.getNamespaceURI().equals(SamlConstants.NS_SAML)) {
+                String msg = "Rejecting SecurityTokenReference ID='" + id + "' with ValueType of '" + valueType +
+                        "' because its target is either missing or not a SAML assertion";
                 logger.warning(msg); // TODO remove redundant logging after debugging complete
                 throw new InvalidDocumentFormatException(msg);
             }
             logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
             cntx.securityTokenReferenceElementToTargetElement.put(str, target);
-        } if (SoapUtil.isValueTypeKerberos(valueType)) {
-            String encodingType = keyid.getAttribute("EncodingType");
+        } if (SoapUtil.isValueTypeKerberos(valueType) && isKeyIdentifier) {
             if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
-                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
+                logger.warning("Ignoring SecurityTokenReference ID=" + id +
+                        " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
                 return;
             }
 
-            String identifier = KerberosSecurityTokenImpl.getSessionIdentifier(value);
-
             if (securityContextFinder == null)
-                throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not provide a SecurityContextFinder");
+                throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not " +
+                        "provide a SecurityContextFinder");
+
+            String identifier = KerberosUtils.getSessionIdentifier(value);
             SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
             if (secContext == null) {
-                throw new BadSecurityContextException(identifier); //TODO kerberosize
+                //TODO kerberosize (so Kerberos SOAP fault is generated, or at least not a WS-SecureConv fault)
+                throw new BadSecurityContextException(identifier);
             }
             SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
-                                                                              keyid,
+                                                                              keyIdentifierElement,
                                                                               identifier);
             cntx.securityTokens.add(secConTok);
         } else {
-            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with unsupported ValueType of " + valueType);
+            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with ValueType of " + valueType);
             return;
         }
     }

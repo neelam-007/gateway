@@ -5,7 +5,7 @@ import com.l7tech.common.util.HexUtils;
 /**
  * Represents a kerberos service ticket.
  *
- * <p>This is part of the information in the GSS AP REQ and is only created
+ * <p>This is part of the information in the AP REQ and is only created
  * if the clients authenticator is validated.</p>
  *
  * @author $Author$
