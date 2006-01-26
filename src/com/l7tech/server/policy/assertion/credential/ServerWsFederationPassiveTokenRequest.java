@@ -215,11 +215,12 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             if (!tokenFromRequest) {
                 auditor.logAndAudit(AssertionMessages.WSFEDPASS_ORIGINAL_TOKEN_NOT_XML);
             } else {
-                //TODO does this do anything? isn't the whole document replaced below?? (also in wstrust credential exchange)
+                //NOTE: the token is in the requestDoc Document
                 Element tokenElement = existingToken.asElement();
                 Node securityEl = tokenElement.getParentNode();
                 securityEl.removeChild(tokenElement);
                 // Check for empty Security header, remove
+                // NOTE: it is possible that we will end up with a header with just a timestamp
                 if (securityEl.getFirstChild() == null) {
                     securityEl.getParentNode().removeChild(securityEl);
                 }

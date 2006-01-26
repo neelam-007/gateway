@@ -81,8 +81,8 @@
             <L7p:FalseAssertion/>
             <L7p:HttpRoutingAssertion>
                 <L7p:ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
-                <L7p:Login stringValue="bob&amp;joe"/>
                 <L7p:Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
+                <L7p:Login stringValue="bob&amp;joe"/>
                 <L7p:Realm stringValue=""/>
                 <L7p:MaxConnections intValue="-5"/>
             </L7p:HttpRoutingAssertion>

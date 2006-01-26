@@ -25,6 +25,10 @@ public class WsFederationPassiveTokenRequest extends Assertion {
         this.timestamp = timestamp;
     }
 
+    public boolean isCredentialModifier() {
+        return true;
+    }    
+
     public String getIpStsUrl() {
         return ipStsUrl;
     }

@@ -702,6 +702,42 @@ public class XmlUtil {
     }
 
     /**
+     * Find the first of the given namespaces that is in use.
+     *
+     * @param element the element to check
+     * @param namespaceUris the namespace uris to check
+     * @return the first used namespace or null if none are used
+     */
+    public static String findActiveNamespace(Element element, String[] namespaceUris) {
+        String foundNamespaceURI = null;
+
+        // check default ns
+        String elementDefaultNamespaceURI = element.getNamespaceURI();
+        if(elementDefaultNamespaceURI!=null) {
+            for (int i = 0; i < namespaceUris.length; i++) {
+                String namespaceUri = namespaceUris[i];
+                if(elementDefaultNamespaceURI.equals(namespaceUri)) {
+                    foundNamespaceURI = namespaceUri;
+                    break;
+                }
+            }
+        }
+
+        // check ns declarations
+        if(foundNamespaceURI==null) {
+            for (int i = 0; i < namespaceUris.length; i++) {
+                String namespaceUri = namespaceUris[i];
+                if(findActivePrefixForNamespace(element, namespaceUri)!=null) {
+                    foundNamespaceURI = namespaceUri;
+                    break;
+                }
+            }
+        }
+
+        return foundNamespaceURI;
+    }
+
+    /**
      * Creates an empty element and appends it to the end of Parent.  The element will share the parent's namespace
      * URI and prefix.
      *

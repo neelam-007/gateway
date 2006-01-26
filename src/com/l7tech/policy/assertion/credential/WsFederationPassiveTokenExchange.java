@@ -22,6 +22,10 @@ public class WsFederationPassiveTokenExchange extends Assertion {
         this.replyUrl = replyUrl;
     }
 
+    public boolean isCredentialModifier() {
+        return true;
+    }
+
     public String getIpStsUrl() {
         return ipStsUrl;
     }

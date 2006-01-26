@@ -127,6 +127,21 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
     
     /**
+     * Test whether the assertion is a credential modifier. Defaults to <code>false</code>
+     *
+     * <p>This is for assertions that modifiy the request, adding credential information
+     * (presumably replacing one kind of credential with another).</p>
+     *
+     * <p>A modifier is typically not a credential source, but may be followed by one in
+     * a policy.</p>
+     *
+     * @return true if credential source, false otherwise
+     */
+    public boolean isCredentialModifier() {
+        return false;
+    }
+
+    /**
      * Creates and returns an iterator that traverses the assertion subtree
      * rooted at this assertion in preorder.  The first node returned by the
      * iterator's

@@ -89,27 +89,39 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                       null));
                     break;
                 case ID_FIP:
-                    for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                        Assertion credSrc = (Assertion)iterator.next();
-                        if (credSrc.isCredentialSource() &&
-                            (credSrc instanceof RequestWssSaml || credSrc instanceof RequestWssX509Cert ||
-                             credSrc instanceof SecureConversation || credSrc instanceof SslAssertion) )
-                            ;
-                        else {
+                    { // scope
+                        boolean foundUsableCredSource = false;
+                        for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
+                            Object credSrc = iterator.next();
+                            if (credSrc instanceof RequestWssSaml ||
+                                    credSrc instanceof RequestWssX509Cert ||
+                                    credSrc instanceof SecureConversation ||
+                                    credSrc instanceof SslAssertion) {
+                                foundUsableCredSource = true;
+                                break;
+                            }
+                        }
+                        if(!foundUsableCredSource) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
                               "This identity cannot authenticate with the " +
                               "type of credential " +
                               "source specified.",
                               null));
-                            break;
                         }
                     }
                     break;
                 case ID_SAMLONLY:
-                    for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                        Assertion credSrc = (Assertion)iterator.next();
-                        if (credSrc.isCredentialSource() && !(credSrc instanceof RequestWssSaml || credSrc instanceof SslAssertion)) {
+                    { // scope
+                        boolean foundUsableCredSource = false;
+                        for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
+                            Object credSrc = iterator.next();
+                            if (credSrc instanceof RequestWssSaml || credSrc instanceof SslAssertion) {
+                                foundUsableCredSource = true;
+                                break;
+                            }
+                        }
+                        if(!foundUsableCredSource) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
                               "This identity can only authenticate with " +
@@ -122,10 +134,18 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     }
                     break;
                 case ID_X509ONLY:
-                    for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                        Assertion credSrc = (Assertion)iterator.next();
-                        if (!(credSrc instanceof RequestWssX509Cert || credSrc instanceof SecureConversation ||
-                          credSrc instanceof SslAssertion)) {
+                    { // scope
+                        boolean foundUsableCredSource = false;
+                        for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
+                            Object credSrc = iterator.next();
+                            if (credSrc instanceof RequestWssX509Cert ||
+                                    credSrc instanceof SecureConversation ||
+                                    credSrc instanceof SslAssertion) {
+                                foundUsableCredSource = true;
+                                break;
+                            }
+                        }
+                        if(!foundUsableCredSource) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
                               "This identity can only authenticate using " +
@@ -133,7 +153,6 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                               "The specified type of credential " +
                               "source is not supported by that user.",
                               null));
-                            break;
                         }
                     }
                     break;

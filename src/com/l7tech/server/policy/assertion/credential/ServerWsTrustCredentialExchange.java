@@ -184,8 +184,6 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 Node securityEl = originalTokenElement.getParentNode();
                 securityEl.removeChild(originalTokenElement);
                 // Check for empty Security header, remove
-                // TODO make this optional?
-                // TODO what if Security header isn't empty?
                 if (securityEl.getFirstChild() == null) {
                     securityEl.getParentNode().removeChild(securityEl);
                 }
@@ -193,6 +191,13 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
             DecorationRequirements decoReq = new DecorationRequirements();
             WssDecorator deco = new WssDecoratorImpl();
+            decoReq.setSecurityHeaderReusable(true);
+            if(requestSec!=null) { // ensure we don't add duplicate timestamp
+                ProcessorResult wssProcResult = requestSec.getProcessorResult();
+                if(wssProcResult!=null && wssProcResult.getTimestamp()!=null) {
+                    decoReq.setIncludeTimestamp(false);
+                }
+            }
             if (rstrObj instanceof SamlAssertion) {
                 SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
                 setCachedSecurityToken(context.getCache(), samlAssertion, getSamlAssertionExpiry(samlAssertion));

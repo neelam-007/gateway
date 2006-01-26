@@ -56,6 +56,7 @@ class PathValidator {
     private Collection wsdlBindingOperations;
     private Set seenAssertionClasses = new HashSet();
     private Map seenCredentials = new HashMap();
+    private Map seenCredentialsSinceModified = new HashMap();
     private Map seenWssSignature = new HashMap();
     private Map seenSamlSecurity = new HashMap();
     private boolean seenSpecificUserAssertion = false;
@@ -98,6 +99,8 @@ class PathValidator {
 
         if (isComposite(a)) {
             processComposite((CompositeAssertion)a);
+        } else if (a.isCredentialModifier()) {
+            processCredentialModifier(a);
         } else if (a.isCredentialSource()) {
             processCredentialSource(a);
         } else if (isAccessControl(a)) {
@@ -189,6 +192,19 @@ class PathValidator {
         }
     }
 
+    private void processCredentialModifier(Assertion a) {
+        if (seenRouting && isDefaultActor(a)) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
+        }
+
+        if (seenAccessControl && isDefaultActor(a)) {
+            result.addError(new PolicyValidatorResult.
+              Error(a, assertionPath, "Access control already set, this assertion might get ignored.", null));
+        }
+
+        setSeenCredentialsSinceModified(a, false);
+    }
+
     private void processCredentialSource(Assertion a) {
         if (seenRouting && isDefaultActor(a)) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
@@ -199,7 +215,7 @@ class PathValidator {
               Error(a, assertionPath, "Access control already set, this assertion might get ignored.", null));
         }
 
-        if (seenCredentials(a)) {
+        if (seenCredentialsSinceModified(a)) {
             result.addWarning(new PolicyValidatorResult.
               Warning(a, assertionPath, "You already have a credential assertion.", null));
         }
@@ -239,6 +255,7 @@ class PathValidator {
         }
 
         setSeenCredentials(a, true);
+        setSeenCredentialsSinceModified(a, true);
     }
 
     private void processPrecondition(final Assertion a) {
@@ -542,6 +559,22 @@ class PathValidator {
     private void setSeenCredentials(Assertion context, boolean value) {
         String actor = assertionToActor(context);
         seenCredentials.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
+    }
+
+    private boolean seenCredentialsSinceModified(Assertion context) {
+        String actor = assertionToActor(context);
+        return seenCredentialsSinceModified(actor);
+    }
+
+    private boolean seenCredentialsSinceModified(String actor) {
+        Boolean currentvalue = (Boolean)seenCredentialsSinceModified.get(actor);
+        if (currentvalue == null) return false;
+        else return currentvalue.booleanValue();
+    }
+
+    private void setSeenCredentialsSinceModified(Assertion context, boolean value) {
+        String actor = assertionToActor(context);
+        seenCredentialsSinceModified.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
     }
 
     private boolean seenWssSignature(Assertion context) {

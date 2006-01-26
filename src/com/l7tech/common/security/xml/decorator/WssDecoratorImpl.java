@@ -80,8 +80,8 @@ public class WssDecoratorImpl implements WssDecorator {
         c.wsseNS = dreq.getPreferredSecurityNamespace();
         c.wsuNS = dreq.getPreferredWSUNamespace();
 
-        Element securityHeader = createSecurityHeader(message, c.wsseNS, c.wsuNS,
-            dreq.getSecurityHeaderActor());
+        Element securityHeader = createSecurityHeader(message, c,
+                dreq.getSecurityHeaderActor(), dreq.isSecurityHeaderReusable());
         Set signList = dreq.getElementsToSign();
 
         Element timestamp = null;
@@ -872,31 +872,49 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     private Element createSecurityHeader(Document message,
-                                         String wsseNS,
-                                         String wsuNs,
-                                         String actor) throws InvalidDocumentFormatException {
+                                         Context context,
+                                         String actor,
+                                         boolean useExisting) throws InvalidDocumentFormatException {
+        Element resultSecurity = null;
         Element oldSecurity = SoapUtil.getSecurityElement(message, actor);
 
         if (oldSecurity != null) {
-            String error;
-            if (actor != null) {
-                error = "This message already has a security header for actor " + actor;
-            } else {
-                error = "This message already has a security header for the default actor";
+            if(!useExisting) {
+                String error;
+                if (actor != null) {
+                    error = "This message already has a security header for actor " + actor;
+                } else {
+                    error = "This message already has a security header for the default actor";
+                }
+                logger.warning(error);
+                throw new InvalidDocumentFormatException(error);
             }
-            logger.warning(error);
-            throw new InvalidDocumentFormatException(error);
+
+            String activeWsuNS = XmlUtil.findActiveNamespace(oldSecurity, SoapUtil.WSU_URIS_ARRAY);
+            if(activeWsuNS==null) {
+                XmlUtil.getOrCreatePrefixForNamespace(oldSecurity, context.wsuNS, "wsu");
+                activeWsuNS = context.wsuNS;
+            }
+
+            // update context to reflect active namespaces
+            context.wsseNS = oldSecurity.getNamespaceURI();
+            context.wsuNS = activeWsuNS;
+
+            resultSecurity = oldSecurity;
+        }
+        else {
+            Element securityHeader;
+            if (oldSecurity == null) {
+                securityHeader = SoapUtil.makeSecurityElement(message, context.wsseNS, actor);
+            } else {
+                securityHeader = oldSecurity;
+            }
+            // Make sure wsu is declared to save duplication
+            XmlUtil.getOrCreatePrefixForNamespace(securityHeader, context.wsuNS, "wsu");
+            resultSecurity = securityHeader;
         }
 
-        Element securityHeader;
-        if (oldSecurity == null) {
-            securityHeader = SoapUtil.makeSecurityElement(message, wsseNS, actor);
-        } else {
-            securityHeader = oldSecurity;
-        }
-        // Make sure wsu is declared to save duplication
-        XmlUtil.getOrCreatePrefixForNamespace(securityHeader, wsuNs, "wsu");
-        return securityHeader;
+        return resultSecurity;
     }
 
     /**

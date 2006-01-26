@@ -22,6 +22,10 @@ public class WsTrustCredentialExchange extends Assertion {
         this.requestType = requestType;
     }
 
+    public boolean isCredentialModifier() {
+        return true;
+    }    
+
     public String getTokenServiceUrl() {
         return tokenServiceUrl;
     }

@@ -115,10 +115,25 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
         this.recipientContext = recipientContext;
     }
 
+    /**
+     * This is not really useful since possession may be proven by something external to this
+     * assertion (e.g. SSL client certificate).
+     *
+     * Also having no proof of possession does not mean this is not a credential source, it just
+     * means it is a less reliable source.
+     *
+     * NOTE: if this is re-enabled you must also update WspConstants#ignoreAssertionProperties
+     * /
     private boolean isRequireProofOfPosession() {
         final boolean hasHolderOfKey = hasHolderOfKey();
         final boolean hasSenderVouches = hasSenderVouches();
         if (!(hasHolderOfKey || hasSenderVouches)) return false;
+
+        // proof of possession is not a requirement if other confirmation methods are allowed
+        if(subjectConfirmations.length > 2 ||
+            (subjectConfirmations.length > 1 && (!(hasHolderOfKey && hasSenderVouches)))) {
+            return false;
+        }
         
         boolean result = true;
         if (hasHolderOfKey) result = result && requireHolderOfKeyWithMessageSignature;
@@ -127,6 +142,9 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
         return result;
     }
 
+    /**
+     *
+     */
     private boolean hasHolderOfKey() {
         for (int i = subjectConfirmations.length - 1; i >= 0; i--) {
             String subjectConfirmation = subjectConfirmations[i];
@@ -205,13 +223,15 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
     }
 
     /**
-     * The SAML assertion is a credential source if the proof of posession has
-     * been requested.
+     * The SAML assertion is a credential source.
      *
-     * @return true if credential source, false otherwise
+     * <P>Note that this credential source should only be trusted if proof of
+     * possession is provided.</p>
+     *
+     * @return true
      */
     public boolean isCredentialSource() {
-        return isRequireProofOfPosession();
+        return true;
     }
 
     /**

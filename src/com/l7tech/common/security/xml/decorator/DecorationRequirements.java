@@ -93,7 +93,7 @@ public class DecorationRequirements {
      * Envelope signature.<p>
      */
     public void setSignTimestamp() {
-        setIncludeTimestamp();
+        setIncludeTimestamp(true);
         this.signTimestamp = true;
     }
 
@@ -102,8 +102,8 @@ public class DecorationRequirements {
      * It won't be signed unless signTimestamp is set (or anything else is signed, in which
      * case a signed timestamp will always be included regardless).
      */
-    public void setIncludeTimestamp() {
-        this.includeTimestamp = true;
+    public void setIncludeTimestamp(boolean includeTimestamp) {
+        this.includeTimestamp = includeTimestamp;
     }
 
     /**
@@ -361,6 +361,27 @@ public class DecorationRequirements {
     }
 
     /**
+     * If true the the decorator should attempt to reuse any existing security header for the same actor/role.
+     *
+     * <p>If a header is reused then the namespaces in the message may not match those set in the
+     * decoration requirements.</p>
+     *
+     * @return true if reuse is permissible
+     */
+    public boolean isSecurityHeaderReusable() {
+        return securityHeaderReusable;
+    }
+
+    /**
+     * Set the header as reusable (or not)
+     *
+     * @param securityHeaderReusable true to allow reuse.
+     */
+    public void setSecurityHeaderReusable(boolean securityHeaderReusable) {
+        this.securityHeaderReusable = securityHeaderReusable;
+    }
+
+    /**
      * If a BinarySecurityToken would need to be generated to hold a sender signing certificate, enabling
      * suppressBst causes it to emit no BST, and instead to refer to the sender cert via its SubjectKeyIdentifier
      * in the Signature's KeyInfo.
@@ -430,6 +451,7 @@ public class DecorationRequirements {
     private String preferredWSUNamespace = SoapUtil.WSU_NAMESPACE;
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
+    private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
     private boolean includeSamlTokenInSignature = false;
     private boolean suppressBst = false;

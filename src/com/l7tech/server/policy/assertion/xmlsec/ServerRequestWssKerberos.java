@@ -6,7 +6,7 @@ import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
-import com.l7tech.common.security.kerberos.KerberosSecurityTokenImpl;
+import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.SecurityContextToken;
@@ -28,7 +28,6 @@ import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.security.auth.login.LoginException;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -131,7 +130,7 @@ public class ServerRequestWssKerberos implements ServerAssertion {
                 // stash for later reference
                 SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
                 try {
-                    sccm.createContextForUser(KerberosSecurityTokenImpl.getSessionIdentifier(kerberosTicket), kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
+                    sccm.createContextForUser(KerberosUtils.getSessionIdentifier(kerberosTicket), kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
                 }
                 catch(DuplicateSessionException dse) {
                     //can't happen since duplicate tickets are detected by kerberos.

@@ -14,6 +14,7 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -116,7 +117,13 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         WssDecorator deco = new WssDecoratorImpl();
         context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, credSource.getClass()));
 
+        ProcessorResult processorResult = requestSec.getProcessorResult();
         DecorationRequirements decoReq = new DecorationRequirements();
+        decoReq.setSecurityHeaderReusable(true);
+        if(processorResult!=null && processorResult.getTimestamp()!=null) {
+            // don't add a timestamp if there's one already
+            decoReq.setIncludeTimestamp(false);
+        }
         decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
         deco.decorateMessage(requestDoc, decoReq);
         requestXml.setDocument(requestDoc);
