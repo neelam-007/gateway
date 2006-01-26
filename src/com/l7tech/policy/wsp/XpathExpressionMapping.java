@@ -63,9 +63,9 @@ class XpathExpressionMapping implements TypeMapping {
         Map nsAlready = XmlUtil.getNamespaceMap(container);
 
         // Create the MessagePredicate element
-        // TODO: There is no way to prevent some "extra" decls from being in scope (ie, wsp: and l7p:)
-        //       Extra decls change the meaning of the xpath.  This is bad!  For now we will ignore the problem
-        //       at least we won't define a wsp: decl that collides with a wsp: decl used by the xpath.
+        //   There is no way to prevent some "extra" decls from being in scope (ie, wsp: and l7p:)
+        //   This should not be a problem, since according to XPath 1.0, if the expression contained prefixes
+        //   not bound to any namespace it was not a valid expression in the first place.
         Element element = XmlUtil.createAndAppendElementNS(container, elementName, nsUri, myPfx);
         element.setAttribute("Dialect", DIALECT_XPATH);
         addNsDeclsToElement(element, nsMap, nsAlready);
