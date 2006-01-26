@@ -24,7 +24,7 @@ public class LdapUser implements User, LdapIdentity, Serializable {
 
     private String dn;
     private UserBean userBean;
-    private Attributes attributes;
+    private transient Attributes attributes;
 
     public LdapUser( UserBean bean ) {
         userBean = bean;
