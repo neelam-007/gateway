@@ -263,13 +263,13 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 // Run response through WssDecorator if indicated
                 if (status == AssertionStatus.NONE &&
                       response.isXml() &&
-                      response.getXmlKnob().getDecorationRequirements().length > 0 &&
+                      response.getSecurityKnob().getDecorationRequirements().length > 0 &&
                       response.isSoap())
                 {
                     Document doc;
                     try {
                         final XmlKnob respXml = response.getXmlKnob();
-                        DecorationRequirements[] allrequirements = respXml.getDecorationRequirements();
+                        DecorationRequirements[] allrequirements = response.getSecurityKnob().getDecorationRequirements();
                         XmlKnob reqXml = request.getXmlKnob();
                         SecurityKnob reqSec = request.getSecurityKnob();
                         doc = respXml.getDocumentWritable(); // writable, we are about to decorate it

@@ -190,6 +190,12 @@ public final class Message {
         return xmlKnob;
     }
 
+    /**
+     * Get the security knob for this Message.  Always succeeds; if a security knob does not yet exist, a new
+     * one will be created.
+     *
+     * @return the security knob for this Message.  Never null.
+     */
     public SecurityKnob getSecurityKnob() {
         SecurityKnob secKnob = (SecurityKnob)getKnob(SecurityKnob.class);
         if (secKnob == null) {

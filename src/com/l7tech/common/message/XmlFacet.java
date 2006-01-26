@@ -5,22 +5,12 @@
 package com.l7tech.common.message;
 
 import com.l7tech.common.mime.*;
-import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents a MimeFacet whose first part is text/xml.
@@ -28,8 +18,6 @@ import java.util.Set;
 public class XmlFacet extends MessageFacet {
     private Document originalDocument = null;  // the original Document
     private Document workingDocument = null;  // the working Document
-    private DecorationRequirements decorationRequirements = null;
-    private Map decorationRequirementsForAlternateRecipients = new HashMap();
 
     /** Can be assumed to be true if {@link #workingDocument} == null */
     private boolean firstPartValid = true;
@@ -208,54 +196,6 @@ public class XmlFacet extends MessageFacet {
             firstPartValid = false;
             workingDocument = document;
             TarariKnob.invalidate(getMessage());
-        }
-
-        /**
-         * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements
-         * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
-         * but never null.
-         */
-        public DecorationRequirements[] getDecorationRequirements() {
-            Set keys = decorationRequirementsForAlternateRecipients.keySet();
-            int arraysize = keys.size();
-            if (decorationRequirements != null) {
-                arraysize += 1;
-            }
-            DecorationRequirements[] output = new DecorationRequirements[arraysize];
-            int i = 0;
-            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-                output[i] = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(iterator.next());
-                i++;
-            }
-            if (decorationRequirements != null) {
-                output[arraysize-1] = decorationRequirements;
-            }
-            return output;
-        }
-
-        public DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient)
-                                            throws IOException, CertificateException {
-            if (recipient == null || recipient.localRecipient()) {
-                return getOrMakeDecorationRequirements();
-            }
-            String actor = recipient.getActor();
-            DecorationRequirements output = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(actor);
-            if (output == null) {
-                output = new DecorationRequirements();
-                X509Certificate clientCert;
-                clientCert = CertUtils.decodeCert(HexUtils.decodeBase64(recipient.getBase64edX509Certificate(), true));
-                output.setRecipientCertificate(clientCert);
-                output.setSecurityHeaderActor(actor);
-                decorationRequirementsForAlternateRecipients.put(actor, output);
-            }
-            return output;
-        }
-
-        public DecorationRequirements getOrMakeDecorationRequirements() {
-            if (decorationRequirements == null) {
-                decorationRequirements = new DecorationRequirements();
-            }
-            return decorationRequirements;
         }
     }
 

@@ -4,11 +4,12 @@
 package com.l7tech.common.message;
 
 import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.security.cert.X509Certificate;
+import java.util.*;
 
 /**
  * Provides access to a {@link SecurityKnob} from a {@link Message}.
@@ -16,6 +17,8 @@ import java.util.Collections;
 public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private ProcessorResult processorResult = null;
     private final List tokens = new ArrayList();
+    private DecorationRequirements decorationRequirements = null;
+    private Map decorationRequirementsForAlternateRecipients = new HashMap();
 
     /**
      * @param message  the Message that owns this aspect
@@ -40,6 +43,53 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
 
     public void setProcessorResult(ProcessorResult pr) {
         processorResult = pr;
+    }
+
+    /**
+     * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements
+     * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
+     * but never null.
+     */
+    public DecorationRequirements[] getDecorationRequirements() {
+        Set keys = decorationRequirementsForAlternateRecipients.keySet();
+        int arraysize = keys.size();
+        if (decorationRequirements != null) {
+            arraysize += 1;
+        }
+        DecorationRequirements[] output = new DecorationRequirements[arraysize];
+        int i = 0;
+        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+            output[i] = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(iterator.next());
+            i++;
+        }
+        if (decorationRequirements != null) {
+            output[arraysize-1] = decorationRequirements;
+        }
+        return output;
+    }
+
+    public DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient) {
+        if (recipient == null || recipient.localRecipient()) {
+            return getOrMakeDecorationRequirements();
+        }
+        String actor = recipient.getActor();
+        DecorationRequirements output = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(actor);
+        if (output == null) {
+            output = new DecorationRequirements();
+            X509Certificate clientCert;
+            clientCert = recipient.getX509Certificate();
+            output.setRecipientCertificate(clientCert);
+            output.setSecurityHeaderActor(actor);
+            decorationRequirementsForAlternateRecipients.put(actor, output);
+        }
+        return output;
+    }
+
+    public DecorationRequirements getOrMakeDecorationRequirements() {
+        if (decorationRequirements == null) {
+            decorationRequirements = new DecorationRequirements();
+        }
+        return decorationRequirements;
     }
 
     public MessageKnob getKnob(Class c) {

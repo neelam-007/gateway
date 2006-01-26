@@ -5,36 +5,35 @@
 
 package com.l7tech.proxy.message;
 
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.kerberos.KerberosClient;
+import com.l7tech.common.security.kerberos.KerberosException;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.security.kerberos.KerberosClient;
-import com.l7tech.common.security.kerberos.KerberosServiceTicket;
-import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
-import com.l7tech.common.security.kerberos.KerberosException;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.security.auth.callback.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -46,11 +45,6 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.NameCallback;
 
 /**
  * Holds message processing state needed by policy application point (SSB) message processor and policy assertions.
@@ -248,7 +242,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (output == null) {
             output = new DecorationRequirements();
             X509Certificate cert = null;
-            cert = CertUtils.decodeCert(HexUtils.decodeBase64(recipient.getBase64edX509Certificate(), true));
+            cert = recipient.getX509Certificate();
             output.setRecipientCertificate(cert);
             output.setSecurityHeaderActor(actor);
             policySettings.downstreamRecipientWSSRequirements.put(actor, output);

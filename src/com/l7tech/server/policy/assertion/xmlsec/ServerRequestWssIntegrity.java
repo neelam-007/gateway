@@ -62,7 +62,7 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
                         auditor.logAndAudit(AssertionMessages.REQUEST_WSS_INT_RESPONSE_NOT_SOAP);
                         // FALLTHROUGH: We'll still send the response; it just won't contain a SignatureConfirmation
                     } else {
-                        wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
+                        wssReq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
                         wssReq.setSignatureConfirmation(signatureConfirmation);
                     }
                 } catch (SAXException e) {

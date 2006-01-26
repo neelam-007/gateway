@@ -469,7 +469,7 @@ public class MessageProcessor {
             // We'll assume that, if we sent a SAML token with the request, it is that token being
             // complained about.
             // TODO check faultDetail for SamlFaultInfo then only drop our token if the Assertion ID matches
-            if (context.getRequest().getXmlKnob().getOrMakeDecorationRequirements().getSenderSamlToken() != null) {
+            if (context.getRequest().getSecurityKnob().getOrMakeDecorationRequirements().getSenderSamlToken() != null) {
                 // TODO we should only trust this fault if it is signed
                 log.warning("Gateway reports " + responseFaultDetail.getFaultCode() +
                             ".  Will throw away current SAML ticket and try again.");

@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.XmlSecurityToken;
@@ -24,7 +25,6 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -90,8 +90,10 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 // GET THE DOCUMENT
                 Document soapmsg = null;
                 final XmlKnob resXml;
+                final SecurityKnob resSec;
                 try {
                     resXml = context.getResponse().getXmlKnob();
+                    resSec = context.getResponse().getSecurityKnob();
                     soapmsg = resXml.getDocumentReadOnly();
                 } catch (SAXException e) {
                     String msg = "cannot get an xml document from the response to sign";
@@ -115,18 +117,7 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     return AssertionStatus.NONE;
                 }
 
-                DecorationRequirements wssReq = null;
-                try {
-                    if (!recipient.localRecipient()) {
-                        wssReq = resXml.getAlternateDecorationRequirements(recipient);
-                    } else {
-                        wssReq = resXml.getOrMakeDecorationRequirements();
-                    }
-                } catch (CertificateException e) {
-                    String msg = "cannot set the recipient cert.";
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
-                    return AssertionStatus.SERVER_ERROR;
-                }
+                DecorationRequirements wssReq = resSec.getAlternateDecorationRequirements(recipient);
 
                 // TODO need some way to guess whether sender would prefer we sign with our cert or with his
                 //      EncryptedKey.  For now, we'll cheat, and use EncryptedKey if the request used any wse11

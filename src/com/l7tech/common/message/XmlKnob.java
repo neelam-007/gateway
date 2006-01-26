@@ -6,13 +6,10 @@
 
 package com.l7tech.common.message;
 
-import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.cert.CertificateException;
 
 /**
  * Aspect of Message that contains an XML document.
@@ -85,22 +82,4 @@ public interface XmlKnob extends MessageKnob {
      * @param document the new Document.  Must not be null.
      */
     void setDocument(Document document);
-
-    /**
-     * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements
-     * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
-     * but never null.
-     */
-    DecorationRequirements[] getDecorationRequirements();
-
-    /**
-     * Get the decorations that should be applied to this Message some time in the future,
-     * creating a new default set of decorations if there are no decorations pending.
-     *
-     * @return the current DecorationRequirements for this message, possibly newly created.  Never null.
-     */
-    DecorationRequirements getOrMakeDecorationRequirements();
-
-    DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient) 
-                                            throws IOException, CertificateException;
 }

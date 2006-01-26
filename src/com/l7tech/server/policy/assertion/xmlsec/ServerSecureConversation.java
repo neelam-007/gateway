@@ -100,7 +100,7 @@ public class ServerSecureConversation implements ServerAssertion {
                         auditor.logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);
                         return AssertionStatus.NOT_APPLICABLE;
                     }
-                    wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
+                    wssReq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();
                 } catch (SAXException e) {
                     throw new CausedIOException(e);
                 }

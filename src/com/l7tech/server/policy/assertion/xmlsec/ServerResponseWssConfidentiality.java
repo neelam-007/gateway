@@ -209,11 +209,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                         return AssertionStatus.NONE;
                     }
                     DecorationRequirements wssReq;
-                    if (recipient != null) {
-                        wssReq = context.getResponse().getXmlKnob().getAlternateDecorationRequirements(recipient);
-                    } else {
-                        wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
-                    }
+                    wssReq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(recipient);
                     wssReq.getElementsToEncrypt().addAll(selectedElements);
                     wssReq.setEncryptionAlgorithm(responseWssConfidentiality.getXEncAlgorithm());
                     if (clientCert != null) {
@@ -236,10 +232,6 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     return AssertionStatus.NONE;
                 } catch (SAXException e) {
                     String msg = "cannot get an xml document from the response to encrypt";
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
-                    return AssertionStatus.SERVER_ERROR;
-                } catch (CertificateException e) {
-                    String msg = "cannot set the recipient cert.";
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
                     return AssertionStatus.SERVER_ERROR;
                 }
