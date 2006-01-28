@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.util.Iterator;
@@ -67,6 +68,7 @@ public class HideUnsupportedClientAssertions implements Filter {
         HttpBasic.class,
         HttpDigest.class,
         WssBasic.class,
+        EncryptedUsernameTokenAssertion.class,
         RequestWssX509Cert.class,
         SecureConversation.class,
         RequestWssIntegrity.class,

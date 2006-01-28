@@ -57,6 +57,7 @@ public class AccessControlFolderNode extends AbstractTreeNode {
         insert(new HttpDigestAuthNode(), index++);
         insert(new SslTransportNode(true), index++);
         insert(new WsTokenBasicAuthNode(), index++);
+        insert(new EncryptedUsernameTokenPaletteNode(), index++);
         insert(new RequestWssX509Node(), index++);
         insert(new SecureConversationNode(), index++);
         insert(new RequestWssSamlNode(), index++);

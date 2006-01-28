@@ -138,7 +138,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     if (secConvTok.isPossessionProved()) {
                         secConvContext = secConvTok;
                     }
-                } else if (token instanceof EncryptedKey && wssResult.isWsse11Seen()) {
+                } else if (token instanceof EncryptedKey) {
                     if (encryptedKey != null) {
                         auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
                         return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work

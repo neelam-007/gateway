@@ -1401,7 +1401,7 @@ public class WssProcessorImpl implements WssProcessor {
             Element timeElement = cntx.timestamp.asElement();
             SigningSecurityToken[] signingTokens = processorResult.getSigningTokens(timeElement);
             if (signingTokens.length == 1) {
-                cntx.timestamp.addSigningSecurityToken(signingTokens[0]);
+                cntx.timestamp.setSigned();
             } else if (signingTokens.length > 1) {
                 throw new IllegalStateException("More then one signing token over Timestamp detected!");
             }
@@ -1521,7 +1521,7 @@ public class WssProcessorImpl implements WssProcessor {
     private static class TimestampImpl extends ParsedElementImpl implements WssTimestamp {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
-        private List signingSecurityTokens = new ArrayList();
+        private boolean signed = false;
 
         public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
             super(timestampElement);
@@ -1538,15 +1538,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public boolean isSigned() {
-            return !signingSecurityTokens.isEmpty();
+            return signed;
         }
 
-        public XmlSecurityToken[] getSigningSecurityTokens() {
-            return (XmlSecurityToken[])signingSecurityTokens.toArray(new XmlSecurityToken[0]);
-        }
-
-        private void addSigningSecurityToken(XmlSecurityToken token) {
-            signingSecurityTokens.add(token);
+        void setSigned() {
+            signed = true;
         }
     }
 
@@ -1605,7 +1601,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public SecurityTokenType getType() {
-            return SecurityTokenType.WSSC_CONTEXT;
+            return SecurityTokenType.WSS_ENCRYPTEDKEY;
         }
 
         public String getElementId() {

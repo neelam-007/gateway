@@ -435,6 +435,29 @@ public class DecorationRequirements {
         this.includeKerberosTicketId = includeKerberosTicketId;
     }
 
+    /**
+     * Check if any included UsernameToken is to be signed and encrypted.
+     * @see #setEncryptUsernameToken(boolean)
+     * @return true if any UsernameToken included in the decorated message should be signed and encrypted.
+     */
+    public boolean isEncryptUsernameToken() {
+        return encryptUsernameToken;
+    }
+
+    /**
+     * Encrypt and sign any UsernameToken that is inserted into the message.  The UsernameToken will be moved
+     * after the reference list so that it will be decrypted before being used by the recipient.  Encryption
+     * will use the best-preference encryption source configured for this DecorationRequirements; at minimum,
+     * a recipient certificate will enable a new EncryptedKey to be created.  The signature will use the
+     * best-preference siganture source; at minimum, the EncryptedKey created for encryption can be reused
+     * for signing.
+     *
+     * @param encryptUsernameToken  if true, sign and encrypt any UsernameToken that is included in the message.
+     */
+    public void setEncryptUsernameToken(boolean encryptUsernameToken) {
+        this.encryptUsernameToken = encryptUsernameToken;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -462,4 +485,5 @@ public class DecorationRequirements {
     private boolean includeKerberosTicket = false;
     private String kerberosTicketId = null;
     private boolean includeKerberosTicketId = false;
+    private boolean encryptUsernameToken = false;
 }

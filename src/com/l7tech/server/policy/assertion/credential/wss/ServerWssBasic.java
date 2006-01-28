@@ -14,6 +14,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -57,9 +58,17 @@ public class ServerWssBasic implements ServerAssertion {
             context.setRequestPolicyViolated();
             return AssertionStatus.AUTH_REQUIRED;
         }
+
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
             if (tokens[i] instanceof UsernameToken) {
+                UsernameToken ut = (UsernameToken)tokens[i];
+
+                String user = ut.getUsername();
+                char[] pass = ut.getPassword();
+                if (pass == null) pass = new char[0];
+                LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
+                context.setCredentials(creds);
                 return AssertionStatus.NONE;
             }
         }

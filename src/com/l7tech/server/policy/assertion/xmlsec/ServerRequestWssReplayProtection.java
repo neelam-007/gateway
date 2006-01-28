@@ -100,13 +100,12 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         if (created > now)
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CLOCK_SKEW, new String[] {String.valueOf(created)});
 
-        if (MAXIMUM_MESSAGE_AGE_MILLIS > 0 &&
-                created <= (now - MAXIMUM_MESSAGE_AGE_MILLIS)) {
+        if (created <= (now - MAXIMUM_MESSAGE_AGE_MILLIS)) {
             // TODO we need a better exception for this than IOException
             throw new IOException("Request timestamp contained Created older than the maximum message age hard cap");
         }
 
-        XmlSecurityToken[] signingTokens = timestamp.getSigningSecurityTokens();
+        XmlSecurityToken[] signingTokens = wssResults.getSigningTokens(timestamp.asElement());
 
         for (int i = 0; i < signingTokens.length; i++) {
             XmlSecurityToken signingToken = signingTokens[i];

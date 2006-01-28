@@ -10,6 +10,6 @@ package com.l7tech.common.security.token;
 /**
  * Represents a WS-Security EncryptedKey.
  */
-public interface EncryptedKey extends SecretKeyToken {
+public interface EncryptedKey extends SecretKeyToken, SigningSecurityToken {
     String getEncryptedKeySHA1();
 }

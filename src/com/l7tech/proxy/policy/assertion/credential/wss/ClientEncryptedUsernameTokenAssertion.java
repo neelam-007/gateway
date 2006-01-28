@@ -12,12 +12,14 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,11 +36,15 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
-            throws OperationCanceledException, IOException, SAXException, PolicyAssertionException {
+            throws OperationCanceledException, IOException, SAXException,
+            PolicyAssertionException, ServerCertificateUntrustedException
+    {
         if (context.getSsg().isFederatedGateway()) {
             log.log(Level.INFO, "Plaintext passwords not permitted with Federated Gateway.  Assertion therefore fails.");
             return AssertionStatus.FAILED;
         }
+
+        final X509Certificate serverCert = context.getSsg().getServerCertificateAlways();
 
         // get the username and passwords
         final String username = context.getUsername();
@@ -59,20 +65,14 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
                 }
 
                 wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));
+                wssReqs.setRecipientCertificate(serverCert);
+                wssReqs.setEncryptUsernameToken(true);
 
-                // TODO implement WSS decoration config for this scenario
-                // TODO implement WSS decoration config for this scenario
-                // TODO implement WSS decoration config for this scenario
-                // TODO implement WSS decoration config for this scenario
-                // TODO implement WSS decoration config for this scenario
-                throw new PolicyAssertionException("Not yet implemented");
-
-                //return AssertionStatus.NONE;
+                return AssertionStatus.NONE;
             }
         });
 
-        throw new PolicyAssertionException("Not yet implemented");
-        //return AssertionStatus.NONE;
+        return AssertionStatus.NONE;
     }
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) {

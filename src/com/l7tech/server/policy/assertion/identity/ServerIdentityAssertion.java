@@ -63,58 +63,58 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) {
         LoginCredentials pc = context.getCredentials();
+
         if (pc == null && context.getAuthenticatedUser() == null) {
             // No credentials have been found yet
             if (context.isAuthenticated()) {
                 auditor.logAndAudit(AssertionMessages.AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND);
                 throw new IllegalStateException("Request is authenticated but request has no LoginCredentials!");
-            } else {
-                // Authentication is required for any IdentityAssertion
-                context.addResult(new AssertionResult(identityAssertion, AssertionStatus.AUTH_REQUIRED));
-                // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
-                context.setAuthenticationMissing();
-                auditor.logAndAudit(AssertionMessages.CREDENTIALS_NOT_FOUND);
-                return AssertionStatus.AUTH_REQUIRED;
             }
-        } else {
-            // A CredentialFinder has already run.
 
-            if (context.isAuthenticated() && context.getAuthenticatedUser() != null) {
-                User user = context.getAuthenticatedUser();
-                // The user was authenticated by a previous IdentityAssertion.
-                auditor.logAndAudit(AssertionMessages.ALREADY_AUTHENTICATED);
-                return checkUser(user, context);
-            } else {
-                if (identityAssertion.getIdentityProviderOid() == Entity.DEFAULT_OID) {
-                    auditor.logAndAudit(AssertionMessages.ID_PROVIDER_ID_NOT_SET);
-                    throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
-                }
+            // Authentication is required for any IdentityAssertion
+            context.addResult(new AssertionResult(identityAssertion, AssertionStatus.AUTH_REQUIRED));
+            // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
+            context.setAuthenticationMissing();
+            auditor.logAndAudit(AssertionMessages.CREDENTIALS_NOT_FOUND);
+            return AssertionStatus.AUTH_REQUIRED;
+        }
 
-                try {
-                    IdentityProvider provider = getIdentityProvider(context);
-                    return validateCredentials(provider, pc, context);
-                } catch (InvalidClientCertificateException icce) {
-                    auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
-                    // set some response header so that the CP is made aware of this situation
-                    context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
-                      SecureSpanConstants.CERT_INVALID);
-                    return authFailed(context, pc, icce);
-                } catch (MissingCredentialsException mce) {
-                    context.setAuthenticationMissing();
-                    return authFailed(context, pc, mce);
-                } catch (AuthenticationException ae) {
-                    return authFailed(context, pc, ae);
-                } catch (FindException fe) {
-                    auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], fe);
-                    // fla fix, allow the policy to continue in case the credentials be valid for
-                    // another id assertion down the road (fix for bug 374)
-                    // throw new IdentityAssertionException( err, fe );
-                    return AssertionStatus.AUTH_FAILED;
-                } catch (IOException e) {
-                    auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] {pc.getLogin()}, e);
-                    return AssertionStatus.AUTH_FAILED;
-                }
-            }
+        // A CredentialFinder has already run.
+        if (context.isAuthenticated() && context.getAuthenticatedUser() != null) {
+            User user = context.getAuthenticatedUser();
+            // The user was authenticated by a previous IdentityAssertion.
+            auditor.logAndAudit(AssertionMessages.ALREADY_AUTHENTICATED);
+            return checkUser(user, context);
+        }
+
+        if (identityAssertion.getIdentityProviderOid() == Entity.DEFAULT_OID) {
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_ID_NOT_SET);
+            throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
+        }
+
+        try {
+            IdentityProvider provider = getIdentityProvider(context);
+            return validateCredentials(provider, pc, context);
+        } catch (InvalidClientCertificateException icce) {
+            auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
+            // set some response header so that the CP is made aware of this situation
+            context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                                                                  SecureSpanConstants.CERT_INVALID);
+            return authFailed(context, pc, icce);
+        } catch (MissingCredentialsException mce) {
+            context.setAuthenticationMissing();
+            return authFailed(context, pc, mce);
+        } catch (AuthenticationException ae) {
+            return authFailed(context, pc, ae);
+        } catch (FindException fe) {
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], fe);
+            // fla fix, allow the policy to continue in case the credentials be valid for
+            // another id assertion down the road (fix for bug 374)
+            // throw new IdentityAssertionException( err, fe );
+            return AssertionStatus.AUTH_FAILED;
+        } catch (IOException e) {
+            auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] {pc.getLogin()}, e);
+            return AssertionStatus.AUTH_FAILED;
         }
     }
 

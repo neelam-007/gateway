@@ -11,14 +11,14 @@ import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 /**
  * @author mike
  */
-public class EncryptedUsernameTokenAssertion extends WssCredentialSourceAssertion implements SecurityHeaderAddressable {
+public class EncryptedUsernameTokenAssertion extends WssBasic implements SecurityHeaderAddressable {
+    // This override looks useless, but it's here because WspWriter doesn't find inherited methods
     public XmlSecurityRecipientContext getRecipientContext() {
-        return recipientContext;
+        return super.getRecipientContext();
     }
 
+    // This override looks useless, but it's here because WspWriter doesn't find inherited methods
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
-        this.recipientContext = recipientContext;
+        super.setRecipientContext(recipientContext);
     }
-
-    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 }

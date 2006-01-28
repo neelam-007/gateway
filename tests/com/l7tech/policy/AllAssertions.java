@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -103,6 +104,7 @@ public class AllAssertions {
         new WsTrustCredentialExchange(),
         new WsFederationPassiveTokenExchange(),
         new WsFederationPassiveTokenRequest(),
+        new EncryptedUsernameTokenAssertion(),
         CUSTOM_ASSERTION_HOLDER,
         new Regex(),
         new UnknownAssertion(),
@@ -163,12 +165,14 @@ public class AllAssertions {
         new SqlAttackAssertion(),
         new RequestSizeLimit(),
         new RequestWssKerberos(),
+        new EncryptedUsernameTokenAssertion(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
+        new EncryptedUsernameTokenAssertion(),            
         new RequestWssX509Cert(),
         new SecureConversation(),
         new RequestWssSaml(),

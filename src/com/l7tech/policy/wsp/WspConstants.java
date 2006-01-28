@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
@@ -184,6 +185,9 @@ public class WspConstants {
         new IntegrityMapping(new RequestWssIntegrity(), "RequestWssIntegrity"), // thaw pre32 form
         new ConfidentialityMapping(new RequestWssConfidentiality(), "Confidentiality"), // freeze RequestWssConfidentiality as wsse:Confidentiality or pre32 form; thaw wsse:Confidentiality
         new ConfidentialityMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"), // thaw pre32 form
+
+        // Encrypted username token will use our proprietary vocabulary since it has special semantics
+        new AssertionMapping(new EncryptedUsernameTokenAssertion(), "EncryptedUsernameToken"),
 
         // Leaf assertions
         new AssertionMapping(new HttpBasic(), "HttpBasic"),

@@ -12,6 +12,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.UsernameTokenImpl;
+import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -101,6 +102,8 @@ public class WssDecoratorTest extends TestCase {
         }
     }
 
+    // TODO: replace most of the members in this class with a single DecorationRequirements field,
+    //       rather than having to maintain 2 separate bits of code that translate TestDocument into DecorationRequirements                                      
     public static class TestDocument {
         public Context c;
         public Element senderSamlAssertion; // may be used instead of senderCert
@@ -110,14 +113,16 @@ public class WssDecoratorTest extends TestCase {
         public PrivateKey recipientKey;
         public boolean signTimestamp;
         public SecretKey secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
-        public Element[] elementsToEncrypt;
-        public Element[] elementsToSign;
+        public Element[] elementsToEncrypt = new Element[0];
+        public Element[] elementsToSign = new Element[0];
         public boolean signSamlToken = false; // if true, SAML token should be signed
         public boolean suppressBst = false;
         public String encryptionAlgorithm = XencAlgorithm.AES_128_CBC.getXEncName(); //default
         public String encryptedKeySha1 = null;
         public String signatureConfirmation = null;
         public String actor = null;
+        public boolean encryptUsernameToken = false;
+        public UsernameToken usernameToken = null;
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
@@ -137,7 +142,7 @@ public class WssDecoratorTest extends TestCase {
                             boolean signSamlToken,
                             boolean suppressBst) {
             this(c, senderSamlAssertion, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
-                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst, null, null, null);
+                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst, false, null, null, null, null);
         }
 
         public TestDocument(Context c,
@@ -150,9 +155,11 @@ public class WssDecoratorTest extends TestCase {
                             SecretKey secureConversationKey,
                             boolean signSamlToken,
                             boolean suppressBst,
+                            boolean encryptUsernameToken,
                             String encryptedKeySha1,
                             String signatureConfirmation,
-                            String actor)
+                            String actor,
+                            UsernameToken senderUsernameToken)
         {
             this.c = c;
             this.senderSamlAssertion = senderSamlAssertion;
@@ -161,17 +168,20 @@ public class WssDecoratorTest extends TestCase {
             this.recipientCert = recipientCert;
             this.recipientKey = recipientKey;
             this.signTimestamp = signTimestamp;
-            this.elementsToEncrypt = elementsToEncrypt;
-            if (this.encryptionAlgorithm != null) {
+            if (elementsToEncrypt != null)
+                this.elementsToEncrypt = elementsToEncrypt;
+            if (encryptionAlgorithm != null)
                 this.encryptionAlgorithm = encryptionAlgorithm;
-            }
-            this.elementsToSign = elementsToSign;
+            if (elementsToSign != null)
+                this.elementsToSign = elementsToSign;
             this.secureConversationKey = secureConversationKey;
             this.signSamlToken = signSamlToken;
             this.suppressBst = suppressBst;
             this.encryptedKeySha1 = encryptedKeySha1;
             this.signatureConfirmation = signatureConfirmation;
             this.actor = actor;
+            this.encryptUsernameToken = encryptUsernameToken;
+            this.usernameToken = senderUsernameToken;
         }
     }
 
@@ -192,9 +202,10 @@ public class WssDecoratorTest extends TestCase {
         reqs.setRecipientCertificate(d.recipientCert);
         reqs.setSenderMessageSigningPrivateKey(d.senderKey);
         reqs.setSignTimestamp();
-        reqs.setUsernameTokenCredentials(null);
+        reqs.setUsernameTokenCredentials(d.usernameToken);
         reqs.setSuppressBst(d.suppressBst);
         reqs.setSignatureConfirmation(d.signatureConfirmation);
+        reqs.setEncryptUsernameToken(d.encryptUsernameToken);
         if (d.actor != null)
             reqs.setSecurityHeaderActor(d.actor.length() < 1 ? null : d.actor);
         if (d.secureConversationKey != null) {
@@ -704,6 +715,32 @@ public class WssDecoratorTest extends TestCase {
                                 true);
     }
 
+    public void testEncryptedUsernameToken() throws Exception {
+        runTest(getEncryptedUsernameTokenTestDocument());
+    }
+
+    public TestDocument getEncryptedUsernameTokenTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                null,
+                                null,
+                                null,
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                null,
+                                null,
+                                new Element[]{c.body},
+                                null,
+                                false,
+                                true,
+                                true,
+                                null,
+                                null,
+                                null,
+                                new UsernameTokenImpl("testuser", "password".toCharArray()));
+    }
+
     public void testWssInteropResponse() throws Exception {
         runTest(getWssInteropResponseTestDocument());
     }
@@ -734,9 +771,9 @@ public class WssDecoratorTest extends TestCase {
                                  new AesKey(keyBytes, 256),
                                  false,
                                  false,
-                                 "abc11EncryptedKeySHA1Value11blahblahblah11==",
+                                 false, "abc11EncryptedKeySHA1Value11blahblahblah11==",
                                  "abc11SignatureConfirmationValue11blahblahblah11==",
-                                 ACTOR_NONE);
+                                 ACTOR_NONE, null);
 
         testDocument.encryptionAlgorithm = XencAlgorithm.AES_256_CBC.getXEncName(); 
 

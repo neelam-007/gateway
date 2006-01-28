@@ -83,6 +83,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Element securityHeader = createSecurityHeader(message, c,
                 dreq.getSecurityHeaderActor(), dreq.isSecurityHeaderReusable());
         Set signList = dreq.getElementsToSign();
+        Set cryptList = dreq.getElementsToEncrypt();
 
         Element timestamp = null;
         int timeoutMillis = dreq.getTimestampTimeoutMillis();
@@ -119,8 +120,20 @@ public class WssDecoratorImpl implements WssDecorator {
         if (relatesTo != null && !signList.isEmpty())
             signList.add(relatesTo);
 
-        if (dreq.getUsernameTokenCredentials() != null)
-            createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
+        Element addedUsernameTokenHolder = null;
+        if (dreq.getUsernameTokenCredentials() != null) {
+            Element usernameToken = createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
+            if (dreq.isEncryptUsernameToken()) {
+                addedUsernameTokenHolder = XmlUtil.createAndAppendElementNS(securityHeader,
+                                                                            "EncryptedUsernameToken",
+                                                                            usernameToken.getNamespaceURI(),
+                                                                            usernameToken.getPrefix());
+                securityHeader.removeChild(usernameToken);
+                addedUsernameTokenHolder.appendChild(usernameToken);
+                signList.add(usernameToken);
+                cryptList.add(addedUsernameTokenHolder);
+            }
+        }
 
         byte[] senderSki = null;
         Element x509Bst = null;
@@ -255,14 +268,15 @@ public class WssDecoratorImpl implements WssDecorator {
                 xencDesiredNextSibling = signature;
         }
 
-        if (dreq.getElementsToEncrypt().size() > 0) {
+        if (cryptList.size() > 0) {
             if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
                 // Encrypt using the EncryptedKey we already added
                 addEncryptedReferenceList(c,
+                                          addedEncKey,
                                           securityHeader,
                                           addedEncKeyXmlEncKey,
-                                          (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
-                                          xencDesiredNextSibling,
+                                          (Element[])(cryptList.toArray(new Element[0])),
+                                          null,
                                           addedEncKey,
                                           null,
                                           null);
@@ -275,13 +289,14 @@ public class WssDecoratorImpl implements WssDecorator {
                 String keyInfoValueTypeURI = SoapUtil.VALUETYPE_DERIVEDKEY;
                 XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
                 addEncryptedReferenceList(c,
-                  securityHeader,
-                  encKey,
-                  (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
-                  xencDesiredNextSibling,
-                  keyInfoReferenceTarget,
-                  null,
-                  keyInfoValueTypeURI);
+                                          securityHeader,
+                                          securityHeader,
+                                          encKey,
+                                          (Element[])(cryptList.toArray(new Element[0])),
+                                          xencDesiredNextSibling,
+                                          keyInfoReferenceTarget,
+                                          null,
+                                          keyInfoValueTypeURI);
             } else if (dreq.getEncryptedKeySha1() != null &&
                        dreq.getEncryptedKey() != null)
             {
@@ -296,8 +311,9 @@ public class WssDecoratorImpl implements WssDecorator {
                 encKey = new XencUtil.XmlEncKey(encKey.getAlgorithm(), key);
                 addEncryptedReferenceList(c,
                                           securityHeader,
+                                          securityHeader,
                                           encKey,
-                                          (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
+                                          (Element[])(cryptList.toArray(new Element[0])),
                                           xencDesiredNextSibling,
                                           null,
                                           keyInfoKeyIdValue,
@@ -308,13 +324,22 @@ public class WssDecoratorImpl implements WssDecorator {
 
                 XencUtil.XmlEncKey encKey = generate(encryptionAlgorithm, c);
                 addEncryptedKey(c,
-                  securityHeader,
-                  dreq.getRecipientCertificate(),
-                  (Element[])(dreq.getElementsToEncrypt().toArray(new Element[0])),
-                  encKey, xencDesiredNextSibling);
+                                securityHeader,
+                                dreq.getRecipientCertificate(),
+                                (Element[])(cryptList.toArray(new Element[0])),
+                                encKey, xencDesiredNextSibling);
             } else
                 throw new IllegalArgumentException("Encryption is requested, but there is no recipientCertificate or SecureConversation session.");
 
+            // Transform any encrypted username token into the correct form and position
+            if (addedUsernameTokenHolder != null) {
+                Element encdata = XmlUtil.findFirstChildElement(addedUsernameTokenHolder);
+                if (encdata == null || !"EncryptedData".equals(encdata.getLocalName()))
+                    throw new DecoratorException("EncryptedUsernameToken does not contain EncryptedData"); // can't happen
+                addedUsernameTokenHolder.removeChild(encdata);
+                securityHeader.removeChild(addedUsernameTokenHolder);
+                securityHeader.insertBefore(encdata, xencDesiredNextSibling);
+            }
         }
 
         // Decoration is done.
@@ -632,6 +657,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * (probably the Signature).
      */
     private Element addEncryptedReferenceList(Context c,
+                                              Element newParent,
                                               Element securityHeader,
                                               XencUtil.XmlEncKey encKey,
                                               Element[] elementsToEncrypt,
@@ -645,7 +671,7 @@ public class WssDecoratorImpl implements WssDecorator {
         // Put the ReferenceList in the right place
         Element referenceList;
         if (desiredNextSibling == null) {
-            referenceList = XmlUtil.createAndAppendElementNS(securityHeader,
+            referenceList = XmlUtil.createAndAppendElementNS(newParent,
                 SoapUtil.REFLIST_EL_NAME,
                 xencNs, "xenc");
         } else {

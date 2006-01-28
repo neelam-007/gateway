@@ -5,7 +5,6 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.util.DateTranslator;
 import org.w3c.dom.Element;
 
@@ -48,10 +47,6 @@ public class WssTimestampWrapper implements WssTimestamp {
 
     public boolean isSigned() {
         return delegate.isSigned();
-    }
-
-    public XmlSecurityToken[] getSigningSecurityTokens() {
-        return delegate.getSigningSecurityTokens();
     }
 
     public Element asElement() {

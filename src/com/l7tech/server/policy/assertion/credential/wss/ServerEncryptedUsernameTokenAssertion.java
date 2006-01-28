@@ -8,24 +8,30 @@ package com.l7tech.server.policy.assertion.credential.wss;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.token.*;
+import com.l7tech.common.security.token.EncryptedKey;
+import com.l7tech.common.security.token.SigningSecurityToken;
+import com.l7tech.common.security.token.UsernameToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * @author alex
- * @version $Revision$
+ * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
+ * signed the timestamp.
  */
 public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
     final private EncryptedUsernameTokenAssertion data;
@@ -36,7 +42,8 @@ public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
         this.auditor = new Auditor(this, springContext, logger);
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
+    {
         if (!data.getRecipientContext().localRecipient()) {
             auditor.logAndAudit(AssertionMessages.WSS_BASIC_FOR_ANOTHER_RECIPIENT);
             return AssertionStatus.NONE;
@@ -57,20 +64,51 @@ public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
             context.setRequestPolicyViolated();
             return AssertionStatus.AUTH_REQUIRED;
         }
+
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
             if (tokens[i] instanceof UsernameToken) {
-                if (isTokenEncrypted(wssResults, tokens[i])) {
-                    SigningSecurityToken sigtok = getSigningSecurityToken(wssResults, tokens[i]);
-                    if (sigtok != null) {
-                        if (sigtok instanceof EncryptedKey) {
-                            EncryptedKey encryptedKey = (EncryptedKey)sigtok;
-                            String encryptedKeySha1 = encryptedKey.getEncryptedKeySHA1();
-                            context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(data.getRecipientContext());
-                            return AssertionStatus.NONE;
-                        }
-                    }
+                UsernameToken utok = (UsernameToken)tokens[i];
+
+                if (!ProcessorResultUtil.nodeIsPresent(utok.asElement(), wssResults.getElementsThatWereEncrypted())) {
+                    logger.fine("Ignoring UsernameToken that was not encrypted");
+                    continue;
                 }
+
+                SigningSecurityToken[] signingTokens = wssResults.getSigningTokens(utok.asElement());
+                if (signingTokens == null || signingTokens.length < 1) {
+                    logger.fine("Ignoring UsernameToken that was not signed");
+                    continue;
+                }
+
+                EncryptedKey signingToken = null;
+                for (int j = 0; j < signingTokens.length; j++) {
+                    SigningSecurityToken stok = signingTokens[j];
+                    if (!(stok instanceof EncryptedKey)) {
+                        logger.fine("Ignoring UsernameToken signging token that was not an EncryptedKey");
+                        continue;
+                    }
+                    signingToken = (EncryptedKey)stok;
+                }
+
+                if (signingToken == null) {
+                    logger.fine("Ignoring UsernameToken that was not signed by an EncryptedKey");
+                    continue;
+                }
+
+                // We're happy with this username token.  Proceed.
+                String user = utok.getUsername();
+                char[] pass = utok.getPassword();
+                if (pass == null) pass = new char[0];
+                LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
+                context.setCredentials(creds);
+
+                // Configure the eventual response to reuse this EncryptedKey
+                String encryptedKeySha1 = signingToken.getEncryptedKeySHA1();
+                DecorationRequirements respReq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(data.getRecipientContext());
+                respReq.setEncryptedKeySha1(encryptedKeySha1);
+                respReq.setEncryptedKey(signingToken.getSecretKey());
+                return AssertionStatus.NONE;
             }
         }
         auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS);
@@ -79,30 +117,6 @@ public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
         context.setRequestPolicyViolated();
         return AssertionStatus.AUTH_REQUIRED;
     }
-
-    private boolean isTokenEncrypted(ProcessorResult wssResults, XmlSecurityToken token) {
-        EncryptedElement[] enc = wssResults.getElementsThatWereEncrypted();
-        Element tokel = token.asElement();
-        for (int i = 0; i < enc.length; i++) {
-            EncryptedElement encryptedElement = enc[i];
-            if (encryptedElement.asElement() == tokel)
-                return true;
-        }
-        return false;
-    }
-
-    /** @return the signging security token for this token, or null if the token was not signed. */
-    private SigningSecurityToken getSigningSecurityToken(ProcessorResult wssResults, XmlSecurityToken token) {
-        SignedElement[] sig = wssResults.getElementsThatWereSigned();
-        Element tokel = token.asElement();
-        for (int i = 0; i < sig.length; i++) {
-            SignedElement signedElement = sig[i];
-            if (signedElement.asElement() == tokel)
-                return signedElement.getSigningSecurityToken();
-        }
-        return null;
-    }
-
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 
@@ -76,6 +77,7 @@ public class CredentialsLocation {
         credentialsLocationMap.put("SSL or TLS with Client Certificate", new SslAssertion(true));
         if (soap) {
             credentialsLocationMap.put("WS Token Basic", new WssBasic());
+            credentialsLocationMap.put("Encrypted UsernameToken", new EncryptedUsernameTokenAssertion());
             credentialsLocationMap.put("WSS Signature", new RequestWssX509Cert());
             credentialsLocationMap.put("WS Secure Conversation", new SecureConversation());
         }

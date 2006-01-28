@@ -225,6 +225,13 @@ public class WssInteropTestMessage extends TestCase {
         doSendTestMessage("http://locutus.l7tech.com:8080/xml/ping", "alice", "password"); // Layer 7
     }
 
+    public void printTestMessage() throws Exception {
+        String url = "http://locutus.l7tech.com:8080/xml/ping";
+        String username = "alice";
+        String password = "password";
+        MsgInfo msgInfo = makeTestMessage(username, password);
+    }
+
     private void doSendTestMessage(String url, String username, String password) throws Exception {
         MsgInfo msgInfo = makeTestMessage(username, password);
         Document d = msgInfo.doc;

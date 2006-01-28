@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
@@ -42,6 +43,7 @@ class PathValidator {
     private static final Class ASSERTION_XPATHCREDENTIALS = XpathCredentialSource.class;
     private static final Class ASSERTION_SAMLASSERTION = RequestWssSaml.class;
     private static final Class ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
+    private static final Class ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
 
 
     private static Map policyParseCache = Collections.synchronizedMap(new WeakHashMap());
@@ -280,14 +282,16 @@ class PathValidator {
             // the server needs to encrypt a symmetric key for the recipient
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
-            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a)) {
+            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
+                    !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN))
+            {
                 String actor = assertionToActor(a);
                 String msg;
                 if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
                     msg = "This assertion should be preceeded by an WSS Signature assertion, " +
-                          "a Secure Conversation assertion, or a SAML Security assertion.";
+                          "a Secure Conversation assertion, or a SAML Security assertion, or an Encrypted UsernameToken assertion.";
                 } else {
-                    msg = "This assertion should be preceeded by an WSS Signature or a " +
+                    msg = "This assertion should be preceeded by an WSS Signature assertion, an Encrypted UsernameToken assertion, or a " +
                           "SAML Security assertion (for actor " + actor + ").";
                 }
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
@@ -314,7 +318,8 @@ class PathValidator {
                   "after the routing assertion.", null));
             }
         } else if (a instanceof RequestWssReplayProtection) {
-            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a)) {
+            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
+                    !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion, " +
                   "a Secure Conversation assertion, or a SAML Security assertion.", null));
