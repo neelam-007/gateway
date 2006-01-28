@@ -13,7 +13,7 @@ public class KerberosPaletteNode  extends AbstractLeafTreeNode {
      * construct the <CODE>HttpDigestAuthNode</CODE> instance.
      */
     public KerberosPaletteNode() {
-        super("Kerberos", "com/l7tech/console/resources/authentication.gif");
+        super("WSS Kerberos", "com/l7tech/console/resources/authentication.gif");
     }
 
     /**

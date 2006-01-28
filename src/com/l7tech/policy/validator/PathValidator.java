@@ -144,24 +144,25 @@ class PathValidator {
             } else {
                 // if the credential source is not HTTP Basic
                 if (!haveSeen(ASSERTION_HTTPBASIC)){
-                    result.addError(new PolicyValidatorResult.
-                      Error(a, assertionPath, "Only HTTP Basic Authentication can be used as a authentication scheme" +
-                      " when a policy involes Custom Assertion.", null));
+                    result.addWarning(new PolicyValidatorResult.
+                      Warning(a, assertionPath, "HTTP Basic Authentication is usually used as the authentication " +
+                        "scheme when a policy contains a Custom Assertion.", null));
                 }
             }
 
             if (seenAccessControl && !haveSeen(ASSERTION_CUSTOM)) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertion is allowed when " +
-                  "a Custom Assertion is used.", null));
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertion is " +
+                  "allowed when a Custom Assertion is used.", null));
             }
 
             if (haveSeen(ASSERTION_CUSTOM)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have a Custom Assertion " +
-                  "in this path.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have a Custom " +
+                  "Assertion in this path.", null));
             }
 
             if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion is after route.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion is after " +
+                  "route.", null));
             }
             seenAccessControl = true;
         }
@@ -246,13 +247,6 @@ class PathValidator {
         //
         if (a instanceof RequestWssSaml)
             setSeenSamlStatement(a, true);
-
-        // Custom Assertion can only be used with HTTP Basic
-        if (haveSeen(ASSERTION_CUSTOM) && !haveSeen(ASSERTION_HTTPBASIC)) {
-            result.addError(new PolicyValidatorResult.
-              Error(a, assertionPath, "Only HTTP Basic Authentication can be used as a " +
-              "authentication scheme when the policy involves a Custom Assertion.", null));
-        }
 
         setSeenCredentials(a, true);
         setSeenCredentialsSinceModified(a, true);
@@ -527,7 +521,8 @@ class PathValidator {
           a instanceof RequestWssConfidentiality || a instanceof RequestWssIntegrity ||
           a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
           a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
-          a instanceof RequestWssSaml || a instanceof SwAAssertion)
+          a instanceof RequestWssSaml || a instanceof SwAAssertion ||
+          a instanceof RequestWssKerberos)
             return true;
         return false;
     }

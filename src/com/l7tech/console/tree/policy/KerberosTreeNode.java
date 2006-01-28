@@ -16,7 +16,7 @@ public class KerberosTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require Kerberos Authentication";
+        return "Require WSS Kerberos Token";
     }
 
     /**
