@@ -338,7 +338,9 @@ public class DecorationRequirements {
      */
     public boolean hasSignatureSource() {
         return senderSamlToken != null || secureConversationSession != null ||
-          (senderMessageSigningCertificate != null && senderMessageSigningPrivateKey != null);
+          (senderMessageSigningCertificate != null && senderMessageSigningPrivateKey != null) ||
+          (encryptUsernameToken && usernameTokenCredentials != null) ||
+          (encryptedKey != null && encryptedKeySha1 != null);
     }
 
     /**
