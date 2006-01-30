@@ -1,20 +1,16 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.identity;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import java.io.Serializable;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class UserBean implements User, Serializable {
     public String getUniqueIdentifier() {
@@ -76,9 +72,9 @@ public class UserBean implements User, Serializable {
      * @param hintIsClear true if you want to communicate that the password is in clear text
      */
     public void setPassword(String password, boolean hintIsClear) throws IllegalStateException {
-        if ( password != null && (hintIsClear || !isAlreadyEncoded(password))) {
+        if (password != null && (hintIsClear || !HexUtils.containsOnlyHex(password))) {
             if (_login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-            _password = encodePasswd(_login, password);
+            _password = HexUtils.encodePasswd(_login, password);
         }
         else _password = password;
     }
@@ -97,46 +93,6 @@ public class UserBean implements User, Serializable {
 
     public void setDepartment(String department) {
         _department = department;
-    }
-
-    public static boolean isAlreadyEncoded(String arg) {
-        if (arg == null || arg.length() != 32) return false;
-        String hexmembers = "0123456789abcdef";
-        for (int i = 0; i < arg.length(); i++) {
-            char toto = arg.charAt(i);
-            if (hexmembers.indexOf(toto) == -1) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static String encodePasswd( String a1 ) {
-        // MD5 IT
-        byte[] digest = HexUtils.getMd5().digest( a1.getBytes() );
-        // ENCODE IT
-        if (digest == null) return "";
-        char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-        if (digest.length != 16) return "";
-        char[] buffer = new char[32];
-
-        for (int i = 0; i < 16; i++) {
-            int low = (digest[i] & 0x0f);
-            int high = ((digest[i] & 0xf0) >> 4);
-            buffer[i*2] = hexadecimal[high];
-            buffer[i*2 + 1] = hexadecimal[low];
-        }
-        return new String(buffer);
-    }
-
-    public static String encodePasswd(String login, String passwd) {
-        String toEncode = login + ":" + HttpDigest.REALM + ":" + passwd;
-        return encodePasswd( toEncode );
-    }
-
-    public static String encodePasswd( String login, String passwd, String realm ) {
-        String toEncode = login + ":" + realm + ":" + passwd;
-        return encodePasswd( toEncode );
     }
 
     public String getName() {
@@ -170,9 +126,8 @@ public class UserBean implements User, Serializable {
         final UserBean userBean = (UserBean) o;
 
         if (_providerId != userBean._providerId) return false;
-        if (_login != null ? !_login.equals(userBean._login) : userBean._login != null) return false;
+        return !(_login != null ? !_login.equals(userBean._login) : userBean._login != null);
 
-        return true;
     }
 
     public int hashCode() {

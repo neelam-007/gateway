@@ -2,12 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -96,7 +96,7 @@ public class PasswordDialog extends JDialog {
      */
     private void initComponents() {
 
-        GridBagConstraints constraints = null;
+        GridBagConstraints constraints;
 
         Container contents = getContentPane();
         contents.setLayout(new GridBagLayout());
@@ -258,7 +258,6 @@ public class PasswordDialog extends JDialog {
                 changePassword(newPasswordField.getPassword());
             } else {
                 newPasswordField.requestFocus();
-                return;
             }
         }
     }
@@ -303,7 +302,7 @@ public class PasswordDialog extends JDialog {
         }
 
         try {
-            if (user.getPassword().equals(UserBean.encodePasswd(user.getLogin(), new String((new String(newPass)).getBytes(), SecureSpanConstants.PASSWORD_ENCODING), HttpDigest.REALM))) {
+            if (user.getPassword().equals(HexUtils.encodePasswd(user.getLogin(), new String((new String(newPass)).getBytes(), SecureSpanConstants.PASSWORD_ENCODING), HttpDigest.REALM))) {
                 JOptionPane.showMessageDialog(
                         this,
                         resources.getString("sameOldPassord.question"),
