@@ -68,6 +68,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     private SamlAssertion samlAssertion = null;
     private Calendar secureConversationExpiryDate = null;
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
+    private LoginCredentials requestCredentials = null;
 
     // Policy settings, filled in by traversing policy tree, and which can all be rolled back by reset()
     private static class PolicySettings {
@@ -91,15 +92,15 @@ public class PolicyApplicationContext extends ProcessingContext {
      * Create a new policy application context.  This holds information not specific to the request or response
      * message -- which is in the request and response -- but that will be needed by the policy application
      * assertions.
-     *  
+     *
      * @param ssg                the Ssg to which this request is destined.  Must not be null.
      * @param request   the request that is to be decorated.  Must not be null.
-     * @param response  a Message to hold the response (before a response is obtained, for 
-     *                  {@link com.l7tech.proxy.policy.assertion.ClientDecorator#decorateRequest}) 
-     *                  or which contains the 
+     * @param response  a Message to hold the response (before a response is obtained, for
+     *                  {@link com.l7tech.proxy.policy.assertion.ClientDecorator#decorateRequest})
+     *                  or which contains the
      *                  response (after the response is obtained, for
      *                  {@link com.l7tech.proxy.policy.assertion.ClientAssertion#unDecorateReply}).
-     *                  Must not be null. 
+     *                  Must not be null.
      * @param requestInterceptor a RequestInterceptor that wishes to be notified about policy updates, or null.
      * @param policyAttachmentKey the soapaction, namespace, and uri that apply to this request, or null
      * @param origUrl            the reconstructed local URL from which this request arrived, or null
@@ -133,6 +134,15 @@ public class PolicyApplicationContext extends ProcessingContext {
             throw new RuntimeException(e); // can't happen
         }
         return origUrl;
+    }
+
+    public void setRequestCredentials(LoginCredentials requestCredentials) {
+        setCredentials(requestCredentials);
+        this.requestCredentials = requestCredentials;
+    }
+
+    public LoginCredentials getRequestCredentials() {
+        return requestCredentials;
     }
 
     /**
@@ -241,8 +251,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                                                                 downstreamRecipientWSSRequirements.get(actor);
         if (output == null) {
             output = new DecorationRequirements();
-            X509Certificate cert = null;
-            cert = recipient.getX509Certificate();
+            X509Certificate cert = recipient.getX509Certificate();
             output.setRecipientCertificate(cert);
             output.setSecurityHeaderActor(actor);
             policySettings.downstreamRecipientWSSRequirements.put(actor, output);
@@ -359,8 +368,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     private PasswordAuthentication getPasswordAuthentication() {
         LoginCredentials lc = super.getCredentials();
         if (lc == null) return null;
-        PasswordAuthentication pw = new PasswordAuthentication(lc.getLogin(), lc.getCredentials());
-        return pw;
+        return new PasswordAuthentication(lc.getLogin(), lc.getCredentials());
     }
 
     /**
@@ -459,7 +467,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             BadCredentialsException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException
     {
         Ssg ssg = getSsg();
-        TokenServiceClient.SecureConversationSession s = null;
+        TokenServiceClient.SecureConversationSession s;
 
         // TODO support WS-SC with Http basic to fed SSG with third-party token service?
         if (ssg.isFederatedGateway())
@@ -609,7 +617,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @throws BadCredentialsException    if we need a certificate but our username and password is wrong
      * @throws PolicyRetryableException   if we should retry policy processing from the beginning
      */
-    public SamlAssertion getOrCreateSamlAssertion()
+    public SamlAssertion getOrCreateSamlHolderOfKeyAssertion()
       throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
       ClientCertificateException, BadCredentialsException, PolicyRetryableException
     {
@@ -673,7 +681,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         try {
             KerberosClient client = new KerberosClient();
             client.setCallbackHandler(new CallbackHandler(){
-                public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+                public void handle(Callback[] callbacks) {
                     PasswordAuthentication pa = ssg.getRuntime().getCredentials();
                     for (int i = 0; i < callbacks.length; i++) {
                         Callback callback = callbacks[i];

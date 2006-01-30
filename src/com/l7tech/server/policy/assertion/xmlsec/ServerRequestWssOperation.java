@@ -42,7 +42,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         if (data instanceof SecurityHeaderAddressable) {
             SecurityHeaderAddressable sha = (SecurityHeaderAddressable)data;
             if (!sha.getRecipientContext().localRecipient()) {
-                auditor.logAndAudit(AssertionMessages.NOTHING_TO_VALIDATE);
+                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
                 return AssertionStatus.NONE;
             }
         }
@@ -50,7 +50,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {
-                auditor.logAndAudit(AssertionMessages.CANNOT_VERIFY_WS_SECURITY);
+                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NONSOAP);
 
                 return AssertionStatus.BAD_REQUEST;
             }

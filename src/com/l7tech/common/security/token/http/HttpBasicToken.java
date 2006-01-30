@@ -1,8 +1,6 @@
 package com.l7tech.common.security.token.http;
 
-import com.l7tech.common.security.token.HasUsernameAndPassword;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.*;
 
 import java.net.PasswordAuthentication;
 

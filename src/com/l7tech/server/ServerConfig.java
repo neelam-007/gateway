@@ -263,6 +263,7 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     public Iterator getIpProtocolPorts() {
         if (_ipProtocolPorts == null) {
+            ArrayList ipps = new ArrayList();
             String[] sHttpPorts = getProperty(PARAM_HTTP_PORTS).trim().split(",\\s*");
             ArrayList httpPortsList = new ArrayList();
             for (int i = 0; i < sHttpPorts.length; i++) {
@@ -341,18 +342,19 @@ public class ServerConfig extends ApplicationObjectSupport {
                 InetAddress ip = (InetAddress)i.next();
 
                 for (j = 0; j < httpPorts.length; j++) {
-                    _ipProtocolPorts.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTP, httpPorts[j]));
+                    ipps.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTP, httpPorts[j]));
                     logger.info("Configured HTTP on " + print(ip) + ":" + httpPorts[j]);
                 }
 
                 for (j = 0; j < httpsPorts.length; j++) {
-                    _ipProtocolPorts.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTPS, httpsPorts[j]));
+                    ipps.add(new HttpTransport.IpProtocolPort(ip, TransportProtocol.HTTPS, httpsPorts[j]));
                     logger.info("Configured HTTPS on " + print(ip) + ":" + httpsPorts[j]);
                 }
             }
+            _ipProtocolPorts = Collections.unmodifiableList(ipps);
         }
 
-        return Collections.unmodifiableList(_ipProtocolPorts).iterator();
+        return _ipProtocolPorts.iterator();
     }
 
     public String getHostname() {
@@ -443,7 +445,7 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     private int _serverId;
     private final long _serverBootTime = System.currentTimeMillis();
-    private ArrayList _ipProtocolPorts = new ArrayList();
+    private List _ipProtocolPorts;
     private String _hostname;
     private Properties _properties;
 

@@ -69,7 +69,7 @@
                 <L7p:ThroughputQuota/>
                 <L7p:EmailAlert/>
                 <L7p:CommentAssertion/>
-                <L7p:EqualityAssertion/>
+                <L7p:ComparisonAssertion/>
                 <L7p:StealthFault/>
                 <L7p:SqlAttackProtection/>
                 <L7p:RequestSizeLimit/>

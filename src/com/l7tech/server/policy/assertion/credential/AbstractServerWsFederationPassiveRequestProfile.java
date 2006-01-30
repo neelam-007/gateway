@@ -70,7 +70,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
             certificateResolver = (CertificateResolver)springContext.getBean("certificateResolver");
         }
         catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
             throw new IllegalStateException("Error during initialization of SSL context", e);
         }
     }

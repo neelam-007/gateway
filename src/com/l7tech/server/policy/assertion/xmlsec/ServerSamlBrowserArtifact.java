@@ -1,50 +1,9 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-
-import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.cookie.CookiePolicy;
-import org.cyberneko.html.parsers.DOMParser;
-import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.html.HtmlConstants;
-import com.l7tech.common.http.CookieUtils;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpException;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.GenericHttpState;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.http.ParameterizedString;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.HexUtils;
@@ -59,6 +18,29 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
+import org.apache.commons.httpclient.Cookie;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.cookie.CookiePolicy;
+import org.cyberneko.html.parsers.DOMParser;
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Retrieves a SAML assertion from an identity provider website according to the Browser/Artifact profile.
@@ -92,7 +74,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
            sslContext.getClientSessionContext().setSessionTimeout(timeout);
            sslContext.init(null, new TrustManager[]{trustManager}, null);
        } catch (Exception e) {
-           auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
+           auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
            throw new RuntimeException(e);
        }
     }
@@ -129,7 +111,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
     /**
      *
      */
-    private AssertionStatus doCheckRequest(PolicyEnforcementContext context, boolean passCookies) throws IOException, PolicyAssertionException {
+    private AssertionStatus doCheckRequest(PolicyEnforcementContext context, boolean passCookies) throws PolicyAssertionException {
         AuthenticationProperties ap = assertion.getAuthenticationProperties();
         GenericHttpState httpState = new GenericHttpState();
         HttpState state = new HttpState();
@@ -225,7 +207,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
                 String location = loginResponseHeaders.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
                 if(location==null) throw new GenericHttpException("No such header: " + HttpConstants.HEADER_LOCATION);
                 URL redirectUrl = new URL(loginUrl, location);
-                context.setVariable("samlBrowserArtifact.redirectUrl", redirectUrl);
+                context.setVariable(SamlBrowserArtifact.VAR_REDIRECT_URL, redirectUrl);
                 String query = redirectUrl.getQuery();
                 if (query == null) {
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_REDIRECT_NO_QUERY);
@@ -246,7 +228,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT);
                 }
 
-                context.setVariable("samlBrowserArtifact.artifact", URLEncoder.encode(artifacts[0], HttpConstants.ENCODING_UTF8));
+                context.setVariable(SamlBrowserArtifact.VAR_ARTIFACT, URLEncoder.encode(artifacts[0], HttpConstants.ENCODING_UTF8));
 
                 if(ap.isEnableCookies()) {
                     // pass cookies back to the bridge/client

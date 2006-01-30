@@ -4,10 +4,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.SqlAttackAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -19,8 +16,9 @@ import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
+import java.io.StringReader;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -203,6 +201,26 @@ public class WspReaderTest extends TestCase {
         log.info("Policy tree constructed after reading 3.2 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
+    }
+
+    public void testEqualityRename() throws Exception {
+        String policy = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "                <L7p:EqualityAssertion>\n" +
+                "                    <L7p:Expression1 stringValue=\"foo\"/>\n" +
+                "                    <L7p:Expression2 stringValue=\"bar\"/>\n" +
+                "                </L7p:EqualityAssertion>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+        Document doc = XmlUtil.parse(new StringReader(policy), false);
+        AllAssertion ass = (AllAssertion)WspReader.parsePermissively(doc.getDocumentElement());
+        log.info("Policy tree constructed after reading 3.4 policy XML:\n" + ass);
+        assertTrue(ass != null);
+        ComparisonAssertion comp = (ComparisonAssertion)ass.getChildren().get(0);
+        assertEquals(comp.getExpression1(), "foo");
+        assertEquals(comp.getExpression2(), "bar");
+        assertEquals(comp.getOperator(), ComparisonAssertion.Operator.EQ);
+        assertFalse(comp.isNegate());
     }
 
     public void testUnknownElementGetsPreserved() throws Exception {

@@ -12,7 +12,8 @@ import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
-import com.l7tech.policy.ExpandVariables;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.UptimeMonitor;
@@ -36,6 +37,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Map;
 
 /**
  * Server side implementation of assertion that sends an SNMP trap.
@@ -51,6 +53,7 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
     private final OID messageOid;
     private final MessageDispatcher dispatcher;
     private final byte[] communityBytes;
+    private final String[] varsUsed;
 
     public ServerSnmpTrapAssertion(SnmpTrapAssertion ass, ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
@@ -80,6 +83,7 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
         trapOid = new OID(trapOi);
         messageOid = new OID(msgOi);
         communityBytes = ass.getCommunity().getBytes();
+        varsUsed = ass.getVariablesUsed();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -98,11 +102,12 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
         String body = ass.getErrorMessage();
         ExpandVariables vars = new ExpandVariables();
         try {
-            body = vars.process(body, context.getVariables());
-        } catch (ExpandVariables.VariableNotFoundException e) {
+            Map variables = context.getVariableMap(varsUsed);
+            body = vars.process(body, variables);
+        } catch (NoSuchVariableException e) {
             logger.log(Level.WARNING, "cannot expand all variables", e);
         }
-        OctetString errorMessage = null;
+        OctetString errorMessage;
         try {
             errorMessage = new OctetString(body.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException e) {

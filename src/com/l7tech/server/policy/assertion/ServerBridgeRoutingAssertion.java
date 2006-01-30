@@ -131,7 +131,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         URL url = null;
         try {
             if (messageProcessor == null || ssg == null) {
-                auditor.logAndAudit(AssertionMessages.BRIDGE_BAD_CONFIG);
+                auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_BAD_CONFIG);
                 return AssertionStatus.FAILED;
             }
 
@@ -160,7 +160,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
                     // TODO support SOAP-with-attachments with SSB api
                     if (context.getRequest().getMimeKnob().isMultipart())
-                        auditor.logAndAudit(AssertionMessages.BRIDGE_NO_ATTACHMENTS);
+                        auditor.logAndAudit(AssertionMessages.BRIDGEROUTE_NO_ATTACHMENTS);
 
                     final HttpRequestKnob httpRequestKnob = context.getRequest().getHttpRequestKnob();
 
@@ -169,7 +169,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                         try {
                             origUrl = new URL(httpRequestKnob.getRequestUrl());
                         } catch (MalformedURLException e) {
-                            auditor.logAndAudit(AssertionMessages.BAD_ORIGINAL_REQUEST_URL);
+                            auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_ORIGINAL_URL);
                         }
                     }
 
@@ -186,9 +186,9 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     final HttpResponseKnob hrk = bridgeResponse.getHttpResponseKnob();
                     int status = hrk == null ? HttpConstants.STATUS_SERVER_ERROR : hrk.getStatus();
                     if (status == HttpConstants.STATUS_OK)
-                        auditor.logAndAudit(AssertionMessages.ROUTED_OK);
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
                     else
-                        auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
                     context.getResponse().getHttpResponseKnob().setStatus(status);
 
@@ -200,11 +200,11 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
                 } catch (ConfigurationException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.ACCESS_DENIED, null, e);
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
                     return AssertionStatus.SERVER_AUTH_FAILED;
                 } catch (OperationCanceledException e) {
                     thrown = e;
-                    auditor.logAndAudit(AssertionMessages.ACCESS_DENIED, null, e);
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED, null, e);
                     return AssertionStatus.SERVER_AUTH_FAILED;
                 } catch (BadSecurityContextException e) {
                     thrown = e;
@@ -314,7 +314,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             try {
                 new URL("http", addr, 777, "/foo/bar");
             } catch (MalformedURLException e) {
-                auditor.logAndAudit(AssertionMessages.REMOTE_ADDRESS_INVALID, new String[] { addr });
+                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[] { addr });
                 return false;
             }
         }
@@ -397,8 +397,8 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             }
 
             public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
-                auditor.logAndAudit(AssertionMessages.ACCESS_DENIED);
-                throw new OperationCanceledException(((AuditDetailMessage)AssertionMessages.ACCESS_DENIED).getMessage());
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED);
+                throw new OperationCanceledException(((AuditDetailMessage)AssertionMessages.HTTPROUTE_ACCESS_DENIED).getMessage());
             }
         };
     }
@@ -438,7 +438,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                 InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
                 samlOptions.setClientAddress(clientAddress);
             } catch (UnknownHostException e) {
-                auditor.logAndAudit(AssertionMessages.CANNOT_RESOLVE_IP_ADDRESS, null, e);
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
             }
         }
         samlOptions.setExpiryMinutes(bridgeRoutingAssertion.getSamlAssertionExpiry());
@@ -577,7 +577,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
                             if(status!=HttpConstants.STATUS_OK && allowRerequest) {
                                 if(rrl.reroute(params.getTargetUrl(), status, res.getHeaders(), context)) {
-                                    auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS_HANDLED, new String[]{params.getTargetUrl().getPath(), Integer.toString(status)});
+                                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[]{params.getTargetUrl().getPath(), Integer.toString(status)});
 
                                     //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
                                     HttpHeader[] headers = params.getExtraHeaders();

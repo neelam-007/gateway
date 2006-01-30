@@ -26,7 +26,7 @@ public class ExportKeys {
     public static void main( String[] args ) throws Exception {
         if (args.length < 5) {
             System.err.println("Usage: java " + ExportKeys.class.getName() +
-                               " jksKeystoreFile keystorePassword keyPassword exportKeyFile exportCertFile" );
+                               " jksKeystoreFile keystorePassword keyPassword exportKeyFile exportCertFile [keystoreType]" );
             System.exit(1);
         }
 
@@ -35,6 +35,10 @@ public class ExportKeys {
         String keyPassword = args[2];
         String exportKeyFilename = args[3];
         String certFilename = args[4];
+        String keystoreType = "JKS";
+        if (args.length > 5) {
+            keystoreType = args[5];
+        }
 
         File keystoreFile = new File(keystoreFilename);
         if (!(keystoreFile.exists() && keystoreFile.isFile() && keystoreFile.canRead())) {
@@ -42,7 +46,7 @@ public class ExportKeys {
             System.exit(2);
         }
 
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance(keystoreType);
         ks.load( new FileInputStream( keystoreFile ), keystorePassword.toCharArray()) ;
         Enumeration e = ks.aliases();
         while (e.hasMoreElements()) {
@@ -56,7 +60,7 @@ public class ExportKeys {
                 FileOutputStream fos = null;
                 try {
                     byte encoded[] = privkey.getEncoded();
-                    fos = new FileOutputStream(exportKeyFilename);
+                    fos = new FileOutputStream(exportKeyFilename + "-" + alias);
                     fos.write("-----BEGIN PRIVATE KEY-----\n".getBytes());
                     fos.write(HexUtils.encodeBase64(encoded).getBytes());
                     fos.write("\n-----END PRIVATE KEY-----\n".getBytes());
@@ -68,7 +72,7 @@ public class ExportKeys {
                 Certificate cert = ks.getCertificate(alias);
                 try {
                     byte encoded[] = cert.getEncoded();
-                    fos = new FileOutputStream(certFilename);
+                    fos = new FileOutputStream(certFilename + "-" + alias);
                     fos.write("-----BEGIN TRUSTED CERTIFICATE-----\n".getBytes());
                     fos.write(HexUtils.encodeBase64(encoded).getBytes("UTF-8"));
                     fos.write("\n-----END TRUSTED CERTIFICATE-----\n".getBytes());

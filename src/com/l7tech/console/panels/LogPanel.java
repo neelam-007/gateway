@@ -241,9 +241,11 @@ public class LogPanel extends JPanel {
                     String associatedLogMessage = Messages.getMessageById(id);
                     String associatedLogLevel = Messages.getSeverityLevelNameById(id);
 
-                    MessageFormat mf = new MessageFormat(associatedLogMessage);
                     StringBuffer result = new StringBuffer();
-                    mf.format(ad.getParams(), result, new FieldPosition(0));
+                    if (associatedLogMessage != null) {
+                        MessageFormat mf = new MessageFormat(associatedLogMessage);
+                        mf.format(ad.getParams(), result, new FieldPosition(0));
+                    }
                     AssociatedLog al = new AssociatedLog(ad.getTime(), associatedLogLevel, result.toString(), ad.getOrdinal());
                     associatedLogs.add(al);
                 }
@@ -488,7 +490,6 @@ public class LogPanel extends JPanel {
 
     /**
      * Return the total number of the messages being displayed.
-     * @return
      */
     private JLabel getMsgTotal(){
         if(msgTotal != null) return msgTotal;

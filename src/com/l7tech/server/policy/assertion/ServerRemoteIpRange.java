@@ -38,22 +38,22 @@ public class ServerRemoteIpRange implements ServerAssertion {
         // get remote address
         TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
         if (tcp == null) {
-            auditor.logAndAudit(AssertionMessages.CANNOT_VALIDATE_IP_ADDRESS);
+            auditor.logAndAudit(AssertionMessages.IP_NOT_TCP);
             return AssertionStatus.BAD_REQUEST;
         }
 
         String remoteAddress = tcp.getRemoteAddress();
         if (!RemoteIpRange.checkIPAddressFormat(remoteAddress)) {
-            auditor.logAndAudit(AssertionMessages.CANNOT_VALIDATE_IP_ADDRESS, new String[] {remoteAddress});
+            auditor.logAndAudit(AssertionMessages.IP_NOT_TCP, new String[] {remoteAddress});
 
             return AssertionStatus.FALSIFIED;
         }
         // check assertion with this address
         if (assertAddress(remoteAddress)) {
-            auditor.logAndAudit(AssertionMessages.REQUESTOR_ADDRESS_ACCEPTED, new String[] {remoteAddress});
+            auditor.logAndAudit(AssertionMessages.IP_ACCEPTED, new String[] {remoteAddress});
             return AssertionStatus.NONE;
         } else {
-            auditor.logAndAudit(AssertionMessages.REQUESTOR_ADDRESS_REJECTED, new String[] {remoteAddress});                        
+            auditor.logAndAudit(AssertionMessages.IP_REJECTED, new String[] {remoteAddress});
             return AssertionStatus.FALSIFIED;
         }
     }

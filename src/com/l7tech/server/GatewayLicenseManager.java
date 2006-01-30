@@ -135,10 +135,10 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         } catch (FindException e) {
             // We'll let this slide and keep the current license, if any, unless it was loaded more than 1 day ago
             if (license != null && (System.currentTimeMillis() - licenseLoaded < DB_FAILURE_GRACE_PERIOD)) {
-                fireEvent(SystemMessages.LICENSE_DB_ERROR_RETRY, null);
+                fireEvent(SystemMessages.LICENSE_DB_ERROR_RETRY, null, "Retrying");
                 return;
             } else {
-                fireEvent(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null);
+                fireEvent(SystemMessages.LICENSE_DB_ERROR_GAVEUP, null, "Giving up");
                 setLicense(null);
                 this.licenseLastError = new InvalidLicenseException("Unable to read license information from database: " + ExceptionUtils.getMessage(e), e);
                 // Leave licenseLoaded the same so this message repeats.
@@ -147,7 +147,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         }
 
         if (licenseXml == null || licenseXml.length() < 1) {
-            fireEvent(SystemMessages.LICENSE_NO_LICENSE, null);
+            fireEvent(SystemMessages.LICENSE_NO_LICENSE, null, "No license");
             setLicense(null);
             this.licenseLoaded = System.currentTimeMillis();
             return;
@@ -158,7 +158,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
             this.licenseLastError = null;
         } catch (InvalidLicenseException e) {
             this.licenseLastError = e;
-            fireEvent(SystemMessages.LICENSE_INVALID, e.getMessage());
+            fireEvent(SystemMessages.LICENSE_INVALID, e.getMessage(), "Invalid");
             setLicense(null);
             this.licenseLoaded = System.currentTimeMillis();
             return;
@@ -210,9 +210,9 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
                     product + " " + major + "." + minor + ")");
     }
 
-    private void fireEvent(AuditDetailMessage message, String suffix) {
+    private void fireEvent(AuditDetailMessage message, String suffix, String action) {
         suffix = suffix == null ? "" : ": " + suffix;
-        getApplicationContext().publishEvent(new LicenseEvent(this, message.getLevel(), message.getMessage(), message.getMessage() + suffix));
+        getApplicationContext().publishEvent(new LicenseEvent(action, message.getLevel(), action, message.getMessage() + suffix));
     }
 
     private X509Certificate[] getTrustedIssuers() {
@@ -231,7 +231,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         if (licenseSet && (old == license || (old != null && old.equals(this.license))))
             return;
         this.licenseSet = true;
-        fireEvent(SystemMessages.LICENSE_UPDATED, license == null ? "<none>" : license.toString());
+        fireEvent(SystemMessages.LICENSE_UPDATED, license == null ? "<none>" : license.toString(), "Updated");
     }
 
     /** Listen for the license property being changed, and update the license immediately. */

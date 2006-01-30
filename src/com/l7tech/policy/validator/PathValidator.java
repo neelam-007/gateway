@@ -3,6 +3,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -61,6 +62,7 @@ class PathValidator {
     private Map seenCredentialsSinceModified = new HashMap();
     private Map seenWssSignature = new HashMap();
     private Map seenSamlSecurity = new HashMap();
+    private Map seenVariables = new HashMap();
     private boolean seenSpecificUserAssertion = false;
 
     boolean seenAccessControl = false; 
@@ -118,6 +120,13 @@ class PathValidator {
         } else if (a instanceof SamlBrowserArtifact) {
             seenAccessControl = true;
             setSeenCredentials(a, true);
+        }
+
+        if (a instanceof SetsVariables) {
+            SetsVariables sv = (SetsVariables) a;
+            for (int i = 0; i < sv.getVariablesSet().length; i++) {
+                setSeenVariable(sv.getVariablesSet()[i]);
+            }
         }
 
         setSeen(a.getClass());
@@ -344,6 +353,17 @@ class PathValidator {
                   "This assertion should be preceeded by a SAML Security assertion.", null));
             }
         }
+
+        if (a instanceof UsesVariables) {
+            UsesVariables ua = (UsesVariables)a;
+            for (int i = 0; i < ua.getVariablesUsed().length; i++) {
+                String var = ua.getVariablesUsed()[i];
+                if (!(BuiltinVariables.isSupported(var) || seenVariable(var))) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                            "This assertion refers to the variable '" + var + "', which is neither built-in nor set in the policy.", null));
+                }
+            }
+        }
     }
 
     private void processRouting(RoutingAssertion a) {
@@ -540,7 +560,8 @@ class PathValidator {
           a instanceof RequestWssReplayProtection ||
           a instanceof WsTrustCredentialExchange ||
           a instanceof WsFederationPassiveTokenExchange ||
-          a instanceof WsFederationPassiveTokenRequest)
+          a instanceof WsFederationPassiveTokenRequest ||
+          a instanceof UsesVariables)
             return true;
         return false;
     }
@@ -594,6 +615,16 @@ class PathValidator {
         Boolean currentvalue = (Boolean)seenSamlSecurity.get(actor);
         if (currentvalue == null) return false;
         else return currentvalue.booleanValue();
+    }
+
+    private boolean seenVariable(String var) {
+        Boolean cur = (Boolean)seenVariables.get(var);
+        if (cur == null) return false;
+        else return cur.booleanValue();
+    }
+
+    private void setSeenVariable(String var) {
+        seenVariables.put(var, Boolean.TRUE);
     }
 
     private void setSeenSamlStatement(Assertion context, boolean value) {

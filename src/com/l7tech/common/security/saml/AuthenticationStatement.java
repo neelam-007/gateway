@@ -29,8 +29,11 @@ class AuthenticationStatement extends SubjectStatement {
         this.authenticationInstant.setTime(new Date(credentials.getAuthInstant()));
     }
 
-    private static final String mapAuthMethod(Class credentialSourceClass) {
+    private static String mapAuthMethod(Class credentialSourceClass) {
         String authMethod = SamlConstants.UNSPECIFIED_AUTHENTICATION;
+        if (credentialSourceClass == null)
+            return authMethod;
+
         if (SslAssertion.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION;
         } else if (RequestWssX509Cert.class.isAssignableFrom(credentialSourceClass)) {

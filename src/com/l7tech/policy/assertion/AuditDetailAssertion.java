@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.variable.ExpandVariables;
+
 import java.util.logging.Level;
 
 /**
@@ -12,7 +14,7 @@ import java.util.logging.Level;
  * User: flascell<br/>
  * Date: Jan 19, 2006<br/>
  */
-public class AuditDetailAssertion extends Assertion {
+public class AuditDetailAssertion extends Assertion implements UsesVariables {
     private String level = Level.INFO.toString();
     private String detail;
 
@@ -30,5 +32,9 @@ public class AuditDetailAssertion extends Assertion {
 
     public void setDetail(String detail) {
         this.detail = detail;
+    }
+
+    public String[] getVariablesUsed() {
+        return ExpandVariables.getReferencedNames(detail);
     }
 }

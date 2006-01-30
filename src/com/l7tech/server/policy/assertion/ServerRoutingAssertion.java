@@ -87,7 +87,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                 } catch (InvalidDocumentFormatException e) {
                     String msg = "this option is not supported for non-soap messages. this message is " +
                                  "supposed to be soap but does not appear to be";
-                    auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
                     throw new PolicyAssertionException(msg);
                 }
                 if (defaultSecHeader != null) {
@@ -100,7 +100,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                     } catch (InvalidDocumentFormatException e) {
                         String msg = "this option is not supported for non-soap messages. this message is " +
                                      "supposed to be soap but does not appear to be";
-                        auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
+                        auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
                         throw new PolicyAssertionException(msg);
                     }
                     if (header != null) {
@@ -137,7 +137,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                 } catch (InvalidDocumentFormatException e) {
                     String msg = "this option is not supported for non-soap messages. this message is " +
                                  "supposed to be soap but does not appear to be";
-                    auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
                     throw new PolicyAssertionException(msg);
                 }
             }
@@ -155,17 +155,17 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                     // should not hapen
                     String msg = "this option is not supported for non-soap messages. " +
                                  "something is wrong with this policy";
-                    auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_POLICY, null, e);
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY, null, e);
                     throw new PolicyAssertionException(msg);
                 }
                 if (secHeaderToPromote != null) {
                     // do it
-                    auditor.logAndAudit(AssertionMessages.PROMOMTING_ACTOR, new String[] {otherToPromote});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PROMOTING_ACTOR, new String[] {otherToPromote});
                     SoapUtil.nukeActorAttribute(secHeaderToPromote);
                 } else {
                     // this is not a big deal but might indicate something wrong
                     // with the assertion => logging as info
-                    auditor.logAndAudit(AssertionMessages.NO_SECURITY_HEADER, new String[] {otherToPromote});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NO_SECURITY_HEADER, new String[] {otherToPromote});
                 }
             }
         }

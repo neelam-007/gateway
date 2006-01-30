@@ -11,6 +11,7 @@ import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.tarari.xml.xslt11.Stylesheet;
@@ -36,6 +37,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * Server side class that executes an XslTransformation assertion within a policy tree.
@@ -55,10 +57,14 @@ public class ServerXslTransformation implements ServerAssertion {
     private GlobalTarariContext tarariContext;
     private Stylesheet master;
 
+    private final String[] varsUsed;
+
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) {
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
         subject = assertion;
         auditor = new Auditor(this, springContext, logger);
+        varsUsed = assertion.getVariablesUsed();
+
         tarariContext = TarariLoader.getGlobalContext();
         // if we're in tarari mode, prepare a stylesheet object
         if (tarariContext != null) {
@@ -89,24 +95,31 @@ public class ServerXslTransformation implements ServerAssertion {
 
         switch (subject.getDirection()) {
             case XslTransformation.APPLY_TO_REQUEST:
-                auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST);
+                auditor.logAndAudit(AssertionMessages.XSLT_REQUEST);
                 msgtotransform = context.getRequest();
                 break;
             case XslTransformation.APPLY_TO_RESPONSE:
-                auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE);
+                auditor.logAndAudit(AssertionMessages.XSLT_RESPONSE);
                 msgtotransform = context.getResponse();
                 break;
             default:
                 // should not get here!
-                auditor.logAndAudit(AssertionMessages.XSL_TRAN_CONFIG_ISSUE);
+                auditor.logAndAudit(AssertionMessages.XSLT_CONFIG_ISSUE);
                 return AssertionStatus.SERVER_ERROR;
         }
 
         int whichMimePart = subject.getWhichMimePart();
         if (whichMimePart <= 0) whichMimePart = 0;
 
+        Map vars;
+        try {
+            vars = context.getVariableMap(varsUsed);
+        } catch (NoSuchVariableException e) {
+            auditor.logAndAudit(AssertionMessages.XSLT_BAD_VAR, new String[] {e.getVariable()});
+            vars = Collections.EMPTY_MAP;
+        }
+
         // 2. Apply the transformation
-        final Map vars = context.getVariables();
         if (tarariContext == null) {
             final Document doctotransform;
 
@@ -123,7 +136,7 @@ public class ServerXslTransformation implements ServerAssertion {
                         InputStream is = mimePart.getInputStream(false);
                         doctotransform = XmlUtil.parse(is, false);
                     } catch (NoSuchPartException e) {
-                        auditor.logAndAudit(AssertionMessages.XSL_TRAN_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart)});
+                        auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart)});
                         return AssertionStatus.BAD_REQUEST;
                     }
                 }
@@ -158,11 +171,20 @@ public class ServerXslTransformation implements ServerAssertion {
                     Object value = vars.get(name);
                     transformer.setParameter(name, value);
                 }
-                
+
                 transformer.setValidate(false);
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
                 XmlResult result = new XmlResult(output);
                 XmlSource source = new XmlSource(msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false));
+
+                for (Iterator i = vars.keySet().iterator(); i.hasNext();) {
+                    String name = (String)i.next();
+                    Object value = vars.get(name);
+                    if (value != null) {
+                        transformer.setParameter(name, value);
+                    }
+                }
+
                 transformer.transform(source, result);
                 byte[] transformedmessage = output.toByteArray();
                 msgtotransform.getMimeKnob().getPart(whichMimePart).setBodyBytes(transformedmessage);
@@ -183,7 +205,7 @@ public class ServerXslTransformation implements ServerAssertion {
     }
 
     private AssertionStatus notXml() {
-        auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST_NOT_XML);
+        auditor.logAndAudit(AssertionMessages.XSLT_REQ_NOT_XML);
         return AssertionStatus.NOT_APPLICABLE;
     }
 

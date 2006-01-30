@@ -87,7 +87,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
             certificateResolver = (CertificateResolver)springContext.getBean("certificateResolver");
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
             throw new RuntimeException(e);
         }
     }
@@ -230,10 +230,10 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             auditor.logAndAudit(AssertionMessages.WSTRUST_SERVER_HTTP_FAILED, null, e);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
             return AssertionStatus.FAILED;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
             return AssertionStatus.FAILED;
         }
     }

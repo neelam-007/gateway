@@ -235,10 +235,10 @@ public class RequestHandler extends AbstractHttpHandler {
                                                        originalUrl);
 
                 if (ssg.isChainCredentialsFromClient())
-                    context.setCredentials(new LoginCredentials(reqUsername,
-                                                                reqPassword.toCharArray(),
-                                                                CredentialFormat.CLEARTEXT,
-                                                                null));
+                    context.setRequestCredentials(new LoginCredentials(reqUsername,
+                            reqPassword.toCharArray(),
+                            CredentialFormat.CLEARTEXT,
+                            null));
                 interceptor.onReceiveMessage(context);
             } catch (Exception e) {
                 interceptor.onMessageError(e);

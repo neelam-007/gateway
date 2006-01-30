@@ -37,26 +37,16 @@ import java.util.logging.Logger;
  */
 public class ServerRequestXpathAssertion implements ServerAssertion {
     private final Auditor auditor;
-    private final String varFound;
-    private final String varResult;
-    private final String varCount;
 
     public ServerRequestXpathAssertion(RequestXpathAssertion data, ApplicationContext springContext) {
-        _data = data;
+        assertion = data;
         auditor = new Auditor(this, springContext, _logger);
-        String prefix = data.getVariablePrefix();
-        if (prefix == null || prefix.length() == 0) {
-            prefix = RequestXpathAssertion.DEFAULT_VAR_PREFIX;
-        }
-        varFound = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_FOUND;
-        varResult = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_RESULT;
-        varCount = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_COUNT;
     }
 
     private synchronized DOMXPath getDOMXpath() throws JaxenException {
         if (_domXpath == null) {
-            String pattern = _data.pattern();
-            Map namespaceMap = _data.namespaceMap();
+            String pattern = assertion.pattern();
+            Map namespaceMap = assertion.namespaceMap();
 
             if (pattern != null) {
                 _domXpath = new DOMXPath(pattern);
@@ -75,9 +65,9 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        context.setVariable(varFound, SimpleXpathAssertion.FALSE);
-        context.setVariable(varCount, "0");
-        context.setVariable(varResult, null);
+        context.setVariable(assertion.foundVariable(), SimpleXpathAssertion.FALSE);
+        context.setVariable(assertion.countVariable(), "0");
+        context.setVariable(assertion.resultVariable(), null);
 
         if (context.getRequest().getKnob(XmlKnob.class) == null) {
             auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
@@ -85,7 +75,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
         }
 
         try {
-            String pattern = _data.pattern();
+            String pattern = assertion.pattern();
 
             if (pattern == null || pattern.length() == 0) {
                 auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
@@ -95,7 +85,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
             XmlKnob reqXml = context.getRequest().getXmlKnob();
             Document doc = reqXml.getDocumentReadOnly();
 
-            List result = null;
+            List result;
             DOMXPath xp = getDOMXpath();
             try {
                 result = xp.selectNodes(doc);
@@ -108,18 +98,18 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST);
                 return AssertionStatus.FALSIFIED;
             } else {
-                context.setVariable(varFound, SimpleXpathAssertion.TRUE);
-                context.setVariable(varCount, new Integer(result.size()).toString());
+                context.setVariable(assertion.foundVariable(), SimpleXpathAssertion.TRUE);
+                context.setVariable(assertion.countVariable(), Integer.toString(result.size()));
                 Object o = result.get(0);
                 if (o instanceof Boolean) {
                     if (((Boolean) o).booleanValue()) {
                         auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE);
-                        context.setVariable(varResult, SimpleXpathAssertion.TRUE);
+                        context.setVariable(assertion.resultVariable(), SimpleXpathAssertion.TRUE);
                         return AssertionStatus.NONE;
                     } else {
                         auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
-                        context.setVariable(varResult, SimpleXpathAssertion.FALSE);
-                        context.setVariable(varFound, SimpleXpathAssertion.FALSE);
+                        context.setVariable(assertion.resultVariable(), SimpleXpathAssertion.FALSE);
+                        context.setVariable(assertion.foundVariable(), SimpleXpathAssertion.FALSE);
                         return AssertionStatus.FALSIFIED;
                     }
                 } else if (o instanceof Node) {
@@ -130,20 +120,20 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                     switch (type) {
                         case Node.TEXT_NODE:
                             auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
-                            context.setVariable(varResult, nodeValue);
+                            context.setVariable(assertion.resultVariable(), nodeValue);
                             return AssertionStatus.NONE;
                         case Node.ELEMENT_NODE:
                             auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND);
-                            context.setVariable(varResult, XmlUtil.getTextValue((Element)n));
+                            context.setVariable(assertion.resultVariable(), XmlUtil.getTextValue((Element)n));
                             return AssertionStatus.NONE;
                         default:
                             auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND);
-                            context.setVariable(varResult, nodeValue);
+                            context.setVariable(assertion.resultVariable(), nodeValue);
                             return AssertionStatus.NONE;
                     }
                 } else {
                     auditor.logAndAudit(AssertionMessages.XPATH_SUCCEED_REQUEST);
-                    context.setVariable(varResult, o.toString());
+                    context.setVariable(assertion.resultVariable(), o.toString());
                     return AssertionStatus.NONE;
                 }
             }
@@ -159,7 +149,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
         }
     }
 
-    private final RequestXpathAssertion _data;
+    private final RequestXpathAssertion assertion;
     private final Logger _logger = Logger.getLogger(getClass().getName());
     private DOMXPath _domXpath;
 }

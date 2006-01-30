@@ -1,21 +1,21 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.action.EqualityAssertionPropertiesAction;
-import com.l7tech.policy.assertion.EqualityAssertion;
+import com.l7tech.console.action.ComparisonAssertionPropertiesAction;
+import com.l7tech.policy.assertion.ComparisonAssertion;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Class EqualityAssertionPolicyNode is a policy node that corresponds to
- * {@link com.l7tech.policy.assertion.EqualityAssertion}.
+ * Class ComparisonAssertionPolicyNode is a policy node that corresponds to
+ * {@link com.l7tech.policy.assertion.ComparisonAssertion}.
  */
-public class EqualityAssertionPolicyNode extends LeafAssertionTreeNode {
-    private EqualityAssertion assertion;
+public class ComparisonAssertionPolicyNode extends LeafAssertionTreeNode {
+    private ComparisonAssertion assertion;
 
-    public EqualityAssertionPolicyNode(EqualityAssertion assertion) {
+    public ComparisonAssertionPolicyNode(ComparisonAssertion assertion) {
         super(assertion);
         this.assertion = assertion;
     }
@@ -24,7 +24,24 @@ public class EqualityAssertionPolicyNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Proceed if " + assertion.getExpression1() + " = " + assertion.getExpression2();
+        StringBuffer name = new StringBuffer("Proceed if ");
+        name.append(assertion.getExpression1());
+        if (assertion.getOperator() == ComparisonAssertion.Operator.CONTAINS) {
+            if (assertion.isNegate()) {
+                name.append(" does not contain ");
+            } else {
+                name.append(" contains ");
+            }
+        } else {
+            name.append(" is ");
+            if (assertion.isNegate()) name.append("not ");
+            name.append(assertion.getOperator().toString());
+        }
+        if (!assertion.getOperator().isUnary()) {
+            name.append(" ").append(assertion.getExpression2());
+        }
+        return name.toString();
+
     }
 
     /**
@@ -42,7 +59,7 @@ public class EqualityAssertionPolicyNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new EqualityAssertionPropertiesAction(this);
+        return new ComparisonAssertionPropertiesAction(this);
     }
 
     protected void loadChildren() {
@@ -57,7 +74,7 @@ public class EqualityAssertionPolicyNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new EqualityAssertionPropertiesAction(this);
+        Action a = new ComparisonAssertionPropertiesAction(this);
         list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});

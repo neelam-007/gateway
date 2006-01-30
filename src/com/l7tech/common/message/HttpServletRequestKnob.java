@@ -4,13 +4,15 @@
 
 package com.l7tech.common.message;
 
-import com.l7tech.common.util.IteratorEnumeration;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.util.IteratorEnumeration;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URL;
+import java.net.MalformedURLException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
@@ -22,6 +24,7 @@ import java.util.*;
 public class HttpServletRequestKnob implements HttpRequestKnob {
     private final HttpServletRequest request;
     private final Map paramMap; // Necessary because you can't get parameters after reading the request's InputStream
+    private final URL url;
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
 
     public HttpServletRequestKnob(HttpServletRequest request) {
@@ -34,6 +37,11 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
         this.paramMap = Collections.unmodifiableMap(params);
         this.request = request;
+        try {
+            this.url = new URL(request.getRequestURL().toString());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("HttpServletRequest had invalid URL", e);
+        }
     }
 
     public HttpCookie[] getCookies() {
@@ -43,7 +51,7 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
             for (int i=0; i < cookies.length; i++) {
                 Cookie cookie = cookies[i];
                 out.add(CookieUtils.fromServletCookie(cookie, false));
-            }            
+            }
         }
         return (HttpCookie[]) out.toArray(new HttpCookie[out.size()]);
     }
@@ -83,6 +91,10 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public String getRequestUrl() {
         return request.getRequestURL().toString(); // NPE here if servlet is bogus
+    }
+
+    public URL getRequestURL() {
+        return url;
     }
 
     public long getDateHeader(String name) throws ParseException {

@@ -20,7 +20,4 @@ public class ServerResponseAcceleratedXpathAssertion extends ServerAcceleratedXp
         super(assertion, applicationContext, new ServerResponseXpathAssertion(assertion, applicationContext));
     }
 
-    protected String getDefaultVariablePrefix() {
-        return ResponseXpathAssertion.DEFAULT_VAR_PREFIX;
-    }
 }

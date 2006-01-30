@@ -1,6 +1,20 @@
 package com.l7tech.policy.assertion.xml;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesVariables;
+import org.apache.xalan.templates.ElemVariable;
+import org.apache.xalan.templates.StylesheetRoot;
+
+import javax.xml.transform.Templates;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An assertion for XSLT transformations of soap messages.
@@ -17,7 +31,8 @@ import com.l7tech.policy.assertion.Assertion;
  * $Id$<br/>
  *
  */
-public class XslTransformation extends Assertion {
+public class XslTransformation extends Assertion implements UsesVariables {
+    private static final Logger logger = Logger.getLogger(XslTransformation.class.getName());
 
     /**
      * the actual transformation xsl
@@ -80,4 +95,35 @@ public class XslTransformation extends Assertion {
 
     public static final int APPLY_TO_REQUEST = 1;
     public static final int APPLY_TO_RESPONSE = 2;
+
+    public String[] getVariablesUsed() {
+        if (varsUsed != null) return varsUsed;
+
+        // Try again later, in case the stylesheet hasn't been set yet
+        if (xslSrc == null || xslSrc.length() == 0) return new String[0];
+
+        try {
+            Templates temp = TransformerFactory.newInstance().newTemplates(new DOMSource(XmlUtil.parse(new StringReader(xslSrc), false)));
+            if (temp instanceof StylesheetRoot) {
+                ArrayList vars = new ArrayList();
+                StylesheetRoot stylesheetRoot = (StylesheetRoot)temp;
+                Vector victor = stylesheetRoot.getVariablesAndParamsComposed();
+                for (Iterator i = victor.iterator(); i.hasNext();) {
+                    ElemVariable var = (ElemVariable)i.next();
+                    vars.add(var.getName().getLocalName());
+                }
+                varsUsed = (String[])vars.toArray(new String[0]);
+            } else {
+                logger.warning("XSLT was not a " + StylesheetRoot.class.getName() + ", can't get declared variables");
+                varsUsed = new String[0];
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Couldn't get declared variables from stylesheet", e);
+            varsUsed = new String[0];
+        }
+
+        return varsUsed;
+    }
+
+    private transient String[] varsUsed;
 }

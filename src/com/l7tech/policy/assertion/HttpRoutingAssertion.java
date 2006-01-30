@@ -5,13 +5,19 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.variable.ExpandVariables;
+
 /**
  *
  * @author mike
  * @version 1.0
  */
-public class HttpRoutingAssertion extends RoutingAssertion {
+public class HttpRoutingAssertion
+        extends RoutingAssertion
+        implements UsesVariables, SetsVariables
+{
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 100; // Flagrantly in contravention of RFC2616!
+    public static final String ROUTING_LATENCY = "httpRouting.latency";
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -172,4 +178,12 @@ public class HttpRoutingAssertion extends RoutingAssertion {
     protected boolean _copyCookies;
     protected String[] _customIpAddresses = null;
     protected String _failoverStrategyName = "ordered";
+
+    public String[] getVariablesUsed() {
+        return ExpandVariables.getReferencedNames(_login + _password + _protectedServiceUrl);
+    }
+
+    public String[] getVariablesSet() {
+        return new String[] { ROUTING_LATENCY };
+    }
 }

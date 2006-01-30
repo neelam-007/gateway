@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
@@ -95,10 +96,17 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
     private static void saveServletKnobs(PolicyEnforcementContext pec, Map context) {
         final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)pec.getRequest().getKnob(HttpServletRequestKnob.class);
-        final HttpServletRequest httpServletRequest = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
-        if (httpServletRequest != null)
-            context.put("httpRequest", httpServletRequest);
+        if (hsRequestKnob != null) {
+            String[] headerNames = hsRequestKnob.getHeaderNames();
+            for (int i = 0; i < headerNames.length; i++) {
+                String name = headerNames[i];
+                context.put(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES + "." + name.toLowerCase(), hsRequestKnob.getHeaderValues(name));
+            }
 
+            final HttpServletRequest httpServletRequest = hsRequestKnob.getHttpServletRequest();
+            if (httpServletRequest != null)
+                context.put("httpRequest", httpServletRequest);
+        }
         final HttpServletResponseKnob hsResponseKnob = (HttpServletResponseKnob)pec.getResponse().getKnob(HttpServletResponseKnob.class);
         final HttpServletResponse httpServletResponse = hsResponseKnob == null ? null : hsResponseKnob.getHttpServletResponse();
         if (httpServletResponse != null)

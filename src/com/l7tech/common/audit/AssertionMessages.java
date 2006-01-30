@@ -11,36 +11,36 @@ import java.util.logging.Level;
 public class AssertionMessages extends Messages {
 
     // ServerHttpRoutingAssertion messages
-    public static final M SSL_CONTEXT_INIT_FAILED              = m(4000, Level.SEVERE, "Couldn't initialize SSL Context");
-    public static final M HTTP_ROUTING_ASSERTION               = m(4001, Level.INFO, "Processing HTTP routing assertion");
-    public static final M NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT  = m(4002, Level.WARNING, "This option is not supported for non-soap messages. This message is supposed to be soap but does not appear to be.");
-    public static final M NON_SOAP_NOT_SUPPORTED_WRONG_POLICY  = m(4003, Level.WARNING, "This option is not supported for non-soap messages. Something is wrong with this policy.");
-    public static final M PROMOMTING_ACTOR                     = m(4004, Level.FINE, "promoting actor {0}");
-    public static final M NO_SECURITY_HEADER                   = m(4005, Level.INFO, "Routing assertion asked for security header with actor {0} be promoted but there was no such security header present in the message.");
-    public static final M ERROR_READING_RESPONSE               = m(4006, Level.SEVERE, "Error reading response");
-    public static final M CANNOT_RESOLVE_IP_ADDRESS            = m(4007, Level.WARNING, "Couldn't resolve client IP address");
-    public static final M TAI_REQUEST_NOT_AUTHENTICATED        = m(4008, Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
-    public static final M TAI_REQUEST_CHAIN_USERNAME           = m(4009, Level.FINE, "TAI credential chaining requested; will chain username {0}");
-    public static final M TAI_REQUEST_USER_ID_NOT_UNIQUE       = m(4010, Level.WARNING, "TAI credential chaining requested, but request User did not have a unique identifier: id is {0}");
-    public static final M TAI_REQUEST_CHAIN_LOGIN              = m(4011, Level.FINE, "TAI credential chaining requested, but there is no User; will chain pc.login {0}");
-    public static final M TAI_REQUEST_NO_USER_OR_LOGIN         = m(4012, Level.WARNING, "TAI credential chaining requested, and request was authenticated, but had no User or pc.login");
-    public static final M ADD_OUTGOING_COOKIE                  = m(4013, Level.FINE, "Adding outgoing cookie: name = {0}");
-    public static final M LOGIN_INFO                           = m(4014, Level.FINE, "Using login '{0}'");
-    public static final M ROUTED_OK                            = m(4015, Level.FINE, "Request routed successfully");
-    public static final M RESPONSE_STATUS                      = m(4016, Level.WARNING, "Protected service ({0}) responded with status {1}");
-    public static final M ADD_OUTGOING_COOKIE_WITH_VERSION     = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
-    public static final M UPDATE_COOKIE                        = m(4018, Level.FINE,  "Updating cookie: name = {0}");
-    public static final M BRIDGE_NO_ATTACHMENTS                = m(4019, Level.WARNING, "Bridge Routing Assertion does not currently support SOAP-with-attachments.  Ignoring additional MIME parts");
-    public static final M BRIDGE_BAD_CONFIG                    = m(4020, Level.SEVERE, "Bridge Routing Assertion is configured with invalid protected service URL or policy XML");
-    public static final M BAD_ORIGINAL_REQUEST_URL             = m(4021, Level.WARNING, "Invalid original request URI -- using default");
-    public static final M ACCESS_DENIED                        = m(4022, Level.WARNING, "Protected service denies access with current BridgeRoutingAssertion credentials");
-    public static final M TOO_MANY_ROUTING_ATTEMPTS            = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
-    public static final M SAML_SV_REQUEST_NOT_AUTHENTICATED    = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
-    public static final M RESPONSE_STATUS_HANDLED              = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}, retrying.");
-    public static final M HTTPROUTE_NO_SUCH_VAR                = m(4026, Level.WARNING, "No such variable: {0}");
+    public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.SEVERE, "Couldn't initialize SSL Context");
+    public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Processing HTTP routing assertion");
+    public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.WARNING, "This option is not supported for non-soap messages. This message is supposed to be soap but does not appear to be.");
+    public static final M HTTPROUTE_NON_SOAP_WRONG_POLICY   = m(4003, Level.WARNING, "This option is not supported for non-soap messages. Something is wrong with this policy.");
+    public static final M HTTPROUTE_PROMOTING_ACTOR         = m(4004, Level.FINE, "promoting actor {0}");
+    public static final M HTTPROUTE_NO_SECURITY_HEADER      = m(4005, Level.INFO, "Routing assertion asked for security header with actor {0} be promoted but there was no such security header present in the message.");
+    public static final M HTTPROUTE_ERROR_READING_RESPONSE  = m(4006, Level.SEVERE, "Error reading response");
+    public static final M HTTPROUTE_CANT_RESOLVE_IP         = m(4007, Level.WARNING, "Couldn't resolve client IP address");
+    public static final M HTTPROUTE_TAI_NOT_AUTHENTICATED   = m(4008, Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
+    public static final M HTTPROUTE_TAI_CHAIN_USERNAME      = m(4009, Level.FINE, "TAI credential chaining requested; will chain username {0}");
+    public static final M HTTPROUTE_TAI_NO_USER_ID          = m(4010, Level.WARNING, "TAI credential chaining requested, but request User did not have a unique identifier: id is {0}");
+    public static final M HTTPROUTE_TAI_CHAIN_LOGIN         = m(4011, Level.FINE, "TAI credential chaining requested, but there is no User; will chain pc.login {0}");
+    public static final M HTTPROUTE_TAI_NO_USER             = m(4012, Level.WARNING, "TAI credential chaining requested, and request was authenticated, but had no User or pc.login");
+    public static final M HTTPROUTE_ADD_OUTGOING_COOKIE     = m(4013, Level.FINE, "Adding outgoing cookie: name = {0}");
+    public static final M HTTPROUTE_LOGIN_INFO              = m(4014, Level.FINE, "Using login '{0}'");
+    public static final M HTTPROUTE_OK                      = m(4015, Level.FINE, "Request routed successfully");
+    public static final M HTTPROUTE_RESPONSE_STATUS         = m(4016, Level.WARNING, "Protected service ({0}) responded with status {1}");
+    public static final M HTTPROUTE_ADDCOOKIE_VERSION       = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
+    public static final M HTTPROUTE_UPDATECOOKIE            = m(4018, Level.FINE,  "Updating cookie: name = {0}");
+    public static final M BRIDGEROUTE_NO_ATTACHMENTS        = m(4019, Level.WARNING, "Bridge Routing Assertion does not currently support SOAP-with-attachments.  Ignoring additional MIME parts");
+    public static final M BRIDGEROUTE_BAD_CONFIG            = m(4020, Level.SEVERE, "Bridge Routing Assertion is configured with invalid protected service URL or policy XML");
+    public static final M HTTPROUTE_BAD_ORIGINAL_URL        = m(4021, Level.WARNING, "Invalid original request URI -- using default");
+    public static final M HTTPROUTE_ACCESS_DENIED           = m(4022, Level.WARNING, "Protected service denies access with current BridgeRoutingAssertion credentials");
+    public static final M HTTPROUTE_TOO_MANY_ATTEMPTS       = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
+    public static final M HTTPROUTE_SAML_SV_NOT_AUTH        = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
+    public static final M HTTPROUTE_RESPONSE_STATUS_HANDLED = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}, retrying.");
+    public static final M HTTPROUTE_NO_SUCH_VAR             = m(4026, Level.WARNING, "No such variable: {0}");
 
     // ServerCredentialSourceAssertion messages
-    public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");
+    public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");
 
     // ServerIdentityAssertion
     public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.SEVERE, "Request is authenticated but request has no LoginCredentials!");
@@ -54,37 +54,37 @@ public class AssertionMessages extends Messages {
     public static final M AUTHENTICATION_FAILED                   = m(4208, Level.INFO, "Authentication failed for {0}");
 
     // ServerRequestWssOperation messages
-    public static final M NOTHING_TO_VALIDATE                     = m(4300, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
-    public static final M CANNOT_VERIFY_WS_SECURITY               = m(4301, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
-    public static final M NO_WSS_LEVEL_SECURITY                   = m(4302, Level.INFO, "This request did not contain any WSS level security.");
+    public static final M REQUESTWSS_NOT_FOR_US  = m(4300, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
+    public static final M REQUESTWSS_NONSOAP     = m(4301, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
+    public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "This request did not contain any WSS level security.");
 
     // ServerRequestSwAAssertion messages
-    public static final M REQUEST_NOT_SOAP                        = m(4400, Level.INFO, "Request not SOAP; cannot validate attachments");
-    public static final M NOT_MULTIPART_MESSAGE                   = m(4401, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
-    public static final M OPERATION_NOT_FOUND                     = m(4402, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
-    public static final M SAME_OPERATION_APPEARS_MORE_THAN_ONCE   = m(4403, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
-    public static final M OPERATION_IS_NON_ELEMENT_NODE           = m(4404, Level.INFO, "XPath pattern {0} found non-element node '{1}'");
-    public static final M PARAMETER_IS_NON_ELEMENT_NODE           = m(4405, Level.INFO, "XPath pattern {0}/{1} found non-element node '{2}'");
-    public static final M OPERATION_FOUND                         = m(4406, Level.FINEST, "The operation {0} is found in the request");
-    public static final M MIME_PART_NOT_FOUND                     = m(4407, Level.FINE, "MIME Part not found in the request. Xpath expression is: {0}/{1})");
-    public static final M SAME_MIME_PART_APPEARS_MORE_THAN_ONCE   = m(4408, Level.FINE, "Same MIME Part appears more than once in the request. Xpath expression is: {0}/{1}");
-    public static final M PARAMETER_FOUND                         = m(4409, Level.FINEST, "Parameter {0} is found in the request");
-    public static final M REFERENCE_NOT_FOUND                     = m(4410, Level.INFO, "The reference (href) of the {0} is found in the request");
-    public static final M REFERENCE_FOUND                         = m(4411, Level.FINEST, "The href of the parameter {0} is found in the request, value={1}");
-    public static final M INVALID_CONTENT_ID_URL                  = m(4412, Level.INFO, "Invalid Content-ID URL {0}");
-    public static final M MUST_BE_ONE_OF_CONTENT_TYPES            = m(4413, Level.INFO, "The content type of the attachment {0} must be one of the types: {1}");
-    public static final M INCORRECT_CONTENT_TYPE                  = m(4414, Level.INFO, "The content type of the attachment {0} must be: {1}");
-    public static final M TOTAL_LENGTH_LIMIT_EXCEEDED             = m(4415, Level.INFO, "The parameter [{0}] has {1} attachments. The total length exceeds the limit: {2} K bytes");
-    public static final M INDIVIDUAL_LENGTH_LIMIT_EXCEEDED        = m(4416, Level.INFO, "The length of the attachment {0} exceeds the limit: {1} K bytes");
-    public static final M ATTACHMENT_NOT_FOUND                    = m(4417, Level.INFO, "The required attachment {0} is not found in the request");
-    public static final M UNEXPECTED_ATTACHMENT_FOUND             = m(4418, Level.INFO, "Unexpected attachment {0} found in the request.");
-    public static final M INVALID_OPERATION                       = m(4419, Level.INFO, "The operation specified in the request is invalid.");
+    public static final M SWA_NOT_SOAP                    = m(4400, Level.INFO, "Request not SOAP; cannot validate attachments");
+    public static final M SWA_NOT_MULTIPART               = m(4401, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
+    public static final M SWA_OPERATION_NOT_FOUND         = m(4402, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
+    public static final M SWA_REPEATED_OPERATION          = m(4403, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
+    public static final M SWA_OPERATION_NOT_ELEMENT_NODE  = m(4404, Level.INFO, "XPath pattern {0} found non-element node '{1}'");
+    public static final M SWA_PARAMETER_NOT_ELEMENT_NODE  = m(4405, Level.INFO, "XPath pattern {0}/{1} found non-element node '{2}'");
+    public static final M SWA_OPERATION_FOUND             = m(4406, Level.FINEST, "The operation {0} is found in the request");
+    public static final M SWA_PART_NOT_FOUND              = m(4407, Level.FINE, "MIME Part not found in the request. Xpath expression is: {0}/{1})");
+    public static final M SWA_REPEATED_MIME_PART          = m(4408, Level.FINE, "Same MIME Part appears more than once in the request. Xpath expression is: {0}/{1}");
+    public static final M SWA_PARAMETER_FOUND             = m(4409, Level.FINEST, "Parameter {0} is found in the request");
+    public static final M SWA_REFERENCE_NOT_FOUND         = m(4410, Level.INFO, "The reference (href) of the {0} is found in the request");
+    public static final M SWA_REFERENCE_FOUND             = m(4411, Level.FINEST, "The href of the parameter {0} is found in the request, value={1}");
+    public static final M SWA_INVALID_CONTENT_ID_URL      = m(4412, Level.INFO, "Invalid Content-ID URL {0}");
+    public static final M SWA_NOT_IN_CONTENT_TYPES        = m(4413, Level.INFO, "The content type of the attachment {0} must be one of the types: {1}");
+    public static final M SWA_BAD_CONTENT_TYPE            = m(4414, Level.INFO, "The content type of the attachment {0} must be: {1}");
+    public static final M SWA_TOTAL_LENGTH_LIMIT_EXCEEDED = m(4415, Level.INFO, "The parameter [{0}] has {1} attachments. The total length exceeds the limit: {2} K bytes");
+    public static final M SWA_PART_LENGTH_LIMIT_EXCEEDED  = m(4416, Level.INFO, "The length of the attachment {0} exceeds the limit: {1} K bytes");
+    public static final M SWA_NO_ATTACHMENT               = m(4417, Level.INFO, "The required attachment {0} is not found in the request");
+    public static final M SWA_UNEXPECTED_ATTACHMENT       = m(4418, Level.INFO, "Unexpected attachment {0} found in the request.");
+    public static final M SWA_INVALID_OPERATION           = m(4419, Level.INFO, "The operation specified in the request is invalid.");
 
     // ServerRemoteIpRange messages
-    public static final M CANNOT_VALIDATE_IP_ADDRESS              = m(4500, Level.INFO, "Request was not received via TCP; cannot validate remote IP address");
-    public static final M REMOTE_ADDRESS_INVALID                  = m(4501, Level.INFO, "The remote address {0} is null or not in expected format.");
-    public static final M REQUESTOR_ADDRESS_ACCEPTED              = m(4502, Level.FINEST, "Requestor address {0} is accepted.");
-    public static final M REQUESTOR_ADDRESS_REJECTED              = m(4503, Level.INFO,  "Requestor address {0} is not allowed");
+    public static final M IP_NOT_TCP         = m(4500, Level.INFO, "Request was not received via TCP; cannot validate remote IP address");
+    public static final M IP_ADDRESS_INVALID = m(4501, Level.INFO, "The remote address {0} is null or not in expected format.");
+    public static final M IP_ACCEPTED        = m(4502, Level.FINEST, "Requestor address {0} is accepted.");
+    public static final M IP_REJECTED        = m(4503, Level.INFO,  "Requestor address {0} is not allowed");
 
     // ServerSecureConversation messages
     public static final M SC_REQUEST_NOT_SOAP                     = m(4600, Level.INFO, "Request not SOAP; unable to check for WS-SecureConversation token");
@@ -199,34 +199,35 @@ public class AssertionMessages extends Messages {
     public static final M UNKNOWN_ASSERTION                                 = m(5800, Level.WARNING, "The unknown assertion invoked. Detail message is: {0}");
 
     // ServerXslTransformation
-    public static final M XSL_TRAN_REQUEST_NOT_XML                        = m(5900, Level.INFO, "Request not XML; cannot perform XSL transformation");
-    public static final M XSL_TRAN_REQUEST                                = m(5901, Level.FINEST, "Transforming request");
-    public static final M XSL_TRAN_RESPONSE_NOT_XML                       = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
-    public static final M XSL_TRAN_RESPONSE                               = m(5903, Level.FINEST, "Transforming response");
-    public static final M XSL_TRAN_CONFIG_ISSUE                           = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
-    public static final M XSL_TRAN_NO_SUCH_PART                           = m(5905, Level.WARNING, "Assertion specifies MIME part {0}, but it does not exist");
+    public static final M XSLT_REQ_NOT_XML  = m(5900, Level.INFO, "Message not XML; cannot perform XSL transformation");
+    public static final M XSLT_REQUEST      = m(5901, Level.FINEST, "Transforming request");
+    public static final M XSLT_RESP_NOT_XML = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
+    public static final M XSLT_RESPONSE     = m(5903, Level.FINEST, "Transforming response");
+    public static final M XSLT_CONFIG_ISSUE = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
+    public static final M XSLT_NO_SUCH_PART = m(5905, Level.WARNING, "Assertion specifies MIME part {0}, but it does not exist");
+    public static final M XSLT_BAD_VAR      = m(5906, Level.WARNING, "Stylesheet refers to variable '{0}', which is not present in the request");
 
     // ServerJmsRoutingAssertion
-    public static final M JMS_ROUTING_CONNECT_FAILED                      = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
-    public static final M JMS_ROUTING_INBOUD_REQUEST_QUEUE_NOT_EMPTY      = m(6001, Level.FINE,  "Inbound request queue is not temporary; using selector to filter responses to our message");
-    public static final M JMS_ROUTING_TOPIC_NOT_SUPPORTED                 = m(6002, Level.SEVERE, "Topics not supported!");
-    public static final M JMS_ROUTING_REQUEST_ROUTED                      = m(6003, Level.FINER, "Routing request to protected service");
-    public static final M JMS_ROUTING_GETTING_RESPONSE                    = m(6004, Level.FINEST, "Getting response from protected service");
-    public static final M JMS_ROUTING_NO_RESPONSE                         = m(6005, Level.WARNING, "Did not receive a routing reply within timeout of {0} ms. Will return empty response");
-    public static final M JMS_ROUTING_GOT_RESPONSE                        = m(6006, Level.FINER, "Received routing reply");
-    public static final M JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE       = m(6007, Level.WARNING, "Received JMS reply with unsupported message type {0}");
-    public static final M JMS_ROUTING_NO_RESPONSE_EXPECTED                = m(6008, Level.INFO, "No response expected from protected service");
-    public static final M JMS_ROUTING_DELETE_TEMPORARY_QUEUE              = m(6009, Level.FINER, "Deleting temporary queue" );
-    public static final M JMS_ROUTING_RETURN_NO_REPLY                     = m(6010, Level.FINER, "Returning NO_REPLY (null) for {0}");
-    public static final M JMS_ROUTING_RETURN_AUTOMATIC                    = m(6011, Level.FINER, "Returning AUTOMATIC {0} for {1}");
-    public static final M JMS_ROUTING_RETURN_REPLY_TO_OTHER               = m(6012, Level.FINER, "Returning REPLY_TO_OTHER {0} for {1}");
-    public static final M JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE               = m(6013, Level.SEVERE, "Unknown JmsReplyType {0}");
-    public static final M JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION        = m(6014, Level.SEVERE, "Request and reply endpoints must belong to the same connection");
-    public static final M JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE      = m(6015, Level.FINER, "Creating request as TextMessage");
-    public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE     = m(6016, Level.FINER, "Creating request as BytesMessage");
-    public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY         = m(6017, Level.FINE, "Routed request endpoint specified NO_REPLY, won't set JMSReplyTo and JMSCorrelationID");
-    public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID           = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
-    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT               = m(6019, Level.SEVERE, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
+    public static final M JMS_ROUTING_CONNECT_FAILED                  = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
+    public static final M JMS_ROUTING_INBOUD_REQUEST_QUEUE_NOT_EMPTY  = m(6001, Level.FINE,  "Inbound request queue is not temporary; using selector to filter responses to our message");
+    public static final M JMS_ROUTING_TOPIC_NOT_SUPPORTED             = m(6002, Level.SEVERE, "Topics not supported!");
+    public static final M JMS_ROUTING_REQUEST_ROUTED                  = m(6003, Level.FINER, "Routing request to protected service");
+    public static final M JMS_ROUTING_GETTING_RESPONSE                = m(6004, Level.FINEST, "Getting response from protected service");
+    public static final M JMS_ROUTING_NO_RESPONSE                     = m(6005, Level.WARNING, "Did not receive a routing reply within timeout of {0} ms. Will return empty response");
+    public static final M JMS_ROUTING_GOT_RESPONSE                    = m(6006, Level.FINER, "Received routing reply");
+    public static final M JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE   = m(6007, Level.WARNING, "Received JMS reply with unsupported message type {0}");
+    public static final M JMS_ROUTING_NO_RESPONSE_EXPECTED            = m(6008, Level.INFO, "No response expected from protected service");
+    public static final M JMS_ROUTING_DELETE_TEMPORARY_QUEUE          = m(6009, Level.FINER, "Deleting temporary queue" );
+    public static final M JMS_ROUTING_RETURN_NO_REPLY                 = m(6010, Level.FINER, "Returning NO_REPLY (null) for {0}");
+    public static final M JMS_ROUTING_RETURN_AUTOMATIC                = m(6011, Level.FINER, "Returning AUTOMATIC {0} for {1}");
+    public static final M JMS_ROUTING_RETURN_REPLY_TO_OTHER           = m(6012, Level.FINER, "Returning REPLY_TO_OTHER {0} for {1}");
+    public static final M JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE           = m(6013, Level.SEVERE, "Unknown JmsReplyType {0}");
+    public static final M JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION    = m(6014, Level.SEVERE, "Request and reply endpoints must belong to the same connection");
+    public static final M JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE  = m(6015, Level.FINER, "Creating request as TextMessage");
+    public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE = m(6016, Level.FINER, "Creating request as BytesMessage");
+    public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "Routed request endpoint specified NO_REPLY, won't set JMSReplyTo and JMSCorrelationID");
+    public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
+    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.SEVERE, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
 
     // ServerRequestWssSaml
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate Saml Statement");
@@ -312,10 +313,12 @@ public class AssertionMessages extends Messages {
     public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(7001, Level.WARNING, "Message has no part #{0}");
     public static final M INVERSE_HTTPFORM_TOO_BIG = m(7002, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
 
-    // EqualityAssertion
-    public static final M EQUALITY_EQ          = m(7100, Level.INFO, "Values were equal");
-    public static final M EQUALITY_NE          = m(7101, Level.INFO, "Values were not equal");
-    public static final M EQUALITY_NO_SUCH_VAR = m(7102, Level.WARNING, "No such variable: {0}");
+    // ComparisonAssertion (formerly known as EqualityAssertion)
+    public static final M COMPARISON_OK           = m(7100, Level.INFO, "Comparison matched");
+    public static final M COMPARISON_NOT          = m(7101, Level.INFO, "Comparison did not match");
+    public static final M COMPARISON_NO_SUCH_VAR  = m(7102, Level.WARNING, "No such variable: {0}");
+    public static final M COMPARISON_BAD_OPERATOR = m(7103, Level.WARNING, "Unsupported operator: {0}");
+    public static final M COMPARISON_NULL         = m(7104, Level.WARNING, "At least one comparison value was null");
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.SEVERE, "Unrecognized protection name: {0}.  Assertion will always fail.");

@@ -16,14 +16,18 @@ public class RoutingStatus {
     public static final RoutingStatus ROUTED = new RoutingStatus( 1, "Routed" );
 
     private RoutingStatus( int num, String name ) {
-        _num = num;
-        _name = name;
+        this.num = num;
+        this.name = name;
     }
 
     public String toString() {
-        return "<RoutingStatus num='" + _num + "' name='" + _name + "'/>";
+        return "<RoutingStatus num='" + num + "' name='" + name + "'/>";
     }
 
-    private int _num;
-    private String _name;
+    public String getName() {
+        return name;
+    }
+
+    private int num;
+    private String name;
 }

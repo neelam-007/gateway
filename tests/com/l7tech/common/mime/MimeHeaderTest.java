@@ -6,6 +6,7 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -102,6 +103,14 @@ public class MimeHeaderTest extends TestCase {
         assertTrue(textPlain.matches("tEXt", "enRIChed"));
         assertTrue(textEnriched.matches("text", "enriched"));
         assertFalse(textXml.matches("text", "enriched"));
+    }
+
+    public void testAuthorization() throws Exception {
+        String name = "Authorization";
+        String value = "Basic " + HexUtils.encodeBase64("login:password".getBytes());
+        MimeHeader mh = MimeHeader.parseValue(name, value);
+        assertEquals(mh.getName(), "Authorization");
+        assertEquals(mh.getMainValue(), value);
     }
 
 }

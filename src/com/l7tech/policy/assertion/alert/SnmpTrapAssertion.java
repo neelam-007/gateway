@@ -7,11 +7,13 @@
 package com.l7tech.policy.assertion.alert;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.variable.ExpandVariables;
 
 /**
  * An assertion that sends an SNMP trap.
  */
-public class SnmpTrapAssertion extends Assertion {
+public class SnmpTrapAssertion extends Assertion implements UsesVariables {
     public static final int DEFAULT_PORT = 162;
     public static final String DEFAULT_ERROR_MESSAGE = "Layer 7 SecureSpan Gateway SNMP Trap";
 
@@ -121,5 +123,9 @@ public class SnmpTrapAssertion extends Assertion {
         sb.append(errorMessage);
         sb.append('"');
         return sb.toString();
+    }
+
+    public String[] getVariablesUsed() {
+        return ExpandVariables.getReferencedNames(errorMessage);
     }
 }

@@ -7,11 +7,13 @@
 package com.l7tech.policy.assertion.alert;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.variable.ExpandVariables;
 
 /**
  * An assertion that sends an email message.
  */
-public class EmailAlertAssertion extends Assertion {
+public class EmailAlertAssertion extends Assertion implements UsesVariables {
     public static final String DEFAULT_HOST = "mail";
     public static final int DEFAULT_PORT = 25;
     public static final String DEFAULT_SUBJECT = "Layer 7 SecureSpan Gateway Email Alert";
@@ -92,5 +94,9 @@ public class EmailAlertAssertion extends Assertion {
     public void setSourceEmailAddress(String sourceEmailAddress) {
         if (sourceEmailAddress == null) sourceEmailAddress = DEFAULT_FROM;
         this.sourceEmailAddress = sourceEmailAddress;
+    }
+
+    public String[] getVariablesUsed() {
+        return ExpandVariables.getReferencedNames(this.getMessage());
     }
 }

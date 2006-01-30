@@ -3,8 +3,8 @@
  */
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.HexUtils;
@@ -12,7 +12,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.ExpandVariables;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -20,8 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The Server side Regex Assertion
@@ -34,6 +35,7 @@ public class ServerRegex implements ServerAssertion {
     private Exception compileException;
     private Regex regexAssertion;
     private final ExpandVariables expandVariables = new ExpandVariables();
+    private final String[] varNames;
     public static final String ENCODING = "UTF-8";
 
     public ServerRegex(Regex ass, ApplicationContext springContext) {
@@ -49,6 +51,7 @@ public class ServerRegex implements ServerAssertion {
         } catch (Exception e) {
             compileException = e;
         }
+        varNames = ass.getVariablesUsed();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -105,7 +108,7 @@ public class ServerRegex implements ServerAssertion {
             AssertionStatus assertionStatus = AssertionStatus.FAILED;
             if (isReplacement) {
                 logger.log(Level.FINE, "Replace requested: Match pattern '{0}', replace pattern '{1}'", new Object[]{regexAssertion.getRegex(), replacement});
-                replacement = expandVariables.process(replacement, context.getVariables());
+                replacement = expandVariables.process(replacement, context.getVariableMap(varNames));
                 String result = matcher.replaceAll(replacement);
                 messagePart.setBodyBytes(result.getBytes(encoding));
                 assertionStatus = AssertionStatus.NONE;
@@ -129,12 +132,11 @@ public class ServerRegex implements ServerAssertion {
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, new String[] { Integer.toString(whichPart) });
             return AssertionStatus.FAILED;
-        } catch (ExpandVariables.VariableNotFoundException e) {
+        } catch (NoSuchVariableException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             return AssertionStatus.FAILED;
         }
     }
-
 
     /** @return true iff. this ServerRegex would consider the specified context to be post-routing. */
     public static boolean isPostRouting(PolicyEnforcementContext context) {

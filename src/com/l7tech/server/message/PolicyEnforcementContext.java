@@ -18,7 +18,10 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.ExpandVariables;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -256,21 +259,28 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return incrementedCounters;
     }
 
-    public void setVariable(String name, Object value) {
-        variables.put(name, value);
+    public void setVariable(String name, Object value) throws VariableNotSettableException {
+        if (BuiltinVariables.isSupported(name)) {
+            BuiltinVariables.set(name, value, this);
+        } else {
+            variables.put(name, value);
+        }
     }
 
-    public Object getVariable(String name) {
-        return variables.get(name);
+    public Object getVariable(String name) throws NoSuchVariableException {
+        if (BuiltinVariables.isSupported(name)) {
+            return BuiltinVariables.get(name, this);
+        } else {
+            return variables.get(name);
+        }
     }
 
-    /**
-     * Returns the read-only (unmodifiable) <code>Map</code> of context variables
-     *
-     * @return the unmodifiable map of context variables.
-     */
-    public Map getVariables() {
-        return Collections.unmodifiableMap(variables);
+    public Map getVariableMap(String[] names) throws NoSuchVariableException {
+        Map vars = new HashMap();
+        for (int i = 0; i < names.length; i++) {
+            vars.put(names[i], getVariable(names[i]));
+        }
+        return vars;
     }
 
     public void routingStarted() {

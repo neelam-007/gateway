@@ -1,5 +1,7 @@
 package com.l7tech.policy;
 
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -74,8 +76,8 @@ public class ExpandVariablesTest extends TestCase {
           String processedMessage = null;
           try {
               expander.process(inputMessage);
-              fail("the "+ExpandVariables.VariableNotFoundException.class+" expected");
-          } catch (ExpandVariables.VariableNotFoundException e) {
+              fail("the "+ NoSuchVariableException.class+" expected");
+          } catch (NoSuchVariableException e) {
           }
       }
 

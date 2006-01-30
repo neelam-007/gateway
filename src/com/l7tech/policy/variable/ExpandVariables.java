@@ -3,24 +3,24 @@
  *
  * $Id$
  */
-package com.l7tech.policy;
+package com.l7tech.policy.variable;
 
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
-import java.util.Map;
-import java.util.Collections;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.io.IOException;
-
-import org.xml.sax.SAXException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The class replaces the variables placeholders in the string that is passed to the
@@ -44,9 +44,8 @@ public class ExpandVariables {
 
     public static final String DEF_PREFIX = "(?:\\$\\{)";
     public static final String DEF_SUFFIX = "(?:\\})";
-    private final Pattern regexPattern;
-    private final String variablePrefix;
-    private final String variableSuffix;
+    private static final Pattern regexPattern = Pattern.compile(DEF_PREFIX+"(.+?)"+DEF_SUFFIX);
+
     private final Map defaultVariables;
 
     /**
@@ -66,9 +65,6 @@ public class ExpandVariables {
             throw new IllegalArgumentException();
         }
         this.defaultVariables = variables;
-        regexPattern = Pattern.compile(DEF_PREFIX+"(.+?)"+DEF_SUFFIX);
-        variablePrefix = DEF_PREFIX;
-        variableSuffix = DEF_SUFFIX;
     }
 
     /**
@@ -77,12 +73,28 @@ public class ExpandVariables {
      *
      * @param s the input message as a message
      * @return the message with expanded/resolved varialbes
-     * @throws VariableNotFoundException if the varialbe
+     * @throws NoSuchVariableException if the varialbe
      */
-    public String process(String s) throws VariableNotFoundException {
+    public String process(String s) throws NoSuchVariableException {
         return process(s, Collections.EMPTY_MAP);
     }
 
+    public static String[] getReferencedNames(String s) {
+        if (s == null) {
+            throw new IllegalArgumentException();
+        }
+        ArrayList vars = new ArrayList();
+        Matcher matcher = regexPattern.matcher(s);
+        while (matcher.find()) {
+            int count = matcher.groupCount();
+            if (count != 1) {
+                throw new IllegalStateException("Expecting 1 matching group, received: "+count);
+            }
+            String var = matcher.group(1);
+            vars.add(var);
+        }
+        return (String[])vars.toArray(new String[0]);
+    }
 
     /**
      * Process the input string and expand the variables using the supplied
@@ -92,9 +104,9 @@ public class ExpandVariables {
      * @param s the input message as a message
      * @param userVariables the caller supplied varialbes map that is consulted first
      * @return the message with expanded/resolved varialbes
-     * @throws VariableNotFoundException if the varialbe
+     * @throws NoSuchVariableException if the varialbe
      */
-    public String process(String s, Map userVariables) throws VariableNotFoundException {
+    public String process(String s, Map userVariables) throws NoSuchVariableException {
         if (s == null) {
             throw new IllegalArgumentException();
         }
@@ -119,34 +131,13 @@ public class ExpandVariables {
                 }
             }
             if (replacement == null) {
-                throw new VariableNotFoundException(var);
+                throw new NoSuchVariableException(var);
             }
             matcher.appendReplacement(sb, replacement);
         }
         matcher.appendTail(sb);
 
         return sb.toString();
-    }
-
-    /**
-     * Signals that the Exception could not be found
-     */
-    public static class VariableNotFoundException extends Exception {
-        private String variable;
-        /**
-         * @param   variable   the variable that was not found and caused the exception
-         */
-        VariableNotFoundException(String variable) {
-            super("The variable '"+variable+"' not found");
-            this.variable = variable;
-        }
-
-        /**
-         * @return the variable name that was not found
-         */
-        public String getVariable() {
-            return variable;
-        }
     }
 
     public static void populateLazyRequestVariables(final PolicyEnforcementContext cntx) {
@@ -201,4 +192,5 @@ public class ExpandVariables {
 
         // todo, other common variables as needed.
     }
+
 }

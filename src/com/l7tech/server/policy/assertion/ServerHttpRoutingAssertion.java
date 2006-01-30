@@ -27,12 +27,13 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.identity.User;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.ExpandVariables;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
@@ -64,14 +65,14 @@ import java.util.logging.Logger;
 public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
-    public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() +
-      ".sslSessionTimeoutSeconds";
+    public static final String PROP_SSL_SESSION_TIMEOUT =
+            HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
     private SignerInfo senderVouchesSignerInfo;
     private final Auditor auditor;
     private final FailoverStrategy failoverStrategy;
-    private final ExpandVariables vars = new ExpandVariables();
-
+    private final ExpandVariables expandVars = new ExpandVariables();
+    private final String[] varNames;
     private final int maxFailoverAttempts;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
@@ -95,7 +96,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             senderVouchesSignerInfo = ku.getSslSignerInfo();
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
             throw new RuntimeException(e);
         }
 
@@ -113,6 +114,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             failoverStrategy = null;
             maxFailoverAttempts = 1;
         }
+
+        varNames = assertion.getVariablesUsed();
     }
 
     private boolean areValidUrlHostnames(String[] addrs, Auditor auditor) {
@@ -121,7 +124,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             try {
                 new URL("http", addr, 777, "/foo/bar");
             } catch (MalformedURLException e) {
-                auditor.logAndAudit(AssertionMessages.REMOTE_ADDRESS_INVALID, new String[] { addr });
+                auditor.logAndAudit(AssertionMessages.IP_ADDRESS_INVALID, new String[] { addr });
                 return false;
             }
         }
@@ -170,7 +173,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 failoverStrategy.reportFailure(host);
             }
 
-            auditor.logAndAudit(AssertionMessages.TOO_MANY_ROUTING_ATTEMPTS);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_TOO_MANY_ATTEMPTS);
             return AssertionStatus.FAILED;
         } finally {
             context.routingFinished();
@@ -205,7 +208,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     /**
      *
      */
-    private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws IOException, PolicyAssertionException
+    private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws PolicyAssertionException
     {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
@@ -262,14 +265,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (login != null && login.length() > 0
               && password != null && password.length() > 0) {
                 try {
-                    login = vars.process(login, context.getVariables());
-                    password = vars.process(password, context.getVariables());
-                } catch (ExpandVariables.VariableNotFoundException e) {
+                    Map vars = context.getVariableMap(varNames);
+                    login = expandVars.process(login, vars);
+                    password = expandVars.process(password, vars);
+                } catch (NoSuchVariableException e) {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_NO_SUCH_VAR, new String[] { e.getVariable() });
                     return AssertionStatus.FAILED;
                 }
 
-                auditor.logAndAudit(AssertionMessages.LOGIN_INFO, new String[] {login});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, new String[] {login});
                 HttpState state = client.getState();
                 doAuth = true;
                 state.setAuthenticationPreemptive(true);
@@ -313,7 +317,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private void doTaiCredentialChaining(PolicyEnforcementContext context, HttpClient client, List headers, URL url) {
         String chainId = null;
         if (!context.isAuthenticated()) {
-            auditor.logAndAudit(AssertionMessages.TAI_REQUEST_NOT_AUTHENTICATED);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NOT_AUTHENTICATED);
         } else {
             User clientUser = context.getAuthenticatedUser();
             if (clientUser != null) {
@@ -322,17 +326,17 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 if (id == null || id.length() < 1) id = clientUser.getUniqueIdentifier();
 
                 if (id != null && id.length() > 0) {
-                    auditor.logAndAudit(AssertionMessages.TAI_REQUEST_CHAIN_USERNAME, new String[] {id});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_USERNAME, new String[] {id});
                     chainId = id;
                 } else
-                    auditor.logAndAudit(AssertionMessages.TAI_REQUEST_USER_ID_NOT_UNIQUE, new String[] {id});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER_ID, new String[] {id});
             } else {
                 final String login = context.getCredentials().getLogin();
                 if (login != null && login.length() > 0) {
-                    auditor.logAndAudit(AssertionMessages.TAI_REQUEST_CHAIN_LOGIN, new String[] {login});
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_CHAIN_LOGIN, new String[] {login});
                     chainId = login;
                 } else
-                    auditor.logAndAudit(AssertionMessages.TAI_REQUEST_NO_USER_OR_LOGIN);
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NO_USER);
             }
 
             if (chainId != null && chainId.length() > 0) {
@@ -344,7 +348,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 cookieOut.setValue(chainId);
                 cookieOut.setDomain(url.getHost());
                 cookieOut.setPath(url.getPath());
-                auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE, new String[] {cookieOut.getName()});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, new String[] {cookieOut.getName()});
                 client.getState().addCookie(cookieOut);
             }
         }
@@ -356,7 +360,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private void doAttachSamlSenderVouches(PolicyEnforcementContext context) throws CertificateException, IOException, SAXException, SignatureException {
         LoginCredentials svInputCredentials = context.getCredentials();
         if (svInputCredentials == null) {
-            auditor.logAndAudit(AssertionMessages.SAML_SV_REQUEST_NOT_AUTHENTICATED);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
         } else {
             Document document = context.getRequest().getXmlKnob().getDocumentWritable();
             SamlAssertionGenerator ag = new SamlAssertionGenerator(senderVouchesSignerInfo);
@@ -368,7 +372,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
                     samlOptions.setClientAddress(clientAddress);
                 } catch (UnknownHostException e) {
-                    auditor.logAndAudit(AssertionMessages.CANNOT_RESOLVE_IP_ADDRESS, null, e);
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
                 }
             }
             samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
@@ -429,7 +433,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             long latencyTimerEnd = System.currentTimeMillis();
             if (readOk) {
                 long latency = latencyTimerEnd - latencyTimerStart;
-                context.setVariable("routing.latency", ""+latency);
+                context.setVariable(HttpRoutingAssertion.ROUTING_LATENCY, ""+latency);
             }
 
             RoutingResultListener rrl = context.getRoutingResultListener();
@@ -437,14 +441,14 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
             if(status != HttpConstants.STATUS_OK && retryRequested) {
                 // retry after if requested by a routing result listener
-                auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS_HANDLED, new String[] {url.getPath(), String.valueOf(status)});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[] {url.getPath(), String.valueOf(status)});
                 return reallyTryUrl(context, client, hconf, headers, doAuth, url, false);
             }
 
             if (status == HttpConstants.STATUS_OK)
-                auditor.logAndAudit(AssertionMessages.ROUTED_OK);
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
             else
-                auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
             HttpResponseKnob httpResponseKnob = (HttpResponseKnob) context.getResponse().getKnob(HttpResponseKnob.class);
             if (httpResponseKnob != null)
@@ -479,7 +483,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     }
 
     private HttpHeaders toHeaders(final Header[] headers) {
-        HttpHeader[] sevenHeads = null;
+        HttpHeader[] sevenHeads;
         if(headers==null) {
             sevenHeads = new HttpHeader[0];
         }
@@ -509,7 +513,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if(status == HttpConstants.STATUS_OK && outerContentType==null) {
                 logger.warning("downstream service returned status (" +
                                status + ") missing content type header.");
-                auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, null);
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, null);
 
                 Document faultDetails = XmlUtil.stringToDocument("<downstreamResponse><status>" +
                                         status + "</status></downstreamResponse>");
@@ -555,7 +559,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 context.getResponse().initialize(stashManager, outerContentType, responseStream);
             }
         } catch (Exception e) {
-            auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);
+            auditor.logAndAudit(AssertionMessages.HTTPROUTE_ERROR_READING_RESPONSE, null, e);
         }
         return responseOk;
     }
@@ -567,8 +571,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         URL url;
         String psurl = httpRoutingAssertion.getProtectedServiceUrl();
         if (psurl == null) {
-            URL wsdlUrl = service.serviceUrl();
-            url = wsdlUrl;
+            url = service.serviceUrl();
         } else {
             url = new URL(psurl);
         }
@@ -593,10 +596,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
             if(CookieUtils.isPassThroughCookie(cookie)) {
                 if(cookie.isNew()) {
-                   auditor.logAndAudit(AssertionMessages.UPDATE_COOKIE, new String[] {cookie.getCookieName()});
+                   auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[] {cookie.getCookieName()});
                 }
 
-                auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE_WITH_VERSION, new String[] {cookie.getCookieName(), String.valueOf(cookie.getVersion())});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[] {cookie.getCookieName(), String.valueOf(cookie.getVersion())});
 
                 // create HTTP Client version of cookie
                 Cookie httpClientCookie = CookieUtils.toHttpClientCookie(cookie);

@@ -1,17 +1,17 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.EqualityAssertion;
+import com.l7tech.policy.assertion.ComparisonAssertion;
 
 import javax.swing.*;
 
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the {@link com.l7tech.policy.assertion.EqualityAssertion}.
+ * It represents the {@link com.l7tech.policy.assertion.ComparisonAssertion}.
  */
-public class EqualityAssertionPaletteNode extends AbstractTreeNode {
-    public EqualityAssertionPaletteNode() {
+public class ComparisonAssertionPaletteNode extends AbstractTreeNode {
+    public ComparisonAssertionPaletteNode() {
         super(null);
     }
 
@@ -32,7 +32,7 @@ public class EqualityAssertionPaletteNode extends AbstractTreeNode {
      * @return the popup menu
      */
     public Assertion asAssertion() {
-        return new EqualityAssertion();
+        return new ComparisonAssertion();
     }
 
     /**

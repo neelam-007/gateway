@@ -45,10 +45,9 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
     protected final String expr;
     protected final boolean isReq;
     protected final ServerAssertion softwareDelegate;
-    private final String varFound;
-    private final String varResult;
-    private final String varCount;
+
     private final Auditor auditor;
+    private final SimpleXpathAssertion assertion;
 
     /**
      * Prepare a hardware accelerated xpath assertion.
@@ -81,23 +80,15 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             logger.log(Level.INFO, "Assertion not supported by hardware -- will fallback to software: " + expr, e);
         }
         this.expr = expr;
+        this.assertion = (SimpleXpathAssertion)assertion;
 
-        String prefix = ((SimpleXpathAssertion)assertion).getVariablePrefix();
-
-        if (prefix == null || prefix.length() == 0) {
-            prefix = getDefaultVariablePrefix();
-        }
-
-        varFound = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_FOUND;
-        varResult = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_RESULT;
-        varCount = prefix + "." + SimpleXpathAssertion.VAR_SUFFIX_COUNT;
         auditor = new Auditor(this, applicationContext, logger);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        context.setVariable(varFound, SimpleXpathAssertion.FALSE);
-        context.setVariable(varCount, "0");
-        context.setVariable(varResult, null);
+        context.setVariable(assertion.foundVariable(), SimpleXpathAssertion.FALSE);
+        context.setVariable(assertion.countVariable(), "0");
+        context.setVariable(assertion.resultVariable(), null);
 
         if (expr == null ) {
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
@@ -111,7 +102,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
         }
 
         // TODO Very bad race condition here that can lead to bogus results.  See Bug #1598.
-        TarariKnob tknob = null;
+        TarariKnob tknob;
         Message mess = isReq ? context.getRequest() : context.getResponse();
         try {
             // Ensure Tarari context is attached, if possible
@@ -138,9 +129,9 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
 
             RAXContext raxContext = tmContext.getRaxContext();
             int numMatches = raxContext.getCount(index);
-            context.setVariable(varCount, new Integer(numMatches).toString());
+            context.setVariable(assertion.countVariable(), Integer.toString(numMatches));
             if (numMatches > 0) {
-                context.setVariable(varFound, SimpleXpathAssertion.TRUE);
+                context.setVariable(assertion.foundVariable(), SimpleXpathAssertion.TRUE);
                 auditor.logAndAudit(isReq ? AssertionMessages.XPATH_SUCCEED_REQUEST : AssertionMessages.XPATH_SUCCEED_RESPONSE);
 
                 StringBuffer resultBuf = new StringBuffer();
@@ -150,11 +141,11 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
                     resultBuf.append(n.getStringValue());
                     n = ns.getNextNode();
                 }
-                context.setVariable(varResult, resultBuf.toString());
+                context.setVariable(assertion.resultVariable(), resultBuf.toString());
 
                 return AssertionStatus.NONE;
             } else {
-                context.setVariable(varFound, SimpleXpathAssertion.FALSE);
+                context.setVariable(assertion.foundVariable(), SimpleXpathAssertion.FALSE);
                 return AssertionStatus.FALSIFIED;
             }
         } catch (SAXException e) {
@@ -176,5 +167,4 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
         super.finalize();
     }
 
-    protected abstract String getDefaultVariablePrefix();
 }

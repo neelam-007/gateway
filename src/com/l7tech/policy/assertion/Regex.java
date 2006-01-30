@@ -5,11 +5,13 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.variable.ExpandVariables;
+
 /**
  * @author emil
  * @version Mar 21, 2005
  */
-public class Regex extends Assertion {
+public class Regex extends Assertion implements UsesVariables {
     public static final int MAX_LENGTH = 1024 * 512;
 
     private String regex;
@@ -126,5 +128,12 @@ public class Regex extends Assertion {
      */
     public void setEncoding(String encoding) {
         this.encoding = encoding;
+    }
+
+    public String[] getVariablesUsed() {
+        if (replacement == null)
+            return new String[0];
+
+        return ExpandVariables.getReferencedNames(replacement);
     }
 }

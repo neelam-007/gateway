@@ -77,6 +77,8 @@ public class WspConstants {
         "CredentialSource", // computed by an assertion to signal that is a credential source
         "CredentialModifier", // computed by an assertion to signal that is a credential modifier
         //"RequireProofOfPosession", // computed by an saml assertion to indicate that the proof of posesions has been required
+        "VariablesUsed",
+        "VariablesSet",
     };
 
     static final TypeMapping typeMappingObject = new ObjectTypeMapping(Object.class, "objectValue");
@@ -114,7 +116,7 @@ public class WspConstants {
 
         new BasicTypeMapping(boolean.class, "booleanValue") {
             protected Object stringToObject(String in) {
-                return new Boolean(in);
+                return Boolean.valueOf(in);
             }
         },
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
@@ -147,6 +149,19 @@ public class WspConstants {
 
             protected Object stringToObject(String in) {
                 return AuthenticationProperties.forKeyName(in);
+            }
+        },
+
+        new BasicTypeMapping(ComparisonAssertion.Operator.class, "operator") {
+            protected String objectToString(Object target) {
+                ComparisonAssertion.Operator op = (ComparisonAssertion.Operator)target;
+                return op.getShortName();
+            }
+
+            protected Object stringToObject(String value) throws InvalidPolicyStreamException {
+                ComparisonAssertion.Operator op = ComparisonAssertion.Operator.getByShortName(value);
+                if (op == null) throw new InvalidPolicyStreamException("Unknown Operator short name: '" + value + "'");
+                return op;
             }
         },
 
@@ -225,7 +240,7 @@ public class WspConstants {
         new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
         new AssertionMapping(new InverseHttpFormPost(), "InverseHttpFormPost"),
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
-        new AssertionMapping(new EqualityAssertion(), "EqualityAssertion"),
+        new AssertionMapping(new ComparisonAssertion(), "ComparisonAssertion"),
         new AssertionMapping(new StealthFault(), "StealthFault"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
         new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),
@@ -260,5 +275,7 @@ public class WspConstants {
         WspUpgradeUtilFrom30.httpClientCertCompatibilityMapping,
         WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
         WspUpgradeUtilFrom30.wssDigestCompatibilityMapping,
+
+        EqualityRenamedToComparison.equalityCompatibilityMapping,
     };
 }

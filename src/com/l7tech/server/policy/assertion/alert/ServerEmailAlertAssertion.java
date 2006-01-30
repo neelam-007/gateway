@@ -11,7 +11,8 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
-import com.l7tech.policy.ExpandVariables;
+import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -43,6 +44,8 @@ public class ServerEmailAlertAssertion implements ServerAssertion {
 
     private static Map sessionCache = new WeakHashMap();
     private Session session = null;
+    private final String[] varsUsed;
+    private final ExpandVariables expandVariables = new ExpandVariables();
 
     /**
      * Find a shared session that uses the same SMTP host, SMTP port, and mail From address.
@@ -89,6 +92,7 @@ public class ServerEmailAlertAssertion implements ServerAssertion {
             fromaddr = null;
         }
         fromAddress = fromaddr;
+        varsUsed = ass.getVariablesUsed();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -108,10 +112,10 @@ public class ServerEmailAlertAssertion implements ServerAssertion {
             message.setFrom(fromAddress);
             message.setSubject(ass.getSubject());
             String body = ass.getMessage();
-            ExpandVariables vars = new ExpandVariables();
             try {
-                body = vars.process(body, context.getVariables());
-            } catch (ExpandVariables.VariableNotFoundException e) {
+                Map vars = context.getVariableMap(varsUsed);
+                body = expandVariables.process(body, vars);
+            } catch (NoSuchVariableException e) {
                 logger.log(Level.WARNING, "cannot expand all variables", e);
             }
             message.setText(body);

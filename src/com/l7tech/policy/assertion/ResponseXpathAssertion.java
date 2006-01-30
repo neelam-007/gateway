@@ -35,4 +35,8 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion {
     private void initDefaultXpath() {
         setXpathExpression(new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, createDefaultNamespaceMap()));
     }
+
+    protected String defaultVariablePrefix() {
+        return DEFAULT_VAR_PREFIX;
+    }
 }

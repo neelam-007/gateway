@@ -4,13 +4,14 @@
 
 package com.l7tech.common.message;
 
+import com.l7tech.common.http.HttpCookie;
+
 import java.io.IOException;
+import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.Map;
 import java.util.Enumeration;
-
-import com.l7tech.common.http.HttpCookie;
+import java.util.Map;
 
 /**
  * Information about a request that arrived over HTTP.
@@ -37,6 +38,8 @@ public interface HttpRequestKnob extends TcpKnob {
      * @return the complete URL of this request (e.g. https://ssg.example.com/ssg/soap). Never null or empty.
      */
     String getRequestUrl();
+
+    URL getRequestURL();
 
     /**
      * @param name the name of the header whose value should be retrieved. Must not be null.

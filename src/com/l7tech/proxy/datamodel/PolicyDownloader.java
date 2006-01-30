@@ -84,7 +84,7 @@ public class PolicyDownloader {
                         request.prepareClientCertificate(); // TODO make client cert work with third-part WS-Trust
                         key = ssg.getClientCertificatePrivateKey();
                     }
-                    SamlAssertion saml = request.getOrCreateSamlAssertion();
+                    SamlAssertion saml = request.getOrCreateSamlHolderOfKeyAssertion();
                     policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg.getRuntime().getHttpClient(),
                                                                                  ssg,
                                                                                  serviceId,

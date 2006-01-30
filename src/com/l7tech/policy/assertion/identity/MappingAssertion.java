@@ -1,8 +1,9 @@
 package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.policy.assertion.SetsVariables;
 
-public class MappingAssertion extends IdentityAssertion {
+public class MappingAssertion extends IdentityAssertion implements SetsVariables {
     private long attributeConfigOid;
 
     private String variableName;
@@ -66,5 +67,9 @@ public class MappingAssertion extends IdentityAssertion {
 
     public void setValidForGroups(boolean validForGroups) {
         this.validForGroups = validForGroups;
+    }
+
+    public String[] getVariablesSet() {
+        return new String[] { variableName };
     }
 }

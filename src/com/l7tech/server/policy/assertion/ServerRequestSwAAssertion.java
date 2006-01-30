@@ -73,7 +73,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
         try {
             if (!context.getRequest().isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.SWA_NOT_SOAP);
                 return AssertionStatus.FAILED;
             }
         } catch (SAXException e) {
@@ -81,7 +81,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         }
 
         if (!context.getRequest().getMimeKnob().isMultipart()) {
-            auditor.logAndAudit(AssertionMessages.NOT_MULTIPART_MESSAGE);
+            auditor.logAndAudit(AssertionMessages.SWA_NOT_MULTIPART);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -107,13 +107,13 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                     result = operationXPath.selectNodes(doc);
 
                     if (result == null || result.size() == 0) {
-                        auditor.logAndAudit(AssertionMessages.OPERATION_NOT_FOUND, new String[] {bo.getXpath()});
+                        auditor.logAndAudit(AssertionMessages.SWA_OPERATION_NOT_FOUND, new String[] {bo.getXpath()});
                         continue;
                     }
 
                     operationElementFound = true;
                     if (result.size() > 1) {
-                        auditor.logAndAudit(AssertionMessages.SAME_OPERATION_APPEARS_MORE_THAN_ONCE, new String[] {bo.getXpath()});
+                        auditor.logAndAudit(AssertionMessages.SWA_REPEATED_OPERATION, new String[] {bo.getXpath()});
                         return AssertionStatus.FALSIFIED;
                     }
 
@@ -125,11 +125,11 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                     int type = operationNodeRequest.getNodeType();
 
                     if (type != Node.ELEMENT_NODE) {
-                        auditor.logAndAudit(AssertionMessages.OPERATION_IS_NON_ELEMENT_NODE, new String[] {bo.getXpath(), operationNodeRequest.toString()});
+                        auditor.logAndAudit(AssertionMessages.SWA_OPERATION_NOT_ELEMENT_NODE, new String[] {bo.getXpath(), operationNodeRequest.toString()});
                         return AssertionStatus.FAILED;
                     }
 
-                    auditor.logAndAudit(AssertionMessages.OPERATION_FOUND, new String[] {bo.getName()});
+                    auditor.logAndAudit(AssertionMessages.SWA_OPERATION_FOUND, new String[] {bo.getName()});
 
                     Iterator parameterItr = bo.getMultipart().keySet().iterator();
 
@@ -142,12 +142,12 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         result = parameterXPath.selectNodes(doc);
 
                         if (result == null || result.size() == 0) {
-                            auditor.logAndAudit(AssertionMessages.MIME_PART_NOT_FOUND, new String[] {bo.getXpath(), part.getName()});
+                            auditor.logAndAudit(AssertionMessages.SWA_PART_NOT_FOUND, new String[] {bo.getXpath(), part.getName()});
                             return AssertionStatus.FALSIFIED;
                         }
 
                         if (result.size() > 1) {
-                            auditor.logAndAudit(AssertionMessages.SAME_MIME_PART_APPEARS_MORE_THAN_ONCE, new String[] {bo.getXpath(), part.getName()});
+                            auditor.logAndAudit(AssertionMessages.SWA_REPEATED_MIME_PART, new String[] {bo.getXpath(), part.getName()});
                             return AssertionStatus.FALSIFIED;
                         }
 
@@ -159,11 +159,11 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         type = parameterNodeRequest.getNodeType();
 
                         if (type != Node.ELEMENT_NODE) {
-                            auditor.logAndAudit(AssertionMessages.PARAMETER_IS_NON_ELEMENT_NODE, new String[] {bo.getXpath(), part.getName(), parameterNodeRequest.toString()});
+                            auditor.logAndAudit(AssertionMessages.SWA_PARAMETER_NOT_ELEMENT_NODE, new String[] {bo.getXpath(), part.getName(), parameterNodeRequest.toString()});
                             return AssertionStatus.FAILED;
                         }
 
-                        auditor.logAndAudit(AssertionMessages.PARAMETER_FOUND, new String[] {part.getName()});
+                        auditor.logAndAudit(AssertionMessages.SWA_PARAMETER_FOUND, new String[] {part.getName()});
                         Element parameterElementRequest = (Element)parameterNodeRequest;
                         Attr href = parameterElementRequest.getAttributeNode("href");
 
@@ -187,7 +187,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                         // for each attachment (href)
                         if (hrefs.size() == 0) {
-                            auditor.logAndAudit(AssertionMessages.REFERENCE_NOT_FOUND, new String[] {part.getName()});
+                            auditor.logAndAudit(AssertionMessages.SWA_REFERENCE_NOT_FOUND, new String[] {part.getName()});
                             return AssertionStatus.FALSIFIED;
                         }
 
@@ -198,17 +198,17 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             href = (Attr)hrefs.get(i);
 
                             String mimePartCIDUrl = href.getValue();
-                            auditor.logAndAudit(AssertionMessages.REFERENCE_FOUND, new String[] {part.getName(), mimePartCIDUrl});
+                            auditor.logAndAudit(AssertionMessages.SWA_REFERENCE_FOUND, new String[] {part.getName(), mimePartCIDUrl});
                             int cpos = mimePartCIDUrl.indexOf(":");
                             if (cpos < 0) {
-                                auditor.logAndAudit(AssertionMessages.INVALID_CONTENT_ID_URL, new String[] {mimePartCIDUrl});
+                                auditor.logAndAudit(AssertionMessages.SWA_INVALID_CONTENT_ID_URL, new String[] {mimePartCIDUrl});
                                 return AssertionStatus.FALSIFIED;
                             }
 
                             String scheme = mimePartCIDUrl.substring(0,cpos);
                             String id = mimePartCIDUrl.substring(cpos+1);
                             if (!"cid".equals(scheme)) {
-                                auditor.logAndAudit(AssertionMessages.INVALID_CONTENT_ID_URL, new String[] {mimePartCIDUrl});
+                                auditor.logAndAudit(AssertionMessages.SWA_INVALID_CONTENT_ID_URL, new String[] {mimePartCIDUrl});
                                 return AssertionStatus.FALSIFIED;
                             }
 
@@ -218,9 +218,9 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 // validate the content type
                                 if (!part.validateContentType(mimepartRequest.getContentType())) {
                                     if (part.getContentTypes().length > 1) {
-                                        auditor.logAndAudit(AssertionMessages.MUST_BE_ONE_OF_CONTENT_TYPES, new String[] {mimePartCIDUrl, part.retrieveAllContentTypes()});
+                                        auditor.logAndAudit(AssertionMessages.SWA_NOT_IN_CONTENT_TYPES, new String[] {mimePartCIDUrl, part.retrieveAllContentTypes()});
                                     } else {
-                                        auditor.logAndAudit(AssertionMessages.INCORRECT_CONTENT_TYPE, new String[] {mimePartCIDUrl, part.retrieveAllContentTypes()});
+                                        auditor.logAndAudit(AssertionMessages.SWA_BAD_CONTENT_TYPE, new String[] {mimePartCIDUrl, part.retrieveAllContentTypes()});
                                     }
                                     return AssertionStatus.FALSIFIED;
                                 }
@@ -230,9 +230,9 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 // check the max. length allowed
                                 if (totalLen > part.getMaxLength() * 1000) {
                                     if (hrefs.size() > 1) {
-                                        auditor.logAndAudit(AssertionMessages.TOTAL_LENGTH_LIMIT_EXCEEDED, new String[] {part.getName(), String.valueOf(hrefs.size()), String.valueOf(part.getMaxLength())});
+                                        auditor.logAndAudit(AssertionMessages.SWA_TOTAL_LENGTH_LIMIT_EXCEEDED, new String[] {part.getName(), String.valueOf(hrefs.size()), String.valueOf(part.getMaxLength())});
                                     } else {
-                                        auditor.logAndAudit(AssertionMessages.INDIVIDUAL_LENGTH_LIMIT_EXCEEDED, new String[] {mimePartCIDUrl, String.valueOf(part.getMaxLength())});
+                                        auditor.logAndAudit(AssertionMessages.SWA_PART_LENGTH_LIMIT_EXCEEDED, new String[] {mimePartCIDUrl, String.valueOf(part.getMaxLength())});
                                     }
                                     return AssertionStatus.FALSIFIED;
                                 }
@@ -241,7 +241,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 // set the validated flag of the attachment to true
                                 mimepartRequest.setValidated(true);
                             } else {
-                                auditor.logAndAudit(AssertionMessages.ATTACHMENT_NOT_FOUND, new String[] {mimePartCIDUrl});
+                                auditor.logAndAudit(AssertionMessages.SWA_NO_ATTACHMENT, new String[] {mimePartCIDUrl});
                                 return AssertionStatus.FALSIFIED;
                             }
                         } // for each attachment
@@ -257,7 +257,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         if (attachmentName == null || attachmentName.length() < 1)
                             attachmentName = "in position #" + attachment.getPosition();
                         if (!attachment.isValidated()) {
-                            auditor.logAndAudit(AssertionMessages.UNEXPECTED_ATTACHMENT_FOUND, new String[] {attachmentName});
+                            auditor.logAndAudit(AssertionMessages.SWA_UNEXPECTED_ATTACHMENT, new String[] {attachmentName});
                             return AssertionStatus.FALSIFIED;
                         }
                     }
@@ -281,7 +281,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         }
 
         if (!operationElementFound) {
-            auditor.logAndAudit(AssertionMessages.INVALID_OPERATION);
+            auditor.logAndAudit(AssertionMessages.SWA_INVALID_OPERATION);
         }
         return AssertionStatus.FALSIFIED;
     }
