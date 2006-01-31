@@ -70,7 +70,7 @@ public class XmlFacet extends MessageFacet {
 
         public PartInfo getPart(int num) throws IOException, NoSuchPartException {
             ensureFirstPartValid();
-            return mk.getPart(num);
+            return num == 0 ? getFirstPart() : mk.getPart(num);
         }
 
         public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException {
