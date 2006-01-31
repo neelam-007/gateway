@@ -148,12 +148,25 @@ public class KnobblyMessageTest extends TestCase {
     public void test2198Anomaly() throws Exception {
         String initial = "<getquote>MSFT</getquote>";
         String newMsg = "<getquote>L7</getquote>";
+
+        // create a message
         Message msg = new Message(new ByteArrayStashManager(),
                                   ContentTypeHeader.XML_DEFAULT,
                                   new ByteArrayInputStream(initial.getBytes()));
+
+        // msg processor gets document read only to process security decorations
         msg.getXmlKnob().getDocumentReadOnly();
-        msg.getXmlKnob().getDocumentWritable();
+
+        // xsl does a transformation and sets the output of transformation as new bytes
         msg.getMimeKnob().getPart(0).setBodyBytes(newMsg.getBytes());
+
+        // routing assertion notices there were wssprocessor results and gets document in write mode to delete the security header (or simlpy change actor)
+        // this here is the problem. you'd think this doc writable would be based on the new bytes set in previous statement
+        // but apparantly, it's not
+        // if you comment this statement, the test succeeds
+        msg.getXmlKnob().getDocumentWritable();
+
+        // routing assertion routes the wrong document as per failure of assert below
         InputStream aftertransformstream = msg.getMimeKnob().getEntireMessageBodyAsInputStream();
         String output = new String (HexUtils.slurpStream(aftertransformstream));
         assertTrue(output.equals(newMsg));
