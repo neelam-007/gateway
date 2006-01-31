@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.PersistentIdentityProvider;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
+import com.l7tech.common.util.HexUtils;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -95,7 +96,7 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
         String authPassHash = null;
 
         if (format == CredentialFormat.CLEARTEXT) {
-            authPassHash = UserBean.encodePasswd(login, new String(credentials), HttpDigest.REALM);
+            authPassHash = HexUtils.encodePasswd(login, new String(credentials), HttpDigest.REALM);
             if (dbPassHash.equals(authPassHash))
                 return new AuthenticationResult(dbUser);
             logger.info("Incorrect password for login " + login);
