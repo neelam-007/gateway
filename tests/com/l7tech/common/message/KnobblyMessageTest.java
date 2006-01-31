@@ -18,6 +18,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -142,6 +143,20 @@ public class KnobblyMessageTest extends TestCase {
         } catch (MessageNotSoapException e) {
             logger.info("Expected exception was thrown: " + e);
         }
+    }
+
+    public void test2198Anomaly() throws Exception {
+        String initial = "<getquote>MSFT</getquote>";
+        String newMsg = "<getquote>L7</getquote>";
+        Message msg = new Message(new ByteArrayStashManager(),
+                                  ContentTypeHeader.XML_DEFAULT,
+                                  new ByteArrayInputStream(initial.getBytes()));
+        msg.getXmlKnob().getDocumentReadOnly();
+        msg.getXmlKnob().getDocumentWritable();
+        msg.getMimeKnob().getPart(0).setBodyBytes(newMsg.getBytes());
+        InputStream aftertransformstream = msg.getMimeKnob().getEntireMessageBodyAsInputStream();
+        String output = new String (HexUtils.slurpStream(aftertransformstream));
+        assertTrue(output.equals(newMsg));
     }
 
     public void testCombinedDomAndByteOperations() throws Exception {
