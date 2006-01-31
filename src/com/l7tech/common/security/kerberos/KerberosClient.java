@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -52,10 +53,46 @@ public class KerberosClient {
     }
 
     /**
+     * Get the default GSS service name.
      *
+     * @return the name
      */
     public static String getGSSServiceName() {
-        return getServiceName() + "@" + getHostName();
+        return getGSSServiceName(getServiceName(), getHostName());
+    }
+
+    /**
+     * Get the GSS service name for the given service and host.
+     *
+     * @param service the service name, if null the default is used.
+     * @param host the host name, if null the default is used.
+     * @return the name
+     */
+    public static String getGSSServiceName(String service, String host) {
+        String serviceToUse = service != null ?  service : getServiceName();
+        String hostToUse = host != null ?  host : getHostName();
+
+        return serviceToUse + "@" + hostToUse;
+    }
+
+    /**
+     * Get the name of the HTTP service for the given host.
+     *
+     * <p>This name is suitable for use with SPNEGO (Simple and Protected
+     * GSS-API NEGOtiation).</p>
+     *
+     * @param protectedUrl the url of the Kerberos protected service.
+     * @return the name
+     * @throws NullPointerException if the given url is null
+     * @throws IllegalArgumentException if the given url does not have a host
+     */
+    public static String getGSSServiceName(URL protectedUrl) {
+        if(protectedUrl==null) throw new NullPointerException("protectedUrl must not be null.");
+
+        String host = protectedUrl.getHost();
+        if(host==null) throw new IllegalArgumentException("The url must contain a host name.");
+
+        return getGSSServiceName(SERVICE_NAME_SPNEGO, host.toLowerCase().trim());
     }
 
     /**
@@ -103,7 +140,7 @@ public class KerberosClient {
                         credential = manager.createCredential(null, GSSCredential.DEFAULT_LIFETIME, kerb5Oid, GSSCredential.INITIATE_ONLY);
                         GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
 
-                        context = manager.createContext(serviceName, kerb5Oid, credential, GSSContext.DEFAULT_LIFETIME);
+                        context = manager.createContext(serviceName, kerb5Oid, credential, KERBEROS_LIFETIME.intValue());
                         context.requestMutualAuth(false);
                         context.requestAnonymity(false);
                         context.requestConf(false);
@@ -220,15 +257,21 @@ public class KerberosClient {
 
     private static final Logger logger = Logger.getLogger(KerberosClient.class.getName());
 
+    private static final String SERVICE_NAME_SPNEGO = "http";
+
     private static final String KERBEROS_SERVICE_NAME_PROPERTY = "com.l7tech.common.security.kerberos.service";
-    private static final String KERBEROS_SERVICE_NAME_DEFAULT = "http";
+    private static final String KERBEROS_SERVICE_NAME_DEFAULT = SERVICE_NAME_SPNEGO;
 
     private static final String KERBEROS_HOST_NAME_PROPERTY = "com.l7tech.common.security.kerberos.host";
     private static final String KERBEROS_HOST_NAME_DEFAULT = "ssg";
 
     private static final String KERBEROS_5_OID = "1.2.840.113554.1.2.2";
-    private static final String LOGIN_CONTEXT_INIT = "com.sun.security.jgss.initiate";
-    private static final String LOGIN_CONTEXT_ACCEPT = "com.sun.security.jgss.accept";
+    private static final String LOGIN_CONTEXT_INIT = "com.l7tech.common.security.kerberos.initiate";
+    private static final String LOGIN_CONTEXT_ACCEPT = "com.l7tech.common.security.kerberos.accept";
+
+    private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
+    private static final Integer KERBEROS_LIFETIME_DEFAULT = new Integer(60 * 15); // seconds
+    private static final Integer KERBEROS_LIFETIME = Integer.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT);
 
     private static Oid kerb5Oid;
 

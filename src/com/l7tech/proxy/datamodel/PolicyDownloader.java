@@ -3,6 +3,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -105,7 +106,7 @@ public class PolicyDownloader {
                                                                                 useSsl,
                                                                                 clientCert,
                                                                                 key);
-                } else if(ssg.isEnableKerberosCredentials()) {
+                } else if(ssg.isEnableKerberosCredentials() && KerberosUtils.isEnabled()) {
                     log.info("Trying Kerberos-over-SSL authenticated policy download from Trusted Gateway " + ssg);
                     try {
                         policy = PolicyServiceClient.downloadPolicyWithKerberos(ssg.getRuntime().getHttpClient(),

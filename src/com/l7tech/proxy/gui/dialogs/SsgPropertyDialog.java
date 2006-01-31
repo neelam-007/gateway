@@ -5,8 +5,10 @@ import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
@@ -57,6 +59,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     //   View for General pane
     private JComponent generalPane;
     private JTextField fieldServerAddress;
+    private JTextField fieldKerberosName;
     private JLabel imageLabel;
 
     //   View for Identity pane
@@ -232,6 +235,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         } else {
             TrustedSsgIdentityPanel tp = new TrustedSsgIdentityPanel(ssg);
             ssgIdentityPane = tp;
+            tp.getUseKerberosCredentialCheckbox().setEnabled(KerberosUtils.isEnabled());
             tp.getUseClientCredentialCheckBox().addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     updateIdentityEnableState();
@@ -514,6 +518,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.HORIZONTAL,
                                             new Insets(5, 5, 0, 25), 0, 0));
 
+            JTextField fkn = getFieldKerberosName(); // ensure created
+            if(KerberosUtils.isEnabled() && !ssg.isFederatedGateway()) {
+                pane.add(new JLabel("Kerberos Name:"),
+                         new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.EAST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(5, 25, 0, 0), 0, 0));
+                pane.add(fkn,
+                         new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(5, 5, 0, 25), 0, 0));
+            }
+
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
                      new GridBagConstraints(0, gridY++, 2, 1, 1.0, 1.0,
@@ -579,9 +597,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /** Enable or disable the Ok button, depending on whether all input is acceptable. */
     private void checkOk() {
-        boolean ok = true;
-        if (fieldServerAddress.getText().length() < 2)
-            ok = false;
+        boolean ok = false;
+
+        if (ValidationUtils.isValidDomain(fieldServerAddress.getText())
+        && ValidationUtils.isValidCharacters(fieldKerberosName.getText(), ValidationUtils.ALPHA_NUMERIC+"/."))
+          ok = true;
+
         getOkButton().setEnabled(ok);
     }
 
@@ -598,6 +619,21 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             });
         }
         return fieldServerAddress;
+    }
+
+    /** Get the Kerberos service/host name */
+    private JTextField getFieldKerberosName() {
+        if (fieldKerberosName == null) {
+            fieldKerberosName = new ContextMenuTextField();
+            fieldKerberosName.setPreferredSize(new Dimension(220, 20));
+            fieldKerberosName.setToolTipText("<HTML>Optional Gateway service/host name, for example<br><address>http/gateway.example.com");
+            fieldKerberosName.getDocument().addDocumentListener(new DocumentListener() {
+                public void  insertUpdate(DocumentEvent e) { checkOk(); }
+                public void  removeUpdate(DocumentEvent e) { checkOk(); }
+                public void changedUpdate(DocumentEvent e) { checkOk(); }
+            });
+        }
+        return fieldKerberosName;
     }
 
     private boolean isPortsCustom(Ssg ssg) {
@@ -654,12 +690,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     tp.getUsernameTextField().setText(clientCertUsername);
                     tp.getUsernameTextField().setEditable(false);
                 }
-                if(System.getProperty("java.security.auth.login.config")!=null) {
-                    tp.getUseKerberosCredentialCheckbox().setSelected(ssg.isEnableKerberosCredentials());
-                }
-                else {
-                    tp.getUseKerberosCredentialCheckbox().setEnabled(false);    
-                }
+                tp.getUseKerberosCredentialCheckbox().setSelected(ssg.isEnableKerberosCredentials());
             }
 
             updateIdentityEnableState();
@@ -670,6 +701,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             getNetworkPane().setWsdlEndpoint("http://localhost:" + clientProxy.getBindPort() + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
+            fieldKerberosName.setText(ssg.getKerberosName());
 
             getNetworkPane().setSsgPort(ssg.getSsgPort());
             getNetworkPane().setSslPort(ssg.getSslPort());
@@ -694,6 +726,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
             if (!ssg.isFederatedGateway()) {
                 TrustedSsgIdentityPanel tp = (TrustedSsgIdentityPanel)ssgIdentityPane;
+                ssg.setKerberosName(fieldKerberosName.getText());
                 ssg.setUsername(tp.getUsernameTextField().getText().trim());
                 ssg.setSavePasswordToDisk(tp.getSavePasswordCheckBox().isSelected());
                 ssg.setChainCredentialsFromClient(tp.getUseClientCredentialCheckBox().isSelected());

@@ -679,6 +679,16 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public KerberosServiceTicket getKerberosServiceTicket() throws GeneralSecurityException {
         try {
+            // determine the kerberos service/host
+            String kerberosName = ssg.getKerberosName();
+            if(kerberosName==null || kerberosName.trim().length()==0) kerberosName = ssg.getHostname();
+            String serviceName = null;
+            String hostName = null;
+            int split = kerberosName.indexOf('/');
+            hostName = kerberosName.substring(split+1);
+            if(split>0) serviceName = kerberosName.substring(0,split);
+
+            // get ticket
             KerberosClient client = new KerberosClient();
             client.setCallbackHandler(new CallbackHandler(){
                 public void handle(Callback[] callbacks) {
@@ -698,7 +708,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                     }
                 }
             });
-            KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getGSSServiceName());
+            KerberosServiceTicket kst = client.getKerberosServiceTicket(KerberosClient.getGSSServiceName(serviceName,hostName));
 
             ssg.getRuntime().kerberosTicket(kst);
 

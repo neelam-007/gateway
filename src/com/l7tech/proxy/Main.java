@@ -68,9 +68,9 @@ public class Main {
         File loginConfig = new File(configDir, "login.config");
         File kerberosConfig = new File(configDir, "krb5.conf");
 
-        if(loginConfig.isFile() && kerberosConfig.isFile()) {
+        if(loginConfig.isFile()) {
             System.setProperty("java.security.auth.login.config", loginConfig.getAbsolutePath());
-            System.setProperty("java.security.krb5.conf", kerberosConfig.getAbsolutePath());
+            if(kerberosConfig.isFile()) System.setProperty("java.security.krb5.conf", kerberosConfig.getAbsolutePath());
         }
     }
 

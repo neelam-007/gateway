@@ -13,6 +13,11 @@ public class ValidationUtils {
 
     //- PUBLIC
 
+    public static final String LETTERS_LOWER = "abcdefghijklmnopqrstuvwxyz";
+    public static final String LETTERS_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    public static final String DIGITS = "0123456789";
+    public static final String ALPHA_NUMERIC = LETTERS_LOWER+LETTERS_UPPER+DIGITS;
+
     /**
      * Check if a string consists only of the given set of characters.
      *
@@ -117,10 +122,6 @@ public class ValidationUtils {
     }
 
     //- PRIVATE
-
-    private static final String LETTERS_LOWER = "abcdefghijklmnopqrstuvwxyz";
-    private static final String LETTERS_UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final String DIGITS = "0123456789";
 
     private static final String DOMAIN_ALLOWED_CHARS = LETTERS_LOWER + LETTERS_UPPER + DIGITS + ".-";
     private static final String[] DOMAIN_INVALID_START_OR_END = {"-","."};

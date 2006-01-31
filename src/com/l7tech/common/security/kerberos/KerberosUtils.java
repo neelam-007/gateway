@@ -15,6 +15,17 @@ public class KerberosUtils {
     //- PUBLIC
 
     /**
+     * Check if Kerberos is enabled.
+     *
+     * <p>This just checks if there is a JAAS login configuration defined.</p>
+     *
+     * @return true if enabled.
+     */
+    public static boolean isEnabled() {
+        return System.getProperty("java.security.auth.login.config")!=null;
+    }
+
+    /**
      * Create a Kerberos session identifier for the given string.
      *
      * @param sha1Base64ApReq the base64 encoded sha-1 hash of the referenced AP REQ

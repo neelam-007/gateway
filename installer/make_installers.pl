@@ -202,11 +202,10 @@ EOF
 	    # "Bridge.sh -bd" to start the bridge with no gui 
 	    # un under daemon mode if invoked as Bridge.sh -bd
 	    $start_options.=<<EOF
-#run="-Dcom.l7tech.common.security.kerberos.host=myhost.mydomain.com"
 if [ "\$1" = "-bd" ]; then
-	run="\$run -classpath $file.jar com.l7tech.proxy.Main"
+	run="-classpath $file.jar com.l7tech.proxy.Main"
 else
-	run="\$run -jar $file.jar"
+	run="-jar $file.jar"
 fi
 
 EOF
