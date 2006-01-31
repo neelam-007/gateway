@@ -70,6 +70,16 @@ else
   adduser gateway
 fi
 
+rebootparam=`grep kernel.panic /etc/sysctl.conf`
+
+if [ "$rebootparam" ]; then
+	echo -n ""
+	# its got the panic time in there already"
+else
+	echo "# kernel panic will reboot in 10 seconds " >> /etc/sysctl.conf
+	echo "kernel.panic = 10" >> /etc/sysctl.conf
+fi
+
 gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
 
 if [ "$gettys" ]; then
