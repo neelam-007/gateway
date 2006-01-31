@@ -125,8 +125,8 @@ public class JdkLoggerConfigurator {
             }
         }
 
+        setupLog4j();
     }
-
 
     /**
      * Add the log handler programatically
@@ -140,6 +140,29 @@ public class JdkLoggerConfigurator {
         Logger rootLogger = Logger.getLogger("");
         rootLogger.addHandler(handler);
     }
+
+    /**
+     * If the Log4j library is present then configure it to use our
+     * logging framework.
+     */
+    private static void setupLog4j() {
+        try {
+            Class configClass = Class.forName("com.l7tech.common.util.Log4jJdkLogAppender");
+            java.lang.reflect.Method configMethod = configClass.getMethod("init", new Class[0]);
+            configMethod.invoke(null, new Object[0]);
+            Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.INFO, "Redirected Log4j logging to JDK logging.");
+        }
+        catch(NoClassDefFoundError ncdfe) {
+            // then we won't configure it ...            
+        }
+        catch(ClassNotFoundException cnfe) {
+            // then we won't configure it ...
+        }
+        catch(Exception e) {
+            Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.WARNING, "Error setting up Log4j logging.", e);
+        }
+    }
+
 
     /**
      * Thread to probe for config file changes and force reread
