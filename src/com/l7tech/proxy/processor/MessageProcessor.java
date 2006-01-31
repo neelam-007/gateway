@@ -18,7 +18,6 @@ import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SimpleCertificateResolver;
-import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -813,7 +812,7 @@ public class MessageProcessor {
                         final String encryptedKeySha1 = context.getEncryptedKeySha1();
                         if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
                         if (!(encryptedKeySha1.equals(value))) return null;
-                        return XencUtil.makeEncryptedKey(encryptedKeySecretKey, encryptedKeySha1);
+                        return WssProcessorUtil.makeEncryptedKey(encryptedKeySecretKey, encryptedKeySha1);
                     }
                 };
 

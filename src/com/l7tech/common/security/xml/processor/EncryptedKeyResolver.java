@@ -17,7 +17,7 @@ public interface EncryptedKeyResolver {
      *
      * @param encryptedKeySha1 the identifier to look up.  Never null or empty.
      * @return the matching EncryptedKey token, or null if no match was found.
-     * @see com.l7tech.common.security.xml.XencUtil#makeEncryptedKey(javax.crypto.SecretKey, String) 
+     * @see WssProcessorUtil#makeEncryptedKey(javax.crypto.SecretKey,String)
      */
     EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1);
 }

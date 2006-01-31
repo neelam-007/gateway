@@ -28,6 +28,7 @@ import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.security.xml.processor.EncryptedKeyResolver;
+import com.l7tech.common.security.xml.processor.WssProcessorUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
@@ -258,7 +259,7 @@ public class WssInteropTestMessage extends TestCase {
         WssProcessorImpl wsp = new WssProcessorImpl();
         EncryptedKeyResolver encryptedKeyResolver = new EncryptedKeyResolver() {
             public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
-                return XencUtil.makeEncryptedKey(aesKey, msgInfo.encryptedKeySha1);
+                return WssProcessorUtil.makeEncryptedKey(aesKey, msgInfo.encryptedKeySha1);
             }
         };
         ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, null,
