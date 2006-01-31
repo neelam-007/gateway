@@ -171,7 +171,7 @@ public class KnobblyMessageTest extends TestCase {
         // routing assertion routes the wrong document as per failure of assert below
         InputStream aftertransformstream = msg.getMimeKnob().getEntireMessageBodyAsInputStream();
         String output = new String (HexUtils.slurpStream(aftertransformstream));
-        assertTrue(output.equals(newMsg));
+        assertEquals(output, newMsg);
     }
 
     public void testCombinedDomAndByteOperations() throws Exception {
