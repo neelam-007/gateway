@@ -34,6 +34,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.security.auth.callback.*;
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -68,6 +69,8 @@ public class PolicyApplicationContext extends ProcessingContext {
     private SamlAssertion samlAssertion = null;
     private Calendar secureConversationExpiryDate = null;
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
+    private SecretKey encryptedKeySecretKey = null;
+    private String encryptedKeySha1 = null;
     private LoginCredentials requestCredentials = null;
 
     // Policy settings, filled in by traversing policy tree, and which can all be rolled back by reset()
@@ -762,5 +765,47 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public void setSessionCookies(HttpCookie[] cookies) {
         getSsg().getRuntime().setSessionCookies(cookies);
+    }
+
+    /**
+     * Get the SecretKey that was encoded into an EncryptedKey in the request message, if we encoded one.
+     * Use @{link #getEncryptedKeySha1} to save the EncryptedKeySHA1 reference that can be used to recognize
+     * future references to this SecretKey.
+     *
+     * @return the SecretKey we encoded into the request message EncryptedKey, or null if we didn't encode one.
+     */
+    public SecretKey getEncryptedKeySecretKey() {
+        return encryptedKeySecretKey;
+    }
+
+    /**
+     * Save the SecretKey that was encoded into an EncryptedKey in the request message.  Typically called
+     * only by {@link com.l7tech.proxy.processor.MessageProcessor}, after it decorates the request.
+     *
+     * @param encryptedKeySecretKey the secret key included in the request, or null if there wasn't one.
+     */
+    public void setEncryptedKeySecretKey(SecretKey encryptedKeySecretKey) {
+        this.encryptedKeySecretKey = encryptedKeySecretKey;
+    }
+
+    /**
+     * Get the EncryptedKeySHA1 identifier for any EncryptedKey encoded into the request message.
+     *
+     * @return the identifier for the EncryptedKey we encoded into the request message, or null if we didn't
+     *         encode an EncryptedKey into the request message.
+     */
+    public String getEncryptedKeySha1() {
+        return encryptedKeySha1;
+    }
+
+    /**
+     * Save the EncryptedKeySHA1 identifier for any EncryptedKey encoded into the request message.
+     * Typically called only by {@link com.l7tech.proxy.processor.MessageProcessor}, after it decorates the
+     * request.
+     *
+     * @param encryptedKeySha1 the identifier for the EncryptedKey we encoded into the request, or null if there wasn't one.
+     */
+    public void setEncryptedKeySha1(String encryptedKeySha1) {
+        this.encryptedKeySha1 = encryptedKeySha1;
     }
 }

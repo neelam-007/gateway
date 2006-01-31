@@ -24,6 +24,7 @@ import java.security.cert.X509Certificate;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class provides users with a form for specifying the source or contents of the trusted 
@@ -181,14 +182,16 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             } catch (FileNotFoundException fne) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.filenotfound"),
-                        resources.getString("view.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
 
             } catch (CertificateException ce) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.cert.generate"),
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
+                final String msg = resources.getString("view.error.cert.generate");
+                logger.log(Level.INFO, msg, ce);
+                JOptionPane.showMessageDialog(this, msg,
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             }
         } else if (urlConnRadioButton.isSelected()) {
@@ -199,8 +202,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 hostnameURL = url.getHost();
             } catch (MalformedURLException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
@@ -218,15 +221,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             } catch (IllegalArgumentException iae) {
                  JOptionPane.showMessageDialog(this, iae.getMessage(),
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
+                                               resources.getString("view.error.title"),
+                                               JOptionPane.ERROR_MESSAGE);
                 return false;
 
             } catch (IOException ioe) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.url.io.error") + "\n" +
                                        urlConnTextField.getText().trim() + "\nPlease ensure the URL is correct.",
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
@@ -243,13 +246,13 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             if (!hostnameURL.equals(cn)) {
                 Object[] options = {"Accept", "Cancel"};
                 int result = JOptionPane.showOptionDialog(null,
-                        "<html>The hostname in URL does not match with the certificate's subject name. " +
-                        "<br>" + "Hostname in URL: " + hostnameURL + "</br>" +
-                        "<br>" + "Subject DN in Certificate: " + cn + "</br>" +
-                        "<br>" + "Do you want to accept the certificate?" + "</br></html>",
-                        "Hostname Mismatch",
-                        0, JOptionPane.WARNING_MESSAGE,
-                        null, options, options[1]);
+                                                          "<html>The hostname in URL does not match with the certificate's subject name. " +
+                                                          "<br>" + "Hostname in URL: " + hostnameURL + "</br>" +
+                                                          "<br>" + "Subject DN in Certificate: " + cn + "</br>" +
+                                                          "<br>" + "Do you want to accept the certificate?" + "</br></html>",
+                                                          "Hostname Mismatch",
+                                                          0, JOptionPane.WARNING_MESSAGE,
+                                                          null, options, options[1]);
 
                 // abort if the user does not accept the hostname mismatch
                 if (result == 1) {
@@ -264,8 +267,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             if((index = certPEM.indexOf(PEM_CERT_BEGIN_MARKER)) == -1) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.begin.marker.missing") + PEM_CERT_BEGIN_MARKER + "\n",
-                        resources.getString("view.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             } else {
                 // strip the begin marker
@@ -274,8 +277,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             if((index = certPEM.indexOf(PEM_CERT_END_MARKER)) == -1) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.end.marker.missing") + PEM_CERT_END_MARKER + "\n",
-                        resources.getString("view.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
 
                 return false;
             } else {
@@ -288,15 +291,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 certDER = HexUtils.decodeBase64(certPEM, true);
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.decode"),
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
             if (certDER == null || certDER.length < 1) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.decode"),
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
@@ -306,8 +309,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 cert = (X509Certificate) cf.generateCertificate(is);
             } catch (CertificateException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.cert.generate"),
-                                       resources.getString("view.error.title"),
-                                       JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 return false;
             }
 
@@ -318,8 +321,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 is.close();
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.close.InputStream"),
-                        resources.getString("view.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                                              resources.getString("view.error.title"),
+                                              JOptionPane.ERROR_MESSAGE);
                 // continue regardless of this error.
             }
         }
@@ -347,8 +350,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                     tc.setCertificate(cert);
                 } catch (CertificateEncodingException e) {
                     JOptionPane.showMessageDialog(this, resources.getString("cert.encode.error"),
-                        resources.getString("view.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                                                  resources.getString("view.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
                 }
             }
         }

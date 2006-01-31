@@ -20,12 +20,14 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.UsernameTokenImpl;
+import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.security.xml.processor.EncryptedKeyResolver;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
@@ -114,7 +116,7 @@ public class WssInteropTestMessage extends TestCase {
         KeyInfoElement.assertKeyInfoMatchesCertificate(ekkinf, recipCert);
 
         // Replace the EncryptedKey payload with our own symmetric key
-        String aesKeyB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipCert.getPublicKey(), new Random());
+        String aesKeyB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipCert.getPublicKey(), new Random()), true);
         Element ekcd = XmlUtil.findFirstChildElementByName(encryptedKeyEl, (String)null, "CipherData");
         Element ekcv = XmlUtil.findFirstChildElementByName(ekcd, (String)null, "CipherValue");
         ekcv.setTextContent(aesKeyB64); // XXX This is a 1.5-ism, not in the 1.4 DOM
@@ -233,7 +235,7 @@ public class WssInteropTestMessage extends TestCase {
     }
 
     private void doSendTestMessage(String url, String username, String password) throws Exception {
-        MsgInfo msgInfo = makeTestMessage(username, password);
+        final MsgInfo msgInfo = makeTestMessage(username, password);
         Document d = msgInfo.doc;
         assertNotNull(d);
         assertTrue(SoapUtil.isSoapMessage(d));
@@ -254,16 +256,13 @@ public class WssInteropTestMessage extends TestCase {
 
         final AesKey aesKey = new AesKey(msgInfo.keyBytes, 256);
         WssProcessorImpl wsp = new WssProcessorImpl();
-        // TODO lookup in a registry?
-        // TODO lookup in a registry?
-        // TODO lookup in a registry?
-        // TODO lookup in a registry?
-         wsp.setKnownEncryptedKey(aesKey, HexUtils.decodeBase64(msgInfo.encryptedKeySha1, true));
-        // TODO lookup in a registry?
-        // TODO lookup in a registry?
-        // TODO lookup in a registry?
-        // TODO lookup in a registry?
-        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, null);
+        EncryptedKeyResolver encryptedKeyResolver = new EncryptedKeyResolver() {
+            public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
+                return XencUtil.makeEncryptedKey(aesKey, msgInfo.encryptedKeySha1);
+            }
+        };
+        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, null,
+                                                           encryptedKeyResolver);
 
         log.info("The following elements had at least all their content encrypted:");
         EncryptedElement[] enc = wssResults.getElementsThatWereEncrypted();

@@ -147,9 +147,20 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
                 sb.append("SessionID=");
                 sb.append(sessionID);
                 messageIdStr = sb.toString();
+            } else if (signingToken instanceof EncryptedKey) {
+                // It was signed by an EncryptedKey
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_ENC_KEY);
+                String encryptedKeySha1 = ((EncryptedKey)signingToken).getEncryptedKeySHA1();
+
+                StringBuffer sb = new StringBuffer();
+                sb.append(created);
+                sb.append(";");
+                sb.append("EncryptedKeySHA1=");
+                sb.append(encryptedKeySha1);
+                messageIdStr = sb.toString();                                
             } else
                 throw new IOException("Unable to generate replay-protection ID for timestamp -- " +
-                                      "it was signed, but not with an unsupported token type " + signingToken.getClass().getName());
+                                      "it was signed, but with the unsupported token type " + signingToken.getClass().getName());
 
             MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
             try {

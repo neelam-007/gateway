@@ -9,6 +9,7 @@ package com.l7tech.common.security.xml.decorator;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 
+import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
 
 /**
@@ -23,6 +24,24 @@ public interface WssDecorator {
      * @param message the soap message to decorate
      * @param decorationRequirements details of what needs to be processed
      */
-    void decorateMessage(Document message, DecorationRequirements decorationRequirements)
+    DecorationResult decorateMessage(Document message, DecorationRequirements decorationRequirements)
             throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException;
+
+    interface DecorationResult {
+        /**
+         * If an EncryptedKey was generated, this returns the EncryptedKeySHA1 reference that can be used to
+         * reference this particular EncryptedKey in a future signature or encryption KeyInfo.
+         *
+         * @return the EncryptedKeySHA1 that can be used to refer to an included EncryptedKey, or null
+         *         if no EncryptedKey was generated.
+         */
+        String getEncryptedKeySha1();
+
+        /**
+         * If an EncryptedKey was generated, this returns the SecretKey that it contains.
+         *
+         * @return the SecretKey encoded into an included EncryptedKey, or null if no EncryptedKey was generated.
+         */
+        SecretKey getEncryptedKeySecretKey();
+    }
 }

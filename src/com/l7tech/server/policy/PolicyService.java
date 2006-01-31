@@ -214,7 +214,7 @@ public class PolicyService extends ApplicationObjectSupport {
                                                   null, serverCert,
                                                   privateServerKey,
                                                   SecureConversationContextManager.getInstance(),
-                                                  certificateResolver);
+                                                  certificateResolver, null);
             reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));

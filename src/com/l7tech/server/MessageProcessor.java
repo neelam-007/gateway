@@ -140,7 +140,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                                                           null, serverCertificate,
                                                           serverPrivateKey,
                                                           SecureConversationContextManager.getInstance(),
-                                                          certificateResolver);
+                                                          certificateResolver, null);
                     reqSec.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {
                     auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);

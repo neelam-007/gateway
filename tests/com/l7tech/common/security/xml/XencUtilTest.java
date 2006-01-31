@@ -70,7 +70,7 @@ public class XencUtilTest extends TestCase {
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
 
-        String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand);
+        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand), true);
         logger.info("Got back: " + paddedB64 + "\n(length:" + paddedB64.length() + ")");
     }
 
@@ -81,7 +81,7 @@ public class XencUtilTest extends TestCase {
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
         SecureRandom rand = new SecureRandom();
-        String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand);
+        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand), true);
         byte[] decrypted = XencUtil.decryptKey(paddedB64, pkey).getDecryptedKeyBytes();
         assertTrue(Arrays.equals(keyBytes, decrypted));
     }
@@ -116,8 +116,7 @@ public class XencUtilTest extends TestCase {
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
         Random notrandomonpurpose = new Random(123);
-        String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, notrandomonpurpose);
-        return paddedB64;
+        return HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, notrandomonpurpose), true);
     }
 
 }

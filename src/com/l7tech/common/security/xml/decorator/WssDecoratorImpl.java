@@ -60,6 +60,8 @@ public class WssDecoratorImpl implements WssDecorator {
         Map idToElementCache = new HashMap();
         String wsseNS = SoapUtil.SECURITY_NAMESPACE;
         String wsuNS = SoapUtil.WSU_NAMESPACE;
+        byte[] lastEncryptedKeyBytes = null;
+        SecretKey lastEncryptedKeySecretKey = null;
 
         String getBase64EncodingTypeUri() {
             return SoapUtil.SECURITY_NAMESPACE.equals(wsseNS)
@@ -73,9 +75,9 @@ public class WssDecoratorImpl implements WssDecorator {
      *
      * @param message the soap message to decorate
      */
-    public void decorateMessage(Document message, DecorationRequirements dreq)
+    public DecorationResult decorateMessage(Document message, DecorationRequirements dreq)
       throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
-        Context c = new Context();
+        final Context c = new Context();
 
         c.wsseNS = dreq.getPreferredSecurityNamespace();
         c.wsuNS = dreq.getPreferredWSUNamespace();
@@ -120,7 +122,7 @@ public class WssDecoratorImpl implements WssDecorator {
         if (relatesTo != null && !signList.isEmpty())
             signList.add(relatesTo);
 
-        Element addedUsernameTokenHolder = null;
+        Element addedUsernameTokenHolder = null; // dummy element to hold fully-encrypted usernametoken.  will be removed later
         if (dreq.getUsernameTokenCredentials() != null) {
             Element usernameToken = createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
             if (dreq.isEncryptUsernameToken()) {
@@ -244,6 +246,13 @@ public class WssDecoratorImpl implements WssDecorator {
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
 
                 addedEncKeyXmlEncKey = generate(encryptionAlgorithm, c);
+
+                // If we've been given a secret key to use, use it instead of making a new one
+                if (dreq.getEncryptedKey() != null) {
+                    addedEncKeyXmlEncKey = new XencUtil.XmlEncKey(addedEncKeyXmlEncKey.getAlgorithm(),
+                                                                  dreq.getEncryptedKey());
+                }
+
                 addedEncKey = addEncryptedKey(c,
                                               securityHeader,
                                               dreq.getRecipientCertificate(),
@@ -354,6 +363,21 @@ public class WssDecoratorImpl implements WssDecorator {
                 soapHeader.getParentNode().removeChild(soapHeader);
         }
 
+        return new DecorationResult() {
+            private String encryptedKeySha1 = null;
+
+            public String getEncryptedKeySha1() {
+                if (encryptedKeySha1 != null)
+                    return encryptedKeySha1;
+                if (c.lastEncryptedKeyBytes == null)
+                    return null;
+                return encryptedKeySha1 = XencUtil.computeEncryptedKeySha1(c.lastEncryptedKeyBytes);
+            }
+
+            public SecretKey getEncryptedKeySecretKey() {
+                return c.lastEncryptedKeySecretKey;
+            }
+        };
     }
 
     private Element addSignatureConfirmation(Element securityHeader, String signatureConfirmation) {
@@ -773,7 +797,13 @@ public class WssDecoratorImpl implements WssDecorator {
         }
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
-        final String base64 = XencUtil.encryptKeyWithRsaAndPad(encKey.getSecretKey().getEncoded(), recipientCertificate.getPublicKey(), c.rand);
+        final SecretKey secretKey = encKey.getSecretKey();
+        c.lastEncryptedKeySecretKey = secretKey;
+        final byte[] encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(),
+                                                                          recipientCertificate.getPublicKey(),
+                                                                          c.rand);
+        c.lastEncryptedKeyBytes = encryptedKeyBytes;
+        final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);
         cipherValue.appendChild(XmlUtil.createTextNode(soapMsg, base64));
         Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, SoapUtil.REFLIST_EL_NAME, xencNs, xenc);
 

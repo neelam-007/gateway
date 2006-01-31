@@ -33,6 +33,8 @@ public interface WssProcessor {
      * @param recipientCertificate the recipient's cert to which encrypted keys may be encoded for
      * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
      * @param securityContextFinder a security context finder for looking up ws-sc sessions, or null to disable WS-SC support.
+     * @param certificateResolver   a resolver for looking up certificates in various ways, or null disable certificate reference support.
+     * @param encryptedKeyResolver a resolver for looking up EncryptedKeySHA1 identifiers, ot null to disable EncryptedKeySHA1 support.
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
      * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
      * @throws GeneralSecurityException if there is a problem with a key or certificate
@@ -49,6 +51,7 @@ public interface WssProcessor {
                                       X509Certificate recipientCertificate,
                                       PrivateKey recipientPrivateKey,
                                       SecurityContextFinder securityContextFinder,
-                                      CertificateResolver certificateResolver)
+                                      CertificateResolver certificateResolver,
+                                      EncryptedKeyResolver encryptedKeyResolver)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException;
 }

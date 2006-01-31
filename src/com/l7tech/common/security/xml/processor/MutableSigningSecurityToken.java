@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Holds some common implementation for SigningSecurityTokens.
  */
-abstract class MutableSigningSecurityToken extends ParsedElementImpl implements SigningSecurityToken {
+public abstract class MutableSigningSecurityToken extends ParsedElementImpl implements SigningSecurityToken {
     public static final SignedElement[] PROTO = new SignedElement[0];
     private List signedElements = new ArrayList();
     protected boolean possessionProved = false;

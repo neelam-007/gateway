@@ -243,6 +243,11 @@ public class DecorationRequirements {
     /**
      * Set the actual secret key bytes to use for signing and encryption when using #EncryptedKeySHA1 style
      * KeyInfos inside signature and encryption blocks.  See {@link #setEncryptedKey} for more information.
+     * <p/>
+     * If {@link #getEncryptedKeySha1()} returns null, no EncryptedKeySHA1 references will be generated.  However,
+     * if a new EncryptedKey is generated anyway, it will prefer to use this secret key, if it is non-null,
+     *  rather than generating a new one.
+     * <p/> 
      * See {@link com.l7tech.common.security.AesKey} for a possible implementation.
      *
      * @param encryptedKey  symmetric key for signing and encryption, or null to disable use of #EncryptedKeySHA1.

@@ -291,6 +291,6 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
                                            null, TestDocuments.getDotNetServerCertificate(),
                                           TestDocuments.getDotNetServerPrivateKey(),
                                           null,
-                                          null);
+                                          null, null);
     }
 }

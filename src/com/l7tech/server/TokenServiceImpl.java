@@ -138,7 +138,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                                                                       serverCert,
                                                                       serverPrivateKey,
                                                                       SecureConversationContextManager.getInstance(),
-                                                                      certificateResolver);
+                                                                      certificateResolver, null);
                 reqSec.setProcessorResult(wssOutput);
             } catch (IOException e) {
                 status = AssertionStatus.BAD_REQUEST;
@@ -431,9 +431,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         }
         encryptedKeyXml.append("<xenc:CipherData>" +
                                 "<xenc:CipherValue>");
-        String encryptedKeyValue = XencUtil.encryptKeyWithRsaAndPad(sharedSecret.getEncoded(),
+        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret.getEncoded(),
                                                                     requestorCert.getPublicKey(),
-                                                                    rand);
+                                                                    rand),
+                                                         true);
         encryptedKeyXml.append(encryptedKeyValue);
         encryptedKeyXml.append("</xenc:CipherValue>" +
                              "</xenc:CipherData>" +

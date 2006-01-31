@@ -57,8 +57,9 @@ public class WssProcessorImpl implements WssProcessor {
                                              X509Certificate recipientCert,
                                              PrivateKey recipientKey,
                                              SecurityContextFinder securityContextFinder,
-                                             CertificateResolver certificateResolver)
-      throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
+                                             CertificateResolver certificateResolver,
+                                             EncryptedKeyResolver encryptedKeyResolver)
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
     {
         // Reset all potential outputs
         Document soapMsg = message.getXmlKnob().getDocumentReadOnly();
@@ -71,6 +72,7 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.elementsByWsuId = SoapUtil.getElementByWsuIdMap(soapMsg);
         cntx.senderCertificate = senderCertificate;
         cntx.certificateResolver = certificateResolver;
+        cntx.encryptedKeyResolver = encryptedKeyResolver;
 
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
@@ -111,35 +113,35 @@ public class WssProcessorImpl implements WssProcessor {
                     }
                 } else {
                     logger.finer("Encountered EncryptedKey element but not of right namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.WSU_URIS_ARRAY)) {
                     processTimestamp(cntx, securityChildToProcess);
                 } else {
                     logger.fine("Encountered Timestamp element but not of right namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processBinarySecurityToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered BinarySecurityToken element but not of right namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.DIGSIG_URI)) {
                     processSignature(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered Signature element but not of right namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.USERNAME_TOK_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processUsernameToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered UsernameToken element but not of expected namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
@@ -147,11 +149,11 @@ public class WssProcessorImpl implements WssProcessor {
                     String identifier = extractIdentifierFromSecConTokElement(secConTokEl);
                     if (identifier == null) {
                         throw new InvalidDocumentFormatException("SecurityContextToken element found, " +
-                          "but its identifier was not extracted.");
+                                "but its identifier was not extracted.");
                     } else {
                         if (securityContextFinder == null)
                             throw new ProcessorException("SecurityContextToken element found in message, but caller " +
-                              "did not provide a SecurityContextFinder");
+                                    "did not provide a SecurityContextFinder");
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
                         if (secContext == null) {
                             throw new BadSecurityContextException(identifier);
@@ -163,14 +165,14 @@ public class WssProcessorImpl implements WssProcessor {
                     }
                 } else {
                     logger.fine("Encountered SecurityContextToken element but not of expected namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.WSSC_DK_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
                     processDerivedKey(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered DerivedKey element but not of expected namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.REFLIST_EL_NAME)) {
                 // In the case of a Secure Conversation the reference list is declared outside
@@ -179,28 +181,28 @@ public class WssProcessorImpl implements WssProcessor {
                     processReferenceList(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered ReferenceList element but not of expected namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SamlConstants.ELEMENT_ASSERTION)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SamlConstants.NS_SAML)) {
                     processSamlSecurityToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered SAML Assertion element but not of expected namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITYTOKENREFERENCE_EL_NAME)) {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processSecurityTokenReference(securityChildToProcess, securityContextFinder, cntx);
                 } else {
                     logger.fine("Encountered SecurityTokenReference element but not of expected namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals("SignatureConfirmation")) {
                 if (elementHasNamespace(securityChildToProcess, new String[] { SoapUtil.SECURITY11_NAMESPACE } )) {
                     processSignatureConfirmation(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered SignatureConfirmation element but not of expected namespace (" +
-                      securityChildToProcess.getNamespaceURI() + ")");
+                            securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else {
                 // Unhandled child elements of the Security Header
@@ -208,8 +210,8 @@ public class WssProcessorImpl implements WssProcessor {
                                                                   SoapUtil.MUSTUNDERSTAND_ATTR_NAME).trim();
                 if ("1".equals(mu) || "true".equalsIgnoreCase(mu)) {
                     String msg = "Unrecognized element in Security header: " +
-                      securityChildToProcess.getNodeName() +
-                      " with mustUnderstand=\"" + mu + "\"; rejecting message";
+                            securityChildToProcess.getNodeName() +
+                            " with mustUnderstand=\"" + mu + "\"; rejecting message";
                     logger.warning(msg);
                     throw new ProcessorException(msg);
                 } else {
@@ -332,7 +334,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         if (value == null) {
             String msg = "Rejecting SecurityTokenReference ID=" + id
-                       + " as the target Reference ID/KeyIdentifier is missing or could not be determined.";
+                    + " as the target Reference ID/KeyIdentifier is missing or could not be determined.";
             logger.warning(msg);
             throw new InvalidDocumentFormatException(msg);
         }
@@ -360,30 +362,30 @@ public class WssProcessorImpl implements WssProcessor {
             logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
             cntx.securityTokenReferenceElementToTargetElement.put(str, target);
         } if (SoapUtil.isValueTypeKerberos(valueType) && isKeyIdentifier) {
-            if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
-                logger.warning("Ignoring SecurityTokenReference ID=" + id +
-                        " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
-                return;
-            }
-
-            if (securityContextFinder == null)
-                throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not " +
-                        "provide a SecurityContextFinder");
-
-            String identifier = KerberosUtils.getSessionIdentifier(value);
-            SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
-            if (secContext == null) {
-                //TODO kerberosize (so Kerberos SOAP fault is generated, or at least not a WS-SecureConv fault)
-                throw new BadSecurityContextException(identifier);
-            }
-            SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
-                                                                              keyIdentifierElement,
-                                                                              identifier);
-            cntx.securityTokens.add(secConTok);
-        } else {
-            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with ValueType of " + valueType);
+        if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
+            logger.warning("Ignoring SecurityTokenReference ID=" + id +
+                    " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
             return;
         }
+
+        if (securityContextFinder == null)
+            throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not " +
+                    "provide a SecurityContextFinder");
+
+        String identifier = KerberosUtils.getSessionIdentifier(value);
+        SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+        if (secContext == null) {
+            //TODO kerberosize (so Kerberos SOAP fault is generated, or at least not a WS-SecureConv fault)
+            throw new BadSecurityContextException(identifier);
+        }
+        SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
+                                                                          keyIdentifierElement,
+                                                                          identifier);
+        cntx.securityTokens.add(secConTok);
+    } else {
+        logger.warning("Ignoring SecurityTokenReference ID=" + id + " with ValueType of " + valueType);
+        return;
+    }
     }
 
     private void processReferenceList(Element referenceListEl, ProcessingStatusHolder cntx) throws ProcessorException, InvalidDocumentFormatException {
@@ -414,12 +416,12 @@ public class WssProcessorImpl implements WssProcessor {
             if (dktok == null) {
                 SigningSecurityToken tok = resolveSigningTokenByRef(keyInfo, cntx);
                 if (tok instanceof EncryptedKey) {
-                    dktok = (EncryptedKeyImpl)tok;
+                    dktok = (EncryptedKey)tok;
                 } else {
                     // there are some keyinfo formats that we do not support. in that case, we should see if
                     // the message can possibly just passthrough
                     logger.info("The DataReference's KeyInfo did not refer to a DerivedKey or previously-known EncryptedKey." +
-                                "This element will not be decrypted.");
+                            "This element will not be decrypted.");
                     cntx.encryptionIgnored = true;
                     return;
                 }
@@ -444,12 +446,12 @@ public class WssProcessorImpl implements WssProcessor {
                                                                 SoapUtil.SECURITY_URIS_ARRAY,
                                                                 SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
         if (sTokrefEl == null) throw new InvalidDocumentFormatException("DerivedKeyToken should " +
-                                 "contain a SecurityTokenReference");
+                "contain a SecurityTokenReference");
         Element refEl = XmlUtil.findFirstChildElementByName(sTokrefEl,
                                                             SoapUtil.SECURITY_URIS_ARRAY,
                                                             SoapUtil.REFERENCE_EL_NAME);
         if (refEl == null) throw new InvalidDocumentFormatException("SecurityTokenReference should " +
-                             "contain a Reference");
+                "contain a Reference");
         String refUri = refEl.getAttribute("URI");
         SecurityContextTokenImpl sct = null;
         for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
@@ -502,7 +504,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processUsernameToken(final Element usernameTokenElement, ProcessingStatusHolder cntx)
-      throws InvalidDocumentFormatException
+            throws InvalidDocumentFormatException
     {
         UsernameTokenImpl rememberedSecToken = null;
         try {
@@ -523,7 +525,7 @@ public class WssProcessorImpl implements WssProcessor {
                                         PrivateKey recipientKey,
                                         X509Certificate recipientCert,
                                         ProcessingStatusHolder cntx)
-      throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
         logger.finest("Processing EncryptedKey");
 
@@ -534,12 +536,12 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (UnexpectedKeyInfoException e) {
             if (cntx.secHeaderActor == SecurityActor.L7ACTOR) {
                 logger.warning("We do not appear to be the intended recipient for this EncryptedKey however the " +
-                  "security header is clearly addressed to us");
+                        "security header is clearly addressed to us");
                 throw e;
             } else if (cntx.secHeaderActor == SecurityActor.NOACTOR) {
                 logger.log(Level.INFO, "We do not appear to be the intended recipient for this " +
-                  "EncryptedKey. Will leave it alone since the security header is not " +
-                  "explicitely addressed to us.", e);
+                        "EncryptedKey. Will leave it alone since the security header is not " +
+                        "explicitely addressed to us.", e);
                 cntx.encryptionIgnored = true;
                 return false;
             }
@@ -549,7 +551,7 @@ public class WssProcessorImpl implements WssProcessor {
         XencUtil.checkEncryptionMethod(encryptedKeyElement);
 
         // Extract the encrypted key
-        XencUtil.EncryptedKeyValue ekvalue = XencUtil.decryptKey(encryptedKeyElement, recipientKey);
+        final XencUtil.EncryptedKeyValue ekvalue = XencUtil.decryptKey(encryptedKeyElement, recipientKey);
         final byte[] unencryptedKey = ekvalue.getDecryptedKeyBytes();
 
         // We got the key. Get the list of elements to decrypt.
@@ -574,7 +576,14 @@ public class WssProcessorImpl implements WssProcessor {
 
         String wsuId = SoapUtil.getElementWsuId(encryptedKeyElement);
         if (wsuId != null) {
-            final EncryptedKeyImpl ekTok = new EncryptedKeyImpl(encryptedKeyElement, aesKey, ekvalue.getEncryptedKeyBytes());
+            final Object encryptedKeySha1Haver = new Object() {
+                public String toString() {
+                    return XencUtil.computeEncryptedKeySha1(ekvalue.getEncryptedKeyBytes());
+                }
+            };
+            final EncryptedKeyImpl ekTok = new EncryptedKeyImpl(encryptedKeyElement,
+                                                                aesKey,
+                                                                encryptedKeySha1Haver);
             cntx.encryptedKeyById.put(wsuId, ekTok);
             cntx.securityTokens.add(ekTok);
         }
@@ -602,8 +611,8 @@ public class WssProcessorImpl implements WssProcessor {
      * @throws org.xml.sax.SAXException if there was a problem parsing the document
      */
     public void decryptReferencedElements(Key key, Element refList, ProcessingStatusHolder cntx)
-      throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
-      ProcessorException, InvalidDocumentFormatException
+            throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
+            ProcessorException, InvalidDocumentFormatException
     {
         List dataRefEls = XmlUtil.findChildElementsByName(refList, SoapUtil.XMLENC_NS, SoapUtil.DATAREF_EL_NAME);
         if (dataRefEls == null || dataRefEls.isEmpty()) {
@@ -628,8 +637,8 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void decryptElement(Element encryptedDataElement, Key key, ProcessingStatusHolder cntx)
-      throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
-      ProcessorException, InvalidDocumentFormatException
+            throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
+            ProcessorException, InvalidDocumentFormatException
     {
         // Hacky for now -- we'll special case EncryptedHeader
         boolean wasEncryptedHeader = false;
@@ -685,7 +694,7 @@ public class WssProcessorImpl implements WssProcessor {
         // override getEncryptionEngine to collect the encryptionmethod algorithm
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn() {
             public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
-              throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException  {
+                    throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException  {
                 algorithm.add(encryptionMethod.getAlgorithm());
                 return super.getEncryptionEngine(encryptionMethod);
             }
@@ -765,7 +774,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processTimestamp(ProcessingStatusHolder ctx, final Element timestampElement)
-      throws InvalidDocumentFormatException
+            throws InvalidDocumentFormatException
     {
         logger.finest("Processing Timestamp");
         if (ctx.timestamp != null)
@@ -792,7 +801,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement,
                                             ProcessingStatusHolder cntx)
-      throws ProcessorException, GeneralSecurityException, InvalidDocumentFormatException
+            throws ProcessorException, GeneralSecurityException, InvalidDocumentFormatException
     {
         logger.finest("Processing BinarySecurityToken");
 
@@ -828,11 +837,11 @@ public class WssProcessorImpl implements WssProcessor {
             final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
             if (wsuId == null) {
                 logger.warning("This BinarySecurityToken does not have a recognized wsu:Id and may not be " +
-                  "referenced properly by a subsequent signature.");
+                        "referenced properly by a subsequent signature.");
             }
             final X509Certificate finalcert = referencedCert;
             XmlSecurityToken rememberedSecToken = new X509BinarySecurityTokenImpl(finalcert,
-                                                                               binarySecurityTokenElement);
+                                                                                  binarySecurityTokenElement);
             cntx.securityTokens.add(rememberedSecToken);
             cntx.x509TokensById.put(wsuId, rememberedSecToken);
         }
@@ -842,7 +851,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processSamlSecurityToken(final Element securityTokenElement, ProcessingStatusHolder context)
-      throws InvalidDocumentFormatException
+            throws InvalidDocumentFormatException
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
@@ -957,7 +966,7 @@ public class WssProcessorImpl implements WssProcessor {
                     return token;
                 }
 
-                final EncryptedKeyImpl ekToken = (EncryptedKeyImpl)cntx.encryptedKeyById.get(uriAttr);
+                final EncryptedKey ekToken = (EncryptedKey)cntx.encryptedKeyById.get(uriAttr);
                 if (ekToken != null) {
                     logger.finest("The KeyInfo referred to a previously decrypted EncryptedKey '" + uriAttr + "'");
                     return ekToken;
@@ -970,12 +979,13 @@ public class WssProcessorImpl implements WssProcessor {
                 String valueType = keyId.getAttribute("ValueType");
                 String value = XmlUtil.getTextValue(keyId).trim();
                 if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
-                    if (knownEncryptedKey == null) {
-                        logger.warning("The KeyInfo referred to a KeyIdentifier, but no EncryptedKeys are currently known");
+                    if (cntx.encryptedKeyResolver == null) {
+                        logger.warning("The KeyInfo referred to a KeyIdentifier, but no EncryptedKeyResolver is available");
                     } else {
-                        if (value.equals(knownEncryptedKey.getEncryptedKeySHA1())) {
+                        EncryptedKey found = cntx.encryptedKeyResolver.getEncryptedKeyBySha1(value);
+                        if (found != null) {
                             logger.finest("The KeyInfo referred to an already-known EncryptedKey token");
-                            return knownEncryptedKey;
+                            return found;
                         } else {
                             logger.finest("The KeyInfo referred to an EncryptedKey token, but we did not recognize the EncryptedKeySHA1.");
                         }
@@ -1099,7 +1109,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processSignature(final Element sigElement, final ProcessingStatusHolder cntx)
-      throws ProcessorException, InvalidDocumentFormatException
+            throws ProcessorException, InvalidDocumentFormatException
     {
         logger.finest("Processing Signature");
 
@@ -1190,25 +1200,25 @@ public class WssProcessorImpl implements WssProcessor {
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
                 if (SoapUtil.TRANSFORM_STR.equals(s)) {
                     return new Transform() {
-            public String getURI() {
-                return SoapUtil.TRANSFORM_STR;
-            }
+                        public String getURI() {
+                            return SoapUtil.TRANSFORM_STR;
+                        }
 
-            public void transform(TransformContext c) throws TransformException {
-                Node source = c.getNode();
-                if (source == null) throw new TransformException("Source node is null");
-                final Node result = (Node)cntx.securityTokenReferenceElementToTargetElement.get(source);
-                if (result == null) throw new TransformException("Unable to check signature of element signed indirectly through SecurityTokenReference transform: the referenced SecurityTokenReference has not yet been seen");
-                ExclusiveC11r canon = new ExclusiveC11r();
-                ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                try {
-                    canon.canonicalize(result, bo);
-                } catch (IOException e) {
-                    throw (TransformException)new TransformException().initCause(e);
-                }
-                c.setContent(bo.toByteArray(), "UTF-8");
-            }
-        };
+                        public void transform(TransformContext c) throws TransformException {
+                            Node source = c.getNode();
+                            if (source == null) throw new TransformException("Source node is null");
+                            final Node result = (Node)cntx.securityTokenReferenceElementToTargetElement.get(source);
+                            if (result == null) throw new TransformException("Unable to check signature of element signed indirectly through SecurityTokenReference transform: the referenced SecurityTokenReference has not yet been seen");
+                            ExclusiveC11r canon = new ExclusiveC11r();
+                            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                            try {
+                                canon.canonicalize(result, bo);
+                            } catch (IOException e) {
+                                throw (TransformException)new TransformException().initCause(e);
+                            }
+                            c.setContent(bo.toByteArray(), "UTF-8");
+                        }
+                    };
                 } else
                     return super.getTransform(s);
             }
@@ -1222,8 +1232,8 @@ public class WssProcessorImpl implements WssProcessor {
             // signature altogether
             if (cntx.encryptionIgnored) {
                 logger.info("the validity of a signature could not be computed however an " +
-                  "encryption element was previously ignored for passthrough " +
-                  "purposes. this signature will therefore be ignored.");
+                        "encryption element was previously ignored for passthrough " +
+                        "purposes. this signature will therefore be ignored.");
                 return;
             }
             StringBuffer msg = new StringBuffer("Signature not valid. " + validity.getSignedInfoMessage());
@@ -1250,7 +1260,7 @@ public class WssProcessorImpl implements WssProcessor {
                 elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
             if (elementCovered == null) {
                 String msg = "Element covered by signature cannot be found in original document nor in " +
-                  "processed document. URI: " + elementCoveredURI;
+                        "processed document. URI: " + elementCoveredURI;
                 logger.warning(msg);
                 throw new ProcessorException(msg);
             }
@@ -1338,8 +1348,8 @@ public class WssProcessorImpl implements WssProcessor {
                         for (int ii = 0; ii < attributes.getLength(); ii++) {
                             Attr n = (Attr)attributes.item(ii);
                             if (n.getLocalName().equals("Id") &&
-                              n.getNamespaceURI() != null &&
-                              n.getNamespaceURI().length() > 0) {
+                                    n.getNamespaceURI() != null &&
+                                    n.getNamespaceURI().length() > 0) {
                                 return n.getNamespaceURI();
                             }
                         }
@@ -1434,6 +1444,7 @@ public class WssProcessorImpl implements WssProcessor {
         String lastSignatureConfirmation = null;
         boolean isWsse11Seen = false;
         CertificateResolver certificateResolver = null;
+        EncryptedKeyResolver encryptedKeyResolver = null;
 
         public ProcessingStatusHolder(Message message, Document processedDocument) {
             this.message = message;
@@ -1590,14 +1601,13 @@ public class WssProcessorImpl implements WssProcessor {
     private static class EncryptedKeyImpl extends MutableSigningSecurityToken implements EncryptedKey {
         private final String elementWsuId;
         private final SecretKey secretKey;
-        private final byte[] encryptedKeyBytes;
-        private String encryptedKeySHA1 = null;
+        private Object encryptedKeySHA1 = null;
 
-        public EncryptedKeyImpl(Element encryptedKeyEl, SecretKey secretKey, byte[] encryptedKeyBytes) {
+        public EncryptedKeyImpl(Element encryptedKeyEl, SecretKey secretKey, Object encryptedKeySha1Haver) {
             super(encryptedKeyEl);
             this.elementWsuId = SoapUtil.getElementWsuId(encryptedKeyEl);
             this.secretKey = secretKey;
-            this.encryptedKeyBytes = encryptedKeyBytes;
+            this.encryptedKeySHA1 = encryptedKeySha1Haver;
         }
 
         public SecurityTokenType getType() {
@@ -1617,14 +1627,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public String getEncryptedKeySHA1() {
-            if (encryptedKeySHA1 == null) {
-                MessageDigest sha1 = HexUtils.getSha1();
-                sha1.reset();
-                final byte[] secretKeyDigest = sha1.digest(encryptedKeyBytes);
-                encryptedKeySHA1 = HexUtils.encodeBase64(secretKeyDigest, true);
-                //logger.info("getEncryptedKeySHA1: Digesting encrypted key bytes=" + HexUtils.hexDump(encryptedKeyBytes) + "   to produce digest=" + HexUtils.hexDump(secretKeyDigest) + "   or in b64=" + encryptedKeySHA1);
-            }
-            return encryptedKeySHA1;
+            return encryptedKeySHA1 == null ? null : encryptedKeySHA1.toString();
         }
     }
 
@@ -1678,38 +1681,4 @@ public class WssProcessorImpl implements WssProcessor {
             return element;
         }
     }
-
-    /**
-     * Set an EncryptedKey reference that will be recognized for subsequent messages processed by this processor
-     * instance.  This is really only meaningful when used client side, since the client can expect that the
-     * server's response can only refer to an EncryptedKey that the client included with its original request.
-     * <p>
-     * Recognizing a single known EncryptedKey per WssProcessor instance is not very useful for server side code
-     * since a server does not necessarily know which client or session it is dealing with until after it has
-     * already processed the security header in the request.  A future version of the software will require
-     * some kind of EncryptedKey resolver which might hook into a cluster-wide registry of previously-seen
-     * EncryptedKeys.
-     *<p>
-     * If no KnownEncryptedKey is set, EncryptedKeySHA1 KeyIdentifiers will not be recognized during message
-     * processing.
-     *
-     * @param key             The SecretKey that was encoded into the original EncryptedKey
-     * @param encryptedForm   the un-base64'ed octets of the CipherData of the original EncryptedKey, that is, after
-     *                        it has already been encrypted with the recipient's public key.
-     */
-    public void setKnownEncryptedKey(SecretKey key, byte[] encryptedForm) {
-        try {
-            String wsuUri = SoapUtil.WSU_NAMESPACE;
-            String xencUri = SoapUtil.XMLENC_NS;
-            byte[] rand = new byte[16];
-            new Random().nextBytes(rand);
-            String id = "KnownEncryptedKey-1-" + HexUtils.hexDump(rand);
-            Element elm = XmlUtil.stringToDocument("<xenc:EncryptedKey wsu:Id=\"" + id + "\" xmlns:xenc=\""+ xencUri + "\" xmlns:wsu=\"" + wsuUri + "\"/>").getDocumentElement();
-            knownEncryptedKey = new EncryptedKeyImpl(elm, key, encryptedForm);
-        } catch (SAXException e) {
-            throw new RuntimeException(e); // can't happen
-        }
-    }
-
-    private EncryptedKeyImpl knownEncryptedKey = null;
 }

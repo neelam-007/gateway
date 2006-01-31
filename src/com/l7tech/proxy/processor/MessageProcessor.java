@@ -14,9 +14,11 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.xml.CertificateResolver;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -388,8 +390,12 @@ public class MessageProcessor {
                             if (expiryMillis != null) {
                                 wssrequirement.setTimestampTimeoutMillis(expiryMillis.intValue());
                             }
-                            wssDecorator.decorateMessage(request.getXmlKnob().getDocumentWritable(), // upgrade to writable document
-                                                         wssrequirement);
+                            WssDecorator.DecorationResult dresult =
+                                    wssDecorator.decorateMessage(
+                                            request.getXmlKnob().getDocumentWritable(), // upgrade to writable DOM
+                                            wssrequirement);
+                            context.setEncryptedKeySecretKey(dresult.getEncryptedKeySecretKey());
+                            context.setEncryptedKeySha1(dresult.getEncryptedKeySha1());
                         }
                     } else {
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
@@ -800,12 +806,24 @@ public class MessageProcessor {
                 CertificateResolver thumbResolver =
                         new SimpleCertificateResolver(new X509Certificate[] { ssg.getClientCertificate(),
                                                                              ssg.getServerCertificate() });
+
+                EncryptedKeyResolver encryptedKeyResolver = new EncryptedKeyResolver() {
+                    public EncryptedKey getEncryptedKeyBySha1(String value) {
+                        final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
+                        final String encryptedKeySha1 = context.getEncryptedKeySha1();
+                        if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
+                        if (!(encryptedKeySha1.equals(value))) return null;
+                        return XencUtil.makeEncryptedKey(encryptedKeySecretKey, encryptedKeySha1);
+                    }
+                };
+
                 final ProcessorResult processorResultRaw =
                   wssProcessor.undecorateMessage(response,
                                                  ssg.getServerCertificate(), haveKey ? ssg.getClientCertificate() : null,
-                    haveKey ? ssg.getClientCertificatePrivateKey() : null,
-                    scf,
-                    thumbResolver);
+                                                 haveKey ? ssg.getClientCertificatePrivateKey() : null,
+                                                 scf,
+                                                 thumbResolver,
+                                                 encryptedKeyResolver);
                 // Translate timestamp in result from SSG time to local time
                 final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
                 processorResult = new ProcessorResultWrapper(processorResultRaw) {

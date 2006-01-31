@@ -281,7 +281,7 @@ public class AdminWebServiceFilter implements Filter {
                                                       null, serverCertificate,
                                                       serverPrivateKey,
                                                       SecureConversationContextManager.getInstance(),
-                                                      certificateResolver);
+                                                      certificateResolver, null);
                 reqSec.setProcessorResult(wssOutput);
             } catch (GeneralSecurityException e) {
                 throw new ProcessorException(e);

@@ -60,7 +60,7 @@ public class WssProcessorTest extends TestCase {
                                                                 recipientCertificate,
                                                                 recipientPrivateKey,
                                                                 testDocument.securityContextFinder,
-                                                                certificateResolver);
+                                                                certificateResolver, null);
         checkProcessorResult(request, result);
     }
 
@@ -393,7 +393,7 @@ public class WssProcessorTest extends TestCase {
                 aliceCert,
                 TestDocuments.getWssInteropAliceKey(),
                 null,
-                new SimpleCertificateResolver(bobCert));
+                new SimpleCertificateResolver(bobCert), null);
 
         checkProcessorResult(d, got);
     }
