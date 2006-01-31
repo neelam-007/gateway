@@ -10,6 +10,7 @@ import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.tarari.xml.XmlSource;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -157,7 +158,8 @@ public class KnobblyMessageTest extends TestCase {
         // msg processor gets document read only to process security decorations
         msg.getXmlKnob().getDocumentReadOnly();
 
-        // xsl does a transformation and sets the output of transformation as new bytes
+        // xsl gets bytes and does a transformation and sets the output of transformation as new bytes
+        new XmlSource(msg.getMimeKnob().getPart(0).getInputStream(false));
         msg.getMimeKnob().getPart(0).setBodyBytes(newMsg.getBytes());
 
         // routing assertion notices there were wssprocessor results and gets document in write mode to delete the security header (or simlpy change actor)
