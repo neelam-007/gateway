@@ -1559,13 +1559,13 @@
                 <include name="buildVersion.txt"/>
                 <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
+                <include name="ssg_appliance_startup_config.sh"/>
                 <include name="tarari.sh"/>
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="tarari-initd"/>
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
-                <include name="back_route"/>
                 <include name="snmpd.conf"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
@@ -1591,7 +1591,6 @@
             <fileset dir="${install.src.bin}">
                 <include name="*.sh"/>
                 <include name="*.pl"/>
-                <include name="back_route"/>
                 <include name="ssg-initd"/>
             </fileset>
             <fileset dir="${install.src.jdk}">

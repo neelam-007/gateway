@@ -1,6 +1,6 @@
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.4
+Version: 4.0m1
 Release: 1
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2005
@@ -86,35 +86,23 @@ if [ "$connt" ]; then
 	echo -n "" 
 	# connection tracking already set
 else
-	echo "options ip_conntrack hashsize=32768" >> /etc/modprobe.conf
+	echo "options ip_conntrack hashsize=65536" >> /etc/modprobe.conf
 	# add in larger hash size. final conntrack size will be 8* hashsize
-	# any way to set the multiplier>?	
+	# This allows larger number of in-flight connections
 fi	
 
 
 %post
-# Check for existence of install crumbs left by install.pl
-if [ -e "/etc/SSG_INSTALL" ]; then 
-	echo -n ""
-else 
-	echo "** New system: Run interactive /ssg/bin/install.pl to configure this system if this node does NOT have X Window installed **"
-fi
 
-echo "** If this is a new system and this node has X Window installed, please run interactive /ssg/configwizard/ssgconfig.sh to configure this system instead ofrunning /ssg/bin/install.pl **"
-echo "** If this is an upgrade and this node has X Window installed, you may re-configure this SSG by running interactive /ssg/configwizard/ssgconfig.sh **" 
-
-echo "Layer 7 SecureSpan(tm) Gateway v3.1" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v4.0m1" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
-echo "Layer 7 SecureSpan(tm) Gateway v3.1" >/etc/issue.net
+echo "Layer 7 SecureSpan(tm) Gateway v4.0m1" >/etc/issue.net
 echo "Kernel \r on an \m" >>/etc/issue.net
 
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then 
 	# last uninstall
-        if [ -e "/etc/SSG_INSTALL" ]; then
-                rm -f /etc/SSG_INSTALL
-        fi
         if [ `grep ^gateway: /etc/passwd` ]; then
             userdel -r gateway
         else
@@ -130,7 +118,8 @@ if [ "$1" = "0" ] ; then
 fi
 
 %changelog 
-
+* Tue Jan 31 2006 JWT
+- install.pl is gone, other changes to track version 4.0
 * Tue Aug 04 2005 JWT
 - Build 3200 Serial line console modifications
 * Mon May 02 2005 JWT
