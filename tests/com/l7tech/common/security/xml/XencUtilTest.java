@@ -62,7 +62,7 @@ public class XencUtilTest extends TestCase {
         assertTrue(paddedKeyBytes.length <= modulusLength);
         assertTrue(paddedKeyBytes.length < 128);
     }
-    
+
     public void testEncryptKeyWithRsaAndPad() throws Exception {
         System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
         SecureRandom rand = new SecureRandom();
@@ -83,6 +83,18 @@ public class XencUtilTest extends TestCase {
         SecureRandom rand = new SecureRandom();
         String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand), true);
         byte[] decrypted = XencUtil.decryptKey(paddedB64, pkey).getDecryptedKeyBytes();
+        assertTrue(Arrays.equals(keyBytes, decrypted));
+    }
+
+    public void testRoundTripRsaOaepEncryptedKey() throws Exception {
+        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
+        PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
+        X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
+        RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
+        byte[] oaepParams = new byte[128];
+        byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
+        String paddedB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaOaepMGF1SHA1(keyBytes, publicKey, oaepParams), true);
+        byte[] decrypted = XencUtil.decryptKey(paddedB64, true, oaepParams, pkey).getDecryptedKeyBytes();
         assertTrue(Arrays.equals(keyBytes, decrypted));
     }
 

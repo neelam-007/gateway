@@ -204,4 +204,8 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName());
     }
+
+    public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/OAEPPadding", PROVIDER.getName());
+    }
 }

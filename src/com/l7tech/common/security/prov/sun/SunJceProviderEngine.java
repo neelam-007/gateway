@@ -70,6 +70,10 @@ public class SunJceProviderEngine implements JceProviderEngine {
         return Cipher.getInstance("RSA/ECB/NoPadding", PROVIDER.getName());
     }
 
+    public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/ECB/OAEPPadding", PROVIDER.getName());
+    }
+
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
         X509Name subject = new X509Name("cn=" + username);
         ASN1Set attrs = null;

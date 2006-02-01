@@ -54,4 +54,8 @@ public class LunaJceProviderEngine implements JceProviderEngine {
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         return Cipher.getInstance("RSA/NONE/NoPadding", PROVNAME);
     }
+
+    public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/OAEPPadding", PROVIDER.getName());
+    }
 }

@@ -66,4 +66,14 @@ public interface JceProviderEngine {
      * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
      */
     Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException;
+
+    /**
+     * Get an implementation of RSA configured to work in raw mode, with OAEP padding.
+     *
+     * @return an RSA Cipher implementation.  Never null.
+     * @throws NoSuchProviderException   if there is a configuration problem.  Shouldn't happen.
+     * @throws NoSuchAlgorithmException  if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     */
+    Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException;
 }

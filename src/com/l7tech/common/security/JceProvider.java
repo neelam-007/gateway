@@ -64,6 +64,10 @@ public abstract class JceProvider {
         return Holder.engine.getRsaNoPaddingCipher();
     }
 
+    public static Cipher getRsaOaepPaddingCipher() throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
+        return Holder.engine.getRsaOaepPaddingCipher();
+    }
+
     public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
         return Holder.engine.createRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
     }

@@ -157,6 +157,7 @@ public class SoapUtil {
     // Misc
     public static final String SOAPACTION = "SOAPAction";
     public static final String SUPPORTED_ENCRYPTEDKEY_ALGO = "http://www.w3.org/2001/04/xmlenc#rsa-1_5";
+    public static final String SUPPORTED_ENCRYPTEDKEY_ALGO_2 = "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p";
     public static final String VALUETYPE_SKI_SUFFIX = "X509SubjectKeyIdentifier";
     public static final String VALUETYPE_SKI = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#" + VALUETYPE_SKI_SUFFIX;
     public static final String VALUETYPE_SKI_2 = SECURITY_NAMESPACE_PREFIX + ":" + VALUETYPE_SKI_SUFFIX;
