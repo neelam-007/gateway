@@ -41,6 +41,8 @@ public class SubjectStatement {
      *
      * @param credentials  the credentials source for subject statement
      * @param confirmation the confirmation method type
+     * @param useThumbprintForSubject if true, an X.509 subject will include just the thumbprintSHA1 of the subject cert.
+     *                                Otherwise, it will contain the entire base64-encoded signing cert.
      * @return the authentication statement for the subject statement, confirmation and method
      */
     public static SubjectStatement createAuthenticationStatement(LoginCredentials credentials,

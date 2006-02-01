@@ -68,8 +68,8 @@ public abstract class AbstractSamlTokenStrategy extends AbstractTokenStrategy {
     private void removeIfExpired() {
         synchronized (lock) {
             if (cachedAssertion != null && cachedAssertion.isExpiringSoon(SAML_PREEXPIRE_SEC)) {
-                log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
-                                                                SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
+                log.log(Level.INFO, "SAML assertion has expired or will do so within the next " +
+                                    SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
                 cachedAssertion = null;
             }
         }

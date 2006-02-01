@@ -22,6 +22,7 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.*;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.collections.LRUMap;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
@@ -52,6 +53,9 @@ public class SsgRuntime {
     // note that the dialog is disabled AFTER this many displays (+1, since we start at 0)
     public static final int MAX_LOGON_CANCEL = 1;
 
+    // Maximum number of Sender Vouches tokens to cache at a time.
+    private static final int MAX_SV_USERS = Integer.getInteger("com.l7tech.proxy.maxSvUsers", 1000).intValue();
+
     private MultiThreadedHttpConnectionManager httpConnectionManager;
 
     private PolicyManager rootPolicyManager = null; // policy store that is not saved to disk
@@ -75,6 +79,7 @@ public class SsgRuntime {
     private KerberosServiceTicket kerberosTicket = null;
     private long timeOffset = 0;
     private Map tokenStrategiesByType;
+    private Map senderVouchesTokenStrategiesByUser;
     private SimpleHttpClient simpleHttpClient = null;
     private CredentialManager credentialManager = Managers.getCredentialManager();
     private SsgKeyStoreManager ssgKeyStoreManager;
@@ -383,6 +388,25 @@ public class SsgRuntime {
         if (tokenType == null || strategy == null) throw new NullPointerException();
         synchronized (ssg) {
             getTokenStrategiesByType().put(tokenType, strategy);
+        }
+    }
+
+    /**
+     * Get the strategy for obtaining a SAML sender-vouches assertion vouching for the specified username.
+     *
+     * @param username  the username to vouch for
+     * @return a strategy that will produce a token for this user.  Never null.
+     */
+    public TokenStrategy getSenderVouchesStrategyForUsername(String username) {
+        synchronized (ssg) {
+            if (senderVouchesTokenStrategiesByUser == null)
+                senderVouchesTokenStrategiesByUser = new LRUMap(MAX_SV_USERS);
+            TokenStrategy strat = (TokenStrategy)senderVouchesTokenStrategiesByUser.get(username);
+            if (strat == null) {
+                strat = new SenderVouchesSamlTokenStrategy(username);
+                senderVouchesTokenStrategiesByUser.put(username, strat);
+            }
+            return strat;
         }
     }
 

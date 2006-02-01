@@ -1,5 +1,6 @@
 package com.l7tech.common.security.saml;
 
+import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
@@ -17,10 +18,7 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
@@ -70,10 +68,10 @@ public class SignedSamlTest extends TestCase {
         System.out.println("Client PEM:\n" + new String(CertUtils.encodeAsPEM(clientCertChain[0])));
     }
 
-    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject) throws IOException, SAXException, CertificateException, SignatureException {
+    private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject) throws CertificateException, SignatureException {
         LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-        samlOptions.setClientAddress(InetAddress.getLocalHost());
+        samlOptions.setClientAddress(InetAddressUtil.getLocalHost());
         samlOptions.setSignAssertion(false);
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY, useThumbprintForSubject);

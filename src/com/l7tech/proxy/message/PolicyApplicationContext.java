@@ -23,6 +23,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
@@ -33,8 +34,11 @@ import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.security.auth.callback.*;
 import javax.crypto.SecretKey;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -66,7 +70,6 @@ public class PolicyApplicationContext extends ProcessingContext {
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private String secureConversationId = null;
     private byte[] secureConversationSharedSecret = null;
-    private SamlAssertion samlAssertion = null;
     private Calendar secureConversationExpiryDate = null;
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
     private SecretKey encryptedKeySecretKey = null;
@@ -139,11 +142,25 @@ public class PolicyApplicationContext extends ProcessingContext {
         return origUrl;
     }
 
+    /**
+     * Set the credentials that came in with the original request.  This may differ from the SSB's own credentials
+     * as returned by getCredentials (or the CredentialManager), if chainCredentialsFromClient is enabled.
+     * <p/>
+     * This also defaults the current request credentials to the ones that arrived with the request.
+     *
+     * @param requestCredentials the credentials that arrived with the original request.
+     */
     public void setRequestCredentials(LoginCredentials requestCredentials) {
         setCredentials(requestCredentials);
         this.requestCredentials = requestCredentials;
     }
 
+    /**
+     * Get the credentials that came in with the original request.  This may differ from the SSB's own credentials
+     * as returned by getCredentials (or the CredentialManager), if chainCredentialsFromClient is enabled.
+     *
+     * @return the credentials that arrived with the original request, or null if there were none.
+     */
     public LoginCredentials getRequestCredentials() {
         return requestCredentials;
     }
@@ -624,10 +641,32 @@ public class PolicyApplicationContext extends ProcessingContext {
       throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
       ClientCertificateException, BadCredentialsException, PolicyRetryableException
     {
-        if (samlAssertion != null)
-            return samlAssertion;
+        return (SamlAssertion)ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION).getOrCreate(ssg);
+    }
 
-        return samlAssertion = (SamlAssertion)ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_ASSERTION).getOrCreate(ssg);
+    /**
+     * Get a valid sender-vouches assertion for this SSG, vouching for the current RequestCredentials username.
+     *
+     * @return a sender-vouches SAML assertion.  Never null.
+     */
+    public SamlAssertion getOrCreateSamlSenderVouchesAssertion()
+            throws ConfigurationException, OperationCanceledException, GeneralSecurityException, 
+                   IOException, KeyStoreCorruptException, ClientCertificateException, BadCredentialsException,
+                   PolicyRetryableException
+    {
+        LoginCredentials creds = getRequestCredentials();
+        if (creds == null) {
+            if (ssg.isChainCredentialsFromClient())
+                throw new ConfigurationException("Can't create Sender-Vouches without enabling chainCredentialsFromClient for this Gateway account");
+
+            PasswordAuthentication pw = ssg.getRuntime().getCredentials();
+            creds = LoginCredentials.makePasswordCredentials(pw.getUserName(), null, HttpBasic.class);
+        }
+        creds.setCredentialSourceAssertion(HttpBasic.class);
+
+        String username = creds.getLogin();
+        TokenStrategy strategy = ssg.getRuntime().getSenderVouchesStrategyForUsername(username);
+        return (SamlAssertion)strategy.getOrCreate(ssg);
     }
 
     /**
@@ -686,9 +725,8 @@ public class PolicyApplicationContext extends ProcessingContext {
             String kerberosName = ssg.getKerberosName();
             if(kerberosName==null || kerberosName.trim().length()==0) kerberosName = ssg.getHostname();
             String serviceName = null;
-            String hostName = null;
             int split = kerberosName.indexOf('/');
-            hostName = kerberosName.substring(split+1);
+            final String hostName = kerberosName.substring(split+1);
             if(split>0) serviceName = kerberosName.substring(0,split);
 
             // get ticket

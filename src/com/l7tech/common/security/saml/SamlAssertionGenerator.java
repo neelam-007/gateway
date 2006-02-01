@@ -59,13 +59,11 @@ public class SamlAssertionGenerator {
      * @param subject the subject the statement is about
      * @param options the options
      * @return the holder of key assertion for the
-     * @throws IOException          on io error
      * @throws SignatureException   on signature related error
-     * @throws SAXException         on xml parsing error
      * @throws CertificateException on certificate error
      */
     public Document createAssertion(SubjectStatement subject, Options options)
-      throws IOException, SignatureException, SAXException, CertificateException {
+      throws SignatureException, CertificateException {
 
         Document doc = assertionToDocument(createStatementType(subject, options));
         if (options.isSignAssertion()) signAssertion(
@@ -84,13 +82,11 @@ public class SamlAssertionGenerator {
      * @param subject  the subject the statement is about
      * @param options  the options
      * @return the document representing the authentication assertion
-     * @throws IOException          on io error
      * @throws SignatureException   on signature related error
-     * @throws SAXException         on xml parsing error
      * @throws CertificateException on certificate error
      */
     public Document attachStatement(Document document, SubjectStatement subject, Options options)
-      throws IOException, SignatureException, SAXException, CertificateException {
+      throws SignatureException, CertificateException {
         Document doc = assertionToDocument(createStatementType(subject, options));
         // sign only if requested and if the confirmation is holder of key.
         // according to WSS SAML interop scenarios the sender vouches is not signed
@@ -111,13 +107,11 @@ public class SamlAssertionGenerator {
      *                         statement
      * @param options          the options, with expiry minutes
      * @return the assertion type containing the requested statement
-     * @throws IOException          on io error
      * @throws SignatureException
-     * @throws SAXException
      * @throws CertificateException
      */
     protected AssertionType createStatementType(SubjectStatement subjectStatement, Options options)
-      throws IOException, SignatureException, SAXException, CertificateException {
+      throws SignatureException, CertificateException {
         Calendar now = Calendar.getInstance(utcTimeZone);
         AssertionType assertionType = getGenericAssertion(now, options.getExpiryMinutes(),
                                                           options.getId() != null ? options.getId() : generateAssertionId(null));
@@ -223,7 +217,7 @@ public class SamlAssertionGenerator {
      * @param options
      */
     protected void attachAssertion(Document soapMessage, Document assertionDoc, Options options)
-      throws IOException, SAXException, SignatureException, CertificateException {
+      throws SignatureException, CertificateException {
 
         try {
             Element bodyElement = SoapUtil.getBodyElement(soapMessage);
@@ -350,8 +344,7 @@ public class SamlAssertionGenerator {
         return assertion;
     }
 
-    protected static Document assertionToDocument(AssertionType assertion)
-      throws IOException, SAXException {
+    protected static Document assertionToDocument(AssertionType assertion) {
         AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance();
         StringWriter sw = new StringWriter();
         assertionDocument.setAssertion(assertion);
@@ -360,8 +353,14 @@ public class SamlAssertionGenerator {
         Map namespaces = new HashMap();
         namespaces.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
         xo.setSaveSuggestedPrefixes(namespaces);
-        assertionDocument.save(sw, xo);
-        return XmlUtil.stringToDocument(sw.toString());
+        try {
+            assertionDocument.save(sw, xo);
+            return XmlUtil.stringToDocument(sw.toString());
+        } catch (SAXException e) {
+            throw new RuntimeException("Unable to produce assertion XML", e); // can't happen: XMLBeans contract
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to produce assertion XML", e); // can't happen: memory-based StringWriter
+        }
     }
 
 

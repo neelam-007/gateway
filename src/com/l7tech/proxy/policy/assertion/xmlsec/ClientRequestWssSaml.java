@@ -6,20 +6,14 @@
 
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.common.security.xml.CertificateResolver;
-import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.SimpleCertificateResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -28,13 +22,9 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.PasswordAuthentication;
-import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,23 +34,31 @@ import java.util.logging.Logger;
 public class ClientRequestWssSaml extends ClientAssertion {
     private static final Logger logger = Logger.getLogger(ClientRequestWssSaml.class.getName());
     private RequestWssSaml data;
-    private final InetAddress localHost;
+    private boolean senderVouches = false;
 
     public ClientRequestWssSaml(RequestWssSaml data) {
         this.data = data;
-        try {
-            localHost = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
+        for (int i = 0; i < data.getSubjectConfirmations().length; i++) {
+            String subjconf = data.getSubjectConfirmations()[i];
+            if (SamlConstants.CONFIRMATION_SENDER_VOUCHES.equals(subjconf)) {
+                senderVouches = true;
+            } else if (SamlConstants.CONFIRMATION_HOLDER_OF_KEY.equals(subjconf)) {
+                senderVouches = false;
+                // If HoK is acceptable, don't try SV
+                break;
+            }
         }
+    }
+
+    public boolean isSenderVouches() {
+        return senderVouches;
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
-                   ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
-                   HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
-                   InvalidDocumentFormatException
-    {
+            ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
+            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
+            InvalidDocumentFormatException, ConfigurationException {
         final Ssg ssg = context.getSsg();
 
         // If we are capable of having client cert, then get one
@@ -71,45 +69,9 @@ public class ClientRequestWssSaml extends ClientAssertion {
         } else
             privateKey = null;
 
-        boolean sv = false;
-        for (int i = 0; i < data.getSubjectConfirmations().length; i++) {
-            String subjconf = data.getSubjectConfirmations()[i];
-            if (SamlConstants.CONFIRMATION_SENDER_VOUCHES.equals(subjconf)) {
-                sv = true;
-            } else if (SamlConstants.CONFIRMATION_HOLDER_OF_KEY.equals(subjconf)) {
-                sv = false;
-                // If HoK is acceptable, don't try SV
-                break;
-            }
-        }
-
         final SamlAssertion ass;
-        if (sv) {
-            LoginCredentials creds = context.getRequestCredentials();
-            creds.setCredentialSourceAssertion(HttpBasic.class);
-
-            if (creds == null) {
-                if (ssg.isChainCredentialsFromClient())
-                    throw new PolicyAssertionException("Can't create Sender-Vouches without chained credentials!");
-
-                PasswordAuthentication pw = ssg.getRuntime().getCredentials();
-                creds = LoginCredentials.makePasswordCredentials(pw.getUserName(), null, HttpBasic.class);
-            }
-
-            SignerInfo si = new SignerInfo(privateKey, new X509Certificate[] { ssg.getClientCertificate() });
-
-            SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
-            opts.setClientAddress(localHost);       // TODO allow override from API caller (i.e. portal) 
-            opts.setExpiryMinutes(5);                // TODO configurable?
-            opts.setId(SamlAssertionGenerator.generateAssertionId("SSB-SamlAssertion"));
-            opts.setSignAssertion(true);             // TODO configurable?
-            opts.setUseThumbprintForSignature(true); // TODO configurable?
-
-            SubjectStatement authenticationStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.SENDER_VOUCHES, true);
-            SamlAssertionGenerator sag = new SamlAssertionGenerator(si);
-            CertificateResolver thumbResolver = new SimpleCertificateResolver(new X509Certificate[] { ssg.getClientCertificate(), ssg.getServerCertificate() });
-            // TODO cache
-            ass = new SamlAssertion(sag.createAssertion(authenticationStatement, opts).getDocumentElement(), thumbResolver);
+        if (isSenderVouches()) {
+            ass = context.getOrCreateSamlSenderVouchesAssertion();
         } else {
             // Look up or apply for SAML ticket
             ass = context.getOrCreateSamlHolderOfKeyAssertion();
@@ -157,7 +119,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
     }
 
     public String getName() {
-        return "SAML Authentication Statement";
+        return isSenderVouches() ? "SAML Sender-Vouches Authentication Statement" : "SAML Holder-of-Key Authentication Statement";
     }
 
     public String iconResource(boolean open) {
