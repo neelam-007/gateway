@@ -1,8 +1,6 @@
+#!/bin/sh
 # FILE /etc/profile.d/ssgruntimedefs.sh
 # LAYER 7 TECHNOLOGIES
-# 07-07-2003, flascelles
-#
-#
 # Defines JAVA_HOME, TOMCAT_HOME, etc
 # Edit at deployment time to ensure values are accurate
 #
@@ -17,13 +15,6 @@ fi
 if [ "$release" = "Red Hat Linux release 9 (Shrike)" ]; then
 	old_rel=1;
 fi
-# options from the sun specjbb2000 run
-#Disks            2 x 73GB Internal    | Command Line     java -d64 -Xbatch   
-#                 ULTRA320 SCSI        |                  -Xmn8g -Xms12g      
-#Other H/W                             |                  -Xmx12g             
-#                                      |                  -XX:+AggressiveHeap 
-#                                      |                  -Xss256k   
-#
 
 cpucount=`grep "cpu MHz" /proc/cpuinfo  |wc -l| tr -d \ `
 
@@ -32,6 +23,7 @@ let cpucount="$cpucount*1"; # sanitize
 system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
 
 multiplier="2/3"
+
 let java_ram="$system_ram*$multiplier" 
 let newsize="$java_ram*7/10"
 
@@ -50,15 +42,18 @@ if [ $cpucount = 1 ]; then
 	default_java_opts="$default_java_opts -XX:+DisableExplicitGC "
 else
 	let gcthreads="$cpucount-1"
+
 	if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
 		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$gcthreads "
 		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
 		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
-	else 
-		#default_java_opts="$default_java_opts -XX:+DisableExplicitGC -XX:+UseParallelGC"
-		default_java_opts="$default_java_opts -XX:+DisableExplicitGC"
-		# previous one. Added new options below:
+	elif [ `expr $JAVA_HOME : ".*1\.5\.0_06.*"` != 0 ]; then
+		# 1.5 build 06
 		default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15 -XX:+AggressiveOpts -XX:+UseBiasedLocking "
+	else 	
+		# 1.5 build 01 through 05
+		# previous one. Added new options below:
+		default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15"
 	fi
 fi
 
@@ -83,17 +78,6 @@ then
 else
         default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`hostname -f`"
 fi
-
-# May have to restore something like this for OS other than linux
-# if $cygwin; then
-#    mac=''
-#else
-#    mac=`/sbin/ifconfig eth0 |awk '/HWaddr/ {print $5}'`
-#fi
-#
-#if [ ! -z $mac ]; then
-#        default_java_opts="$default_java_opts -Dcom.l7tech.cluster.macAddress=$mac"
-#fi
 
 # aliases to start and stop ssg
 alias startssg='/etc/rc.d/init.d/ssg start'
@@ -134,3 +118,7 @@ fi
 if [ "$old_rel" = 1 ]; then
 	export LD_ASSUME_KERNEL="2.2.5"
 fi
+
+
+unset -v old_rel default_java_opts gcthreads new_size release cpucount system_ram multiplier java_ram maxnewsize newsize
+
