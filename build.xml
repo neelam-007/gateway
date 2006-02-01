@@ -586,6 +586,9 @@
                 <exclude name="com/l7tech/common/xml/tarari/TarariMessageContextImpl.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/util/**/*"/>
 
+                <!-- Exclude unless Log4j is used -->
+                <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
+
                 <exclude name="com/l7tech/common/audit/**/*"/>
                 <exclude name="com/l7tech/common/alert/**/*"/>
 
@@ -647,6 +650,7 @@
                 <exclude name="com/l7tech/common/security/Rsa*.class"/>
                 <exclude name="com/l7tech/common/util/Pkcs12*.class"/>
                 <exclude name="com/l7tech/common/util/CertificateDownloader.class"/>
+                <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
                 <exclude name="com/l7tech/common/security/xml/processor/**/*"/>
                 <exclude name="com/l7tech/common/security/xml/decorator/**/*"/>
 

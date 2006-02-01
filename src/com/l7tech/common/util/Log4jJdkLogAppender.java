@@ -104,8 +104,9 @@ public class Log4jJdkLogAppender implements Appender
      *
      */
     public void doAppend(final LoggingEvent loggingEvent) {
-        Logger logger = Logger.getLogger(loggingEvent.categoryName);
-        Level level = getLevel(loggingEvent.level);
+        String name = loggingEvent.categoryName==null ? "" : loggingEvent.categoryName;
+        Logger logger = Logger.getLogger(name);
+        Level level = getLevel(loggingEvent.level==null ? Priority.INFO : loggingEvent.level);
         if(logger.isLoggable(level)) {
             logger.log(getLogRecord(level, loggingEvent));
         }
