@@ -13,7 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A CertificateResolver that is given a list of certs that it is to recognize.
+ * A CertificateResolver that is given a small list of certs that it is to recognize.
  */
 public class SimpleCertificateResolver implements CertificateResolver {
     private static final Logger logger = Logger.getLogger(SimpleCertificateResolver.class.getName());
