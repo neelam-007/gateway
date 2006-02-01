@@ -48,11 +48,12 @@ else
 		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
 		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
 	elif [ `expr $JAVA_HOME : ".*1\.5\.0_06.*"` != 0 ]; then
-		# 1.5 build 06
+		# searches for the string 1.5.0_06... the version these options supposedly appear
+		# I need to verify this actually helps as much as the 
+		# SpecJBB site suggests it does
 		default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15 -XX:+AggressiveOpts -XX:+UseBiasedLocking "
 	else 	
-		# 1.5 build 01 through 05
-		# previous one. Added new options below:
+		# 1.5 build 01 through 05 * Current default
 		default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15"
 	fi
 fi
