@@ -204,8 +204,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             currentdata.setResetCounter(0);
             try {
                 Session session = getSession();
-                // update existing data
-                session.update(currentdata);
+                session.delete(currentdata);
             } catch (HibernateException e) {
                 String msg = "Hibernate exception revoking cert";
                 logger.log(Level.WARNING, msg, e);
