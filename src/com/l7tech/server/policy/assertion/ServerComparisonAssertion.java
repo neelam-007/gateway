@@ -42,15 +42,25 @@ public class ServerComparisonAssertion implements ServerAssertion {
             return AssertionStatus.FAILED;
         }
 
+        ComparisonAssertion.Operator op = assertion.getOperator();
         String val1 = getValue(assertion.getExpression1(), vars);
-        String val2 = getValue(assertion.getExpression2(), vars);
-        if (val1 == null || val2 == null) {
+        if (val1 == null) {
             auditor.logAndAudit(AssertionMessages.COMPARISON_NULL);
             return AssertionStatus.FAILED;
         }
 
+        String val2;
+        if (op.isUnary()) {
+            val2 = null;
+        } else {
+            val2 = getValue(assertion.getExpression2(), vars);
+            if (val2 == null) {
+                auditor.logAndAudit(AssertionMessages.COMPARISON_NULL);
+                return AssertionStatus.FAILED;
+            }
+        }
+
         boolean match;
-        ComparisonAssertion.Operator op = assertion.getOperator();
         ComparisonAssertion.Comparer comparer = op.getComparer();
 
         if (comparer != null) {
