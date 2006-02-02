@@ -51,7 +51,8 @@ public class BuiltinVariables {
         if (var == null) {
             // Try prefixed name
             int pos = name.lastIndexOf(".");
-            var = (Variable)varsByPrefix.get(name.substring(0,pos));
+            if (pos > 0)
+                var = (Variable)varsByPrefix.get(name.substring(0,pos));
         }
         return var;
     }
