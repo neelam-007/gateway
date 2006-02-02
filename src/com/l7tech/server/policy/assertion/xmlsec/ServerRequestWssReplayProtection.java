@@ -111,17 +111,9 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             XmlSecurityToken signingToken = signingTokens[i];
 
             String messageIdStr = null;
-            if (signingToken instanceof X509SecurityToken || signingToken instanceof SamlSecurityToken) {
-                X509Certificate signingCert;
-                if (signingToken instanceof X509SecurityToken) {
-                    // It was signed by a client certificate
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
-                    signingCert = ((X509SecurityToken)signingToken).getCertificate();
-                } else {
-                    // It was signed by a SAML holder-of-key assertion
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SAML_HOK);
-                    signingCert = ((SamlSecurityToken)signingToken).getSubjectCertificate();
-                }
+            if (signingToken instanceof X509SigningSecurityToken) {
+                X509Certificate signingCert = ((X509SigningSecurityToken)signingToken).getMessageSigningCertificate();
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
 
                 // Use cert info as sender id
                 MessageDigest md = HexUtils.getSha1();

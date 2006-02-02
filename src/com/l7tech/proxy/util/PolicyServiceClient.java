@@ -519,7 +519,7 @@ public class PolicyServiceClient {
                           ssg.getRuntime().getPolicyServiceFile());
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createDecoratedGetPolicyRequest(serviceId, samlAss, null, subjectPrivateKey, timestampCreatedDate);
-        return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
+        return obtainResponse(httpClient, url, ssg, requestDoc, null, serverCertificate, samlAss.getMessageSigningCertificate(), subjectPrivateKey);
     }
 
     /**

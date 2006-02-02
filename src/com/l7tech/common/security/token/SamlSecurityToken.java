@@ -13,7 +13,7 @@ import java.util.Calendar;
 /**
  * Represents a saml:Assertion XML security token.
  */
-public interface SamlSecurityToken extends SigningSecurityToken {
+public interface SamlSecurityToken extends X509SigningSecurityToken {
     ConfirmationMethod HOLDER_OF_KEY = new ConfirmationMethod("Holder-of-key");
     ConfirmationMethod SENDER_VOUCHES = new ConfirmationMethod("Sender-vouches");
     ConfirmationMethod BEARER_TOKEN = new ConfirmationMethod("Bearer token");
