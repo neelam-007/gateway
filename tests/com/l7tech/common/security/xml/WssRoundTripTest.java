@@ -14,6 +14,8 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.skunkworks.wsibsp.WsiBSPValidator;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -36,6 +38,8 @@ import java.util.logging.Logger;
 public class WssRoundTripTest extends TestCase {
     private static Logger log = Logger.getLogger(WssRoundTripTest.class.getName());
     private static final String SESSION_ID = "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid";
+    private static final WsiBSPValidator validator = new WsiBSPValidator();
+
 
     public WssRoundTripTest(String name) {
         super(name);
@@ -114,7 +118,8 @@ public class WssRoundTripTest extends TestCase {
 
     public void testEncryptionOnlyAES192() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES192",
-                                               wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_192_CBC.getXEncName())));
+                                               wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_192_CBC.getXEncName())),
+                         false);
     }
 
     public void testEncryptionOnlyAES256() throws Exception {
@@ -150,22 +155,26 @@ public class WssRoundTripTest extends TestCase {
 
     public void testSigningOnlyWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnlyWithSecureConversation",
-                                               wssDecoratorTest.getSigningOnlyWithSecureConversationTestDocument()));
+                                               wssDecoratorTest.getSigningOnlyWithSecureConversationTestDocument()),
+                         false);
     }
 
     public void testSigningAndEncryptionWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
-                                               wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument()));
+                                               wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument()),
+                         false);
     }
 
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlHolderOfKeyRequest",
-                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()));
+                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()),
+                         false);
     }
 
     public void testSignedSamlSenderVouchesRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlSenderVouchesRequest",
-                                               wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument()));
+                                               wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument()),
+                         false);
     }
 
     public void testSignedEmptyElement() throws Exception {
@@ -200,10 +209,15 @@ public class WssRoundTripTest extends TestCase {
 
     public void testEncryptedUsernameToken() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedUsernameToken",
-                                               wssDecoratorTest.getEncryptedUsernameTokenTestDocument()));
+                                               wssDecoratorTest.getEncryptedUsernameTokenTestDocument()),
+                         false);
     }
 
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
+        runRoundTripTest(ntd, true);
+    }
+
+    private void runRoundTripTest(NamedTestDocument ntd, boolean checkBSP1Compliance) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;
         WssDecoratorTest.Context c = td.c;
@@ -263,6 +277,8 @@ public class WssRoundTripTest extends TestCase {
 
         // Ooh, an incoming message has just arrived!
         Document incomingMessage = XmlUtil.stringToDocument(new String(decoratedMessage));
+
+        boolean isValid = !checkBSP1Compliance || validator.isValid(incomingMessage);
 
         assertTrue("Serialization did not affect the integrity of the XML message",
                    XmlUtil.nodeToString(message).equals(XmlUtil.nodeToString(incomingMessage)));
@@ -393,6 +409,8 @@ public class WssRoundTripTest extends TestCase {
                        XmlUtil.elementIsEmpty(elementToEncrypt) || wasEncrypted);
             log.info("Element " + elementToEncrypt.getLocalName() + " succesfully verified as either empty or encrypted.");
         }
+
+        assertTrue("XML message passed WS-I BSP tests.", isValid);        
     }
 
     private SecurityContextFinder makeSecurityContextFinder(final SecretKey secureConversationKey) {
