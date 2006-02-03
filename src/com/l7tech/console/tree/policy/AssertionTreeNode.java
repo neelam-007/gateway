@@ -164,7 +164,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             } else if ((pm instanceof PolicyValidatorResult.Warning)) {
                 hasWarnings = true;
             }
-            sb.append("<i>" + pm.getMessage() + "</i>");
+            sb.append("<i>").append(pm.getMessage()).append("</i>");
         }
         sb.append("</strong></html>");
         String format = sb.toString();
@@ -261,8 +261,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
 
         Runnable runnable = new Runnable() {
             public void run() {
-                TreeNode[] path =
-                  ((DefaultMutableTreeNode)AssertionTreeNode.this).getPath();
+                TreeNode[] path = AssertionTreeNode.this.getPath();
                 if (path != null) {
                     tree.setSelectionPath(new TreePath(path));
                 }
