@@ -7,8 +7,8 @@
 package com.l7tech.server.message;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.util.SoapUtil;
@@ -19,13 +19,12 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
 
@@ -67,7 +66,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
         this.requestId = RequestIdGenerator.next();
-        ExpandVariables.populateLazyRequestVariables(this);
     }
 
     public boolean isAuthenticated() {

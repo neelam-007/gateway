@@ -3,9 +3,11 @@
  */
 package com.l7tech.policy.variable;
 
+import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
+import javax.wsdl.Operation;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,12 +69,13 @@ public class BuiltinVariables {
         return var.isMultivalued();
     }
 
+    private static final RemoteIpGetter remoteIpGetter = new RemoteIpGetter();
+    private static final OperationGetter soapOperationGetter = new OperationGetter();
+    private static final SoapNamespaceGetter soapNamespaceGetter = new SoapNamespaceGetter();
+
     public static final Variable[] VARS = {
-        new Variable("request.tcp.remoteAddress", new Getter() {
-            public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRequest().getTcpKnob().getRemoteAddress();
-            }
-        }),
+        new Variable("request.tcp.remoteAddress", remoteIpGetter),
+        new Variable("request.tcp.remoteip", remoteIpGetter),
         new Variable("request.tcp.remoteHost", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return context.getRequest().getTcpKnob().getRemoteHost();
@@ -108,37 +111,26 @@ public class BuiltinVariables {
                 return context.getRequest().getHttpRequestKnob().getQueryString();
             }
         }),
-            new SettableVariable("auditLevel",
-                    new Getter() {
-                        public Object get(String name, PolicyEnforcementContext context) {
-                            return context.getAuditLevel().getName();
-                        }
-                    },
-                    new Setter() {
-                        public void set(String name, Object value, PolicyEnforcementContext context) {
-                            Level level = Level.parse(value.toString());
-                            if (level.equals(Level.SEVERE)) {
-                                throw new IllegalArgumentException("SEVERE is reserved for audit system events");
-                            }
-                            context.setAuditLevel(level);
-                        }
-                    }),
-            new Variable("operation",
-                    new Getter() {
-                        public Object get(String name, PolicyEnforcementContext context) {
-                            try {
-                                if (context.getService().isSoap()) {
-                                    return context.getOperation().getName();
-                                } else {
-                                    logger.info("Can't get operation name for a non-SOAP service");
-                                    return null;
-                                }
-                            } catch (Exception e) {
-                                logger.log(Level.WARNING, "Couldn't get operation name", e);
-                                return null;
-                            }
-                        }
-                    }),
+        new SettableVariable("auditLevel",
+            new Getter() {
+                public Object get(String name, PolicyEnforcementContext context) {
+                    return context.getAuditLevel().getName();
+                }
+            },
+            new Setter() {
+                public void set(String name, Object value, PolicyEnforcementContext context) {
+                    Level level = Level.parse(value.toString());
+                    if (level.equals(Level.SEVERE)) {
+                        throw new IllegalArgumentException("SEVERE is reserved for audit system events");
+                    }
+                    context.setAuditLevel(level);
+                }
+            }
+        ),
+        new Variable("request.soap.operation", soapOperationGetter),
+        new Variable("request.soap.operationname", soapOperationGetter),
+        new Variable("request.soap.namespace", soapNamespaceGetter),
+        new Variable("request.soap.urn", soapNamespaceGetter),
         new Variable("requestId", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return context.getRequestId();
@@ -205,4 +197,44 @@ public class BuiltinVariables {
         "ssg.cert.chain",
     };
 
+    private static class RemoteIpGetter implements Getter {
+        public Object get(String name, PolicyEnforcementContext context) {
+            return context.getRequest().getTcpKnob().getRemoteAddress();
+        }
+    }
+
+    private static class OperationGetter implements Getter {
+        public Object get(String name, PolicyEnforcementContext context) {
+            try {
+                if (context.getService().isSoap()) {
+                    Operation operation = context.getOperation();
+                    if (operation != null) return operation.getName();
+                    return null;
+                } else {
+                    logger.info("Can't get operation name for a non-SOAP service");
+                    return null;
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't get operation name", e);
+                return null;
+            }
+        }
+    }
+
+    private static class SoapNamespaceGetter implements Getter {
+        public Object get(String name, PolicyEnforcementContext context) {
+            SoapKnob soapKnob = (SoapKnob)context.getRequest().getKnob(SoapKnob.class);
+            if (soapKnob == null) {
+                logger.info("Can't get SOAP namespace for non-SOAP message");
+                return null;
+            }
+
+            try {
+                return soapKnob.getPayloadNamespaceUri();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't get SOAP namespace", e);
+                return null;
+            }
+        }
+    }
 }

@@ -5,19 +5,10 @@
  */
 package com.l7tech.policy.variable;
 
-import com.l7tech.common.message.TcpKnob;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import org.xml.sax.SAXException;
-
-import javax.wsdl.Operation;
-import javax.wsdl.WSDLException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
-import java.util.logging.Level;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,18 +26,11 @@ import java.util.regex.Pattern;
  * @version Apr 8, 2005
  */
 public class ExpandVariables {
-    public static final String COMMON_VAR_REMOTEIP = "request.tcp.remoteip";
-    public static final String COMMON_VAR_OPERATIONNAME = "request.soap.operationname";
-    public static final String COMMON_VAR_OPERATIONURN = "request.soap.urn";
-    // todo, add common variables as needed here
-
     private static final Logger logger = Logger.getLogger(ExpandVariables.class.getName());
 
     public static final String DEF_PREFIX = "(?:\\$\\{)";
     public static final String DEF_SUFFIX = "(?:\\})";
     private static final Pattern regexPattern = Pattern.compile(DEF_PREFIX+"(.+?)"+DEF_SUFFIX);
-
-    private final Map defaultVariables;
 
     /**
      *  Default Constructor.  Creates the empty default varialbes map.
@@ -64,7 +48,6 @@ public class ExpandVariables {
         if (variables == null) {
             throw new IllegalArgumentException();
         }
-        this.defaultVariables = variables;
     }
 
     /**
@@ -102,11 +85,11 @@ public class ExpandVariables {
      * then the default variables map is consulted.
      *
      * @param s the input message as a message
-     * @param userVariables the caller supplied varialbes map that is consulted first
+     * @param vars the caller supplied varialbes map that is consulted first
      * @return the message with expanded/resolved varialbes
      * @throws NoSuchVariableException if the varialbe
      */
-    public String process(String s, Map userVariables) throws NoSuchVariableException {
+    public String process(String s, Map vars) throws NoSuchVariableException {
         if (s == null) {
             throw new IllegalArgumentException();
         }
@@ -118,79 +101,28 @@ public class ExpandVariables {
             if (matchingCount != 1) {
                 throw new IllegalStateException("Expecting 1 matching group, received: "+matchingCount);
             }
-            String var = matcher.group(1);
-            String replacement = null;
-            Object varval = userVariables.get(var);
-            if (varval != null) {
-                replacement = varval.toString();
+
+            String name = matcher.group(1);
+            Object value = vars.get(name);
+            String replacement;
+
+            if (value instanceof String[]) {
+                // TODO let user supply delimiter?
+                replacement = Arrays.asList((String[])value).toString();
+            } else if (value instanceof String) {
+                replacement = (String)value;
+            } else {
+                // TODO typed data and interpolation don't mix
+                logger.warning("Variable '" + name + "' is a " + value.getClass().getName() + ", not a String; using .toString() instead");
+                replacement = value.toString();
             }
-            if (replacement == null) {
-                varval = defaultVariables.get(var);
-                if (varval != null) {
-                    replacement = varval.toString();
-                }
-            }
-            if (replacement == null) {
-                throw new NoSuchVariableException(var);
-            }
+
+            if (replacement == null) throw new NoSuchVariableException(name);
             matcher.appendReplacement(sb, replacement);
         }
         matcher.appendTail(sb);
 
         return sb.toString();
-    }
-
-    public static void populateLazyRequestVariables(final PolicyEnforcementContext cntx) {
-        // remote address variable
-        final TcpKnob tcp = (TcpKnob)cntx.getRequest().getKnob(TcpKnob.class);
-        if (tcp == null) {
-            logger.info("This context's request has no TcpKnob. No remoteIp variable can be populated.");
-        } else {//
-            cntx.setVariable(COMMON_VAR_REMOTEIP, new Object() {
-                public String toString() {
-                    return tcp.getRemoteAddress();
-                }
-            });
-        }
-
-        // operation name variable
-        cntx.setVariable(COMMON_VAR_OPERATIONNAME, new Object() {
-                public String toString() {
-                    try {
-                        Operation op = cntx.getOperation();
-                        if (op != null) {
-                            return op.getName();
-                        }
-                    } catch (IOException e) {
-                        logger.log(Level.INFO, "cannot get operation name", e);
-                    } catch (SAXException e) {
-                        logger.log(Level.INFO, "cannot get operation name", e);
-                    } catch (WSDLException e) {
-                        logger.log(Level.INFO, "cannot get operation name", e);
-                    } catch (InvalidDocumentFormatException e) {
-                        logger.log(Level.INFO, "cannot get operation name", e);
-                    }
-                    return "[unknown]";
-                }
-            });
-
-        // operation urn variable
-        cntx.setVariable(COMMON_VAR_OPERATIONURN, new Object() {
-                public String toString() {
-                    try {
-                        return cntx.getRequest().getSoapKnob().getPayloadNamespaceUri();
-                    } catch (IOException e) {
-                        logger.log(Level.INFO, "cannot get operation urn", e);
-                    } catch (SAXException e) {
-                        logger.log(Level.INFO, "cannot get operation urn", e);
-                    } catch (MessageNotSoapException e) {
-                        logger.log(Level.INFO, "cannot get operation urn", e);
-                    }
-                    return "[unknown]";
-                }
-            });
-
-        // todo, other common variables as needed.
     }
 
 }
