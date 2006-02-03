@@ -27,9 +27,12 @@ import java.util.regex.Pattern;
 public class ExpandVariables {
     private static final Logger logger = Logger.getLogger(ExpandVariables.class.getName());
 
-    public static final String DEF_PREFIX = "(?:\\$\\{)";
-    public static final String DEF_SUFFIX = "(?:\\})";
-    private static final Pattern regexPattern = Pattern.compile(DEF_PREFIX+"(.+?)"+DEF_SUFFIX);
+    public static final String SYNTAX_PREFIX = "${";
+    public static final String SYNTAX_SUFFIX = "}";
+    
+    private static final String REGEX_PREFIX = "(?:\\$\\{)";
+    private static final String REGEX_SUFFIX = "(?:\\})";
+    private static final Pattern regexPattern = Pattern.compile(REGEX_PREFIX +"(.+?)"+REGEX_SUFFIX);
 
     public static String[] getReferencedNames(String s) {
         if (s == null) {
