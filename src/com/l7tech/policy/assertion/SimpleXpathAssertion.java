@@ -32,6 +32,7 @@ public abstract class SimpleXpathAssertion
      */
     public void setVariablePrefix(String variablePrefix) {
         this.variablePrefix = variablePrefix;
+        doVarNames();
     }
 
     private void doVarNames() {

@@ -1,12 +1,13 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.policy.variable.ExpandVariables;
 
 /**
  * A pseudo-routing assertion that returns a hardcoded response message, with a hardcoded
  * response status and content type.
  */
-public class HardcodedResponseAssertion extends Assertion {
+public class HardcodedResponseAssertion extends Assertion implements UsesVariables {
     private int responseStatus = 200;
     private String responseContentType = ContentTypeHeader.XML_DEFAULT.getFullValue();
     private String responseBody = null;
@@ -36,5 +37,9 @@ public class HardcodedResponseAssertion extends Assertion {
 
     public void setResponseBody(String responseBody) {
         this.responseBody = responseBody;
+    }
+
+    public String[] getVariablesUsed() {
+        return ExpandVariables.getReferencedNames(responseBody + responseContentType);
     }
 }

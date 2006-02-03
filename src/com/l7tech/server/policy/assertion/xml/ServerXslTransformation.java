@@ -11,15 +11,14 @@ import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.tarari.xml.XmlParseException;
+import com.tarari.xml.XmlResult;
+import com.tarari.xml.XmlSource;
 import com.tarari.xml.xslt11.Stylesheet;
 import com.tarari.xml.xslt11.XsltException;
 import com.tarari.xml.xslt11.parser.XsltParseException;
-import com.tarari.xml.XmlSource;
-import com.tarari.xml.XmlResult;
-import com.tarari.xml.XmlParseException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -33,11 +32,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side class that executes an XslTransformation assertion within a policy tree.
@@ -111,13 +109,7 @@ public class ServerXslTransformation implements ServerAssertion {
         int whichMimePart = subject.getWhichMimePart();
         if (whichMimePart <= 0) whichMimePart = 0;
 
-        Map vars;
-        try {
-            vars = context.getVariableMap(varsUsed);
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_BAD_VAR, new String[] {e.getVariable()});
-            vars = Collections.EMPTY_MAP;
-        }
+        Map vars = context.getVariableMap(varsUsed, auditor);
 
         // 2. Apply the transformation
         if (tarariContext == null) {
@@ -176,14 +168,6 @@ public class ServerXslTransformation implements ServerAssertion {
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
                 XmlResult result = new XmlResult(output);
                 XmlSource source = new XmlSource(msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false));
-
-                for (Iterator i = vars.keySet().iterator(); i.hasNext();) {
-                    String name = (String)i.next();
-                    Object value = vars.get(name);
-                    if (value != null) {
-                        transformer.setParameter(name, value);
-                    }
-                }
 
                 transformer.transform(source, result);
                 byte[] transformedmessage = output.toByteArray();

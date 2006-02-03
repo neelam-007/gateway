@@ -8,6 +8,8 @@ package com.l7tech.server.message;
 
 import com.l7tech.common.RequestId;
 import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
@@ -21,6 +23,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -33,12 +36,15 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  * TODO write some farking javadoc
  */
 public class PolicyEnforcementContext extends ProcessingContext {
+    private static final Logger logger = Logger.getLogger(PolicyEnforcementContext.class.getName());
+
     private final RequestId requestId;
     private ArrayList incrementedCounters = new ArrayList();
     private final Map deferredAssertions = new LinkedHashMap();
@@ -259,24 +265,42 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setVariable(String name, Object value) throws VariableNotSettableException {
         if (BuiltinVariables.isSupported(name)) {
-            BuiltinVariables.set(name, value, this);
+            try {
+                BuiltinVariables.set(name, value, this);
+            } catch (NoSuchVariableException e) {
+                throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
+            }
         } else {
-            variables.put(name, value);
+            variables.put(name.toLowerCase(), value);
         }
     }
 
     public Object getVariable(String name) throws NoSuchVariableException {
+        Object value;
         if (BuiltinVariables.isSupported(name)) {
-            return BuiltinVariables.get(name, this);
+            try {
+                value = BuiltinVariables.get(name, this);
+            } catch (NoSuchVariableException e) {
+                throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
+            }
         } else {
-            return variables.get(name);
+            value = variables.get(name.toLowerCase());
         }
+
+        if (value == null) throw new NoSuchVariableException(name);
+
+        return value;
     }
 
-    public Map getVariableMap(String[] names) throws NoSuchVariableException {
-        Map vars = new HashMap();
+    public VariableMap getVariableMap(String[] names, Auditor auditor) {
+        VariableMap vars = new VariableMap();
         for (int i = 0; i < names.length; i++) {
-            vars.put(names[i], getVariable(names[i]));
+            try {
+                vars.put(names[i], getVariable(names[i].toLowerCase()));
+            } catch (NoSuchVariableException e) {
+                vars.addBadName(names[i]);
+                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[] {names[i]});
+            }
         }
         return vars;
     }

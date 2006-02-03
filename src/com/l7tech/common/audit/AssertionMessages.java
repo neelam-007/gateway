@@ -37,7 +37,6 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_TOO_MANY_ATTEMPTS       = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
     public static final M HTTPROUTE_SAML_SV_NOT_AUTH        = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
     public static final M HTTPROUTE_RESPONSE_STATUS_HANDLED = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}, retrying.");
-    public static final M HTTPROUTE_NO_SUCH_VAR             = m(4026, Level.WARNING, "No such variable: {0}");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");
@@ -206,7 +205,6 @@ public class AssertionMessages extends Messages {
     public static final M XSLT_RESPONSE     = m(5903, Level.FINEST, "Transforming response");
     public static final M XSLT_CONFIG_ISSUE = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
     public static final M XSLT_NO_SUCH_PART = m(5905, Level.WARNING, "Assertion specifies MIME part {0}, but it does not exist");
-    public static final M XSLT_BAD_VAR      = m(5906, Level.WARNING, "Stylesheet refers to variable '{0}', which is not present in the request");
 
     // ServerJmsRoutingAssertion
     public static final M JMS_ROUTING_CONNECT_FAILED                  = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
@@ -317,9 +315,8 @@ public class AssertionMessages extends Messages {
     // ComparisonAssertion (formerly known as EqualityAssertion)
     public static final M COMPARISON_OK           = m(7100, Level.INFO, "Comparison matched");
     public static final M COMPARISON_NOT          = m(7101, Level.INFO, "Comparison did not match");
-    public static final M COMPARISON_NO_SUCH_VAR  = m(7102, Level.WARNING, "No such variable: {0}");
-    public static final M COMPARISON_BAD_OPERATOR = m(7103, Level.WARNING, "Unsupported operator: {0}");
-    public static final M COMPARISON_NULL         = m(7104, Level.WARNING, "At least one comparison value was null");
+    public static final M COMPARISON_BAD_OPERATOR = m(7102, Level.WARNING, "Unsupported operator: {0}");
+    public static final M COMPARISON_NULL         = m(7103, Level.WARNING, "At least one comparison value was null");
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.SEVERE, "Unrecognized protection name: {0}.  Assertion will always fail.");
@@ -366,4 +363,5 @@ public class AssertionMessages extends Messages {
     public static final M USERDETAIL_FINE    = m(-3, Level.FINE,    "{0}");
     public static final M USERDETAIL_INFO    = m(-4, Level.INFO,    "{0}");
     public static final M USERDETAIL_WARNING = m(-5, Level.WARNING, "{0}");
+    public static final M NO_SUCH_VARIABLE   = m(-6, Level.WARNING, "No such variable: {0}");
 }

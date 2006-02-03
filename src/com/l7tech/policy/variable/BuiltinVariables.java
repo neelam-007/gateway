@@ -29,11 +29,13 @@ public class BuiltinVariables {
     private static final Map varsByName = new HashMap();
     private static final Map varsByPrefix = new HashMap();
 
-    public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException {
+    public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException, NoSuchVariableException {
         Variable var = getVar(name);
         if (var instanceof SettableVariable) {
             SettableVariable sv = (SettableVariable)var;
             sv.set(name, value, context);
+        } else if (var == null) {
+            throw new NoSuchVariableException(name);
         } else {
             throw new VariableNotSettableException(name);
         }
@@ -49,18 +51,23 @@ public class BuiltinVariables {
 
     private static Variable getVar(String name) {
         // Try simple name first
-        Variable var = (Variable)varsByName.get(name);
+        final String lname = name.toLowerCase();
+        Variable var = (Variable)varsByName.get(lname);
         if (var == null) {
             // Try prefixed name
-            int pos = name.lastIndexOf(".");
+            int pos = lname.lastIndexOf(".");
             if (pos > 0)
-                var = (Variable)varsByPrefix.get(name.substring(0,pos));
+                var = (Variable)varsByPrefix.get(lname.substring(0,pos));
         }
         return var;
     }
 
     public static boolean isSupported(String name) {
         return getVar(name) != null;
+    }
+
+    public static boolean isSettable(String name) {
+        return getVar(name) instanceof SettableVariable;
     }
 
     public static boolean isMultivalued(String name) {
@@ -169,9 +176,9 @@ public class BuiltinVariables {
         for (int i = 0; i < VARS.length; i++) {
             Variable var = VARS[i];
             if (var.isPrefixed()) {
-                varsByPrefix.put(var.getName(), var);
+                varsByPrefix.put(var.getName().toLowerCase(), var);
             } else {
-                varsByName.put(var.getName(), var);
+                varsByName.put(var.getName().toLowerCase(), var);
             }
         }
     }

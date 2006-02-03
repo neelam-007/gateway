@@ -124,8 +124,9 @@ class PathValidator {
 
         if (a instanceof SetsVariables) {
             SetsVariables sv = (SetsVariables) a;
-            for (int i = 0; i < sv.getVariablesSet().length; i++) {
-                setSeenVariable(sv.getVariablesSet()[i]);
+            final String[] vars = sv.getVariablesSet();
+            for (int i = 0; i < vars.length; i++) {
+                setSeenVariable(vars[i].toLowerCase());
             }
         }
 
@@ -356,9 +357,10 @@ class PathValidator {
 
         if (a instanceof UsesVariables) {
             UsesVariables ua = (UsesVariables)a;
-            for (int i = 0; i < ua.getVariablesUsed().length; i++) {
-                String var = ua.getVariablesUsed()[i];
-                if (!(BuiltinVariables.isSupported(var) || seenVariable(var))) {
+            final String[] vars = ua.getVariablesUsed();
+            for (int i = 0; i < vars.length; i++) {
+                String var = vars[i];
+                if (!(BuiltinVariables.isSupported(var) || seenVariable(var.toLowerCase()))) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                             "This assertion refers to the variable '" + var + "', which is neither built-in nor set in the policy.", null));
                 }

@@ -6,7 +6,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.ComparisonAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -22,7 +21,6 @@ import java.util.logging.Logger;
 public class ServerComparisonAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerComparisonAssertion.class.getName());
 
-    private final ExpandVariables expandVars = new ExpandVariables();
     private final Auditor auditor;
     private final ComparisonAssertion assertion;
     private final String[] variablesUsed;
@@ -34,13 +32,7 @@ public class ServerComparisonAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Map vars;
-        try {
-            vars = context.getVariableMap(variablesUsed);
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.COMPARISON_NO_SUCH_VAR);
-            return AssertionStatus.FAILED;
-        }
+        Map vars = context.getVariableMap(variablesUsed, auditor);
 
         ComparisonAssertion.Operator op = assertion.getOperator();
         String val1 = getValue(assertion.getExpression1(), vars);
@@ -90,11 +82,6 @@ public class ServerComparisonAssertion implements ServerAssertion {
     }
 
     private String getValue(String expression1, Map variables) {
-        try {
-            return expandVars.process(expression1, variables);
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.COMPARISON_NO_SUCH_VAR, new String[] {expression1});
-            return null;
-        }
+        return ExpandVariables.process(expression1, variables);
     }
 }

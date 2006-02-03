@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
@@ -32,10 +33,12 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
     private final String message;
     private final int status;
     private final ContentTypeHeader contentType;
+    private final String[] variablesUsed;
 
     public ServerHardcodedResponseAssertion(HardcodedResponseAssertion ass, ApplicationContext springContext) {
         auditor = new Auditor(this, springContext, logger);
         ContentTypeHeader ctype;
+        variablesUsed = ass.getVariablesUsed();
         try {
             ctype = ContentTypeHeader.parseValue(ass.getResponseContentType());
         } catch (IOException e) {
@@ -60,7 +63,11 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
         Message response = context.getResponse();
         response.close();
         try {
-            response.initialize(stashManager, contentType, new ByteArrayInputStream(message.getBytes(contentType.getEncoding())));
+            String msg = message;
+            if (variablesUsed.length > 0) {
+                msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor));
+            }
+            response.initialize(stashManager, contentType, new ByteArrayInputStream(msg.getBytes(contentType.getEncoding())));
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[] {"Unable to produce hardcoded response"},

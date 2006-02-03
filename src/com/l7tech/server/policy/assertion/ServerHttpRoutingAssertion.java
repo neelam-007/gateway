@@ -27,13 +27,12 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.identity.User;
-import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
@@ -71,7 +70,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private SignerInfo senderVouchesSignerInfo;
     private final Auditor auditor;
     private final FailoverStrategy failoverStrategy;
-    private final ExpandVariables expandVars = new ExpandVariables();
     private final String[] varNames;
     private final int maxFailoverAttempts;
 
@@ -264,14 +262,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             boolean doAuth = false;
             if (login != null && login.length() > 0
               && password != null && password.length() > 0) {
-                try {
-                    Map vars = context.getVariableMap(varNames);
-                    login = expandVars.process(login, vars);
-                    password = expandVars.process(password, vars);
-                } catch (NoSuchVariableException e) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_NO_SUCH_VAR, new String[] { e.getVariable() });
-                    return AssertionStatus.FAILED;
-                }
+                Map vars = context.getVariableMap(varNames, auditor);
+                login = ExpandVariables.process(login, vars);
+                password = ExpandVariables.process(password, vars);
 
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, new String[] {login});
                 HttpState state = client.getState();

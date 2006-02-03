@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.UptimeMonitor;
@@ -36,8 +35,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Map;
 
 /**
  * Server side implementation of assertion that sends an SNMP trap.
@@ -99,14 +96,7 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
         pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new TimeTicks(uptimeSeconds * 100))); // TimeTicks is s/100
         pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, trapOid));
 
-        String body = ass.getErrorMessage();
-        ExpandVariables vars = new ExpandVariables();
-        try {
-            Map variables = context.getVariableMap(varsUsed);
-            body = vars.process(body, variables);
-        } catch (NoSuchVariableException e) {
-            logger.log(Level.WARNING, "cannot expand all variables", e);
-        }
+        String body = ExpandVariables.process(ass.getErrorMessage(), context.getVariableMap(varsUsed, auditor));
         OctetString errorMessage;
         try {
             errorMessage = new OctetString(body.getBytes("UTF-8"));

@@ -6,16 +6,15 @@
 package com.l7tech.policy.variable;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * The class replaces the variables placeholders in the string that is passed to the
- * {@link ExpandVariables#process(String)} method.
+ * {@link ExpandVariables#process} method.
  * The variables placeholders are by default of format <code>${var.name}</code> where
  * <code>var.name</code> is the variable name.
  * The variables are passed in the <code>Map</code> of string key-value pairs. The default
@@ -31,36 +30,6 @@ public class ExpandVariables {
     public static final String DEF_PREFIX = "(?:\\$\\{)";
     public static final String DEF_SUFFIX = "(?:\\})";
     private static final Pattern regexPattern = Pattern.compile(DEF_PREFIX+"(.+?)"+DEF_SUFFIX);
-
-    /**
-     *  Default Constructor.  Creates the empty default varialbes map.
-     */
-    public ExpandVariables() {
-        this(Collections.EMPTY_MAP);
-    }
-
-    /**
-     * Constructor accepting the default variables map
-     *
-     * @param variables the default variables.
-     */
-    public ExpandVariables(Map variables) {
-        if (variables == null) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    /**
-     * Process the input string and expand the variables using the
-     * default variables map in this class.
-     *
-     * @param s the input message as a message
-     * @return the message with expanded/resolved varialbes
-     * @throws NoSuchVariableException if the varialbe
-     */
-    public String process(String s) throws NoSuchVariableException {
-        return process(s, Collections.EMPTY_MAP);
-    }
 
     public static String[] getReferencedNames(String s) {
         if (s == null) {
@@ -87,9 +56,8 @@ public class ExpandVariables {
      * @param s the input message as a message
      * @param vars the caller supplied varialbes map that is consulted first
      * @return the message with expanded/resolved varialbes
-     * @throws NoSuchVariableException if the varialbe
      */
-    public String process(String s, Map vars) throws NoSuchVariableException {
+    public static String process(String s, Map vars) {
         if (s == null) {
             throw new IllegalArgumentException();
         }
@@ -107,9 +75,8 @@ public class ExpandVariables {
             String replacement;
 
             if (value == null) {
-                replacement = name;
+                replacement = "";
             } else if (value instanceof String[]) {
-
                 // TODO let user supply delimiter?
                 replacement = Arrays.asList((String[])value).toString();
             } else if (value instanceof String) {
@@ -120,7 +87,6 @@ public class ExpandVariables {
                 replacement = value.toString();
             }
 
-            if (replacement == null) throw new NoSuchVariableException(name);
             matcher.appendReplacement(sb, replacement);
         }
         matcher.appendTail(sb);
@@ -128,4 +94,6 @@ public class ExpandVariables {
         return sb.toString();
     }
 
+    private ExpandVariables() {
+    }
 }

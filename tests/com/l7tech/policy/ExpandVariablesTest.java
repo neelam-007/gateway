@@ -1,7 +1,6 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -26,8 +25,7 @@ public class ExpandVariablesTest extends TestCase {
      * ExpandVariablesTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite(ExpandVariablesTest.class);
-        return suite;
+        return new TestSuite(ExpandVariablesTest.class);
     }
 
     public void setUp() throws Exception {
@@ -43,10 +41,9 @@ public class ExpandVariablesTest extends TestCase {
         String value = "value_variable1";
         variables.put("var1", value);
 
-        ExpandVariables expander = new ExpandVariables(variables);
         String inputMessage = "Blah message blah ${var1}";
         String expectedOutputMessage = "Blah message blah value_variable1";
-        String processedMessage = expander.process(inputMessage);
+        String processedMessage = ExpandVariables.process(inputMessage, variables);
         assertTrue(processedMessage.indexOf(value) >= 0);
         assertEquals(processedMessage, expectedOutputMessage);
     }
@@ -58,28 +55,23 @@ public class ExpandVariablesTest extends TestCase {
         variables.put("var1", value1);
         variables.put("var2", value2);
 
-        ExpandVariables expander = new ExpandVariables(variables);
         String inputMessage = "Blah message blah ${var1} and more blah ${var2}";
         String expectedOutputMessage = "Blah message blah value_variable1 and more blah value_variable2";
-        String processedMessage = expander.process(inputMessage);
+        String processedMessage = ExpandVariables.process(inputMessage, variables);
         assertTrue(processedMessage.indexOf(value1) >= 0);
         assertEquals(processedMessage, expectedOutputMessage);
     }
 
     public void testSingleVariableNotFound() throws Exception {
-          Map variables = new HashMap();
-          String value = "value_variable1";
-          variables.put("var1", value);
+        Map variables = new HashMap();
+        String value = "value_variable1";
+        variables.put("var1", value);
 
-          ExpandVariables expander = new ExpandVariables(variables);
-          String inputMessage = "Blah message blah ${var2}";
-          String processedMessage = null;
-          try {
-              expander.process(inputMessage);
-              fail("the "+ NoSuchVariableException.class+" expected");
-          } catch (NoSuchVariableException e) {
-          }
-      }
+        final String prefix = "Blah message blah ";
+        String inputMessage = prefix + "${var2}";
+        String out = ExpandVariables.process(inputMessage, variables);
+        assertEquals(out, prefix);
+    }
 
     /**
      * Test <code>ExpandVariablesTest</code> main.

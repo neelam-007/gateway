@@ -8,7 +8,7 @@ public class NoSuchVariableException extends Exception {
     /**
      * @param   variable   the variable that was not found and caused the exception
      */
-    NoSuchVariableException(String variable) {
+    public NoSuchVariableException(String variable) {
         super("The variable '"+variable+"' could not be found");
         this.variable = variable;
     }

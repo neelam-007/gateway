@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
@@ -34,7 +33,6 @@ public class ServerRegex implements ServerAssertion {
     private Pattern regexPattern;
     private Exception compileException;
     private Regex regexAssertion;
-    private final ExpandVariables expandVariables = new ExpandVariables();
     private final String[] varNames;
     public static final String ENCODING = "UTF-8";
 
@@ -108,7 +106,7 @@ public class ServerRegex implements ServerAssertion {
             AssertionStatus assertionStatus = AssertionStatus.FAILED;
             if (isReplacement) {
                 logger.log(Level.FINE, "Replace requested: Match pattern '{0}', replace pattern '{1}'", new Object[]{regexAssertion.getRegex(), replacement});
-                replacement = expandVariables.process(replacement, context.getVariableMap(varNames));
+                replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, auditor));
                 String result = matcher.replaceAll(replacement);
                 messagePart.setBodyBytes(result.getBytes(encoding));
                 assertionStatus = AssertionStatus.NONE;
@@ -131,9 +129,6 @@ public class ServerRegex implements ServerAssertion {
             return assertionStatus;
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, new String[] { Integer.toString(whichPart) });
-            return AssertionStatus.FAILED;
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             return AssertionStatus.FAILED;
         }
     }

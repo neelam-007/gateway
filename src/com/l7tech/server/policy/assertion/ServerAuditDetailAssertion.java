@@ -6,12 +6,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +26,6 @@ public class ServerAuditDetailAssertion implements ServerAssertion {
     private final Auditor auditor;
     private final String[] varsUsed;
     private Logger logger = Logger.getLogger(ServerAuditDetailAssertion.class.getName());
-    private final ExpandVariables expandVariables = new ExpandVariables();
 
     public ServerAuditDetailAssertion(AuditDetailAssertion subject, ApplicationContext springContext) {
         this.subject = subject;
@@ -38,12 +35,7 @@ public class ServerAuditDetailAssertion implements ServerAssertion {
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         String detail = subject.getDetail();
-        try {
-            Map vars = context.getVariableMap(varsUsed);
-            detail = expandVariables.process(detail, vars);
-        } catch (NoSuchVariableException e) {
-            logger.log(Level.WARNING, "cannot expand all variables", e);
-        }
+        detail = ExpandVariables.process(detail, context.getVariableMap(varsUsed, auditor));
 
         if (Level.FINEST.toString().equals(subject.getLevel())) {
             auditor.logAndAudit(AssertionMessages.USERDETAIL_FINEST, new String[] {detail});
