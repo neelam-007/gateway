@@ -260,7 +260,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                               addedEncKeyXmlEncKey,
                                               null);
                 keyInfoReferenceTarget = addedEncKey;
-                keyInfoValueTypeURI = null;
+                keyInfoValueTypeURI = SoapUtil.VALUETYPE_ENCRYPTED_KEY;
                 senderSigningKey = addedEncKeyXmlEncKey.getSecretKey();
             } else
                 throw new IllegalArgumentException("Signing is requested, but there is no senderCertificate or WS-SecureConversation session");
@@ -288,7 +288,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                           null,
                                           addedEncKey,
                                           null,
-                                          null);
+                                          SoapUtil.VALUETYPE_ENCRYPTED_KEY);
             } else if (sct != null) {
                 // Encrypt using Secure Conversation session
                 if (session == null)

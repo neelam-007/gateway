@@ -166,6 +166,7 @@ public class SoapUtil {
     public static final String VALUETYPE_X509_2 = SECURITY_NAMESPACE_PREFIX + ":" + VALUETYPE_X509_SUFFIX;
     public static final String VALUETYPE_X509_THUMB_SHA1_SUFFIX = "ThumbprintSHA1";
     public static final String VALUETYPE_X509_THUMB_SHA1 =        "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1";
+    public static final String VALUETYPE_ENCRYPTED_KEY = "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#EncryptedKey";
     public static final String VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX = "EncryptedKeySHA1";
     public static final String VALUETYPE_ENCRYPTED_KEY_SHA1 = "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#EncryptedKeySHA1";
     public static final String VALUETYPE_SAML = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertion-1.0"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
