@@ -27,11 +27,20 @@ start() {
 	if [ "$USER" = "root" ]; then
         	$tarariStart > /dev/null 2>&1
 		RETVAL=$?
+		if [ ($RETVAL) ]; then 
+			return $RETVAL
+		fi
+
+		if [ -e /dev/cpp ]; then
+			chown gateway.gateway /dev/cpp /dev/cpp_jam
+			chmod 600  /dev/cpp /dev/cpp_jam
+		else
+			RETVAL=2 # enoent
+		fi
 	else
 		echo "Need to be root to run this script";
 		exit
 	fi	
-        echo
         return $RETVAL
 }
 stop() {
@@ -43,7 +52,6 @@ stop() {
 		echo "Need to be root to run this script";
 		exit
 	fi	
-	echo
         return $RETVAL
 
 }
@@ -61,5 +69,11 @@ case "$1" in
 	start
 	;;
 esac
+
+if [ ($RETVAL) ]; then 
+	echo "           Error"
+else
+	echo "           Ok"
+fi
 
 exit $RETVAL
