@@ -106,13 +106,16 @@ public class ExpandVariables {
             Object value = vars.get(name);
             String replacement;
 
-            if (value instanceof String[]) {
+            if (value == null) {
+                replacement = name;
+            } else if (value instanceof String[]) {
+
                 // TODO let user supply delimiter?
                 replacement = Arrays.asList((String[])value).toString();
             } else if (value instanceof String) {
                 replacement = (String)value;
             } else {
-                // TODO typed data and interpolation don't mix
+                // TODO typed data anbd interpolation don't mix
                 logger.warning("Variable '" + name + "' is a " + value.getClass().getName() + ", not a String; using .toString() instead");
                 replacement = value.toString();
             }
