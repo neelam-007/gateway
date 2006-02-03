@@ -9,6 +9,7 @@ import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.exporter.PolicyImporter;
@@ -125,7 +126,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     public String getTooltipText() {
         List messages = getValidatorMessages();
         if (messages.isEmpty()) {
-            StringBuffer sb = new StringBuffer();
+            StringBuffer sb = new StringBuffer("<html>");
             final String st = super.getTooltipText();
             if (st != null) sb.append(st);
             Assertion ass = this.asAssertion();
@@ -133,14 +134,18 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                 SetsVariables sv = (SetsVariables)ass;
                 final String[] vars = sv.getVariablesSet();
                 if (vars.length > 0) {
-                    if (sb.length() != 0)
-                        sb.append(", setting");
+                    if (st != null)
+                        sb.append(", setting ");
                     else
                         sb.append("Sets ");
 
                     for (int i = 0; i < vars.length; i++) {
                         String name = vars[i];
-                        sb.append(name);
+                        sb.append(ExpandVariables.SYNTAX_PREFIX)
+                            .append("<b>")
+                            .append(name)
+                            .append("</b>")
+                            .append(ExpandVariables.SYNTAX_SUFFIX);
                         if (i < vars.length-1) sb.append(", ");
                     }
                 }
