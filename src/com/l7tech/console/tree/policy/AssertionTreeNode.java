@@ -10,6 +10,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
@@ -124,7 +125,27 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     public String getTooltipText() {
         List messages = getValidatorMessages();
         if (messages.isEmpty()) {
-            return super.getTooltipText();
+            StringBuffer sb = new StringBuffer();
+            final String st = super.getTooltipText();
+            if (st != null) sb.append(st);
+            Assertion ass = this.asAssertion();
+            if (ass instanceof SetsVariables) {
+                SetsVariables sv = (SetsVariables)ass;
+                final String[] vars = sv.getVariablesSet();
+                if (vars.length > 0) {
+                    if (sb.length() != 0)
+                        sb.append(", setting");
+                    else
+                        sb.append("Sets ");
+
+                    for (int i = 0; i < vars.length; i++) {
+                        String name = vars[i];
+                        sb.append(name);
+                        if (i < vars.length-1) sb.append(", ");
+                    }
+                }
+            }
+            return sb.toString();
         }
         StringBuffer sb = new StringBuffer();
         sb.append("<html><strong> There are {0}<br>");
