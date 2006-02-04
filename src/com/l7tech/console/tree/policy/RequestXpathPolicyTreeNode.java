@@ -24,12 +24,6 @@ public class RequestXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
             sb.append("[XPath expression not set]");
         } else {
             sb.append(_assertion.getXpathExpression().getExpression());
-            String vp = _assertion.getVariablePrefix();
-            if (vp != null && vp.length() > 0) {
-                sb.append(" (setting variables starting with '");
-                sb.append(vp);
-                sb.append("')");
-            }
         }
         return sb.toString();
     }
