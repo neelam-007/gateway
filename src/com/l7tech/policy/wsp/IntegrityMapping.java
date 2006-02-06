@@ -38,7 +38,7 @@ class IntegrityMapping extends AssertionMapping {
             return super.freeze(wspWriter, object, container);
 
         if (!(object.target instanceof RequestWssIntegrity))
-            throw new InvalidPolicyTreeException("IntegrityMapping is unable to free object of type " + object.target.getClass());
+            throw new InvalidPolicyTreeException("IntegrityMapping is unable to freeze object of type " + object.target.getClass());
 
         RequestWssIntegrity ass = (RequestWssIntegrity)object.target;
         Element integrity = XmlUtil.createAndAppendElementNS(container, "Integrity", SoapUtil.SECURITY_NAMESPACE, "wsse");
@@ -62,7 +62,16 @@ class IntegrityMapping extends AssertionMapping {
 
         RequestWssIntegrity ass = new RequestWssIntegrity();
         TypedReference tr = new TypedReference(RequestWssIntegrity.class, ass);
-        // todo. what about the other properties?!
+
+        Element recipContextEl = XmlUtil.findFirstChildElementByName(source, (String)null, "xmlSecurityRecipientContext");
+        if (recipContextEl != null) {
+            TypedReference rctr = new BeanTypeMapping(XmlSecurityRecipientContext.class, "xmlSecurityRecipientContext").thaw(recipContextEl, visitor);
+            if (rctr.target instanceof XmlSecurityRecipientContext) {
+                XmlSecurityRecipientContext x = (XmlSecurityRecipientContext)rctr.target;
+                ass.setRecipientContext(x);
+            }
+        }
+
         Element messageParts = XmlUtil.findFirstChildElementByName(source, (String)null, "MessageParts");
         TypedReference xpathRef = xpathMapper.thaw(messageParts, visitor);
         if (xpathRef == null || !(xpathRef.target instanceof XpathExpression))
