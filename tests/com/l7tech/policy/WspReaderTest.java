@@ -5,6 +5,7 @@ import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -276,6 +277,32 @@ public class WspReaderTest extends TestCase {
         assertEquals(xp, gotXpath);
         assertEquals(ns1, gotNsmap.get("ns1"));
         assertEquals(ns2, gotNsmap.get("ns2"));
+    }
+
+    public void testPreserveRequestXpathExpressionBug2215() throws Exception {
+        final String policyxml = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "    <wsp:All wsp:Usage=\"Required\">\n" +
+                "        <wsse:Integrity wsp:Usage=\"wsp:Required\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+                "            <L7p:xmlSecurityRecipientContext xmlSecurityRecipientContext=\"included\">\n" +
+                "                <L7p:Base64edX509Certificate stringValue=\"MIIEdTCCA96gAwIBAgIQFs1YCiUfRT3jH24nbk09TzANBgkqhkiG9w0BAQUFADCBujEfMB0GA1UEChMWVmVyaVNpZ24gVHJ1c3QgTmV0d29yazEXMBUGA1UECxMOVmVyaVNpZ24sIEluYy4xMzAxBgNVBAsTKlZlcmlTaWduIEludGVybmF0aW9uYWwgU2VydmVyIENBIC0gQ2xhc3MgMzFJMEcGA1UECxNAd3d3LnZlcmlzaWduLmNvbS9DUFMgSW5jb3JwLmJ5IFJlZi4gTElBQklMSVRZIExURC4oYyk5NyBWZXJpU2lnbjAeFw0wNDAzMDMwMDAwMDBaFw0wNjAzMDMyMzU5NTlaMIG5MQswCQYDVQQGEwJVUzETMBEGA1UECBMKQ2FsaWZvcm5pYTESMBAGA1UEBxQJUGFsbyBBbHRvMRUwEwYDVQQKFAxQYXlwYWwsIEluYy4xHDAaBgNVBAsUE0luZm9ybWF0aW9uIFN5c3RlbXMxMzAxBgNVBAsUKlRlcm1zIG9mIHVzZSBhdCB3d3cudmVyaXNpZ24uY29tL3JwYSAoYykwMDEXMBUGA1UEAxQOd3d3LnBheXBhbC5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKbFw8ZbqbLIHOd+alJfxK5Ig4opcjPdE4eL9NVh4Tm2bfXou0uy7XSuo4dYqCCXfod5bxU351pLepuXOLhqOoy6ENk68ZlK9IHNkobtjTTDLln0uUfTv718unovVLEIWjYdlVNlcshbd1ttdd/SPlXm2N4f3icrXLWdEesJsAApAgMBAAGjggF5MIIBdTAJBgNVHRMEAjAAMAsGA1UdDwQEAwIFoDBGBgNVHR8EPzA9MDugOaA3hjVodHRwOi8vY3JsLnZlcmlzaWduLmNvbS9DbGFzczNJbnRlcm5hdGlvbmFsU2VydmVyLmNybDBEBgNVHSAEPTA7MDkGC2CGSAGG+EUBBxcDMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8vd3d3LnZlcmlzaWduLmNvbS9ycGEwKAYDVR0lBCEwHwYJYIZIAYb4QgQBBggrBgEFBQcDAQYIKwYBBQUHAwIwNAYIKwYBBQUHAQEEKDAmMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC52ZXJpc2lnbi5jb20wbQYIKwYBBQUHAQwEYTBfoV2gWzBZMFcwVRYJaW1hZ2UvZ2lmMCEwHzAHBgUrDgMCGgQUj+XTGoasjY5rw8+AatRIGCx7GS4wJRYjaHR0cDovL2xvZ28udmVyaXNpZ24uY29tL3ZzbG9nby5naWYwDQYJKoZIhvcNAQEFBQADgYEAR46ofsDJMdV7FIGZ98O3dkEFTkD9FrRE6XWVX2LebPvBebONSpIeGEjV/hJ919eGnFjujTmN1Pn98/G+xUBQeFsSN/3mdgujE5Yg4h4Zc8UXTOzlKUL/0H/xnU5gkZvtX0qJjylqrugb3+yaVXFAC7DU/2oZ/wSFFHCBmwm7QF8=\"/>\n" +
+                "                <L7p:Actor stringValue=\"fdsfd\"/>\n" +
+                "            </L7p:xmlSecurityRecipientContext>\n" +
+                "            <wsse:MessageParts\n" +
+                "                Dialect=\"http://www.w3.org/TR/1999/REC-xpath-19991116\"\n" +
+                "                xmlns:e=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+                "                xmlns:s0=\"http://warehouse.acme.com/ws\"\n" +
+                "                xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
+                "                xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>\n" +
+                "        </wsse:Integrity>\n" +
+                "    </wsp:All>\n" +
+                "</wsp:Policy>";
+
+        Assertion p = WspReader.parsePermissively(policyxml);
+        System.out.println(p.toString());
+        System.out.println("DONE");
+        AllAssertion root = (AllAssertion)p;
+        RequestWssIntegrity rwi = (RequestWssIntegrity)root.children().next();
+        assertTrue(rwi.getRecipientContext().getActor().equals("fdsfd"));
     }
 
     public static void main(String[] args) {

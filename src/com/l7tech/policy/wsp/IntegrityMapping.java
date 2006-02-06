@@ -62,7 +62,7 @@ class IntegrityMapping extends AssertionMapping {
 
         RequestWssIntegrity ass = new RequestWssIntegrity();
         TypedReference tr = new TypedReference(RequestWssIntegrity.class, ass);
-
+        // todo. what about the other properties?!
         Element messageParts = XmlUtil.findFirstChildElementByName(source, (String)null, "MessageParts");
         TypedReference xpathRef = xpathMapper.thaw(messageParts, visitor);
         if (xpathRef == null || !(xpathRef.target instanceof XpathExpression))

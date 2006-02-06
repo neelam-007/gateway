@@ -140,8 +140,12 @@ class BeanTypeMapping extends ComplexTypeMapping {
             }
 
             Method setter = (Method)setters.get(parm + ":" + getter.getReturnType());
-            if (setter == null)
-                throw new InvalidPolicyTreeException("WspWriter: Warning: class " + bean.getClass() + ": no setter found for parameter " + parm);
+            if (setter == null) {
+                // if getter does not have corresponding setter, then it's not a bean property that should be serialized
+                // fla fix for bugzilla #2215
+                continue;
+                //throw new InvalidPolicyTreeException("WspWriter: Warning: class " + bean.getClass() + ": no setter found for parameter " + parm);
+            }
             Class returnType = getter.getReturnType();
             if (!setter.getParameterTypes()[0].equals(returnType))
                 throw new InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree about its type");
