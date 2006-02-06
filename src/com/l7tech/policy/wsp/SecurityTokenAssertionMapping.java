@@ -5,14 +5,15 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import org.w3c.dom.Element;
 
 /**
@@ -40,6 +41,10 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
         this.tokenType = null;
     }
 
+    protected String getPropertiesElementName() {
+        return "Properties";
+    }
+
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         if (tokenType == null)
             throw new InvalidPolicyTreeException("Unable to freeze object of type " + getMappedClass());
@@ -51,6 +56,19 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
         final String wssePfx = "wsse";
         Element st = XmlUtil.createAndAppendElementNS(container, "SecurityToken", wsseNs, wssePfx);
         securityTokenTypeMapping.freeze(wspWriter, new TypedReference(tokenType.getClass(), tokenType), st);
+
+        if ("SecurityToken".equals(st.getLocalName())) {
+            // Extra SAML params have not yet been saved
+            String pfx = getNsPrefix(wspWriter);
+            if (pfx.endsWith(":")) pfx = pfx.substring(0, pfx.length() - 1);
+            if (pfx.length() < 1) pfx = "L7p";
+            Element params = XmlUtil.createAndAppendElementNS(st,
+                                                              getPropertiesElementName(),
+                                                              getNsUri(),
+                                                              pfx);
+            super.populateElement(wspWriter, params, object);
+        }
+
         return st;
     }
 
@@ -68,15 +86,22 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
 
         SecurityTokenType tokenType = (SecurityTokenType)tokenTypeRef.target;
 
+        final TypedReference ret;
         if (SecurityTokenType.SAML_ASSERTION.equals(tokenType))
-            return samlMapper.thawRequestWssSaml(source, visitor);
-        if (SecurityTokenType.WSS_USERNAME.equals(tokenType))
-            return new TypedReference(WssBasic.class, new WssBasic());
-        if (SecurityTokenType.WSSC_CONTEXT.equals(tokenType))
-            return new TypedReference(SecureConversation.class,  new SecureConversation());
-        if (SecurityTokenType.WSS_X509_BST.equals(tokenType))
-            return new TypedReference(RequestWssX509Cert.class, new RequestWssX509Cert());
+            ret = new TypedReference(RequestWssSaml.class, new RequestWssSaml());
+        else if (SecurityTokenType.WSS_USERNAME.equals(tokenType))
+            ret = new TypedReference(WssBasic.class, new WssBasic());
+        else if (SecurityTokenType.WSSC_CONTEXT.equals(tokenType))
+            ret = new TypedReference(SecureConversation.class,  new SecureConversation());
+        else if (SecurityTokenType.WSS_X509_BST.equals(tokenType))
+            ret = new TypedReference(RequestWssX509Cert.class, new RequestWssX509Cert());
+        else
+            throw new InvalidPolicyStreamException("Unsupported wsse:SecurityToken TokenType " + tokenType);
 
-        throw new InvalidPolicyStreamException("Unsupported wsse:SecurityToken TokenType " + tokenType);
+        Element params = XmlUtil.findFirstChildElementByName(source, (String)null, getPropertiesElementName());
+        if (params != null)
+            super.populateObject(ret, params, visitor);
+
+        return ret;
     }
 }
