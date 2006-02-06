@@ -298,8 +298,6 @@ public class WspReaderTest extends TestCase {
                 "</wsp:Policy>";
 
         Assertion p = WspReader.parsePermissively(policyxml);
-        System.out.println(p.toString());
-        System.out.println("DONE");
         AllAssertion root = (AllAssertion)p;
         RequestWssIntegrity rwi = (RequestWssIntegrity)root.children().next();
         assertTrue(rwi.getRecipientContext().getActor().equals("fdsfd"));
