@@ -279,7 +279,7 @@ public class WspReaderTest extends TestCase {
         assertEquals(ns2, gotNsmap.get("ns2"));
     }
 
-    public void testPreserveRequestXpathExpressionBug2215() throws Exception {
+    public void testReproBug2215() throws Exception {
         final String policyxml = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
                 "        <wsse:Integrity wsp:Usage=\"wsp:Required\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
