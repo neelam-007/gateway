@@ -67,6 +67,15 @@ class ConfidentialityMapping extends AssertionMapping {
         RequestWssConfidentiality ass = new RequestWssConfidentiality();
         TypedReference tr = new TypedReference(RequestWssConfidentiality.class, ass);
 
+        Element recipContextEl = XmlUtil.findFirstChildElementByName(source, (String)null, "xmlSecurityRecipientContext");
+        if (recipContextEl != null) {
+            TypedReference rctr = new BeanTypeMapping(XmlSecurityRecipientContext.class, "xmlSecurityRecipientContext").thaw(recipContextEl, visitor);
+            if (rctr.target instanceof XmlSecurityRecipientContext) {
+                XmlSecurityRecipientContext x = (XmlSecurityRecipientContext)rctr.target;
+                ass.setRecipientContext(x);
+            }
+        }
+
         Element messageParts = XmlUtil.findFirstChildElementByName(source, (String)null, "MessageParts");
         TypedReference xpathRef = xpathMapper.thaw(messageParts, visitor);
         if (xpathRef == null || !(xpathRef.target instanceof XpathExpression))
