@@ -188,7 +188,8 @@ public class WspConstants {
                                           SecurityTokenType.WSS_X509_BST), // freeze RequestWssX509Cert as SecurityToken or pre32 form; thaw pre32 form
         new SecurityTokenAssertionMapping(new SecureConversation(), "SecureConversation",
                                           SecurityTokenType.WSSC_CONTEXT), // freeze SecureConversation as SecurityToken or pre32 form; thaw pre32 form
-        new SamlSecurityTokenAssertionMapping(), // freeze RequestWssSaml as SecurityToken or pre32 form; thaw pre32 form
+        new SecurityTokenAssertionMapping(new RequestWssSaml(), "RequestWssSaml", 
+                                          SecurityTokenType.SAML_ASSERTION),
         new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate", "RequestXpathAssertion"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
             // Compatibility with old 2.1 instances of this assertion

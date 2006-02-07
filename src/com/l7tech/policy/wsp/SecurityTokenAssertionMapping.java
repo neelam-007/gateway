@@ -27,7 +27,6 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
 
     protected final SecurityTokenType tokenType;
     private static final SecurityTokenTypeMapping securityTokenTypeMapping = new SecurityTokenTypeMapping(); // delegate: general wsse:SecurityToken parser
-    private static final SamlSecurityTokenAssertionMapping samlMapper = new SamlSecurityTokenAssertionMapping(); // parse extra SAML parameters
 
     /** Create a mapping for serializing assertions to wsse:SecurityToken elements, and parsing pre32 assertion elements. */
     public SecurityTokenAssertionMapping(Assertion prototype, String oldExternalName, SecurityTokenType tokenType) {
@@ -41,8 +40,9 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
         this.tokenType = null;
     }
 
-    protected String getPropertiesElementName() {
-        return "Properties";
+    protected String getPropertiesElementName(SecurityTokenType tokenType) {
+        // For backward compat with pre-4.0, use SamlParams for saml token properties
+        return SecurityTokenType.SAML_ASSERTION.equals(tokenType) ? "SamlParams" : "Properties";
     }
 
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
@@ -63,7 +63,7 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
             if (pfx.endsWith(":")) pfx = pfx.substring(0, pfx.length() - 1);
             if (pfx.length() < 1) pfx = "L7p";
             Element params = XmlUtil.createAndAppendElementNS(st,
-                                                              getPropertiesElementName(),
+                                                              getPropertiesElementName(tokenType),
                                                               getNsUri(),
                                                               pfx);
             super.populateElement(wspWriter, params, object);
@@ -98,7 +98,7 @@ class SecurityTokenAssertionMapping extends AssertionMapping {
         else
             throw new InvalidPolicyStreamException("Unsupported wsse:SecurityToken TokenType " + tokenType);
 
-        Element params = XmlUtil.findFirstChildElementByName(source, (String)null, getPropertiesElementName());
+        Element params = XmlUtil.findFirstChildElementByName(source, (String)null, getPropertiesElementName(tokenType));
         if (params != null)
             super.populateObject(ret, params, visitor);
 
