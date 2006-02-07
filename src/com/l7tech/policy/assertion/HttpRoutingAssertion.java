@@ -6,6 +6,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  *
@@ -183,7 +184,9 @@ public class HttpRoutingAssertion
         return ExpandVariables.getReferencedNames(_login + _password + _protectedServiceUrl);
     }
 
-    public String[] getVariablesSet() {
-        return new String[] { ROUTING_LATENCY };
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+            new VariableMetadata(ROUTING_LATENCY, false, false, ROUTING_LATENCY, false)
+        };
     }
 }

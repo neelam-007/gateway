@@ -6,39 +6,35 @@ package com.l7tech.policy.variable;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 /**
- * A built-in variable (accessible from {@link BuiltinVariables} and the strategy for getting it
- * from a {@link PolicyEnforcementContext}.
+ * A built-in variable (accessible from {@link BuiltinVariables} and the strategy
+ * for getting it from a {@link PolicyEnforcementContext}.
  */
 class Variable {
-    private final String name;
     private final Getter getter;
-    private final boolean prefixed;
-    private final boolean multivalued;
+    private final VariableMetadata metadata;
 
     Variable(String name, Getter getter) {
-        this(name, getter, false, false);
+        this(name, getter, null);
     }
 
-    public Variable(String name, Getter getter, boolean prefixed, boolean multivalued) {
-        this.name = name;
+    Variable(String name, Getter getter, String resourceKey) {
+        this(name, getter, false, false, false, resourceKey);
+    }
+
+    Variable(String name, Getter getter, boolean prefixed, boolean multivalued) {
+        this(name, getter, prefixed, multivalued, false, null);
+    }
+
+    Variable(String name, Getter getter, boolean prefixed, boolean multivalued, boolean settable, String resourceKey) {
+        this.metadata = new VariableMetadata(name, prefixed, multivalued, resourceKey, false);
         this.getter = getter;
-        this.prefixed = prefixed;
-        this.multivalued = multivalued;
     }
 
-    String getName() {
-        return name;
+    VariableMetadata getMetadata() {
+        return metadata;
     }
 
-    public boolean isPrefixed() {
-        return prefixed;
-    }
-
-    public boolean isMultivalued() {
-        return multivalued;
-    }
-
-    public Object get(String name, PolicyEnforcementContext context) throws NoSuchVariableException {
+    Object get(String name, PolicyEnforcementContext context) throws NoSuchVariableException {
         if (getter == null)
             return context.getVariable(name);
         else

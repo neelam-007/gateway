@@ -4,13 +4,10 @@
 package com.l7tech.policy.variable;
 
 import com.l7tech.common.message.SoapKnob;
-import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.wsdl.Operation;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +25,7 @@ public class BuiltinVariables {
 
     private static final Map varsByName = new HashMap();
     private static final Map varsByPrefix = new HashMap();
+    private static final Map metadataByName = new HashMap();
 
     public static void set(String name, Object value, PolicyEnforcementContext context) throws VariableNotSettableException, NoSuchVariableException {
         Variable var = getVar(name);
@@ -73,16 +71,20 @@ public class BuiltinVariables {
     public static boolean isMultivalued(String name) {
         Variable var = getVar(name);
         if (var == null) return false;
-        return var.isMultivalued();
+        return var.getMetadata().isMultivalued();
     }
 
     private static final RemoteIpGetter remoteIpGetter = new RemoteIpGetter();
     private static final OperationGetter soapOperationGetter = new OperationGetter();
     private static final SoapNamespaceGetter soapNamespaceGetter = new SoapNamespaceGetter();
 
-    public static final Variable[] VARS = {
+    public static Map getAllMetadata() {
+        return Collections.unmodifiableMap(metadataByName);
+    }
+
+    private static final Variable[] VARS = {
         new Variable("request.tcp.remoteAddress", remoteIpGetter),
-        new Variable("request.tcp.remoteip", remoteIpGetter),
+        new Variable("request.tcp.remoteip", remoteIpGetter, "request.tcp.remoteAddress"),
         new Variable("request.tcp.remoteHost", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return context.getRequest().getTcpKnob().getRemoteHost();
@@ -135,22 +137,12 @@ public class BuiltinVariables {
             }
         ),
         new Variable("request.soap.operation", soapOperationGetter),
-        new Variable("request.soap.operationname", soapOperationGetter),
+        new Variable("request.soap.operationname", soapOperationGetter, "request.soap.operation"),
         new Variable("request.soap.namespace", soapNamespaceGetter),
-        new Variable("request.soap.urn", soapNamespaceGetter),
+        new Variable("request.soap.urn", soapNamespaceGetter, "request.soap.namespace"),
         new Variable("requestId", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return context.getRequestId();
-            }
-        }),
-        new Variable("routingStartTime", new Getter() {
-            public Object get(String name, PolicyEnforcementContext context) {
-                return ISO8601Date.format(new Date(context.getRoutingStartTime()));
-            }
-        }),
-        new Variable("routingEndTime", new Getter() {
-            public Object get(String name, PolicyEnforcementContext context) {
-                return ISO8601Date.format(new Date(context.getRoutingEndTime()));
             }
         }),
         new Variable("routingStatus", new Getter() {
@@ -175,10 +167,11 @@ public class BuiltinVariables {
     static {
         for (int i = 0; i < VARS.length; i++) {
             Variable var = VARS[i];
-            if (var.isPrefixed()) {
-                varsByPrefix.put(var.getName().toLowerCase(), var);
+            metadataByName.put(var.getMetadata().getName(), var.getMetadata());
+            if (var.getMetadata().isPrefixed()) {
+                varsByPrefix.put(var.getMetadata().getName().toLowerCase(), var);
             } else {
-                varsByName.put(var.getName().toLowerCase(), var);
+                varsByName.put(var.getMetadata().getName().toLowerCase(), var);
             }
         }
     }

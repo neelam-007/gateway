@@ -3,9 +3,11 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.variable.VariableMetadata;
+
 /**
  * Indicates that this assertion is capable of setting one or more variables.
  */
 public interface SetsVariables {
-    String[] getVariablesSet();
+    VariableMetadata[] getVariablesSet();
 }

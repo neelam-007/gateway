@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  * Gateway makes an HTTP GET request with HTTP Basic credentials to a SAML
@@ -56,10 +57,10 @@ public class SamlBrowserArtifact extends Assertion implements SetsVariables {
         this.authenticationProperties = new AuthenticationProperties(authenticationProperties);
     }
 
-    public String[] getVariablesSet() {
-        return new String[] {
-            VAR_ARTIFACT,
-            VAR_REDIRECT_URL
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+            new VariableMetadata(VAR_ARTIFACT, false, false, null, false),
+            new VariableMetadata(VAR_REDIRECT_URL, false, false, null, false),
         };
     }
 }

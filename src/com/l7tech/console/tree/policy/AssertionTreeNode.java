@@ -10,6 +10,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.exporter.PolicyImporter;
@@ -125,14 +126,14 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      */
     public String getTooltipText() {
         List messages = getValidatorMessages();
+        StringBuffer sb = new StringBuffer();
         if (messages.isEmpty()) {
-            StringBuffer sb = new StringBuffer("<html>");
             final String st = super.getTooltipText();
             if (st != null) sb.append(st);
             Assertion ass = this.asAssertion();
             if (ass instanceof SetsVariables) {
                 SetsVariables sv = (SetsVariables)ass;
-                final String[] vars = sv.getVariablesSet();
+                final VariableMetadata[] vars = sv.getVariablesSet();
                 if (vars.length > 0) {
                     if (st != null)
                         sb.append(", setting ");
@@ -140,7 +141,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                         sb.append("Sets ");
 
                     for (int i = 0; i < vars.length; i++) {
-                        String name = vars[i];
+                        String name = vars[i].getName();
                         sb.append(ExpandVariables.SYNTAX_PREFIX)
                             .append("<b>")
                             .append(name)
@@ -150,36 +151,37 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                     }
                 }
             }
+            sb.insert(0, "<html>");
             return sb.toString();
-        }
-        StringBuffer sb = new StringBuffer();
-        sb.append("<html><strong> There are {0}<br>");
-        Iterator it = messages.iterator();
-        boolean first = true;
-        boolean hasWarnings = false;
-        boolean hasErrors = false;
-        for (; it.hasNext();) {
-            if (!first) {
-                sb.append("<br>");
+        } else {
+            sb.append("<html><strong> There are {0}<br>");
+            Iterator it = messages.iterator();
+            boolean first = true;
+            boolean hasWarnings = false;
+            boolean hasErrors = false;
+            for (; it.hasNext();) {
+                if (!first) {
+                    sb.append("<br>");
+                }
+                first = false;
+                PolicyValidatorResult.Message pm = (PolicyValidatorResult.Message)it.next();
+                if (pm instanceof PolicyValidatorResult.Error) {
+                    hasErrors = true;
+                } else if ((pm instanceof PolicyValidatorResult.Warning)) {
+                    hasWarnings = true;
+                }
+                sb.append("<i>").append(pm.getMessage()).append("</i>");
             }
-            first = false;
-            PolicyValidatorResult.Message pm = (PolicyValidatorResult.Message)it.next();
-            if (pm instanceof PolicyValidatorResult.Error) {
-                hasErrors = true;
-            } else if ((pm instanceof PolicyValidatorResult.Warning)) {
-                hasWarnings = true;
+            sb.append("</strong></html>");
+            String format = sb.toString();
+            String msg = "warnings and errors, the policy might be invalid";
+            if (hasWarnings && !hasErrors) {
+                msg = "warnings, the policy might be invalid";
+            } else if (!hasWarnings && hasErrors) {
+                msg = "errors, the policy might be invalid";
             }
-            sb.append("<i>").append(pm.getMessage()).append("</i>");
+            return MessageFormat.format(format, new Object[]{msg});
         }
-        sb.append("</strong></html>");
-        String format = sb.toString();
-        String msg = "warnings and errors, the policy might be invalid";
-        if (hasWarnings && !hasErrors) {
-            msg = "warnings, the policy might be invalid";
-        } else if (!hasWarnings && hasErrors) {
-            msg = "errors, the policy might be invalid";
-        }
-        return MessageFormat.format(format, new Object[]{msg});
     }
 
     /**

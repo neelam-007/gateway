@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.variable.VariableMetadata;
+
 /**
  * Superclass of {@link RequestXpathAssertion} and {@link ResponseXpathAssertion} that
  * adds variable prefix support.
@@ -60,8 +62,13 @@ public abstract class SimpleXpathAssertion
         return countVariable;
     }
 
-    public String[] getVariablesSet() {
-        return new String[] { foundVariable(), countVariable(), resultVariable() };
+    public VariableMetadata[] getVariablesSet() {
+        return new VariableMetadata[] {
+            // Note default prefixes are used here for property lookup purposes
+            new VariableMetadata(foundVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_FOUND, false),
+            new VariableMetadata(countVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_COUNT, false),
+            new VariableMetadata(resultVariable(), false, false, defaultVariablePrefix() + "." + VAR_SUFFIX_RESULT, false),
+        };
     }
 
     protected abstract String defaultVariablePrefix();

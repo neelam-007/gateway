@@ -4,6 +4,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -124,9 +125,9 @@ class PathValidator {
 
         if (a instanceof SetsVariables) {
             SetsVariables sv = (SetsVariables) a;
-            final String[] vars = sv.getVariablesSet();
+            final VariableMetadata[] vars = sv.getVariablesSet();
             for (int i = 0; i < vars.length; i++) {
-                setSeenVariable(vars[i].toLowerCase());
+                setSeenVariable(vars[i].getName().toLowerCase());
             }
         }
 
