@@ -59,6 +59,8 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -184,11 +186,11 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 }
                 return status;
             }
-
+            Map rstTypes = getTrustTokenTypeAndRequestTypeValues(context);
             Document response;
-            if (isRequestForSecureConversationContext(context)) {
+            if (isRequestForSecureConversationContext(rstTypes)) {
                 response = handleSecureConversationContextRequest(context, authenticatedUser);
-            } else if (isRequestForSAMLToken(context)) {
+            } else if (isRequestForSAMLToken(rstTypes)) {
                 response = handleSamlRequest(context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
             } else {
                 status = AssertionStatus.BAD_REQUEST;
@@ -447,60 +449,90 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
      */
-    private boolean isRequestForSecureConversationContext(PolicyEnforcementContext context)
-                                                                        throws InvalidDocumentFormatException {
-        Document doc;
-        try {
-            XmlKnob reqXml = context.getRequest().getXmlKnob();
-            doc = reqXml.getDocumentReadOnly();
-        } catch (SAXException e) {
-            // if we can't get the doc, then the request must be bad
-            logger.log(Level.WARNING, "Cannot get request's document", e);
-            return false;
-        } catch (IOException e) {
-            // if we can't get the doc, then the request must be bad
-            logger.log(Level.WARNING, "Cannot get request's document", e);
+    private boolean isRequestForSecureConversationContext(Map rstTypes) {
+        String val = (String)rstTypes.get(SoapUtil.WST_TOKENTYPE);
+        if (val == null || !"http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct".equals(val)) {
             return false;
         }
 
-        Element body = SoapUtil.getBodyElement(doc);
-        // body must include wst:RequestSecurityToken element
-        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
-        if (maybeRSTEl == null) {
-            logger.warning("No " + SoapUtil.WST_REQUESTSECURITYTOKEN + " found.");
-            return false;
-        }
-        String rstName = maybeRSTEl.getLocalName();
-        if (!SoapUtil.WST_REQUESTSECURITYTOKEN.equals(rstName)) {
-            logger.fine("Body's child does not seem to be a RST (" + rstName + ")");
-            return false;
-        }
-        if (!Arrays.asList(SoapUtil.WST_NAMESPACE_ARRAY).contains(maybeRSTEl.getNamespaceURI())) {
-            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
-            return false;
-        }
-        // validate <wst:TokenType>http://schemas.xmlsoap.org/ws/2004/04/sct</wst:TokenType>
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_TOKENTYPE);
-        if (tokenTypeEl == null) {
-            logger.warning("Token type not specified. This is not supported.");
-            return false;
-        }
-        String value = XmlUtil.getTextValue(tokenTypeEl);
-        if (!"http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct".equals(value)) {
-            return false;
-        }
-        // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_REQUESTTYPE);
-        if (reqTypeEl == null) {
-            logger.warning("Request type not specified. This is not supported.");
-            return false;
-        }
-        value = XmlUtil.getTextValue(reqTypeEl);
-        if (!value.endsWith("/trust/Issue")) {
-            logger.warning("RequestType not supported." + value);
+        val = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
+        if (val == null || !val.endsWith("/trust/Issue")) {
+            logger.warning("RequestType not supported." + val);
             return false;
         }
         return true;
+    }
+
+    /**
+     * Checks whether this request is meant to be for a SAML version 2.0 token.
+     * expected value of   TokenType is 'urn:oasis:names:tc:SAML:2.0:assertion#Assertion',
+     * expected value of RequestType is 'http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue'
+     */
+    private boolean isRequestForSAML20Token(Map rstTypes) {
+        String tokenType = (String)rstTypes.get(SoapUtil.WST_TOKENTYPE);
+        if (tokenType == null ||
+            !tokenType.startsWith("urn:oasis:names:tc:SAML:2.0:assertion") ||
+            !tokenType.endsWith("Assertion")) {
+            return false;
+        }
+        String requestType = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
+        if (requestType == null || !requestType.endsWith("/trust/Issue")) {
+            return false;
+        }
+        logger.fine("Request was identified as one for SAML 2.0 Token");
+        return true;
+    }
+
+    /**
+     * Retrieves soap:Envelope/soap:Body/wst:RequestSecurityToken/wst:TokenType/text() and puts it in the return map
+     * under the SoapUtil.WST_TOKENTYPE key.
+     * Retrieves soap:Envelope/soap:Body/wst:RequestSecurityToken/wst:RequestType/text() and puts it in the return map
+     * under the SoapUtil.WST_REQUESTTYPE key.
+     *
+     * The old way was using too much code duplication and was too inneficient.
+     */
+    private Map getTrustTokenTypeAndRequestTypeValues(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
+        Map output = new HashMap();
+        Document doc;
+        try {
+            XmlKnob knob = context.getRequest().getXmlKnob();
+            doc = knob.getDocumentReadOnly();
+        } catch (SAXException e) {
+            // if we can't get the doc, then the request must be bad
+            logger.log(Level.WARNING, "Cannot get request's document", e);
+            return output;
+        } catch (IOException e) {
+            // if we can't get the doc, then the request must be bad
+            logger.log(Level.WARNING, "Cannot get request's document", e);
+            return output;
+        }
+        Element body = SoapUtil.getBodyElement(doc);
+        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
+
+        // body must include wst:RequestSecurityToken element
+        if (!maybeRSTEl.getLocalName().equals(SoapUtil.WST_REQUESTSECURITYTOKEN)) {
+            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
+            return output;
+        }
+        if (!Arrays.asList(SoapUtil.WST_NAMESPACE_ARRAY).contains(maybeRSTEl.getNamespaceURI())) {
+            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
+            return output;
+        }
+
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_TOKENTYPE);
+        if (tokenTypeEl == null) {
+            logger.warning("Token type not specified. This is not supported.");
+        } else {
+            output.put(SoapUtil.WST_TOKENTYPE, XmlUtil.getTextValue(tokenTypeEl));
+        }
+
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_REQUESTTYPE);
+        if (reqTypeEl == null) {
+            logger.warning("Request type not specified. This is not supported.");
+        } else {
+            output.put(SoapUtil.WST_REQUESTTYPE, XmlUtil.getTextValue(reqTypeEl));
+        }
+        return output;
     }
 
     /** Regexp that recognizes all known SAML token type URIs and qnames. */
@@ -511,57 +543,17 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
      */
-    private boolean isRequestForSAMLToken(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
-        Document doc;
-        try {
-            XmlKnob reqXml = context.getRequest().getXmlKnob();
-            doc = reqXml.getDocumentReadOnly();
-        } catch (SAXException e) {
-            // if we can't get the doc, then the request must be bad
-            logger.log(Level.WARNING, "Cannot get request's document", e);
-            return false;
-        } catch (IOException e) {
-            // if we can't get the doc, then the request must be bad
-            logger.log(Level.WARNING, "Cannot get request's document", e);
+    private boolean isRequestForSAMLToken(Map rstTypes) {
+        String tokenType = (String)rstTypes.get(SoapUtil.WST_TOKENTYPE);
+        if (tokenType == null || !PSAML.matcher(tokenType).find()) {
+            logger.warning("TokenType '" + tokenType + "' is not recognized as calling for a saml:Assertion");
             return false;
         }
-
-        Element body = SoapUtil.getBodyElement(doc);
-        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
-
-        // body must include wst:RequestSecurityToken element
-        if (!maybeRSTEl.getLocalName().equals(SoapUtil.WST_REQUESTSECURITYTOKEN)) {
-            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
+        String requestType = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
+        if (requestType == null || !requestType.endsWith("/trust/Issue")) {
             return false;
         }
-        if (!Arrays.asList(SoapUtil.WST_NAMESPACE_ARRAY).contains(maybeRSTEl.getNamespaceURI())) {
-            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
-            return false;
-        }
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_TOKENTYPE);
-        if (tokenTypeEl == null) {
-            logger.warning("Token type not specified. This is not supported.");
-            return false;
-        }
-
-        // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_REQUESTTYPE);
-        if (reqTypeEl == null) {
-            logger.warning("Request type not specified. This is not supported.");
-            return false;
-        }
-        String value = XmlUtil.getTextValue(reqTypeEl);
-
-        if (!value.endsWith("/trust/Issue")) {
-            logger.warning("RequestType '" + value + "' not supported.");
-            return false;
-        }
-
-        final String tokenType = XmlUtil.getTextValue(tokenTypeEl);
-        if (PSAML.matcher(tokenType).find())
-            return true;
-        logger.warning("TokenType '" + tokenType + "' is not recognized as calling for a saml:Assertion");
-        return false;
+        return true;
     }
 
     private String getRemoteAddress(PolicyEnforcementContext pec) {

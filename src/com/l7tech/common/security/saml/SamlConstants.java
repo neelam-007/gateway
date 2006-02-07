@@ -8,7 +8,8 @@ package com.l7tech.common.security.saml;
  */
 public class SamlConstants {
     /** namespaces */
-    public static final String NS_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
+    public static final String NS_SAML  = "urn:oasis:names:tc:SAML:1.0:assertion";
+    public static final String NS_SAML2 = "urn:oasis:names:tc:SAML:2.0:assertion";
     public static final String NS_SAML_PREFIX = "saml";
     public static final String NS_SAMLP = "urn:oasis:names:tc:SAML:1.0:protocol";
     public static final String NS_SAMLP_PREFIX = "samlp";
