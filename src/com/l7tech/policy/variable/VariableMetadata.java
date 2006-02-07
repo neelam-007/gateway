@@ -6,7 +6,7 @@ package com.l7tech.policy.variable;
 import java.io.Serializable;
 
 /**
- * Metadata describing a {@link Variable}.  Applies mainly to {@link BuiltinVariables} at this time.
+ * Metadata describing a variable.  Applies mainly to built-in variables at this time.
  */
 public class VariableMetadata implements Serializable {
     private final String name;

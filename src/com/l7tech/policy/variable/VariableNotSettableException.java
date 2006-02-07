@@ -8,7 +8,7 @@ public class VariableNotSettableException extends RuntimeException {
     /**
      * @param   variable   the variable that was not found and caused the exception
      */
-    VariableNotSettableException(String variable) {
+    public VariableNotSettableException(String variable) {
         super("The variable '"+variable+"' is not settable");
         this.variable = variable;
     }

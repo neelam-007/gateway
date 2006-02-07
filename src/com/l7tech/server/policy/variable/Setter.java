@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2006 Layer 7 Technologies Inc.
  */
-package com.l7tech.policy.variable;
+package com.l7tech.server.policy.variable;
 
 import com.l7tech.server.message.PolicyEnforcementContext;
 

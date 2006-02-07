@@ -20,10 +20,11 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.policy.variable.VariableMap;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
@@ -266,7 +267,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     public void setVariable(String name, Object value) throws VariableNotSettableException {
         if (BuiltinVariables.isSupported(name)) {
             try {
-                BuiltinVariables.set(name, value, this);
+                ServerVariables.set(name, value, this);
             } catch (NoSuchVariableException e) {
                 throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
             }
@@ -279,7 +280,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         Object value;
         if (BuiltinVariables.isSupported(name)) {
             try {
-                value = BuiltinVariables.get(name, this);
+                value = ServerVariables.get(name, this);
             } catch (NoSuchVariableException e) {
                 throw new RuntimeException("Variable '" + name + "' is supposedly supported, but doesn't exist", e);
             }

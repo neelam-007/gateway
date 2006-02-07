@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2006 Layer 7 Technologies Inc.
  */
-package com.l7tech.policy.variable;
+package com.l7tech.server.policy.variable;
 
 import com.l7tech.server.message.PolicyEnforcementContext;
 
@@ -11,13 +11,9 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 class SettableVariable extends Variable {
     private final Setter setter;
 
-    SettableVariable(String name, Getter getter, Setter setter, boolean prefixed, boolean multivalued, String resourceKey) {
-        super(name, getter, prefixed, multivalued, true, resourceKey);
-        this.setter = setter;
-    }
-
     SettableVariable(String name, Getter getter, Setter setter) {
-        this(name, getter, setter, false, false, null);
+        super(name, getter);
+        this.setter = setter;
     }
 
     void set(String name, Object value, PolicyEnforcementContext context) {
