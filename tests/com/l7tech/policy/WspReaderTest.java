@@ -138,7 +138,7 @@ public class WspReaderTest extends TestCase {
         SqlAttackAssertion out = (SqlAttackAssertion)WspReader.parseStrictly(xml);
         assertNotNull(out);
         assertTrue(out.getProtections().contains(SqlAttackAssertion.PROT_ORASQL));
-        assertFalse(out.getProtections().contains(SqlAttackAssertion.PROT_METATEXT));        
+        assertFalse(out.getProtections().contains(SqlAttackAssertion.PROT_METATEXT));
     }
 
     private static final Object[][] VERSIONS = {
