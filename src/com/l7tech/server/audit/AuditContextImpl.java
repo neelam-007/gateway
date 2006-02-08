@@ -72,7 +72,7 @@ public class AuditContextImpl implements AuditContext {
 
         Level severity = Messages.getSeverityLevelById(detail.getMessageId());
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
-        if(severity.intValue() >= currentAssociatedLogsThreshold.intValue()) {
+        if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
             // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
             detail.setOrdinal(ordinal++);
             details.add(detail);
@@ -89,18 +89,18 @@ public class AuditContextImpl implements AuditContext {
 
         try {
             if (currentRecord instanceof MessageSummaryAuditRecord) {
-                if (currentRecord.getLevel().intValue() < currentMessageThreshold.intValue()) {
+                if (currentRecord.getLevel().intValue() < getSystemMessageThreshold().intValue()) {
                     logger.fine("MessageSummaryAuditRecord generated with level " +
                                 currentRecord.getLevel() +
                                 " will not be saved; current message audit threshold is " +
-                                currentMessageThreshold.getName() );
+                                getSystemMessageThreshold().getName() );
                     return;
                 }
             } else if (currentRecord instanceof AdminAuditRecord) {
-                if (currentRecord.getLevel().intValue() < currentAdminThreshold.intValue()) {
+                if (currentRecord.getLevel().intValue() < getSystemAdminThreshold().intValue()) {
                     logger.fine("AdminAuditRecord generated with level " + currentRecord.getLevel()
                                 + " will not be saved; current admin audit threshold is " +
-                                currentAdminThreshold.getName() );
+                                getSystemAdminThreshold().getName() );
                     return;
                 }
             } else {
