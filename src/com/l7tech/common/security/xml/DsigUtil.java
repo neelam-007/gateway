@@ -189,7 +189,7 @@ public class DsigUtil {
             if (signingCert == null) throw new SignatureException("Unable to resolve signing cert");
         } catch (SAXException e) {
             throw new SignatureException(e);
-        } catch (KeyInfoElement.KeyInfoElementException e) {
+        } catch (KeyInfoElement.MissingResolverException e) {
             throw new SignatureException(e);
         }
 

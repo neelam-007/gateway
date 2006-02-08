@@ -50,7 +50,8 @@ public interface XmlKnob extends MessageKnob {
      * <p>
      * Thus, a caller can initially call {@link #getDocumentReadOnly} to get a read-only document,
      * but then upgrade their returned Document reference to be writable
-     * simply by calling getDocumentWritable() in void context.
+     * by calling getDocumentWritable().  If there is any doubt, the caller can double-check that the return value
+     * strongly equals (ie, using ==) the earlier return value of getDocument().
      *
      * @see #getDocumentReadOnly for the read-only, faster version of this call
      * @return the current working Document.  Caller may modify this.

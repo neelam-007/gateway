@@ -32,4 +32,5 @@ public interface ProcessorResult {
     String getLastSignatureValue(); // TODO replace this with a mechanism that can cope with multiple signature values
     String getLastSignatureConfirmation(); // TODO replace this with a mechanism that can cope with multiple SignatureConfirmation headers
     boolean isWsse11Seen(); // TODO Remove this hack.  It is for detecting the WSS interop scenario request July 2005
+    boolean isDerivedKeySeen(); // Use this to tell if it is safe to use derived keys in a response.
 }

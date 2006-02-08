@@ -13,7 +13,7 @@ import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.KeyInfoElement;
 import com.l7tech.common.security.xml.CertificateResolver;
-import com.l7tech.common.security.xml.processor.MutableX509SigningSecurityToken;
+import com.l7tech.common.security.xml.processor.X509SigningSecurityTokenImpl;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 /**
  * Encapsulates an abstract saml:Assertion SecurityToken.
  */
-public class SamlAssertion extends MutableX509SigningSecurityToken implements SamlSecurityToken {
+public class SamlAssertion extends X509SigningSecurityTokenImpl implements SamlSecurityToken {
     protected static final Logger logger = Logger.getLogger(SamlAssertion.class.getName());
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
@@ -210,7 +210,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
             throw new SAXException(e);
         } catch (IOException e) {
             throw new SAXException("Invalid Base64 in SAML token issuer certificate", e);
-        } catch (KeyInfoElement.KeyInfoElementException e) {
+        } catch (KeyInfoElement.MissingResolverException e) {
             throw new SAXException(e);
         }
     }
@@ -341,7 +341,7 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
             if (!validity.getCoreValidity()) {
                 StringBuffer msg = new StringBuffer("Unable to verify signature of SAML assertion: Validity not achieved. " + validity.getSignedInfoMessage());
                 for (int i = 0; i < validity.getNumberOfReferences(); i++) {
-                    msg.append("\n\tElement " + validity.getReferenceURI(i) + ": " + validity.getReferenceMessage(i));
+                    msg.append("\n\tElement ").append(validity.getReferenceURI(i)).append(": ").append(validity.getReferenceMessage(i));
                 }
                 logger.warning(msg.toString());
                 throw new CausedSignatureException(msg.toString());

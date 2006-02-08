@@ -45,7 +45,7 @@ public class WssProcessorUtil {
     /**
      * Private implementation of EncryptedKey that can be used internally by Trogdor.
      */
-    private static class MyEncryptedKey extends MutableSigningSecurityToken implements EncryptedKey {
+    private static class MyEncryptedKey extends SigningSecurityTokenImpl implements EncryptedKey {
         private final String encryptedKeySha1;
         private final SecretKey key;
         private final String id;

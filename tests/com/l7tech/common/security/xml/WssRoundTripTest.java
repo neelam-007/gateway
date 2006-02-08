@@ -15,7 +15,6 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.skunkworks.wsibsp.WsiBSPValidator;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -25,11 +24,7 @@ import org.w3c.dom.Node;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -64,37 +59,6 @@ public class WssRoundTripTest extends TestCase {
     }
 
     WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
-    private NamedTestDocument[] getAllTestDocuments() throws Exception {
-        // Find all getFooTestDocument() methods in WssDecoratorTest
-        List testDocuments = new ArrayList();
-        Method[] methods = WssDecoratorTest.class.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
-            String name = method.getName();
-            if (name.startsWith("get") && name.endsWith("TestDocument") &&
-                    method.getReturnType().equals(WssDecoratorTest.TestDocument.class))
-            {
-                testDocuments.add(new NamedTestDocument(name,
-                                                        (WssDecoratorTest.TestDocument)method.invoke(
-                                                                wssDecoratorTest, new Object[0])));
-            }
-        }
-
-        log.info("Found " + testDocuments.size() + " TestDocuments in WssDecoratorTest");
-        return (NamedTestDocument[])testDocuments.toArray(new NamedTestDocument[0]);
-    }
-
-    public void DISABLED_testAllRoundTrips() throws Exception {
-        NamedTestDocument[] testDocs = getAllTestDocuments();
-        for (int i = 0; i < testDocs.length; i++) {
-            NamedTestDocument testDoc = testDocs[i];
-            try {
-                runRoundTripTest(testDoc);
-            } catch (Exception e) {
-                log.log(Level.SEVERE, "Test \"" + testDoc.name + "\"failed: " + e.getMessage(), e);
-            }
-        }
-    }
 
     public void testSimple() throws Exception {
         runRoundTripTest(new NamedTestDocument("Simple",
@@ -213,6 +177,12 @@ public class WssRoundTripTest extends TestCase {
                          false);
     }
 
+    public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptedUsernameTokenWithDerivedKeys",
+                                               wssDecoratorTest.getEncryptedUsernameTokenWithDerivedKeysTestDocument()),
+                                               false);
+    }
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         runRoundTripTest(ntd, true);
     }
@@ -246,6 +216,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setUsernameTokenCredentials(td.usernameToken);
         reqs.setEncryptUsernameToken(td.encryptUsernameToken);
         reqs.setSuppressBst(td.suppressBst);
+        reqs.setUseDerivedKeys(td.useDerivedKeys);
         if (td.secureConversationKey != null) {
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }

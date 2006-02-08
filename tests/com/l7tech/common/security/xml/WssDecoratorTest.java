@@ -123,6 +123,7 @@ public class WssDecoratorTest extends TestCase {
         public String actor = null;
         public boolean encryptUsernameToken = false;
         public UsernameToken usernameToken = null;
+        public boolean useDerivedKeys = false;
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
@@ -142,7 +143,7 @@ public class WssDecoratorTest extends TestCase {
                             boolean signSamlToken,
                             boolean suppressBst) {
             this(c, senderSamlAssertion, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
-                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst, false, null, null, null, null);
+                 elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, suppressBst, false, null, null, null, null, false);
         }
 
         public TestDocument(Context c,
@@ -159,7 +160,8 @@ public class WssDecoratorTest extends TestCase {
                             String encryptedKeySha1,
                             String signatureConfirmation,
                             String actor,
-                            UsernameToken senderUsernameToken)
+                            UsernameToken senderUsernameToken,
+                            boolean useDerivedKeys)
         {
             this.c = c;
             this.senderSamlAssertion = senderSamlAssertion;
@@ -182,6 +184,7 @@ public class WssDecoratorTest extends TestCase {
             this.actor = actor;
             this.encryptUsernameToken = encryptUsernameToken;
             this.usernameToken = senderUsernameToken;
+            this.useDerivedKeys = useDerivedKeys;
         }
     }
 
@@ -206,6 +209,7 @@ public class WssDecoratorTest extends TestCase {
         reqs.setSuppressBst(d.suppressBst);
         reqs.setSignatureConfirmation(d.signatureConfirmation);
         reqs.setEncryptUsernameToken(d.encryptUsernameToken);
+        reqs.setUseDerivedKeys(d.useDerivedKeys);
         if (d.actor != null)
             reqs.setSecurityHeaderActor(d.actor.length() < 1 ? null : d.actor);
         if (d.secureConversationKey != null) {
@@ -738,7 +742,34 @@ public class WssDecoratorTest extends TestCase {
                                 null,
                                 null,
                                 null,
-                                new UsernameTokenImpl("testuser", "password".toCharArray()));
+                                new UsernameTokenImpl("testuser", "password".toCharArray()), false);
+    }
+
+    public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
+        runTest(getEncryptedUsernameTokenWithDerivedKeysTestDocument());
+    }
+
+    public TestDocument getEncryptedUsernameTokenWithDerivedKeysTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                null,
+                                null,
+                                null,
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                null,
+                                null,
+                                new Element[]{c.body},
+                                null,
+                                false,
+                                true,
+                                true,
+                                null,
+                                null,
+                                null,
+                                new UsernameTokenImpl("testuser", "password".toCharArray()),
+                                true);
     }
 
     public void testWssInteropResponse() throws Exception {
@@ -773,7 +804,7 @@ public class WssDecoratorTest extends TestCase {
                                  false,
                                  false, "abc11EncryptedKeySHA1Value11blahblahblah11==",
                                  "abc11SignatureConfirmationValue11blahblahblah11==",
-                                 ACTOR_NONE, null);
+                                 ACTOR_NONE, null, false);
 
         testDocument.encryptionAlgorithm = XencAlgorithm.AES_256_CBC.getXEncName(); 
 

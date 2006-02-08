@@ -5,10 +5,10 @@
 
 package com.l7tech.common.security.xml.decorator;
 
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.kerberos.KerberosServiceTicket;
-import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.NamespaceFactory;
 import org.w3c.dom.Element;
 
 import javax.crypto.SecretKey;
@@ -200,18 +200,6 @@ public class DecorationRequirements {
         this.secureConversationSession = secureConversationSession;
     }
 
-    public String getPreferredWSUNamespace() {
-        return preferredWSUNamespace;
-    }
-
-    /**
-     * If this is not set, then the default SoapUtil.WSU_NAMESPACE
-     * will be used.
-     */
-    public void setPreferredWSUNamespace(String ns) {
-        preferredWSUNamespace = ns;
-    }
-
     /**
      * If this is set along with EncryptedKey, then signing and encryption will use a KeyInfo that uses
      * a KeyInfo of #EncryptedKeySHA1 containing this string, which must be the Base64-encoded
@@ -294,19 +282,23 @@ public class DecorationRequirements {
         byte[] getSecretKey();
     }
 
-    public String getPreferredSecurityNamespace() {
-        return preferredSecurityNamespace;
+    /**
+     * Get the namespace settings to use during decoration.
+     *
+     * @return a NamespaceFactory.  Never null.
+     */
+    public NamespaceFactory getNamespaceFactory() {
+        return namespaceFactory;
     }
 
     /**
-     * If you dont set this, the default WSSE namespace will be used. You would
-     * want to specify this namespace for example when decorating a response to
-     * a request that already referred to a specific wsse namespace.
+     * Set new namespace settings to use during decoration.
      *
-     * @param preferredSecurityNamespace the wsse namespace.
+     * @param namespaceFactory the new NamespaceFactory, or null to use the default namespaces.
      */
-    public void setPreferredSecurityNamespace(String preferredSecurityNamespace) {
-        this.preferredSecurityNamespace = preferredSecurityNamespace;
+    public void setNamespaceFactory(NamespaceFactory namespaceFactory) {
+        if (namespaceFactory == null) namespaceFactory = new NamespaceFactory();
+        this.namespaceFactory = namespaceFactory;
     }
 
     /**
@@ -465,6 +457,35 @@ public class DecorationRequirements {
         this.encryptUsernameToken = encryptUsernameToken;
     }
 
+    /**
+     * If true, encryption and signing should be done using a pair of new DerivedKeyTokens, if applicable,
+     * rather than using the same secret key to both sign and encrypt.  Note that WS-SecureConversation
+     * will always use derived keys regardless of this setting.
+     * <p/>
+     * This is not necessary if an EncryptedKey will be used only for encryption, and only for a single message.
+     *
+     * @return true if Derived Keys should be used for signing and encryption rather than referencing
+     *         the secret key in an EncryptedKey directly.
+     */
+    public boolean isUseDerivedKeys() {
+        return useDerivedKeys;
+    }
+
+    /**
+     * If true, encryption and signing should be done using a pair of new DerivedKeyTokens, if applicable,
+     * rather than using the same secret key to both sign and encrypt.  Note that WS-SecureConversation
+     * will always use derived keys regardless of this setting.
+     * <p/>
+     * This is not necessary if an EncryptedKey will be used only for encryption, and only for a single message.
+     *
+     * @param useDerivedKeys true if Derived Keys should be used for signing and encryption rather than referencing
+     *         the secret key in an EncryptedKey directly.  Otherwise, derived keys will not be used unless
+     *         necessary (ie, with WS-SecureConversation)
+     */
+    public void setUseDerivedKeys(boolean useDerivedKeys) {
+        this.useDerivedKeys = useDerivedKeys;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -477,8 +498,7 @@ public class DecorationRequirements {
     private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#aes128-cbc";
     //private String encryptionAlgorithm = "http://www.w3.org/2001/04/xmlenc#tripledes-cbc";
     private Set elementsToSign = new LinkedHashSet();
-    private String preferredSecurityNamespace = SoapUtil.SECURITY_NAMESPACE;
-    private String preferredWSUNamespace = SoapUtil.WSU_NAMESPACE;
+    private NamespaceFactory namespaceFactory = new NamespaceFactory();
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
     private boolean securityHeaderReusable = false;
@@ -493,4 +513,5 @@ public class DecorationRequirements {
     private String kerberosTicketId = null;
     private boolean includeKerberosTicketId = false;
     private boolean encryptUsernameToken = false;
+    private boolean useDerivedKeys = false;
 }

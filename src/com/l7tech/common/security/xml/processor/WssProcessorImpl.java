@@ -396,6 +396,7 @@ public class WssProcessorImpl implements WssProcessor {
         for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
             Element dataRefEl = (Element)j.next();
             String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+            if (dataRefUri.startsWith("#")) dataRefUri = dataRefUri.substring(1);
             Element encryptedDataElement = (Element)cntx.elementsByWsuId.get(dataRefUri);
             if (encryptedDataElement == null)
                 encryptedDataElement = SoapUtil.getElementByWsuId(referenceListEl.getOwnerDocument(), dataRefUri);
@@ -437,7 +438,9 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private void processDerivedKey(Element derivedKeyEl, ProcessingStatusHolder cntx) throws InvalidDocumentFormatException {
+    private void processDerivedKey(Element derivedKeyEl, ProcessingStatusHolder cntx)
+            throws InvalidDocumentFormatException, ProcessorException
+    {
         // get corresponding shared secret reference wsse:SecurityTokenReference
         Element sTokrefEl = XmlUtil.findFirstChildElementByName(derivedKeyEl,
                                                                 SoapUtil.SECURITY_URIS_ARRAY,
@@ -447,31 +450,52 @@ public class WssProcessorImpl implements WssProcessor {
         Element refEl = XmlUtil.findFirstChildElementByName(sTokrefEl,
                                                             SoapUtil.SECURITY_URIS_ARRAY,
                                                             SoapUtil.REFERENCE_EL_NAME);
-        if (refEl == null) throw new InvalidDocumentFormatException("SecurityTokenReference should " +
-                "contain a Reference");
-
-        String refUri = refEl.getAttribute("URI");
-        if (refUri == null || refUri.length() < 1)
-            throw new InvalidDocumentFormatException("DerivedKeyToken's SecurityTokenReference lacks URI parameter");
 
         final XmlSecurityToken derivationSource;
-        if (refUri.startsWith("#"))
-            derivationSource = findXmlSecurityTokenById(cntx, refUri);
-        else
-            derivationSource = findSecurityContextTokenBySessionId(cntx, refUri);
+        if (refEl == null) {
+            // Check for an EncryptedKeySHA1 reference
+            Element keyIdEl = XmlUtil.findFirstChildElementByName(sTokrefEl,
+                                                                  SoapUtil.SECURITY_URIS_ARRAY,
+                                                                  "KeyIdentifier");
+            if (keyIdEl == null)
+                throw new InvalidDocumentFormatException("DerivedKey SecurityTokenReference must contain a Reference or a KeyIdentifier");
+
+            String keyIdB64 = XmlUtil.getTextValue(keyIdEl);
+
+            String valueType = keyIdEl.getAttribute("ValueType");
+            if (valueType == null)
+                throw new InvalidDocumentFormatException("DerivedKey SecurityTokenReference KeyIdentifier has no ValueType");
+
+            if (SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1.equals(valueType)) {
+                if (cntx.encryptedKeyResolver == null)
+                    throw new ProcessorException("Unable to process DerivedKeyToken - it references an EncryptedKeySha1, but no EncryptedKey resolver is available");
+                derivationSource = cntx.encryptedKeyResolver.getEncryptedKeyBySha1(keyIdB64);
+            } else
+                throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to unsupported ValueType " + valueType);
+
+        } else {
+            String refUri = refEl.getAttribute("URI");
+            if (refUri == null || refUri.length() < 1)
+                throw new InvalidDocumentFormatException("DerivedKeyToken's SecurityTokenReference lacks URI parameter");
+            if (refUri.startsWith("#"))
+                derivationSource = findXmlSecurityTokenById(cntx, refUri);
+            else
+                derivationSource = findSecurityContextTokenBySessionId(cntx, refUri);
+        }
 
         if (derivationSource instanceof SecurityContextTokenImpl) {
-            SecurityContextToken sct = (SecurityContextTokenImpl)derivationSource;
-            deriveKeyFromSecurityContext(cntx, derivedKeyEl, sct);
+            cntx.derivedKeyTokens.add(deriveKeyFromSecurityContext(cntx, derivedKeyEl,
+                                                                   (SecurityContextTokenImpl)derivationSource));
+            // We won't count this as having seen a derived key, since WS-SC has always used them, and older SSBs
+            // won't understand them if we try to use them for a non-WS-SC response
         } else if (derivationSource instanceof EncryptedKey) {
-            EncryptedKey ek = (EncryptedKey)derivationSource;
-            deriveKeyFromEncryptedKey(cntx, derivedKeyEl, ek);
+            cntx.derivedKeyTokens.add(deriveKeyFromEncryptedKey(cntx, derivedKeyEl,
+                                                                (EncryptedKey)derivationSource));
+            cntx.isDerivedKeySeen = true;
         } else if (derivationSource instanceof KerberosSecurityToken) {
-            KerberosSecurityToken kst = (KerberosSecurityToken)derivationSource;
-            deriveKeyFromKerberosToken(cntx, derivedKeyEl, kst);
-        } else if (derivationSource instanceof UsernameToken) {
-            UsernameToken utok = (UsernameToken)derivationSource;
-            deriveKeyFromUsernameToken(cntx, derivedKeyEl, utok);
+            cntx.derivedKeyTokens.add(deriveKeyFromKerberosToken(cntx, derivedKeyEl,
+                                                                 (KerberosSecurityToken)derivationSource));
+            cntx.isDerivedKeySeen = true;
         } else
             throw new InvalidDocumentFormatException("Unsupported DerivedKeyToken reference target " + derivationSource.getType());
 
@@ -480,7 +504,7 @@ public class WssProcessorImpl implements WssProcessor {
     private XmlSecurityToken findSecurityContextTokenBySessionId(ProcessingStatusHolder cntx, String refUri) {
         Collection tokens = cntx.securityTokens;
         for (Iterator iterator = tokens.iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
+            Object o = iterator.next();
             if (o instanceof SecurityContextToken) {
                 SecurityContextToken token = (SecurityContextToken)o;
                 if (refUri.equals(token.getContextIdentifier()))
@@ -490,34 +514,22 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private void deriveKeyFromEncryptedKey(ProcessingStatusHolder cntx, Element derivedKeyEl, EncryptedKey ek) throws InvalidDocumentFormatException {
-        // TODO derive a key from the EncryptedKey's secret key
-        // TODO derive a key from the EncryptedKey's secret key
-        // TODO derive a key from the EncryptedKey's secret key
-        // TODO derive a key from the EncryptedKey's secret key
-        throw new InvalidDocumentFormatException("Key derivation from EncryptedKey not yet supported");
-        // TODO derive a key from the EncryptedKey's secret key
-        // TODO derive a key from the EncryptedKey's secret key
-        // TODO derive a key from the EncryptedKey's secret key
-        // TODO derive a key from the EncryptedKey's secret key
+    /** @return a new DerivedKeyToken.  Never null. */
+    private DerivedKeyToken deriveKeyFromEncryptedKey(ProcessingStatusHolder cntx, Element derivedKeyEl, EncryptedKey ek) throws InvalidDocumentFormatException {
+        try {
+            SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
+            final SecretKey resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
+                                                           ek.getSecretKey().getEncoded());
+            // remember this symmetric key so it can later be used to process the signature
+            // or the encryption
+            return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, ek);
+        } catch (NoSuchAlgorithmException e) {
+            throw new InvalidDocumentFormatException(e);
+        }
     }
 
-    private void deriveKeyFromUsernameToken(ProcessingStatusHolder cntx, Element derivedKeyEl, UsernameToken utok) throws InvalidDocumentFormatException {
-        // TODO derive a key from the password
-        // TODO derive a key from the password
-        // TODO derive a key from the password
-        // TODO derive a key from the password
-        assert utok != null;
-        assert cntx != null;
-        assert derivedKeyEl != null;
-        throw new InvalidDocumentFormatException("Key derivation from UsernameToken not yet supported");
-        // TODO derive a key from the password
-        // TODO derive a key from the password
-        // TODO derive a key from the password
-        // TODO derive a key from the password
-    }
-
-    private void deriveKeyFromKerberosToken(ProcessingStatusHolder cntx, Element derivedKeyEl, KerberosSecurityToken kst) throws InvalidDocumentFormatException {
+    /** @return a new DerivedKeyToken.  Never null. */
+    private DerivedKeyToken deriveKeyFromKerberosToken(ProcessingStatusHolder cntx, Element derivedKeyEl, KerberosSecurityToken kst) throws InvalidDocumentFormatException {
         // TODO derive a key from the kerberos token
         // TODO derive a key from the kerberos token
         // TODO derive a key from the kerberos token
@@ -532,21 +544,18 @@ public class WssProcessorImpl implements WssProcessor {
         // TODO derive a key from the kerberos token
     }
 
-    private void deriveKeyFromSecurityContext(ProcessingStatusHolder cntx, Element derivedKeyEl, SecurityContextToken sct) throws InvalidDocumentFormatException {
-        SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
-        final SecretKey resultingKey;
+    /** @return a new DerivedKeyToken.  Never null. */
+    private DerivedKeyToken deriveKeyFromSecurityContext(ProcessingStatusHolder cntx, Element derivedKeyEl, SecurityContextToken sct) throws InvalidDocumentFormatException {
         try {
-            resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
+            SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
+            final SecretKey resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
                                                            sct.getSecurityContext().getSharedSecret().getEncoded());
+            // remember this symmetric key so it can later be used to process the signature
+            // or the encryption
+            return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, sct);
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidDocumentFormatException(e);
         }
-        final SecretKey finalKey = resultingKey;
-        DerivedKeyTokenImpl rememberedKeyToken = new DerivedKeyTokenImpl(derivedKeyEl, finalKey, sct);
-        // remember this symmetric key so it can later be used to process the signature
-        // or the encryption
-        cntx.derivedKeyTokens.add(rememberedKeyToken);
-        return;
     }
 
     /**
@@ -857,7 +866,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class TimestampDate extends ParsedElementImpl implements com.l7tech.common.security.xml.processor.WssTimestampDate {
+    private static class TimestampDate extends ParsedElementImpl implements WssTimestampDate {
         Date date;
 
         TimestampDate(Element createdOrExpiresElement) throws ParseException {
@@ -956,7 +965,11 @@ public class WssProcessorImpl implements WssProcessor {
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
 
-                class EmbeddedSamlSignatureToken implements X509SecurityToken {
+                class EmbeddedSamlSignatureToken extends SigningSecurityTokenImpl implements X509SecurityToken {
+                    public EmbeddedSamlSignatureToken() {
+                        super(null);
+                    }
+
                     public X509Certificate getCertificate() {
                         return samlToken.getIssuerCertificate();
                     }
@@ -1057,7 +1070,7 @@ public class WssProcessorImpl implements WssProcessor {
                     uriAttr = uriAttr.substring(1);
                 }
                 // try to see if this reference matches a previously parsed SigningSecurityToken
-                final MutableX509SigningSecurityToken token = (MutableX509SigningSecurityToken)cntx.x509TokensById.get(uriAttr);
+                final X509SigningSecurityTokenImpl token = (X509SigningSecurityTokenImpl)cntx.x509TokensById.get(uriAttr);
                 if (token != null) {
                     logger.finest("The keyInfo referred to a previously parsed Security Token '" + uriAttr + "'");
                     return token;
@@ -1222,9 +1235,9 @@ public class WssProcessorImpl implements WssProcessor {
         final DerivedKeyTokenImpl dkt = resolveDerivedKeyByRef(keyInfoElement, cntx);
         // Try to resolve cert by reference
         SigningSecurityToken signingToken = resolveSigningTokenByRef(keyInfoElement, cntx);
-        MutableX509SigningSecurityToken signingCertToken = null;
-        if (signingToken instanceof MutableX509SigningSecurityToken)
-            signingCertToken = (MutableX509SigningSecurityToken)signingToken;
+        X509SigningSecurityTokenImpl signingCertToken = null;
+        if (signingToken instanceof X509SigningSecurityTokenImpl)
+            signingCertToken = (X509SigningSecurityTokenImpl)signingToken;
 
         if (signingCertToken != null) {
             signingCert = signingCertToken.getMessageSigningCertificate();
@@ -1373,14 +1386,19 @@ public class WssProcessorImpl implements WssProcessor {
                 signingCertToken.addSignedElement(signedElement);
                 signingCertToken.onPossessionProved();
             } else if (dkt != null) {
-                // If signed by a derived key token, credit the signature to the derivation source instead
-                MutableSigningSecurityToken t = (MutableSigningSecurityToken)dkt.getSecurityContextToken();
-                final SignedElement signedElement = new SignedElementImpl(t, elementCovered);
-                cntx.elementsThatWereSigned.add(signedElement);
-                t.addSignedElement(signedElement);
-                t.onPossessionProved();
-            } else if (signingToken instanceof MutableSigningSecurityToken) {
-                MutableSigningSecurityToken tok = (MutableSigningSecurityToken)signingToken;
+                // If signed by a derived key token, credit the signature to the derivation source instead of the DKT
+                XmlSecurityToken token = dkt.getSourceToken();
+                if (token instanceof SigningSecurityTokenImpl) {
+                    SigningSecurityTokenImpl t = (SigningSecurityTokenImpl)dkt.getSourceToken();
+                    final SignedElement signedElement = new SignedElementImpl(t, elementCovered);
+                    cntx.elementsThatWereSigned.add(signedElement);
+                    t.addSignedElement(signedElement);
+                    t.onPossessionProved();
+                } else {
+                    throw new InvalidDocumentFormatException("Unable to record signature using unsupport key derivation source: " + token.getType());
+                }
+            } else if (signingToken instanceof SigningSecurityTokenImpl) {
+                SigningSecurityTokenImpl tok = (SigningSecurityTokenImpl)signingToken;
                 final SignedElement signedElement = new SignedElementImpl(tok, elementCovered);
                 cntx.elementsThatWereSigned.add(signedElement);
                 tok.addSignedElement(signedElement);
@@ -1474,6 +1492,10 @@ public class WssProcessorImpl implements WssProcessor {
                 return cntx.isWsse11Seen;
             }
 
+            public boolean isDerivedKeySeen() {
+                return cntx.isDerivedKeySeen;
+            }
+
             /**
              * @param element the element to find the signing tokens for
              * @return the array if tokens that signed the element or empty array if none
@@ -1541,6 +1563,7 @@ public class WssProcessorImpl implements WssProcessor {
         String lastSignatureValue = null;
         String lastSignatureConfirmation = null;
         boolean isWsse11Seen = false;
+        boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
         CertificateResolver certificateResolver = null;
         EncryptedKeyResolver encryptedKeyResolver = null;
 
@@ -1560,7 +1583,9 @@ public class WssProcessorImpl implements WssProcessor {
                 return;
             documentModified = true;
             try {
-                message.getXmlKnob().getDocumentWritable();
+                Document d = message.getXmlKnob().getDocumentWritable();
+                if (d != processedDocument)
+                    throw new IllegalStateException("Writable document is not the same as the one we started to process"); // can't happen
             } catch (SAXException e) {
                 throw new CausedIllegalStateException(e); // can't happen anymore
             } catch (IOException e) {
@@ -1569,7 +1594,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class X509BinarySecurityTokenImpl extends MutableX509SigningSecurityToken implements X509SecurityToken {
+    private static class X509BinarySecurityTokenImpl extends X509SigningSecurityTokenImpl implements X509SecurityToken {
         private final X509Certificate finalcert;
 
         public X509BinarySecurityTokenImpl(X509Certificate finalcert, Element binarySecurityTokenElement) {
@@ -1632,13 +1657,13 @@ public class WssProcessorImpl implements WssProcessor {
 
     private static class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
         private final SecretKey finalKey;
-        private final SecurityContextToken sct;
+        private final XmlSecurityToken sourceToken;
         private final String elementWsuId;
 
-        public DerivedKeyTokenImpl(Element dktel, SecretKey finalKey, SecurityContextToken sct) {
+        public DerivedKeyTokenImpl(Element dktel, SecretKey finalKey, XmlSecurityToken sourceToken) {
             super(dktel);
             this.finalKey = finalKey;
-            this.sct = sct;
+            this.sourceToken = sourceToken;
             elementWsuId = SoapUtil.getElementWsuId(dktel);
         }
 
@@ -1654,8 +1679,8 @@ public class WssProcessorImpl implements WssProcessor {
             return finalKey;
         }
 
-        SecurityContextToken getSecurityContextToken() {
-            return sct;
+        public XmlSecurityToken getSourceToken() {
+            return sourceToken;
         }
 
         public String toString() {
@@ -1667,7 +1692,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class EncryptedKeyImpl extends MutableSigningSecurityToken implements EncryptedKey {
+    private static class EncryptedKeyImpl extends SigningSecurityTokenImpl implements EncryptedKey {
         private final String elementWsuId;
         private final SecretKey secretKey;
         private Object encryptedKeySHA1 = null;
@@ -1700,7 +1725,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class SecurityContextTokenImpl extends MutableSigningSecurityToken implements SecurityContextToken {
+    private static class SecurityContextTokenImpl extends SigningSecurityTokenImpl implements SecurityContextToken {
         private final SecurityContext secContext;
         private final String identifier;
         private final String elementWsuId;

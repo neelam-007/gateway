@@ -6,13 +6,9 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.security.token.ParsedElement;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TooManyChildElementsException;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -26,18 +22,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Represents a parsed KeyInfo element, perhaps from a ds:Signature.
+ * Represents a parsed KeyInfo element, perhaps from a ds:Signature.  For creating a new KeyInfo element,
+ * see {@link KeyInfoDetails}.
  */
 public class KeyInfoElement implements ParsedElement {
     private static final Logger logger = Logger.getLogger(KeyInfoElement.class.getName());
     private final Element element;
     private final X509Certificate cert;
 
-    public static class KeyInfoElementException extends Exception {
-        public KeyInfoElementException() {}
-        public KeyInfoElementException(String message) { super(message); }
-        public KeyInfoElementException(String message, Throwable cause) { super(message, cause); }
-        public KeyInfoElementException(Throwable cause) { super(cause); }
+    /** Exception throws if a certificate resolver is required to parse a KeyInfo, but none is available. */
+    public static class MissingResolverException extends Exception {
+        private MissingResolverException() {}
+        private MissingResolverException(String message) { super(message); }
+        private MissingResolverException(String message, Throwable cause) { super(message, cause); }
+        private MissingResolverException(Throwable cause) { super(cause); }
     }
 
     /**
@@ -47,11 +45,11 @@ public class KeyInfoElement implements ParsedElement {
      * @throws NullPointerException if it's null
      * @throws IllegalArgumentException if it isn't a ds:KeyInfo element
      * @throws SAXException if the format of this KeyInfo is invalid or not supported
-     * @throws KeyInfoElementException if this KeyInfo refers to an X509 SHA1 thumbprint, but no thumbprint
-     *                                 resolver was supplied.
+     * @throws MissingResolverException if this KeyInfo refers to an X509 SHA1 thumbprint or keyname, but no certificate resolver was supplied.
+     *
      */
     public static KeyInfoElement parse(Element keyinfo, CertificateResolver certificateResolver)
-            throws SAXException, KeyInfoElementException
+            throws SAXException, MissingResolverException
     {
         return new KeyInfoElement(keyinfo, certificateResolver);
     }
@@ -59,16 +57,14 @@ public class KeyInfoElement implements ParsedElement {
 
     private KeyInfoElement(Element keyinfo,
                            CertificateResolver certificateResolver)
-            throws SAXException, KeyInfoElementException
+            throws SAXException, MissingResolverException
     {
         if (!"KeyInfo".equals(keyinfo.getLocalName())) throw new IllegalArgumentException("Element is not a KeyInfo element");
         if (!SoapUtil.DIGSIG_URI.equals(keyinfo.getNamespaceURI())) throw new IllegalArgumentException("KeyInfo element is not in dsig namespace");
         try {
             this.element = keyinfo;
-            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
-            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
-            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
-            // TODO there can be multiple KeyIdentifiers in a single SecurityTokenReference
+            // TODO There can be multiple KeyIdentifiers in a single SecurityTokenReference
+            //      We should fix this, but at least it isn't a security hole.
             Element x509Data = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.DIGSIG_URI, "X509Data");
             if (x509Data != null) {
                 // Use X509Data
@@ -83,7 +79,7 @@ public class KeyInfoElement implements ParsedElement {
                 Element str = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
                 if (str != null) {
                     // Use SecurityTokenReference
-                    if (certificateResolver == null) throw new KeyInfoElementException("KeyInfo uses SecurityTokenReference but no certificate resolver is available");
+                    if (certificateResolver == null) throw new MissingResolverException("KeyInfo uses SecurityTokenReference but no certificate resolver is available");
                     Element keyid = XmlUtil.findOnlyOneChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
                     if (keyid == null) throw new SAXException("KeyInfo has SecurityTokenReference but no KeyIdentifier");
                     String vt = keyid.getAttribute("ValueType");
@@ -111,7 +107,7 @@ public class KeyInfoElement implements ParsedElement {
                     if (keyName == null || keyName.length() < 1)
                         throw new SAXException("KeyInfo contains KeyName but it is empty");
                     // Use KeyName
-                    if (certificateResolver == null) throw new KeyInfoElementException("KeyInfo uses KeyName but no key name resolver is available");
+                    if (certificateResolver == null) throw new MissingResolverException("KeyInfo uses KeyName but no key name resolver is available");
                     X509Certificate gotCert = certificateResolver.lookupByKeyName(keyName);
                     if (gotCert == null) throw new SAXException("KeyInfo KeyName did not match any X.509 certificate known to this recipient");
                     cert = gotCert;
@@ -161,7 +157,18 @@ public class KeyInfoElement implements ParsedElement {
         assertKeyInfoMatchesCertificate(kinfo, recipientCert);
     }
 
-    public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert) throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException {
+    /**
+     * Make sure that the specified KeyInfo in fact is referring to the specified certificate.
+     *
+     * @param keyInfo    the KeyInfo element to check.  Must not be null.
+     * @param cert       the X.509 certificate we expect it to be referring to.  Must not be null.
+     * @throws InvalidDocumentFormatException   If we can't figure out the KeyInfo format.
+     * @throws UnexpectedKeyInfoException       If we understood the KeyInfo, but it is not referring to our certificate.
+     * @throws CertificateException             If we need the encoded form of the certificate but it is invalid.
+     */
+    public static void assertKeyInfoMatchesCertificate(Element keyInfo, X509Certificate cert)
+            throws InvalidDocumentFormatException, UnexpectedKeyInfoException, CertificateException
+    {
         Element str = XmlUtil.findOnlyOneChildElementByName(keyInfo,
                                                             SoapUtil.SECURITY_URIS_ARRAY,
                                                             SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
@@ -247,173 +254,6 @@ public class KeyInfoElement implements ParsedElement {
         } else
             throw new UnsupportedKeyInfoFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
                     "ValueType: " + valueType);
-    }
-
-    /**
-     * Add a KeyInfo that refers to a cert by its SKI to any parent element.  Caller must supply the namespaces.
-     *
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     *
-     */
-    public static void addKeyInfoToElement(Element keyInfoParent,
-                                           String wsseNs,
-                                           String wssePrefix,
-                                           String valueType,
-                                           byte[] idBytes,
-                                           String base64EncodingTypeUri)
-    {
-        Document soapMsg = keyInfoParent.getOwnerDocument();
-
-        Element cipherData = XmlUtil.findFirstChildElementByName(keyInfoParent, SoapUtil.XMLENC_NS, "CipherData");
-        // If there's a cipherdata, but keyinfo before it
-        final Element keyInfo;
-        if (cipherData == null)
-            keyInfo = XmlUtil.createAndAppendElementNS(keyInfoParent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        else
-            keyInfo = XmlUtil.createAndInsertBeforeElementNS(cipherData, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        populateKeyInfo(keyInfo, wsseNs, wssePrefix, valueType, base64EncodingTypeUri, idBytes, soapMsg);
-    }
-
-    public static void populateKeyInfo(Element keyInfo, String wsseNs, String wssePrefix, String valueType, String base64EncodingTypeUri, byte[] idBytes, Document soapMsg) {
-        Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-                                                                    wsseNs, wssePrefix);
-        Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
-                                                         wsseNs, wssePrefix);
-
-        keyId.setAttribute("ValueType", valueType);
-        keyId.setAttribute("EncodingType", base64EncodingTypeUri);
-
-        String recipSkiB64 = HexUtils.encodeBase64(idBytes, true);
-        keyId.appendChild(XmlUtil.createTextNode(soapMsg, recipSkiB64));
-    }
-
-    /**
-     * Add a KeyInfo to the specified dsig:Signature element.
-     *
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     *
-     * @param sigElement      the ds:Signature element to which the KeyInfo should be added.
-     * @param wsseNs          wsse namespace URI to use.
-     * @param wssePrefix      wsse prefix to use.
-     * @param base64EncodingTypeUri  URI to use for EncodingType of Base64Binary.
-     * @param senderSki              If non-null, use a SKI reference to identify sender cert.
-     * @param keyInfoReferenceTarget the Element to which the KeyInfo should refer, or null if senderSki is provided instead.  Ignored if senderSki is provided.
-     *                               senderSki and keyInfoReferenceTarget must not both be null.
-     *                               If this is provided and no senderSki is provided, keyInfoValueTypeURI must be provided as well.
-     * @param keyInfoReferenceTargetWsuId  if keyInfoReferenceTarget is supplied, this must be the reference target's already-set wsu:Id.
-     * @param keyInfoValueTypeURI    the value type URL to use for the KeyInfo reference to keyInfoReferenceTarget.  Must not be null if keyInfoReferenceTarget != null.
-     * @param keyInfoKeyIdValue  to content of a KeyInfo/SecurityTokenReference/KeyIdentifier element, or null if keyInfoReferenceTarget is provided.
-     * @throws KeyInfoElementException if a KeyInfo cannot be built with the specified arguments.
-     */
-    public static void addDsigKeyInfo(Element sigElement,
-                                      String wsseNs,
-                                      String wssePrefix,
-                                      String base64EncodingTypeUri,
-                                      byte[] senderSki,
-                                      Element keyInfoReferenceTarget,
-                                      String keyInfoReferenceTargetWsuId,
-                                      String keyInfoValueTypeURI,
-                                      String keyInfoKeyIdValue)
-            throws KeyInfoElementException
-    {
-        // Add the KeyInfo element.
-        if (senderSki != null) {
-            // Include KeyInfo element in signature that refers to the specified SKI.
-            addKeyInfoToElement(sigElement, wsseNs, wssePrefix, SoapUtil.VALUETYPE_SKI, senderSki, base64EncodingTypeUri);
-        } else {
-            // Include KeyInfo element in signature that refers to the specified target element with the specified value type.
-            // add following KeyInfo
-            // <KeyInfo>
-            //  <wsse:SecurityTokenReference>
-            //      <wsse:Reference	URI="#bstId"
-            //                      ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" />
-            //      </wsse:SecurityTokenReference>
-            // </KeyInfo>
-            Element keyInfoEl = sigElement.getOwnerDocument().createElementNS(sigElement.getNamespaceURI(), "KeyInfo");
-            keyInfoEl.setPrefix("ds");
-            Element secTokRefEl = sigElement.getOwnerDocument().createElementNS(wsseNs, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-            secTokRefEl.setPrefix(wssePrefix);
-            keyInfoEl.appendChild(secTokRefEl);
-
-            if (keyInfoReferenceTarget != null) {
-                // Create <KeyInfo><SecurityTokenReference><Reference URI="#Blah" ValueType="ValueTypeURI"></></></>
-                Element refEl = sigElement.getOwnerDocument().createElementNS(wsseNs, "Reference");
-                refEl.setPrefix(wssePrefix);
-                secTokRefEl.appendChild(refEl);
-                refEl.setAttribute("URI", "#" + keyInfoReferenceTargetWsuId);
-                refEl.setAttribute("ValueType", keyInfoValueTypeURI);
-                sigElement.appendChild(keyInfoEl);
-            } else if (keyInfoKeyIdValue != null) {
-                // Create <KeyInfo><SecurityTokenReference><KeyIdentifier ValueType="ValueTypeURI">b64blah==</></></>
-                Element kidEl = sigElement.getOwnerDocument().createElementNS(wsseNs, "KeyIdentifier");
-                kidEl.setPrefix(wssePrefix);
-                secTokRefEl.appendChild(kidEl);
-                kidEl.setAttribute("ValueType", keyInfoValueTypeURI);
-                kidEl.appendChild(XmlUtil.createTextNode(kidEl, keyInfoKeyIdValue));
-                sigElement.appendChild(keyInfoEl);
-            } else {
-                throw new KeyInfoElementException("Signing requested, but theres no sender SKI, KeyInfo Reference target, or KeyIdentifier value");
-            }
-        }
-    }
-
-    /**
-     * Appends a KeyInfo to the specified parent Element, referring to keyInfoReferenceTarget.
-     *
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method
-     * TODO merge the three add*KeyInfo*() methods into one useful factory method 
-     *
-     */
-    public static Element addXencKeyInfo(Element securityHeader,
-                                         Element parent,
-                                         Element keyInfoReferenceTarget,
-                                         String keyInfoReferenceTargetWsuId,
-                                         String keyInfoKeyIdValue,
-                                         String keyInfoValueTypeURI)
-            throws KeyInfoElementException
-    {
-        Element cipherData = XmlUtil.findFirstChildElementByName(parent, SoapUtil.XMLENC_NS, "CipherData");
-        final Element keyInfo;
-        if (cipherData == null)
-            keyInfo = XmlUtil.createAndAppendElementNS(parent, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        else
-            keyInfo = XmlUtil.createAndInsertBeforeElementNS(cipherData, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
-        final String wsseNs = securityHeader.getNamespaceURI();
-        final String wsse = "wsse";
-        Element str = XmlUtil.createAndAppendElementNS(keyInfo,
-                                                       SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-                                                       wsseNs,
-                                                       wsse);
-        if (keyInfoReferenceTarget != null) {
-            Element ref = XmlUtil.createAndAppendElementNS(str,
-                                                           "Reference",
-                                                           wsseNs,
-                                                           wsse);
-            ref.setAttribute("URI", keyInfoReferenceTargetWsuId);
-            ref.setAttribute("ValueType", keyInfoValueTypeURI);
-        } else if (keyInfoKeyIdValue != null) {
-            Element kid = XmlUtil.createAndAppendElementNS(str, "KeyIdentifier", wsseNs, wsse);
-            kid.setAttribute("ValueType", keyInfoValueTypeURI);
-            kid.appendChild(XmlUtil.createTextNode(kid, keyInfoKeyIdValue));
-        } else {
-            throw new KeyInfoElementException("Encryption requested, but theres no KeyInfo Reference target or KeyIdentifier value");
-        }
-        return keyInfo;
     }
 
     public static class UnsupportedKeyInfoFormatException extends InvalidDocumentFormatException {

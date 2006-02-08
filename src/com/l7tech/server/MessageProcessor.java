@@ -296,13 +296,13 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         // do the actual decoration
                         for (int i = 0; i < allrequirements.length; i++) {
                             final DecorationRequirements responseDecoReq = allrequirements[i];
-                            if (responseDecoReq != null) {
-                                if (wssOutput != null && wssOutput.getSecurityNS() != null) {
-                                    responseDecoReq.setPreferredSecurityNamespace(wssOutput.getSecurityNS());
-                                }
-                                if (wssOutput != null && wssOutput.getWSUNS() != null) {
-                                    responseDecoReq.setPreferredWSUNamespace(wssOutput.getWSUNS());
-                                }
+                            if (responseDecoReq != null && wssOutput != null) {
+                                if (wssOutput.getSecurityNS() != null)
+                                    responseDecoReq.getNamespaceFactory().setWsseNs(wssOutput.getSecurityNS());
+                                if (wssOutput.getWSUNS() != null)
+                                    responseDecoReq.getNamespaceFactory().setWsuNs(wssOutput.getWSUNS());
+                                if (wssOutput.isDerivedKeySeen())
+                                    responseDecoReq.setUseDerivedKeys(true);
                             }
                             wssDecorator.decorateMessage(doc, responseDecoReq);
                         }

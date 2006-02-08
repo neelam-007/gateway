@@ -12,8 +12,8 @@ import org.w3c.dom.Element;
 /**
  * @author mike
  */
-public abstract class MutableX509SigningSecurityToken extends MutableSigningSecurityToken implements X509SigningSecurityToken {
-    public MutableX509SigningSecurityToken(Element element) {
+public abstract class X509SigningSecurityTokenImpl extends SigningSecurityTokenImpl implements X509SigningSecurityToken {
+    public X509SigningSecurityTokenImpl(Element element) {
         super(element);
     }
 }

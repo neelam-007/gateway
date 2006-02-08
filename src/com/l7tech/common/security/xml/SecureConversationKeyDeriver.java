@@ -68,7 +68,7 @@ public class SecureConversationKeyDeriver {
         // check that default algorithm is in effect
         String algo = derivedKeyToken.getAttributeNS(namespaceURI, ALGO_ATTRNAME);
 
-        if (algo.equals("")) {
+        if (algo == null || algo.length() < 1) {
             throw new NoSuchAlgorithmException("Algorithm specified (" + algo + "). We only support default P_SHA-1");
         }
 

@@ -2,14 +2,11 @@ package com.l7tech.common.security.saml;
 
 import com.ibm.xml.dsig.*;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.KeyInfoElement;
+import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
@@ -115,7 +112,7 @@ public class SamlAssertionGenerator {
         Calendar now = Calendar.getInstance(utcTimeZone);
         AssertionType assertionType = getGenericAssertion(now, options.getExpiryMinutes(),
                                                           options.getId() != null ? options.getId() : generateAssertionId(null));
-        SubjectStatementAbstractType subjectStatementAbstractType = null;
+        final SubjectStatementAbstractType subjectStatementAbstractType;
 
         if (subjectStatement instanceof AuthenticationStatement) {
             AuthenticationStatement as = (AuthenticationStatement)subjectStatement;
@@ -196,16 +193,9 @@ public class SamlAssertionGenerator {
         X509Certificate cert = (X509Certificate)keyInfo;
         if (subjectStatement.isUseThumbprintForSubject()) {
             Element subjConfEl = (Element)subjectConfirmation.getDomNode();
-            try {
-                KeyInfoElement.addKeyInfoToElement(subjConfEl,
-                        SoapUtil.SECURITY_NAMESPACE,
-                        "wsse",
-                        SoapUtil.VALUETYPE_X509_THUMB_SHA1,
-                        MessageDigest.getInstance("SHA1").digest(cert.getEncoded()),
-                        SoapUtil.ENCODINGTYPE_BASE64BINARY);
-            } catch (NoSuchAlgorithmException e) {
-                throw new CertificateException(e); // Can't happen
-            }
+            NamespaceFactory nsf = new NamespaceFactory();
+            KeyInfoDetails.makeKeyId(CertUtils.getThumbprintSHA1(cert), true, SoapUtil.VALUETYPE_X509_THUMB_SHA1).
+                    createAndAppendKeyInfoElement(nsf, subjConfEl);
         } else {
             KeyInfoType keyInfoType = subjectConfirmation.addNewKeyInfo();
             X509DataType x509Data = keyInfoType.addNewX509Data();
@@ -280,14 +270,9 @@ public class SamlAssertionGenerator {
             keyInfoElement = keyInfo.getKeyInfoElement(assertionDoc);
             // Replace cert with STR?
             try {
-                byte[] thumb = MessageDigest.getInstance("SHA1").digest(signingCertChain[0].getEncoded());
-                KeyInfoElement.populateKeyInfo(keyInfoElement,
-                        SoapUtil.SECURITY_NAMESPACE,
-                        "wsse",
-                        SoapUtil.VALUETYPE_X509_THUMB_SHA1,
-                        SoapUtil.ENCODINGTYPE_BASE64BINARY,
-                        thumb,
-                        assertionDoc);
+                String thumb = CertUtils.getThumbprintSHA1(signingCertChain[0]);
+                KeyInfoDetails.makeKeyId(thumb, true, SoapUtil.VALUETYPE_X509_THUMB_SHA1).
+                        populateExistingKeyInfoElement(new NamespaceFactory(), keyInfoElement);
             } catch (Exception e) {
                 throw new SignatureException(e);
             }

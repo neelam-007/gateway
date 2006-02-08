@@ -65,6 +65,10 @@ public class ProcessorResultWrapper implements ProcessorResult {
         return delegate.isWsse11Seen();
     }
 
+    public boolean isDerivedKeySeen() {
+        return delegate.isDerivedKeySeen();
+    }
+
     /**
      * @param element the element to find the signing tokens for
      * @return the array if tokens that signed the element or empty array if none

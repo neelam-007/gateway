@@ -16,12 +16,12 @@ import java.util.List;
 /**
  * Holds some common implementation for SigningSecurityTokens.
  */
-abstract class MutableSigningSecurityToken extends ParsedElementImpl implements SigningSecurityToken {
+abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements SigningSecurityToken {
     public static final SignedElement[] PROTO = new SignedElement[0];
     private List signedElements = new ArrayList();
     protected boolean possessionProved = false;
 
-    public MutableSigningSecurityToken(Element element) {
+    public SigningSecurityTokenImpl(Element element) {
         super(element);
     }
 
@@ -29,8 +29,7 @@ abstract class MutableSigningSecurityToken extends ParsedElementImpl implements 
         return (SignedElement[])signedElements.toArray(PROTO);
     }
 
-    /** @param signedElement the signed element to record.  Must not be null. */
-    void addSignedElement(SignedElement signedElement) {
+    public void addSignedElement(SignedElement signedElement) {
         if (signedElement == null) throw new NullPointerException();
         signedElements.add(signedElement);
     }
