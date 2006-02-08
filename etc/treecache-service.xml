@@ -1,16 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <server>
-  <classpath codebase="./lib" archives="jboss-cache.jar, jgroups.jar" />
-
   <!--  ====================================================================  -->
   <!--  Defines TreeCache configuration                                       -->
   <!--  ====================================================================  -->
   <mbean code="org.jboss.cache.TreeCache" name="jboss.cache:service=TreeCache">
-    <depends>jboss:service=Naming</depends>
-    <depends>jboss:service=TransactionManager</depends>
-
-    <!-- Configure the TransactionManager -->
-    <attribute name="TransactionManagerLookupClass">org.jboss.cache.DummyTransactionManagerLookup</attribute>
 
     <!--
             Node locking level : SERIALIZABLE

@@ -12,6 +12,7 @@ import com.l7tech.server.util.MessageIdManager;
 import net.sf.hibernate.Session;
 import org.jboss.cache.PropertyConfigurator;
 import org.jboss.cache.TreeCache;
+import org.jboss.cache.TransactionManagerLookup;
 import org.jboss.cache.lock.LockingException;
 import org.jboss.cache.lock.TimeoutException;
 import org.jboss.cache.transaction.DummyTransactionManager;
@@ -23,6 +24,7 @@ import javax.naming.Context;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
+import javax.transaction.TransactionManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,8 +54,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         if (initialized) {
             throw new IllegalStateException("Already Initialized");
         }
-        Properties prop = new Properties();
-        prop.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.cache.transaction.DummyContextFactory");
+        dummyTransactionManager = new DummyTransactionManager();
         tree = new TreeCache();
         PropertyConfigurator config = new PropertyConfigurator();
         config.configure(tree, "treecache-service.xml");
@@ -61,6 +62,11 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         props = props.replaceFirst("mcast_addr=[0-9\\.]+", "mcast_addr=" + address);
         props = props.replaceFirst("mcast_port=[0-9]+", "mcast_port=" + port);
         tree.setClusterProperties(props);
+        tree.setTransactionManagerLookup(new TransactionManagerLookup(){
+            public TransactionManager getTransactionManager() throws Exception {
+                return dummyTransactionManager;
+            }
+        });
         // if we're the first, load old message ids from database
         getHibernateTemplate().execute(new HibernateCallback() {
             public Object doInHibernate(Session session) {
@@ -91,7 +97,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             final long now = System.currentTimeMillis();
             UserTransaction tx = null;
             try {
-                tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+                tx = new DummyUserTransaction(dummyTransactionManager);
                 tx.begin();
                 Set names = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
                 if (names != null) {
@@ -170,8 +176,11 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         PreparedStatement ps = null;
         ResultSet rs = null;
         Connection conn = null;
+        UserTransaction tx = null;
         try {
             // load old message ids from database
+            tx = new DummyUserTransaction(dummyTransactionManager);
+            tx.begin();
             conn = session.connection();
             ps = conn.prepareStatement("SELECT messageid, expires FROM message_id");
             rs = ps.executeQuery();
@@ -197,6 +206,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             } catch (Exception e) {
                 logger.log( Level.WARNING, "Caught exception while trying to close PreparedStatement", e );
             }
+            tx.commit();
         }
     }
 
@@ -264,7 +274,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             conn = null;
 
             // Flip expiry sign to avoid saving the same record again
-            tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+            tx = new DummyUserTransaction(dummyTransactionManager);
             tx.begin();
 
             for (Iterator i = saved.entrySet().iterator(); i.hasNext();) {
@@ -311,7 +321,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
     public void assertMessageIdIsUnique(MessageId prospect) throws DuplicateMessageIdException {
         UserTransaction tx = null;
         try {
-            tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+            tx = new DummyUserTransaction(dummyTransactionManager);
             tx.begin();
             Long expires = (Long)tree.get(MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier(), EXPIRES_ATTR);
             if (expires == null) {
@@ -340,6 +350,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
+    private DummyTransactionManager dummyTransactionManager;
     private TreeCache tree;
     boolean initialized = false;
 
