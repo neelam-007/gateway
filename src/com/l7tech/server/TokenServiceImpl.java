@@ -190,6 +190,12 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             Document response;
             if (isRequestForSecureConversationContext(rstTypes)) {
                 response = handleSecureConversationContextRequest(context, authenticatedUser);
+            } else if (isRequestForSAML20Token(rstTypes)) {
+                // todo, implement this
+                String msg = "SAML 2.0 token requested but not yet supported.";
+                logger.info(msg);
+                context.setFaultDetail(new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER, msg, null));
+                return AssertionStatus.NOT_YET_IMPLEMENTED;
             } else if (isRequestForSAMLToken(rstTypes)) {
                 response = handleSamlRequest(context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
             } else {
@@ -489,7 +495,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * Retrieves soap:Envelope/soap:Body/wst:RequestSecurityToken/wst:RequestType/text() and puts it in the return map
      * under the SoapUtil.WST_REQUESTTYPE key.
      *
-     * The old way was using too much code duplication and was too inneficient.
+     * The old way was using too much code duplication and was too innefficient.
      */
     private Map getTrustTokenTypeAndRequestTypeValues(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
         Map output = new HashMap();
