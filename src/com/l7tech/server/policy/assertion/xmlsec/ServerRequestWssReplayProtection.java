@@ -21,6 +21,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.logging.Logger;
@@ -116,17 +117,19 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
 
                 // Use cert info as sender id
-                MessageDigest md = HexUtils.getSha1();
-                md.update(Long.toString(created).getBytes("UTF-8"));
-                md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
-                md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
                 try {
+                    MessageDigest md = MessageDigest.getInstance("SHA-1");
+                    md.update(Long.toString(created).getBytes("UTF-8"));
+                    md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
+                    md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
                     md.update(skiToString(signingCert).getBytes("UTF-8"));
+                    byte[] digest = md.digest();
+                    messageIdStr = HexUtils.hexDump(digest);
                 } catch (CertificateEncodingException e) {
                     throw new IOException("Unable to generate replay-protection ID; a SKI cannot be derived from signing cert '" + signingCert.getSubjectDN().getName() + "'");
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e); // can't happen, misconfigured VM
                 }
-                byte[] digest = md.digest();
-                messageIdStr = HexUtils.hexDump(digest);
             } else if (signingToken instanceof SecurityContextToken) {
                 // It was signed by a WS-SecureConversation session's derived key
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY);

@@ -10,6 +10,6 @@ import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
  *
  * TODO support for signing / principal information
  */
-public interface KerberosSecurityToken extends XmlSecurityToken {
+public interface KerberosSecurityToken extends XmlSecurityToken, SigningSecurityToken {
     public KerberosGSSAPReqTicket getTicket();
 }

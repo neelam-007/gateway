@@ -4,7 +4,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -81,7 +81,7 @@ public class PolicyService extends ApplicationObjectSupport {
     private final X509Certificate serverCert;
     private final ServerPolicyFactory policyFactory;
     private final FilterManager filterManager;
-    private final CertificateResolver certificateResolver;
+    private final SecurityTokenResolver securityTokenResolver;
 
     /**
      * The supported credential sources used to determine whether the requester is
@@ -115,7 +115,7 @@ public class PolicyService extends ApplicationObjectSupport {
                          X509Certificate serverCert, 
                          ServerPolicyFactory policyFactory, 
                          FilterManager filterManager, 
-                         CertificateResolver certificateResolver)
+                         SecurityTokenResolver securityTokenResolver)
     {
         if (privateServerKey == null || serverCert == null) {
             throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
@@ -131,7 +131,7 @@ public class PolicyService extends ApplicationObjectSupport {
         this.serverCert = serverCert;
         this.policyFactory = policyFactory;
         this.filterManager = filterManager;
-        this.certificateResolver = certificateResolver;
+        this.securityTokenResolver = securityTokenResolver;
 
         // populate all possible credentials sources
         this.allCredentialAssertions = new ArrayList();
@@ -214,7 +214,7 @@ public class PolicyService extends ApplicationObjectSupport {
                                                   null, serverCert,
                                                   privateServerKey,
                                                   SecureConversationContextManager.getInstance(),
-                                                  certificateResolver, null);
+                                                  securityTokenResolver);
             reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));

@@ -5,12 +5,15 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.security.token.EncryptedKey;
+import com.l7tech.common.security.token.KerberosSecurityToken;
+
 import java.security.cert.X509Certificate;
 
 /**
  * Interface implemented by entities capable of lookup up X.509 certificate by their SHA1 thumbprint, SKI, or KeyName.
  */
-public interface CertificateResolver {
+public interface SecurityTokenResolver {
     /**
      * Look up a certificate by its base64-ed SHA1 thumbprint.
      *
@@ -35,4 +38,21 @@ public interface CertificateResolver {
      * @return the certificate that was found, or null if one was not found.
      */
     X509Certificate lookupByKeyName(String keyName);
+
+    /**
+     * Look up an EncryptedKey by its EncryptedKeySHA1.
+     *
+     * @param encryptedKeySha1 the identifier to look up.  Never null or empty.
+     * @return the matching EncryptedKey token, or null if no match was found.
+     * @see com.l7tech.common.security.xml.processor.WssProcessorUtil#makeEncryptedKey(javax.crypto.SecretKey,String)
+     */
+    EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1);
+
+    /**
+     * Look up a Kerberos token using a Kerberosv5APREQSHA1 reference.
+     *
+     * @param kerberosSha1  the base64-encoded Kerberosv5APREQSHA1 identifier to look up
+     * @return the matching already-known Kerberos token, or null if no match was found.
+     */
+    KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1);
 }

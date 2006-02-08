@@ -7,10 +7,10 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessor;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
@@ -150,7 +150,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -195,7 +195,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -240,7 +240,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -284,7 +284,7 @@ public class SamlProcessingTest extends TestCase {
                 Document doc = XmlUtil.parse(new ByteArrayInputStream(bo.toByteArray()));
                 samlGenerator.attachStatement(doc, subjectStatement, samlOptions);
                 WssProcessor wssProcessor = new WssProcessorImpl();
-                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null, null);
+                ProcessorResult result = wssProcessor.undecorateMessage(new Message(doc), null, null, null, null, null);
                 XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
                 boolean found = false;
                 for (int k = 0; k < tokens.length; k++) {
@@ -454,7 +454,7 @@ public class SamlProcessingTest extends TestCase {
         // See if our code can deal with it
         final String signingCertThumbprint = CertUtils.getThumbprintSHA1(signingCert);
         final String signingCertSki = CertUtils.getSki(signingCert);
-        CertificateResolver thumbResolver = new SimpleCertificateResolver(signingCert);
+        SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(signingCert);
         SamlAssertion sa = new SamlAssertion(assDoc.getDocumentElement(), thumbResolver);
         assertTrue(sa.isSenderVouches());
         assertNotNull(sa.getIssuerCertificate());

@@ -532,7 +532,7 @@ public class TokenServiceClient {
                                                     null, clientCertificate,
                                                     clientPrivateKey,
                                                     null,
-                                                    null, null);
+                                                    null);
         } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);
         } catch (IOException e) {

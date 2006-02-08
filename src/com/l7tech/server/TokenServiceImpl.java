@@ -8,7 +8,7 @@ import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
@@ -81,19 +81,19 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCert;
     private final ServerAssertion tokenServicePolicy;
-    private final CertificateResolver certificateResolver;
+    private final SecurityTokenResolver securityTokenResolver;
 
     /**
      * specify the server key and cert at construction time instead of letting the object try to retreive them
      */
-    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, CertificateResolver certificateResolver) {
+    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, SecurityTokenResolver securityTokenResolver) {
         if (privateServerKey == null || serverCert == null) {
             throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         }
 
         this.serverPrivateKey = privateServerKey;
         this.serverCert = serverCert;
-        this.certificateResolver = certificateResolver;
+        this.securityTokenResolver = securityTokenResolver;
         this.tokenServicePolicy = policyFactory.makeServerPolicy(getGenericEnforcementPolicy());
     }
 
@@ -140,7 +140,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                                                                       serverCert,
                                                                       serverPrivateKey,
                                                                       SecureConversationContextManager.getInstance(),
-                                                                      certificateResolver, null);
+                                                                      securityTokenResolver);
                 reqSec.setProcessorResult(wssOutput);
             } catch (IOException e) {
                 status = AssertionStatus.BAD_REQUEST;

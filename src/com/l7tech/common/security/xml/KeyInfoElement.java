@@ -6,7 +6,10 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.security.token.ParsedElement;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import org.w3c.dom.Element;
@@ -14,7 +17,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -41,22 +43,22 @@ public class KeyInfoElement implements ParsedElement {
     /**
      * Parse the specified KeyInfo element.
      * @param keyinfo the element to parse.  Must not be null.  Must be a ds:KeyInfo element in proper namespace.
-     * @param certificateResolver resolver for X.509 sha1 thumbprints, or null to disable thumbprint support.
+     * @param securityTokenResolver resolver for X.509 sha1 thumbprints, or null to disable thumbprint support.
      * @throws NullPointerException if it's null
      * @throws IllegalArgumentException if it isn't a ds:KeyInfo element
      * @throws SAXException if the format of this KeyInfo is invalid or not supported
      * @throws MissingResolverException if this KeyInfo refers to an X509 SHA1 thumbprint or keyname, but no certificate resolver was supplied.
      *
      */
-    public static KeyInfoElement parse(Element keyinfo, CertificateResolver certificateResolver)
+    public static KeyInfoElement parse(Element keyinfo, SecurityTokenResolver securityTokenResolver)
             throws SAXException, MissingResolverException
     {
-        return new KeyInfoElement(keyinfo, certificateResolver);
+        return new KeyInfoElement(keyinfo, securityTokenResolver);
     }
 
 
     private KeyInfoElement(Element keyinfo,
-                           CertificateResolver certificateResolver)
+                           SecurityTokenResolver securityTokenResolver)
             throws SAXException, MissingResolverException
     {
         if (!"KeyInfo".equals(keyinfo.getLocalName())) throw new IllegalArgumentException("Element is not a KeyInfo element");
@@ -79,7 +81,7 @@ public class KeyInfoElement implements ParsedElement {
                 Element str = XmlUtil.findOnlyOneChildElementByName(keyinfo, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
                 if (str != null) {
                     // Use SecurityTokenReference
-                    if (certificateResolver == null) throw new MissingResolverException("KeyInfo uses SecurityTokenReference but no certificate resolver is available");
+                    if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses SecurityTokenReference but no certificate resolver is available");
                     Element keyid = XmlUtil.findOnlyOneChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
                     if (keyid == null) throw new SAXException("KeyInfo has SecurityTokenReference but no KeyIdentifier");
                     String vt = keyid.getAttribute("ValueType");
@@ -90,9 +92,9 @@ public class KeyInfoElement implements ParsedElement {
                     if (vt == null) {
                         throw new SAXException("KeyInfo has null STR/KeyIdentifier ValueType");
                     } else if (vt.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX)) {
-                        gotCert = certificateResolver.lookup(value);
+                        gotCert = securityTokenResolver.lookup(value);
                     } else if (vt.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
-                        gotCert = certificateResolver.lookupBySki(value);
+                        gotCert = securityTokenResolver.lookupBySki(value);
                     } else {
                         throw new SAXException("KeyInfo uses STR/KeyIdentifier ValueType other than ThumbprintSHA1: " + vt);
                     }
@@ -107,8 +109,8 @@ public class KeyInfoElement implements ParsedElement {
                     if (keyName == null || keyName.length() < 1)
                         throw new SAXException("KeyInfo contains KeyName but it is empty");
                     // Use KeyName
-                    if (certificateResolver == null) throw new MissingResolverException("KeyInfo uses KeyName but no key name resolver is available");
-                    X509Certificate gotCert = certificateResolver.lookupByKeyName(keyName);
+                    if (securityTokenResolver == null) throw new MissingResolverException("KeyInfo uses KeyName but no key name resolver is available");
+                    X509Certificate gotCert = securityTokenResolver.lookupByKeyName(keyName);
                     if (gotCert == null) throw new SAXException("KeyInfo KeyName did not match any X.509 certificate known to this recipient");
                     cert = gotCert;
                 }
@@ -235,9 +237,7 @@ public class KeyInfoElement implements ParsedElement {
         {
             // TODO replace this with a cert cache lookup by SHA1 thumbprint
             byte[] certBytes = cert.getEncoded();
-            MessageDigest sha1 = HexUtils.getSha1();
-            sha1.reset();
-            byte[] certSha1 = sha1.digest(certBytes);
+            byte[] certSha1 = HexUtils.getSha1Digest(certBytes);
             if (Arrays.equals(certSha1, keyIdValueBytes)) {
                 logger.fine("The cert SHA1 thumbprint was recognized.  The cert is ours for sure.");
                 /* FALLTHROUGH */

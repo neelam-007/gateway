@@ -12,7 +12,7 @@ import com.ibm.xml.dsig.Validity;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.KeyInfoElement;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.X509SigningSecurityTokenImpl;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -96,12 +96,12 @@ public class SamlAssertion extends X509SigningSecurityTokenImpl implements SamlS
      * certificates by thumbprint reference (as opposed to inline keyinfo).
      *
      * @param ass the XML element containing the assertion.  Must be a saml:Assertion element.
-     * @param certificateResolver  the resolver for thumbprint KeyInfos, or null for no thumbprint support.
+     * @param securityTokenResolver  the resolver for thumbprint KeyInfos, or null for no thumbprint support.
      * @throws SAXException    if the format of this assertion is invalid or not supported
      * @throws SAXException    if the KeyInfo used a thumbprint, but no thumbprint resolver was supplied.
      */
     public SamlAssertion(Element ass,
-                         CertificateResolver certificateResolver)
+                         SecurityTokenResolver securityTokenResolver)
             throws SAXException
     {
         super(ass);
@@ -179,7 +179,7 @@ public class SamlAssertion extends X509SigningSecurityTokenImpl implements SamlS
                         List strs = XmlUtil.findChildElementsByName(keyInfoEl, SoapUtil.SECURITY_URIS_ARRAY, "SecurityTokenReference");
                         if (keyInfoEl != null && !strs.isEmpty()) {
                             try {
-                                KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), certificateResolver);
+                                KeyInfoElement kie = KeyInfoElement.parse((Element)keyInfo.getDomNode(), securityTokenResolver);
                                 subjectCertificate = kie.getCertificate();
                             } catch (Exception e) {
                                 logger.log(Level.INFO, "KeyInfo contained a SecurityTokenReference but it wasn't a thumbprint");
@@ -196,7 +196,7 @@ public class SamlAssertion extends X509SigningSecurityTokenImpl implements SamlS
                 // Extract the issuer certificate
                 Element keyinfo = XmlUtil.findOnlyOneChildElementByName(signature, SoapUtil.DIGSIG_URI, "KeyInfo");
                 if (keyinfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
-                KeyInfoElement keyInfo = KeyInfoElement.parse(keyinfo, certificateResolver);
+                KeyInfoElement keyInfo = KeyInfoElement.parse(keyinfo, securityTokenResolver);
                 issuerCertificate = keyInfo.getCertificate();
             }
 

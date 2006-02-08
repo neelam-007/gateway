@@ -14,7 +14,7 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -84,7 +84,7 @@ public class TokenServiceTest extends TestCase {
         final TokenService service = new TokenServiceImpl(TestDocuments.getDotNetServerPrivateKey(),
                                                       TestDocuments.getDotNetServerCertificate(),
                                                       (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
-                                                      (CertificateResolver)applicationContext.getBean("certificateResolver"));
+                                                      (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"));
 
         final TokenServiceImpl.CredentialsAuthenticator authenticator = new TokenServiceImpl.CredentialsAuthenticator() {
 
@@ -137,7 +137,7 @@ public class TokenServiceTest extends TestCase {
         final TokenService service = new TokenServiceImpl(issuerPrivateKey,
                                                           issuerCertificate,
                                                           (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
-                                                          (CertificateResolver)applicationContext.getBean("certificateResolver"));
+                                                          (SecurityTokenResolver)applicationContext.getBean("securityTokenResolver"));
 
         final TokenServiceImpl.CredentialsAuthenticator authenticator = new TokenServiceImpl.CredentialsAuthenticator() {
 

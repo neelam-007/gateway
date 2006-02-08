@@ -6,7 +6,7 @@
 package com.l7tech.common;
 
 import com.l7tech.common.security.xml.DsigUtil;
-import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import org.w3c.dom.Document;
@@ -213,7 +213,7 @@ public final class License implements Serializable {
         Element signature = XmlUtil.findOnlyOneChildElementByName(lic, SoapUtil.DIGSIG_URI, "Signature");
         if (signature != null && trustedIssuers != null) {
             // See if it is valid and if we trust it
-            X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleCertificateResolver(trustedIssuers));
+            X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleSecurityTokenResolver(trustedIssuers));
             X509Certificate foundTrustedIssuer = null;
             for (int i = 0; i < trustedIssuers.length; i++) {
                 X509Certificate issuer = trustedIssuers[i];

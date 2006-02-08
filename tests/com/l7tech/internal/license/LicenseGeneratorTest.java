@@ -6,7 +6,7 @@
 package com.l7tech.internal.license;
 
 import com.l7tech.common.security.xml.DsigUtil;
-import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CertUtils;
@@ -141,7 +141,7 @@ public class LicenseGeneratorTest extends TestCase {
         assertNotNull(sigElement);
 
         try {
-            DsigUtil.checkSimpleEnvelopedSignature(sigElement, new SimpleCertificateResolver(signingCert));
+            DsigUtil.checkSimpleEnvelopedSignature(sigElement, new SimpleSecurityTokenResolver(signingCert));
             fail("Pretty-printing the license did not break the naive signature verification");
         } catch (SignatureException e) {
             // Ok - whitespace change broke the naive sig verification
@@ -149,7 +149,7 @@ public class LicenseGeneratorTest extends TestCase {
 
         // Should work if we strip the whitespace again
         XmlUtil.stripWhitespace(lic.getDocumentElement());
-        X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(sigElement, new SimpleCertificateResolver(signingCert));
+        X509Certificate gotCert = DsigUtil.checkSimpleEnvelopedSignature(sigElement, new SimpleSecurityTokenResolver(signingCert));
         assertTrue(CertUtils.certsAreEqual(gotCert, signingCert));
 
         log.info("Signature validated successfully.");

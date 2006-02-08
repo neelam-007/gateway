@@ -6,19 +6,25 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.security.token.EncryptedKey;
+import com.l7tech.common.security.token.KerberosSecurityToken;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
- * A CertificateResolver that is given a small list of certs that it is to recognize.
+ * A SecurityTokenResolver that is given a small list of certs that it is to recognize.
  */
-public class SimpleCertificateResolver implements CertificateResolver {
-    private static final Logger logger = Logger.getLogger(SimpleCertificateResolver.class.getName());
+public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
+    private static final Logger logger = Logger.getLogger(SimpleSecurityTokenResolver.class.getName());
 
     private final Cert[] certs;
+    private Map encryptedKeys = new HashMap();
+    private Map kerberosTokens = new HashMap();
 
     private static class Cert {
         private final X509Certificate cert;
@@ -52,7 +58,7 @@ public class SimpleCertificateResolver implements CertificateResolver {
      * Create a thumbprint resolver that will find no certs at all, ever.  Useful for testing
      * (wiring up beans that require a resolver).
      */
-    public SimpleCertificateResolver() {
+    public SimpleSecurityTokenResolver() {
         this.certs = new Cert[0];
     }
 
@@ -60,7 +66,7 @@ public class SimpleCertificateResolver implements CertificateResolver {
      * Create a thumbprint resolver that will recognize any cert in the specified list.
      * For convenience, the certs array may contain nulls which will be ignored.
      */
-    public SimpleCertificateResolver(X509Certificate[] certs) {
+    public SimpleSecurityTokenResolver(X509Certificate[] certs) {
         if (certs != null) {
             this.certs = new Cert[certs.length];
             for (int i = 0; i < certs.length; i++)
@@ -70,7 +76,7 @@ public class SimpleCertificateResolver implements CertificateResolver {
         }
     }
 
-    public SimpleCertificateResolver(X509Certificate cert) {
+    public SimpleSecurityTokenResolver(X509Certificate cert) {
         this(new X509Certificate[] { cert });
     }
 
@@ -102,5 +108,31 @@ public class SimpleCertificateResolver implements CertificateResolver {
                 return cert.cert;
         }
         return null;
+    }
+
+    public Map getEncryptedKeys() {
+        return encryptedKeys;
+    }
+
+    public void setEncryptedKeys(Map encryptedKeys) {
+        if (encryptedKeys == null) throw new NullPointerException();
+        this.encryptedKeys = encryptedKeys;
+    }
+
+    public Map getKerberosTokens() {
+        return kerberosTokens;
+    }
+
+    public void setKerberosTokens(Map kerberosTokens) {
+        if (kerberosTokens == null) throw new NullPointerException();
+        this.kerberosTokens = kerberosTokens;
+    }
+
+    public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
+        return (EncryptedKey)encryptedKeys.get(encryptedKeySha1);
+    }
+
+    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+        return (KerberosSecurityToken)kerberosTokens.get(kerberosSha1);
     }
 }

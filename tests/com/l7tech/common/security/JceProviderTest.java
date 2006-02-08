@@ -180,7 +180,7 @@ public class JceProviderTest {
                                                                                        null, TestDocuments.getDotNetServerCertificate(),
                     TestDocuments.getDotNetServerPrivateKey(),
                     null,
-                    null, null);
+                    null);
             log.info("signature verified on " + processorResult.getElementsThatWereSigned().length + " elements");
         }
 
@@ -245,7 +245,7 @@ public class JceProviderTest {
                                                          null, TestDocuments.getDotNetServerCertificate(),
                         TestDocuments.getDotNetServerPrivateKey(),
                         null,
-                        null, null);
+                        null);
             }
         });
     }

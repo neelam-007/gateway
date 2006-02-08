@@ -16,7 +16,7 @@ import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -60,7 +60,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
     private final URL tokenServiceUrl;
     private final SSLContext sslContext;
     private final WssProcessor trogdor = new WssProcessorImpl();
-    private final CertificateResolver certificateResolver;
+    private final SecurityTokenResolver securityTokenResolver;
 
     public ServerWsTrustCredentialExchange(WsTrustCredentialExchange assertion, ApplicationContext springContext) {
         super(CACHE_SEC_TOKEN_KEY);
@@ -85,7 +85,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslContext.init(null, new TrustManager[]{trustManager}, null);
 
-            certificateResolver = (CertificateResolver)springContext.getBean("certificateResolver");
+            securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
             throw new RuntimeException(e);
@@ -220,7 +220,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
                 Message reqMessage = context.getRequest();
                 SecurityKnob secKnob = requestSec!=null ? requestSec : reqMessage.getSecurityKnob();
-                secKnob.setProcessorResult(trogdor.undecorateMessage(reqMessage, null, null, null, null, certificateResolver, null));
+                secKnob.setProcessorResult(trogdor.undecorateMessage(reqMessage, null, null, null, null, securityTokenResolver));
                 return AssertionStatus.NONE;
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);

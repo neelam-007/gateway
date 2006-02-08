@@ -105,7 +105,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         Map params = new HashMap();
         params.put( HttpDigest.PARAM_QOP, HttpDigest.QOP_AUTH );
         params.put( HttpDigest.PARAM_NONCE, nonce );
-        params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( nonce.getBytes() ) ) );
+        params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( HexUtils.getMd5Digest( nonce.getBytes() ) ) );
         return params;
     }
 

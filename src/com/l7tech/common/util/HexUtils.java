@@ -24,7 +24,12 @@ import java.util.regex.Pattern;
  * Time: 2:31:32 PM
  */
 public class HexUtils {
-    /** @return a thread-local MD5 MessageDigest instance.  Do not use  if a caller might already be using it. */
+
+    // TODO make this abomination of a method private, and rewrite the complex calls to get their own digestor, the simple ones to call getMd5Digest() instead
+    /**
+     * @return a thread-local MD5 MessageDigest instance.  Do not use  if a caller might already be using it.
+     * @deprecated don't call this, it should be made private; use {@link #getMd5Digest(byte[][])} or {@link #getMd5Digest(byte[])}  instead
+     */
     public static MessageDigest getMd5() {
         MessageDigest md5 = (MessageDigest)md5s.get();
         if (md5 == null) {
@@ -39,7 +44,24 @@ public class HexUtils {
         return md5;
     }
 
-    public static MessageDigest getSha1() {
+    public static byte[] getMd5Digest(byte[] stuffToDigest) {
+        return getMd5().digest(stuffToDigest);
+    }
+
+    public static byte[] getMd5Digest(byte[][] stuffToDigest) {
+        MessageDigest md = getMd5();
+        for (int i = 0; i < stuffToDigest.length; i++) {
+            byte[] bytes = stuffToDigest[i];
+            md.update(bytes);
+        }
+        return md.digest();
+    }
+
+    public static byte[] getSha1Digest(byte[] stuffToDigest) {
+        return getSha1().digest(stuffToDigest);
+    }
+
+    private static MessageDigest getSha1() {
         MessageDigest sha1 = (MessageDigest)sha1s.get();
         if (sha1 == null) {
             try {
@@ -488,7 +510,7 @@ public class HexUtils {
     public static String encodePasswd(String login, String passwd) {
         String toEncode = login + ":" + HttpDigest.REALM + ":" + passwd;
         try {
-            return hexDump(getMd5().digest(toEncode.getBytes("UTF-8")));
+            return hexDump(getMd5Digest(toEncode.getBytes("UTF-8")));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // Can't happen
         }
@@ -497,7 +519,7 @@ public class HexUtils {
     public static String encodePasswd( String login, String passwd, String realm ) {
         String toEncode = login + ":" + realm + ":" + passwd;
         try {
-            return hexDump(getMd5().digest(toEncode.getBytes("UTF-8")));
+            return hexDump(getMd5Digest(toEncode.getBytes("UTF-8")));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // Can't happen
         }

@@ -7,6 +7,8 @@ package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.security.token.EncryptedKey;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.KerberosSecurityToken;
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -33,6 +35,7 @@ public class WssProcessorUtil {
         String id = "VirtualEncryptedKey-1-" + HexUtils.hexDump(rand);
         Element element;
         try {
+            // TODO no need to make fake xml here -- just pass null as the element, it should work fine
             element = XmlUtil.stringToDocument("<xenc:EncryptedKey wsu:Id=\"" + id +
                     "\" xmlns:xenc=\""+ SoapUtil.XMLENC_NS + "\" xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE +
                     "\"/>").getDocumentElement();
@@ -40,6 +43,19 @@ public class WssProcessorUtil {
             throw new RuntimeException(e); // can't happen
         }
         return new MyEncryptedKey(id, element, encryptedKeySha1, key);
+    }
+
+    /**
+     * Creates a virtual KerberosSecurityToken that uses the specified ticket.
+     *
+     * @param ticket  the kerberos ticket to point to.  Must not be null.
+     * @return a new virtual binary security token (with a null element) that can be used as a SigningSecurityToken.
+     */
+    public static KerberosSecurityToken makeKerberosToken(KerberosGSSAPReqTicket ticket) {
+        byte[] rand = new byte[16];
+        new Random().nextBytes(rand);
+        String id = "VirtualBinarySecurityToken-1-" + HexUtils.hexDump(rand);
+        return new KerberosSecurityTokenImpl(ticket, id, null);
     }
 
     /**

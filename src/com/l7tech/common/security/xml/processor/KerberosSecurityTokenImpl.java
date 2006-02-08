@@ -1,10 +1,9 @@
-package com.l7tech.common.security.kerberos;
+package com.l7tech.common.security.xml.processor;
 
-import org.w3c.dom.Element;
-
+import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
-import com.l7tech.common.util.HexUtils;
+import org.w3c.dom.Element;
 
 /**
  * Security token implementation for Kerberos.
@@ -14,12 +13,14 @@ import com.l7tech.common.util.HexUtils;
  * @author $Author$
  * @version $Revision$
  */
-public class KerberosSecurityTokenImpl implements KerberosSecurityToken {
+public class KerberosSecurityTokenImpl extends SigningSecurityTokenImpl implements KerberosSecurityToken {
 
     //- PUBLIC
 
-    public KerberosSecurityTokenImpl(KerberosGSSAPReqTicket ticket) {
+    public KerberosSecurityTokenImpl(KerberosGSSAPReqTicket ticket, String wsuId, Element element) {
+        super(element);
         this.ticket = ticket;
+        this.wsuId = wsuId;
     }
 
     public KerberosGSSAPReqTicket getTicket() {
@@ -27,11 +28,7 @@ public class KerberosSecurityTokenImpl implements KerberosSecurityToken {
     }
 
     public String getElementId() {
-        return null;
-    }
-
-    public Element asElement() {
-        return null;
+        return wsuId;
     }
 
     public SecurityTokenType getType() {
@@ -41,4 +38,5 @@ public class KerberosSecurityTokenImpl implements KerberosSecurityToken {
     //- PRIVATE
 
     private final KerberosGSSAPReqTicket ticket;
+    private final String wsuId;
 }

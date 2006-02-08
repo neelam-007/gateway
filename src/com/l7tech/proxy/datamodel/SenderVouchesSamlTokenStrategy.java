@@ -9,9 +9,9 @@ import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SecurityTokenType;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -74,7 +74,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
                                                                                                   SubjectStatement.SENDER_VOUCHES,
                                                                                                   true);
         SamlAssertionGenerator sag = new SamlAssertionGenerator(si);
-        CertificateResolver thumbResolver = new SimpleCertificateResolver(new X509Certificate[] { clientCertificate, ssg.getServerCertificate() });
+        SecurityTokenResolver thumbResolver = new SimpleSecurityTokenResolver(new X509Certificate[] { clientCertificate, ssg.getServerCertificate() });
 
         try {
             return new SamlAssertion(sag.createAssertion(authenticationStatement, opts).getDocumentElement(), thumbResolver);

@@ -11,7 +11,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -58,7 +58,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final WssDecorator wssDecorator;
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCertificate;
-    private final CertificateResolver certificateResolver;
+    private final SecurityTokenResolver securityTokenResolver;
     private final LicenseManager licenseManager;
 
     /**
@@ -76,7 +76,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             WssDecorator wssd,
                             PrivateKey pkey,
                             X509Certificate cert,
-                            CertificateResolver certificateResolver,
+                            SecurityTokenResolver securityTokenResolver,
                             LicenseManager licenseManager)
       throws IllegalArgumentException {
         if (sm == null) {
@@ -97,7 +97,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
-        this.certificateResolver = certificateResolver;
+        this.securityTokenResolver = securityTokenResolver;
         this.licenseManager = licenseManager;
     }
 
@@ -140,7 +140,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                                                           null, serverCertificate,
                                                           serverPrivateKey,
                                                           SecureConversationContextManager.getInstance(),
-                                                          certificateResolver, null);
+                                                          securityTokenResolver);
                     reqSec.setProcessorResult(wssOutput);
                 } catch (MessageNotSoapException e) {
                     auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);

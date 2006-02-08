@@ -8,7 +8,7 @@ import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.wsfederation.FederationPassiveClient;
 import com.l7tech.common.security.wsfederation.ResponseStatusException;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -67,7 +67,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
 
             trogdor = new WssProcessorImpl();
 
-            certificateResolver = (CertificateResolver)springContext.getBean("certificateResolver");
+            securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver");
         }
         catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, e);
@@ -127,7 +127,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
         decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
         deco.decorateMessage(requestDoc, decoReq);
         requestXml.setDocument(requestDoc);
-        requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, certificateResolver, null));
+        requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null, null, securityTokenResolver));
     }
 
     /**
@@ -221,7 +221,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     private final Auditor auditor;
     private final SSLContext sslContext;
     private final WssProcessor trogdor;
-    private final CertificateResolver certificateResolver;
+    private final SecurityTokenResolver securityTokenResolver;
     private final Set authCookieSet;
 
     /**

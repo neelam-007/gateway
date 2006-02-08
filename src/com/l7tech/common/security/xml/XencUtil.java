@@ -70,9 +70,7 @@ public class XencUtil {
      *         of type EncryptedKeySHA1.
      */
     public static String computeEncryptedKeySha1(byte[] encryptedKeyBytes) {
-        MessageDigest sha1 = HexUtils.getSha1();
-        sha1.reset();
-        final byte[] secretKeyDigest = sha1.digest(encryptedKeyBytes);
+        final byte[] secretKeyDigest = HexUtils.getSha1Digest(encryptedKeyBytes);
         return HexUtils.encodeBase64(secretKeyDigest, true);
     }
 

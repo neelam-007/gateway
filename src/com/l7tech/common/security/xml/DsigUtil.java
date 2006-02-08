@@ -169,22 +169,22 @@ public class DsigUtil {
      *    it may additionally sign other things, but it will be accepted as long as it signs the root element.
      *
      * @param sigElement            the signature to check.  Must point to a non-null ds:Signature element.
-     * @param certificateResolver   resolver for KeyInfos containing thumbprints, SKIs, or KeyNames.
+     * @param securityTokenResolver   resolver for KeyInfos containing thumbprints, SKIs, or KeyNames.
      * @return                      the certificate that was used to successfully verify the signature.  Never null.
-     *                              <b>NOTE: This cert will NOT necessarily be known to the certificateResolver --
+     *                              <b>NOTE: This cert will NOT necessarily be known to the securityTokenResolver --
      *                                 it may have come from the signature itself as X509Data -- so a successful
      *                                 return from this method does NOT guarantee that the signature should be
      *                                 TRUSTED, just that it was VALID.</b>
      * @throws SignatureException   if the signature could not be validated.
      */
-    public static X509Certificate checkSimpleEnvelopedSignature(Element sigElement, CertificateResolver certificateResolver) throws SignatureException {
+    public static X509Certificate checkSimpleEnvelopedSignature(Element sigElement, SecurityTokenResolver securityTokenResolver) throws SignatureException {
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
         if (keyInfoElement == null) throw new SignatureException("No KeyInfo found in signature");
 
         final X509Certificate signingCert;
 
         try {
-            KeyInfoElement parsedKeyInfo = KeyInfoElement.parse(keyInfoElement, certificateResolver);
+            KeyInfoElement parsedKeyInfo = KeyInfoElement.parse(keyInfoElement, securityTokenResolver);
             signingCert = parsedKeyInfo.getCertificate();
             if (signingCert == null) throw new SignatureException("Unable to resolve signing cert");
         } catch (SAXException e) {

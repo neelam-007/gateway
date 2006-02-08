@@ -13,11 +13,12 @@ import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.EncryptedKey;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.token.KerberosSecurityToken;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.xml.SimpleCertificateResolver;
+import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -31,10 +32,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.datamodel.FederatedSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.FederatedSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -802,27 +803,35 @@ public class MessageProcessor {
             ProcessorResult processorResult = null;
             try {
                 final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
-                CertificateResolver thumbResolver =
-                        new SimpleCertificateResolver(new X509Certificate[] { ssg.getClientCertificate(),
-                                                                             ssg.getServerCertificate() });
+                SimpleSecurityTokenResolver thumbResolver =
+                        new SimpleSecurityTokenResolver(new X509Certificate[] { ssg.getClientCertificate(),
+                                ssg.getServerCertificate() })
+                        {
+                            public EncryptedKey getEncryptedKeyBySha1(String value) {
+                                final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
+                                final String encryptedKeySha1 = context.getEncryptedKeySha1();
+                                if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
+                                if (!(encryptedKeySha1.equals(value))) return null;
+                                return WssProcessorUtil.makeEncryptedKey(encryptedKeySecretKey, encryptedKeySha1);
+                            }
 
-                EncryptedKeyResolver encryptedKeyResolver = new EncryptedKeyResolver() {
-                    public EncryptedKey getEncryptedKeyBySha1(String value) {
-                        final SecretKey encryptedKeySecretKey = context.getEncryptedKeySecretKey();
-                        final String encryptedKeySha1 = context.getEncryptedKeySha1();
-                        if (encryptedKeySecretKey == null || encryptedKeySha1 == null) return null;
-                        if (!(encryptedKeySha1.equals(value))) return null;
-                        return WssProcessorUtil.makeEncryptedKey(encryptedKeySecretKey, encryptedKeySha1);
-                    }
-                };
+                            public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+                                KerberosServiceTicket tick = context.getExistingKerberosServiceTicket();
+                                if (tick == null) return null;
+                                String tickId = context.getKerberosServiceTicketId();
+                                if (tickId == null) return null;
+                                if (!(tickId.equals(kerberosSha1))) return null;
+                                return WssProcessorUtil.makeKerberosToken(tick.getGSSAPReqTicket()); 
+                            }
+                        };
 
                 final ProcessorResult processorResultRaw =
-                  wssProcessor.undecorateMessage(response,
-                                                 ssg.getServerCertificate(), haveKey ? ssg.getClientCertificate() : null,
-                                                 haveKey ? ssg.getClientCertificatePrivateKey() : null,
-                                                 scf,
-                                                 thumbResolver,
-                                                 encryptedKeyResolver);
+                        wssProcessor.undecorateMessage(response,
+                                                       ssg.getServerCertificate(), haveKey ? ssg.getClientCertificate() : null,
+                                                       haveKey ? ssg.getClientCertificatePrivateKey() : null,
+                                                       scf,
+                                                       thumbResolver
+                        );
                 // Translate timestamp in result from SSG time to local time
                 final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
                 processorResult = new ProcessorResultWrapper(processorResultRaw) {

@@ -9,7 +9,6 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
-import com.l7tech.common.security.kerberos.KerberosSecurityTokenImpl;
 import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.*;
@@ -57,8 +56,8 @@ public class WssProcessorImpl implements WssProcessor {
                                              X509Certificate recipientCert,
                                              PrivateKey recipientKey,
                                              SecurityContextFinder securityContextFinder,
-                                             CertificateResolver certificateResolver,
-                                             EncryptedKeyResolver encryptedKeyResolver)
+                                             SecurityTokenResolver securityTokenResolver
+    )
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
     {
         // Reset all potential outputs
@@ -71,8 +70,7 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.releventSecurityHeader = null;
         cntx.elementsByWsuId = SoapUtil.getElementByWsuIdMap(soapMsg);
         cntx.senderCertificate = senderCertificate;
-        cntx.certificateResolver = certificateResolver;
-        cntx.encryptedKeyResolver = encryptedKeyResolver;
+        cntx.securityTokenResolver = securityTokenResolver;
 
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
@@ -289,7 +287,8 @@ public class WssProcessorImpl implements WssProcessor {
     private void processSecurityTokenReference(Element str,
                                                SecurityContextFinder securityContextFinder,
                                                ProcessingStatusHolder cntx)
-            throws InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
+            throws InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
+    {
         // Get identifier
         String id = SoapUtil.getElementWsuId(str);
         boolean noId = false;
@@ -359,30 +358,30 @@ public class WssProcessorImpl implements WssProcessor {
             logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
             cntx.securityTokenReferenceElementToTargetElement.put(str, target);
         } if (SoapUtil.isValueTypeKerberos(valueType) && isKeyIdentifier) {
-        if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
-            logger.warning("Ignoring SecurityTokenReference ID=" + id +
-                    " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
+            if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
+                logger.warning("Ignoring SecurityTokenReference ID=" + id +
+                        " with missing or invalid KeyIdentifier/@EncodingType=" + encodingType);
+                return;
+            }
+
+            if (securityContextFinder == null)
+                throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not " +
+                        "provide a SecurityContextFinder");
+
+            String identifier = KerberosUtils.getSessionIdentifier(value);
+            SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+            if (secContext == null) {
+                //TODO kerberosize (so Kerberos SOAP fault is generated, or at least not a WS-SecureConv fault)
+                throw new BadSecurityContextException(identifier);
+            }
+            SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
+                                                                              keyIdentifierElement,
+                                                                              identifier);
+            cntx.securityTokens.add(secConTok);
+        } else {
+            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with ValueType of " + valueType);
             return;
         }
-
-        if (securityContextFinder == null)
-            throw new ProcessorException("Kerberos KeyIdentifier element found in message, but caller did not " +
-                    "provide a SecurityContextFinder");
-
-        String identifier = KerberosUtils.getSessionIdentifier(value);
-        SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
-        if (secContext == null) {
-            //TODO kerberosize (so Kerberos SOAP fault is generated, or at least not a WS-SecureConv fault)
-            throw new BadSecurityContextException(identifier);
-        }
-        SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
-                                                                          keyIdentifierElement,
-                                                                          identifier);
-        cntx.securityTokens.add(secConTok);
-    } else {
-        logger.warning("Ignoring SecurityTokenReference ID=" + id + " with ValueType of " + valueType);
-        return;
-    }
     }
 
     private void processReferenceList(Element referenceListEl, ProcessingStatusHolder cntx) throws ProcessorException, InvalidDocumentFormatException {
@@ -457,9 +456,6 @@ public class WssProcessorImpl implements WssProcessor {
             Element keyIdEl = XmlUtil.findFirstChildElementByName(sTokrefEl,
                                                                   SoapUtil.SECURITY_URIS_ARRAY,
                                                                   "KeyIdentifier");
-            if (keyIdEl == null)
-                throw new InvalidDocumentFormatException("DerivedKey SecurityTokenReference must contain a Reference or a KeyIdentifier");
-
             String keyIdB64 = XmlUtil.getTextValue(keyIdEl);
 
             String valueType = keyIdEl.getAttribute("ValueType");
@@ -467,9 +463,13 @@ public class WssProcessorImpl implements WssProcessor {
                 throw new InvalidDocumentFormatException("DerivedKey SecurityTokenReference KeyIdentifier has no ValueType");
 
             if (SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1.equals(valueType)) {
-                if (cntx.encryptedKeyResolver == null)
-                    throw new ProcessorException("Unable to process DerivedKeyToken - it references an EncryptedKeySha1, but no EncryptedKey resolver is available");
-                derivationSource = cntx.encryptedKeyResolver.getEncryptedKeyBySha1(keyIdB64);
+                if (cntx.securityTokenResolver == null)
+                    throw new ProcessorException("Unable to process DerivedKeyToken - it references an EncryptedKeySha1, but no security token resolver is available");
+                derivationSource = cntx.securityTokenResolver.getEncryptedKeyBySha1(keyIdB64);
+            } else if (SoapUtil.VALUETYPE_KERBEROS_APREQ_SHA1.equals(valueType)) {
+                if (cntx.securityTokenResolver == null)
+                    throw new ProcessorException("Unable to process DerivedKeyToken - it references a Kerberosv5APREQSHA1, but no security token resolver is available");
+                derivationSource = cntx.securityTokenResolver.getKerberosTokenBySha1(keyIdB64);
             } else
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to unsupported ValueType " + valueType);
 
@@ -529,19 +529,22 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     /** @return a new DerivedKeyToken.  Never null. */
-    private DerivedKeyToken deriveKeyFromKerberosToken(ProcessingStatusHolder cntx, Element derivedKeyEl, KerberosSecurityToken kst) throws InvalidDocumentFormatException {
-        // TODO derive a key from the kerberos token
-        // TODO derive a key from the kerberos token
-        // TODO derive a key from the kerberos token
-        // TODO derive a key from the kerberos token
+    private DerivedKeyToken deriveKeyFromKerberosToken(ProcessingStatusHolder cntx,
+                                                       Element derivedKeyEl,
+                                                       KerberosSecurityToken kst)
+            throws InvalidDocumentFormatException
+    {
         assert derivedKeyEl != null;
         assert kst != null;
         assert cntx != null;
-        throw new InvalidDocumentFormatException("Key derivation from Kerberos token not yet supported");
-        // TODO derive a key from the kerberos token
-        // TODO derive a key from the kerberos token
-        // TODO derive a key from the kerberos token
-        // TODO derive a key from the kerberos token
+        try {
+            SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
+            final SecretKey resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
+                                                                           kst.getTicket().getServiceTicket().getKey());
+            return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, kst);
+        } catch (NoSuchAlgorithmException e) {
+            throw new InvalidDocumentFormatException(e);
+        }
     }
 
     /** @return a new DerivedKeyToken.  Never null. */
@@ -936,12 +939,12 @@ public class WssProcessorImpl implements WssProcessor {
             throw new InvalidDocumentFormatException("Unable to parse base64 BinarySecurityToken", e);
         }
 
+        final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
         if(valueType.endsWith("X509v3")) {
             // create the x509 binary cert based on it
             X509Certificate referencedCert = CertUtils.decodeCert(decodedValue);
 
             // remember this cert
-            final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
             if (wsuId == null) {
                 logger.warning("This BinarySecurityToken does not have a recognized wsu:Id and may not be " +
                         "referenced properly by a subsequent signature.");
@@ -952,7 +955,9 @@ public class WssProcessorImpl implements WssProcessor {
             cntx.x509TokensById.put(wsuId, rememberedSecToken);
         }
         else {
-            cntx.securityTokens.add(new KerberosSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue)));
+            cntx.securityTokens.add(new KerberosSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
+                                                                  wsuId,
+                                                                  binarySecurityTokenElement));
         }
     }
 
@@ -961,7 +966,7 @@ public class WssProcessorImpl implements WssProcessor {
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
-            final SamlAssertion samlToken = new SamlAssertion(securityTokenElement, context.certificateResolver);
+            final SamlAssertion samlToken = new SamlAssertion(securityTokenElement, context.securityTokenResolver);
             if (samlToken.hasEmbeddedIssuerSignature()) {
                 samlToken.verifyEmbeddedIssuerSignature();
 
@@ -1089,10 +1094,10 @@ public class WssProcessorImpl implements WssProcessor {
                 String valueType = keyId.getAttribute("ValueType");
                 String value = XmlUtil.getTextValue(keyId).trim();
                 if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1_SUFFIX)) {
-                    if (cntx.encryptedKeyResolver == null) {
-                        logger.warning("The KeyInfo referred to a KeyIdentifier, but no EncryptedKeyResolver is available");
+                    if (cntx.securityTokenResolver == null) {
+                        logger.warning("The KeyInfo referred to a KeyIdentifier, but no security token resolver is available");
                     } else {
-                        EncryptedKey found = cntx.encryptedKeyResolver.getEncryptedKeyBySha1(value);
+                        EncryptedKey found = cntx.securityTokenResolver.getEncryptedKeyBySha1(value);
                         if (found != null) {
                             logger.finest("The KeyInfo referred to an already-known EncryptedKey token");
                             return found;
@@ -1107,10 +1112,10 @@ public class WssProcessorImpl implements WssProcessor {
                         return token;
                     }
 
-                    if (cntx.certificateResolver == null) {
-                        logger.warning("The KeyInfo referred to a ThumbprintSHA1, but no CertificateResolver is available");
+                    if (cntx.securityTokenResolver == null) {
+                        logger.warning("The KeyInfo referred to a ThumbprintSHA1, but no SecurityTokenResolver is available");
                     } else {
-                        X509Certificate foundCert = cntx.certificateResolver.lookup(value);
+                        X509Certificate foundCert = cntx.securityTokenResolver.lookup(value);
                         if (foundCert == null) {
                             logger.info("The KeyInfo referred to a ThumbprintSHA1, but we were unable to locate a matching cert");
                         } else {
@@ -1128,10 +1133,10 @@ public class WssProcessorImpl implements WssProcessor {
                         return token;
                     }
 
-                    if (cntx.certificateResolver == null) {
-                        logger.warning("The KeyInfo referred to a SKI, but no CertificateResolver is available");
+                    if (cntx.securityTokenResolver == null) {
+                        logger.warning("The KeyInfo referred to a SKI, but no SecurityTokenResolver is available");
                     } else {
-                        X509Certificate foundCert = cntx.certificateResolver.lookupBySki(value);
+                        X509Certificate foundCert = cntx.securityTokenResolver.lookupBySki(value);
                         if (foundCert == null) {
                             logger.info("The KeyInfo referred to a SKI, but we were unable to locate a matching cert");
                         } else {
@@ -1564,8 +1569,7 @@ public class WssProcessorImpl implements WssProcessor {
         String lastSignatureConfirmation = null;
         boolean isWsse11Seen = false;
         boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
-        CertificateResolver certificateResolver = null;
-        EncryptedKeyResolver encryptedKeyResolver = null;
+        SecurityTokenResolver securityTokenResolver = null;
 
         public ProcessingStatusHolder(Message message, Document processedDocument) {
             this.message = message;

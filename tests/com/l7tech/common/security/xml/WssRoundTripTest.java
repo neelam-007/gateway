@@ -259,7 +259,7 @@ public class WssRoundTripTest extends TestCase {
                                                       td.recipientCert,
                                                       td.recipientKey,
                                                       makeSecurityContextFinder(td.secureConversationKey),
-                                                      null, null);
+                                                      null);
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingMessage));
 

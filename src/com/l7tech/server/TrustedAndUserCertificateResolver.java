@@ -6,7 +6,9 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.X509Entity;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.token.EncryptedKey;
+import com.l7tech.common.security.token.KerberosSecurityToken;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -22,7 +24,7 @@ import java.util.logging.Logger;
 /**
  * Bean that can look up any certificate known to the SSG by thumbprint.
  */
-public class TrustedAndUserCertificateResolver implements CertificateResolver {
+public class TrustedAndUserCertificateResolver implements SecurityTokenResolver {
     private static final Logger logger = Logger.getLogger(TrustedAndUserCertificateResolver.class.getName());
     private TrustedCertManager trustedCertManager = null;
     private ClientCertManager clientCertManager = null;
@@ -127,6 +129,24 @@ public class TrustedAndUserCertificateResolver implements CertificateResolver {
 
     public X509Certificate lookupByKeyName(String keyName) {
         // TODO Implement this using a lookup by cert DN if we decide to bother supporting this feature here
+        return null;
+    }
+
+    /**
+     * Ssg implementation lookup of encrypted key; currently always fails.
+     *
+     * @return currently always returns null
+     */
+    public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
+        return null;
+    }
+
+    /**
+     * Ssg implementation lookup of kerberos token; currently always fails.
+     *
+     * @return currently always returns null
+     */
+    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return null;
     }
 }

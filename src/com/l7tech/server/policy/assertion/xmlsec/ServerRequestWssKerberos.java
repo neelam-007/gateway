@@ -12,6 +12,7 @@ import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.SecurityContextToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.SecurityContext;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -107,6 +108,12 @@ public class ServerRequestWssKerberos implements ServerAssertion {
 
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
+                    // Set up response to be able to sign and encrypt using a reference to this ticket
+                    DecorationRequirements dreq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(null);
+                    dreq.setKerberosTicket(kerberosServiceTicket);
+                    dreq.setKerberosTicketId(kerberosSession.getIdentifier());
+                    dreq.setIncludeKerberosTicketId(true);
+
                     return AssertionStatus.NONE;
                 }
             }
@@ -129,13 +136,20 @@ public class ServerRequestWssKerberos implements ServerAssertion {
 
                 // stash for later reference
                 SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
+                final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosTicket);
                 try {
-                    sccm.createContextForUser(KerberosUtils.getSessionIdentifier(kerberosTicket), kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
+                    sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
                 }
                 catch(DuplicateSessionException dse) {
                     //can't happen since duplicate tickets are detected by kerberos.
                     logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
                 }
+
+                // Set up response to be able to sign and encrypt using a reference to this ticket
+                DecorationRequirements dreq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(null);
+                dreq.setKerberosTicket(kerberosServiceTicket);
+                dreq.setKerberosTicketId(sessionIdentifier);
+                dreq.setIncludeKerberosTicketId(true);
 
                 return AssertionStatus.NONE;
             }

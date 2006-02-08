@@ -360,7 +360,7 @@
             <ref bean="sslKeystoreCertificate"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="certificateResolver"/>
+            <ref bean="securityTokenResolver"/>
         </constructor-arg>
         <constructor-arg>
             <ref bean="licenseManager"/>
@@ -381,7 +381,7 @@
             <ref bean="policyFilterManager"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="certificateResolver"/>
+            <ref bean="securityTokenResolver"/>
         </constructor-arg>
     </bean>
     <!-- server side token service -->
@@ -396,7 +396,7 @@
             <ref bean="policyFactory"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="certificateResolver"/>
+            <ref bean="securityTokenResolver"/>
         </constructor-arg>
     </bean>
 
@@ -525,7 +525,7 @@
         </property>
     </bean>
 
-    <bean id="certificateResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
+    <bean id="securityTokenResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>

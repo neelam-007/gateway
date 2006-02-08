@@ -40,7 +40,7 @@ public class DigestAuthenticator {
         String a2 = (String)authParams.get(HttpDigest.PARAM_METHOD) + ":" +
           (String)authParams.get(HttpDigest.PARAM_URI);
 
-        String ha2 = HexUtils.encodeMd5Digest(HexUtils.getMd5().digest(a2.getBytes()));
+        String ha2 = HexUtils.encodeMd5Digest(HexUtils.getMd5Digest(a2.getBytes()));
 
         String serverDigestValue;
         if (!HttpDigest.QOP_AUTH.equals(qop))
@@ -53,7 +53,7 @@ public class DigestAuthenticator {
               + cnonce + ":" + qop + ":" + ha2;
         }
 
-        String expectedResponse = HexUtils.encodeMd5Digest(HexUtils.getMd5().digest(serverDigestValue.getBytes()));
+        String expectedResponse = HexUtils.encodeMd5Digest(HexUtils.getMd5Digest(serverDigestValue.getBytes()));
         String response = new String(credentials);
 
         String login = pc.getLogin();

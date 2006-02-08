@@ -10,6 +10,7 @@ import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.DesKey;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.*;
@@ -154,8 +155,9 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         // Add Kerberos ticket
+        Element addedKerberosBst = null;
         if (dreq.isIncludeKerberosTicket() && dreq.getKerberosTicket() != null) {
-            addKerberosBinarySecurityToken(securityHeader, dreq.getKerberosTicket().getGSSAPReqTicket());
+            addedKerberosBst = addKerberosBinarySecurityToken(securityHeader, dreq.getKerberosTicket().getGSSAPReqTicket());
         }
 
         // At this point, if we possess a sender cert, we have a senderCertKeyInfo, and have also have added a BST unless it's suppressed
@@ -211,24 +213,39 @@ public class WssDecoratorImpl implements WssDecorator {
                     senderSigningKey = dreq.getEncryptedKey();
                     signatureKeyInfo = KeyInfoDetails.makeKeyId(dreq.getEncryptedKeySha1(), true, SoapUtil.VALUETYPE_ENCRYPTED_KEY_SHA1);
                 }
+            } else if (addedKerberosBst != null) {
+                // Derive key from kerberos session key using direct URI reference
+                assert dreq.getKerberosTicket() != null;
+                KeyInfoDetails  kerbUriRef = KeyInfoDetails.makeUriReference(
+                        getOrCreateWsuId(c, addedKerberosBst, null),
+                        SoapUtil.VALUETYPE_KERBEROS_GSS_AP_REQ);
+                final DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c,
+                                                                           securityHeader,
+                                                                           null,
+                                                                           kerbUriRef,
+                                                                           dreq.getKerberosTicket().getKey(),
+                                                                           "DerivedKey");
+                senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
+                String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
+                signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
+            } else if (dreq.getKerberosTicket() != null) {
+                // Derive key from kerberos session referenced using KerberosSHA1
+                String kerbSha1 = KerberosUtils.getSessionIdentifier(dreq.getKerberosTicket().getGSSAPReqTicket());
+                KeyInfoDetails kerbShaRef = KeyInfoDetails.makeKeyId(kerbSha1, true, SoapUtil.VALUETYPE_KERBEROS_APREQ_SHA1);
+                final DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c,
+                                                                           securityHeader,
+                                                                           null,
+                                                                           kerbShaRef,
+                                                                           dreq.getKerberosTicket().getKey(),
+                                                                           "DerivedKey");
+                senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
+                String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
+                signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
             } else if (senderCertKeyInfo != null) {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
                 signatureKeyInfo = senderCertKeyInfo;
-            } else if (dreq.getKerberosTicket() != null) {
-                // TODO sign with GSS!
-                // TODO sign with GSS!
-                // TODO sign with GSS!
-                // TODO sign with GSS!
-                // TODO sign with GSS!
-                // TODO sign with GSS!
-                // TODO sign with GSS!
-                // TODO sign with GSS!
-                // add a derived key token
-                // senderSigningKey = derived key token;
-                // signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
-                throw new IllegalArgumentException("Signature using kerberos ticket not yet implemented");
             } else if (saml != null) {
                 // sign with SAML token
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
@@ -288,7 +305,20 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         if (cryptList.size() > 0) {
-            if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
+            if (sct != null) {
+                // Encrypt using Secure Conversation session
+                if (session == null)
+                    throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session);
+                XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
+                String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, null);
+                addEncryptedReferenceList(c,
+                                          securityHeader,
+                                          xencDesiredNextSibling,
+                                          (Element[])(cryptList.toArray(new Element[0])),
+                                          encKey,
+                                          KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+            } else if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
                 if (dreq.isUseDerivedKeys()) {
                     // Derive a new key and use for encryption
                     DerivedKeyToken dkt = addDerivedKeyToken(c,
@@ -316,19 +346,6 @@ public class WssDecoratorImpl implements WssDecorator {
                                               addedEncKeyXmlEncKey,
                                               KeyInfoDetails.makeUriReference(encKeyId, SoapUtil.VALUETYPE_ENCRYPTED_KEY));
                 }
-            } else if (sct != null) {
-                // Encrypt using Secure Conversation session
-                if (session == null)
-                    throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
-                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session);
-                XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
-                String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, null);
-                addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          xencDesiredNextSibling,
-                                          (Element[])(cryptList.toArray(new Element[0])),
-                                          encKey,
-                                          KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
             } else if (dreq.getEncryptedKeySha1() != null &&
                        dreq.getEncryptedKey() != null)
             {
@@ -367,6 +384,46 @@ public class WssDecoratorImpl implements WssDecorator {
                                               encKey,
                                               keyInfoDetails);
                 }
+            } else if (addedKerberosBst != null) {
+                // Derive key using direct URI reference
+                KeyInfoDetails kerbUriRef = KeyInfoDetails.makeUriReference(
+                        getOrCreateWsuId(c, addedKerberosBst, null),
+                        SoapUtil.VALUETYPE_KERBEROS_GSS_AP_REQ);
+                DerivedKeyToken dkt = addDerivedKeyToken(c,
+                                                         securityHeader,
+                                                         null,
+                                                         kerbUriRef,
+                                                         dreq.getKerberosTicket().getKey(),
+                                                         "DerivedKey");
+                String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
+                XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(),
+                                                                 dkt.derivedKey);
+                addEncryptedReferenceList(c,
+                                          securityHeader,
+                                          xencDesiredNextSibling,
+                                          (Element[])(cryptList.toArray(new Element[0])),
+                                          dktEncKey,
+                                          KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+            } else if (dreq.getKerberosTicket() != null) {
+                // Derive key using KerberosSHA1 reference
+                String kerbSha1 = KerberosUtils.getSessionIdentifier(dreq.getKerberosTicket().getGSSAPReqTicket());
+                KeyInfoDetails kerbShaRef = KeyInfoDetails.makeKeyId(kerbSha1, true, SoapUtil.VALUETYPE_KERBEROS_APREQ_SHA1);
+                DerivedKeyToken dkt = addDerivedKeyToken(c,
+                                                         securityHeader,
+                                                         null,
+                                                         kerbShaRef,
+                                                         dreq.getKerberosTicket().getKey(),
+                                                         "DerivedKey");
+                String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
+                XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(),
+                                                                 dkt.derivedKey);
+                addEncryptedReferenceList(c,
+                                          securityHeader,
+                                          xencDesiredNextSibling,
+                                          (Element[])(cryptList.toArray(new Element[0])),
+                                          dktEncKey,
+                                          KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+
             } else if (dreq.getRecipientCertificate() != null) {
                 // Encrypt to recipient's certificate
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();

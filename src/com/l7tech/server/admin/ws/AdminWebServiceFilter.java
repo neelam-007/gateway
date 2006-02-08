@@ -8,7 +8,7 @@ import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.security.xml.CertificateResolver;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -61,7 +61,7 @@ public class AdminWebServiceFilter implements Filter {
     private ServerAssertion adminPolicy;
     private X509Certificate serverCertificate;
     private PrivateKey serverPrivateKey;
-    private CertificateResolver certificateResolver;
+    private SecurityTokenResolver securityTokenResolver;
 
     private static final Logger log = Logger.getLogger(AdminWebServiceFilter.class.getName());
     private static final String ERR_PREFIX = "Configuration error; could not get ";
@@ -87,7 +87,7 @@ public class AdminWebServiceFilter implements Filter {
         auditContext = (AuditContext)getBean(applicationContext, "auditContext", "audit context", AuditContext.class);
         serverPrivateKey = (PrivateKey)getBean(applicationContext, "sslKeystorePrivateKey", "server private key", PrivateKey.class);
         serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate", X509Certificate.class);
-        certificateResolver = (CertificateResolver)getBean(applicationContext, "certificateResolver", "certificate resolver", CertificateResolver.class);
+        securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
 
         IdentityProviderFactory ipf = (IdentityProviderFactory)getBean(applicationContext, "identityProviderFactory", "Identity Provider Factory", IdentityProviderFactory.class);
 
@@ -281,7 +281,7 @@ public class AdminWebServiceFilter implements Filter {
                                                       null, serverCertificate,
                                                       serverPrivateKey,
                                                       SecureConversationContextManager.getInstance(),
-                                                      certificateResolver, null);
+                                                      securityTokenResolver);
                 reqSec.setProcessorResult(wssOutput);
             } catch (GeneralSecurityException e) {
                 throw new ProcessorException(e);

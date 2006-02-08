@@ -21,13 +21,10 @@ import com.l7tech.common.security.token.EncryptedElement;
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.token.EncryptedKey;
-import com.l7tech.common.security.xml.DsigUtil;
-import com.l7tech.common.security.xml.KeyInfoElement;
-import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.WssProcessorImpl;
-import com.l7tech.common.security.xml.processor.EncryptedKeyResolver;
 import com.l7tech.common.security.xml.processor.WssProcessorUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -257,13 +254,14 @@ public class WssInteropTestMessage extends TestCase {
 
         final AesKey aesKey = new AesKey(msgInfo.keyBytes, 256);
         WssProcessorImpl wsp = new WssProcessorImpl();
-        EncryptedKeyResolver encryptedKeyResolver = new EncryptedKeyResolver() {
+
+
+        SecurityTokenResolver resolver = new SimpleSecurityTokenResolver() {
             public EncryptedKey getEncryptedKeyBySha1(String encryptedKeySha1) {
                 return WssProcessorUtil.makeEncryptedKey(aesKey, msgInfo.encryptedKeySha1);
             }
         };
-        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, null,
-                                                           encryptedKeyResolver);
+        ProcessorResult wssResults = wsp.undecorateMessage(new Message(responseDoc), null, null, null, null, resolver);
 
         log.info("The following elements had at least all their content encrypted:");
         EncryptedElement[] enc = wssResults.getElementsThatWereEncrypted();

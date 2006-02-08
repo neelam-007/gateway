@@ -35,7 +35,7 @@ public class HexUtilsTest extends TestCase {
     }
 
     public void testEncodeMd5Digest() throws Exception {
-        MessageDigest md5 = HexUtils.getMd5();
+        MessageDigest md5 = HexUtils.getMd5();  // TODO don't use the getMd5() method
         md5.update("484736327827227".getBytes());
         md5.update("-1".getBytes());
         md5.update("TheseAreSomeCertificateBytes".getBytes());

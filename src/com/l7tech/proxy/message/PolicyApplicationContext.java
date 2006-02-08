@@ -694,7 +694,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                           WSSC_PREEXPIRE_SEC + " seconds. Will throw it away and get a new one.");
             }
             else {
-                id = HexUtils.encodeBase64(HexUtils.getSha1().digest(kst.getGSSAPReqTicket().toByteArray()));
+                id = HexUtils.encodeBase64(HexUtils.getSha1Digest(kst.getGSSAPReqTicket().toByteArray()));
             }
         }
 

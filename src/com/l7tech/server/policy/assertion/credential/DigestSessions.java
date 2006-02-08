@@ -57,7 +57,7 @@ public class DigestSessions {
         String nonceValue = request.getTcpKnob().getRemoteAddress() + ":" +
             currentTime + ":" + NONCEKEY;
 
-        byte[] buffer = HexUtils.getMd5().digest(nonceValue.getBytes());
+        byte[] buffer = HexUtils.getMd5Digest(nonceValue.getBytes());
         nonceValue = HexUtils.encodeMd5Digest(buffer);
 
         // Updating the value in the nonce hashtable
