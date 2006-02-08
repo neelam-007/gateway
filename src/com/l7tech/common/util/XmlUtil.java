@@ -683,10 +683,11 @@ public class XmlUtil {
      * specified element, and then returns the active prefix for this namespace URI.  If a new prefix is declared,
      * it will be as close as possible to desiredPrefix (that is, identical unless some other namespace is already
      * using it in which case it will be desiredPrefix with one or more digits appended to make it unique).
-     * @param element
-     * @param namespace
-     * @param desiredPrefix
-     * @return the prefix to use for this namespace.  May be null if it's the default prefix, but never empty.
+     * @param element    the element under whose scope the namespace should be valid.  Must not be null.   
+     * @param namespace  the namespace to be declared.  Must not be null or empty.
+     * @param desiredPrefix  Preferred prefix, if a new namespace declaration is needed.  If this is specified, this method never returns null.
+     * @return the prefix to use for this namespace.  May be null if it's the default prefix and desiredPrefix was null,
+     *         but never empty.
      */
     public static String getOrCreatePrefixForNamespace(Element element, String namespace, String desiredPrefix) {
         String existingPrefix = findActivePrefixForNamespace(element, namespace);
