@@ -17,16 +17,24 @@ import java.util.logging.Logger;
 
 /**
  * Holds the transient state of the audit system for the current thread.
+ *
+ * Not thread-safe in the slightest!
  * <p>
- * Call {@link #setCurrentRecord} to add any nubmer of {@link AuditRecord}s to the context.
+ * Call {@link #setCurrentRecord} to attach a single {@link AuditRecord} describing the SSG's current
+ * operation to the context, and {@link #addDetail} to add zero or more {@link AuditDetail} records.
  * <p>
- * Records that are added to the context will be persisted to the database later, when {@link #flush}
- * is called, if their level meets or exceeds the corresponding threshold.  Call {@link ServerConfig#getProperty},
- * specifying {@link ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} or {@link ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD}
- * as the parameter, to determine the current threshold for {@link MessageSummaryAuditRecord} and {@link AdminAuditRecord}
- * records, respectively.
- * <p>
- * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} regardless of their level.
+ * {@link MessageSummaryAuditRecord}s, {@link AdminAuditRecord}s and {@link AuditDetail}s that are
+ * added to the context may or may not be persisted to the database later, when {@link #flush} is called,
+ * if their level meets or exceeds the corresponding threshold.  {@link SystemAuditRecord}s have no
+ * minimum threshold; they are always persisted.
+ *
+ * @see ServerConfig#getProperty
+ * @see ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD
+ * @see ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD
+
+ * @see MessageSummaryAuditRecord
+ * @see AdminAuditRecord
+ * @see SystemAuditRecord
  *
  * @author alex
  */
@@ -45,10 +53,6 @@ public class AuditContextImpl implements AuditContext {
         }
         this.serverConfig = serverConfig;
         this.auditRecordManager = auditRecordManager;
-
-        currentMessageThreshold = getSystemMessageThreshold();
-        currentAssociatedLogsThreshold = getAssociatedLogsThreshold();
-        currentAdminThreshold = getSystemAdminThreshold();
     }
 
     /**
@@ -115,6 +119,9 @@ public class AuditContextImpl implements AuditContext {
         } finally {
             // Reinitialize in case this thread needs us again for a new request
             currentRecord = null;
+            currentAdminThreshold = null;
+            currentAssociatedLogsThreshold = null;
+            currentMessageThreshold = null;
             details.clear();
             highestLevelYetSeen = Level.ALL;
             ordinal = 0;
@@ -133,59 +140,68 @@ public class AuditContextImpl implements AuditContext {
     }
 
     private Level getSystemMessageThreshold() {
-        String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);
-        Level output = null;
-        if (msgLevel != null) {
-            try {
-                output = Level.parse(msgLevel);
-            } catch(IllegalArgumentException e) {
-                logger.warning("Invalid message threshold value '" + msgLevel + "'. Will use default " +
-                               DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+        if (currentMessageThreshold == null) {
+            String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);
+            Level output = null;
+            if (msgLevel != null) {
+                try {
+                    output = Level.parse(msgLevel);
+                } catch(IllegalArgumentException e) {
+                    logger.warning("Invalid message threshold value '" + msgLevel + "'. Will use default " +
+                                   DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+                }
             }
+            if (output == null) {
+                output = DEFAULT_MESSAGE_THRESHOLD;
+            }
+            currentMessageThreshold = output;
         }
-        if (output == null) {
-            output = DEFAULT_MESSAGE_THRESHOLD;
-        }
-        return output;
+        return currentMessageThreshold;
     }
 
     private Level getAssociatedLogsThreshold() {
-        String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
-        Level output = null;
-        if (msgLevel != null) {
-            try {
-                output = Level.parse(msgLevel);
-            } catch(IllegalArgumentException e) {
-                logger.warning("Invalid associated logs threshold value '" + msgLevel + "'. Will use default " +
-                               DEFAULT_ASSOCIATED_LOGS_THRESHOLD.getName() + " instead.");
+        if (currentAssociatedLogsThreshold == null) {
+            String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
+            Level output = null;
+            if (msgLevel != null) {
+                try {
+                    output = Level.parse(msgLevel);
+                } catch(IllegalArgumentException e) {
+                    logger.warning("Invalid associated logs threshold value '" + msgLevel + "'. Will use default " +
+                                   DEFAULT_ASSOCIATED_LOGS_THRESHOLD.getName() + " instead.");
+                }
             }
+            if (output == null) {
+                output = DEFAULT_ASSOCIATED_LOGS_THRESHOLD;
+            }
+            currentAssociatedLogsThreshold = output;
         }
-        if (output == null) {
-            output = DEFAULT_ASSOCIATED_LOGS_THRESHOLD;
-        }
-        return output;
+        return currentAssociatedLogsThreshold;
     }
 
     private Level getSystemAdminThreshold() {
-        String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
-        Level output = null;
-        if (msgLevel != null) {
-            try {
-                output = Level.parse(msgLevel);
-            } catch(IllegalArgumentException e) {
-                logger.warning("Invalid admin threshold value '" + msgLevel + "'. Will use default " +
-                               DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+        if (currentAdminThreshold == null) {
+            String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
+            Level output = null;
+            if (msgLevel != null) {
+                try {
+                    output = Level.parse(msgLevel);
+                } catch(IllegalArgumentException e) {
+                    logger.warning("Invalid admin threshold value '" + msgLevel + "'. Will use default " +
+                                   DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+                }
             }
+            if (output == null) {
+                output = DEFAULT_MESSAGE_THRESHOLD;
+            }
+            currentAdminThreshold = output;
         }
-        if (output == null) {
-            output = DEFAULT_MESSAGE_THRESHOLD;
-        }
-        return output;
+        return currentAdminThreshold;
     }
 
-    private final Level currentMessageThreshold;
-    private final Level currentAdminThreshold;
-    private final Level currentAssociatedLogsThreshold;
+    private Level currentMessageThreshold;
+    private Level currentAdminThreshold;
+    private Level currentAssociatedLogsThreshold;
     private final AuditRecordManager auditRecordManager;
 
     private AuditRecord currentRecord;
