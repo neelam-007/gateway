@@ -110,13 +110,14 @@ public class CertificateCheckInfo implements Serializable {
 
     /** @return the H(A1) of the specified username and password, in the current realm. */
     private String computeHa1(String username, char[] password) {
-        MessageDigest md5 = HexUtils.getMd5(); // TODO don't use the getMd5() method
-        md5.update((username == null ? "" : username).getBytes());
-        md5.update(":".getBytes());
-        md5.update((realm == null ? "" : realm).getBytes());
-        md5.update(":".getBytes());
-        md5.update((password == null ? "" : new String(password)).getBytes());
-        return HexUtils.encodeMd5Digest(md5.digest());
+        byte[][] toDigest = {
+            (username == null ? "" : username).getBytes(),
+            ":".getBytes(),
+            (realm == null ? "" : realm).getBytes(),
+            ":".getBytes(),
+            (password == null ? "" : new String(password)).getBytes()
+        };
+        return HexUtils.encodeMd5Digest(HexUtils.getMd5Digest(toDigest));
     }
 
     /**
@@ -145,13 +146,14 @@ public class CertificateCheckInfo implements Serializable {
      * @return the digest as a hex-encoded string, or "NOPASS" if ha1 was null.
      */
     private String computeHash(String ha1, String nonce, byte[] certBytes) {
-        MessageDigest md5 = HexUtils.getMd5(); // TODO don't use the getMd5() method
-        md5.update(ha1.getBytes());
-        md5.update(nonce.getBytes());
-        md5.update(oid.getBytes());
-        md5.update(certBytes);
-        md5.update(ha1.getBytes());
-        String desiredValue = HexUtils.encodeMd5Digest(md5.digest());
+        byte[][] toDigest = {
+            ha1.getBytes(),
+            nonce.getBytes(),
+            oid.getBytes(),
+            certBytes,
+            ha1.getBytes()
+        };
+        String desiredValue = HexUtils.encodeMd5Digest(HexUtils.getMd5Digest(toDigest));
         return desiredValue;
     }
 

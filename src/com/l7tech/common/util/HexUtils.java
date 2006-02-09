@@ -25,25 +25,6 @@ import java.util.regex.Pattern;
  */
 public class HexUtils {
 
-    // TODO make this abomination of a method private, and rewrite the complex calls to get their own digestor, the simple ones to call getMd5Digest() instead
-    /**
-     * @return a thread-local MD5 MessageDigest instance.  Do not use  if a caller might already be using it.
-     * @deprecated don't call this, it should be made private; use {@link #getMd5Digest(byte[][])} or {@link #getMd5Digest(byte[])}  instead
-     */
-    public static MessageDigest getMd5() {
-        MessageDigest md5 = (MessageDigest)md5s.get();
-        if (md5 == null) {
-            try {
-                md5 = MessageDigest.getInstance("MD5");
-                md5s.set(md5);
-            } catch ( NoSuchAlgorithmException e ) {
-                throw new RuntimeException(e);
-            }
-        }
-        md5.reset();
-        return md5;
-    }
-
     public static byte[] getMd5Digest(byte[] stuffToDigest) {
         return getMd5().digest(stuffToDigest);
     }
@@ -59,20 +40,6 @@ public class HexUtils {
 
     public static byte[] getSha1Digest(byte[] stuffToDigest) {
         return getSha1().digest(stuffToDigest);
-    }
-
-    private static MessageDigest getSha1() {
-        MessageDigest sha1 = (MessageDigest)sha1s.get();
-        if (sha1 == null) {
-            try {
-                sha1 = MessageDigest.getInstance("SHA-1");
-                sha1s.set(sha1);
-            } catch ( NoSuchAlgorithmException e ) {
-                throw new RuntimeException(e);
-            }
-        }
-        sha1.reset();
-        return sha1;
     }
 
     private HexUtils() {}
@@ -494,6 +461,40 @@ public class HexUtils {
 
     private static ThreadLocal md5s = new ThreadLocal();
     private static ThreadLocal sha1s = new ThreadLocal();
+
+    /**
+     * Get a thread-local MD5 MessageDigest instance.
+     */
+    private static MessageDigest getMd5() {
+        MessageDigest md5 = (MessageDigest)md5s.get();
+        if (md5 == null) {
+            try {
+                md5 = MessageDigest.getInstance("MD5");
+                md5s.set(md5);
+            } catch ( NoSuchAlgorithmException e ) {
+                throw new RuntimeException(e);
+            }
+        }
+        md5.reset();
+        return md5;
+    }
+
+    /**
+     * Get a thread-local SHA-1 MessageDigest instance.
+     */
+    private static MessageDigest getSha1() {
+        MessageDigest sha1 = (MessageDigest)sha1s.get();
+        if (sha1 == null) {
+            try {
+                sha1 = MessageDigest.getInstance("SHA-1");
+                sha1s.set(sha1);
+            } catch ( NoSuchAlgorithmException e ) {
+                throw new RuntimeException(e);
+            }
+        }
+        sha1.reset();
+        return sha1;
+    }
 
     public static boolean containsOnlyHex(String arg) {
         if (arg == null || arg.length() != 32) return false;
