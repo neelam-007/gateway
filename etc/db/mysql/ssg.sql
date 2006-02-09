@@ -169,7 +169,7 @@ DROP TABLE IF EXISTS service_resolution;
 CREATE TABLE service_resolution (
   objectid bigint(20) NOT NULL,
   serviceid bigint NOT NULL,
-  digested varchar(24) NOT NULL,
+  digested varchar(32) NOT NULL,
   soapaction mediumtext character set latin1 BINARY default '',
   urn mediumtext character set latin1 BINARY default '',
   uri mediumtext character set latin1 BINARY default '',

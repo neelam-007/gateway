@@ -54,7 +54,7 @@ public class ResolutionParameters extends EntityImp implements Serializable {
             throw new RuntimeException(e);
         }
         String toDigest = soapaction + urn + uri;
-        digested = HexUtils.encodeBase64(digester.digest(toDigest.getBytes()));
+        digested = HexUtils.hexDump(digester.digest(toDigest.getBytes()));
     }
 
     /*private String truncate(String value, int max, String field) {
