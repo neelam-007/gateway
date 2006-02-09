@@ -5,6 +5,7 @@ import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -340,6 +341,19 @@ public class WspReaderTest extends TestCase {
         assertTrue(rwi.getRecipientContext().getActor().equals("ppal"));
     }
 
+    public void testReproBug2214TabsInEmail() throws Exception {
+        final String body = "foo\r\nbar baz blah\tbleet blot";
+
+        EmailAlertAssertion ema = new EmailAlertAssertion();
+        ema.setSubject("Hi there");
+        ema.setTargetEmailAddress("blah@blah.example.com");
+        ema.setMessage(body);
+
+        String emXml = WspWriter.getPolicyXml(ema);
+        EmailAlertAssertion got = (EmailAlertAssertion)WspReader.parseStrictly(emXml);
+
+        assertEquals(got.getMessage(), body);
+    }
 
 
     public static void main(String[] args) {
