@@ -37,14 +37,12 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
      * calling this method at any given time.
      */
     public synchronized void save() throws IOException {
-        // TODO: add lockfile so multiple Client Proxy instances can safely share a data store
-
         FileUtils.saveFileSafely(STORE_FILE, new FileUtils.Saver() {
-            public void doSave(FileOutputStream fos) throws IOException {
+            public void doSave(FileOutputStream fos) {
                 XMLEncoder encoder = null;
                 try {
                     encoder = new XMLEncoder(fos);
-                    encoder.writeObject(ssgs); // TODO worry about locking SSGs while saving
+                    encoder.writeObject(ssgs);
                     encoder.close();
                     encoder = null;
                 } finally {
