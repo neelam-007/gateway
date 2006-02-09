@@ -120,7 +120,7 @@ public class KeystoreUtils {
             FileInputStream fis = null;
             String sslkeystorepath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME);
             String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
-            fis = FileUtils.loadFileSafely(sslkeystorepath);
+            fis = new FileInputStream(sslkeystorepath);
             keyStore.load(fis, sslkeystorepassword.toCharArray());
             fis.close();
             return keyStore;
