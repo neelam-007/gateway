@@ -1,10 +1,14 @@
 package com.l7tech.server.service.resolution;
 
 import com.l7tech.common.util.HashCode;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.imp.EntityImp;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Object representation of a row in the serviceresolution table.
@@ -22,31 +26,53 @@ import java.util.logging.Logger;
 public class ResolutionParameters extends EntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(ResolutionParameters.class.getName());
     // todo, ideally, this should fail at the database layer but mysql truncs silently
-    public static final int MAX_LENGTH_RES_PARAMETER = 255;
+    //public static final int MAX_LENGTH_RES_PARAMETER = 255;
 
     public String getSoapaction() {
         return soapaction;
     }
 
     public void setSoapaction(String soapaction) {
-        this.soapaction = truncate(soapaction, MAX_LENGTH_RES_PARAMETER, "soapaction");
+        this.soapaction = soapaction;
+        resetHash();
     }
 
-    private String truncate(String value, int max, String field) {
+    public String getDigested() {
+        return digested;
+    }
+
+    public void setDigested(String digested) {
+        this.digested = digested;
+    }
+
+    private void resetHash() {
+        MessageDigest digester = null;
+        try {
+            digester = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            logger.log(Level.SEVERE, "cannot happen", e);
+            throw new RuntimeException(e);
+        }
+        String toDigest = soapaction + urn + uri;
+        digested = HexUtils.encodeBase64(digester.digest(toDigest.getBytes()));
+    }
+
+    /*private String truncate(String value, int max, String field) {
         if (value == null) return ""; // Oracle doesn't distinguish between "" and NULL
         if (value.length() > max) {
             logger.warning("The " + field + " " + value + " is too long to remember as a resolution parameter.");
             return value.substring(0, max);
         } else
             return value;
-    }
+    }*/
 
     public String getUrn() {
         return urn;
     }
 
     public void setUrn(String urn) {
-        this.urn = truncate(urn, MAX_LENGTH_RES_PARAMETER, "namespace");
+        this.urn = urn;
+        resetHash();
     }
 
     public long getServiceid() {
@@ -62,7 +88,8 @@ public class ResolutionParameters extends EntityImp implements Serializable {
     }
 
     public void setUri(String uri) {
-        this.uri = truncate(uri, MAX_LENGTH_RES_PARAMETER, "URI");
+        this.uri = uri;
+        resetHash();
     }
 
     /**
@@ -126,5 +153,6 @@ public class ResolutionParameters extends EntityImp implements Serializable {
     private String urn;
     private String uri;
     private long serviceid;
+    private String digested;
 
 }

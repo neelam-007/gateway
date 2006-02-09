@@ -148,8 +148,6 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
     protected abstract Object getRequestValue( Message request ) throws ServiceResolutionException;
 
-    protected abstract int getMaxLength();
-
     protected boolean matches( PublishedService candidateService, PublishedService matchService ) {
         // Get the match values for this service
         Set candidateValues = new HashSet( Arrays.asList( getTargetValues( candidateService ) ) );
@@ -192,14 +190,13 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     }
 
     Set resolve(Object value, Set serviceSubset) throws ServiceResolutionException {
-
-        if (value instanceof String) {
+        /*if (value instanceof String) {
             String s = (String)value;
             if (s.length() > getMaxLength()) {
                 s = s.substring(0,getMaxLength());
                 value = s;
             }
-        }
+        }*/
         Map serviceMap = getServiceMap( value );
 
         if ( serviceMap == null || serviceMap.isEmpty() ) return Collections.EMPTY_SET;

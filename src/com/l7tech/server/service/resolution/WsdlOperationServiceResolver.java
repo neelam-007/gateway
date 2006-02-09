@@ -24,7 +24,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
             return new Object[0];
         }
         List values = new ArrayList(2);
-        int max = getMaxLength();
+        //int max = getMaxLength();
         try {
             Wsdl wsdl = service.parsedWsdl();
             // fla bugfix for 1827 soap bindings only should be considered for soap web services
@@ -36,7 +36,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
                 operation = (BindingOperation)operations.next();
                 String value = getTargetValue( wsdl.getDefinition(), operation );
                 if ( value != null ) {
-                    if (value.length() > max) value = value.substring(0, max);
+                    //if (value.length() > max) value = value.substring(0, max);
                     values.add( value );
                 }
             }

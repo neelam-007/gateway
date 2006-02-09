@@ -141,6 +141,7 @@
         <property name="uri" column="uri" type="string"/>
         <property name="soapaction" column="soapaction" type="string"/>
         <property name="serviceid" column="serviceid" type="long"/>
+        <property name="digested" column="digested" type="string"/>
     </class>
 
     <class name="com.l7tech.cluster.ClusterNodeInfo" table="cluster_info">

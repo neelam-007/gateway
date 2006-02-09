@@ -110,10 +110,6 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver {
         return null;
     }
 
-    protected int getMaxLength() {
-        return ResolutionParameters.MAX_LENGTH_RES_PARAMETER;
-    }
-
     public int getSpeed() {
         return FAST;
     }
