@@ -18,6 +18,8 @@
     <!-- Properties not published. -->
     <property name="wsdlXml" ignore="true"/>
     <property name="loadTime" ignore="true"/>
+    <property name="httpMethods" ignore="true"/>
+    <property name="httpMethodNames" ignore="true"/>
 
   </mapping>
 </mappings>
