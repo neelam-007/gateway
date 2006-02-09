@@ -11,6 +11,9 @@ import com.l7tech.common.io.InputStreamChannel;
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.FileLock;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Utility methods to approximate Unix-style transactional file replacement in Java.
@@ -20,6 +23,7 @@ import java.nio.channels.ReadableByteChannel;
  * Time: 2:58:00 PM
  */
 public class FileUtils {
+    private static final Logger logger = Logger.getLogger(FileUtils.class.getName());
 
     /**
      * Interface implemented by those who wish to call saveFileSafely().
@@ -29,9 +33,8 @@ public class FileUtils {
     }
 
     /**
-     * Safely overwrite the specified file with new information.
-     * Caller is responsible for ensuring that only one thread will be attempting to save or load
-     * the same file at the same time.
+     * Safely overwrite the specified file with new information.  A lock file will be used to ensure
+     * that only one thread at a time will be attempting to save or load the file at the same time.
      * <p/>
      * <pre>
      *    oldFile   curFile  newFile  Description                    Action to take
@@ -50,8 +53,11 @@ public class FileUtils {
      */
     public static void saveFileSafely(String path, Saver saver) throws IOException {
         FileOutputStream out = null;
+        RandomAccessFile lockRaf = null;
+        FileLock lock = null;
 
         try {
+            File lckFile = new File(path + ".LCK");
             File oldFile = new File(path + ".OLD");
             File curFile = new File(path);
             File newFile = new File(path + ".NEW");
@@ -62,6 +68,11 @@ public class FileUtils {
             // Make directory if needed
             if (curFile.getParentFile() != null)
                 curFile.getParentFile().mkdir();
+
+            // Get file lock
+            lckFile.createNewFile();
+            lockRaf = new RandomAccessFile(lckFile, "rw");
+            lock = lockRaf.getChannel().lock();
 
             // At start: any state is possible
 
@@ -106,7 +117,21 @@ public class FileUtils {
 
         } finally {
             if (out != null)
-                out.close();
+                try { out.close(); }
+                catch (IOException e) {
+                    // Could happen normally if there was an earlier IOException
+                    logger.log(Level.WARNING, "Unable to close file: " + e.getMessage(), e);
+                }
+            if (lock != null)
+                try { lock.release(); }
+                catch (IOException e) {
+                    logger.log(Level.SEVERE, "Unable to release lock: " + e.getMessage(), e);
+                }
+            if (lockRaf != null)
+                try { lockRaf.close(); }
+                catch (IOException e) {
+                    logger.log(Level.SEVERE, "Unable to close lock file: " + e.getMessage(), e);
+                }
         }
     }
 
@@ -119,13 +144,32 @@ public class FileUtils {
      * @return
      * @throws FileNotFoundException
      */
-    public static FileInputStream loadFileSafely(String path) throws FileNotFoundException {
+    public static FileInputStream loadFileSafely(String path) throws IOException {
+        RandomAccessFile lockRaf = null;
+        FileLock lock = null;
         FileInputStream in = null;
         try {
+            // Get file lock
+            File lckFile = new File(path + ".LCK");
+            lckFile.createNewFile();
+            lockRaf = new RandomAccessFile(lckFile, "rw");
+            lock = lockRaf.getChannel().lock();
+
             in = new FileInputStream(path);
         } catch (FileNotFoundException e) {
             // Check for an interrupted update operation
             in = new FileInputStream(path + ".OLD");
+        } finally {
+            if (lock != null)
+                try { lock.release(); }
+                catch (IOException e) {
+                    logger.log(Level.SEVERE, "Unable to release lock: " + e.getMessage(), e);
+                }
+            if (lockRaf != null)
+                try { lockRaf.close(); }
+                catch (IOException e) {
+                    logger.log(Level.SEVERE, "Unable to close lock file: " + e.getMessage(), e);
+                }
         }
         return in;
     }
@@ -134,20 +178,48 @@ public class FileUtils {
      * Ensure that path is deleted, along with any .OLD or .NEW files that might be laying around.
      * The actual file will be deleted last, guaranteeing that the delete will be atomic (ie, no future call
      * to loadFileSafely() will recover an out-of-date version of the file if we are interrupted in mid-delete).
-     * Caller is responsible for ensuring that only one thread attempts to save or load the same file at any time.
      *
      * @param path the path to delete
      * @return true if some files were deleted, or false if none were found
      */
     public static boolean deleteFileSafely(String path) {
-        boolean deletes = false;
-        if (new File(path + ".OLD").delete())
-            deletes = true;
-        if (new File(path + ".NEW").delete())
-            deletes = true;
-        if (new File(path).delete())
-            deletes = true;
-        return deletes;
+        File lckFile = new File(path + ".LCK");
+        RandomAccessFile lockRaf = null;
+        FileLock lock = null;
+        try {
+            boolean deletes = false;
+
+            // Get file lock
+            try {
+                lckFile.createNewFile();
+                lockRaf = new RandomAccessFile(lckFile, "rw");
+                lock = lockRaf.getChannel().lock();
+            } catch (FileNotFoundException e) {
+                deletes = true; // can't happen
+            } catch (IOException e) {
+                deletes = true; // we tried; now we'll just try to delete the lock file
+            }
+
+            if (new File(path + ".OLD").delete())
+                deletes = true;
+            if (new File(path + ".NEW").delete())
+                deletes = true;
+            if (new File(path).delete())
+                deletes = true;
+            return deletes;
+        } finally {
+            lckFile.delete();
+            if (lock != null)
+                try { lock.release(); }
+                catch (IOException e) {
+                    logger.log(Level.SEVERE, "Unable to release lock: " + e.getMessage(), e);
+                }
+            if (lockRaf != null)
+                try { lockRaf.close(); }
+                catch (IOException e) {
+                    logger.log(Level.SEVERE, "Unable to close lock file: " + e.getMessage(), e);
+                }
+        }
     }
 
     /**
