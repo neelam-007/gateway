@@ -28,3 +28,13 @@ alter table audit_message drop column provider_oid;
 alter table audit_admin drop column admin_login;
 
 alter table community_schemas change schema schema_xml mediumtext default '';
+
+alter table service_resolution drop index `soapaction`;
+alter table service_resolution modify column soapaction mediumtext character set latin1 BINARY default '';
+alter table service_resolution modify column urn mediumtext character set latin1 BINARY default '';
+alter table service_resolution modify column uri mediumtext character set latin1 BINARY default '';
+alter table service_resolution add digested varchar(32) default '';
+update service_resolution set digested=HEX(MD5(CONCAT(soapaction,urn,uri)));
+alter table service_resolution modify column digested varchar(32) NOT NULL;
+CREATE UNIQUE INDEX digested ON service_resolution (digested);
+
