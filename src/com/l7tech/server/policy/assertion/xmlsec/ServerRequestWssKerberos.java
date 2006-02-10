@@ -109,60 +109,41 @@ public class ServerRequestWssKerberos implements ServerAssertion {
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
                     // Set up response to be able to sign and encrypt using a reference to this ticket
-                    DecorationRequirements dreq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(null);
-                    dreq.setKerberosTicket(kerberosServiceTicket);
-                    dreq.setKerberosTicketId(kerberosSession.getIdentifier());
-                    dreq.setIncludeKerberosTicketId(true);
+                    addDeferredAssertion(context, kerberosServiceTicket);
 
                     return AssertionStatus.NONE;
                 }
             }
         }
         else if (kerberosTicket != null) { // process ticket
+            KerberosServiceTicket kerberosServiceTicket = kerberosTicket.getServiceTicket();
+            assert kerberosServiceTicket!=null;
+            LoginCredentials loginCreds = new LoginCredentials(kerberosServiceTicket.getClientPrincipalName(),
+                                                        null,
+                                                        CredentialFormat.KERBEROSTICKET,
+                                                        KerberosSecurityToken.class,
+                                                        null,
+                                                        kerberosServiceTicket);
+            context.setCredentials(loginCreds);
+            context.setAuthenticated(true);
+
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
+
+            // stash for later reference
+            SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
+            final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosTicket);
             try {
-                KerberosClient client = new KerberosClient();
-                KerberosServiceTicket kerberosServiceTicket = client.getKerberosServiceTicket(requestWssKerberos.getServicePrincipalName(), kerberosTicket);
-                kerberosTicket.setServiceTicket(kerberosServiceTicket);
-                LoginCredentials loginCreds = new LoginCredentials(kerberosServiceTicket.getClientPrincipalName(),
-                                                            null,
-                                                            CredentialFormat.KERBEROSTICKET,
-                                                            KerberosSecurityToken.class,
-                                                            null,
-                                                            kerberosServiceTicket);
-                context.setCredentials(loginCreds);
-                context.setAuthenticated(true);
-
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
-
-                // stash for later reference
-                SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
-                final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosTicket);
-                try {
-                    sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
-                }
-                catch(DuplicateSessionException dse) {
-                    //can't happen since duplicate tickets are detected by kerberos.
-                    logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
-                }
-
-                // Set up response to be able to sign and encrypt using a reference to this ticket
-                DecorationRequirements dreq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(null);
-                dreq.setKerberosTicket(kerberosServiceTicket);
-                dreq.setKerberosTicketId(sessionIdentifier);
-                dreq.setIncludeKerberosTicketId(true);
-
-                return AssertionStatus.NONE;
+                sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, new SecretKeySpec(kerberosServiceTicket.getKey(), "l7 shared secret"));
             }
-            catch(KerberosException ke) {
-                if(ke.getCause() instanceof LoginException) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_INVALID_CONFIG, null, ke);
-                    return AssertionStatus.FAILED;
-                }
-                else {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_INVALID_TICKET, null, ke);
-                    return AssertionStatus.AUTH_REQUIRED;
-                }
+            catch(DuplicateSessionException dse) {
+                //can't happen since duplicate tickets are detected by kerberos.
+                logger.log(Level.SEVERE, "Duplicate session key error when creating kerberos session.", dse);
             }
+
+            // Set up response to be able to sign and encrypt using a reference to this ticket
+            addDeferredAssertion(context, kerberosServiceTicket);
+
+            return AssertionStatus.NONE;
         }
         auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_NO_TICKET);
         context.setAuthenticationMissing();
@@ -175,4 +156,17 @@ public class ServerRequestWssKerberos implements ServerAssertion {
     private final Auditor auditor;
 
     private RequestWssKerberos requestWssKerberos;
+
+    private void addDeferredAssertion(PolicyEnforcementContext context, final KerberosServiceTicket kerberosServiceTicket) {
+        context.addDeferredAssertion(this, new ServerAssertion() {
+            public AssertionStatus checkRequest(PolicyEnforcementContext context)
+                    throws IOException, PolicyAssertionException
+            {
+                DecorationRequirements dreq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(null);
+                dreq.setKerberosTicket(kerberosServiceTicket);
+
+                return AssertionStatus.NONE;
+            }
+        });
+    }
 }

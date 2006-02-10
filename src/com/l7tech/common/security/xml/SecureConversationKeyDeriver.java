@@ -44,29 +44,17 @@ public class SecureConversationKeyDeriver {
         // check which version of wsc we are dealing with
         if (namespaceURI == null) {
             throw new IllegalArgumentException("DerivedKeyToken must specify wsc namespace");
-        } else if (namespaceURI.equals(SoapUtil.WSSC_NAMESPACE)) {
-            // we are dealing with wsc 1.1
-            // do we care?
+        } else if (XmlUtil.elementInNamespace(derivedKeyToken, SoapUtil.WSSC_NAMESPACE_ARRAY)
+                || XmlUtil.elementInNamespace(derivedKeyToken, SoapUtil.SECURITY_URIS_ARRAY)) {
+            // ok wsc 1.0, 1.1 or whatever wsc is in WSE 3.0
         } else {
-            boolean ok = false;
-            // lets make sure we are dealing with a wsse namespace
-            for (int i = 0; i < SoapUtil.SECURITY_URIS_ARRAY.length; i++) {
-                String secNs = SoapUtil.SECURITY_URIS_ARRAY[i];
-                if (secNs.equals(namespaceURI)) {
-                    ok = true;
-                    break;
-                }
-            }
-            if (!ok) {
-                throw new InvalidDocumentFormatException("Unsuported DerivedKeyToken namespace " +
+            throw new InvalidDocumentFormatException("Unsuported DerivedKeyToken namespace " +
                                                          derivedKeyToken.getNamespaceURI());
-            }
-            // we are dealing with wsc 1.0
-            // do we care?
         }
 
         // check that default algorithm is in effect
         String algo = derivedKeyToken.getAttributeNS(namespaceURI, ALGO_ATTRNAME);
+        if(algo==null || algo.length()==0) algo = derivedKeyToken.getAttribute(ALGO_ATTRNAME);
 
         if (algo == null || algo.length() < 1) {
             throw new NoSuchAlgorithmException("Algorithm specified (" + algo + "). We only support default P_SHA-1");
@@ -103,6 +91,10 @@ public class SecureConversationKeyDeriver {
         // get nonce
         Element nonceNode = XmlUtil.findOnlyOneChildElementByName(derivedKeyToken,
                                                                   SoapUtil.SECURITY_URIS_ARRAY,
+                                                                  "Nonce");
+
+        if(nonceNode==null) nonceNode = XmlUtil.findOnlyOneChildElementByName(derivedKeyToken,
+                                                                  namespaceURI,
                                                                   "Nonce");
         if (nonceNode == null)
             throw new InvalidDocumentFormatException("DerivedKeyToken has no Nonce");

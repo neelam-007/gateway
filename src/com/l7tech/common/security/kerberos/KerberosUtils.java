@@ -42,7 +42,17 @@ public class KerberosUtils {
      * @return the session identifier
      */
     public static String getSessionIdentifier(KerberosGSSAPReqTicket ticket) {
-        return getSessionIdentifier(HexUtils.encodeBase64(HexUtils.getSha1Digest(ticket.toByteArray())));
+        return getSessionIdentifier(getBase64Sha1(ticket));
+    }
+
+    /**
+     * Get the Base64 encoded SHA-1 hash of the given ticket.
+     *
+     * @param ticket the ticket
+     * @return the hash
+     */
+    public static String getBase64Sha1(KerberosGSSAPReqTicket ticket) {
+        return HexUtils.encodeBase64(HexUtils.getSha1Digest(ticket.toByteArray()));
     }
 
     //- PRIVATE

@@ -6,6 +6,7 @@ import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
@@ -94,6 +95,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                                          deferredDecoration(clientCert,
                                                             null,
                                                             null,
+                                                            null,
                                                             responseWssConfidentiality.getRecipientContext()));
             return AssertionStatus.NONE;
         } else {
@@ -107,9 +109,10 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             }
 
             // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
-            // or a SecureConversation in progress
+            // or a SecureConversation in progress or an Encrypted Key or Kerberos Session
 
             X509Certificate clientCert = null;
+            KerberosServiceTicket kerberosServiceTicket = null;
             SecurityContextToken secConvContext = null;
             EncryptedKey encryptedKey = null;
             XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
@@ -133,6 +136,13 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                         }
                         clientCert = samlToken.getSubjectCertificate();
                     }
+                } else if (token instanceof KerberosSecurityToken) {
+                    KerberosSecurityToken kerberosSecurityToken = (KerberosSecurityToken)token;
+                    if(kerberosServiceTicket!=null) {
+                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
+                        return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
+                    }
+                    kerberosServiceTicket = kerberosSecurityToken.getTicket().getServiceTicket();
                 } else if (token instanceof SecurityContextToken) {
                     SecurityContextToken secConvTok = (SecurityContextToken)token;
                     if (secConvTok.isPossessionProved()) {
@@ -147,14 +157,14 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                 }
             }
 
-            if (clientCert == null && secConvContext == null && encryptedKey == null) {
+            if (clientCert == null && secConvContext == null && encryptedKey == null && kerberosServiceTicket==null) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN);
                 context.setAuthenticationMissing(); // todo is it really, though?
                 context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
             }
 
-            context.addDeferredAssertion(this, deferredDecoration(clientCert, secConvContext, encryptedKey, null));
+            context.addDeferredAssertion(this, deferredDecoration(clientCert, kerberosServiceTicket, secConvContext, encryptedKey, null));
             return AssertionStatus.NONE;
         }
     }
@@ -171,6 +181,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
      * @param recipient the intended recipient for the Security header to create
      */
     private ServerAssertion deferredDecoration(final X509Certificate clientCert,
+                                               final KerberosServiceTicket kerberosServiceTicket,
                                                final SecurityContextToken secConvTok,
                                                final EncryptedKey encryptedKey,
                                                final XmlSecurityRecipientContext recipient) {
@@ -226,6 +237,8 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                         wssReq.setEncryptedKey(encryptedKey.getSecretKey());
                         wssReq.setEncryptedKeySha1(encryptedKey.getEncryptedKeySHA1());
                         wssReq.setSignTimestamp();
+                    } else if (kerberosServiceTicket != null ) {
+                        wssReq.setKerberosTicket(kerberosServiceTicket);
                     }
 
                     auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED, new String[] {String.valueOf(selectedElements.size())});

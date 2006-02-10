@@ -532,6 +532,49 @@ public class XmlUtil {
     }
 
     /**
+     * Check if the given document contains any processing instructions.
+     *
+     * @param document the document
+     * @return true if processing instructions are found.
+     */
+    public static boolean hasProcessingInstructions(Document document) {
+        return !findProcessingInstructions(document).isEmpty();
+    }
+
+    /**
+     * Get the processing instructions for the document.
+     *
+     * @param document the document
+     * @return the immutable list of processing instructions (org.w3c.dom.ProcessingInstruction)
+     */
+    public static List findProcessingInstructions(Document document) {
+        List piList = Collections.EMPTY_LIST;
+
+        if(document!=null) {
+            NodeList nodes = document.getChildNodes();
+            int piCount = 0;
+            for(int n=0; n<nodes.getLength(); n++) {
+                Node node = nodes.item(n);
+                if(node.getNodeType()==Node.PROCESSING_INSTRUCTION_NODE) {
+                    piCount++;
+                }
+            }
+            if(piCount>0) {
+                List piNodes = new ArrayList(piCount);
+                for(int n=0; n<nodes.getLength(); n++) {
+                    Node node = nodes.item(n);
+                    if(node.getNodeType()==Node.PROCESSING_INSTRUCTION_NODE) {
+                        piNodes.add(node);
+                    }
+                }
+                piList = Collections.unmodifiableList(piNodes);
+            }
+        }
+
+        return piList;
+    }
+
+    /**
      * Removes all child Elements of a parent Element
      * with the specified name that are in the specified namespace.
      *
@@ -1013,6 +1056,32 @@ public class XmlUtil {
                 }
             }
         }
+    }
+
+    /**
+     * Checks that the namespace of the passed element is one of the namespaces
+     * passed.
+     *
+     * @param el the element to check
+     * @param possibleNamespaces (uris, not prefixes ...), may contain a null entry
+     * @return  true if the namespace matches
+     */
+    public static boolean elementInNamespace(Element el, String[] possibleNamespaces) {
+        boolean hasNamespace = false;
+        String ns = el.getNamespaceURI();
+        for (int i = 0; i < possibleNamespaces.length; i++) {
+            if (ns==null) {
+                if(possibleNamespaces[i]==null) {
+                    hasNamespace = true;
+                    break;
+                }
+            }
+            else if (ns.equals(possibleNamespaces[i])) {
+                hasNamespace = true;
+                break;
+            }
+        }
+        return hasNamespace;
     }
 
     /**

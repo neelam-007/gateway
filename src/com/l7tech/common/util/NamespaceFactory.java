@@ -14,6 +14,7 @@ import org.w3c.dom.Element;
 public class NamespaceFactory {
     protected String wsseNs = SoapUtil.SECURITY_NAMESPACE;
     protected String wsuNs = SoapUtil.WSU_NAMESPACE;
+    protected String wsscNs = SoapUtil.WSSC_NAMESPACE;
 
     public NamespaceFactory() {
     }
@@ -29,6 +30,10 @@ public class NamespaceFactory {
 
     public String getWsuNs() {
         return wsuNs;
+    }
+
+    public String getWsscNs() {
+        return wsscNs;
     }
 
     /**
@@ -96,6 +101,16 @@ public class NamespaceFactory {
     public void setWsuNs(String wsuNs) {
         if (wsuNs == null || wsuNs.length() < 1) throw new IllegalArgumentException("wsuNs must be provided");
         this.wsuNs = wsuNs;
+    }
+
+    /**
+     * Change the wssc namespace used by future calls to this NamespaceFactory.
+     *
+     * @param wsscNs
+     */
+    public void setWsscNs(String wsscNs) {
+        if (wsscNs == null || wsscNs.length() < 1) throw new IllegalArgumentException("wsscNs must be provided");
+        this.wsscNs = wsscNs;
     }
 
     /**

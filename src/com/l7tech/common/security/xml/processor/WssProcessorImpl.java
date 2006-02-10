@@ -165,7 +165,7 @@ public class WssProcessorImpl implements WssProcessor {
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.WSSC_DK_EL_NAME)) {
-                if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
+                if (elementHasNamespace(securityChildToProcess,SoapUtil.WSSC_NAMESPACE_ARRAY)) {
                     processDerivedKey(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered DerivedKey element but not of expected namespace (" +
@@ -606,11 +606,7 @@ public class WssProcessorImpl implements WssProcessor {
      * passed
      */
     private boolean elementHasNamespace(Element el, String[] possibleNamespaces) {
-        String ns = el.getNamespaceURI();
-        for (int i = 0; i < possibleNamespaces.length; i++) {
-            if (ns.equals(possibleNamespaces[i])) return true;
-        }
-        return false;
+        return XmlUtil.elementInNamespace(el, possibleNamespaces);
     }
 
     private void processUsernameToken(final Element usernameTokenElement, ProcessingStatusHolder cntx)

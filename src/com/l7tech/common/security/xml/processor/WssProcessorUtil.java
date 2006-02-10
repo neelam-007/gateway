@@ -55,7 +55,7 @@ public class WssProcessorUtil {
         byte[] rand = new byte[16];
         new Random().nextBytes(rand);
         String id = "VirtualBinarySecurityToken-1-" + HexUtils.hexDump(rand);
-        return new KerberosSecurityTokenImpl(ticket, id, null);
+        return new KerberosSecurityTokenImpl(ticket, id);
     }
 
     /**

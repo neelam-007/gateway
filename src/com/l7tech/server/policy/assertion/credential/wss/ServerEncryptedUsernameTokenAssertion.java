@@ -16,6 +16,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.message.SecurityKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -28,14 +29,15 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import javax.crypto.SecretKey;
 
 /**
  * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
  * signed the timestamp.
  */
 public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
-    final private EncryptedUsernameTokenAssertion data;
-    private final Auditor auditor;
+
+    //- PUBLIC
 
     public ServerEncryptedUsernameTokenAssertion(EncryptedUsernameTokenAssertion data, ApplicationContext springContext) {
         this.data = data;
@@ -105,18 +107,39 @@ public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
 
                 // Configure the eventual response to reuse this EncryptedKey
                 String encryptedKeySha1 = signingToken.getEncryptedKeySHA1();
-                DecorationRequirements respReq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(data.getRecipientContext());
-                respReq.setEncryptedKeySha1(encryptedKeySha1);
-                respReq.setEncryptedKey(signingToken.getSecretKey());
+                addDeferredAssertion(context, encryptedKeySha1, signingToken.getSecretKey());
                 return AssertionStatus.NONE;
             }
         }
         auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS);
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
-        context.setRequestPolicyViolated();
+        context.setRequestPolicyViolated();        
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(ServerEncryptedUsernameTokenAssertion.class.getName());
+
+    private final EncryptedUsernameTokenAssertion data;
+    private final Auditor auditor;
+
+    private void addDeferredAssertion(PolicyEnforcementContext context,
+                                      final String encryptedKeySha1,
+                                      final SecretKey secretKey) {
+        context.addDeferredAssertion(this, new ServerAssertion() {
+            public AssertionStatus checkRequest(PolicyEnforcementContext context)
+                    throws IOException, PolicyAssertionException
+            {
+                SecurityKnob sk = context.getResponse().getSecurityKnob();
+                DecorationRequirements respReq = sk.getAlternateDecorationRequirements(data.getRecipientContext());
+                respReq.setEncryptedKeySha1(encryptedKeySha1);
+                respReq.setEncryptedKey(secretKey);
+
+                return AssertionStatus.NONE;
+            }
+        });
+    }
+
 }

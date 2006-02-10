@@ -142,8 +142,9 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     }
                 }
 
-                if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
-                    // No luck with #EncryptedKeySHA1, so we'll have to do a full RSA signature using our own cert.
+                if ((wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null)
+                  && wssReq.getKerberosTicket() == null) {
+                    // No luck with #EncryptedKeySHA1 or Kerberos, so we'll have to do a full RSA signature using our own cert.
                     wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
                     wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
                 }
