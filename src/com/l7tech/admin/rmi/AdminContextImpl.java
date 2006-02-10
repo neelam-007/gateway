@@ -120,7 +120,7 @@ public class AdminContextImpl
         }
 
         if (trustedCertAdmin == null) {
-            throw new IllegalArgumentException("Jms Admin is required");
+            throw new IllegalArgumentException("Trusted Cert Admin is required");
         }
     }
 }
