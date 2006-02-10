@@ -46,6 +46,7 @@ class PathValidator {
     private static final Class ASSERTION_SAMLASSERTION = RequestWssSaml.class;
     private static final Class ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
     private static final Class ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
+    private static final Class ASSERTION_KERBEROSTICKET = RequestWssKerberos.class;
 
 
     private static Map policyParseCache = Collections.synchronizedMap(new WeakHashMap());
@@ -294,15 +295,17 @@ class PathValidator {
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
             if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
-                    !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN))
+                    !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN) && !haveSeen(ASSERTION_KERBEROSTICKET))
             {
                 String actor = assertionToActor(a);
                 String msg;
                 if (actor.equals(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE)) {
                     msg = "This assertion should be preceeded by an WSS Signature assertion, " +
-                          "a Secure Conversation assertion, or a SAML Security assertion, or an Encrypted UsernameToken assertion.";
+                          "a Secure Conversation assertion, a SAML Security assertion, " +
+                          "an Encrypted UsernameToken assertion, or a WSS Kerberos assertion.";
                 } else {
-                    msg = "This assertion should be preceeded by an WSS Signature assertion, an Encrypted UsernameToken assertion, or a " +
+                    msg = "This assertion should be preceeded by an WSS Signature assertion," +
+                          "an Encrypted UsernameToken assertion, a WSS Kerberos assertion, or a " +
                           "SAML Security assertion (for actor " + actor + ").";
                 }
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
