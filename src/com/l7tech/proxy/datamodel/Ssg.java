@@ -287,14 +287,6 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         return url;
     }
 
-    /**
-     * Check if a non-null and non-empty username, and a non-null password, are configured for this SSG.
-     * @return
-     */
-    /*public boolean isCredentialsConfigured() {
-        return getUsername() != null && password() != null && getUsername().length() > 0;
-    }*/
-
     public String getSsgFile() {
         return ssgFile;
     }
@@ -346,7 +338,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     /**
      * Is this SSG marked as Default?
      * If a client request arrives via an endpoint not mapped to any SSG, it is routed to the Default SSG.
-     * @return
+     * @return true if this is the default Ssg
      */
     public boolean isDefaultSsg() {
         return defaultSsg;
