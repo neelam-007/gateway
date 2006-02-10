@@ -469,10 +469,19 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (SoapUtil.VALUETYPE_KERBEROS_APREQ_SHA1.equals(valueType)) {
                 if (cntx.securityTokenResolver == null)
                     throw new ProcessorException("Unable to process DerivedKeyToken - it references a Kerberosv5APREQSHA1, but no security token resolver is available");
-                derivationSource = cntx.securityTokenResolver.getKerberosTokenBySha1(keyIdB64);
+                XmlSecurityToken xst = cntx.securityTokenResolver.getKerberosTokenBySha1(keyIdB64);
+
+                if(xst==null) {
+                    xst = findSecurityContextTokenBySessionId(cntx, KerberosUtils.getSessionIdentifier(keyIdB64));
+                }
+
+                derivationSource = xst;
             } else
                 throw new InvalidDocumentFormatException("DerivedKey KeyIdentifier refers to unsupported ValueType " + valueType);
 
+            if(derivationSource==null) {
+                throw new InvalidDocumentFormatException("Invalid DerivedKeyToken reference target " + keyIdB64);
+            }
         } else {
             String refUri = refEl.getAttribute("URI");
             if (refUri == null || refUri.length() < 1)
@@ -481,6 +490,10 @@ public class WssProcessorImpl implements WssProcessor {
                 derivationSource = findXmlSecurityTokenById(cntx, refUri);
             else
                 derivationSource = findSecurityContextTokenBySessionId(cntx, refUri);
+
+            if(derivationSource==null) {
+                throw new InvalidDocumentFormatException("Invalid DerivedKeyToken reference target " + refUri);
+            }
         }
 
         if (derivationSource instanceof SecurityContextTokenImpl) {

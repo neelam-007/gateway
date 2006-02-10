@@ -151,11 +151,16 @@ public class KerberosClient {
 
                         KerberosTicket ticket = getTicket(kerberosSubject.getPrivateCredentials(), serviceName, manager);
 
-                        return new KerberosServiceTicket(ticket.getClient().getName(),
+                        KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
+                        KerberosServiceTicket kst = new KerberosServiceTicket(ticket.getClient().getName(),
                                                          servicePrincipalName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
-                                                         new KerberosGSSAPReqTicket(bytes));
+                                                         apReq);
+
+                        apReq.setServiceTicket(kst);
+
+                        return kst;
                     }
                     finally {
                         if(context!=null) context.dispose();
