@@ -41,7 +41,8 @@ class Words {
      * @return the matching word, or null if no match was found.
      */
     public Word getByPrefix(String prefix) {
-        if (prefix == null || prefix.length() < 1) return null;
+        final int prefixLength = prefix.length();
+        if (prefix == null || prefixLength < 1) return null;
         prefix = prefix.trim().toLowerCase();
 
         String numbers = null;
@@ -55,7 +56,7 @@ class Words {
         for (Iterator i = words.iterator(); i.hasNext();) {
             Word word = (Word)i.next();
             final String name = word.getName().toLowerCase();
-            if (name.startsWith(prefix)) {
+            if (name.startsWith(prefix) && prefixLength >= word.getMinAbbrev()) {
                 if (numbers == null)
                     return word;
                 matcher = digitFinder.matcher(name);

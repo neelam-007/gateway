@@ -9,9 +9,10 @@ package com.l7tech.proxy.cli;
  * Represents either a command or a configuration noun in the Bridge CLI.
  */
 abstract class Word {
-    protected final String name;
-    protected final String desc;
-    protected String help = null;
+    private final String name;
+    private final String desc;
+    private int minAbbrev = 1; // minimum length of abbreviation that may match this word
+    private String help = null;
 
     /**
      * Create a new Word with the specified name and description.
@@ -29,6 +30,25 @@ abstract class Word {
     protected void setHelpText(String helpText) {
         if (helpText == null || helpText.length() < 1) throw new IllegalArgumentException();
         this.help = helpText;
+    }
+
+    /** @return minimum abbreviation length.  Always positive, and never greater than the length of {@link #getName}. */
+    public int getMinAbbrev() {
+        return minAbbrev;
+    }
+
+    protected void setMinAbbrev(int minAbbrev) {
+        if (minAbbrev < 1) throw new IllegalArgumentException();
+        if (minAbbrev > getName().length()) throw new IllegalArgumentException();
+        this.minAbbrev = minAbbrev;
+    }
+
+    public String getHelp() {
+        return help;
+    }
+
+    public void setHelp(String help) {
+        this.help = help;
     }
 
     /** @return the name of this word, ie "show". Never null or empty. */

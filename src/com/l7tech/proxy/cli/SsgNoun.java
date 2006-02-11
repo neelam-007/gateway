@@ -6,29 +6,32 @@
 package com.l7tech.proxy.cli;
 
 import com.l7tech.common.util.ArrayUtils;
-import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.PasswordAuthentication;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Configuration noun referring to an Ssg instance.
  */
 class SsgNoun extends Noun {
+    private final CommandSession session;
     private final Ssg ssg;
     private final Words properties;
 
-    public SsgNoun(Ssg inssg) {
+    public SsgNoun(CommandSession session, Ssg inssg) {
         super(inssg.getLocalEndpoint(), "Gateway Account for " + inssg.getUsername() + "@" + inssg.getSsgAddress());
+        this.session = session;
         this.ssg = inssg;
         properties = new Words(Arrays.asList(new NounProperty[] {
                 new NounProperty(ssg, "hostname", "SsgAddress", "Hostname or IP address of SecreSpan Gateway"),
@@ -102,6 +105,7 @@ class SsgNoun extends Noun {
                             }
                             try {
                                 boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
+                                out.print(' ');
                                 if (haveKey) {
                                     out.print("<private key ready>");
                                 } else {
@@ -148,8 +152,58 @@ class SsgNoun extends Noun {
         return baos.toString();
     }
 
+    public void create(PrintStream out, String[] args) throws CommandException {
+        // This message shouldn't have gotten here.  Pass the buck to the main gateways object
+        Noun gateways = (Noun)session.getNouns().getByName("gateways");
+        if (gateways == null) throw new IllegalStateException("No gateways object");
+        gateways.create(out, args);
+    }
+
+    public void delete(PrintStream out, String[] args) throws CommandException {
+        if (args != null && args.length > 0 && !"force".equalsIgnoreCase(args[0])) {
+            NounProperty prop = (NounProperty)properties.getByName(args[0]);
+            if (prop == null)
+                throw new CommandException(getName() + " has no property " + args[0] + ".  (Note that 'delete' doesn't allow abbreviations.)");
+            prop.delete();
+            return;
+        }
+
+        boolean saveAfter = false;
+        if (ssg.getClientCertificate() != null) {
+            if (args == null || args.length < 1 || !args[0].equalsIgnoreCase("force")) {
+                out.println(getName() + " has a client certificate.  Deleting this gateway will destroy");
+                out.println("this certificate and private key.  To proceed, use 'delete " + getName() + " force'");
+                return;
+            }
+        }
+
+        try {
+            if (!ssg.isFederatedGateway()) {
+                session.addRunOnSave(new Runnable() {
+                    public void run() {
+                        ssg.getRuntime().getSsgKeyStoreManager().deleteStores();
+                    }
+                });
+            }
+            session.getSsgManager().remove(ssg);
+            session.onChangesMade();
+        } catch (SsgNotFoundException e) {
+            // Was it already removed in the meantime?  Oh well.  We'll eat this and just not delete it.
+        }
+    }
+
+    public void set(PrintStream out, String propertyName, String[] args) throws CommandException {
+        if (propertyName == null || propertyName.length() < 1)
+            throw new CommandException("Use 'help " + getName() + "' for a description of available properties.");
+
+        NounProperty prop = (NounProperty)properties.getByPrefix(propertyName);
+        if (prop == null) throw new CommandException("Unknown property '" + propertyName + "'.  Use 'help " + getName() + "' for a list.");
+
+        prop.set(args);
+    }
+
     // Display all relevant info about this noun to the specified output stream.
-    public void show(PrintStream out, String[] args) {
+    public void show(PrintStream out, String[] args) throws CommandException {
         super.show(out, args);
 
         if (args != null && args.length > 0) {
@@ -157,7 +211,7 @@ class SsgNoun extends Noun {
             //noinspection UnusedAssignment
             args = ArrayUtils.shift(args);
             NounProperty prop = (NounProperty)properties.getByPrefix(arg);
-            if (prop == null) throw new IllegalArgumentException("Unknown property '" + arg + "'.  Use 'help " + getName() + "' for a list.");
+            if (prop == null) throw new CommandException("Unknown property '" + arg + "'.  Use 'help " + getName() + "' for a list.");
             out.println("  " + prop.getName() + " - " + prop.getDesc() + "\n");
             prop.printValue(out, false);
             return;

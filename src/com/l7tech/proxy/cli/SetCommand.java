@@ -5,6 +5,8 @@
 
 package com.l7tech.proxy.cli;
 
+import com.l7tech.common.util.ArrayUtils;
+
 import java.io.PrintStream;
 
 /**
@@ -13,6 +15,7 @@ import java.io.PrintStream;
 class SetCommand extends Command {
     protected SetCommand() {
         super("set", "Set an object property");
+        setMinAbbrev(2);
         setHelpText("The set command changes the properties of an object.\n" +
                 "You can get a description of the properties for an object with 'help <object>'.\n" +
                 "You can see the current values of the properties for an object with 'show <object>'.\n" +
@@ -27,8 +30,12 @@ class SetCommand extends Command {
                 "               set gateway5 password\n");
     }
 
-    public void execute(CommandSession session, PrintStream out, String[] args) {
-        // TODO
-        throw new RuntimeException("Not yet implemented");
+    public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
+        if (args == null || args.length < 2 || args[0] == null || args[0].length() < 1 || args[1] == null || args[1].length() < 1)
+            throw new CommandException("Usage: set <object> <property> [<value>]");
+        Noun noun = findNoun(session, args);
+        args = ArrayUtils.shift(args);
+        noun.set(out, args[0], ArrayUtils.shift(args));
+        session.onChangesMade();
     }
 }

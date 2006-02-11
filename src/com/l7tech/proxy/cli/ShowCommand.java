@@ -15,6 +15,7 @@ import java.io.PrintStream;
 class ShowCommand extends Command {
     protected ShowCommand() {
         super("show", "Show information about an object");
+        setMinAbbrev(2);
         setHelpText("The show command displays the current properties of an object.\n" +
                 "\n" +
                 "        Usage: show <object>\n" +
@@ -24,12 +25,10 @@ class ShowCommand extends Command {
                 "               sh g3 clientCert\n");
     }
 
-    public void execute(CommandSession session, PrintStream out, String[] args) {
+    public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
         if (args == null || args.length < 1 || args[0].length() < 1)
-            throw new IllegalArgumentException("Usage: show <object> [<property>]");
-        Noun noun = (Noun)session.getNouns().getByPrefix(args[0]);
-        if (noun == null)
-            throw new IllegalArgumentException("Unrecognized object '" + args[0] + "'.  Type 'help' for more information.");
+            throw new CommandException("Usage: show <object> [<property>]");
+        Noun noun = findNoun(session, args);
         noun.show(out, ArrayUtils.shift(args));
     }
 }

@@ -27,7 +27,9 @@ class CommandSession {
     private final PrintStream err;
     private Commands currentCommands = null;
     private boolean interactive = false;
-    private SsgManager ssgManager = null;
+    private SsgManagerImpl ssgManager = null;
+    private boolean unsavedChanges = false;
+    private List runOnSave = new ArrayList();
 
     public CommandSession(final PrintStream out, final PrintStream err) {
         if (out == null || err == null) throw new NullPointerException();
@@ -49,6 +51,9 @@ class CommandSession {
     public SsgManager getSsgManager() {
         if (ssgManager == null) {
             ssgManager = SsgManagerImpl.getSsgManagerImpl();
+            ssgManager.load();
+            runOnSave.clear();
+            unsavedChanges = false;
         }
         return ssgManager;
     }
@@ -64,9 +69,11 @@ class CommandSession {
     }
 
     /** Repeatedly read allCommands and process them. */
-    public void processCommands(final InputStream in) {
+    public void processInteractiveCommands(final InputStream in) {
         setInteractive(true);
         BufferedReader bin = new BufferedReader(new InputStreamReader(in));
+        getSsgManager();
+        out.println("Editing configuration in " + ssgManager.getStorePath());
         out.println(TYPE_HELP);
         out.println();
         while (interactive) {
@@ -81,20 +88,19 @@ class CommandSession {
             } catch (IOException e) {
                 err.println("Error: " + ExceptionUtils.getMessage(e));
                 break; // Stop interactive mode if we couldn't read a command
-            } catch (IllegalArgumentException e) {
+            } catch (CommandException e) {
+                // Normal exception used to report error message
                 err.println(ExceptionUtils.getMessage(e));
-            } catch (RuntimeException e) {
+            } catch (Throwable e) {
                 err.print("Internal error: ");
                 e.printStackTrace(err);
-            } catch (Throwable e) {
-                err.println("Error: " + ExceptionUtils.getMessage(e));
             }
         }
         out.println("Interactive mode exiting");
     }
 
     /** Process single command. */
-    public void processCommand(String[] args) {
+    public void processCommand(String[] args) throws CommandException {
         final String cmdStr = args[0];
         if (cmdStr == null || cmdStr.length() < 1) return; // Ignore blank line
         Command command = (Command)allCommands.getByName(cmdStr);
@@ -103,13 +109,13 @@ class CommandSession {
             if (command != null)
                 out.println("(" + command.getName() + ")");
         }
-        if (command == null) throw new IllegalArgumentException("Unknown command '" + cmdStr + "'. " + TYPE_HELP);
+        if (command == null) throw new CommandException("Unknown command '" + cmdStr + "'. " + TYPE_HELP);
 
         // Check for correct interactivity
         if (isInteractive() && !command.isInteractive())
-            throw new IllegalArgumentException("Command '" + command.getName() + "' is not available in interactive mode");
+            throw new CommandException("Command '" + command.getName() + "' is not available in interactive mode");
         if (!isInteractive() && !command.isOneshot())
-            throw new IllegalArgumentException("Command '" + command.getName() + "' is not available in command line mode");
+            throw new CommandException("Command '" + command.getName() + "' is not available in command line mode");
 
         String[] rest = new String[args.length - 1];
         System.arraycopy(args, 1, rest, 0, rest.length);
@@ -118,6 +124,7 @@ class CommandSession {
 
     /** Quit an interactive mode session. */
     public void quit() {
+        if (unsavedChanges) out.println("Discarding unsaved configuration changes");
         setInteractive(false);
     }
 
@@ -145,9 +152,70 @@ class CommandSession {
         List ret = new ArrayList(global);
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
             Ssg ssg = (Ssg)i.next();
-            ret.add(new SsgNoun(ssg));
+            ret.add(new SsgNoun(this, ssg));
         }
         return new Nouns(ret);
     }
-}
 
+    /**
+     * Set the unsaved changes flag.
+     * Used by commands to report when changes have been made to the config file.
+     * The changed config file won't be saved until saveChanges() is called.
+     */
+    public void onChangesMade() {
+        unsavedChanges = true;
+    }
+
+    /**
+     * Unconditionally writes out the config file.
+     */
+    public void saveConfig() throws IOException {
+        getSsgManager().save();
+        for (Iterator i = runOnSave.iterator(); i.hasNext();) {
+            Runnable runnable = (Runnable)i.next();
+            try {
+                runnable.run();
+            } catch (RuntimeException e) {
+                err.println("Warning: error while saving: " + ExceptionUtils.getMessage(e));
+            }
+        }
+        runOnSave.clear();
+        unsavedChanges = false;
+        out.println("Configuration saved to " + ssgManager.getStorePath());
+    }
+
+    /**
+     * Saves all changes made to the current ssgManager, but only if the unsavedChanges flag is on.
+     * @throws IOException
+     */
+    public void saveUnsavedChanges() throws IOException {
+        if (unsavedChanges) saveConfig();
+    }
+
+    /**
+     * Forgets any changes and reloads ssgManager from the config file.
+     */
+    public void rollback() {
+        getSsgManager();
+        if (unsavedChanges) out.println("Discarding unsaved configuration changes");
+        ssgManager.load();
+        out.println("Configuration reloaded from " + ssgManager.getStorePath());
+        runOnSave.clear();
+        unsavedChanges = false;
+    }
+
+    /** @return true if the unsaved changes flag is on. */
+    public boolean isUnsavedChanges() {
+        return unsavedChanges;
+    }
+
+    /**
+     * Register a Runnable to be executed after the next time the configuration file is saved.
+     * This can be used to defer truststore delete etc. for deleted SSGs.
+     *
+     * @param runnable
+     */
+    public void addRunOnSave(Runnable runnable) {
+        runOnSave.add(runnable);
+    }
+}

@@ -47,7 +47,7 @@ public class Main {
 
     public static void main(String[] args) {
         initLogging("com/l7tech/proxy/resources/cliLogging.properties");
-        System.out.println("SecureSpan Bridge Configuration Editor\n");
+        System.out.println("SecureSpan Bridge Configuration Editor");
         JceProvider.init();
 
         final CommandSession cc = new CommandSession(System.out, System.err);
@@ -55,7 +55,7 @@ public class Main {
 
         if (args.length < 1 || cmdMatch(args[0], "i")) {
             // Interactive mode
-            cc.processCommands(System.in);
+            cc.processInteractiveCommands(System.in);
             return;
         }
 
@@ -66,6 +66,7 @@ public class Main {
 
         try {
             cc.processCommand(args);
+            cc.saveUnsavedChanges();
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             System.err.println();

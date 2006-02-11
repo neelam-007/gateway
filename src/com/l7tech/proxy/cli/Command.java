@@ -53,5 +53,22 @@ abstract class Command extends Word {
      * @param out     where any textual output of the command is to be sent.  Must not be null.
      * @param args    extra arguments for the command.  May be null or empty.
      */
-    public abstract void execute(CommandSession session, PrintStream out, String[] args);
+    public abstract void execute(CommandSession session, PrintStream out, String[] args) throws CommandException;
+
+    /**
+     * Utility method for subclasses that finds the noun being referred to by args.
+     *
+     * @param session   the session to search.  Must not be null.
+     * @param args      arguments which may refer to a noun.  May be null or empty.
+     * @return the located noun.  Never null.
+     * @throws CommandException if args is null or empty, or no matching noun could be found in the session.
+     */
+    protected Noun findNoun(CommandSession session, String[] args) throws CommandException {
+        if (args == null || args.length < 1 || args[0].length() < 1)
+            throw new CommandException("Usage: " + getName() + " <object>");
+        Noun noun = (Noun)session.getNouns().getByPrefix(args[0]);
+        if (noun == null)
+            throw new CommandException("Unrecognized object '" + args[0] + "'.  Type 'help' for more information.");
+        return noun;
+    }
 }

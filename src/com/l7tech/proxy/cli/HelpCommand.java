@@ -71,7 +71,8 @@ class HelpCommand extends Command {
         out.println();
         printAvailableObjects(session, out);
         out.println();
-        out.println("Use 'help <command>' or 'help <object>' for more information.\n");
+        out.println("Use 'help <command>' or 'help <object>' for more information.");
+        out.println("Most words can be abbreviated to two or three letters.");
     }
 
     private void printWordHelp(CommandSession session, PrintStream out, Word word) {

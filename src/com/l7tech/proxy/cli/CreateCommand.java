@@ -5,6 +5,8 @@
 
 package com.l7tech.proxy.cli;
 
+import com.l7tech.common.util.ArrayUtils;
+
 import java.io.PrintStream;
 
 /**
@@ -22,8 +24,9 @@ class CreateCommand extends Command {
                 "               create gateway ssg.example.com testuser secret\n");
     }
 
-    public void execute(CommandSession session, PrintStream out, String[] args) {
-        // TODO
-        throw new RuntimeException("Not yet implemented");
+    public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
+        Noun noun = findNoun(session, args);
+        noun.create(out, ArrayUtils.shift(args));
+        session.onChangesMade();
     }
 }

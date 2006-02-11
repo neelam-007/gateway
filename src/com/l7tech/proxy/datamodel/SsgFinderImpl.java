@@ -6,24 +6,17 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.util.FileUtils;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+
 import java.beans.XMLDecoder;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.HashMap;
-
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import java.util.logging.Logger;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provides read-only access to the ssgs.xml file.
@@ -52,6 +45,11 @@ public class SsgFinderImpl implements SsgFinder {
     }
 
     protected SsgFinderImpl() {
+    }
+
+    /** @return the path the config file we are saving and loading from. */
+    public String getStorePath() {
+        return STORE_FILE;
     }
 
     /**

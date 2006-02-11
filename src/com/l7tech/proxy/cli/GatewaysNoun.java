@@ -5,12 +5,14 @@
 
 package com.l7tech.proxy.cli;
 
-import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgManager;
 
 import java.io.PrintStream;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Configuration noun representing the current set of Ssg objects.
@@ -27,8 +29,8 @@ class GatewaysNoun extends Noun {
     }
 
     // Display all relevant info about this noun to the specified output stream.
-    public void show(PrintStream out, String[] args) {
-        if (args != null && args.length > 0) throw new IllegalArgumentException("gateways has no property '" + args[0] + "'");
+    public void show(PrintStream out, String[] args) throws CommandException {
+        if (args != null && args.length > 0) throw new CommandException("gateways has no property '" + args[0] + "'");
         super.show(out, args);
         List ssgs = session.getSsgManager().getSsgList();
         if (ssgs.size() < 1) {
@@ -50,5 +52,24 @@ class GatewaysNoun extends Noun {
             out.print(TextUtils.pad(ssg.getUsername(), 17));
             out.println();
         }
+    }
+
+    public void create(PrintStream out, String[] args) throws CommandException {
+        SsgManager ssgManager = session.getSsgManager();
+        Ssg ssg = ssgManager.createSsg();
+        if (args != null && args.length > 0) {
+            ssg.setSsgAddress(args[0]);
+            args = ArrayUtils.shift(args);
+        }
+        if (args != null && args.length > 0) {
+            ssg.setUsername(args[0]);
+            args = ArrayUtils.shift(args);
+        }
+        if (args != null && args.length > 0) {
+            ssg.getRuntime().setCachedPassword(args[0].toCharArray());
+            ssg.setSavePasswordToDisk(true);
+        }
+        ssgManager.add(ssg);
+        out.println(ssg.getLocalEndpoint() + " created");
     }
 }
