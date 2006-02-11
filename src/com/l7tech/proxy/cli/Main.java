@@ -9,11 +9,44 @@ import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.proxy.datamodel.Managers;
 
+import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.util.logging.LogManager;
+
 /**
  * Command line tool for editing a Bridge configuration file.
  */
 public class Main {
+
+    private static void initLogging(String configPath) {
+        // apache logging layer to use the jdk logger
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+
+        final File file = new File(configPath);
+        final LogManager logManager = LogManager.getLogManager();
+
+        try {
+            if (file.exists()) {
+                final InputStream in = file.toURL().openStream();
+                if (in != null) {
+                    logManager.readConfiguration(in);
+                }
+            }
+
+            ClassLoader cl = Main.class.getClassLoader();
+            URL resource = cl.getResource(configPath);
+            if (resource != null) {
+                logManager.readConfiguration(resource.openStream());
+            }
+        } catch (IOException e) {
+            // Oh well, we tried our best
+        }
+    }
+
     public static void main(String[] args) {
+        initLogging("com/l7tech/proxy/resources/cliLogging.properties");
         System.out.println("SecureSpan Bridge Configuration Editor\n");
         JceProvider.init();
 

@@ -183,10 +183,12 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         return isFederatedTrusted() || getWsTrustSamlTokenStrategy() != null;
     }
 
+    /** @return true if this is a federated gateway hanging off a trusted gateway. */
     public boolean isFederatedTrusted() {
        return trustedGateway != null;
     }
 
+    /** @return true if this is a federated gateway that uses a WS-Trust STS. */
     public boolean isFederatedWsTrust() {
         return getWsTrustSamlTokenStrategy() instanceof WsTrustSamlTokenStrategy;
     }

@@ -8,9 +8,11 @@ package com.l7tech.proxy.cli;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
+import com.l7tech.common.util.ExceptionUtils;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -77,10 +79,15 @@ class CommandSession {
                 String[] args = line.split("\\s");
                 processCommand(args);
             } catch (IOException e) {
-                err.println("Error: " + e.getMessage());
+                err.println("Error: " + ExceptionUtils.getMessage(e));
                 break; // Stop interactive mode if we couldn't read a command
-            } catch (Exception e) {
-                err.println("Error: " + e.getMessage());
+            } catch (IllegalArgumentException e) {
+                err.println(ExceptionUtils.getMessage(e));
+            } catch (RuntimeException e) {
+                err.print("Internal error: ");
+                e.printStackTrace(err);
+            } catch (Throwable e) {
+                err.println("Error: " + ExceptionUtils.getMessage(e));
             }
         }
         out.println("Interactive mode exiting");
@@ -133,7 +140,7 @@ class CommandSession {
 
     /** @return all Nouns currently available in this session.  Never null or empty. */
     public Nouns getNouns() {
-        List global = Nouns.getGlobal();
+        List global = Arrays.asList(new Object[] {new GatewaysNoun(this)});
         List ssgs = getSsgManager().getSsgList();
         List ret = new ArrayList(global);
         for (Iterator i = ssgs.iterator(); i.hasNext();) {

@@ -75,7 +75,16 @@ class HelpCommand extends Command {
     }
 
     private void printWordHelp(CommandSession session, PrintStream out, Word word) {
-        out.println(word.getName() + " - " + word.getDesc());
+        String header = word.getName() + " - " + word.getDesc();
+        if (word instanceof Command) {
+            Command command = (Command)word;
+            out.print(TextUtils.pad(header, 55));
+            out.print(TextUtils.pad("Cmdline:" + (command.isOneshot()?'Y':'N'), 10));
+            out.print(TextUtils.pad("Interactive:" + (command.isInteractive()?'Y':'N'), 14));
+            out.println();
+        } else {
+            out.println(header);
+        }
         out.println();
         out.println(word.getHelpText());
     }

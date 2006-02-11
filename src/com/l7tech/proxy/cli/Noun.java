@@ -16,7 +16,15 @@ abstract class Noun extends Word {
     }
 
     // Display all relevant info about this noun to the specified output stream.
-    public void show(PrintStream out) {
+
+    /**
+     * Display information about this noun, or the specific property of this noun, to the specified output stream.
+     *
+     * @param out  the output stream.  Must not be null.
+     * @param args info about the property to display; if not provided, all relevant overview info should be displayed.
+     *             May be null or empty.
+     */
+    public void show(PrintStream out, String[] args) {
         out.println(getName() + " - " + getDesc() + "\n");        
     }
 }
