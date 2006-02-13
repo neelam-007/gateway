@@ -4,9 +4,9 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -187,7 +187,7 @@ public class StubDataStore {
             InternalGroup g = (InternalGroup)groups.next();
             for (Iterator i = users.values().iterator(); i.hasNext();) {
                 InternalUser u = (InternalUser)i.next();
-                GroupMembership gm = new GroupMembership(u.getOid(), g.getOid());
+                InternalGroupMembership gm = InternalGroupMembership.newInternalMembership(g.getOid(), u.getOid());
                 encoder.writeObject(gm);
                 populate(gm);
             }

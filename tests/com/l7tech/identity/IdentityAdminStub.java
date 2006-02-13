@@ -7,8 +7,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.internal.InternalGroupMembership;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.service.PublishedService;
@@ -118,13 +118,13 @@ public class IdentityAdminStub implements IdentityAdmin {
             // Clear existing memberships
             for (Iterator i = store.getGroupMemberships().iterator(); i.hasNext();) {
                 GroupMembership gm = (GroupMembership)i.next();
-                if (user.getUniqueIdentifier().equals(Long.toString(gm.getUserOid()))) i.remove();
+                if (user.getUniqueIdentifier().equals(gm.getMemberUserId())) i.remove();
             }
 
             // Set new memberships
             for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
                 EntityHeader header = (EntityHeader)i.next();
-                GroupMembership mem = new GroupMembership(Long.parseLong(user.getUniqueIdentifier()), header.getOid());
+                GroupMembership mem = InternalGroupMembership.newInternalMembership(header.getOid(), Long.parseLong(user.getUniqueIdentifier()));
                 store.getGroupMemberships().add(mem);
             }
         }
@@ -183,9 +183,9 @@ public class IdentityAdminStub implements IdentityAdmin {
         Set memberships = store.getGroupMemberships();
         Set results = new HashSet();
         for (Iterator i = memberships.iterator(); i.hasNext();) {
-            GroupMembership gm = (GroupMembership)i.next();
-            if (userId.equals(Long.toString(gm.getUserOid()))) {
-                Group g = (Group)store.getGroups().get(Long.toString(gm.getGroupOid()));
+            InternalGroupMembership gm = (InternalGroupMembership) i.next();
+            if (userId.equals(gm.getMemberUserId())) {
+                Group g = (Group)store.getGroups().get(gm.getThisGroupId());
                 results.add(fromGroup(g));
             }
         }
@@ -198,8 +198,8 @@ public class IdentityAdminStub implements IdentityAdmin {
         Set results = new HashSet();
         for (Iterator i = memberships.iterator(); i.hasNext();) {
             GroupMembership gm = (GroupMembership)i.next();
-            if (groupId.equals(Long.toString(gm.getGroupOid()))) {
-                User u = (User)store.getUsers().get(Long.toString(gm.getUserOid()));
+            if (groupId.equals(gm.getThisGroupId())) {
+                User u = (User)store.getUsers().get(gm.getMemberUserId());
                 results.add(fromUser(u));
             }
         }
