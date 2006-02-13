@@ -61,7 +61,7 @@ update internal_user_group set provider_oid = -2;
 alter table internal_user_group add objectid bigint(20) auto_increment primary key;
 
 -- Redefine PK to exclude auto_increment
-alter table internal_user_group change objectid objectid bigint(20) primary key;
+alter table internal_user_group change objectid objectid bigint(20) not null;
 
 -- Add new indexes
 alter table internal_user_group add index (provider_oid);
