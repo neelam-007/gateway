@@ -258,6 +258,11 @@ class PathValidator {
             }
         }
 
+        // kerberos is both credentials and authorization since authorization is delegated to issuer
+        if (a instanceof RequestWssKerberos) {
+            seenAccessControl = true;
+        }
+
         //
         if (a instanceof RequestWssSaml)
             setSeenSamlStatement(a, true);
