@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
@@ -368,9 +369,16 @@ class GroupUsersPanel extends JPanel {
 
             groupAdd.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    JDialog d = (JDialog)SwingUtilities.windowForComponent(GroupUsersPanel.this);
+                    Window w = SwingUtilities.windowForComponent(GroupUsersPanel.this);
 
-                    JDialog dialog = new NewGroupMemberDialog(d, GroupUsersPanel.this, ipc);
+                    Frame parent;
+                    if (w instanceof Frame) {
+                        parent = (Frame)w;
+                    } else {
+                        parent = TopComponents.getInstance().getMainWindow();
+                    }
+
+                    JDialog dialog = new NewGroupMemberDialog(parent, GroupUsersPanel.this, ipc);
                     dialog.setResizable(false);
                     dialog.setVisible(true);
 

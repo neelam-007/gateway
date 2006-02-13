@@ -14,14 +14,15 @@ import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.beans.BeansException;
+import org.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -36,6 +37,12 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     private ServiceCache serviceCache;
     private Class[] visitorClasses;
     private ApplicationContext applicationContext;
+
+    private final String versionQuery = "SELECT " + getTableName() + "." + F_VERSION + " FROM " + getTableName() +
+        " in class " + getImpClass().getName() + " WHERE " + getTableName() + "." + F_OID + " = ?";
+
+    private final String oidVersionQuery = "SELECT " + getTableName() + "." + F_OID + ", " + getTableName() + "." + F_VERSION +
+      " FROM " + getTableName() + " in class " + getImpClass().getName();
 
     public void setVisitorClassnames(String visitorClassnames) {
         String[] names = visitorClassnames.split(",\\s*");
@@ -114,13 +121,14 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public int getCurrentPolicyVersion(long policyId) throws FindException {
         try {
             Session s = getSession();
-            List results = s.find(getFieldQuery(new Long(policyId).toString(), F_VERSION));
-            if (results == null || results.isEmpty()) {
+            Query q = s.createQuery(versionQuery);
+            q.setLong(0, policyId);
+            List results = q.list();
+            if (results == null || results.isEmpty() || results.size() > 1) {
                 throw new FindException("cannot get version for service " + Long.toString(policyId));
             }
             Integer i = (Integer)results.get(0);
-            int res = i.intValue();
-            return res;
+            return i.intValue();
         } catch (HibernateException e) {
             throw new FindException("cannot get version", e);
         }
@@ -246,13 +254,12 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
      * @throws FindException if the query fails for some reason
      */
     public Map getServiceVersions() throws FindException {
-        String query = "SELECT " + getTableName() + "." + F_OID + ", " + getTableName() + "." + F_VERSION +
-          " FROM " + getTableName() + " in class " + getImpClass().getName();
         Map output = new HashMap();
 
         try {
             Session s = getSession();
-            List results = s.find(query);
+            Query q = s.createQuery(oidVersionQuery);
+            List results = q.list();
             if (results == null || results.isEmpty()) {
                 // logger.fine("no version info to return");
             } else {

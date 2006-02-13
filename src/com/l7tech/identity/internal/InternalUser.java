@@ -1,11 +1,11 @@
 package com.l7tech.identity.internal;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.InvalidPasswordException;
-import com.l7tech.common.util.HexUtils;
 
 /**
  * User from the internal identity provider.

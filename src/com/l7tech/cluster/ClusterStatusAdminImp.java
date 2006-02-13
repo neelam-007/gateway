@@ -7,12 +7,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayLicenseManager;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -25,7 +23,7 @@ import java.util.logging.Logger;
  * Date: Jan 2, 2004<br/>
  * $Id$<br/>
  */
-public class ClusterStatusAdminImp extends HibernateDaoSupport implements ClusterStatusAdmin {
+public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
      * Constructs the new cluster status admin implementation.
      * On constructir change update the spring bean definition
@@ -144,8 +142,8 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
         return clusterInfoManager.getSelfNodeInf().getName();
     }
 
-    public List getAllProperties() throws RemoteException, FindException {
-        return clusterPropertyManager.getAllProperties();
+    public Collection getAllProperties() throws RemoteException, FindException {
+        return clusterPropertyManager.findAll();
     }
 
     public String getProperty(String key) throws RemoteException, FindException {

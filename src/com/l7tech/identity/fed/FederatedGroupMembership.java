@@ -1,55 +1,36 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.identity.fed;
 
-import com.l7tech.identity.internal.GroupMembership;
+import com.l7tech.identity.GroupMembership;
 
 /**
- * @author alex
- * @version $Revision$
+ * This class still has a composite primary key, so it uses the inherited
+ * {@link #getOid()} property to store the Federated Group OID
  */
 public class FederatedGroupMembership extends GroupMembership {
     public FederatedGroupMembership() {
-        super();
     }
 
-    public FederatedGroupMembership(long providerOid, long userOid, long groupOid) {
-        super(userOid, groupOid);
-        this.providerOid = providerOid;
+    public FederatedGroupMembership(long providerOid, long groupOid, long userOid)
+            throws NumberFormatException
+    {
+        this.thisGroupProviderOid = providerOid;
+        setThisGroupId(Long.toString(groupOid));
+        this.memberUserId = Long.toString(userOid);
     }
 
-    public long getProviderOid() {
-        return providerOid;
+    public String getThisGroupId() {
+        return Long.toString(getOid());
     }
 
-    public void setProviderOid( long providerOid ) {
-        this.providerOid = providerOid;
+    public void setThisGroupId(String thisGroupId) throws NumberFormatException {
+        if (thisGroupId == null) {
+            setOid(DEFAULT_OID);
+        } else {
+            setOid(Long.parseLong(thisGroupId));
+        }
     }
-
-    public boolean equals(Object other) {
-        if (this == other) return true;
-        if (!(other instanceof FederatedGroupMembership)) return false;
-
-        final FederatedGroupMembership groupMembership = (FederatedGroupMembership)other;
-
-        if (providerOid != groupMembership.providerOid) return false;
-        if (groupOid != groupMembership.groupOid) return false;
-        if (userOid != groupMembership.userOid) return false;
-
-        return true;
-    }
-
-    public int hashCode() {
-        int result;
-        result = (int) (userOid ^ (userOid >>> 32));
-        result = 29 * result + (int) (providerOid ^ (providerOid >>> 32));
-        result = 29 * result + (int) (groupOid ^ (groupOid >>> 32));
-        return result;
-    }
-
-    private long providerOid;
 }

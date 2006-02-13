@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <!DOCTYPE hibernate-mapping PUBLIC
-        "-//Hibernate/Hibernate Mapping DTD 2.0//EN"
-        "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <!--
   This is the unified (PostgreSQL & MySQL) version of the Hibernate mapping file.
 -->
 
 <hibernate-mapping>
-    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider">
+    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -29,9 +29,9 @@
 
     <subclass name="com.l7tech.identity.ldap.LdapIdentityProviderConfig"
               extends="com.l7tech.identity.IdentityProviderConfig"
-              discriminator-value="2"/>
+              discriminator-value="2" lazy="false"/>
 
-    <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group">
+    <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -49,30 +49,7 @@
         -->
     </class>
 
-<!-- AC WORK IN PROGRESS
-    <class name="com.l7tech.identity.internal.MetaGroup" table="meta_group">
-        <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo"/>
-        </id>
-
-        <version name="version" column="version" type="integer"/>
-
-        <property name="description" type="string"/>
-        <property name="name" type="string"/>
-    </class>
-
-    <class name="com.l7tech.identity.internal.MetaGroupMembership" table="meta_group_membership">
-        <composite-id>
-            <key-property name="metaGroupOid" column="meta_group_oid" type="long"/>
-            <key-property name="foreignProviderOid" column="foreign_provider_oid" type="long"/>
-            <key-property name="foreignUserId" column="foreign_user_id" type="string"/>
-            <key-property name="foreignGroupId" column="foreign_group_id" type="string"/>
-        </composite-id>
-    </class>
--->
-
-
-    <class name="com.l7tech.identity.internal.InternalUser" table="internal_user">
+    <class name="com.l7tech.identity.internal.InternalUser" table="internal_user" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -95,15 +72,21 @@
         -->
     </class>
 
-    <class name="com.l7tech.identity.internal.GroupMembership" table="internal_user_group">
-        <composite-id>
-            <key-property name="userOid" column="internal_user" type="long"/>
-            <key-property name="groupOid" column="internal_group" type="long"/>
-        </composite-id>
+    <class name="com.l7tech.identity.internal.InternalGroupMembership" table="internal_user_group" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="thisGroupId" column="internal_group" type="string"/>
+        <property name="memberUserId" column="user_id" type="string"/>
+        <property name="memberSubgroupId" column="subgroup_id" type="string"/>
+        <property name="memberProviderOid" column="provider_oid" type="long"/>
     </class>
 
 
-    <class name="com.l7tech.service.PublishedService" table="published_service">
+    <class name="com.l7tech.service.PublishedService" table="published_service" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -120,7 +103,7 @@
         <property name="httpMethodNames" column="http_methods" type="text"/>
     </class>
 
-    <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert">
+    <class name="com.l7tech.server.identity.cert.CertEntryRow" table="client_cert" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -133,7 +116,7 @@
         <property name="ski" type="string"/>
     </class>
 
-    <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution">
+    <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution" lazy="false">
         <id name="oid" column="objectid" type="long">
             <generator class="hilo"/>
         </id>
@@ -144,7 +127,7 @@
         <property name="digested" column="digested" type="string"/>
     </class>
 
-    <class name="com.l7tech.cluster.ClusterNodeInfo" table="cluster_info">
+    <class name="com.l7tech.cluster.ClusterNodeInfo" table="cluster_info" lazy="false">
         <id name="mac" column="mac" type="string" unsaved-value="">
             <generator class="assigned"/>
         </id>
@@ -157,7 +140,7 @@
         <property name="lastUpdateTimeStamp" column="statustimestamp" type="long"/>
     </class>
 
-    <class name="com.l7tech.cluster.ServiceUsage" table="service_usage">
+    <class name="com.l7tech.cluster.ServiceUsage" table="service_usage" lazy="false">
         <composite-id>
             <key-property name="serviceid" column="serviceid" type="long"/>
             <key-property name="nodeid" column="nodeid" type="string"/>
@@ -167,7 +150,7 @@
         <property name="completed" column="completedreqnr" type="long"/>
     </class>
 
-    <class name="com.l7tech.common.transport.jms.JmsConnection" table="jms_connection">
+    <class name="com.l7tech.common.transport.jms.JmsConnection" table="jms_connection" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -190,7 +173,7 @@
         -->
     </class>
 
-    <class name="com.l7tech.common.transport.jms.JmsEndpoint" table="jms_endpoint">
+    <class name="com.l7tech.common.transport.jms.JmsEndpoint" table="jms_endpoint" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -210,7 +193,7 @@
         <property name="messageSource" column="is_message_source"/>
     </class>
 
-    <class name="com.l7tech.common.security.TrustedCert" table="trusted_cert">
+    <class name="com.l7tech.common.security.TrustedCert" table="trusted_cert" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -230,9 +213,9 @@
 
     <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"
               extends="com.l7tech.identity.IdentityProviderConfig"
-              discriminator-value="3"/>
+              discriminator-value="3" lazy="false"/>
 
-    <class name="com.l7tech.identity.fed.FederatedUser" table="fed_user">
+    <class name="com.l7tech.identity.fed.FederatedUser" table="fed_user" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -250,7 +233,7 @@
         <property name="lastName" column="last_name" type="string"/>
     </class>
 
-    <class name="com.l7tech.identity.fed.FederatedGroup" table="fed_group">
+    <class name="com.l7tech.identity.fed.FederatedGroup" table="fed_group" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -263,15 +246,15 @@
         <property name="name" type="string"/>
     </class>
 
-    <class name="com.l7tech.identity.fed.FederatedGroupMembership" table="fed_user_group">
+    <class name="com.l7tech.identity.fed.FederatedGroupMembership" table="fed_user_group" lazy="false">
         <composite-id>
-            <key-property name="providerOid" column="provider_oid" type="long"/>
-            <key-property name="userOid" column="fed_user_oid" type="long"/>
-            <key-property name="groupOid" column="fed_group_oid" type="long"/>
+            <key-property name="thisGroupProviderOid" column="provider_oid" type="long"/>
+            <key-property name="memberUserId" column="fed_user_oid" type="long"/>
+            <key-property name="thisGroupId" column="fed_group_oid" type="long"/>
         </composite-id>
     </class>
 
-    <class name="com.l7tech.identity.fed.VirtualGroup" table="fed_group_virtual">
+    <class name="com.l7tech.identity.fed.VirtualGroup" table="fed_group_virtual" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -287,7 +270,7 @@
         <property name="xmlProperties" column="properties" type="text"/>
     </class>
 
-    <class name="com.l7tech.server.sla.CounterIDRecord" table="counters">
+    <class name="com.l7tech.server.sla.CounterIDRecord" table="counters" lazy="false">
         <id name="counterId" column="counterid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -296,7 +279,7 @@
         <property name="counterName" column="countername" type="string"/>
     </class>
 
-    <class name="com.l7tech.common.xml.schema.SchemaEntry" table="community_schemas">
+    <class name="com.l7tech.common.xml.schema.SchemaEntry" table="community_schemas" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -305,14 +288,16 @@
         <property name="tns" column="tns" type="string"/>
     </class>
 
-    <class name="com.l7tech.cluster.ClusterProperty" table="cluster_properties">
-        <id name="key" column="propkey" type="string">
-            <generator class="assigned"/>
+    <class name="com.l7tech.cluster.ClusterProperty" table="cluster_properties" lazy="false">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
         </id>
-        <property name="value" column="propvalue" type="text"/>
+        <version name="version"/> 
+        <property name="name" column="propkey" type="string" unique="true"/>
+        <property name="value" column="propvalue" type="string"/>
     </class>
 
-    <class name="com.l7tech.service.SampleMessage" table="sample_messages">
+    <class name="com.l7tech.service.SampleMessage" table="sample_messages" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>

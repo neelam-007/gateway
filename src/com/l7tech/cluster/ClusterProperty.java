@@ -6,7 +6,7 @@
  */
 package com.l7tech.cluster;
 
-import java.io.Serializable;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
@@ -14,19 +14,10 @@ import java.io.Serializable;
  *
  * @author flascelles@layer7-tech.com
  */
-public class ClusterProperty implements Serializable {
+public class ClusterProperty extends NamedEntityImp {
     private static final long serialVersionUID = -5971674585207716763L;
 
-    private String key;
     private String value;
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
 
     public String getValue() {
         return value;
@@ -40,6 +31,22 @@ public class ClusterProperty implements Serializable {
     public boolean isHiddenInGui() {
         // Currently, there's only 1 hidden property, so for now we'll just hardcode it rather than
         // add a whole new DB column and support code
-        return "license".equals(key);
+        return "license".equals(_name);
+    }
+
+    public boolean equals(Object other) {
+        ClusterProperty cp = (ClusterProperty)other;
+        if (_oid != cp._oid) return false;
+        if (!(_name.equals(cp._name))) return false;
+        if (!(value.equals(cp.value))) return false;
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (value != null ? value.hashCode() : 0);
+        result = 29 * result + (_name != null ? _name.hashCode() : 0);
+        result = 29 * result + (int)(_oid ^ (_oid >>> 32));
+        return result;
     }
 }

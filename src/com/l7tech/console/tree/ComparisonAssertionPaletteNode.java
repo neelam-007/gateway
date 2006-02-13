@@ -61,7 +61,7 @@ public class ComparisonAssertionPaletteNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Equality";
+        return "Comparison";
     }
 
     /**

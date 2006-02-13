@@ -25,7 +25,7 @@ public class EntityChangeSet {
         map = new HashMap();
         for ( int i = 0; i < propertyNames.length; i++ ) {
             String propertyName = (String)propertyNames[i];
-            map.put(propertyName, new PropertyChange(oldValues[i], newValues[i]));
+            map.put(propertyName, new PropertyChange(oldValues == null ? null : oldValues[i], newValues[i]));
         }
     }
 

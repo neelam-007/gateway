@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.UpdateException;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
-import java.util.List;
+import java.util.Collection;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -108,7 +108,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         return "No name from test stub";
     }
 
-    public List getAllProperties() throws RemoteException, FindException {
+    public Collection getAllProperties() throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 

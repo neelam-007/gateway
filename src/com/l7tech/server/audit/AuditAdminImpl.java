@@ -21,7 +21,6 @@ import com.l7tech.server.ServerConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -39,7 +38,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, ApplicationContextAware {
+public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;

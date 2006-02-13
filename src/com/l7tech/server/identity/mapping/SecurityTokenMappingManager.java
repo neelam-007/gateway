@@ -2,7 +2,7 @@ package com.l7tech.server.identity.mapping;
 
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.attribute.SecurityTokenMapping;
+import com.l7tech.identity.mapping.SecurityTokenMapping;
 
 public class SecurityTokenMappingManager extends HibernateEntityManager {
     public SecurityTokenMapping findByPrimaryKey(long oid) throws FindException {

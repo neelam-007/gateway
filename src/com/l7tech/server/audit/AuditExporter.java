@@ -13,12 +13,12 @@ import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 
 import java.io.IOException;
 import java.io.OutputStream;

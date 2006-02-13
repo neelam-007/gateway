@@ -26,7 +26,7 @@ import java.security.PermissionCollection;
  * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @see java.security.Permission
  */
-public final class ObjectPermission extends Permission {
+public class ObjectPermission extends Permission {
 
     /**
      * Read an object

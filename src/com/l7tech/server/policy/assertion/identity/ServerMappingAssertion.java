@@ -10,7 +10,7 @@ import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.attribute.*;
+import com.l7tech.identity.mapping.*;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;

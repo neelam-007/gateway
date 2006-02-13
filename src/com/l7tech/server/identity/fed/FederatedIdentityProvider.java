@@ -165,8 +165,8 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
      *
      * @throws Exception if initialization fails
      */
-    protected void initDao() throws Exception {
-        super.initDao();
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
         if (trustedCertManager == null) {
             throw new IllegalArgumentException("The Trusted Certificate Manager is required");
         }

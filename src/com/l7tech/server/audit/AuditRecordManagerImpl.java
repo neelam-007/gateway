@@ -15,10 +15,10 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
-import net.sf.hibernate.Criteria;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.expression.Expression;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -57,8 +57,8 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             Date fromTime = criteria.fromTime;
             Date toTime = criteria.toTime;
 
-            if (fromTime != null) query.add(Expression.ge(PROP_TIME, new Long(fromTime.getTime())));
-            if (toTime != null) query.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
+            if (fromTime != null) query.add(Restrictions.ge(PROP_TIME, new Long(fromTime.getTime())));
+            if (toTime != null) query.add(Restrictions.le(PROP_TIME, new Long(toTime.getTime())));
 
             Level fromLevel = criteria.fromLevel;
             if (fromLevel == null) fromLevel = Level.FINEST;
@@ -66,7 +66,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             if (toLevel == null) toLevel = Level.SEVERE;
 
             if (fromLevel.equals(toLevel)) {
-                query.add(Expression.eq(PROP_LEVEL, fromLevel.getName()));
+                query.add(Restrictions.eq(PROP_LEVEL, fromLevel.getName()));
             } else {
                 if (fromLevel.intValue() > toLevel.intValue()) throw new FindException("fromLevel " + fromLevel.getName() + " is not lower in value than toLevel " + toLevel.getName());
                 Set levels = new HashSet();
@@ -76,17 +76,16 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
                         levels.add(level.getName());
                     }
                 }
-                query.add(Expression.in(PROP_LEVEL, levels));
+                query.add(Restrictions.in(PROP_LEVEL, levels));
             }
 
             // The semantics of these start & end parameters seem to be kinda backwards
-            if (criteria.startMessageNumber > 0) query.add(Expression.le(PROP_OID, new Long(criteria.startMessageNumber)));
-            if (criteria.endMessageNumber > 0) query.add(Expression.gt(PROP_OID, new Long(criteria.endMessageNumber)));
+            if (criteria.startMessageNumber > 0) query.add(Restrictions.le(PROP_OID, new Long(criteria.startMessageNumber)));
+            if (criteria.endMessageNumber > 0) query.add(Restrictions.gt(PROP_OID, new Long(criteria.endMessageNumber)));
 
-            if (criteria.nodeId != null) query.add(Expression.eq(PROP_NODEID, criteria.nodeId));
+            if (criteria.nodeId != null) query.add(Restrictions.eq(PROP_NODEID, criteria.nodeId));
 
-            List l = query.list();
-            return l;
+            return query.list();
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);
         }

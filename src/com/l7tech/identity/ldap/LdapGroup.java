@@ -92,8 +92,7 @@ public class LdapGroup implements Group, Serializable, LdapIdentity {
         if (!(o instanceof LdapGroup)) return false;
         final LdapGroup groupImp = (LdapGroup) o;
         if ( providerId != groupImp.providerId ) return false;
-        if ( !dn.equals(groupImp.dn) ) return false;
-        return true;
+        return dn.equals(groupImp.dn);
     }
 
     public int hashCode() {

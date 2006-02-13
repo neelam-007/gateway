@@ -6,28 +6,26 @@
  */
 package com.l7tech.server.communityschemas;
 
-import com.l7tech.common.xml.schema.SchemaAdmin;
-import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.common.LicenseManager;
+import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.admin.AccessManager;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
-import java.util.Collection;
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  * Serverside implementation of the SchemaAdmin interface.
  *
  * @author flascelles@layer7-tech.com
  */
-public class SchemaAdminImpl extends HibernateDaoSupport implements SchemaAdmin {
-
+public class SchemaAdminImpl implements SchemaAdmin {
     private final AccessManager accessManager;
     private final LicenseManager licenseManager;
     private CommunitySchemaManager communitySchemaManager;

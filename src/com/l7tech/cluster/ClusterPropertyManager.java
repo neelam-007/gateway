@@ -6,65 +6,52 @@
  */
 package com.l7tech.cluster;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.event.admin.ClusterPropertyEvent;
+import org.hibernate.FlushMode;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
-import net.sf.hibernate.HibernateException;
 
 /**
  * Hibernate manager for read/write access to the cluster_properties table.
  *
  * @author flascelles@layer7-tech.com
  */
-public class ClusterPropertyManager extends HibernateDaoSupport implements ApplicationContextAware {
-    private static final String TABLE_NAME = "cluster_properties";
+public class ClusterPropertyManager extends HibernateEntityManager implements ApplicationContextAware {
     private final Logger logger = Logger.getLogger(ClusterPropertyManager.class.getName());
     private ApplicationContext applicationContext;
 
     public ClusterPropertyManager() {}
 
     /**
-     * @return a list containing ClusterProperty objects (never null)
-     */
-    public List getAllProperties() throws FindException {
-        String queryall = "from " + TABLE_NAME + " in class " + ClusterProperty.class.getName();
-        try {
-            return getSession().find(queryall);
-        }  catch (HibernateException e) {
-            String msg = "error retrieving cluster properties";
-            logger.log(Level.WARNING, msg, e);
-            throw new FindException(msg, e);
-        }
-    }
-
-    /**
      * @return may return null if the property is not set. will return the property value otherwise
      */
     public String getProperty(String key) throws FindException {
-        ClusterProperty prop = getRowObject(key);
+        ClusterProperty prop = findByKey(key);
         if (prop != null) {
             return prop.getValue();
         }
         return null;
     }
 
-    private ClusterProperty getRowObject(String key) throws FindException {
-        String query = "from " + TABLE_NAME + " in class " + ClusterProperty.class.getName() +
-                       " where " + TABLE_NAME + ".key" + " = \'" + key + "\'";
-        List hibResults = null;
+    public ClusterProperty findByKey(String key) throws FindException {
+        String query = "from " + getTableName() + " in class " + ClusterProperty.class.getName() +
+                       " where " + getTableName() + ".name = ?";
+        List hibResults;
         try {
-            hibResults = getSession().find(query);
+            // Prevent reentrant ClusterProperty lookups from flushing in-progress writes
+            final Session session = getSession();
+            Query q = session.createQuery(query).setFlushMode(FlushMode.NEVER);
+            q.setString(0, key);
+            hibResults = q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving property";
             logger.log(Level.WARNING, msg, e);
@@ -76,8 +63,7 @@ public class ClusterPropertyManager extends HibernateDaoSupport implements Appli
         }
         switch (hibResults.size()) {
             case 1: {
-                ClusterProperty prop = (ClusterProperty)hibResults.get(0);
-                return prop;
+                return (ClusterProperty)hibResults.get(0);
             }
             default:
                 logger.warning("this should not happen. more than one entry found" +
@@ -94,7 +80,7 @@ public class ClusterPropertyManager extends HibernateDaoSupport implements Appli
         // try to get the prop
         ClusterProperty existingVal = null;
         try {
-            existingVal = getRowObject(key);
+            existingVal = findByKey(key);
         } catch (FindException e) {
             logger.log(Level.WARNING, "error getting existing value", e);
         }
@@ -127,7 +113,7 @@ public class ClusterPropertyManager extends HibernateDaoSupport implements Appli
         } else {
             try {
                 ClusterProperty row = new ClusterProperty();
-                row.setKey(key);
+                row.setName(key);
                 row.setValue(value);
                 getSession().save(row);
                 applicationContext.publishEvent(new ClusterPropertyEvent(row, ClusterPropertyEvent.ADDED));
@@ -141,5 +127,17 @@ public class ClusterPropertyManager extends HibernateDaoSupport implements Appli
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    public Class getImpClass() {
+        return ClusterProperty.class;
+    }
+
+    public Class getInterfaceClass() {
+        return ClusterProperty.class;
+    }
+
+    public String getTableName() {
+        return "cluster_properties";
     }
 }

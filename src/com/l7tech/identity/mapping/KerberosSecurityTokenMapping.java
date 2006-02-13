@@ -1,4 +1,4 @@
-package com.l7tech.identity.attribute;
+package com.l7tech.identity.mapping;
 
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.KerberosSecurityToken;

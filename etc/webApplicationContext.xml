@@ -49,9 +49,6 @@
             <ref local='keystore'/>
         </property>
 
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
         <property name="certificateAuthenticator">
             <ref bean="certificateAuthenticator"/>
         </property>
@@ -84,9 +81,6 @@
         </property>
         <property name="keystore">
             <ref local='keystore'/>
-        </property>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
         </property>
     </bean>
 

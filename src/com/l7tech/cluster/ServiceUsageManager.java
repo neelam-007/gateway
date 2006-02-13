@@ -3,13 +3,14 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import net.sf.hibernate.Hibernate;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,6 +27,9 @@ import java.util.logging.Logger;
  *
  */
 public class ServiceUsageManager extends HibernateDaoSupport {
+    private final String deleteQuery = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName() +
+                      " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME +
+                      " = ?";
 
     /**
      * retrieves all service usage recorded in database
@@ -35,7 +39,7 @@ public class ServiceUsageManager extends HibernateDaoSupport {
         try {
             String queryall = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName();
             Session session = getSession();
-            return session.find(queryall);
+            return session.createQuery(queryall).list();
         } catch (HibernateException e) {
             String msg = "could not retreive service usage obj";
             logger.log(Level.SEVERE, msg, e);
@@ -53,7 +57,9 @@ public class ServiceUsageManager extends HibernateDaoSupport {
             String find = "FROM " + TABLE_NAME +
                     " IN CLASS " + ServiceUsage.class.getName() +
                     " WHERE " + SERVICE_ID_COLUMN_NAME + " = ?";
-            List results = getSession().find(find, new Long(serviceOid), Hibernate.LONG);
+            Query q = getSession().createQuery(find);
+            q.setLong(0, serviceOid);
+            List results = q.list();
             return (ServiceUsage[])results.toArray(new ServiceUsage[0]);
         } catch (HibernateException e) {
             throw new FindException("Couldn't retrieve ServiceUsage", e);
@@ -86,30 +92,13 @@ public class ServiceUsageManager extends HibernateDaoSupport {
     public void clear(String nodeid) throws DeleteException {
         try {
             Session session = getSession();
-
-            String delQuery = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName() +
-                              " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME +
-                              " = \'" + nodeid + "\'";
-            session.delete(delQuery);
+            Query q = session.createQuery(deleteQuery);
+            q.setString(0, nodeid);
+            for (Iterator i = q.iterate(); i.hasNext();) {
+                session.delete(i.next());
+            }
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, "error clearing table", e);
-        }
-    }
-
-    private boolean isAlreadyInDB(ServiceUsage arg) {
-        String query = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName() +
-                          " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME +
-                          " = \'" + arg.getNodeid() + "\'" + " and " + TABLE_NAME + "." + SERVICE_ID_COLUMN_NAME +
-                          " = \'" + arg.getServiceid() + "\'";
-        try {
-            Session session = getSession();
-            List res = session.find(query);
-            if (res == null || res.isEmpty()) return false;
-            return true;
-        } catch (HibernateException e) {
-            String msg = "could not retreive service usage obj";
-            logger.log(Level.SEVERE, msg, e);
-            return false;
         }
     }
 

@@ -40,6 +40,14 @@ public class InternalUserManager extends PersistentUserManager {
         return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), null);
     }
 
+    public User headerToUser(EntityHeader header) {
+        InternalUser iu = new InternalUser();
+        iu.setProviderId(getProviderOid());
+        iu.setOid(header.getOid());
+        iu.setLogin(header.getName());
+        return iu;
+    }
+
     public Class getImpClass() {
         return InternalUser.class;
     }

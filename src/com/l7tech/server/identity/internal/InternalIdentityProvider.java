@@ -1,23 +1,27 @@
 package com.l7tech.server.identity.internal;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
-import com.l7tech.identity.attribute.IdentityMapping;
+import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.server.event.identity.Authenticated;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.PersistentIdentityProvider;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.common.util.HexUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collection;
 
 /**
  * IdentityProvider implementation for the internal identity provider.
@@ -27,7 +31,7 @@ import java.util.Collection;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
-public class InternalIdentityProvider extends PersistentIdentityProvider {
+public class InternalIdentityProvider extends PersistentIdentityProvider implements ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(InternalIdentityProvider.class.getName());
     public static final String ENCODING = "UTF-8";
 
@@ -35,6 +39,7 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
     private UserManager userManager;
     private GroupManager groupManager;
     private CertificateAuthenticator certificateAuthenticator;
+    private ApplicationContext springContext;
 
     public InternalIdentityProvider(IdentityProviderConfig config) {
         this.config = config;
@@ -61,28 +66,37 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
     public AuthenticationResult authenticate( LoginCredentials pc )
             throws AuthenticationException, FindException, IOException
     {
-        String login = pc.getLogin();
+        AuthenticationResult ar = null;
+        try {
+            String login = pc.getLogin();
 
-        InternalUser dbUser;
-        dbUser = (InternalUser)userManager.findByLogin(login);
-        if (dbUser == null) {
-            String err = "Couldn't find user with login " + login;
-            logger.info(err);
-            throw new AuthenticationException(err);
-        }
+            InternalUser dbUser;
+            dbUser = (InternalUser)userManager.findByLogin(login);
+            if (dbUser == null) {
+                String err = "Couldn't find user with login " + login;
+                logger.info(err);
+                throw new AuthenticationException(err);
+            }
 
-        if (dbUser.getExpiration() > -1 && dbUser.getExpiration() < System.currentTimeMillis()) {
-            String err = "Credentials' login matches an internal user " + login + " but that " +
-                    "account is now expired.";
-            logger.info(err);
-            throw new AuthenticationException(err);
-        }
+            if (dbUser.getExpiration() > -1 && dbUser.getExpiration() < System.currentTimeMillis()) {
+                String err = "Credentials' login matches an internal user " + login + " but that " +
+                        "account is now expired.";
+                logger.info(err);
+                throw new AuthenticationException(err);
+            }
 
-        CredentialFormat format = pc.getFormat();
-        if (format.isClientCert() || format == CredentialFormat.SAML) {
-            return certificateAuthenticator.authenticateX509Credentials(pc, dbUser);
-        } else {
-            return autenticatePasswordCredentials(pc, dbUser);
+            CredentialFormat format = pc.getFormat();
+            if (format.isClientCert() || format == CredentialFormat.SAML) {
+                ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser);
+            } else {
+                ar = autenticatePasswordCredentials(pc, dbUser);
+            }
+
+            return ar;
+        } finally {
+            if (ar != null) {
+                springContext.publishEvent(new Authenticated(ar));
+            }
         }
     }
 
@@ -93,7 +107,7 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
         String login = dbUser.getLogin();
         char[] credentials = pc.getCredentials();
         String dbPassHash = dbUser.getPassword();
-        String authPassHash = null;
+        String authPassHash;
 
         if (format == CredentialFormat.CLEARTEXT) {
             authPassHash = HexUtils.encodePasswd(login, new String(credentials), HttpDigest.REALM);
@@ -150,14 +164,7 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
         this.certificateAuthenticator = certificateAuthenticator;
     }
 
-    /**
-     * Subclasses can override this for custom initialization behavior.
-     * Gets called after population of this instance's bean properties.
-     *
-     * @throws Exception if initialization fails
-     */
-    protected void initDao() throws Exception {
-        super.initDao();
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.springContext = applicationContext;
     }
-
 }

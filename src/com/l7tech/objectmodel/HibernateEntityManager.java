@@ -5,12 +5,13 @@
 package com.l7tech.objectmodel;
 
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.util.ExceptionUtils;
-import net.sf.hibernate.*;
+import org.hibernate.*;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -24,6 +25,26 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     public static final String F_OID = "oid";
     public static final String F_VERSION = "version";
 
+    private final String oidVersionQuery =
+            "SELECT " + getTableName() + "." + F_OID + ", " + getTableName() + "." + F_VERSION +
+            " FROM " + getTableName() +
+            " IN CLASS " + getImpClass().getName();
+
+    private final String versionQuery =
+            "SELECT " + getTableName() + "." + F_VERSION +
+            " FROM " + getTableName() +
+            " IN CLASS " + getImpClass().getName() +
+            " WHERE " + getTableName() + "." + F_OID + " = ?";
+
+    private final String findEntityQuery =
+            "FROM " + getTableName() +
+            " IN CLASS " + getImpClass().getName() +
+            " WHERE " + getTableName() + "." + F_OID + " = ?";
+
+    private final String deleteQuery =
+            "FROM " + getTableName() +
+            " IN CLASS ?" +
+            " WHERE " + getTableName() + "." + F_OID + " = ?";
 
     /**
      * Returns the current version (in the database) of the entity with the specified OID.
@@ -33,16 +54,11 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      * @throws FindException
      */
     public Integer getVersion(long oid) throws FindException {
-        String alias = getTableName();
-        String query = "SELECT " + alias + ".version"
-          + " FROM " + alias + " IN CLASS " + getImpClass().getName()
-          + " WHERE " + alias + ".oid = ?";
         try {
-            FlushMode beforeMode = null;
-            Session s = getSession();
-            s.setFlushMode(FlushMode.NEVER); // getVersion() always wants to know what's actually in the database; stale objects are unimportant
-            List results = s.find(query, new Long(oid), Hibernate.LONG);
-            s.setFlushMode(beforeMode);
+            Query q = getSession().createQuery(versionQuery);
+            q.setLong(0, oid);
+            q.setFlushMode(FlushMode.NEVER);
+            List results = q.list();
             if (results.size() == 0) return null;
             if (results.size() > 1) throw new FindException("Multiple results found");
             Object result = results.get(0);
@@ -54,16 +70,11 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     }
 
     public Entity findEntity(long oid) throws FindException {
-        String alias = getTableName();
-        String query = "FROM " + alias +
-          " IN CLASS " + getImpClass() +
-          " WHERE " + alias + ".oid = ?";
         try {
-            FlushMode beforeMode = null;
-            Session s = getSession();
-            s.setFlushMode(FlushMode.COMMIT);
-            List results = s.find(query, new Long(oid), Hibernate.LONG);
-            s.setFlushMode(beforeMode);
+            Query q = getSession().createQuery(findEntityQuery);
+            q.setFlushMode(FlushMode.NEVER);
+            q.setLong(0, oid);
+            List results = q.list();
             if (results.size() == 0) return null;
             if (results.size() > 1) throw new FindException("Multiple results found!");
             Object result = results.get(0);
@@ -76,20 +87,11 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
 
     public Map findVersionMap() throws FindException {
         Map result = new HashMap();
-        Class impClass = getImpClass();
-        String alias = getTableName();
-        if (!Entity.class.isAssignableFrom(impClass)) throw new FindException("Can't find non-Entities!");
-
-        String query = "SELECT " + alias + ".oid, " + alias + ".version" +
-          " FROM " + alias +
-          " IN CLASS " + getImpClass();
+        if (!Entity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         try {
-            FlushMode beforeMode = null;
-            Session s = getSession();
-            s.setFlushMode(FlushMode.COMMIT);
-            List results = s.find(query);
-            s.setFlushMode(beforeMode);
+            Query q = getSession().createQuery(oidVersionQuery).setFlushMode(FlushMode.NEVER);
+            List results = q.list();
             if (results.size() > 0) {
                 for (Iterator i = results.iterator(); i.hasNext();) {
                     Object[] row = (Object[])i.next();
@@ -105,57 +107,6 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         }
 
         return result;
-    }
-
-    /**
-     * Generates a Hibernate query string for retrieving a single field from a User.
-     *
-     * @param oid      The objectId of the User to query
-     * @param getfield the (aliased) name of the field to return
-     */
-    protected String getFieldQuery(String oid, String getfield) {
-        String alias = getTableName();
-        StringBuffer sqlBuffer = new StringBuffer("SELECT ");
-        sqlBuffer.append(alias);
-        sqlBuffer.append(".");
-        sqlBuffer.append(getfield);
-        sqlBuffer.append(" FROM ");
-        sqlBuffer.append(alias);
-        sqlBuffer.append(" in class ");
-        sqlBuffer.append(getImpClass().getName());
-        sqlBuffer.append(" WHERE ");
-        sqlBuffer.append(alias);
-        sqlBuffer.append(".");
-        sqlBuffer.append(F_OID);
-        sqlBuffer.append(" = '");
-        sqlBuffer.append(oid);
-        sqlBuffer.append("'");
-        return sqlBuffer.toString();
-    }
-
-    public void checkUpdate(Entity ent) throws UpdateException {
-        String stmt = getFieldQuery(Long.toString(ent.getOid()), F_VERSION);
-
-        try {
-            Session s = getSession();
-            List results = s.find(stmt);
-            if (results.size() == 0) {
-                String err = "Object to be updated does not exist!";
-                logger.log(Level.WARNING, err);
-                throw new UpdateException(err);
-            }
-
-            int savedVersion = ((Integer)results.get(0)).intValue();
-
-            if (savedVersion != ent.getVersion()) {
-                String err = "Object to be updated is stale (a later version exists in the database)!";
-                logger.log(Level.WARNING, err);
-                throw new StaleUpdateException(err);
-            }
-        } catch (HibernateException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new UpdateException(e.getMessage(), e);
-        }
     }
 
     public abstract Class getImpClass();
@@ -221,8 +172,9 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         CacheInfo cacheInfo;
         try {
             read.acquire();
-            cacheInfo = (CacheInfo)cache.get(oid);
-            read.release();
+            cacheInfo = (CacheInfo)cacheInfoByOid.get(oid);
+            read.release(); read = null;
+
             if (cacheInfo == null) return false;
 
             return cacheInfo.timestamp + maxAge >= System.currentTimeMillis();
@@ -230,8 +182,52 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
             Thread.currentThread().interrupt();
             return false;
+        } finally {
+            if (read != null) read.release();
         }
 
+    }
+
+    public NamedEntity getCachedEntityByName(String name, int maxAge) throws FindException {
+        if (name == null) throw new NullPointerException();
+        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
+        Sync read = cacheLock.readLock();
+        try {
+            read.acquire();
+            CacheInfo cinfo = (CacheInfo)cacheInfoByName.get(name);
+            read.release(); read = null;
+
+            NamedEntity ne;
+            if (cinfo == null) {
+                final Session session = getSession();
+
+                Criteria findByName = session.createCriteria(getInterfaceClass());
+                findByName.add(Restrictions.eq("name", name));
+                findByName.setFlushMode(FlushMode.NEVER);
+                List entities = findByName.list();
+
+                if (entities.size() > 1) {
+                    throw new FindException("Found multiple entities with name '" + name + "'");
+                } else if (entities.size() == 0) {
+                    return null;
+                }
+                ne = (NamedEntity)entities.get(0);
+
+                return (NamedEntity)checkAndCache(ne);
+            } else {
+                return (NamedEntity)freshen(cinfo, maxAge);
+            }
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (HibernateException e) {
+            throw new FindException("Couldn't find entity by name", e);
+        } catch (CacheVeto e) {
+            throw new FindException("Couldn't cache entity", e);
+        } finally {
+            if (read != null) read.release();
+        }
     }
 
     /**
@@ -252,24 +248,21 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         Entity entity;
 
         Sync read = cacheLock.readLock();
-        Sync write = cacheLock.writeLock();
-        CacheInfo cacheInfo = null;
+        CacheInfo cacheInfo;
         try {
             read.acquire();
-            cacheInfo = (CacheInfo)cache.get(oid);
-            read.release();
-            read = null;
+            cacheInfo = (CacheInfo)cacheInfoByOid.get(oid);
+            read.release(); read = null;
+
             if (cacheInfo == null) {
                 // Might be new, or might be first run
                 entity = findEntity(objectid);
                 if (entity == null) return null; // Doesn't exist
 
                 // New
-                write.acquire();
-                checkAndCache(entity);
-                write.release();
-                write = null;
-                return entity;
+                return checkAndCache(entity);
+            } else {
+                return freshen(cacheInfo, maxAge);
             }
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
@@ -277,45 +270,47 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             return null;
         } finally {
             if (read != null) read.release();
-            if (write != null) write.release();
         }
 
-        try {
-            if (cacheInfo.timestamp + maxAge < System.currentTimeMillis()) {
-                // Time for a version check (getVersion() always goes to the database)
-                Integer currentVersion = getVersion(objectid);
-                if (currentVersion == null) {
-                    // BALEETED
-                    write.acquire();
-                    cacheRemove(cacheInfo.entity);
-                    write.release();
-                    write = null;
-                    return null;
-                } else if (currentVersion.intValue() != cacheInfo.version) {
-                    // Updated
-                    entity = findEntity(objectid);
-                    write.acquire();
-                    cacheInfo = checkAndCache(entity);
-                    write.release();
-                    write = null;
-                }
+    }
+
+    private Entity freshen(CacheInfo cacheInfo, int maxAge) throws FindException, CacheVeto {
+        if (cacheInfo.timestamp + maxAge < System.currentTimeMillis()) {
+            // Time for a version check (getVersion() always goes to the database)
+            Integer currentVersion = getVersion(cacheInfo.entity.getOid());
+            if (currentVersion == null) {
+                // BALEETED
+                cacheRemove(cacheInfo.entity);
+                return null;
+            } else if (currentVersion.intValue() != cacheInfo.version) {
+                // Updated
+                return checkAndCache(findEntity(cacheInfo.entity.getOid()));
             }
-
-            return cacheInfo.entity;
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, "Interrupted while acquiring cache lock", e);
-            Thread.currentThread().interrupt();
-            return null;
-        } finally {
-            if (read != null) read.release();
-            if (write != null) write.release();
         }
+
+        return cacheInfo.entity;
     }
 
     protected void cacheRemove(Entity thing) {
         final Long oid = new Long(thing.getOid());
-        cache.remove(oid);
-        removedFromCache(thing);
+
+        Sync write = cacheLock.writeLock();
+        try {
+            write.acquire();
+            cacheInfoByOid.remove(oid);
+            if (thing instanceof NamedEntity) {
+                cacheInfoByName.remove(((NamedEntity)thing).getName());
+            }
+            write.release();
+            write = null;
+
+            removedFromCache(thing);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
+            Thread.currentThread().interrupt();
+        } finally {
+            if (write != null) write.release();
+        }
     }
 
     /**
@@ -335,23 +330,43 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      */
     protected void addedToCache(Entity ent) { }
 
-    protected CacheInfo checkAndCache(Entity thing) throws CacheVeto {
+    protected Entity checkAndCache(Entity thing) throws CacheVeto {
         final Long oid = new Long(thing.getOid());
         checkCachable(thing);
 
-        CacheInfo info = (CacheInfo)cache.get(oid);
-        if (info == null) {
-            info = new CacheInfo();
-            cache.put(oid, info);
+        Sync read = cacheLock.readLock();
+        Sync write = cacheLock.writeLock();
+        try {
+            read.acquire();
+            CacheInfo info = (CacheInfo)cacheInfoByOid.get(oid);
+            read.release(); read = null;
+
+            if (info == null) {
+                info = new CacheInfo();
+
+                write.acquire();
+                cacheInfoByOid.put(oid, info);
+                if (thing instanceof NamedEntity) {
+                    cacheInfoByName.put(((NamedEntity)thing).getName(), info);
+                }
+                write.release(); write = null;
+            }
+
+            info.entity = thing;
+            info.version = thing.getVersion();
+            info.timestamp = System.currentTimeMillis();
+
+            addedToCache(thing);
+
+            return thing;
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted waiting for cache lock", e);
+            Thread.currentThread().interrupt();
+            return null;
+        } finally {
+            if (write != null) write.release();
+            if (read != null) read.release();
         }
-
-        info.entity = thing;
-        info.version = thing.getVersion();
-        info.timestamp = System.currentTimeMillis();
-
-        addedToCache(thing);
-
-        return info;
     }
 
 
@@ -366,14 +381,14 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      */
     protected Object findByPrimaryKey(Class impClass, long oid) throws FindException {
         try {
-            FlushMode beforeMode = null;
             Session s = getSession();
+            FlushMode beforeMode = s.getFlushMode();
             s.setFlushMode(FlushMode.COMMIT);
             Object thing = s.load(impClass, new Long(oid));
             s.setFlushMode(beforeMode);
             return thing;
         } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, net.sf.hibernate.ObjectNotFoundException.class) ||
+            if (ExceptionUtils.causedBy(e, org.hibernate.ObjectNotFoundException.class) ||
                 ExceptionUtils.causedBy(e, ObjectDeletedException.class)) {
                 return null;
             }
@@ -390,10 +405,18 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      */
     protected boolean delete(Class entityClass, long oid) throws DeleteException {
         try {
-            String deleteQuery = "from temp in class " +
-              entityClass.getName() +
-              " where temp.oid = ?";
-            return getHibernateTemplate().delete(deleteQuery, new Long(oid), Hibernate.LONG) == 1;
+            Query q = getSession().createQuery(deleteQuery);
+            q.setString(0, entityClass.getName());
+            q.setLong(1,oid);
+            List todelete = q.list();
+            if (todelete.size() == 0) {
+                return false;
+            } else if (todelete.size() == 1) {
+                getHibernateTemplate().delete(todelete.get(0));
+                return true;
+            } else {
+                throw new DeleteException("More than one entity found with oid = " + oid);
+            }
         } catch (DataAccessException he) {
             throw new DeleteException(he.toString(), he);
         }
@@ -402,7 +425,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
-    private ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
-    private Map cache = new HashMap();
-
+    private ReadWriteLock cacheLock = new ReentrantWriterPreferenceReadWriteLock();
+    private Map cacheInfoByOid = new HashMap();
+    private Map cacheInfoByName = new HashMap();
 }

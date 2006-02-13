@@ -147,8 +147,6 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 msg.append(" (");
                 msg.append(((NamedEntity)entity).getName());
                 msg.append(")");
-            } else {
-                msg.append(entityOid);
             }
 
             if (event instanceof Created) {

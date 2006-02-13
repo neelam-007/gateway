@@ -9,17 +9,12 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.objectmodel.*;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.dao.DataAccessException;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -29,10 +24,8 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsConnectionManager extends HibernateEntityManager
-  implements ApplicationContextAware, InitializingBean {
+public class JmsConnectionManager extends HibernateEntityManager implements InitializingBean {
     private List _allProviders = null;
-    private ApplicationContext applicationContext;
 
     public Collection findAllProviders() throws FindException {
         // TODO make this real, eh?!!
@@ -65,7 +58,7 @@ public class JmsConnectionManager extends HibernateEntityManager
     public void update(final JmsConnection conn) throws VersionException, UpdateException {
         _logger.info("Updating JmsConnection " + conn);
 
-        JmsConnection original = null;
+        JmsConnection original;
         // check for original connection
         try {
             original = findConnectionByPrimaryKey(conn.getOid());
@@ -135,10 +128,6 @@ public class JmsConnectionManager extends HibernateEntityManager
     }
 
     private JmsEndpointManager jmsEndpointManager;
-
-    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
-        applicationContext = ctx;
-    }
 
     public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
         this.jmsEndpointManager = jmsEndpointManager;

@@ -6,11 +6,11 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Query;
-import net.sf.hibernate.Session;
 import org.springframework.dao.DataAccessException;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
 
 import java.io.IOException;
 import java.security.cert.Certificate;

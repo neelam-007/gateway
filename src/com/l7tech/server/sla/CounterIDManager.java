@@ -7,18 +7,17 @@
 package com.l7tech.server.sla;
 
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.SaveException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Iterator;
-import java.util.logging.Logger;
+import java.util.List;
 import java.util.logging.Level;
-
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
-import org.springframework.dao.DataAccessException;
+import java.util.logging.Logger;
 
 /**
  * The CounterIDManager is responsible for assigning a counter id for each combination of counter_name, identity.

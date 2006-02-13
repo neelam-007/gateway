@@ -478,7 +478,7 @@ public class MainWindow extends JFrame {
             editMenu.add(getManageGlobalSchemasMenuItem());
             // Disabled for 3.4 -- there are currently no cluster properties to manage with this GUI
             // ("license" is managed with a seperate GUI of its own, and is hidden in the cluster property list.)
-            // editMenu.add(getManageClusterPropertiesActionMenuItem());
+            editMenu.add(getManageClusterPropertiesActionMenuItem());
             editMenu.add(getManageJmsEndpointsMenuItem());
 
             int mnemonic = editMenu.getText().toCharArray()[0];
@@ -1229,7 +1229,7 @@ public class MainWindow extends JFrame {
     private Action getManageClusterPropertiesAction() {
         if (manageClusterPropertiesAction != null) return manageClusterPropertiesAction;
         manageClusterPropertiesAction = new ManageClusterPropertiesAction();
-        manageClusterPropertiesAction.setEnabled(false);
+        manageClusterPropertiesAction.setEnabled(true);
         this.addLogonListener(manageClusterPropertiesAction);
         return manageClusterPropertiesAction;
     }

@@ -8,9 +8,6 @@ import java.io.Serializable;
  *
  * <b>Note:</b> The numeric IDs assigned to these types are also used explicitly in SSG.hbm.xml at the moment.
  *
- * This should be changed to something like {@link net.sf.hibernate.PersistentEnum} (maybe less deprecated)
- * in the future.
- * 
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>

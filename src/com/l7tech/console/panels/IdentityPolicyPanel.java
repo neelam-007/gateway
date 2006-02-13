@@ -144,7 +144,7 @@ public class IdentityPolicyPanel extends JPanel {
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                exitHandler(e);
+                exitHandler();
             }
         });
         helpButton.addActionListener(new ActionListener() {
@@ -191,7 +191,7 @@ public class IdentityPolicyPanel extends JPanel {
         updateRouting();
     }
 
-    private void exitHandler(ActionEvent e) {
+    private void exitHandler() {
         Window w = SwingUtilities.windowForComponent(this);
         w.dispose();
     }
@@ -204,7 +204,7 @@ public class IdentityPolicyPanel extends JPanel {
      */
     private void updateSslAssertion() {
         boolean canmod = true;
-        boolean selected = false;
+        boolean selected;
 
         Set othersSslAssertions = new HashSet();
         for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
@@ -236,9 +236,7 @@ public class IdentityPolicyPanel extends JPanel {
 
         Set principalCredAssertions = principalAssertionPaths.getAssertions(IdentityPath.CREDENTIAL_SOURCE);
         for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
-            Assertion credAssertion = (Assertion)it.next();
-
-            existingCredAssertion = credAssertion;
+            existingCredAssertion = (Assertion)it.next();
 
             selectAuthMethodComboItem(existingCredAssertion);
             if (othersCredAssertions.contains(existingCredAssertion))
@@ -325,7 +323,7 @@ public class IdentityPolicyPanel extends JPanel {
 
         if (enableHttp) {
             routeToUrlField.setForeground(Color.BLACK);
-            userRouteField.setForeground(Color.BLACK);         
+            userRouteField.setForeground(Color.BLACK);
             passwordRouteField.setForeground(Color.BLACK);
             realmRouteField.setForeground(Color.BLACK);
         } else {
@@ -402,7 +400,7 @@ public class IdentityPolicyPanel extends JPanel {
             addAssertionTreeNodes(aa);
             removeAssertionTreeNodes(ar);
             scheduleValidate();
-            exitHandler(e);
+            exitHandler();
 
         }
 
@@ -481,9 +479,8 @@ public class IdentityPolicyPanel extends JPanel {
         if (!authMethodComboBox.isEnabled()) return null;
 
         Object key = authMethodComboBox.getSelectedItem();
-        Assertion newCredAssertion = (Assertion) credentialsLocationMap.get(key);
         // TODO verify support for XML signing/encryption
-        return newCredAssertion;
+        return (Assertion) credentialsLocationMap.get(key);
     }
 
     private RoutingAssertion collectRoutingAssertion() {

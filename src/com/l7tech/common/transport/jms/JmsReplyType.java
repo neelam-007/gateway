@@ -6,14 +6,14 @@
 
 package com.l7tech.common.transport.jms;
 
+import org.hibernate.usertype.UserType;
+import org.hibernate.HibernateException;
+
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.UserType;
 
 /**
  * @author alex
@@ -61,6 +61,10 @@ public class JmsReplyType implements Serializable {
             return equal;
         }
 
+        public int hashCode(Object x) throws HibernateException {
+            return x.hashCode();
+        }
+
         public Object nullSafeGet(ResultSet resultSet, String[] strings, Object object) throws HibernateException, SQLException {
             int value = resultSet.getInt(strings[0]);
             if(value<0 || value>=VALUES.length) value=0;
@@ -79,6 +83,18 @@ public class JmsReplyType implements Serializable {
 
         public boolean isMutable() {
             return false;
+        }
+
+        public Serializable disassemble(Object value) throws HibernateException {
+            return (Serializable)value;
+        }
+
+        public Object assemble(Serializable cached, Object owner) throws HibernateException {
+            return cached;
+        }
+
+        public Object replace(Object original, Object target, Object owner) throws HibernateException {
+            return original;
         }
     }
 

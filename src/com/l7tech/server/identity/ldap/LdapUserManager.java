@@ -21,7 +21,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
- * $Id$<br/>
  */
 public class LdapUserManager implements UserManager {
 
@@ -235,6 +234,14 @@ public class LdapUserManager implements UserManager {
 
     public EntityHeader userToHeader(User user) {
         return new EntityHeader(user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), user.getName());
+    }
+
+    public User headerToUser(EntityHeader header) {
+        LdapUser user = new LdapUser();
+        user.setProviderId(this.identityProvider.getConfig().getOid());
+        user.setDn(header.getStrId());
+        user.setCn(header.getName());
+        return user;
     }
 
     /**

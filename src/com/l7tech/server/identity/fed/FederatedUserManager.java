@@ -15,9 +15,9 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.identity.PersistentUserManager;
-import net.sf.hibernate.Criteria;
-import net.sf.hibernate.expression.Expression;
 import org.springframework.dao.DataAccessException;
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Restrictions;
 
 import java.util.List;
 
@@ -41,6 +41,14 @@ public class FederatedUserManager extends PersistentUserManager {
     public EntityHeader userToHeader( User user ) {
         FederatedUser imp = (FederatedUser)cast(user);
         return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
+    }
+
+    public User headerToUser(EntityHeader header) {
+        FederatedUser fu = new FederatedUser();
+        fu.setOid(header.getOid());
+        fu.setName(header.getName());
+        fu.setProviderId(getProviderOid());
+        return fu;
     }
 
     public Class getImpClass() {
@@ -103,7 +111,7 @@ public class FederatedUserManager extends PersistentUserManager {
     }
 
     protected void addFindAllCriteria( Criteria findHeadersCriteria ) {
-        findHeadersCriteria.add(Expression.eq("providerId", new Long(getProviderOid())));
+        findHeadersCriteria.add(Restrictions.eq("providerId", new Long(getProviderOid())));
     }
 
     private final String FIND_BY_ = "FROM " + getTableName() + " IN CLASS " + getImpClass() +

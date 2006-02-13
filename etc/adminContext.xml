@@ -66,7 +66,7 @@
     </bean>
 
     <!--    shared export properties, inherited with parent= -->
-    <bean id="sharedExportProperties">
+    <bean id="sharedExportProperties" abstract="true">
         <property name="registryPort">
             <value>2124</value>
         </property>
@@ -196,9 +196,6 @@
         <property name="authorizer">
             <ref bean='authorizer'/>
         </property>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
     </bean>
 
     <!--    audit admin exporter -->
@@ -224,9 +221,6 @@
         </property>
         <property name="serverConfig">
             <ref bean="serverConfig"/>
-        </property>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
         </property>
     </bean>
 
@@ -258,9 +252,6 @@
         <property name="serverConfig">
             <ref bean="serverConfig"/>
         </property>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
         <property name="sampleMessageManager">
             <ref bean="sampleMessageManager"/>
         </property>
@@ -285,9 +276,6 @@
         </constructor-arg>
         <property name="communitySchemaManager">
             <ref bean="communitySchemaManager"/>
-        </property>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
         </property>
     </bean>
 
@@ -316,9 +304,6 @@
         <property name="jmsEndpointManager">
             <ref bean="jmsEndpointManager"/>
         </property>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
     </bean>
 
     <!--    trusted cert admin exporter -->
@@ -345,9 +330,6 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
     </bean>
 
     <!--    custom assertions admin exporter -->
@@ -397,9 +379,6 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
     </bean>
 
     <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager" singleton="true"/>

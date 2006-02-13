@@ -63,7 +63,7 @@ public class ClusterPropertyDialog extends JDialog {
             public Object getValueAt(int rowIndex, int columnIndex) {
                 ClusterProperty entry = (ClusterProperty)properties.get(rowIndex);
                 switch (columnIndex) {
-                    case 0: return entry.getKey();
+                    case 0: return entry.getName();
                     case 1: return entry.getValue();
                     default: throw new RuntimeException("column index not supported " + columnIndex);
                 }
@@ -192,7 +192,7 @@ public class ClusterPropertyDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
-            CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property", prop.getKey(), prop.getValue());
+            CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property", prop.getName(), prop.getValue());
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             dlg.setVisible(true);
@@ -201,10 +201,10 @@ public class ClusterPropertyDialog extends JDialog {
             }
 
             try {
-                if (dlg.newKey().equals(prop.getKey())) {
+                if (dlg.newKey().equals(prop.getName())) {
                     reg.getClusterStatusAdmin().setProperty(dlg.newKey(), dlg.newValue());
                 } else {
-                    reg.getClusterStatusAdmin().setProperty(prop.getKey(), null);
+                    reg.getClusterStatusAdmin().setProperty(prop.getName(), null);
                     reg.getClusterStatusAdmin().setProperty(dlg.newKey(), dlg.newValue());
                 }
             }  catch (RemoteException e) {
@@ -229,7 +229,7 @@ public class ClusterPropertyDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
             try {
-                reg.getClusterStatusAdmin().setProperty(prop.getKey(), null);
+                reg.getClusterStatusAdmin().setProperty(prop.getName(), null);
             } catch (RemoteException e) {
                 logger.log(Level.SEVERE, "exception setting property", e);
             } catch (SaveException e) {
@@ -267,7 +267,7 @@ public class ClusterPropertyDialog extends JDialog {
         if (reg != null && reg.getClusterStatusAdmin() != null) {
             properties.clear();
             try {
-                java.util.List allProperties = reg.getClusterStatusAdmin().getAllProperties();
+                Collection allProperties = reg.getClusterStatusAdmin().getAllProperties();
                 for (Iterator i = allProperties.iterator(); i.hasNext();) {
                     ClusterProperty property = (ClusterProperty)i.next();
                     if (!property.isHiddenInGui())
@@ -295,11 +295,11 @@ public class ClusterPropertyDialog extends JDialog {
     public static void main(String[] args) {
         ClusterPropertyDialog me = new ClusterPropertyDialog((Frame)null);
         ClusterProperty sample = new ClusterProperty();
-        sample.setKey("com.l7tech.gateway.enablePhotonSequencer");
+        sample.setName("com.l7tech.gateway.enablePhotonSequencer");
         sample.setValue("true");
         me.properties.add(sample);
         sample = new ClusterProperty();
-        sample.setKey("com.l7tech.gateway.reloadTargetOnHBXTrigger");
+        sample.setName("com.l7tech.gateway.reloadTargetOnHBXTrigger");
         sample.setValue("false");
         me.properties.add(sample);
         me.pack();

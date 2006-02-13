@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2006 Layer 7 Technologies Inc.
  */
-package com.l7tech.identity.attribute;
+package com.l7tech.identity.mapping;
 
 import com.l7tech.common.security.saml.SamlConstants;
 

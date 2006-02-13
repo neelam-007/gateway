@@ -7,7 +7,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.attribute.IdentityMapping;
+import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 

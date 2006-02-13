@@ -151,8 +151,12 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                     }
                 }
             }
-            sb.insert(0, "<html>");
-            return sb.toString();
+            if (sb.length() > 0) {
+                sb.insert(0, "<html>");
+                return sb.toString();
+            } else {
+                return null;
+            }
         } else {
             sb.append("<html><strong> There are {0}<br>");
             Iterator it = messages.iterator();

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE hibernate-mapping PUBLIC
-        "-//Hibernate/Hibernate Mapping DTD 2.1//EN"
-        "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <!-- $Id$ -->
 
@@ -9,8 +9,8 @@
   This is the Hibernate mapping file for identity mapping configuration records.
 -->
 
-<hibernate-mapping package="com.l7tech.identity.attribute">
-    <class name="AttributeConfig" table="attributes">
+<hibernate-mapping package="com.l7tech.identity.mapping">
+    <class name="AttributeConfig" table="attributes" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -30,7 +30,7 @@
         </set>
     </class>
 
-    <class name="IdentityMapping" table="attribute_identity">
+    <class name="IdentityMapping" table="attribute_identity" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -45,7 +45,7 @@
         <many-to-one name="attributeConfig"/>
     </class>
 
-    <class name="SecurityTokenMapping" table="attribute_token">
+    <class name="SecurityTokenMapping" table="attribute_token" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>

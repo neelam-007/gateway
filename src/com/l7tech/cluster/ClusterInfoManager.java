@@ -5,9 +5,11 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.hibernate.Session;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.FlushMode;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -166,7 +168,8 @@ public class ClusterInfoManager extends HibernateDaoSupport {
         // get all objects from that table
         String queryall = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName();
         try {
-            return getSession().find(queryall);
+            Query q = getSession().createQuery(queryall).setFlushMode(FlushMode.NEVER);
+            return q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";
             logger.log(Level.WARNING, msg, e);
@@ -236,7 +239,8 @@ public class ClusterInfoManager extends HibernateDaoSupport {
 
             List hibResults = null;
             try {
-                hibResults = getSession().find(query);
+                Query q = getSession().createQuery(query).setFlushMode(FlushMode.NEVER);
+                hibResults = q.list();
             }  catch (HibernateException e) {
                 String msg = "error looking for available node name";
                 logger.log(Level.WARNING, msg, e);
@@ -280,7 +284,8 @@ public class ClusterInfoManager extends HibernateDaoSupport {
                        " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = \'" + mac + "\'";
         List hibResults = null;
         try {
-            hibResults = getSession().find(query);
+            Query q = getSession().createQuery(query).setFlushMode(FlushMode.NEVER);
+            hibResults = q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";
             logger.log(Level.WARNING, msg, e);

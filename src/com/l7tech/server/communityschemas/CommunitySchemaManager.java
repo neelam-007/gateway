@@ -6,35 +6,33 @@
  */
 package com.l7tech.server.communityschemas;
 
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.apache.xmlbeans.XmlException;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.w3c.dom.ls.LSInput;
-
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-import java.io.StringReader;
-
+import com.l7tech.common.util.LSInputImpl;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.schema.SchemaEntry;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.server.ServerConfig;
 import com.tarari.xml.schema.SchemaResolver;
+import org.apache.xmlbeans.XmlException;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This manager gives access to the community schemas included in the

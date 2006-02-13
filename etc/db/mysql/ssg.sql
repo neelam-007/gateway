@@ -102,10 +102,17 @@ INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd
 
 DROP TABLE IF EXISTS internal_user_group;
 CREATE TABLE internal_user_group (
-  internal_user bigint(20) NOT NULL,
+  objectid bigint(20) not null,
+  version int(11) not null,
   internal_group bigint(20) NOT NULL,
-  PRIMARY KEY  (internal_user,internal_group),
-  UNIQUE KEY  (internal_user,internal_group)
+  provider_oid bigint(20) NOT NULL,
+  user_id varchar(255),
+  subgroup_id varchar(255),
+  PRIMARY KEY (objectid),
+  INDEX (internal_group),
+  INDEX (provider_oid),
+  INDEX (user_id),
+  INDEX (subgroup_id)
 ) TYPE=InnoDB;
 
 --
@@ -113,7 +120,7 @@ CREATE TABLE internal_user_group (
 --
 
 
-INSERT INTO internal_user_group VALUES (3,2);
+INSERT INTO internal_user_group VALUES (1, 0, 2, -2, '3', null);
 
 --
 -- Table structure for table 'published_service'
@@ -481,8 +488,12 @@ CREATE TABLE community_schemas (
 
 DROP TABLE IF EXISTS cluster_properties;
 CREATE TABLE cluster_properties (
-  propkey varchar(128) NOT NULL PRIMARY KEY,
-  propvalue mediumtext NOT NULL
+  objectid bigint(20) NOT NULL,
+  version integer NOT NULL,
+  propkey varchar(128) NOT NULL,
+  propvalue MEDIUMTEXT NOT NULL,
+  PRIMARY KEY (objectid),
+  UNIQUE(propkey)
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS sample_messages;

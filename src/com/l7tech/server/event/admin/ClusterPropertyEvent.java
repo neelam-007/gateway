@@ -32,6 +32,6 @@ public class ClusterPropertyEvent extends AdminEvent {
     }
 
     public String toString() {
-        return this.getClass().getName() + " [" + source.getClass().getName() + " " + ((ClusterProperty)source).getKey() + "]";
+        return this.getClass().getName() + " [" + source.getClass().getName() + " " + ((ClusterProperty)source).getName() + "]";
     }
 }

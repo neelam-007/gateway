@@ -35,8 +35,7 @@ import java.util.logging.Level;
  */
 public class TrustedCertManagerImp extends HibernateEntityManager implements TrustedCertManager {
     public TrustedCert findByPrimaryKey(long oid) throws FindException {
-        TrustedCert cert = (TrustedCert)findByPrimaryKey(getImpClass(), oid);
-        return cert;
+        return (TrustedCert)findByPrimaryKey(getImpClass(), oid);
     }
 
     public TrustedCert findBySubjectDn(String dn) throws FindException {

@@ -76,6 +76,11 @@ public interface UserManager extends EntityManager {
     EntityHeader userToHeader(User user);
 
     /**
+     * Creates a fake {@link User} containing any relevant fields from the provided {@link EntityHeader}.
+     */
+    User headerToUser(EntityHeader header);
+
+    /**
      * @return the {@link Class} that entities managed by this manager belong to.
      */
     Class getImpClass();

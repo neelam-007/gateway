@@ -6,23 +6,18 @@
 
 package com.l7tech.server.identity;
 
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.PersistentUser;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserManager;
+import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
-import net.sf.hibernate.Criteria;
-import net.sf.hibernate.Hibernate;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.expression.Expression;
+import org.springframework.dao.DataAccessException;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.Query;
+import org.hibernate.criterion.Restrictions;
 
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
-
-import org.springframework.dao.DataAccessException;
 
 /**
  * @author alex
@@ -58,7 +53,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
     public User findByLogin(String login) throws FindException {
         try {
             Criteria findByLogin = getSession().createCriteria(getImpClass());
-            findByLogin.add(Expression.eq("login", login));
+            findByLogin.add(Restrictions.eq("login", login));
             addFindAllCriteria(findByLogin);
             List users = findByLogin.list();
             switch (users.size()) {
@@ -96,7 +91,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         searchString = searchString.replace('?', '_');
         try {
             Criteria search = getSession().createCriteria(getImpClass());
-            search.add(Expression.ilike(getNameFieldname(), searchString));
+            search.add(Restrictions.ilike(getNameFieldname(), searchString));
             addFindAllCriteria(search);
             List entities = search.list();
             List headers = new ArrayList();
@@ -135,7 +130,8 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             Set groupHeaders = groupManager.getGroupHeaders(userImp);
             for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
                 EntityHeader groupHeader = (EntityHeader)i.next();
-                s.delete(groupManager.newMembership(userImp.getOid(), groupHeader.getOid()));
+                Group group = groupManager.findByPrimaryKey(groupHeader.getStrId());
+                s.delete(groupManager.newMembership(group, userImp));
             }
             s.delete(userImp);
             revokeCert(userImp);
@@ -163,7 +159,11 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         hql.append(" WHERE provider_oid = ?");
 
         try {
-            getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
+            Query q = getSession().createQuery(hql.toString());
+            q.setLong(0, ipoid);
+            for (Iterator i = q.iterate(); i.hasNext();) {
+                getSession().delete(i.next());
+            }
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
@@ -176,7 +176,11 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         hql.append(" WHERE oid = ?");
 
         try {
-            getSession().delete(hql.toString(), identifier, Hibernate.STRING);
+            Query q = getSession().createQuery(hql.toString());
+            q.setString(0, identifier);
+            for (Iterator i = q.iterate(); i.hasNext();) {
+                getSession().delete(i.next());
+            }
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);

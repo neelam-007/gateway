@@ -31,8 +31,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
         query.append(JmsEndpoint.class.getName());
         query.append(" where endpoint.messageSource = ?");
         try {
-            Collection endpoints = getHibernateTemplate().find(query.toString(), Boolean.TRUE);
-            return endpoints;
+            return getHibernateTemplate().find(query.toString(), Boolean.TRUE);
         } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }
@@ -93,7 +92,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
     public void update(final JmsEndpoint endpoint) throws VersionException, UpdateException {
         _logger.info("Updating JmsEndpoint" + endpoint);
 
-        JmsEndpoint original = null;
+        JmsEndpoint original;
         // check for original endpoint
         try {
             original = findByPrimaryKey(endpoint.getOid());

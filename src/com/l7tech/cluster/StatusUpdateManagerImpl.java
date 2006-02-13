@@ -5,20 +5,20 @@
  */
 package com.l7tech.cluster;
 
+import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.UptimeMonitor;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.service.ServiceStatistics;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 import java.io.FileNotFoundException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Ther class that performs the status update activities.

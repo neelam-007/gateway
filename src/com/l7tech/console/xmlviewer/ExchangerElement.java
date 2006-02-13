@@ -24,6 +24,7 @@ import org.dom4j.Attribute;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
+import org.dom4j.io.OutputFormat;
 import org.dom4j.tree.DefaultElement;
 
 import java.io.StringWriter;
@@ -38,6 +39,7 @@ import java.util.List;
  */
 public class ExchangerElement extends DefaultElement implements XElement {
     private XDocument document = null;
+    private OutputFormat outform = null;
     private XElementType type = null;
 
     /**
@@ -53,8 +55,6 @@ public class ExchangerElement extends DefaultElement implements XElement {
 
     /**
      * Constructs a default element with an initial type.
-     *
-     * @param name the unmutable name.
      */
     public ExchangerElement(XElementType type) {
         this(new QName(type.getName(), Namespace.get(type.getNamespace())));
@@ -63,15 +63,13 @@ public class ExchangerElement extends DefaultElement implements XElement {
 
     /**
      * Constructs a default element with a dom4j element.
-     *
-     * @param the dom4j element.
      */
     public ExchangerElement(QName name) {
         super(name);
         type = new XElementType(name.getName(), name.getNamespaceURI());
-
-        outputFormat.setIndent("  ");
-        outputFormat.setNewlines(true);
+        outform = new OutputFormat();
+        outform.setIndent("  ");
+        outform.setNewlines(true);
     }
 
     /**
@@ -207,8 +205,6 @@ public class ExchangerElement extends DefaultElement implements XElement {
 
     /**
      * Sets the text value of this element.
-     *
-     * @param the value of this element.
      */
     public void setValue(String text) {
         super.setText(text);
@@ -220,8 +216,6 @@ public class ExchangerElement extends DefaultElement implements XElement {
 
     /**
      * Adds a child element to this element.
-     *
-     * @param the child element.
      */
     public void add(XElement child) {
         super.add((Element)child);
@@ -233,8 +227,6 @@ public class ExchangerElement extends DefaultElement implements XElement {
 
     /**
      * Removes a child element from this element.
-     *
-     * @param the child element.
      */
     public void remove(XElement child) {
         super.remove((Element)child);
@@ -255,8 +247,6 @@ public class ExchangerElement extends DefaultElement implements XElement {
 
     /**
      * Sets the document for this element.
-     *
-     * @param the document.
      */
     public void document(XDocument document) {
         this.document = document;

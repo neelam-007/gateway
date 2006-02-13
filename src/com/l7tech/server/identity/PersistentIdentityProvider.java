@@ -8,12 +8,12 @@ package com.l7tech.server.identity;
 
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.attribute.IdentityMapping;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.beans.factory.InitializingBean;
 
 import java.util.Collection;
 import java.util.TreeSet;
@@ -22,7 +22,7 @@ import java.util.TreeSet;
  * @author alex
  * @version $Revision$
  */
-public abstract class PersistentIdentityProvider extends HibernateDaoSupport implements IdentityProvider {
+public abstract class PersistentIdentityProvider implements IdentityProvider, InitializingBean {
     protected ClientCertManager clientCertManager;
     protected KeystoreUtils keystore;
 
@@ -66,7 +66,7 @@ public abstract class PersistentIdentityProvider extends HibernateDaoSupport imp
      *
      * @throws Exception if initialization fails
      */
-    protected void initDao() throws Exception {
+    public void afterPropertiesSet() throws Exception {
         if (clientCertManager == null) {
             throw new IllegalArgumentException("The Client Certificate Manager is required");
         }

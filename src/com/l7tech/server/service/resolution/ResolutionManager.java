@@ -4,10 +4,10 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.PublishedService;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Query;
-import net.sf.hibernate.Session;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.Query;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -106,10 +106,15 @@ public class ResolutionManager extends HibernateDaoSupport {
     public void deleteResolutionParameters(long serviceOid) throws DeleteException {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
           " where " + TABLE_NAME + "." + SVCID_COLUMN + " = " + serviceOid;
-        Session session = null;
+        Session session;
         try {
             session = getSession();
-            int deleted = session.delete(query);
+            Query q = session.createQuery(query);
+            int deleted = 0;
+            for (Iterator i = q.iterate(); i.hasNext();) {
+                session.delete(i.next());
+                deleted++;
+            }
             logger.finest("deleted " + deleted + " resolution parameters.");
         } catch (HibernateException e) {
             String msg = "error deleting resolution parameters with query " + query;
@@ -123,10 +128,7 @@ public class ResolutionManager extends HibernateDaoSupport {
             return false;
         }
 
-        if (!paramcol2.containsAll(paramcol1)) {
-            return false;
-        }
-        return true;
+        return paramcol2.containsAll(paramcol1);
     }
 
     private Collection getDistinct(PublishedService service) {
@@ -159,7 +161,7 @@ public class ResolutionManager extends HibernateDaoSupport {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
           " where " + TABLE_NAME + "." + SVCID_COLUMN + " = ?";
 
-        List hibResults = null;
+        List hibResults;
         try {
             Query q = getSession().createQuery(query);
             q.setLong(0, serviceid);

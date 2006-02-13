@@ -2,9 +2,9 @@ package com.l7tech.server.identity;
 
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Authorizer;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
@@ -13,7 +13,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.security.auth.Subject;
 import java.rmi.RemoteException;
@@ -37,7 +36,7 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
-public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityAdmin {
+public class IdentityAdminImpl implements IdentityAdmin {
     private ClientCertManager clientCertManager;
 
     private final AccessManager accessManager;

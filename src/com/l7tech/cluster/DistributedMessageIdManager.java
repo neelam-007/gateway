@@ -9,7 +9,6 @@ package com.l7tech.cluster;
 import com.l7tech.common.util.Background;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import net.sf.hibernate.Session;
 import org.jboss.cache.PropertyConfigurator;
 import org.jboss.cache.TreeCache;
 import org.jboss.cache.TransactionManagerLookup;
@@ -17,10 +16,10 @@ import org.jboss.cache.lock.LockingException;
 import org.jboss.cache.lock.TimeoutException;
 import org.jboss.cache.transaction.DummyTransactionManager;
 import org.jboss.cache.transaction.DummyUserTransaction;
-import org.springframework.orm.hibernate.HibernateCallback;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.hibernate.Session;
 
-import javax.naming.Context;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
@@ -171,11 +170,11 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         tree.startService(); // kick start tree cache
 
         // Perturb delay to avoid synchronization with other cluster nodes
-        long when = GC_PERIOD * 2 + new Random().nextInt(1 + (int)GC_PERIOD/4);
+        long when = GC_PERIOD * 2 + new Random().nextInt(1 + GC_PERIOD /4);
         Background.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
         PreparedStatement ps = null;
         ResultSet rs = null;
-        Connection conn = null;
+        Connection conn;
         UserTransaction tx = null;
         try {
             // load old message ids from database
@@ -193,7 +192,6 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                     tree.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, new Long(expires > 0 ? -expires : expires));
                 }
             }
-            conn = null;
         } finally {
             try {
                 if (rs != null) rs.close();
@@ -206,7 +204,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             } catch (Exception e) {
                 logger.log( Level.WARNING, "Caught exception while trying to close PreparedStatement", e );
             }
-            tx.commit();
+            if (tx != null) tx.commit();
         }
     }
 
@@ -341,7 +339,6 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
             } catch ( SystemException e ) {
                 final String msg = "Unable to rollback transaction";
                 logger.log( Level.WARNING, msg, e );
-                throw new RuntimeException(msg, e);
             }
         }
         // We must have either returned or thrown by now

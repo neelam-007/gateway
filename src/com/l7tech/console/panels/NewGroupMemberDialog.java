@@ -49,7 +49,7 @@ public class NewGroupMemberDialog extends JDialog {
      *
      * @param parent the GroupPanel parent.
      */
-    public NewGroupMemberDialog(JDialog owner, GroupUsersPanel parent, IdentityProviderConfig ipc) {
+    public NewGroupMemberDialog(Frame owner, GroupUsersPanel parent, IdentityProviderConfig ipc) {
         // Init UI
         super(owner, true);
         this.parent = parent;
@@ -317,7 +317,5 @@ public class NewGroupMemberDialog extends JDialog {
     private final String CMD_CANCEL = "cmd.cancel";
     private final String CMD_OK = "cmd.ok";
     private static final String NON_MEMBER_LABEL = "Non-Members:";
-
-    private final ClassLoader cl = getClass().getClassLoader();
 }
 

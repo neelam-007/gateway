@@ -7,10 +7,7 @@ import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -100,7 +97,7 @@ public class NewGroupDialog extends JDialog {
      */
     private void initComponents() {
 
-        GridBagConstraints constraints = null;
+        GridBagConstraints constraints;
 
         Container contents = getContentPane();
         JPanel panel = new JPanel();
@@ -233,8 +230,7 @@ public class NewGroupDialog extends JDialog {
                         new FilterDocument(24,
                                 new FilterDocument.Filter() {
                                     public boolean accept(String str) {
-                                        if (str == null) return false;
-                                        return true;
+                                        return str != null;
                                     }
                                 }));
         return groupIdTextField;

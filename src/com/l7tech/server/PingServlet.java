@@ -7,10 +7,10 @@
 package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.SessionFactory;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;

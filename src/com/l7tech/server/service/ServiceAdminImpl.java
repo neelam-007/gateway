@@ -1,10 +1,10 @@
 package com.l7tech.server.service;
 
 import com.l7tech.admin.AccessManager;
-import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -21,7 +21,6 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -47,8 +46,7 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmin {
-
+public class ServiceAdminImpl implements ServiceAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
     private final String UDDI_CONFIG_FILENAME = "uddi.properties";
     private static final String UDDI_PROP_MAX_ROWS = "uddi.result.max_rows";

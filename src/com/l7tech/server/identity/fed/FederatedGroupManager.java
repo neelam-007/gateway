@@ -8,13 +8,15 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.*;
-import com.l7tech.identity.fed.*;
-import com.l7tech.identity.internal.GroupMembership;
+import com.l7tech.identity.fed.FederatedGroup;
+import com.l7tech.identity.fed.FederatedGroupMembership;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentGroupManager;
-import net.sf.hibernate.Criteria;
-import net.sf.hibernate.expression.Expression;
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Restrictions;
 
 import java.util.Set;
 import java.util.logging.Logger;
@@ -32,6 +34,9 @@ import java.util.regex.PatternSyntaxException;
  */
 public class FederatedGroupManager extends PersistentGroupManager {
     private FederatedIdentityProvider federatedProvider;
+    private FederatedIdentityProviderConfig providerConfig;
+
+    private static final Logger logger = Logger.getLogger(FederatedGroupManager.class.getName());
 
     public FederatedGroupManager(IdentityProvider identityProvider) {
         super(identityProvider);
@@ -49,8 +54,9 @@ public class FederatedGroupManager extends PersistentGroupManager {
     protected FederatedGroupManager() {
     }
 
-    public GroupMembership newMembership( long userOid, long groupOid ) {
-        return new FederatedGroupMembership(providerConfig.getOid(), userOid, groupOid);
+    public GroupMembership newMembership(Group group, User user) {
+        FederatedGroup fgroup = (FederatedGroup)cast(group);
+        return new FederatedGroupMembership(providerConfig.getOid(), fgroup.getOid(), Long.parseLong(user.getUniqueIdentifier()));
     }
 
     protected Class getMembershipClass() {
@@ -63,7 +69,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
     }
 
     protected void addFindAllCriteria( Criteria allHeadersCriteria ) {
-        allHeadersCriteria.add(Expression.eq("providerId", new Long(getProviderOid())));
+        allHeadersCriteria.add(Restrictions.eq("providerId", new Long(getProviderOid())));
     }
 
     public Group findByPrimaryKey( String oid ) throws FindException {
@@ -130,6 +136,10 @@ public class FederatedGroupManager extends PersistentGroupManager {
         }
     }
 
+    protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
+        // super is fine
+    }
+
     public PersistentGroup cast(Group group) {
         FederatedGroup imp;
         if ( group instanceof GroupBean ) {
@@ -151,9 +161,4 @@ public class FederatedGroupManager extends PersistentGroupManager {
     public String getTableName() {
         return "fed_group";
     }
-
-
-    private FederatedIdentityProviderConfig providerConfig;
-
-    private final Logger logger = Logger.getLogger(getClass().getName());
 }

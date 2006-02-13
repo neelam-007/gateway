@@ -6,7 +6,6 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
@@ -23,7 +22,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     }
 
     public String getUniqueIdentifier() {
-        return new Long( _oid ).toString();
+        return Long.toString(_oid);
     }
 
     public void setOid( long oid ) {
@@ -36,7 +35,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         if ( uniqueId == null || uniqueId.length() == 0 )
             return -1L;
         else
-            return new Long( bean.getUniqueIdentifier() ).longValue();
+            return Long.parseLong(bean.getUniqueIdentifier());
     }
 
     /**
@@ -122,12 +121,11 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
                 : userImp.bean.getProviderId() != DEFAULT_OID ) return false;
         String login = getLogin();
         String ologin = userImp.getLogin();
-        if ( login != null ? !login.equals(ologin) : ologin != null) return false;
-        return true;
+        return !(login != null ? !login.equals(ologin) : ologin != null);
     }
 
     public int hashCode() {
-        if ( _oid != DEFAULT_OID ) return (int)_oid;
+        if (_oid != DEFAULT_OID) return (int)_oid;
         String login = getLogin();
         if ( login == null ) return System.identityHashCode(this);
 

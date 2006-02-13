@@ -46,6 +46,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, TruePolicyNode.class);
+        assertionMap.put(FalseAssertion.class, FalsePolicyNode.class);
 
         assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
         assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);

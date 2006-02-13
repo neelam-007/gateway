@@ -12,7 +12,7 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 /**
@@ -32,23 +32,31 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         this.bean = bean;
     }
 
-    public void setXmlProperties(String xml) throws IOException {
+    public void setXmlProperties(String xml) {
         if (xml != null && xml.equals(xmlProperties)) return;
         this.xmlProperties = xml;
         if ( xml != null && xml.length() > 0 ) {
-            XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
-            bean.setProperties((Map)xd.readObject());
+            try {
+                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+                bean.setProperties((Map)xd.readObject());
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e); // Can't happen
+            }
         }
     }
 
-    public String getXmlProperties() throws IOException {
+    public String getXmlProperties() {
         if ( xmlProperties == null ) {
             Map properties = bean.getProperties();
             if ( properties == null ) return null;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            XMLEncoder xe = new XMLEncoder(baos);
-            xe.writeObject(properties);
-            xmlProperties = baos.toString(PROPERTIES_ENCODING);
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                XMLEncoder xe = new XMLEncoder(baos);
+                xe.writeObject(properties);
+                xmlProperties = baos.toString(PROPERTIES_ENCODING);
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e); // Can't happen
+            }
         }
         return xmlProperties;
     }
@@ -63,7 +71,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         if ( uniqueId == null || uniqueId.length() == 0 ) {
             return -1L;
         } else {
-            return new Long( bean.getUniqueIdentifier() ).longValue();
+            return Long.parseLong(bean.getUniqueIdentifier());
         }
     }
 
@@ -84,7 +92,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     }
 
     public String getUniqueIdentifier() {
-        return new Long( _oid ).toString();
+        return Long.toString(_oid);
     }
 
     public long getProviderId() {
@@ -103,7 +111,14 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         bean.setVersion(version);
     }
 
-    public abstract void copyFrom( Group objToCopy);
+    public void copyFrom( Group objToCopy) {
+        PersistentGroup imp = (PersistentGroup)objToCopy;
+        setOid(imp.getOid());
+        setName(imp.getName());
+        setDescription(imp.getDescription());
+        setProviderId(imp.getProviderId());
+        setXmlProperties(imp.getXmlProperties());
+    }
 
     public GroupBean getGroupBean() {
         return bean;
@@ -113,8 +128,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         if (this == o) return true;
         if (!(o instanceof PersistentGroup)) return false;
         final PersistentGroup groupImp = (PersistentGroup) o;
-        if (_oid != DEFAULT_OID ? !(_oid == groupImp._oid) : groupImp._oid != DEFAULT_OID ) return false;
-        return true;
+        return !(_oid != DEFAULT_OID ? !(_oid == groupImp._oid) : groupImp._oid != DEFAULT_OID);
     }
 
     public int hashCode() {

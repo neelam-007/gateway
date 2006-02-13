@@ -6,20 +6,19 @@
  */
 package com.l7tech.server.sla;
 
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
-import org.springframework.orm.hibernate.HibernateCallback;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.HibernateException;
+import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.springframework.orm.hibernate3.HibernateCallback;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.util.Calendar;
-
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * CounterManager implementation that uses a database table instead of a cache.

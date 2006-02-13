@@ -27,6 +27,8 @@ alter table audit_message drop column user_id;
 alter table audit_message drop column provider_oid;
 alter table audit_admin drop column admin_login;
 
+
+-- Rename community_schemas.schema to work around reserved word
 alter table community_schemas change schema schema_xml mediumtext default '';
 
 alter table service_resolution drop index `soapaction`;
@@ -38,3 +40,44 @@ update service_resolution set digested=HEX(MD5(CONCAT(soapaction,urn,uri)));
 alter table service_resolution modify column digested varchar(32) NOT NULL;
 CREATE UNIQUE INDEX digested ON service_resolution (digested);
 
+------------------------
+-- META-GROUP SUPPORT --
+------------------------
+
+-- Get rid of old composite PK
+alter table internal_user_group drop primary key;
+
+-- Add/rename columns
+alter table internal_user_group change internal_user user_id varchar(255) null;
+alter table internal_user_group add provider_oid bigint(20) not null;
+alter table internal_user_group add subgroup_id varchar(255);
+alter table internal_user_group add version int(11) not null;
+
+-- Populate new column to reflect belonging to IIP
+update internal_user_group set provider_oid = -2;
+
+-- Add new PK with auto_increment to generate unique values
+-- (hopefully won't collide with hibernate's high/low generator)
+alter table internal_user_group add objectid bigint(20) auto_increment primary key;
+
+-- Redefine PK to exclude auto_increment
+alter table internal_user_group change objectid objectid bigint(20) primary key;
+
+-- Add new indexes
+alter table internal_user_group add index (provider_oid);
+alter table internal_user_group add index (user_id);
+alter table internal_user_group add index (subgroup_id);
+
+------------------------
+-- Cluster Properties --
+------------------------
+
+alter table cluster_properties drop primary key;
+
+alter table cluster_properties add objectid bigint(20) not null primary key auto_increment;
+alter table cluster_properties add version integer not null;
+
+-- Removes auto_increment but still primary key
+alter table cluster_properties change objectid objectid bigint(20) not null;
+
+create unique index i_cp_propkey on cluster_properties (propkey);

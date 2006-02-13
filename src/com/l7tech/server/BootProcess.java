@@ -13,10 +13,11 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.server.event.system.*;
 import com.l7tech.server.service.ServiceManagerImp;
-import com.l7tech.identity.cert.TrustedCertManager;
-import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.cluster.ClusterPropertyManager;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -27,8 +28,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -73,7 +74,6 @@ public class BootProcess extends ApplicationObjectSupport
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
         serverConfig = config;
-
     }
 
     public void start() throws LifecycleException {
@@ -161,6 +161,10 @@ public class BootProcess extends ApplicationObjectSupport
 
         auditor = new Auditor(this, springContext, logger);
 
+        ClusterPropertyManager clusterPropertyManager = (ClusterPropertyManager)getApplicationContext().getBean("clusterPropertyManager");
+        if (clusterPropertyManager == null) throw new LifecycleException("ClusterPropertyManager not available yet");
+        serverConfig.setClusterPropertyManager(clusterPropertyManager);
+
         GlobalTarariContext context = TarariLoader.getGlobalContext();
         if (context != null) {
             auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
@@ -178,7 +182,6 @@ public class BootProcess extends ApplicationObjectSupport
 
         deleteOldAttachments(serverConfig.getAttachmentDirectory());
         try {
-
             // This needs to happen here, early enough that it will notice early events but after the database init
 
             getApplicationContext().publishEvent(new Initializing(this, Component.GW_SERVER, ipAddress));

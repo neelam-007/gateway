@@ -6,6 +6,8 @@
 
 package com.l7tech.server;
 
+import com.l7tech.cluster.ClusterProperty;
+import com.l7tech.cluster.ClusterPropertyManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -65,6 +67,9 @@ public class ServerConfig extends ApplicationObjectSupport {
     private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
     private static final String SUFFIX_DESC = ".description";
     private static final String SUFFIX_DEFAULT = ".default";
+    private static final String SUFFIX_CLUSTER_KEY = ".clusterProperty";
+    private static final String SUFFIX_CLUSTER_AGE = ".clusterPropertyAge";
+    private static final int CLUSTER_DEFAULT_AGE = 30000;
 
     public static ServerConfig getInstance() {
         if (_instance == null) _instance = new ServerConfig();
@@ -76,44 +81,74 @@ public class ServerConfig extends ApplicationObjectSupport {
         String setSysPropProp = propName + SUFFIX_SETSYSPROP;
         String jndiProp = propName + SUFFIX_JNDI;
         String dfltProp = propName + SUFFIX_DEFAULT;
+        String clusterKeyProp = propName + SUFFIX_CLUSTER_KEY;
+        String clusterAgeProp = propName + SUFFIX_CLUSTER_AGE;
 
-        String systemValue = getPropertyValue(sysPropProp);
-        String setSystemValue = getPropertyValue(setSysPropProp);
-        String jndiValue = getPropertyValue(jndiProp);
-        String defaultValue = getPropertyValue(dfltProp);
+        String systemPropertyName = getServerConfigProperty(sysPropProp);
+        String isSetSystemProperty = getServerConfigProperty(setSysPropProp);
+        String jndiName = getServerConfigProperty(jndiProp);
+        String defaultValue = getServerConfigProperty(dfltProp);
+        String clusterKey = getServerConfigProperty(clusterKeyProp);
+        String clusterAge = getServerConfigProperty(clusterAgeProp);
 
         String value = null;
 
-        if ( systemValue != null && systemValue.length() > 0 ) {
-            logger.finest("Checking System property " + systemValue);
-            value = System.getProperty(systemValue);
+        if ( systemPropertyName != null && systemPropertyName.length() > 0 ) {
+            logger.finest("Checking System property " + systemPropertyName);
+            value = System.getProperty(systemPropertyName);
         }
 
-        if (value == null && jndiValue != null && jndiValue.length() > 0 ) {
+        if (value == null && clusterKey != null && clusterKey.length() > 0) {
+            if (clusterPropertyManager == null) {
+                logger.warning("Property '" + propName + "' has a cluster properties key defined, but the ClusterPropertyManager is not yet available");
+            } else {
+                logger.finest("Checking for cluster property '" + clusterKey + "'");
+                try {
+                    int age;
+                    if (clusterAge != null && clusterAge.length() > 0) {
+                        age = Integer.parseInt(clusterAge);
+                    } else {
+                        age = CLUSTER_DEFAULT_AGE;
+                    }
+
+                    ClusterProperty cp = (ClusterProperty)clusterPropertyManager.getCachedEntityByName(clusterKey, age);
+                    if (cp == null) {
+                        logger.finest("No cluster property named '" + clusterKey + "'");
+                    } else {
+                        logger.finest("Using cluster property " + clusterKey + " = '" + cp.getValue() + "'");
+                        value = cp.getValue();
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Couldn't find cluster property '" + clusterKey + "'", e);
+                }
+            }
+        }
+
+        if (value == null && jndiName != null && jndiName.length() > 0 ) {
             try {
-                logger.finest("Checking JNDI property " + jndiValue);
+                logger.finest("Checking JNDI property " + jndiName);
                 if (_icontext == null) _icontext = new InitialContext();
-                value = (String)_icontext.lookup(jndiValue);
+                value = (String)_icontext.lookup(jndiName);
             } catch (NamingException ne) {
                 logger.fine(ne.getMessage());
             }
         }
-        
-        if ( value == null ) value = getPropertyValue( propName );
+
+        if ( value == null ) value = getServerConfigProperty( propName );
 
         if ( value == null ) {
             logger.finest("Using default value " + defaultValue);
             value = defaultValue;
         }
 
-        if (value != null && "true".equalsIgnoreCase(setSystemValue)) {
-            System.setProperty(systemValue, value);
+        if (value != null && "true".equalsIgnoreCase(isSetSystemProperty)) {
+            System.setProperty(systemPropertyName, value);
         }
 
         return value;
     }
 
-    private String getPropertyValue(String prop) {
+    private String getServerConfigProperty(String prop) {
         String val = (String)_properties.get(prop);
         if (val == null) return null;
         if (val.length() == 0) return val;
@@ -181,7 +216,12 @@ public class ServerConfig extends ApplicationObjectSupport {
             logger.severe("Couldn't load serverconfig.properties!");
             throw new RuntimeException("Couldn't load serverconfig.properties!");
         } finally {
-            if (propStream != null) try { propStream.close(); } catch (IOException e) {}
+            if (propStream != null)
+                try {
+                    propStream.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Couldn't close properties file", e);
+                }
         }
 
         // Find and process any override properties
@@ -207,7 +247,12 @@ public class ServerConfig extends ApplicationObjectSupport {
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Error loading serverconfig_override.properties; continuing with no overrides", e);
         } finally {
-            if (overStream != null) try { overStream.close(); } catch (IOException e) {}
+            if (overStream != null)
+                try {
+                    overStream.close();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Couldn't close properties stream", e);
+                }
         }
 
         // export as system property. This is required so custom assertions
@@ -233,11 +278,13 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     public int getServerId() {
         if (_serverId == 0) {
+            String sid = null;
             try {
-                String sid = getProperty(PARAM_SERVER_ID);
+                sid = getProperty(PARAM_SERVER_ID);
                 if (sid != null && sid.length() > 0)
-                    _serverId = new Byte(sid).byteValue();
+                    _serverId = Byte.parseByte(sid);
             } catch (NumberFormatException nfe) {
+                logger.log(Level.WARNING, "Invalid ServerID value '" + sid + "'", nfe);
             }
 
             if (_serverId == 0) {
@@ -443,6 +490,11 @@ public class ServerConfig extends ApplicationObjectSupport {
         return super.getApplicationContext();
     }
 
+    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
+        this.clusterPropertyManager = clusterPropertyManager;
+    }
+
+    private ClusterPropertyManager clusterPropertyManager;
     private int _serverId;
     private final long _serverBootTime = System.currentTimeMillis();
     private List _ipProtocolPorts;

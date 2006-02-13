@@ -7,14 +7,13 @@
 package com.l7tech.server;
 
 import com.l7tech.admin.AccessManager;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -34,7 +33,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class TrustedCertAdminImpl extends HibernateDaoSupport implements TrustedCertAdmin {
+public class TrustedCertAdminImpl implements TrustedCertAdmin {
     private final AccessManager accessManager;
     private final X509Certificate rootCertificate;
     private final LicenseManager licenseManager;

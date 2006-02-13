@@ -330,13 +330,16 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                     JOptionPane.showMessageDialog(identitiesInTable, "Not all identities can be displayed " +
                                                                      "because the search criterion is too wide");
                 } else {
-                    modelOut.addRow(fromHeader(header, ipc));
+                    User u = admin.findUserByID(ipc.getOid(), header.getStrId());
+                    modelOut.addRow(u);
                 }
             }
 
             i = Arrays.asList(admin.findAllGroups(ipc.getOid())).iterator();
             while (i.hasNext()) {
-                modelOut.addRow(fromHeader((EntityHeader)i.next(), ipc));
+                EntityHeader header = (EntityHeader)i.next();
+                Group g = admin.findGroupByID(ipc.getOid(), header.getStrId());
+                modelOut.addRow(g);
             }
 
             //SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
@@ -632,7 +635,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
               if (p instanceof Group) {
                   // assume that the strid is a valuable piece of information if it;s something else than a number
                   String strid = ((Group)p).getUniqueIdentifier();
-                  String tt = null;
+                  String tt;
                   try {
                       Long.parseLong(strid);
                       tt = null;
@@ -661,25 +664,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             return new ImageIcon(ImageCache.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE));
         }
         return null;
-    }
-
-    private Principal fromHeader(EntityHeader h, IdentityProviderConfig ipc) {
-        if (EntityType.GROUP.equals(h.getType())) {
-            GroupBean g = new GroupBean();
-            g.setName(h.getName());
-            g.getName();
-            g.setProviderId(ipc.getOid());
-            g.setUniqueIdentifier(h.getStrId());
-            return g;
-        } else if (EntityType.USER.equals(h.getType())) {
-            UserBean u = new UserBean();
-            u.setName(h.getName());
-            u.setLogin(h.getName());
-            u.setProviderId(ipc.getOid());
-            u.setUniqueIdentifier(h.getStrId());
-            return u;
-        }
-        throw new IllegalArgumentException("Unknown type " + h.getType());
     }
 
     private JTable identitiesInTable;

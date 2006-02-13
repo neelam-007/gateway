@@ -1,4 +1,4 @@
-package com.l7tech.identity.attribute;
+package com.l7tech.identity.mapping;
 
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.ldap.LdapGroup;

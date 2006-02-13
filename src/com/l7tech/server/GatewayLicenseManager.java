@@ -239,7 +239,7 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
         if (applicationEvent instanceof ClusterPropertyEvent) {
             ClusterPropertyEvent evt = (ClusterPropertyEvent)applicationEvent;
             ClusterProperty clusterProperty = evt.getClusterProperty();
-            if (LICENSE_PROPERTY_NAME.equals(clusterProperty.getKey())) {
+            if (LICENSE_PROPERTY_NAME.equals(clusterProperty.getName())) {
                 // Schedule an immediate update, next time anyone does a license check
                 requestReload();
             }

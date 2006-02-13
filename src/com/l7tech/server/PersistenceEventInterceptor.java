@@ -10,7 +10,7 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
-import com.l7tech.identity.internal.GroupMembership;
+import com.l7tech.identity.GroupMembership;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.event.*;
@@ -20,10 +20,12 @@ import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.identity.cert.CertEntryRow;
 import com.l7tech.server.service.resolution.ResolutionParameters;
-import net.sf.hibernate.CallbackException;
-import net.sf.hibernate.Interceptor;
-import net.sf.hibernate.type.Type;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.hibernate.Interceptor;
+import org.hibernate.CallbackException;
+import org.hibernate.EntityMode;
+import org.hibernate.Transaction;
+import org.hibernate.type.Type;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -33,14 +35,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Notices when any persistent {@link Entity} is saved, updated or deleted, and creates and fires
- * corresponding {@link Updated}, {@link Deleted} and {@link Created} events,
+ * Notices when any persistent {@link Entity} is saved, updated or deleted, and creates and
+ * fires corresponding {@link Updated}, {@link Deleted} and {@link Created} events,
  * if and when the current transaction commits.
  *
  * @author alex
  * @version $Revision$
  */
 public class PersistenceEventInterceptor extends ApplicationObjectSupport implements Interceptor {
+    private static Logger logger = Logger.getLogger(PersistenceEventInterceptor.class.getName());
+
     public PersistenceEventInterceptor() {
         ignoredClassNames = new HashSet();
         ignoredClassNames.add(SSGLogRecord.class.getName());
@@ -55,20 +59,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     private final Set ignoredClassNames;
 
     private boolean ignored(Object entity) {
-        if (!(entity instanceof Entity || entity instanceof GroupMembership || entity instanceof CertEntryRow)) return true;
+        if (!(entity instanceof Entity)) return true;
         return ignoredClassNames.contains(entity.getClass().getName());
-    }
-
-    /**
-     * Detects updates and fires an {@link com.l7tech.server.event.admin.Updated} event if the entity isn't {@link #ignored} and the update is committed
-     */
-    public boolean onFlushDirty(final Object entity, final Serializable id, final Object[] currentState, final Object[] previousState, final String[] propertyNames, Type[] types) throws CallbackException {
-        if (!ignored(entity)) {
-            logger.log(Level.FINE, "Updated " + entity.getClass().getName() + " " + id);
-            EntityChangeSet changes = new EntityChangeSet(propertyNames, previousState, currentState);
-            getApplicationContext().publishEvent(updatedEvent(entity, changes));
-        }
-        return false;
     }
 
     /**
@@ -92,82 +84,117 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         }
     }
 
-    AdminEvent deletedEvent(Object obj) {
-        if (obj instanceof Entity) {
-            return new Deleted((Entity)obj);
-        } else if (obj instanceof GroupMembership) {
+    /**
+     * Detects updates and fires an {@link com.l7tech.server.event.admin.Updated} event if the entity isn't {@link #ignored} and the update is committed
+     */
+    public boolean onFlushDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState, String[] propertyNames, Type[] types) throws CallbackException {
+        if (!ignored(entity)) {
+            logger.log(Level.FINE, "Updated " + entity.getClass().getName() + " " + id);
+            EntityChangeSet changes = new EntityChangeSet(propertyNames, previousState, currentState);
+            getApplicationContext().publishEvent(updatedEvent(entity, changes));
+        }
+        return false;
+    }
+
+
+    private AdminEvent deletedEvent(Object obj) {
+        if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "removed", getApplicationContext()));
         } else if (obj instanceof CertEntryRow) {
             return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "removed", null, getApplicationContext()));
+        } else if (obj instanceof Entity) {
+            return new Deleted((Entity)obj);
         } else
             throw new IllegalStateException("Can't make a Deleted event for a " + obj.getClass().getName());
     }
 
-    AdminEvent createdEvent(Object obj) {
-        if (obj instanceof Entity) {
-            return new Created((Entity)obj);
+    private AdminEvent createdEvent(Object obj) {
+        if (obj instanceof CertEntryRow) {
+            return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "added", null, getApplicationContext()));
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "added", getApplicationContext()));
-        } else if (obj instanceof CertEntryRow) {
-            return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "added", null, getApplicationContext()));
+        } else if (obj instanceof Entity) {
+            return new Created((Entity)obj);
         } else
             throw new IllegalStateException("Can't make a Created event for a " + obj.getClass().getName());
     }
 
-    AdminEvent updatedEvent(Object obj, EntityChangeSet changes) {
-        if (obj instanceof Entity) {
-            return new Updated((Entity)obj, changes);
+    private AdminEvent updatedEvent(Object obj, EntityChangeSet changes) {
+        if (obj instanceof CertEntryRow) {
+            return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "updated", changes, getApplicationContext()));
         } else if (obj instanceof GroupMembership) {
             return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "updated", getApplicationContext()));
-        } else if (obj instanceof CertEntryRow) {
-            return new UserCertEvent(new UserCertEventInfo((CertEntryRow)obj, "updated", changes, getApplicationContext()));
+        } else if (obj instanceof Entity) {
+            return new Updated((Entity)obj, changes);
         } else
             throw new IllegalStateException("Can't make an Updated event for a " + obj.getClass().getName());
     }
 
+    /** Ignored */
+    public void onCollectionRecreate(Object collection, Serializable key) throws CallbackException {
+    }
 
-    /**
-     * Ignored
-     */
+    /** Ignored */
+    public void onCollectionRemove(Object collection, Serializable key) throws CallbackException {
+    }
+
+    /** Ignored */
+    public void onCollectionUpdate(Object collection, Serializable key) throws CallbackException {
+    }
+
+    /** Ignored */
     public boolean onLoad(Object entity, Serializable id, Object[] state, String[] propertyNames, Type[] types) throws CallbackException {
         return false;
     }
 
-    /**
-     * Ignored
-     */
+    /** Ignored */
     public void preFlush(Iterator entities) throws CallbackException {
     }
 
-    /**
-     * Ignored
-     */
+    /** Ignored */
     public void postFlush(Iterator entities) throws CallbackException {
     }
 
-    /**
-     * Ignored
-     */
-    public Boolean isUnsaved(Object entity) {
+    /** Ignored */
+    public Boolean isTransient(Object entity) {
         return null;
     }
 
-    /**
-     * Ignored
-     */
+    /** Ignored */
     public int[] findDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState, String[] propertyNames, Type[] types) {
         return null;
     }
 
-    /**
-     * Ignored
-     */
-    public Object instantiate(Class clazz, Serializable id) throws CallbackException {
+    /** Ignored */
+    public Object instantiate(String entityName, EntityMode entityMode, Serializable id) throws CallbackException {
         return null;
     }
 
-    /**
-     * Ignored
-     */
-    private static Logger logger = Logger.getLogger(PersistenceEventInterceptor.class.getName());
+    /** Ignored */
+    public String getEntityName(Object object) throws CallbackException {
+        return null;
+    }
+
+    /** Ignored */
+    public Object getEntity(String entityName, Serializable id) throws CallbackException {
+        return null;
+    }
+
+    /** Ignored */
+    public void afterTransactionBegin(Transaction tx) {
+    }
+
+    /** Ignored */
+    public void beforeTransactionCompletion(Transaction tx) {
+    }
+
+    /** Ignored */
+    public void afterTransactionCompletion(Transaction tx) {
+    }
+
+    /** Ignored */
+    public String onPrepareStatement(String sql) {
+        return sql;
+    }
+
 }

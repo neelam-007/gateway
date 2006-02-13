@@ -7,12 +7,11 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.admin.AccessManager;
-import com.l7tech.common.transport.jms.*;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.LicenseManager;
+import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
-import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -29,7 +28,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
+public class JmsAdminImpl implements JmsAdmin {
     private JmsConnectionManager jmsConnectionManager;
     private JmsEndpointManager jmsEndpointManager;
     private final AccessManager accessManager;

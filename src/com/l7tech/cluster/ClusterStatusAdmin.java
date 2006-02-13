@@ -1,15 +1,14 @@
 package com.l7tech.cluster;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.common.LicenseException;
-import com.l7tech.common.License;
 import com.l7tech.common.InvalidLicenseException;
+import com.l7tech.common.License;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 import java.rmi.RemoteException;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
@@ -76,7 +75,7 @@ public interface ClusterStatusAdmin {
      * get cluster wide properties
      * @return a list containing ClusterProperty objects (never null)
      */
-    List getAllProperties() throws RemoteException, FindException;
+    Collection getAllProperties() throws RemoteException, FindException;
 
     /**
      * get cluster wide property

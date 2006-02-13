@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE hibernate-mapping PUBLIC
-        "-//Hibernate/Hibernate Mapping DTD 2.1//EN"
-        "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
 
 <!-- $Id$ -->
 
@@ -10,7 +10,7 @@
 -->
 
 <hibernate-mapping>
-    <class name="com.l7tech.common.audit.AuditRecord" table="audit_main">
+    <class name="com.l7tech.common.audit.AuditRecord" table="audit_main" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -31,7 +31,7 @@
             <one-to-many class="com.l7tech.common.audit.AuditDetail"/>
         </set>
         
-        <joined-subclass name="com.l7tech.common.audit.MessageSummaryAuditRecord" table="audit_message" >
+        <joined-subclass name="com.l7tech.common.audit.MessageSummaryAuditRecord" table="audit_message" lazy="false">
             <key column="objectid"/>
             <property name="status" type="int"/>
             <property name="strRequestId" column="request_id" type="string"/>
@@ -46,21 +46,21 @@
             <property name="routingLatency" column="routing_latency" type="int"/>
         </joined-subclass>
 
-        <joined-subclass name="com.l7tech.common.audit.AdminAuditRecord" table="audit_admin">
+        <joined-subclass name="com.l7tech.common.audit.AdminAuditRecord" table="audit_admin" lazy="false">
             <key column="objectid"/>
             <property name="entityClassname" column="entity_class" type="string"/>
             <property name="entityOid" column="entity_id" type="long"/>
             <property name="action" column="action" type="char"/>
         </joined-subclass>
 
-        <joined-subclass name="com.l7tech.common.audit.SystemAuditRecord" table="audit_system">
+        <joined-subclass name="com.l7tech.common.audit.SystemAuditRecord" table="audit_system" lazy="false">
             <key column="objectid"/>
             <property name="componentId" column="component_id" type="int"/>
             <property name="action" type="string"/>
         </joined-subclass>
     </class>
 
-    <class name="com.l7tech.common.audit.AuditDetail" table="audit_detail">
+    <class name="com.l7tech.common.audit.AuditDetail" table="audit_detail" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
