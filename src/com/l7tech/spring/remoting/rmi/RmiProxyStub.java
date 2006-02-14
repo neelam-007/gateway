@@ -8,6 +8,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationTargetException;
 import java.rmi.Remote;
 
 import org.aopalliance.intercept.MethodInvocation;
@@ -27,21 +28,27 @@ final class RmiProxyStub implements InvocationHandler, Serializable {
 
     public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
         Object result = null;
-        if(serviceStub instanceof RmiInvocationHandler) {
-            RemoteInvocation ri = remoteInvocationFactory.createRemoteInvocation(new MethodInvocation(){
-                //
-                public Method getMethod() {return method;}
-                public Object[] getArguments() {return args;}
 
-                // not used by spring
-                public Object proceed() throws Throwable {return null;}
-                public Object getThis() {return null;}
-                public AccessibleObject getStaticPart() {return null;}
-            });
-            result = ((RmiInvocationHandler)serviceStub).invoke(ri);
+        try {
+            if(serviceStub instanceof RmiInvocationHandler) {
+                RemoteInvocation ri = remoteInvocationFactory.createRemoteInvocation(new MethodInvocation(){
+                    //
+                    public Method getMethod() {return method;}
+                    public Object[] getArguments() {return args;}
+
+                    // not used by spring
+                    public Object proceed() throws Throwable {return null;}
+                    public Object getThis() {return null;}
+                    public AccessibleObject getStaticPart() {return null;}
+                });
+                result = ((RmiInvocationHandler)serviceStub).invoke(ri);
+            }
+            else {
+                result = method.invoke(serviceStub, args);
+            }
         }
-        else {
-            result = method.invoke(serviceStub, args);
+        catch(InvocationTargetException ite) { // unwrap any target exception
+            throw ite.getCause();
         }
         return result;
     }
