@@ -244,7 +244,7 @@ public class LicensePanel extends JPanel {
         grantsPanel.removeAll();
         grantsPanel.setLayout(new BoxLayout(grantsPanel, BoxLayout.Y_AXIS));
         final String grants = license.getGrants();
-        grantsPanel.add(new JScrollPane(new WrappingLabel(grants, (grants.length() / 70) + 1),
+        grantsPanel.add(new JScrollPane(new WrappingLabel(grants, (grants.length() / 70) + 2),
                                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
     }
@@ -306,7 +306,7 @@ public class LicensePanel extends JPanel {
         statusField.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
         validLicense = false;
 
-        WrappingLabel errorsLabel = new WrappingLabel(errorText, (errorText.length() / 68) + 1);
+        WrappingLabel errorsLabel = new WrappingLabel(errorText, (errorText.length() / 70) + 2);
         errorsLabel.setContextMenuEnabled(true);
         errorsLabel.setContextMenuAutoSelectAll(true);
         JScrollPane sp = new JScrollPane(errorsLabel,
