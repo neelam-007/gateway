@@ -47,7 +47,8 @@ abstract class Command extends Word {
     }
 
     /**
-     * Run this command in the specified session.
+     * Run this command in the specified session.  The parameter args, if given and nonempty, should identify
+     * a noun (and possibly property) on which to run the command.
      *
      * @param session the session in which the command is to be run.  Must not be null.
      * @param out     where any textual output of the command is to be sent.  Must not be null.

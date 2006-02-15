@@ -18,7 +18,7 @@ import java.util.List;
  */
 class Commands extends Words {
     private static Command[] GLOBAL_COMMAND_ARRAY = {
-            new NullCommand("interactive", "Enter interactive processing mode", false, true),
+            new NullCommand("interactive", "Enter interactive processing mode", false, true), // placeholder
             new HelpCommand(),
             new ShowCommand(),
             new SetCommand(),
@@ -60,26 +60,28 @@ class Commands extends Words {
         }
 
         public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-            if (session.isUnsavedChanges()) {
-                if ((args == null || args.length < 1))
-                    throw new CommandException("You have unsaved changes -- please use either 'quit save' or 'quit rollback'.");
+            if (!session.isUnsavedChanges()) {
+                session.quit();
+                return;
+            }
+
+            // There's unsaved changes -- have to save or rollback first.
+            if ((args != null && args.length >= 1)) {
                 Command cmd = (Command)session.getCommands().getByPrefix(args[0]);
-                final boolean isRoll = cmd != null && cmd.getName().equals("rollback");
-                final boolean isSave = cmd != null && cmd.getName().equals("save");
-                if (!isRoll && !isSave) {
-                    throw new CommandException("You have unsaved changes -- please use either 'quit save' or 'quit rollback'.");
-                } else {
-                    if (isSave)
-                        cmd.execute(session, out, args);
+                if (cmd instanceof RollbackCommand || cmd instanceof SaveCommand) {
+                    cmd.execute(session, out, args);
+                    session.quit();
+                    return;
                 }
             }
-            session.quit();
+
+            throw new CommandException("You have unsaved changes -- please use either 'quit save' or 'quit rollback'.");
         }
     }
 
     private static class SaveCommand extends Command {
         protected SaveCommand() {
-            super("save", "Save configuration changes, overwriting the config file");
+            super("save", "Save configuration changes, overwriting config file");
             setMinAbbrev(2);
         }
 

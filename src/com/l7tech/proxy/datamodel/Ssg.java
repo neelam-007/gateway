@@ -59,8 +59,8 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private String ssgFile = SecureSpanConstants.SSG_FILE;
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
-    private String keyStorePath = null;
-    private String trustStorePath = null;
+    private File keyStoreFile = null;
+    private File trustStoreFile = null;
     private boolean defaultSsg = false;
     private boolean chainCredentialsFromClient = false;
     private String kerberosName = null;
@@ -351,59 +351,74 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     }
 
     /**
-     * Get the pathname of the key store file this SSG will use.
-     * @return the key store pathname
-     */
-    public synchronized String getKeyStorePath() {
-        if (keyStorePath == null)
-            keyStorePath = KEY_FILE + getId() + KEY_EXT;
-        return keyStorePath;
-    }
-
-    /**
      * Set the pathname of the key store file this SSG should use.
      * @param keyStorePath the key store pathname
+     * @deprecated this is only here for backward compat with old config files.  Use {@link #setKeyStoreFile} instead.
      */
     public void setKeyStorePath(String keyStorePath) {
         if (keyStorePath == null)
             throw new IllegalArgumentException("keyStorePath may not be null");
         if (keyStorePath.length() < 1)
             throw new IllegalArgumentException("keyStorePath may not be the empty string");
-        this.keyStorePath = keyStorePath;
+        setKeyStoreFile(new File(keyStorePath));
         getRuntime().flushKeyStoreData();
     }
 
     /**
-     * Get the pathname of the trust store file this SSG will use.
-     * @return the trust store pathname
+     * Set the file to use as the key store for this SSG.
+     *
+     * @param file the key store file.  Must not be null.
      */
-    public synchronized String getTrustStorePath() {
-        if (trustStorePath == null)
-            trustStorePath = TRUST_FILE + getId() + TRUST_EXT;
-        return trustStorePath;
+    public void setKeyStoreFile(File file) {
+        if (file == null) throw new NullPointerException();
+        this.keyStoreFile = file;
+        getRuntime().flushKeyStoreData();
     }
 
     /**
      * Set the pathname of the trust store file this SSG will use
      * @param trustStorePath the trust store pathname
+     * @deprecated this is here only for backward compatibility.  Use {@link #setTrustStoreFile} instead.
      */
     public void setTrustStorePath(String trustStorePath) {
         if (trustStorePath == null)
             throw new IllegalArgumentException("trustStorePath may not be null");
         if (trustStorePath.length() < 1)
             throw new IllegalArgumentException("trustStorePath may not be the empty string");
-        this.trustStorePath = trustStorePath;
+        setTrustStoreFile(new File(trustStorePath));
+    }
+
+    /**
+     * Set the trust store file this SSG will use.
+     *
+     * @param file the trust store file.  Must not be null.
+     */
+    public void setTrustStoreFile(File file) {
+        if (file == null) throw new IllegalArgumentException("trustStoreFile may not be null");
+        this.trustStoreFile = file;
         getRuntime().flushKeyStoreData();
     }
 
-    /** Key store file.  Package private; used by SsgKeyStoreManager. */
-    File getKeyStoreFile() {
-        return new File(getKeyStorePath());
+    /**
+     * Get the File of the key store this SSG will use.
+     *
+     * @return the key store pathname.  Never null.
+     */
+    public File getKeyStoreFile() {
+        if (keyStoreFile == null)
+            keyStoreFile = new File(KEY_FILE + getId() + KEY_EXT);
+        return keyStoreFile;
     }
 
-    /** Trust store file.  Package private; used by SsgKeyStoreManager. */
-    File getTrustStoreFile() {
-        return new File(getTrustStorePath());
+    /**
+     * Get the trust store file.
+     *
+     * @return the trust store file.  Never null.
+     */
+    public File getTrustStoreFile() {
+        if (trustStoreFile == null)
+            trustStoreFile = new File(TRUST_FILE + getId() + TRUST_EXT);
+        return trustStoreFile;
     }
 
     public byte[] getPersistPassword() {

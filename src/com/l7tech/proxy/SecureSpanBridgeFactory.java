@@ -107,9 +107,9 @@ public class SecureSpanBridgeFactory {
         if (options.getGatewaySslPort() != 0)
             ssg.setSslPort(options.getGatewaySslPort());
         if (options.getKeyStorePath() != null)
-            ssg.setKeyStorePath(options.getKeyStorePath());
+            ssg.setKeyStoreFile(new File(options.getKeyStorePath()));
         if (options.getCertStorePath() != null)
-            ssg.setTrustStorePath(options.getCertStorePath());
+            ssg.setTrustStoreFile(new File(options.getCertStorePath()));
         if (options.getUseSslByDefault() != null)
             ssg.setUseSslByDefault(options.getUseSslByDefault().booleanValue());
         if (options.getTrustedGateway() != null) {

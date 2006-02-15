@@ -23,7 +23,7 @@ class HelpCommand extends Command {
         super("help", "Show command usage information");
     }
 
-    public void execute(CommandSession session, PrintStream out, String[] args) {
+    public void execute(final CommandSession session, PrintStream out, String[] args) {
         if (args != null && args.length > 0) {
             String wordStr = args[0];
 
@@ -40,17 +40,16 @@ class HelpCommand extends Command {
 
             // If we matched one, show its help page and return
             if (word != null) {
-                printWordHelp(session, out, word);
+                printWordHelp(out, word);
                 return;
             }
 
-            // Last check for our own made-up word
+            // Last check for someone trying to get help on our made-up word "gatewayN"
             if ("gatewayn".equalsIgnoreCase(wordStr)) {
-                printWordHelp(session, out, new Word("gatewayN", "Gateway Account #N (where N is a natural number)") {
-                    public String getHelpText() {
-                        return SsgNoun.getOverviewHelpText();
-                    }
-                });
+                word = new Word("gatewayN",
+                                "Gateway Account #N (where N is a natural number)",
+                                SsgNoun.getGenericHelpText());
+                printWordHelp(out, word);
                 return;
             }
 
@@ -64,18 +63,20 @@ class HelpCommand extends Command {
 
         if (!session.isInteractive()) {
             String progname = "BridgeConfig"; // TODO maybe look this up, if possible to do so in Java
-            out.println("Usage: " + progname + " command [object [parameter [value]]]\n");
+            out.println("Usage: " + progname + " <global command> [<object> [<parameter> [<value>]]]");
+            out.println("       " + progname + " <object> <special command> [<parameter> [<value>]]\n");
         }
 
         printAvailableCommands(session, out);
         out.println();
         printAvailableObjects(session, out);
         out.println();
+        out.println("Most names can be abbreviated (i.e. 'show' to 'sh', or 'gateway17' to 'g17')");
+        out.println("Objects may have extra commands of their own (i.e. 'gateway4 discover')");
         out.println("Use 'help <command>' or 'help <object>' for more information.");
-        out.println("Most words can be abbreviated to two or three letters.");
     }
 
-    private void printWordHelp(CommandSession session, PrintStream out, Word word) {
+    private void printWordHelp(PrintStream out, Word word) {
         String header = word.getName() + " - " + word.getDesc();
         if (word instanceof Command) {
             Command command = (Command)word;
@@ -91,7 +92,7 @@ class HelpCommand extends Command {
     }
 
     private void printAvailableCommands(CommandSession session, PrintStream out) {
-        out.println("Available Commands:\n");
+        out.println("Global Commands:\n");
         List commands = session.getCommands().getAll();
         for (Iterator i = commands.iterator(); i.hasNext();) {
             Command command = (Command)i.next();
@@ -108,7 +109,7 @@ class HelpCommand extends Command {
 
         for (Iterator i = nouns.iterator(); i.hasNext();) {
             Noun noun = (Noun)i.next();
-            if (!listSsgs && noun.getName().startsWith("gateway") && !noun.getName().equals("gateways"))
+            if (!listSsgs && noun instanceof SsgNoun)
                 continue; // Skip listing every single Ssg; we'll summarize them below, instead
             out.println("  " + TextUtils.pad(noun.getName(), LEFTWIDTH) + noun.getDesc());
         }

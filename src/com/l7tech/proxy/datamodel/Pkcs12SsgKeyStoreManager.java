@@ -387,14 +387,15 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         }
     }
 
-    public void deleteStores() {
+    public boolean deleteStores() {
         if (ssg.isFederatedGateway())
             throw new IllegalStateException("Not permitted to delete key stores for a Federated SSG.");
 
         synchronized (ssg) {
-            FileUtils.deleteFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
-            FileUtils.deleteFileSafely(ssg.getTrustStoreFile().getAbsolutePath());
+            boolean delKs = FileUtils.deleteFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
+            boolean delTs = FileUtils.deleteFileSafely(ssg.getTrustStoreFile().getAbsolutePath());
             clearCachedKeystoreData();
+            return delKs || delTs;
         }
     }
 

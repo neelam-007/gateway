@@ -25,7 +25,8 @@ class GatewaysNoun extends Noun {
         if (session == null) throw new NullPointerException();
         this.session = session;
         setHelpText(SsgNoun.getOverviewHelpText() + "\n\nUse 'show gateways' to list the available gateways, 'show gateway5' (or 'sh g5') to show\n" +
-                    "just Gateway Account #5, and 'create gateway' to create a new Gateway Account.");
+                    "just Gateway Account #5, and 'create gateway' to create a new Gateway Account.\n\n" +
+                    SsgNoun.getPropertiesText() + "\n" + SsgNoun.getSpecialCommandsText());
     }
 
     // Display all relevant info about this noun to the specified output stream.
@@ -57,15 +58,18 @@ class GatewaysNoun extends Noun {
     public void create(PrintStream out, String[] args) throws CommandException {
         SsgManager ssgManager = session.getSsgManager();
         Ssg ssg = ssgManager.createSsg();
-        if (args != null && args.length > 0) {
-            ssg.setSsgAddress(args[0]);
-            args = ArrayUtils.shift(args);
+        if (args == null || args.length <= 0) {
+            throw new CommandException("Usage: create gateway <hostname> [<username> [<password>]]");
         }
-        if (args != null && args.length > 0) {
+
+        ssg.setSsgAddress(args[0]);
+        args = ArrayUtils.shift(args);
+
+        if (args.length > 0) {
             ssg.setUsername(args[0]);
             args = ArrayUtils.shift(args);
         }
-        if (args != null && args.length > 0) {
+        if (args.length > 0) {
             ssg.getRuntime().setCachedPassword(args[0].toCharArray());
             ssg.setSavePasswordToDisk(true);
         }

@@ -57,8 +57,9 @@ public abstract class SsgKeyStoreManager {
 
     /**
      * Delete any keystore that might exist for this Ssg.
+     * @return true if any files were deleted
      */
-    public abstract void deleteStores();
+    public abstract boolean deleteStores();
 
     /**
      * Set the Ssg certificate for this Ssg.
@@ -88,8 +89,28 @@ public abstract class SsgKeyStoreManager {
                                              char[] privateKeyPassword)
             throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException;
 
+    /**
+     * Attempt server certificate discovery using the specified credentials.  This will not invoke the
+     * ssg's credential manager except to report if trust could not be automatically established
+     * for the specified username (perhaps because the SSG doesn't possess H(A1) for that account).
+     *
+     * @param ssg              the Ssg whose SSL certificate is to be discovered.  Must not be null.
+     * @param credentials      the credentials to use.  If null, or if credentials.getPass() is null, the
+     *                         ssg's credential manager will always be notified that trust could not be
+     *                         automatically established.
+     * @throws IOException     if there was a network problem talking to the SSG
+     * @throws IOException     if there was a problem writing the updated trust store out to disk
+     * @throws BadCredentialsException     if automatic trust checking was performed, but it failed due either to
+     *                                     an invalid password or a modified certificate
+     * @throws OperationCanceledException  if the credential manager was notified that trust could not be automatically
+     *                                     established, and declined to manually trust the certificate
+     * @throws KeyStoreCorruptException    if the trust store file is corrupt
+     * @throws CertificateException        if the SSG sent back an invalid certificate
+     * @throws KeyStoreException           if the trust store file is corrupt, or a KeyStore operation failed "for some other reason"
+     */
     public void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials)
-            throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException
+            throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException,
+                   CertificateException, KeyStoreException
     {
         logger.log(Level.FINER, "Discovering server certificate for Gateway " + ssg + " (" + ssg.getLocalEndpoint() + ")");
         CertificateDownloader cd = new CertificateDownloader(ssg.getRuntime().getHttpClient(),

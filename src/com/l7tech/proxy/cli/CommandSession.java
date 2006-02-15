@@ -9,6 +9,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.ArrayUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -101,15 +102,24 @@ class CommandSession {
 
     /** Process single command. */
     public void processCommand(String[] args) throws CommandException {
-        final String cmdStr = args[0];
-        if (cmdStr == null || cmdStr.length() < 1) return; // Ignore blank line
-        Command command = (Command)allCommands.getByName(cmdStr);
+        final String wordStr = args[0];
+        if (wordStr == null || wordStr.length() < 1) return; // Ignore blank line
+        args = ArrayUtils.shift(args);
+
+        // First, check for COMMAND NOUN ARG ARG ARG style
+        Command command = (Command)allCommands.getByPrefix(wordStr);
+
         if (command == null) {
-            command = (Command)allCommands.getByPrefix(cmdStr);
-            if (command != null)
-                out.println("(" + command.getName() + ")");
+            // Check for NOUN COMMAND ARG ARG ARG style
+            Nouns nouns = getNouns();
+            final Noun noun = (Noun)nouns.getByPrefix(wordStr);
+            if (noun == null)
+                throw new CommandException("Unknown command or object '" + wordStr + "'. " + TYPE_HELP);
+
+            // Execute special command (object.verb)
+            noun.execute(this, out, args);
+            return;
         }
-        if (command == null) throw new CommandException("Unknown command '" + cmdStr + "'. " + TYPE_HELP);
 
         // Check for correct interactivity
         if (isInteractive() && !command.isInteractive())
@@ -117,9 +127,8 @@ class CommandSession {
         if (!isInteractive() && !command.isOneshot())
             throw new CommandException("Command '" + command.getName() + "' is not available in command line mode");
 
-        String[] rest = new String[args.length - 1];
-        System.arraycopy(args, 1, rest, 0, rest.length);
-        command.execute(this, out, rest);
+        // Execute global command (verb.object) 
+        command.execute(this, out, args);
     }
 
     /** Quit an interactive mode session. */

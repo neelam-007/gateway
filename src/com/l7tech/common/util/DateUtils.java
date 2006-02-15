@@ -11,9 +11,6 @@ import java.util.Date;
  * Utilities related to date handling.
  */
 public class DateUtils {
-    private static String plural(long count, String obj) {
-        return count + " " + obj + (count == 1 ? "" : "s");
-    }
 
     /**
      * Compare the specified date to today and produce a relative date phrase like "Yesterday" or "3 years from now".
@@ -51,8 +48,8 @@ public class DateUtils {
         if (days > 365) {
             long years = days / 365;
             days -= (years * 365);
-            yearsStr = plural(years, "year") + " and ";
+            yearsStr = TextUtils.plural(years, "year") + " and ";
         }
-        return yearsStr + plural(days, "day") + ago;
+        return yearsStr + TextUtils.plural(days, "day") + ago;
     }
 }

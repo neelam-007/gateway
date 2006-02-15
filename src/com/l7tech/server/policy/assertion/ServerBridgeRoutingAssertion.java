@@ -664,7 +664,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             return true;
         }
 
-        public void deleteStores() {
+        public boolean deleteStores() {
             throw new UnsupportedOperationException();
         }
 

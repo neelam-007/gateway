@@ -20,7 +20,7 @@ class CreateCommand extends Command {
                 "        Usage: create <object>\n" +
                 "               create <object> <property> [<property> [<property]]]\n" +
                 "\n" +
-                "     Examples: create gateway\n" +
+                "     Examples: create gateway 192.168.1.57\n" +
                 "               create gateway ssg.example.com testuser secret\n");
     }
 
