@@ -289,7 +289,7 @@ public class MessageProcessor {
             throw (SSLException)new SSLException("SSL connection failure to something other than our Gateway (or its Trusted Gateway, if applicable), but no third-party strategy (WS-Trust,WS-Federation) is configured: " + e.getMessage()).initCause(e);
         strat.handleSslException(sslPeer, e);
 
-        // Update SSGs
+        // Update SSGs to save any token strategy state changes (ie, discovered WS-Trust server SSL cert)
         federatedSsg.getRuntime().getCredentialManager().saveSsgChanges(federatedSsg);
     }
 
