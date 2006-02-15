@@ -224,7 +224,8 @@ public class FileUtils {
 
     /**
      * Saves the inputstream into the given output file.
-     * On successfull operation closes the input stream <code>in</code>.
+     *
+     * Caller is responsible for closing the input stream.
      *
      * @param in  the input file
      * @param out the output file
@@ -234,11 +235,16 @@ public class FileUtils {
         if (in == null || out == null) {
             throw new IllegalArgumentException();
         }
-        ReadableByteChannel sourceChannel = new InputStreamChannel(in);
-        FileChannel destinationChannel = new FileOutputStream(out).getChannel();
-        destinationChannel.transferFrom(sourceChannel, 0, Integer.MAX_VALUE);
-        sourceChannel.close();
-        destinationChannel.close();
+        ReadableByteChannel sourceChannel = null;
+        FileChannel destinationChannel = null;
+        try {
+            sourceChannel = new InputStreamChannel(in);
+            destinationChannel = new FileOutputStream(out).getChannel();
+            destinationChannel.transferFrom(sourceChannel, 0, Integer.MAX_VALUE);
+        }
+        finally {
+            ResourceUtils.closeQuietly(destinationChannel);
+        }
     }
 
     /**
@@ -253,10 +259,16 @@ public class FileUtils {
         if (in == null || out == null) {
             throw new IllegalArgumentException();
         }
-        FileChannel sourceChannel = new FileInputStream(in).getChannel();
-        FileChannel destinationChannel = new FileOutputStream(out).getChannel();
-        sourceChannel.transferTo(0, sourceChannel.size(), destinationChannel);
-        sourceChannel.close();
-        destinationChannel.close();
+        FileChannel sourceChannel = null;
+        FileChannel destinationChannel = null;
+        try {
+            sourceChannel = new FileInputStream(in).getChannel();
+            destinationChannel = new FileOutputStream(out).getChannel();
+            sourceChannel.transferTo(0, sourceChannel.size(), destinationChannel);
+        }
+        finally {
+            ResourceUtils.closeQuietly(sourceChannel);
+            ResourceUtils.closeQuietly(destinationChannel);
+        }
     }
 }
