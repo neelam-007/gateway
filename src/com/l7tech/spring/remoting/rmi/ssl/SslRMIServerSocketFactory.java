@@ -3,12 +3,23 @@ package com.l7tech.spring.remoting.rmi.ssl;
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.net.SocketAddress;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketImplFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.List;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+
+import com.l7tech.common.util.ResourceUtils;
 
 /**
  * <p>An <code>SslRMIServerSocketFactory</code> instance is used by the RMI
@@ -36,11 +47,7 @@ import java.util.List;
  */
 public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
 
-    private String keyStoreFile;
-    private String keyStoreType = KeyStore.getDefaultType();
-    private String algorithm = "SunX509";
-    private String protocol = "TLS";
-    private String keyStorePassword;
+    //- PUBLIC
 
     /**
      * <p>Creates a new <code>SslRMIServerSocketFactory</code> with
@@ -51,7 +58,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      * enabled and do not require client authentication.</p>
      */
     public SslRMIServerSocketFactory() {
-        this(null, null, false);
+        this(null, null, true, false);
     }
 
     /**
@@ -82,6 +89,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      */
     public SslRMIServerSocketFactory(String[] enabledCipherSuites,
                                      String[] enabledProtocols,
+                                     boolean wantClientAuth,
                                      boolean needClientAuth)
       throws IllegalArgumentException, IllegalStateException {
 
@@ -91,6 +99,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
           null : (String[])enabledCipherSuites.clone();
         this.enabledProtocols = enabledProtocols == null ?
           null : (String[])enabledProtocols.clone();
+        this.wantClientAuth = wantClientAuth;
         this.needClientAuth = needClientAuth;
 
         // Force the initialization of the default at construction time,
@@ -157,6 +166,18 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
 
     /**
      * <p>Returns <code>true</code> if client authentication is
+     * desired on SSL connections accepted by server sockets created
+     * by this factory.</p>
+     *
+     * @return <code>true</code> if client authentication is desired
+     * @see SSLSocket#setWantClientAuth
+     */
+    public final boolean getWantClientAuth() {
+        return wantClientAuth;
+    }
+
+    /**
+     * <p>Returns <code>true</code> if client authentication is
      * required on SSL connections accepted by server sockets created
      * by this factory.</p>
      *
@@ -215,7 +236,28 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
     public ServerSocket createServerSocket(int port) throws IOException {
         try {
             final SSLServerSocketFactory sslSocketFactory = getDefaultSSLSocketFactory();
-            return sslSocketFactory.createServerSocket(port);
+            final SSLServerSocket sslServerSocket = (SSLServerSocket) sslSocketFactory.createServerSocket(port);
+
+
+            // Configure client certificate requirements
+            //
+            if (this.needClientAuth) {
+                sslServerSocket.setNeedClientAuth(true);
+            }
+            else if (this.wantClientAuth) {
+                sslServerSocket.setWantClientAuth(true);
+            }
+
+            return new SSLServerSocketWrapper(sslServerSocket){
+                public Socket accept() throws IOException {
+                    return new SSLSocketWrapper((SSLSocket) sslServerSocket.accept()){
+                        public InputStream getInputStream() throws IOException {
+                            setContext(this);
+                            return super.getInputStream();
+                        }
+                    };
+                }
+            };
         } catch (Exception e) {
             IOException ioException = new IOException("Error creating SSL server socket");
             ioException.initCause(e);
@@ -242,6 +284,84 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
         SslRMIServerSocketFactory that = (SslRMIServerSocketFactory)obj;
         return (getClass().equals(that.getClass()) && checkParameters(that));
     }
+
+    /**
+     * <p>Returns a hash code value for this
+     * <code>SslRMIServerSocketFactory</code>.</p>
+     *
+     * @return a hash code value for this
+     *         <code>SslRMIServerSocketFactory</code>.
+     */
+    public int hashCode() {
+        return getClass().hashCode() +
+          (needClientAuth ? Boolean.TRUE.hashCode() : Boolean.FALSE.hashCode()) +
+          (wantClientAuth ? Boolean.TRUE.hashCode() : Boolean.FALSE.hashCode()) +
+          (enabledCipherSuites == null ? 0 : enabledCipherSuitesList.hashCode()) +
+          (enabledProtocols == null ? 0 : enabledProtocolsList.hashCode());
+    }
+
+    /**
+     * Get the context for the current thread.
+     *
+     * @return the context or null;
+     */
+    public static Context getContext() {
+        return (Context) contextLocal.get();
+    }
+
+    /**
+     * Context data objects are available as thread locals to allow invocation targets
+     * to determine the source / authentication level for the request.
+     */
+    public static class Context {
+        //- PUBLIC
+
+        public String getRemoteHost() {
+            return remoteHost;
+        }
+
+        public boolean isRemoteClientCertAuthenticated() {
+            return remoteCertificates!=null;
+        }
+
+        public String toString() {
+            return "Context()[remoteHost='"+getRemoteHost()+"', certAuth="+isRemoteClientCertAuthenticated()+"]";
+        }
+
+        //- PRIVATE
+
+        private final String remoteHost;
+        private final java.security.cert.Certificate[] remoteCertificates;
+
+        private Context(SSLSession session) {
+            remoteHost = session.getPeerHost();
+            java.security.cert.Certificate[] certs = null;
+            try {
+                certs = session.getPeerCertificates();
+            }
+            catch(SSLPeerUnverifiedException spue) {
+                // no certs
+            }
+            remoteCertificates = certs;
+        }
+    }
+
+    //- PRIVATE
+
+    private static SSLServerSocketFactory defaultSSLSocketFactory = null;
+    private static ThreadLocal contextLocal = new ThreadLocal();
+
+    private String keyStoreFile;
+    private String keyStoreType = KeyStore.getDefaultType();
+    private String algorithm = "SunX509";
+    private String protocol = "TLS";
+    private String keyStorePassword;
+    private final String[] enabledCipherSuites;
+    private final String[] enabledProtocols;
+    private final boolean wantClientAuth;
+    private final boolean needClientAuth;
+    private List enabledCipherSuitesList;
+    private List enabledProtocolsList;
 
     private boolean checkParameters(SslRMIServerSocketFactory that) {
         // needClientAuth flag
@@ -276,22 +396,6 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
         return true;
     }
 
-    /**
-     * <p>Returns a hash code value for this
-     * <code>SslRMIServerSocketFactory</code>.</p>
-     *
-     * @return a hash code value for this
-     *         <code>SslRMIServerSocketFactory</code>.
-     */
-    public int hashCode() {
-        return getClass().hashCode() +
-          (needClientAuth ? Boolean.TRUE.hashCode() : Boolean.FALSE.hashCode()) +
-          (enabledCipherSuites == null ? 0 : enabledCipherSuitesList.hashCode()) +
-          (enabledProtocols == null ? 0 : enabledProtocolsList.hashCode());
-    }
-
-    private static SSLServerSocketFactory defaultSSLSocketFactory = null;
-
     private SSLServerSocketFactory getDefaultSSLSocketFactory()
       throws NoSuchAlgorithmException, KeyStoreException,
              IOException, UnrecoverableKeyException, CertificateException, KeyManagementException {
@@ -309,7 +413,14 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
 
         if (keyStorePassword !=null && keyStoreFile !=null) {
             pwd = keyStorePassword.toCharArray();
-            ks.load(new FileInputStream(keyStoreFile), pwd);
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(keyStoreFile);
+                ks.load(fis, pwd);
+            }
+            finally {
+                ResourceUtils.closeQuietly(fis);
+            }
         }
         kmf.init(ks, pwd);
         keyManagers = kmf.getKeyManagers();
@@ -319,9 +430,14 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
         return defaultSSLSocketFactory;
     }
 
-    private final String[] enabledCipherSuites;
-    private final String[] enabledProtocols;
-    private final boolean needClientAuth;
-    private List enabledCipherSuitesList;
-    private List enabledProtocolsList;
+    /**
+     * Set the current threads ssl connection information.
+     *
+     * <p>This is invoked on the thread doing the reading from the socket.</p>
+     *
+     * @param socket the socket with the info
+     */
+    private void setContext(SSLSocket socket) {
+        contextLocal.set(new Context(socket.getSession()));
+    }
 }

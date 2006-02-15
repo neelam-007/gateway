@@ -28,7 +28,7 @@ final class AdminSessionInvocationFactory implements RemoteInvocationFactory, Se
     protected final Log logger = LogFactory.getLog(getClass());
 
     public RemoteInvocation createRemoteInvocation(MethodInvocation methodInvocation) {
-        logger.debug("createRemoteInvocation for method: '"+methodInvocation.getMethod().getName()+"'");
+        logger.debug("In createRemoteInvocation for method: '"+methodInvocation.getMethod().getName()+"'");
         final Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject == null) {
             logger.debug("No Subject in the current calling context (subject == null)");

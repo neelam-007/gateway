@@ -44,7 +44,7 @@ class AdminSessionRemoteInvocation extends RemoteInvocation {
                 logger.info("Unable to obtain admin IP address, assuming '"+remoteAddress+"'");
             }
             if (logger.isTraceEnabled()) {
-                logger.trace("the subject is " + (subject == null ? "null" : "'"+extractPrincipalName(subject)+"', from address '"+remoteAddress+"'"));
+                logger.trace("The subject is " + (subject == null ? "null" : "'"+extractPrincipalName(subject)+"', from address '"+remoteAddress+"'"));
             }
             return
               Subject.doAs(subject, new PrivilegedExceptionAction() {
@@ -63,7 +63,7 @@ class AdminSessionRemoteInvocation extends RemoteInvocation {
             } else if (ex instanceof RuntimeException) {
                 throw (RuntimeException)ex;
             }
-            throw new RemoteAccessException("invoke error", e);
+            throw new RemoteAccessException("Method invocation error.", e);
         }
     }
 

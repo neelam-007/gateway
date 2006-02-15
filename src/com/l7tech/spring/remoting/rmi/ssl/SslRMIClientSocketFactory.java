@@ -63,6 +63,16 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
     }
 
     /**
+     * Sets the <code>KeyManagerFactory</code> used to determine the clients credentials.
+     *
+     * @param keyManagerFactory the factory to use
+     * @see javax.net.ssl.KeyManagerFactory
+     */
+    public static void setKeyManagerFactory(KeyManagerFactory keyManagerFactory) {
+        SslRMIClientSocketFactory.currentKeyManagerFactory = keyManagerFactory;
+    }
+
+    /**
      * <p>Creates a new <code>SslRMIClientSocketFactory</code>.</p>
      */
     public SslRMIClientSocketFactory() {
@@ -195,6 +205,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
     private static final long serialVersionUID = -8310631444933958385L;
     private static final Logger logger = Logger.getLogger(SslRMIClientSocketFactory.class.getName());
 
+    private static KeyManagerFactory currentKeyManagerFactory;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
 
     //
@@ -297,7 +308,10 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
                     TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
                     tmf.init((KeyStore)null);
                     SSLContext sslContext = SSLContext.getInstance("SSL");
-                    sslContext.init(null, getTrustManagers(tmf, serverHostname), null);
+                    sslContext.init(
+                            currentKeyManagerFactory !=null ? currentKeyManagerFactory.getKeyManagers() : null, 
+                            getTrustManagers(tmf, serverHostname),
+                            null);
                     sf = sslContext.getSocketFactory();
                     socketFactoryByHost.put(serverHostname, sf);
                 } catch (Exception e) {

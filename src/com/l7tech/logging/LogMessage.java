@@ -1,7 +1,7 @@
 package com.l7tech.logging;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.Date;
 
 /**
  * This class encapsulates an SSGLogRecord and contains further information for displaying it in a UI in a
@@ -22,23 +22,14 @@ public class LogMessage {
     public LogMessage(SSGLogRecord log) {
         this.log = log;
 
-        final Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(log.getMillis());
-        final SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
-        time = sdf.format(cal.getTime());
-
-        msgClass = log.getSourceClassName() != null ? log.getSourceClassName().toString() : null;
-        msgMethod = log.getSourceMethodName() != null ? log.getSourceMethodName().toString() : null;
-
-        // Strip redundant info from detail message (Bug #1281)
-        String stripex = "^.*?\\s+\\d\\d\\d\\d\\d?\\s+\\d\\d?\\:\\d\\d?\\:\\d\\d?\\s+[AP]M\\s+";
-        String severity = log.getLevel().toString() + ":\\s+";
-        if (msgClass != null)
-            stripex += msgClass.replace('$', '.') + "\\s+";
-        if (msgMethod != null)
-            stripex += msgMethod.replace('$', '.') + "\\s+" + severity;
-        if (log.getMessage() == null) msgDetails = "";
-        else msgDetails = log.getMessage().replaceFirst(stripex, "");
+        SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
+        String details = log.getMessage();
+        if(details==null) details = "";
+        
+        time = sdf.format(new Date(log.getMillis()));
+        msgClass = log.getSourceClassName();
+        msgMethod = log.getSourceMethodName();
+        msgDetails = details;
     }
 
     public long getMsgNumber() {

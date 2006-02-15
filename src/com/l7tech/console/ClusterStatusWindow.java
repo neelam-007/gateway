@@ -7,6 +7,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.SecureAction;
+import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.panels.EditGatewayNameDialog;
 import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.security.LogonListener;
@@ -16,6 +17,8 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -57,8 +60,12 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     private javax.swing.JTable clusterStatusTable = null;
     private javax.swing.JMenuBar clusterWindowMenuBar = null;
     private javax.swing.JMenu fileMenu = null;
+    private javax.swing.JMenu nodeMenu = null;
     private javax.swing.JMenu helpMenu = null;
     private javax.swing.JMenuItem exitMenuItem = null;
+    private javax.swing.JMenuItem nodeLogViewMenuItem = null;
+    private javax.swing.JMenuItem nodeDeleteMenuItem = null;
+    private javax.swing.JMenuItem nodeRenameMenuItem = null;
     private javax.swing.JMenuItem helpTopicsMenuItem = null;
     private ClusterStatusTableSorter clusterStatusTableSorter = null;
     private StatisticsPanel statisticsPane = null;
@@ -67,6 +74,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     private ServiceAdmin serviceManager = null;
     private Hashtable currentNodeList = null;
     private Vector clusterRequestCounterCache = null;
+    private Vector logWindows = new Vector();
 
     private static final int MAX = 100;
     private static final int MIN = 0;
@@ -157,6 +165,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         if (clusterWindowMenuBar == null) {
             clusterWindowMenuBar = new JMenuBar();
             clusterWindowMenuBar.add(getFileMenu());
+            clusterWindowMenuBar.add(getNodeMenu());
             clusterWindowMenuBar.add(getHelpMenu());
         }
         return clusterWindowMenuBar;
@@ -179,6 +188,25 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     }
 
     /**
+     * Return nodeMenu propery value
+     *
+     * @return JMenu
+     */
+    private JMenu getNodeMenu() {
+        if (nodeMenu != null) return nodeMenu;
+
+        nodeMenu = new JMenu();
+        nodeMenu.setText(resapplication.getString("Node"));
+        nodeMenu.add(getNodeLogViewMenuItem());
+        nodeMenu.add(getNodeDeleteMenuItem());
+        nodeMenu.add(getNodeRenameMenuItem());
+        int mnemonic = nodeMenu.getText().toCharArray()[0];
+        nodeMenu.setMnemonic(mnemonic);
+
+        return nodeMenu;
+    }
+
+    /**
      * Return helpMenu propery value
      *
      * @return JMenu
@@ -193,28 +221,6 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         helpMenu.setMnemonic(mnemonic);
 
         return helpMenu;
-    }
-
-    /**
-     * Return exitMenuItem property value
-     *
-     * @return JMenuItem
-     */
-    private JMenuItem getExitMenuItem() {
-        if (exitMenuItem != null) return exitMenuItem;
-
-        exitMenuItem = new JMenuItem();
-        exitMenuItem.setText(resapplication.getString("ExitMenuItem.name"));
-        int mnemonic = 'X';
-        exitMenuItem.setMnemonic(mnemonic);
-        exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
-        exitMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                exitMenuEventHandler();
-            }
-        });
-
-        return exitMenuItem;
     }
 
     /**
@@ -249,35 +255,67 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
             protected void popUpMenuHandler(MouseEvent mouseEvent) {
                 JPopupMenu menu = new JPopupMenu();
 
-                final int selectedRowIndex = getClusterStatusTable().getSelectedRow();
+                final int rowAtPoint = getClusterStatusTable().rowAtPoint(mouseEvent.getPoint());
                 boolean canDelete = false;
-                if (selectedRowIndex >= 0) {
-                    Object o = getClusterStatusTable().getValueAt(selectedRowIndex, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
+                if (rowAtPoint >= 0) {
+                    String nodeId = (String)getClusterStatusTable().getValueAt(rowAtPoint, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
+                    boolean logsBeingDisplayed = displayingLogsForNode(nodeId);
+                    Object o = getClusterStatusTable().getValueAt(rowAtPoint, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
                     if (o instanceof Integer) {
                         Integer nodeStatus = (Integer)o;
                         if (nodeStatus.intValue() == 0) {
                             canDelete = true;
                         }
                     }
+
+                    List actions = new ArrayList();
+                    actions.add(new ViewLogsAction(rowAtPoint, !logsBeingDisplayed));
+                    SecureAction sa = new DeleteNodeEntryAction(rowAtPoint, canDelete && !logsBeingDisplayed);
+                    if (sa.isAuthorized()) {
+                        actions.add(sa);
+                    }
+                    sa = new RenameNodeAction(rowAtPoint);
+                    if (sa.isAuthorized()) {
+                        actions.add(sa);
+                    }
+                    if (actions.isEmpty()) {
+                        return;
+                    }
+                    for (Iterator iterator = actions.iterator(); iterator.hasNext();) {
+                        Action action = (Action)iterator.next();
+                        menu.add(action);
+                    }
+                    Utilities.removeToolTipsFromMenuItems(menu);
+                    menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                 }
-                List actions = new ArrayList();
-                SecureAction sa = new DeleteNodeEntryAction(canDelete);
-                if (sa.isAuthorized()) {
-                    actions.add(sa);
+            }
+        });
+        getClusterStatusTable().getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            public void valueChanged(ListSelectionEvent e) {
+                int row = getClusterStatusTable().getSelectedRow();
+                boolean canDelete = false;
+                if(row>=0) {
+                    String nodeId = (String)getClusterStatusTable().getValueAt(row, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
+                    boolean logsBeingDisplayed = displayingLogsForNode(nodeId);
+
+                    getNodeLogViewMenuItem().setEnabled(!logsBeingDisplayed);
+
+                    Object o = getClusterStatusTable().getValueAt(row, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
+                    if (o instanceof Integer) {
+                        Integer nodeStatus = (Integer) o;
+                        canDelete = (nodeStatus.intValue() == 0);
+                    }
+                    SecureAction sa1 = new DeleteNodeEntryAction(row, canDelete);
+                    getNodeDeleteMenuItem().setEnabled(sa1.isAuthorized() && canDelete && !logsBeingDisplayed);
+
+                    SecureAction sa2 = new RenameNodeAction(row);
+                    getNodeRenameMenuItem().setEnabled(sa2.isAuthorized());
                 }
-                sa = new RenameNodeAction();
-                if (sa.isAuthorized()) {
-                    actions.add(sa);
+                else {
+                    getNodeLogViewMenuItem().setEnabled(false);
+                    getNodeDeleteMenuItem().setEnabled(false);
+                    getNodeRenameMenuItem().setEnabled(false);
                 }
-                if (actions.isEmpty()) {
-                    return;
-                }
-                for (Iterator iterator = actions.iterator(); iterator.hasNext();) {
-                    SecureAction secureAction = (SecureAction)iterator.next();
-                    menu.add(secureAction);
-                }
-                Utilities.removeToolTipsFromMenuItems(menu);
-                menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
             }
         });
 
@@ -357,6 +395,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
 
         clusterStatusTable = new javax.swing.JTable();
         clusterStatusTable.setModel(getClusterStatusTableModel());
+        clusterStatusTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         BarIndicator loadShareRenderer = new BarIndicator(MIN, MAX, Color.blue);
         loadShareRenderer.setStringPainted(true);
@@ -455,6 +494,83 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     }
 
     /**
+     * Return exitMenuItem property value
+     *
+     * @return JMenuItem
+     */
+    private JMenuItem getExitMenuItem() {
+        if (exitMenuItem != null) return exitMenuItem;
+
+        exitMenuItem = buildMenuItem("ExitMenuItem.name",
+                                     'X',
+                                     null,
+            new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                exitMenuEventHandler();
+            }
+        });
+
+        return exitMenuItem;
+    }
+
+    /**
+     * Return nodeLogViewMenuItem property value
+     *
+     * @return JMenuItem
+     */
+    private JMenuItem getNodeLogViewMenuItem() {
+        if(nodeLogViewMenuItem != null) return nodeLogViewMenuItem;
+
+        nodeLogViewMenuItem = buildMenuItem("Node_ViewLogsMenuItem_text_name", 'L', null,
+            new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    new ViewLogsAction(0, true).performAction();
+                }
+        });
+        nodeLogViewMenuItem.setEnabled(false);
+
+        return nodeLogViewMenuItem;
+    }
+
+    /**
+     * Return nodeDeleteMenuItem property value
+     *
+     * @return JMenuItem
+     */
+    private JMenuItem getNodeDeleteMenuItem() {
+        if(nodeDeleteMenuItem != null) return nodeDeleteMenuItem;
+
+        nodeDeleteMenuItem = buildMenuItem("Node_DeleteMenuItem_text_name", 'D', null,
+            new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    new DeleteNodeEntryAction(0, true).performAction();
+                }
+        });
+        nodeDeleteMenuItem.setEnabled(false);
+
+        return nodeDeleteMenuItem;
+    }
+
+    /**
+     * Return nodeRenameMenuItem property value
+     *
+     * @return JMenuItem
+     */
+    private JMenuItem getNodeRenameMenuItem() {
+        if(nodeRenameMenuItem != null) return nodeRenameMenuItem;
+
+        nodeRenameMenuItem = buildMenuItem("Node_RenameMenuItem_text_name", 'R', null,
+            new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    new RenameNodeAction(0).performAction();
+                }
+        });
+        nodeRenameMenuItem.setEnabled(false);
+
+        return nodeRenameMenuItem;
+    }
+
+    /**
      * Return helpTopicsMenuItem property value
      *
      * @return JMenuItem
@@ -462,18 +578,28 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     private JMenuItem getHelpTopicsMenuItem() {
         if (helpTopicsMenuItem != null) return helpTopicsMenuItem;
 
-        helpTopicsMenuItem = new JMenuItem();
-        helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text_name"));
-        int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
-        helpTopicsMenuItem.setMnemonic(mnemonic);
-        helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
-        helpTopicsMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                TopComponents.getInstance().getMainWindow().showHelpTopics(e);
-            }
+        helpTopicsMenuItem = buildMenuItem("Help_TopicsMenuItem_text_name",
+                                          (char)0,
+                                          KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),
+            new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    TopComponents.getInstance().getMainWindow().showHelpTopics(e);
+                }
         });
 
         return helpTopicsMenuItem;
+    }
+
+    private JMenuItem buildMenuItem(String resKey, char mnemonic, KeyStroke accelKeyStroke, ActionListener actionListener) {
+        JMenuItem jMenuItem = new JMenuItem();
+        jMenuItem.setText(resapplication.getString(resKey));
+        if(mnemonic==0) mnemonic = jMenuItem.getText().toCharArray()[0];
+        if(mnemonic>0) jMenuItem.setMnemonic(mnemonic);
+        if(accelKeyStroke!=null) jMenuItem.setAccelerator(accelKeyStroke);
+        else jMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, KeyEvent.ALT_MASK));
+        jMenuItem.addActionListener(actionListener);
+
+        return jMenuItem;
     }
 
     /**
@@ -746,6 +872,18 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
      * Clean up the resources of the cluster status window when the window is closed.
      */
     public void dispose() {
+        synchronized(logWindows) {
+            for(Enumeration lwEnum=logWindows.elements(); lwEnum.hasMoreElements(); ) {
+                Object window = lwEnum.nextElement();
+                if(window instanceof GatewayLogWindow) {
+                    GatewayLogWindow gwl = (GatewayLogWindow) window;
+                    try { gwl.dispose(); }
+                    catch(Exception ex){};
+                }
+            }
+            logWindows.removeAllElements();
+        }
+
         getStatusRefreshTimer().stop();
         super.dispose();
     }
@@ -758,6 +896,17 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         initCaches();
         getStatusRefreshTimer().start();
         canceled = false;
+
+        synchronized(logWindows) {
+            for(Enumeration lwEnum=logWindows.elements(); lwEnum.hasMoreElements(); ) {
+                Object window = lwEnum.nextElement();
+                if(window instanceof LogonListener) {
+                    LogonListener ll = (LogonListener) window;
+                    try { ll.onLogon(e); }
+                    catch(Exception ex){};
+                }
+            }
+        }
     }
 
 
@@ -766,6 +915,17 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
      */
     public void onLogoff(LogonEvent e) {
         cleanUp();
+
+        synchronized(logWindows) {
+            for(Enumeration lwEnum=logWindows.elements(); lwEnum.hasMoreElements(); ) {
+                Object window = lwEnum.nextElement();
+                if(window instanceof LogonListener) {
+                    LogonListener ll = (LogonListener) window;
+                    try { ll.onLogon(e); }
+                    catch(Exception ex){};
+                }
+            }
+        }
     }
 
     private void cleanUp() {
@@ -836,6 +996,24 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         }
     }
 
+    private boolean displayingLogsForNode(String nodeId) {
+        boolean displayed = false;
+
+        synchronized(logWindows) {
+            for(Enumeration lwEnum=logWindows.elements(); lwEnum.hasMoreElements(); ) {
+                Object window = lwEnum.nextElement();
+                if(window instanceof GatewayLogWindow) {
+                    GatewayLogWindow gwl = (GatewayLogWindow) window;
+                    if(nodeId.equals(gwl.getNodeId())) {
+                        displayed = true;
+                    }
+                }
+            }
+        }
+
+        return displayed;
+    }
+
     /**
      * This customized renderer can render objects of the type TextandIcon
      */
@@ -873,8 +1051,11 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     };
 
     private class DeleteNodeEntryAction extends SecureAction {
-        public DeleteNodeEntryAction(boolean buttonEnabled) {
+        private final int tableRow;
+
+        public DeleteNodeEntryAction(int row, boolean buttonEnabled) {
             setEnabled(buttonEnabled);
+            tableRow = row;
         }
 
         /**
@@ -962,7 +1143,10 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     }
 
     private class RenameNodeAction extends SecureAction {
-        public RenameNodeAction() {
+        private final int tableRow;
+
+        public RenameNodeAction(int row) {
+            tableRow = row;
         }
 
         /**
@@ -992,17 +1176,75 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
          */
         public void performAction() {
             // get the selected row index
-            final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
             final String nodeName;
             final String nodeId;
 
             // save the number of selected message
-            if (selectedRowIndexOld >= 0) {
-                nodeName = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
-                nodeId = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
+            if (tableRow >= 0) {
+                nodeName = (String)getClusterStatusTable().getValueAt(tableRow, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+                nodeId = (String)getClusterStatusTable().getValueAt(tableRow, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
 
                 EditGatewayNameDialog dialog = new EditGatewayNameDialog(getClusterStatusWindow(), clusterStatusAdmin, nodeId, nodeName);
                 dialog.setVisible(true);
+            }
+        }
+    }
+
+    private class ViewLogsAction extends BaseAction {
+        private final int tableRow;
+
+        public ViewLogsAction(int row, boolean buttonEnabled) {
+            setEnabled(buttonEnabled);
+            tableRow = row;
+        }
+
+        public String getName() {
+            return "View Log";
+        }
+
+        protected String iconResource() {
+            return RESOURCE_PATH + "/AnalyzeGatewayLog16x16.gif";
+        }
+
+        protected void performAction() {
+            // get the selected row index
+            int selectedRow = tableRow;
+            if(selectedRow < 0) {
+                selectedRow = getClusterStatusTable().getSelectedRow(); // when called from node menu
+            }
+
+            // save the number of selected message
+            if (selectedRow >= 0) {
+                final String nodeName = (String)getClusterStatusTable().getValueAt(selectedRow, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+                final String nodeId = (String)getClusterStatusTable().getValueAt(selectedRow, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
+
+                final GatewayLogWindow window = new GatewayLogWindow(nodeName, nodeId);
+                window.pack();
+
+                window.addWindowListener(new WindowAdapter() {
+                    boolean disposed = false;
+
+                    public void windowClosing(final WindowEvent e) {
+                        if(!disposed) {
+                            logWindows.remove(window);
+                            window.dispose();
+                        }
+                        disposed = true;
+
+                    }
+
+                    public void windowClosed(final WindowEvent e) {
+                        if(!disposed) {
+                            logWindows.remove(window);
+                            window.dispose();
+                        }
+                        disposed = true;
+                    }
+                });
+
+                Utilities.centerOnScreen(window);
+                logWindows.add(window);
+                window.setVisible(true);
             }
         }
     }

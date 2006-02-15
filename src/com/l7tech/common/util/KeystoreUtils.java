@@ -41,24 +41,26 @@ public class KeystoreUtils {
 
     public byte[] readSSLCert() throws IOException {
         String sslCertPath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_CERT_NAME);
-        InputStream certStream = new FileInputStream(sslCertPath);
+        InputStream certStream = null;
         byte[] cert;
         try {
+            certStream = new FileInputStream(sslCertPath);
             cert = HexUtils.slurpStream(certStream, 16384);
         } finally {
-            certStream.close();
+            ResourceUtils.closeQuietly(certStream);
         }
         return cert;
     }
 
     public byte[] readRootCert() throws IOException {
         String sslCertPath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(ROOT_CERTNAME);
-        InputStream certStream = new FileInputStream(sslCertPath);
+        InputStream certStream = null;
         byte[] cert;
         try {
+            certStream = new FileInputStream(sslCertPath);
             cert = HexUtils.slurpStream(certStream, 16384);
         } finally {
-            certStream.close();
+            ResourceUtils.closeQuietly(certStream);
         }
         return cert;
     }
@@ -115,14 +117,13 @@ public class KeystoreUtils {
 
 
     public KeyStore getSSLKeyStore() throws KeyStoreException {
+        FileInputStream fis = null;
         try {
             KeyStore keyStore = KeyStore.getInstance(getKeyStoreType());
-            FileInputStream fis = null;
             String sslkeystorepath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME);
             String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
             fis = new FileInputStream(sslkeystorepath);
             keyStore.load(fis, sslkeystorepassword.toCharArray());
-            fis.close();
             return keyStore;
         } catch (FileNotFoundException e) {
             logger.log(Level.SEVERE, "error loading keystore", e);
@@ -136,6 +137,9 @@ public class KeystoreUtils {
         } catch (IOException e) {
             logger.log(Level.SEVERE, "error loading keystore", e);
             throw new KeyStoreException(e.getMessage());
+        }
+        finally {
+            ResourceUtils.closeQuietly(fis);
         }
     }
 
@@ -172,6 +176,7 @@ public class KeystoreUtils {
         kmf.init(getSSLKeyStore(), getSslKeystorePasswd().toCharArray());
         return kmf;
     }
+
     /**
      * Load the <code>KeyStore</code> from a given keystore file that is protected with a specified
      * password.
@@ -188,11 +193,12 @@ public class KeystoreUtils {
     public static KeyStore getKeyStore(String path, char[] password, String keystoreType)
       throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
         KeyStore keyStore = KeyStore.getInstance(keystoreType);
-        FileInputStream fis = new FileInputStream(path);
+        FileInputStream fis = null;
         try {
+            fis = new FileInputStream(path);
             keyStore.load(fis, password);
         } finally {
-            fis.close();
+            ResourceUtils.closeQuietly(fis);
         }
         return keyStore;
     }
@@ -215,8 +221,6 @@ public class KeystoreUtils {
       throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
         return getKeyStore(path, password, KeyStore.getDefaultType());
     }
-
-
 
     /**
      * Returns the Ssl signer info containing the private key, cert and the public
@@ -253,30 +257,38 @@ public class KeystoreUtils {
     private synchronized Properties getProps() {
         if (props == null) {
             String propsPath = serverConfig.getProperty(ServerConfig.PARAM_KEYSTORE);
-            InputStream inputStream = null;
-            if (propsPath != null && propsPath.length() > 0) {
-                File f = new File(propsPath);
-                if (f.exists()) {
+            InputStream fileInputStream = null;
+            InputStream resInputStream = null;
+            try {
+                if (propsPath != null && propsPath.length() > 0) {
                     try {
-                        inputStream = new FileInputStream(propsPath);
+                        fileInputStream = new FileInputStream(propsPath);
                         logger.info("Loading keystore properties from " + propsPath);
                     } catch (FileNotFoundException fnfe) {
                     }
+                    if (fileInputStream == null) logger.info("Keystore properties file '" + propsPath + "' could not be found. Will try loading as resource");
                 }
-                if (inputStream == null) logger.info("Keystore properties file " + inputStream + " could not be found. Will try loading as resource");
-            }
 
-            if (inputStream == null) {
-                inputStream = getClass().getResourceAsStream(DEFAULT_PROPS_RESOURCE);
-                logger.info("Loading keystore properties as resource");
-            }
+                if (fileInputStream == null) {
+                    resInputStream = getClass().getResourceAsStream(DEFAULT_PROPS_RESOURCE);
+                    if(resInputStream==null) {
+                        logger.log(Level.SEVERE, "Keystore properties not found (file or resource)");
+                        throw new RuntimeException("Missing keystore properties.");
+                    }
+                    logger.info("Loading keystore properties as resource");
+                }
 
-            props = new Properties();
-            try {
-                props.load(inputStream);
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "Cannot load keystore properties", e);
-                throw new RuntimeException(e);
+                props = new Properties();
+                try {
+                    props.load(fileInputStream!=null ? fileInputStream : resInputStream);
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Cannot load keystore properties", e);
+                    throw new RuntimeException(e);
+                }
+            }
+            finally {
+                ResourceUtils.closeQuietly(fileInputStream);
+                ResourceUtils.closeQuietly(resInputStream);
             }
         }
         return props;

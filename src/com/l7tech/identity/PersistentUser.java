@@ -106,7 +106,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
 
     public String toString() {
         return "com.l7tech.identity.User." +
-                "\n\tName=" + _name +
+                "\n\tName=" + bean.getName() +
                 "\n\tFirst name=" + bean.getFirstName() +
                 "\n\tLast name=" + bean.getLastName() +
                 "\n\tLogin=" + bean.getLogin() +

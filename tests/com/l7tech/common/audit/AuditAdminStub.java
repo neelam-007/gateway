@@ -42,8 +42,12 @@ public class AuditAdminStub implements AuditAdmin {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
-    public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+    public SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return new SSGLogRecord[0];
+    }
+
+    public int getSystemLogRefresh(int typeId) {
+        return 5;
     }
 
     public Level serverMessageAuditThreshold() throws RemoteException {

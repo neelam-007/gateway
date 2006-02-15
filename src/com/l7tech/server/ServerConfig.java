@@ -45,6 +45,9 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";
     public static final String PARAM_AUDIT_PURGE_MINIMUM_AGE = "auditPurgeMinimumAge";
 
+    public static final String PARAM_AUDIT_REFRESH_PERIOD_SECS = "auditViewerRefreshSeconds";
+    public static final String PARAM_AUDIT_LOG_REFRESH_PERIOD_SECS = "auditLogViewerRefreshSeconds";
+
     public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
 
     public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";

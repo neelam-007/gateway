@@ -29,6 +29,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private GenericLogAdmin logAdmin = null;
+    private int logType;
     private boolean canceled;
     private LogPanel logPanel;
 
@@ -39,8 +40,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param logPanel The panel of log browser.
      * @param model  A table model.
      */
-    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model) {
+    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model, int logType) {
         this.logPanel = logPanel;
+        this.logType = logType;
         setModel(model);
     }
 
@@ -355,6 +357,16 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         canceled = true;
     }
 
+    public int getDelay() {
+        int delay = 3;
+
+        if(logAdmin!=null) {
+            delay = logAdmin.getSystemLogRefresh(logType);
+        }
+
+        return delay;
+    }
+
     /**
      * Return the flag indicating whether the job has been cancelled or not.
      *
@@ -398,9 +410,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param logPane   The object reference to the LogPanel.
      * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
      * @param requests  The list of requests for retrieving logs. One request per node.
+     * @param nodeId the node to filter requests by (may be null)
      * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
-    public void refreshLogs(final LogPanel logPane, final boolean restartTimer, Vector requests, final boolean newRefresh) {
+    public void refreshLogs(final LogPanel logPane, final boolean restartTimer, Vector requests, final String nodeId, final boolean newRefresh) {
 
         //long endMsgNumber = -1;
 
@@ -430,7 +443,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
 
         // create a worker thread to retrieve the cluster info
-        final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logAdmin, currentNodeList, requests) {
+        final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logAdmin, logType, nodeId, currentNodeList, requests) {
             public void finished() {
 
                 if (isCanceled()) {
@@ -470,7 +483,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                             SwingUtilities.invokeLater(
                                     new Runnable() {
                                         public void run() {
-                                            refreshLogs(logPane, restartTimer, unfilledRequest, false);
+                                            refreshLogs(logPane, restartTimer, unfilledRequest, nodeId, false);
                                         }
                                     });
 

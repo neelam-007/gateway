@@ -5,6 +5,7 @@ import com.l7tech.common.RequestId;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.text.MessageFormat;
 
 /**
  * Log record that can be persisted.
@@ -23,34 +24,29 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     }
 
     /**
-     * Constructs a <CODE>SSGLogRecord</CODE> given the log record.
+     * Constructs a <CODE>SSGLogRecord</CODE> given the log record and the node Id.
      *
      * @param record  the <CODE>LogRecord</CODE> containing the log information.
-     */
-    public SSGLogRecord(LogRecord record) {
-        super(record.getLevel(), record.getMessage());
-        setLoggerName(record.getLoggerName());
-        setMillis(record.getMillis());
-        //setSequenceNumber(record.getSequenceNumber());
-        setSourceClassName(record.getSourceClassName());
-        setSourceMethodName(record.getSourceMethodName());
-    }
-
-    /**
-     * Constructs a <CODE>SSGLogRecord</CODE> given the log record, request Id, and the node Id.
-     *
-     * @param record  the <CODE>LogRecord</CODE> containing the log information.
-     * @param reqId   the request id associated with the log.
      * @param nodeId  the id of the node generating the log.
      */
-    public SSGLogRecord(LogRecord record, RequestId reqId, String nodeId) {
+    public SSGLogRecord(LogRecord record, String nodeId) {
         super(record.getLevel(), record.getMessage());
         setLoggerName(record.getLoggerName());
+        setParameters(record.getParameters());
         setMillis(record.getMillis());
-        //setSequenceNumber(record.getSequenceNumber());
-        setSourceClassName(record.getSourceClassName());
-        setSourceMethodName(record.getSourceMethodName());
-        setReqId(reqId);
+        setSequenceNumber(record.getSequenceNumber());
+        setOid(record.getSequenceNumber());
+
+        // Looks like this may be slow, so turning off for now:
+        //
+        // Note that if the client application has not specified an explicit
+        // source method name and source class name, then the LogRecord class
+        // will infer them automatically when they are first accessed (due to
+        // a call on getSourceMethodName or getSourceClassName) by analyzing
+        // the call stack.
+        //
+        //setSourceClassName(record.getSourceClassName());
+        //setSourceMethodName(record.getSourceMethodName());
         setNodeId(nodeId);
     }
 
@@ -135,6 +131,22 @@ public class SSGLogRecord extends LogRecord implements Serializable {
      */
     public void setStrRequestId(String requestId) {
         this.requestId = requestId;
+    }
+
+    /**
+     *
+     */
+    public String getMessage() {
+        String formattedMessage = super.getMessage();
+        if(formattedMessage!=null && getParameters()!=null && getParameters().length>0) {
+            try {
+                formattedMessage = MessageFormat.format(formattedMessage, getParameters());
+            }
+            catch(IllegalArgumentException iae) {
+                // then display the unformatted message
+            }
+        }
+        return formattedMessage;
     }
 
     /**

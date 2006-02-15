@@ -8,6 +8,7 @@ import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
+import com.l7tech.logging.GenericLogAdmin;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -52,11 +53,14 @@ public class LogPanel extends JPanel {
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
     private static final int LOG_REFRESH_TIMER = 3000;
+    private int logsRefreshInterval;
     private javax.swing.Timer logsRefreshTimer = null;
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
+    private boolean isAuditType;
+    private String nodeId = null;
     private JPanel selectPane = null;
     private JPanel filterPane = null;
     private JPanel controlPane = null;
@@ -92,16 +96,31 @@ public class LogPanel extends JPanel {
      * Constructor
      */
     public LogPanel() {
+        this(true, true, null);
+    }
+
+    /**
+     * Constructor
+     */
+    public LogPanel(boolean includeDetailPane, boolean isAuditType, String nodeId) {
         setLayout(new BorderLayout());
 
-        JSplitPane logSplitPane = new JSplitPane();
+        this.logsRefreshInterval = LOG_REFRESH_TIMER;
+        this.nodeId = nodeId;
+        this.isAuditType = isAuditType;
 
-        logSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-        logSplitPane.setTopComponent(getMsgTablePane());
-        logSplitPane.setBottomComponent(getMsgDetailsPane());
-        logSplitPane.setDividerLocation(0.5);
+        if(includeDetailPane) {
+            JSplitPane logSplitPane = new JSplitPane();
+            logSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+            logSplitPane.setTopComponent(getMsgTablePane());
+            logSplitPane.setBottomComponent(getMsgDetailsPane());
+            logSplitPane.setDividerLocation(0.5);
+            add(logSplitPane, BorderLayout.CENTER);
+        }
+        else {
+            add(getMsgTablePane(), BorderLayout.CENTER);
+        }
 
-        add(logSplitPane, BorderLayout.CENTER);
         add(getSelectPane(), BorderLayout.SOUTH);
 
         getMsgTable().getSelectionModel().
@@ -341,6 +360,7 @@ public class LogPanel extends JPanel {
      */
     public void onConnect(){
         getFilteredLogTableSorter().onConnect();
+        updateLogsRefreshTimerDelay();
         clearMsgTable();
         getLogsRefreshTimer().start();
     }
@@ -777,7 +797,8 @@ public class LogPanel extends JPanel {
     private FilteredLogTableSorter getFilteredLogTableSorter(){
         if(logTableSorter != null) return logTableSorter;
 
-        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel());
+        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel(),
+                isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
 
         return logTableSorter;
     }
@@ -834,7 +855,7 @@ public class LogPanel extends JPanel {
         getLogsRefreshTimer().stop();
 
         // retrieve the new logs
-        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, autoRefresh.isSelected(), new Vector(), true);
+        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, autoRefresh.isSelected(), new Vector(), nodeId, true);
 
     }
 
@@ -851,7 +872,10 @@ public class LogPanel extends JPanel {
             int rowCount = getMsgTable().getRowCount();
             boolean rowFound = false;
             for (int i = 0; i < rowCount; i++) {
-                String selctedMsgNum = getMsgTable().getValueAt(i, LOG_NODE_ID_COLUMN_INDEX).toString().trim() + getMsgTable().getValueAt(i, LOG_MSG_NUMBER_COLUMN_INDEX).toString().trim();
+                Object nodeId = getMsgTable().getValueAt(i, LOG_NODE_ID_COLUMN_INDEX);
+                Object mesNum = getMsgTable().getValueAt(i, LOG_MSG_NUMBER_COLUMN_INDEX);
+
+                String selctedMsgNum = nodeId.toString().trim() + mesNum.toString().trim();
 
                 if (selctedMsgNum.equals(msgNumber)) {
                     getMsgTable().setRowSelectionInterval(i, i);
@@ -899,6 +923,17 @@ public class LogPanel extends JPanel {
         }
     }
 
+    private void updateLogsRefreshTimerDelay() {
+        int refreshSeconds = getFilteredLogTableSorter().getDelay();
+
+        if(refreshSeconds >= 0 && refreshSeconds < 300) logsRefreshInterval = 1000 * refreshSeconds;
+        else logsRefreshInterval = LOG_REFRESH_TIMER;
+
+        if(logsRefreshInterval==0) logsRefreshInterval = Integer.MAX_VALUE; // disable refresh
+
+        getLogsRefreshTimer().setDelay(logsRefreshInterval);
+    }
+
     /**
      *  Clear the message table
      */
@@ -919,7 +954,7 @@ public class LogPanel extends JPanel {
         if (logsRefreshTimer != null) return logsRefreshTimer;
 
         //Create a refresh logs timer.
-        logsRefreshTimer = new javax.swing.Timer(LOG_REFRESH_TIMER, new ActionListener() {
+        logsRefreshTimer = new javax.swing.Timer(logsRefreshInterval, new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 refreshLogs();
             }

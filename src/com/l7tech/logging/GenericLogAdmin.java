@@ -17,6 +17,10 @@ import java.rmi.RemoteException;
  * @version $Id$
  */
 public interface GenericLogAdmin {
+
+    public static final int TYPE_AUDIT = 1;
+    public static final int TYPE_LOG = 2;
+
     /**
      * Retrieve the system logs of a node in between the startMsgNumber and endMsgNumber specified
      * up to the specified size. The retrieved block of logs will not contain the log whose
@@ -59,6 +63,7 @@ public interface GenericLogAdmin {
      * call the method {@link com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus}.
      *
      * @param nodeid the id of the node for which the logs should be retrieved.
+     * @param typeId the type of the logs to retrieve.
      * @param startMsgNumber the message number to locate the start point.
      *                       Start from beginning of the SecureSpan Gateway message buffer if it equals to -1.
      * @param endMsgNumber   the message number to locate the end point.
@@ -69,5 +74,13 @@ public interface GenericLogAdmin {
      * @see com.l7tech.logging.SSGLogRecord
      *
      */
-    SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException, FindException;
+    SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, int size) throws RemoteException, FindException;
+
+    /**
+     * Get the configured refresh period for the log type.
+     *
+     * @param typeId the type of the logs to retrieve.
+     * @return the configured refresh period (seconds).
+     */
+    int getSystemLogRefresh(int typeId);
 }

@@ -16,7 +16,7 @@
         </constructor-arg>
     </bean>
 
-<!--
+    <!--
     set the internal trust failurte handler. This is required when the ssl connection to self is attempted,
     such as when connection to the local rmi registry.
     -->
@@ -32,7 +32,6 @@
         </property>
     </bean>
 
-
     <!-- admin services, Rmi socket factories -->
     <bean id="rmiServerSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory">
         <property name="keyStoreType">
@@ -47,7 +46,7 @@
     </bean>
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
-          depends-on="setInternalTrustFailureHandler"/>
+          depends-on="setKeyManagerFactoryForNodeToNodeRMI, setInternalTrustFailureHandler"/>
 
     <bean id="adminSessionInvocationFactory" class="com.l7tech.spring.remoting.rmi.AdminSessionInvocationFactory"/>
 
@@ -66,7 +65,7 @@
     </bean>
 
     <!--    shared export properties, inherited with parent= -->
-    <bean id="sharedExportProperties" abstract="true">
+    <bean id="baseExportProperties" abstract="true">
         <property name="registryPort">
             <value>2124</value>
         </property>
@@ -88,12 +87,68 @@
         <property name="stubRemoteInvocationFactory">
             <ref bean="adminSessionInvocationFactory"/>
         </property>
+    </bean>
+    <bean id="sharedExportProperties" parent="baseExportProperties" abstract="true">
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.spring.remoting.rmi.SecureRemoteInvocationExecutor">
                 <property name="adminSessionManager">
                     <ref bean="adminSessionManager"/>
                 </property>
             </bean>
+        </property>
+    </bean>
+    <bean id="sharedClusterExportProperties" parent="baseExportProperties" abstract="true">
+        <property name="remoteInvocationExecutor">
+            <bean class="com.l7tech.spring.remoting.rmi.ClusterRemoteInvocationExecutor">
+                <constructor-arg>
+                    <ref bean="clusterInfoManager"/>
+                </constructor-arg>
+            </bean>
+        </property>
+    </bean>
+
+    <!-- cluster login exporter -->
+    <bean class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean" parent="sharedClusterExportProperties">
+        <property name="serviceName">
+            <value>ClusterLogin</value>
+        </property>
+        <property name="service">
+            <ref bean="clusterLogin"/>
+        </property>
+        <property name="serviceInterface">
+            <value>com.l7tech.cluster.ClusterLogin</value>
+        </property>
+    </bean>
+    <!-- cluster login servant -->
+    <bean id="clusterLogin" class="com.l7tech.cluster.rmi.ClusterLoginImpl"/>
+
+    <!-- cluster context exporter -->
+    <bean id="clusterContextRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
+          parent="sharedClusterExportProperties">
+        <property name="service">
+            <ref bean="clusterContext"/>
+        </property>
+        <property name="serviceInterface">
+            <value>com.l7tech.cluster.ClusterContext</value>
+        </property>
+        <property name="singleton">
+            <value>false</value>
+        </property>
+    </bean>
+    <!-- cluster context servant -->
+    <bean id="clusterContext" class="com.l7tech.cluster.rmi.ClusterContextImpl">
+        <constructor-arg>
+            <ref local="clusterLogRemote"/>
+        </constructor-arg>
+    </bean>
+    <!-- cluster audit exporter -->
+    <bean id="clusterLogRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
+          parent="sharedClusterExportProperties">
+        <property name="service">
+            <ref bean="auditAdmin"/>
+        </property>
+        <property name="serviceInterface">
+            <value>com.l7tech.logging.GenericLogAdmin</value>
         </property>
     </bean>
 
@@ -215,6 +270,9 @@
         </constructor-arg>
         <property name="auditRecordManager">
             <ref bean="auditRecordManager"/>
+        </property>
+        <property name="logRecordManager">
+            <ref bean="logRecordManager"/>
         </property>
         <property name="keystore">
             <ref bean="keystore"/>

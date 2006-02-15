@@ -30,6 +30,8 @@ public class ClusterLogWorker extends SwingWorker {
 
     private ClusterStatusAdmin clusterStatusService = null;
     private GenericLogAdmin logService = null;
+    private int logType;
+    private String nodeId;
     private Hashtable newNodeList;
     private Hashtable currentNodeList;
     private Vector requests;
@@ -39,15 +41,18 @@ public class ClusterLogWorker extends SwingWorker {
     static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
 
     /**
-     * A constructor
+     * Create a new cluster log worker.
+     *
      * @param clusterStatusService  An object reference to the <CODE>ClusterStatusAdmin</CODE>service
      * @param logService  An object reference to the <CODE>GenericLogAdmin</CODE> service
      * @param currentNodeList  A list of nodes obtained from the last retrieval
      * @param requests  A list of requests for retrieving logs. One request per node.
      */
-    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, GenericLogAdmin logService, Hashtable currentNodeList, Vector requests) {
+    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, GenericLogAdmin logService, int logType, String nodeId, Hashtable currentNodeList, Vector requests) {
         this.clusterStatusService = clusterStatusService;
         this.logService = logService;
+        this.logType = logType;
+        this.nodeId = nodeId;
         this.currentNodeList = currentNodeList;
 
         if (currentNodeList == null || logService == null || clusterStatusService == null) {
@@ -134,9 +139,10 @@ public class ClusterLogWorker extends SwingWorker {
         for (int i = 0; i < cluster.length; i++) {
 
             GatewayStatus nodeStatus = new GatewayStatus(cluster[i]);
-            String nodeId = nodeStatus.getNodeId();
-            if (nodeId != null) {
-                if (currentNodeList.get(nodeId) == null) {
+            String clusterNodeId = nodeStatus.getNodeId();
+            if (clusterNodeId != null) {
+                if (currentNodeList.get(clusterNodeId) == null
+                 && (nodeId==null || nodeId.equals(clusterNodeId))) {
                     // add the new node to the request array with the startMsgNumber and endMsgNumber set to -1
                     requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1));
                 }
@@ -160,7 +166,7 @@ public class ClusterLogWorker extends SwingWorker {
 
                     rawLogs = new SSGLogRecord[]{};
 
-                    rawLogs = logService.getSystemLog(logRequest.getNodeId(), logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
+                    rawLogs = logService.getSystemLog(logRequest.getNodeId(), this.logType, logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
                     //System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
                     //System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());
@@ -195,8 +201,9 @@ public class ClusterLogWorker extends SwingWorker {
                     logRequest.addRetrievedLogCount(newLogs.size());
                 }
 
-                if ((rawLogs.length < FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE ||
-                        logRequest.getRetrievedLogCount() >= FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES)) {
+                if (this.logType == GenericLogAdmin.TYPE_LOG || 
+                    rawLogs.length < FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE ||
+                    logRequest.getRetrievedLogCount() >= FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES) {
 
                     requestCompleted.add(logRequest);
                 }
