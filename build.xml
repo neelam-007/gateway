@@ -539,8 +539,6 @@
                 <exclude name="com/l7tech/internal/**/*"/>
                 <exclude name="com/l7tech/console/**/*"/>
                 <exclude name="com/l7tech/test/**/*"/>
-                <exclude name="com/l7tech/spring/remoting/rmi/codebase/ClassSetAnnotation.class"/>
-                <exclude name="com/l7tech/spring/remoting/rmi/codebase/java.rmi.server.RMIClassLoaderSpi"/>
                 <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
                 <exclude name="com/l7tech/proxy/gui/**"/>
                 <exclude name="com/l7tech/server/config/**"/>
@@ -549,8 +547,6 @@
             <zipfileset dir="${src.root}/web" includes="*" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="*"/>
             <zipfileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml" prefix="ssg"/>
-            <zipfileset dir="${src.root}/src/com/l7tech/spring/remoting/rmi/codebase" includes="defaultWhitelist.dat"
-                        prefix="WEB-INF/classes"/>
             <!-- Spring config -->
             <zipfileset dir="${src.root}/etc" includes="webApplicationContext.xml" prefix="WEB-INF"/>
             <zipfileset dir="${src.root}/etc" includes="dataAccessContext.xml" prefix="WEB-INF"/>
@@ -705,7 +701,6 @@
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
                 <include name="com/l7tech/spring/remoting/rmi/**/*"/>
-                <exclude name="com/l7tech/spring/remoting/rmi/codebase/*"/>
             </fileset>
         </jar>
     </target>
