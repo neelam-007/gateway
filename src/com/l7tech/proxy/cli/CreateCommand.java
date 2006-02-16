@@ -10,7 +10,7 @@ import com.l7tech.common.util.ArrayUtils;
 import java.io.PrintStream;
 
 /**
- * The "create" command.
+ * The "create" global command.
  */
 class CreateCommand extends Command {
     protected CreateCommand() {

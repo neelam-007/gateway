@@ -12,14 +12,13 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.SslPeer;
 
-import java.net.PasswordAuthentication;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Collections;
 
 /**
  * Credential manager for use in the interactive Bridge command line configurator.
@@ -42,10 +41,22 @@ class CommandSessionCredentialManager extends CredentialManagerImpl {
         this.session = session;
     }
 
-    public PasswordAuthentication DISABLED_getCredentials(Ssg ssg) throws OperationCanceledException {
-        PasswordAuthentication pw = ssg.getRuntime().getCredentials();
-        if (pw == null || pw.getUserName() == null) return getNewCredentials(ssg, false);
-        return pw;
+    public void notifyLengthyOperationStarting(Ssg ssg, String message) {
+        session.getOut().print("Generating new RSA key pair... ");
+    }
+
+    public void notifyLengthyOperationFinished(Ssg ssg) {
+        session.getOut().println("Done.");
+    }
+
+    static class BadKeystoreException extends OperationCanceledException {
+        public BadKeystoreException(String message) {
+            super(message);
+        }
+    }
+
+    public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
+        throw new BadKeystoreException("Unable to authorize deletion of corrupt keystore");
     }
 
     public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate cert)

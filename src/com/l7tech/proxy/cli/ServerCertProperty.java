@@ -8,9 +8,10 @@ package com.l7tech.proxy.cli;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 
+import java.io.IOException;
 import java.io.PrintStream;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 
 /**
  * Property for an SSG server cert.
@@ -39,6 +40,9 @@ class ServerCertProperty extends NounProperty {
 
         try {
             out.println(CertUtils.toString(cert));
+            out.println(new String(CertUtils.encodeAsPEM(cert)));
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
         } catch (CertificateEncodingException e) {
             out.println("<certificate damaged>"); // can't happen
         }

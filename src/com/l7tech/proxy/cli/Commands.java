@@ -5,10 +5,7 @@
 
 package com.l7tech.proxy.cli;
 
-import com.l7tech.common.util.ExceptionUtils;
-
 import java.io.PrintStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +22,6 @@ class Commands extends Words {
             new CreateCommand(),
             new DeleteCommand(),
             new QuitCommand(),
-            new SaveCommand(),
     };
 
     private static final Commands GLOBAL_COMMANDS = new Commands();
@@ -60,21 +56,6 @@ class Commands extends Words {
 
         public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
             session.quit();
-        }
-    }
-
-    private static class SaveCommand extends Command {
-        protected SaveCommand() {
-            super("save", "Save configuration changes, overwriting config file");
-            setMinAbbrev(2);
-        }
-
-        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-            try {
-                session.saveConfig();
-            } catch (IOException e) {
-                throw new CommandException("Unable to save changes: " + ExceptionUtils.getMessage(e), e);
-            }
         }
     }
 }

@@ -120,7 +120,7 @@ class NounProperty extends Word {
      * @param value  the new value to set.  May be null.  Must be an instance of type.
      * @throws ClassCastException if the given object wouldn't fit into our mutator.
      */
-    protected void setValue(Object value) {
+    protected void setValue(Object value) throws CommandException {
         try {
             getMutator().invoke(targetObject, new Object[] {value});
         } catch (IllegalArgumentException e) {
@@ -159,7 +159,7 @@ class NounProperty extends Word {
             }
 
             if (args == null || args.length < 1)
-                throw new CommandException(getName() + " requires a single objectVal of type " + ClassUtils.getClassName(type));
+                throw new CommandException(getName() + " requires a single value of type " + ClassUtils.getClassName(type));
             final String stringVal;
             if (args.length > 1)
                 stringVal = HexUtils.join("", args).toString();
@@ -169,6 +169,7 @@ class NounProperty extends Word {
             final Object objectVal;
             if (type.isPrimitive()) {
                 if (type.equals(boolean.class))
+                    //noinspection UnnecessaryBoxing
                     objectVal = Boolean.valueOf(isTrue(stringVal));
                 else if (type.equals(char.class)) {
                     if (stringVal.length() < 1)
@@ -196,7 +197,7 @@ class NounProperty extends Word {
             } else
                 throw new IllegalStateException("No valueOf or String ctor");  // can't happen
 
-            getMutator().invoke(targetObject, new Object[] { objectVal });
+            setValue(objectVal);
 
         } catch (NoSuchMethodException e) {
             // We tried our best, but you'll need to make a subclass for your property.

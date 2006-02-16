@@ -57,8 +57,8 @@ class DiscoverCommand extends Command {
             ssgNoun.ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssgNoun.ssg, creds);
             realOut.println(ssgNoun.getName() + " serverCertificate changed to cert with DN: " +
                     ssgNoun.ssg.getServerCertificateAlways().getSubjectDN().getName());
+            session.onChangesMade();
             return;
-
 
         } catch (OperationCanceledException e) {
             caught = e;
@@ -92,10 +92,9 @@ class DiscoverCommand extends Command {
                 final String thumb = CertUtils.getCertificateFingerprint(cert,
                                                                          CertUtils.ALG_SHA1,
                                                                          CertUtils.FINGERPRINT_RAW_HEX).toLowerCase();
-                out.println("To manually trust the above certificate, use '" +
+                out.println("To manually trust the above certificate, use: \n    " +
                         ssgNoun.getName() + " discover serverCert " +
-                        thumb +
-                        "'");
+                        thumb.substring(0, 16));
             } catch (GeneralSecurityException e1) {
                 // can't happen -- either checked earlier, or can only happen if vm misconfigured
                 throw new CommandException("Unable to show certificate: " + ExceptionUtils.getMessage(e1), e1);
@@ -106,9 +105,9 @@ class DiscoverCommand extends Command {
         if (creds == null || creds.getUserName() == null ||
                 creds.getUserName().length() < 1 || creds.getPassword() == null)
         {
-            out.println("\nTo attempt automatic certificate discovery, set the username and password first:");
-            out.println("    '" + ssgNoun.getName() + " set username alice'");
-            out.print("    '" + ssgNoun.getName() + " set password s3cr3t'");
+            out.println("\nTo attempt automatic validation, first set both a username and password:");
+            out.println("    " + ssgNoun.getName() + " set username alice");
+            out.print("    " + ssgNoun.getName() + " set password s3cr3t");
         }
 
         out.close();

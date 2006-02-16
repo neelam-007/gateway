@@ -29,7 +29,7 @@ class HelpCommand extends Command {
 
             // Try to match a word or object
             final Commands sessionCommands = session.getCommands();
-            final Nouns sessionNouns = session.getNouns();
+            final Words sessionNouns = session.getNouns();
             Word word = sessionCommands.getByName(wordStr);
             Words globalCommands = Commands.getInstance();
             if (word == null) word = globalCommands.getByName(wordStr);

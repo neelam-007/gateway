@@ -30,6 +30,7 @@ class CommandSession {
     private Commands currentCommands = null;
     private boolean interactive = false;
     private SsgManagerImpl ssgManager = null;
+    boolean grid = false;
 
     public CommandSession(final PrintStream out, final PrintStream err) {
         if (out == null || err == null) throw new NullPointerException();
@@ -84,6 +85,8 @@ class CommandSession {
         out.println();
         while (interactive) {
             try {
+                if (grid)
+                    out.println("---------|---------|---------|---------|---------|---------|---------|       ||");
                 out.print("SSB> ");
                 out.flush();
                 String line = bin.readLine();
@@ -116,7 +119,7 @@ class CommandSession {
 
         if (command == null) {
             // Check for NOUN COMMAND ARG ARG ARG style
-            Nouns nouns = getNouns();
+            Words nouns = getNouns();
             final Noun noun = (Noun)nouns.getByPrefix(wordStr);
             if (noun == null)
                 throw new CommandException("Unknown command or object '" + wordStr + "'. " + TYPE_HELP);
@@ -159,7 +162,7 @@ class CommandSession {
     }
 
     /** @return all Nouns currently available in this session.  Never null or empty. */
-    public Nouns getNouns() {
+    public Words getNouns() {
         List global = Arrays.asList(new Object[] {new GatewaysNoun(this)});
         List ssgs = getSsgManager().getSsgList();
         List ret = new ArrayList(global);
@@ -167,7 +170,7 @@ class CommandSession {
             Ssg ssg = (Ssg)i.next();
             ret.add(new SsgNoun(this, ssg));
         }
-        return new Nouns(ret);
+        return new Words(ret);
     }
 
     /**

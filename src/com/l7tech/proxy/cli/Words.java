@@ -41,8 +41,7 @@ class Words {
      * @return the matching word, or null if no match was found.
      */
     public Word getByPrefix(String prefix) {
-        final int prefixLength = prefix.length();
-        if (prefix == null || prefixLength < 1) return null;
+        if (prefix == null || prefix.length() < 1) return null;
         prefix = prefix.trim().toLowerCase();
 
         String numbers = null;
@@ -53,6 +52,7 @@ class Words {
         }
 
         List words = getAll();
+        final int prefixLength = prefix.length();
         for (Iterator i = words.iterator(); i.hasNext();) {
             Word word = (Word)i.next();
             final String name = word.getName().toLowerCase();

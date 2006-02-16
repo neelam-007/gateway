@@ -8,8 +8,10 @@ package com.l7tech.proxy.cli;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 
 import java.io.PrintStream;
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
 
@@ -42,6 +44,16 @@ class ClientCertProperty extends NounProperty {
                 }
             }
             try {
+                // Try to unlock the private key with the current password, if any
+                try {
+                    ssgNoun.ssg.getClientCertificatePrivateKey();
+                } catch (BadCredentialsException e) {
+                    // Ok, fair enough -- just checking
+                } catch (RuntimeException e) {
+                    if (!ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class)) throw e;
+                    // Ok, fair enough -- just checking
+                }
+
                 boolean haveKey = ssgNoun.ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
                 out.print(' ');
                 if (haveKey) {
@@ -51,8 +63,22 @@ class ClientCertProperty extends NounProperty {
                 }
             } catch (KeyStoreCorruptException e) {
                 out.print("<private key unavailable>");
+            } catch (RuntimeException e) {
+                if (!ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class)) throw e;
+                out.print("<private key unavailable>");
             }
-            if (m) out.println();
+
+            if (m) {
+                out.println();
+
+                try {
+                    out.println(new String(CertUtils.encodeAsPEM(clientCert)));
+                } catch (IOException e) {
+                    throw new RuntimeException(e); // can't happen
+                } catch (CertificateEncodingException e) {
+                    throw new RuntimeException(e); // can't happen
+                }
+            }
         }
     }
 

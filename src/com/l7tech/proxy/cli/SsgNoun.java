@@ -6,17 +6,21 @@
 package com.l7tech.proxy.cli;
 
 import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.util.SslUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
+import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.security.KeyStoreException;
 
 /**
  * Configuration noun referring to an Ssg instance.
@@ -39,13 +43,17 @@ class SsgNoun extends Noun {
                 new PasswordProperty(),
                 new NounProperty(ssg, "chainCredentials", "ChainCredentialsFromClient", "Chain credentials from client (HTTP Basic)"),
                 new NounProperty(ssg, "savePassword", "SavePasswordToDisk", "Save the password in the configuration file"),
-                new NounProperty(ssg, "defaultSsl", "UseSslByDefault", "Use SSL for initial request, and unless policy says otherwise"),
+                new NounProperty(ssg, "preferSsl", "UseSslByDefault", "Use SSL unless a policy says otherwise"),
                 new ServerCertProperty(this),
                 new ClientCertProperty(this),
+                new DefaultSsgProperty(),
         }));
 
         this.specialCommands = new Commands(Arrays.asList(new Command[] {
                 new DiscoverCommand(this),
+                new RequestCommand(),
+                new ChangePassCommand(),
+                new ImportCommand(),
         }));
     }
 
@@ -248,8 +256,142 @@ class SsgNoun extends Noun {
             if (args == null || args.length < 1 || args[0] == null)
                 throw new CommandException("Password must be specified.");
             ssg.getRuntime().setCachedPassword(args[0].toCharArray());
+            if (ssg.isSavePasswordToDisk())
+                return;
+            final PrintStream out = session.getOut();
+            if (!session.isInteractive()) {
+                // If not interactive, this oneshot command would be completely useless if we didn't save the passwd
+                out.println("NOTE: Setting savePassword to true for " + SsgNoun.this.getName());
+                ssg.setSavePasswordToDisk(true);
+            } else {
+                // Interactive mode.  Warn the admin that password is being saved only for this session
+                out.println("NOTE: password set for session only: savePassword not enabled for " + SsgNoun.this.getName());
+                out.println("To save password to disk now, use '" + SsgNoun.this.getName() + " set savePassword true'");
+            }
         }
     }
 
+    private class DefaultSsgProperty extends NounProperty {
+        public DefaultSsgProperty() {
+            super(SsgNoun.this.ssg, "default", "DefaultSsg", "Make this the default Gateway Account");
+        }
 
+        public void set(String[] args) throws CommandException {
+            // For this property, we will accept setting without an argument to mean "make this one the default"
+            if (args == null || args.length < 1)
+                setValue(Boolean.TRUE);
+            else
+                super.set(args);
+        }
+
+        // Hook setValue to make sure other Ssgs get downgraded when this one is upgraded to default
+        protected void setValue(Object value) throws CommandException {
+            super.setValue(value);
+            if (((Boolean)value).booleanValue()) {
+                try {
+                    SsgNoun.this.session.getSsgManager().setDefaultSsg(ssg);
+                } catch (SsgNotFoundException e) {
+                    throw new CommandException("Gateway Account no longer exists");
+                }
+            }
+        }
+    }
+
+    private class RequestCommand extends Command {
+        public RequestCommand() {
+            super("request", "Request client certificate");
+        }
+
+        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
+            if (args == null || args.length < 1 || args[0].length() < 1)
+                throw new CommandException("Usage: " + SsgNoun.this.getName() + " request clientCert\n\n" +
+                                           "Requires that a username and password be configured.");
+
+            PasswordAuthentication creds = ssg.getRuntime().getCredentials();
+            if (creds == null)
+                throw new CommandException("To apply for a client certificate, first set a username and password:\n" +
+                                           "    " + SsgNoun.this.getName() + " set username alice\n" +
+                                           "    " + SsgNoun.this.getName() + " set password s3cr3t");
+
+            if (ssg.getServerCertificate() == null) {
+                session.getOut().println("Attempting automatic server certificate discovery...");
+                new DiscoverCommand(SsgNoun.this).execute(session, out, new String[] { "serverCert" });
+            }
+
+            try {
+                ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(creds);
+                session.onChangesMade();
+                out.println("Now using client certificate with DN: " + ssg.getClientCertificate().getSubjectDN().getName());
+            } catch (BadCredentialsException e) {
+                throw new CommandException("Gateway indicates invalid current credentials (bad password? missing cert?)", e);
+            } catch (CertificateAlreadyIssuedException e) {
+                throw new CommandException("The Gateway has already issued a certificate to this account.  Please use\n" +
+                                           "a different account, or have the Gateway administrator revoke the old cert");
+            } catch (Exception e) {
+                throw new CommandException("Unable to obtain client certificate: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+    }
+
+    private class ChangePassCommand extends Command {
+        public ChangePassCommand() {
+            super("changePass", "Ask Gateway to change password and revoke client cert");
+        }
+
+        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
+            if (args == null || args.length < 1 || args[0].length() < 1)
+                throw new CommandException("Usge: " + SsgNoun.this.getName() + " changePass <new password>");
+
+            PasswordAuthentication oldpass = ssg.getRuntime().getCredentials();
+            if (oldpass == null) {
+                throw new CommandException("To change your password, first set a username and existing password:\n" +
+                                           "    " + SsgNoun.this.getName() + " set username alice\n" +
+                                           "    " + SsgNoun.this.getName() + " set password s3cr3t");
+            }
+
+            try {
+                final char[] newpass = args[0].toCharArray();
+                SslUtils.changePasswordAndRevokeClientCertificate(ssg,
+                                                                  oldpass.getUserName(),
+                                                                  oldpass.getPassword(),
+                                                                  newpass);
+                ssg.getRuntime().setCachedPassword(newpass);
+                ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
+
+            } catch (IOException e) {
+                throw new CommandException("Unable to change password and revoke client cert: " + ExceptionUtils.getMessage(e), e);
+            } catch (BadCredentialsException e) {
+                throw new CommandException("Gateway indicates invalid current credentials (bad password? missing cert?)", e);
+            } catch (BadPasswordFormatException e) {
+                throw new CommandException("Gateway rejected the new password (too short?)", e);
+            } catch (SslUtils.PasswordNotWritableException e) {
+                throw new CommandException("Gateway is unable to change the password for this account", e);
+            } catch (KeyStoreCorruptException e) {
+                throw new CommandException("Unable to revoke client certificate -- keystore damaged: " + ExceptionUtils.getMessage(e), e);
+            } catch (KeyStoreException e) {
+                throw new RuntimeException(e); // shouldn't happen
+            } finally {
+                session.onChangesMade();
+            }
+
+        }
+    }
+
+    private class ImportCommand extends Command {
+        protected ImportCommand() {
+            super("import", "Import a client or server certificate");
+        }
+
+        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
+            if (args == null || args.length < 2 || args[0] == null || args[1] == null)
+                throw new CommandException("Usage: " + SsgNoun.this.getName() + " import serverCert <path of PEM or DER file>\n" +
+                                           "       " + SsgNoun.this.getName() + " import clientCert <path of PKCS#12 file> <pass phrase> [<alias>]");
+
+            try {
+                throw new CommandException("Not yet implemented");
+            } finally {
+                session.onChangesMade();
+            }
+        }
+    }
 }

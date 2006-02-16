@@ -10,7 +10,7 @@ import com.l7tech.common.util.ArrayUtils;
 import java.io.PrintStream;
 
 /**
- * The "delete" command.
+ * The "delete" global command.
  */
 class DeleteCommand extends Command {
     protected DeleteCommand() {
@@ -27,7 +27,7 @@ class DeleteCommand extends Command {
     public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
         if (args == null || args.length < 1 || args[0].length() < 1)
             throw new CommandException("Usage: " + getName() + " <object>");
-        final Nouns nouns = session.getNouns();
+        final Words nouns = session.getNouns();
         Noun noun = (Noun)nouns.getByName(args[0]);
         if (noun == null) {
             noun = (Noun)nouns.getByPrefix(args[0]);

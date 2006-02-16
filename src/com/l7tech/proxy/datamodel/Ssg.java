@@ -624,6 +624,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     /**
      * Get the private key.  Might take a long time if it needs to prompt for a password.
+     * @return the private key, or null if we don't yet have a client certificate.
      */
     public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException {
         for (;;) {
@@ -637,7 +638,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
                 try {
                     getRuntime().handleKeyStoreCorrupt();
                 } catch (OperationCanceledException e1) {
-                    throw new RuntimeException(msg); // cancel it
+                    throw new RuntimeException(msg, e1); // cancel it
                 }
                 /* FALLTHROUGH and retry */
             } catch (OperationCanceledException e) {
