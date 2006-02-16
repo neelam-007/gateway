@@ -129,7 +129,7 @@ public class SubjectStatement {
      *         confirmation method
      */
     public boolean isConfirmationSenderVouches() {
-        return SENDER_VOUCHES.equals(confirmationMethod);
+        return SENDER_VOUCHES.method.equals(confirmationMethod);
     }
 
     public boolean isUseThumbprintForSubject() {

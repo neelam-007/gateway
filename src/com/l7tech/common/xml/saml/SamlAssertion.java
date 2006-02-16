@@ -57,10 +57,12 @@ public class SamlAssertion extends X509SigningSecurityTokenImpl implements SamlS
     private String nameIdentifierValue;
     private String authenticationMethod;
 
-    /**
-     * Currently only ever set by {@link com.l7tech.common.security.xml.processor.WssProcessorImpl#processSamlSecurityToken}
-     */
-    protected boolean possessionProved = false;
+    // Commented out since this obscures the superclass field
+    //
+    //    /**
+    //     * Currently only ever set by {@link com.l7tech.common.security.xml.processor.WssProcessorImpl#processSamlSecurityToken}
+    //     */
+    //    protected boolean possessionProved = false;
 
     public boolean isHolderOfKey() {
         return HOLDER_OF_KEY.equals(confirmationMethod);
@@ -227,17 +229,19 @@ public class SamlAssertion extends X509SigningSecurityTokenImpl implements SamlS
         return subjectCertificate;
     }
 
-    /**
-     * @return true if the subject described by this assertion has proven possession of the private key
-     *         corresponding to the subject certificate here. Only meaningful if {@link #isHolderOfKey()}.
-     */
-    public boolean isPossessionProved() {
-        return possessionProved;
-    }
-
-    public void onPossessionProved() {
-        possessionProved = true;
-    }
+    // Commented out since this obscures the superclass methods
+    //
+    //    /**
+    //     * @return true if the subject described by this assertion has proven possession of the private key
+    //     *         corresponding to the subject certificate here. Only meaningful if {@link #isHolderOfKey()}.
+    //     */
+    //    public boolean isPossessionProved() {
+    //        return possessionProved;
+    //    }
+    //
+    //    public void onPossessionProved() {
+    //        possessionProved = true;
+    //    }
 
     public X509Certificate getMessageSigningCertificate() {
         // TODO is this strictly true?

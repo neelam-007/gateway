@@ -34,7 +34,6 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
 
     public ServerHttpBasic(HttpBasic data, ApplicationContext springContext) {
         super(data, springContext);
-        _data = data;
     }
 
     protected Map challengeParams(Message request, Map authParams) {
@@ -99,6 +98,4 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     protected AssertionStatus checkAuthParams(Map authParams) {
         return AssertionStatus.NONE;
     }
-
-    protected HttpBasic _data;
 }

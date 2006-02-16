@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
-    static protected Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
+    private static final Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
 
     /**
      * default comparator for the child objects

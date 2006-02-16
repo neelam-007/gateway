@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * Date: Jun 5, 2003
  */
 public abstract class SecurityProvider extends Authorizer implements AuthenticationProvider {
-    protected static final Logger logger = Logger.getLogger(SecurityProvider.class.getName());
+    private static final Logger logger = Logger.getLogger(SecurityProvider.class.getName());
     private Set subjectRoles = new HashSet();
 
     /**

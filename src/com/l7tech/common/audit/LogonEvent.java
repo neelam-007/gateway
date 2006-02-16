@@ -14,8 +14,8 @@ import org.springframework.context.ApplicationEvent;
  * @version 1.0
  */
 public class LogonEvent extends ApplicationEvent {
-    public static int LOGON = 0x0;
-    public static int LOGOFF = 0x1;
+    public static final int LOGON = 0x0;
+    public static final int LOGOFF = 0x1;
 
 
     private final int type;

@@ -14,10 +14,10 @@ import java.text.MessageFormat;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
 public class ErrorManager {
-    protected static final Logger log = Logger.getLogger(ErrorManager.class.getName());
-    protected static ErrorManager instance = new ErrorManager();
+    private static final Logger log = Logger.getLogger(ErrorManager.class.getName());
+    private static final ErrorManager instance = new ErrorManager();
 
-    protected LinkedList handlers = new LinkedList();
+    private LinkedList handlers = new LinkedList();
     /**
      * inly subclasses can instantiate the class
      */

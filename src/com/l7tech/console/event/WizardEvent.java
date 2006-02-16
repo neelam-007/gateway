@@ -10,11 +10,11 @@ import java.util.EventObject;
  */
 public class WizardEvent extends EventObject {
     /** Event sent when the user cancels the wizard. */
-    static public int CANCELED = 1;
+    public static final int CANCELED = 1;
     /** Event sent when the user has finished the wizard. */
-    static public int FINISHED = 2;
+    public static final int FINISHED = 2;
     /** Event sent after a new page has been selected. */
-    static public int SELECTION_CHANGED = 3;
+    public static final int SELECTION_CHANGED = 3;
 
     private final int id;
 

@@ -33,6 +33,6 @@ public abstract class HttpCredentialSourceAssertion extends Assertion {
 
     protected String _realm;
 
-    public static String PARAM_SCHEME = "scheme";
-    public static String PARAM_REALM = "realm";
+    public static final String PARAM_SCHEME = "scheme";
+    public static final String PARAM_REALM = "realm";
 }

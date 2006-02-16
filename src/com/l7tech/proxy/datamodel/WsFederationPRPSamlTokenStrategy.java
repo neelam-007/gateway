@@ -195,10 +195,7 @@ public class WsFederationPRPSamlTokenStrategy extends FederatedSamlTokenStrategy
             throw newSSLException("SSL connection failure, but no peer certificate presented: " + e.getMessage(), e);
 
         // Check if the user wants to trust this peer certificate
-        if (sslPeer instanceof Ssg)
-            ((Ssg)sslPeer).getRuntime().getCredentialManager().notifySslCertificateUntrusted(sslPeer, serverName, peerCert);
-        else
-            Managers.getCredentialManager().notifySslCertificateUntrusted(sslPeer, serverName, peerCert);
+        Managers.getCredentialManager().notifySslCertificateUntrusted(sslPeer, serverName, peerCert);
 
         // They do; import it
         storeTokenServerCert(peerCert);

@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * @version Sep 2, 2004
  */
 public abstract class Authorizer {
-    protected static Logger logger = Logger.getLogger(Authorizer.class.getName());
+    private static final Logger logger = Logger.getLogger(Authorizer.class.getName());
 
 
     /**

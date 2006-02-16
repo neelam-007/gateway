@@ -19,7 +19,7 @@ import java.util.Map;
  * @version 1.0
  */
 public class TopComponents {
-    protected static TopComponents instance = new TopComponents();
+    private static final TopComponents instance = new TopComponents();
 
     /**
      * protected constructor, this class cannot be instantiated

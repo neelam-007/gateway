@@ -135,7 +135,7 @@ public class FormPreparer {
     /**
      * the precanned <code>ComponentPreparer</code> that sets the text component read only
      */
-    public static ComponentPreparer TEXT_COMPONENT_READONLY_PREPARER = new ComponentPreparer() {
+    public static final ComponentPreparer TEXT_COMPONENT_READONLY_PREPARER = new ComponentPreparer() {
         public void prepare(Component c) {}
 
         public void prepare(JTextComponent c) {

@@ -9,7 +9,7 @@ import java.net.URISyntaxException;
  * @version 22-Dec-2004
  */
 public class NamingURL {
-    public static String DEFAULT_SCHEME = "rmi";
+    public static final String DEFAULT_SCHEME = "rmi";
     private static final int DEFAULT_PORT = 2124;
 
     private String scheme;
