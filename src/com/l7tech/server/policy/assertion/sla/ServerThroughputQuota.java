@@ -13,6 +13,7 @@ import com.l7tech.server.sla.CounterManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
+import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -37,11 +38,13 @@ public class ServerThroughputQuota implements ServerAssertion {
     private final Auditor auditor;
     private ApplicationContext  applicationContext;
     private final String[] TIME_UNITS = {"second", "hour", "day", "month"};
+    private final String[] varsUsed;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
         this.assertion = assertion;
         this.applicationContext = ctx;
         auditor = new Auditor(this, applicationContext, logger);
+        varsUsed = assertion.getVariablesUsed();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -83,6 +86,7 @@ public class ServerThroughputQuota implements ServerAssertion {
                 return AssertionStatus.FALSIFIED;
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
+                // no need to resolve external variables here
                 context.getIncrementedCounters().add(assertion.getCounterName());
             }
         } else {
@@ -159,8 +163,12 @@ public class ServerThroughputQuota implements ServerAssertion {
 
         long counterid = 0;
         CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
+        String resolvedCounterName = assertion.getCounterName();
+        if (varsUsed.length > 0) {
+            resolvedCounterName = ExpandVariables.process(resolvedCounterName, context.getVariableMap(varsUsed, auditor));
+        }
         try {
-            counterid = counterIDManager.getCounterId(assertion.getCounterName(), user);
+            counterid = counterIDManager.getCounterId(resolvedCounterName, user);
         } catch (ObjectModelException e) {
             // should not happen
             throw new IOException("could not get counter id " + e.getMessage());

@@ -7,6 +7,8 @@
 package com.l7tech.policy.assertion.sla;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.variable.ExpandVariables;
 
 /**
  * An assertion that enforce the number of requests that can be made to a particular resource per time unit.
@@ -17,7 +19,7 @@ import com.l7tech.policy.assertion.Assertion;
  *
  * @author flascelles@layer7-tech.com
  */
-public class ThroughputQuota extends Assertion {
+public class ThroughputQuota extends Assertion implements UsesVariables {
     public static final int TIME_UNIT_UNDEFINED = 0;
     public static final int PER_SECOND = 1;
     public static final int PER_HOUR = 2;
@@ -112,5 +114,10 @@ public class ThroughputQuota extends Assertion {
 
     public void setCounterStrategy(int counterStrategy) {
         this.counterStrategy = counterStrategy;
+    }
+
+    public String[] getVariablesUsed() {
+        if (counterName == null) return new String[0];
+        return ExpandVariables.getReferencedNames(counterName);
     }
 }
