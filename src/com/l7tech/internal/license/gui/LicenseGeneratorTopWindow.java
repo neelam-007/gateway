@@ -561,12 +561,8 @@ public class LicenseGeneratorTopWindow extends JFrame {
             while (aliases.hasMoreElements()) {
                 String a = (String)aliases.nextElement();
                 if (alias == null) {
-                    try {
-                        if (ks.isKeyEntry(alias))
-                            alias = a;
-                    } catch (NullPointerException npe) {
-                        // Screw you, com.sun.net.ssl.internal.ssl.PKCS12KeyStore.engineIsKeyEntry
-                    }
+                    if (ks.isKeyEntry(a))
+                        alias = a;
                 }
             }
         }

@@ -72,13 +72,14 @@ public class SwaRequestAssertionValidator implements AssertionValidator {
         if (binding == null) {
             logger.warning("Could not resolve binding '" + bindingName + "'");
         }
-
-        List bop = binding.getBindingOperations();
-        for (Iterator iterator = bop.iterator(); iterator.hasNext();) {
-            BindingOperation bo = (BindingOperation)iterator.next();
-            MIMEMultipartRelated mmr = wsdl.getMimeMultipartRelatedInput(bo);
-            if (mmr != null) {   // todo: not sure if need to check if it is empty too (mmr.getMIMEParts().isEmpty())? - em
-                return true;
+        else {
+            List bop = binding.getBindingOperations();
+            for (Iterator iterator = bop.iterator(); iterator.hasNext();) {
+                BindingOperation bo = (BindingOperation)iterator.next();
+                MIMEMultipartRelated mmr = wsdl.getMimeMultipartRelatedInput(bo);
+                if (mmr != null) {   // todo: not sure if need to check if it is empty too (mmr.getMIMEParts().isEmpty())? - em
+                    return true;
+                }
             }
         }
         return false;
