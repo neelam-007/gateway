@@ -179,7 +179,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // if the policy throws AND the stealth flag is set, drop connection
             if (context.isStealthResponseMode()) {
                 logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
-                                       "Instructing valve to drop connection completly.",
+                                       "Instructing valve to drop connection completely.",
                                        e);
                 hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
                                       ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
