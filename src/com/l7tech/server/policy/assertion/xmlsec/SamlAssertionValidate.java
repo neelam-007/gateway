@@ -414,18 +414,14 @@ public class SamlAssertionValidate {
     }
 
     static class Error {
-        private final String reason;
-        private final Object context;
         private final Object[] arguments;
         private final Exception exception;
         private final String formattedReason;
 
         protected Error(String reason, Object context, Object args, Exception exception) {
-            this.reason = reason;
             if (reason == null) {
                 throw new IllegalArgumentException("Reason is required");
             }
-            this.context = context;
             this.arguments = getArguments(args);
             this.formattedReason = MessageFormat.format(reason, arguments);
             this.exception = exception;

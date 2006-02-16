@@ -44,14 +44,11 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  */
 public class ServerResponseWssConfidentiality implements ServerAssertion {
-    private SignerInfo signerInfo;
     private final Auditor auditor;
     private final X509Certificate recipientContextCert;
 
     public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
         responseWssConfidentiality = data;
-        KeystoreUtils ku = (KeystoreUtils)ctx.getBean("keystore");
-        signerInfo = ku.getSslSignerInfo();
         this.auditor = new Auditor(this, ctx, logger);
 
         X509Certificate rccert = null;

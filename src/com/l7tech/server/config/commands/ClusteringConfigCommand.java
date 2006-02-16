@@ -23,7 +23,6 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     private String hostname;
     private String clusterHostname;
     private static final String BACKUP_FILE_NAME = "cluster_config_backups";
-    DateFormat formatter;
     private static final String PROP_RMI_HOSTNAME = "java.rmi.server.hostname";
 
     public ClusteringConfigCommand(ConfigurationBean bean) {

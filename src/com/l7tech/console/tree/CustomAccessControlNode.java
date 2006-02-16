@@ -11,6 +11,7 @@ import com.l7tech.console.util.Registry;
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The class represents an custom access control gui node element in the
@@ -20,6 +21,8 @@ import java.util.logging.Level;
  * @version 1.1
  */
 public class CustomAccessControlNode extends AbstractTreeNode {
+    private static final Logger logger = Logger.getLogger(CustomAccessControlNode.class.getName());
+
     private CustomAssertionsRegistrar registrar;
     private Image defaultImageIcon;
 

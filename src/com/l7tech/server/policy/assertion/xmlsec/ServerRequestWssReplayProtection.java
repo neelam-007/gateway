@@ -40,7 +40,6 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
     private final Auditor auditor;
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext ctx) {
-        this.subject = subject;
         this.applicationContext = ctx;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
@@ -177,5 +176,4 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
     }
 
     private static final Logger logger = Logger.getLogger(ServerRequestWssReplayProtection.class.getName());
-    private RequestWssReplayProtection subject;
 }

@@ -11,7 +11,6 @@ import java.net.URL;
  */
 public class JWhich {
     private String className;
-    private ClassLoader classLoader;
 
     /**
      * Construct the new <code>JWhich</code> that determines

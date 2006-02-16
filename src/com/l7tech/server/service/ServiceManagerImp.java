@@ -35,7 +35,6 @@ import java.util.logging.Logger;
  */
 public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager, ApplicationContextAware {
     private ServiceCache serviceCache;
-    private Class[] visitorClasses;
     private ApplicationContext applicationContext;
 
     private final String versionQuery = "SELECT " + getTableName() + "." + F_VERSION + " FROM " + getTableName() +
@@ -46,16 +45,13 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public void setVisitorClassnames(String visitorClassnames) {
         String[] names = visitorClassnames.split(",\\s*");
-        ArrayList classes = new ArrayList();
         for (int i = 0; i < names.length; i++) {
             String name = names[i];
             try {
                 Class clazz = Class.forName(name);
-                classes.add(clazz);
             } catch (ClassNotFoundException e) {
                 logger.log(Level.WARNING, "PolicyVisitor classname " + name + " could not be loaded.", e);
             }
-            visitorClasses = (Class[])classes.toArray(new Class[0]);
         }
     }
 

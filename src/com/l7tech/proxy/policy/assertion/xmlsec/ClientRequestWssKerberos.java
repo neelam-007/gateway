@@ -38,7 +38,6 @@ public class ClientRequestWssKerberos extends ClientAssertion {
     //- PUBLIC
 
     public ClientRequestWssKerberos(RequestWssKerberos requestWssKerberos) {
-        requestKerberos = requestWssKerberos;
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException,
@@ -92,6 +91,5 @@ public class ClientRequestWssKerberos extends ClientAssertion {
     //- PRIVATE
 
     private final static Logger logger = Logger.getLogger(ClientRequestWssKerberos.class.getName());
-    private RequestWssKerberos requestKerberos;
 
 }

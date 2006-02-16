@@ -26,6 +26,7 @@ import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
@@ -34,6 +35,8 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public abstract class AssertionTreeNode extends AbstractTreeNode {
+    private static final Logger logger = Logger.getLogger(AssertionTreeNode.class.getName());
+
     private List validatorMessages = new ArrayList();
     private List viewValidatorMessages = null;
 

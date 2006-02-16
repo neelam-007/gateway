@@ -38,7 +38,6 @@ public class RequestIdGenerator {
 
     private RequestIdGenerator() {
         ServerConfig config = ServerConfig.getInstance();
-        _serverId = config.getServerId();
         reseed( config.getServerBootTime() );
     }
 
@@ -51,7 +50,6 @@ public class RequestIdGenerator {
     }
 
     private long _bootTime;
-    private int _serverId;
     private long _sequence;
 
     private static RequestIdGenerator _instance;

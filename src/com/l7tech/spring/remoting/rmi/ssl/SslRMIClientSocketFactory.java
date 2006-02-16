@@ -219,7 +219,6 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
     private static class SSLClientTrustManager implements X509TrustManager {
         private final X509TrustManager delegate;
         private final SSLTrustFailureHandler trustFailureHandler;
-        private final String serverHostname;
 
         /**
          * Package subclassing
@@ -234,7 +233,6 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
             }
             this.delegate = delegate;
             this.trustFailureHandler = trustFailureHandler;
-            this.serverHostname = serverHostname.toLowerCase();
         }
 
         /**

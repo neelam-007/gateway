@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The class represents an gui node element in the TreeModel that
@@ -17,6 +18,8 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class XmlFolderNode extends AbstractTreeNode {
+    private static final Logger logger = Logger.getLogger(XmlFolderNode.class.getName());
+
     /**
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
@@ -57,7 +60,7 @@ public class XmlFolderNode extends AbstractTreeNode {
             }
         } catch (RemoteException e1) {
             logger.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
-        }        
+        }
     }
 
     /**

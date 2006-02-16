@@ -8,6 +8,7 @@ import javax.swing.tree.MutableTreeNode;
 import java.io.*;
 import java.util.Comparator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -21,6 +22,8 @@ import org.xml.sax.SAXException;
  * @version 1.1
  */
 public class PoliciesFolderNode extends AbstractTreeNode {
+    private static final Logger logger = Logger.getLogger(PoliciesFolderNode.class.getName());
+
     public static final String NAME = "Policy Templates";
     public static final String TEMPLATES_DIR = "policy.templates";
 

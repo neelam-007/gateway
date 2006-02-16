@@ -44,9 +44,6 @@ public interface RsaSignerEngine {
         public static final CertType CLIENT = new CertType("Client");
 
         private CertType( String desc ) {
-            this.desc = desc;
         }
-
-        private final String desc;
     }
 }

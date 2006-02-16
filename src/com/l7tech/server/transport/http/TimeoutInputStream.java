@@ -181,7 +181,7 @@ public class TimeoutInputStream extends ServletInputStream {
     /**
      *
      */
-    public void mark(int readlimit) {
+    public synchronized void mark(int readlimit) {
         in.mark(readlimit);
     }
 
@@ -190,7 +190,7 @@ public class TimeoutInputStream extends ServletInputStream {
      *
      * @throws IOException if an underlying error occurs or if there is a timeout
      */
-    public void reset() throws IOException {
+    public synchronized void reset() throws IOException {
         checkTimeout();
         in.reset();
     }
@@ -355,7 +355,6 @@ public class TimeoutInputStream extends ServletInputStream {
      * Data for the blocker
      */
     private static class BlockerInfo {
-        private Thread threadToInterrupt;
         private InputStream inputStreamToClose;
         private boolean cleared;
         private boolean readComplete;
@@ -369,7 +368,6 @@ public class TimeoutInputStream extends ServletInputStream {
         private int minDataRate;
 
         private BlockerInfo(InputStream toClose, long timeout, long slowTime, int dataRate) {
-            threadToInterrupt = Thread.currentThread();
             inputStreamToClose = toClose;
             streamStartTime = System.currentTimeMillis();
             bytesRead = 0;

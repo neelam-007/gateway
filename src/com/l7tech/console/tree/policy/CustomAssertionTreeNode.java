@@ -14,6 +14,7 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.IntrospectionException;
@@ -27,6 +28,8 @@ import java.awt.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
+    private static final Logger logger = Logger.getLogger(CustomAssertionTreeNode.class.getName());
+
     private CustomAssertionsRegistrar registrar;
     private Image defaultImageIcon;
 

@@ -43,7 +43,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
 
     private PrivateKey caPrivateKey;
     private X509Certificate caCert;
-    X509Name caSubjectName;
     private static final SecureRandom random = new SecureRandom();
 
     //----------------------------------------

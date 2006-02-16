@@ -27,8 +27,6 @@ import java.util.Map;
  * @author alex
  */
 public class LoginCredentials implements SecurityToken {
-    private String elementId;
-    private Element element;
 
     public static LoginCredentials makeCertificateCredentials(X509Certificate cert, Class credentialSource) {
         String login = getCn(cert);
