@@ -22,12 +22,12 @@ class SetCommand extends Command {
                 "In interactive mode, a setter may prompt for additional information (like passwords).\n" +
                 "For some other properties, the value may be omitted.\n" +
                 "\n" +
-                "        Usage: set <object> <property> <value>\n" +
-                "               set <object> <property>\n" +
+                "        Usage: <object> set <property> <value>\n" +
+                "               <object> set <property>\n" +
                 "\n" +
-                "     Examples: set gateway1 clientCertificate auto\n" +
-                "               set gateway3 defaultGateway\n" +
-                "               set gateway5 password\n");
+                "     Examples: gateway1 set clientCertificate auto\n" +
+                "               gateway3 set defaultGateway true\n" +
+                "               gateway5 set password s3cr3t\n");
     }
 
     public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {

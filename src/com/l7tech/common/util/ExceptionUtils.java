@@ -67,7 +67,8 @@ public class ExceptionUtils {
     }
 
     /**
-     * Get the message for the specified exception.  If the exception itself has a null message,
+     * Get the message for the specified exception that is at least 2 characters long.
+     * If the exception itself has a null message or it is too short,
      * checks for a message in its cause.  If all causes have been exhaused, returns the
      * classname of the original exception.
      *
@@ -75,17 +76,46 @@ public class ExceptionUtils {
      * @return a diagnostic message that can be displayed.  Never null.
      */
     public static String getMessage(final Throwable t) {
+        return getMessage(t, 2);
+    }
+
+    /**
+     * Get the message for the specified exception that is at least n characters long.
+     * If the exception has a null message, or its message is shorter than n character, checks
+     * for a message in its cause.  If all causes have been exhausted, returns the classname of the original
+     * exception.
+     *
+     * @param t the Throwable to examine.  Must not be null.
+     * @param n the minimum length of message that is acceptable, or 0 to accept any non-null message.
+     *          For example, set to 2 to disallow the exception message "0".
+     * @return a diagnostic message that can be displayed.  Never null.
+     */
+    public static String getMessage(final Throwable t, int n) {
         if (t == null)
             return "null";
 
         Throwable current = t;
         while (current != null) {
             String msg = current.getMessage();
-            if (msg != null)
+
+            // Special case for array IndexOutOfBounds, which often uses just the bad index as its message
+            if (current instanceof IndexOutOfBoundsException && isLong(msg))
+                msg = "Index out of bounds: " + msg;
+
+            if (msg != null && (n < 1 || msg.length() >= n))
                 return msg;
             current = current.getCause();
         }
 
         return t.getClass().getName();
+    }
+
+    private static boolean isLong(String s) {
+        try {
+            Long.valueOf(s);
+            return true;
+        } catch (NumberFormatException nfe) {
+            return false;
+        }
     }
 }

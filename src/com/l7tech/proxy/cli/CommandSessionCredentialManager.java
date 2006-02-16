@@ -5,22 +5,30 @@
 
 package com.l7tech.proxy.cli;
 
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.CredentialManagerImpl;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.SslPeer;
 
-import java.io.*;
 import java.net.PasswordAuthentication;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * Credential manager for use in the interactive Bridge command line configurator.
+ * This credential manager does not support multithreaded operation.
  */
 class CommandSessionCredentialManager extends CredentialManagerImpl {
     private final CommandSession session;
-    private final InputStream in;
-    private final OutputStream out;
+    private List lastFailedServerCerts = new ArrayList();
+    private List trustedCertFingerprints = new ArrayList();
 
     /**
      * Creates a credential manager that will use command line prompts for usernames and passwords.  When prompting
@@ -28,14 +36,10 @@ class CommandSessionCredentialManager extends CredentialManagerImpl {
      * attempt to mask the password.  (Sadly, that appears to be the best that can be done with the current JRE.)
      *
      * @param session  the command session we are attached to.  Must not be null.
-     * @param in     the inputstream to read passwords from.  Must not be null.
-     * @param out    the outputstream where the keystrokes from passwords being typed might be echoed.  Must not be null.
      */
-    public CommandSessionCredentialManager(CommandSession session, InputStream in, OutputStream out) {
+    CommandSessionCredentialManager(CommandSession session) {
         super();
         this.session = session;
-        this.in = in;
-        this.out = out;
     }
 
     public PasswordAuthentication DISABLED_getCredentials(Ssg ssg) throws OperationCanceledException {
@@ -44,48 +48,68 @@ class CommandSessionCredentialManager extends CredentialManagerImpl {
         return pw;
     }
 
-    /**
-     * Get credentials using text-mode password prompt hack.  Experimental.
-     *
-     * @param ssg the Ssg whose credentials you want to update
-     * @param displayBadPasswordMessage if true, user will be told that current credentials are no good.
-     * @return the new credentials for this Ssg.  Never null.
-     * @throws OperationCanceledException if we prompted the user, but he clicked cancel
-     */
-    public PasswordAuthentication DISABLED_getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
-        PrintStream err = session.getErr();
-        if (displayBadPasswordMessage)
-            err.println("Gateway rejected existing username or password for gateway" + ssg.getId());
-        err.println("Credentials required for gateway" + ssg.getId() + " (" + ssg + ").");
-        err.print("Please enter a username (or press enter to cancel): ");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(in));
-        try {
-            String username = bin.readLine();
-            if (username == null) throw new OperationCanceledException("Input has ended");
-            if (username.length() < 1) throw new OperationCanceledException("User canceled login prompt.");
+    public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate cert)
+            throws OperationCanceledException
+    {
+        final String gotPrintMD5 = getThumbprint(cert, CertUtils.ALG_MD5).toLowerCase();
+        final String gotPrintSHA = getThumbprint(cert, CertUtils.ALG_SHA1).toLowerCase();
 
-            err.print("Password: ");
-            String passstr = bin.readLine();
-            if (passstr == null) throw new OperationCanceledException("Input has ended");
-            char[] password = passstr.toCharArray();
-            //char[] password = TextUtils.getPassword(in, out, "Please enter a password: ");
-
-            ssg.setUsername(username);
-            ssg.getRuntime().setCachedPassword(password);
-            ssg.getRuntime().onCredentialsUpdated();
-            ssg.getRuntime().promptForUsernameAndPassword(true);
-
-            return ssg.getRuntime().getCredentials();
-        } catch (IOException e) {
-            throw new OperationCanceledException("Unable to read from input", e);
+        for (Iterator i = trustedCertFingerprints.iterator(); i.hasNext();) {
+            String printPrefix = ((String)i.next()).toLowerCase();
+            if (gotPrintMD5.startsWith(printPrefix)) {
+                session.getOut().println("Manually trusting server certificate with MD5 fingerprint " + gotPrintMD5);
+                return; // Trust this certificate
+            }
+            if (gotPrintSHA.startsWith(printPrefix)) {
+                session.getOut().println("Manually trusting server certificate with SHA1 fingerprint " + gotPrintSHA);
+                return; // Trust this certificate
+            }
         }
+
+        lastFailedServerCerts.add(cert);
+        throw new OperationCanceledException("Unable to automatically trust server certificate.");
     }
 
-    public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
-        super.notifySslCertificateUntrusted(sslPeer, serverDesc, untrustedCertificate);
+    private String getThumbprint(X509Certificate cert, String alg) throws OperationCanceledException {
+        try {
+            return CertUtils.getCertificateFingerprint(cert, alg, CertUtils.FINGERPRINT_RAW_HEX).toLowerCase();
+        } catch (CertificateEncodingException e) {
+            throw new OperationCanceledException("Invalid server certificate: " + ExceptionUtils.getMessage(e), e); // can't happen, would have been caught earlier
+        } catch (NoSuchAlgorithmException e) {
+            throw new OperationCanceledException("Unable to compute cert thumbprint: " + ExceptionUtils.getMessage(e), e); // can't happen, misconfigured VM
+        }
     }
 
     public void saveSsgChanges(Ssg ssg) {
         session.onChangesMade(); // mark the session as dirty so any changed state will get saved
+    }
+
+    /**
+     * Get the list of X509Certificate objects that have been passed to {@link #notifySslCertificateUntrusted} since
+     * the last time {@link #clearLastFailedServerCerts} was called.
+     *
+     * @return the list of recently failed server certs.  May be empty, but never null.
+     */
+    public List getLastFailedServerCerts() {
+        return Collections.unmodifiableList(lastFailedServerCerts);
+    }
+
+    /**
+     * Clear the collection of failed server certificates so we can begin collecting more.
+     */
+    public void clearLastFailedServerCerts() {
+        lastFailedServerCerts.clear();
+    }
+
+    /**
+     * Manually trust any future X.509 certificate whose SHA-1 or MD5 fingerprint, when encoded as hex, starts
+     * with the specified thumbprint string or prefix.
+     *
+     * @param thumbPrint the thumbprint to trust, or some prefix of the thumbprint.  Must not be null or empty.
+     */
+    public void addTrustedServerCertThumbprint(String thumbPrint) {
+        if (thumbPrint == null || thumbPrint.length() < 1)
+            throw new IllegalArgumentException("A non-empty thumbprint is needed");
+        trustedCertFingerprints.add(thumbPrint);
     }
 }

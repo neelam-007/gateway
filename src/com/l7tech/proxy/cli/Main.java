@@ -51,7 +51,7 @@ public class Main {
         JceProvider.init();
 
         final CommandSession cc = new CommandSession(System.out, System.err);
-        Managers.setCredentialManager(new CommandSessionCredentialManager(cc, System.in, System.out));
+        Managers.setCredentialManager(cc.getCredentialManager());
 
         if (args.length < 1 || cmdMatch(args[0], "i")) {
             // Interactive mode
@@ -66,7 +66,6 @@ public class Main {
 
         try {
             cc.processCommand(args);
-            cc.saveUnsavedChanges();
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
             System.err.println();

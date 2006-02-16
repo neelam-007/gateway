@@ -35,6 +35,7 @@ public class CertUtils {
     public static final String ALG_MD5 = "MD5";
     public static final String ALG_SHA1 = "SHA1";
     public static final String FINGERPRINT_HEX = "hex";
+    public static final String FINGERPRINT_RAW_HEX = "rawhex";
     public static final String FINGERPRINT_BASE64 = "b64";
 
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
@@ -356,16 +357,20 @@ public class CertUtils {
         MessageDigest md = MessageDigest.getInstance(algorithm);
         byte[] digest = md.digest(fingers);
 
+        boolean raw = false;
         if (FINGERPRINT_BASE64.equals(format))
             return HexUtils.encodeBase64(digest, true);
+        else if (FINGERPRINT_RAW_HEX.equals(format))
+            raw = true;
         else if (!(FINGERPRINT_HEX.equals(format)))
             throw new IllegalArgumentException("Unknown cert fingerprint format: " + format);
 
         // the algorithm
-        buff.append(algorithm).append(":");
+        if (!raw)
+            buff.append(algorithm).append(":");
 
         for (int i = 0; i < digest.length; i++) {
-            if (i != 0) buff.append(":");
+            if (!raw && i != 0) buff.append(":");
             int b = digest[i] & 0xff;
             String hex = Integer.toHexString(b);
             if (hex.length() == 1) buff.append("0");

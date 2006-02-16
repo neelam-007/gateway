@@ -8,7 +8,7 @@ package com.l7tech.proxy.cli;
 /**
  * Exception thrown when an illegal, meaningless, or invalid command is entered.
  */
-public class CommandException extends Exception {
+class CommandException extends Exception {
     public CommandException() {
     }
 

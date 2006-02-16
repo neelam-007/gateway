@@ -24,18 +24,25 @@ class CommandSession {
     public static final String TYPE_HELP = "Type 'help' for instructions.";
     private static final Commands allCommands = Commands.getInstance();
 
+    final private CommandSessionCredentialManager credentialManager;
     private final PrintStream out;
     private final PrintStream err;
     private Commands currentCommands = null;
     private boolean interactive = false;
     private SsgManagerImpl ssgManager = null;
-    private boolean unsavedChanges = false;
-    private List runOnSave = new ArrayList();
 
     public CommandSession(final PrintStream out, final PrintStream err) {
         if (out == null || err == null) throw new NullPointerException();
         this.out = out;
         this.err = err;
+        this.credentialManager = new CommandSessionCredentialManager(this);
+    }
+
+    /**
+     * @return the credential manager attached to this session.  Never null.
+     */
+    public CommandSessionCredentialManager getCredentialManager() {
+        return credentialManager;
     }
 
     /** @return true if this session is running in interactive command mode. */
@@ -53,8 +60,6 @@ class CommandSession {
         if (ssgManager == null) {
             ssgManager = SsgManagerImpl.getSsgManagerImpl();
             ssgManager.load();
-            runOnSave.clear();
-            unsavedChanges = false;
         }
         return ssgManager;
     }
@@ -127,13 +132,12 @@ class CommandSession {
         if (!isInteractive() && !command.isOneshot())
             throw new CommandException("Command '" + command.getName() + "' is not available in command line mode");
 
-        // Execute global command (verb.object) 
+        // Execute global command (verb.object)
         command.execute(this, out, args);
     }
 
     /** Quit an interactive mode session. */
     public void quit() {
-        if (unsavedChanges) out.println("Discarding unsaved configuration changes");
         setInteractive(false);
     }
 
@@ -172,7 +176,11 @@ class CommandSession {
      * The changed config file won't be saved until saveChanges() is called.
      */
     public void onChangesMade() {
-        unsavedChanges = true;
+        try {
+            saveConfig();
+        } catch (IOException e) {
+            err.println("Error: unable to save configuration: " + ExceptionUtils.getMessage(e));
+        }
     }
 
     /**
@@ -180,51 +188,5 @@ class CommandSession {
      */
     public void saveConfig() throws IOException {
         getSsgManager().save();
-        for (Iterator i = runOnSave.iterator(); i.hasNext();) {
-            Runnable runnable = (Runnable)i.next();
-            try {
-                runnable.run();
-            } catch (RuntimeException e) {
-                err.println("Warning: error while saving: " + ExceptionUtils.getMessage(e));
-            }
-        }
-        runOnSave.clear();
-        unsavedChanges = false;
-        out.println("Configuration saved to " + ssgManager.getStorePath());
-    }
-
-    /**
-     * Saves all changes made to the current ssgManager, but only if the unsavedChanges flag is on.
-     * @throws IOException
-     */
-    public void saveUnsavedChanges() throws IOException {
-        if (unsavedChanges) saveConfig();
-    }
-
-    /**
-     * Forgets any changes and reloads ssgManager from the config file.
-     */
-    public void rollback() {
-        getSsgManager();
-        if (unsavedChanges) out.println("Discarding unsaved configuration changes");
-        ssgManager.load();
-        out.println("Configuration reloaded from " + ssgManager.getStorePath());
-        runOnSave.clear();
-        unsavedChanges = false;
-    }
-
-    /** @return true if the unsaved changes flag is on. */
-    public boolean isUnsavedChanges() {
-        return unsavedChanges;
-    }
-
-    /**
-     * Register a Runnable to be executed after the next time the configuration file is saved.
-     * This can be used to defer truststore delete etc. for deleted SSGs.
-     *
-     * @param runnable
-     */
-    public void addRunOnSave(Runnable runnable) {
-        runOnSave.add(runnable);
     }
 }

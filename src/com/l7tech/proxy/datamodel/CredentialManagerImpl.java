@@ -30,7 +30,6 @@ public class CredentialManagerImpl extends CredentialManager {
     }
 
     public PasswordAuthentication getCredentials(Ssg ssg)
-            throws OperationCanceledException
     {
         PasswordAuthentication pw = ssg.getRuntime().getCredentials();
         return pw;

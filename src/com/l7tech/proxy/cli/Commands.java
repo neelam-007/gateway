@@ -26,7 +26,6 @@ class Commands extends Words {
             new DeleteCommand(),
             new QuitCommand(),
             new SaveCommand(),
-            new RollbackCommand(),
     };
 
     private static final Commands GLOBAL_COMMANDS = new Commands();
@@ -60,22 +59,7 @@ class Commands extends Words {
         }
 
         public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-            if (!session.isUnsavedChanges()) {
-                session.quit();
-                return;
-            }
-
-            // There's unsaved changes -- have to save or rollback first.
-            if ((args != null && args.length >= 1)) {
-                Command cmd = (Command)session.getCommands().getByPrefix(args[0]);
-                if (cmd instanceof RollbackCommand || cmd instanceof SaveCommand) {
-                    cmd.execute(session, out, args);
-                    session.quit();
-                    return;
-                }
-            }
-
-            throw new CommandException("You have unsaved changes -- please use either 'quit save' or 'quit rollback'.");
+            session.quit();
         }
     }
 
@@ -91,17 +75,6 @@ class Commands extends Words {
             } catch (IOException e) {
                 throw new CommandException("Unable to save changes: " + ExceptionUtils.getMessage(e), e);
             }
-        }
-    }
-
-    private static class RollbackCommand extends Command {
-        protected RollbackCommand() {
-            super("rollback", "Reload config file, discarding changes");
-            setMinAbbrev(4);
-        }
-
-        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-            session.rollback();
         }
     }
 }

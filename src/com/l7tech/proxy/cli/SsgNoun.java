@@ -6,19 +6,14 @@
 package com.l7tech.proxy.cli;
 
 import com.l7tech.common.util.ArrayUtils;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TextUtils;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.PasswordAuthentication;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -28,8 +23,8 @@ import java.util.List;
  */
 class SsgNoun extends Noun {
     private final CommandSession session;
-    private final Ssg ssg;
-    private final Words properties;
+    final Ssg ssg;
+    final Words properties;
     private final Commands specialCommands;
 
     private static final SsgNoun EXAMPLE = new SsgNoun(null, new Ssg(0));
@@ -40,113 +35,17 @@ class SsgNoun extends Noun {
         this.ssg = inssg;
         properties = new Words(Arrays.asList(new NounProperty[] {
                 new NounProperty(ssg, "hostname", "SsgAddress", "Hostname or IP address of SecreSpan Gateway"),
-
                 new NounProperty(ssg, "username", "Username", "Username of account on this Gateway"),
-
-                new NounProperty(ssg.getRuntime(), "password", "CachedPassword", "Password of account on this Gateway") {
-                    public void printValue(PrintStream out, boolean singleLine) {
-                        char[] pass = (char[])getValue();
-                        if (pass == null) {
-                            out.print("<not yet set>");
-                        } else {
-                            if (pass.length < 1)
-                                out.print("<empty password>");
-                            else
-                                out.print("<present but not shown>");
-                        }
-                        if (!singleLine) out.println();
-                    }
-
-                    protected Object getValue() {
-                        PasswordAuthentication creds = ssg.getRuntime().getCredentials();
-                        return creds == null ? null : creds.getPassword();
-                    }
-
-                    public void set(String[] args) throws CommandException {
-                        if (args == null || args.length < 1 || args[0] == null)
-                            throw new CommandException("Password must be specified.");
-                        ssg.getRuntime().setCachedPassword(args[0].toCharArray());
-                    }
-                },
-
+                new PasswordProperty(),
                 new NounProperty(ssg, "chainCredentials", "ChainCredentialsFromClient", "Chain credentials from client (HTTP Basic)"),
-
                 new NounProperty(ssg, "savePassword", "SavePasswordToDisk", "Save the password in the configuration file"),
-
                 new NounProperty(ssg, "defaultSsl", "UseSslByDefault", "Use SSL for initial request, and unless policy says otherwise"),
-
-                new NounProperty(ssg, "serverCert", "ServerCertificate", "Gateway X.509 SSL certificate") {
-                    public void printValue(PrintStream out, boolean singleLine) {
-                        X509Certificate cert = (X509Certificate)getValue();
-
-                        if (cert == null) {
-                            out.print("<not yet discovered>");
-                            if (!singleLine) out.println();
-                            return;
-                        }
-
-                        if (singleLine) {
-                            out.print(cert.getSubjectDN().getName());
-                            return;
-                        }
-
-                        try {
-                            out.println(CertUtils.toString(cert));
-                        } catch (CertificateEncodingException e) {
-                            out.println("<certificate damaged>"); // can't happen
-                        }
-                    }
-                },
-
-                new NounProperty(ssg, "clientCert", "ClientCertificate", "Bridge X.509 client ceritifcate") {
-                    public void printValue(PrintStream out, boolean singleLine) {
-                        final boolean m = !singleLine;
-                        X509Certificate clientCert = (X509Certificate)getValue();
-                        if (clientCert == null) {
-                            out.print("<none>");
-                            if (m) out.println();
-                            return;
-                        } else {
-                            if (singleLine) {
-                                out.print(clientCert.getSubjectDN().getName());
-                            } else {
-                                try {
-                                    out.println(CertUtils.toString(clientCert));
-                                } catch (CertificateEncodingException e) {
-                                    out.println("<certificate damaged>"); // can't happen
-                                }
-                            }
-                            try {
-                                boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
-                                out.print(' ');
-                                if (haveKey) {
-                                    out.print("<private key ready>");
-                                } else {
-                                    out.print("<private key locked>");
-                                }
-                            } catch (KeyStoreCorruptException e) {
-                                out.print("<private key unavailable>");
-                            }
-                            if (m) out.println();
-                        }
-                    }
-                },
+                new ServerCertProperty(this),
+                new ClientCertProperty(this),
         }));
 
         this.specialCommands = new Commands(Arrays.asList(new Command[] {
-                new Command("discover", "Discover Gateway SSL certificate") {
-                    public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-                        try {
-                            // TODO instead of committing here, defer the trust store creation until commit
-                            session.saveUnsavedChanges();
-
-                            PasswordAuthentication creds = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
-                            ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, creds);
-                        } catch (Exception e) {
-                            throw new CommandException("Server certificate discovery failed: " + ExceptionUtils.getMessage(e), e);
-                        }
-                    }
-                },
+                new DiscoverCommand(this),
         }));
     }
 
@@ -244,31 +143,19 @@ class SsgNoun extends Noun {
             }
         }
 
+        ssg.setTrustedGateway(null); // break federation prior to removing key stores
+        ssg.setWsTrustSamlTokenStrategy(null); // break federation prior to removing key stores TODO fix hack
+        final File kf = ssg.getKeyStoreFile();
+        final File ts = ssg.getTrustStoreFile();
+        final boolean haveKf = kf.exists();
+        final boolean haveTs = ts.exists();
         try {
-            if (!ssg.isFederatedGateway()) {
-                final File kf = ssg.getKeyStoreFile();
-                final File ts = ssg.getTrustStoreFile();
-                session.addRunOnSave(new Runnable() {
-                    public void run() {
-                        boolean wasKf = kf.exists();
-                        boolean wasTs = ts.exists();
-                        if (ssg.getRuntime().getSsgKeyStoreManager().deleteStores()) {
-                            if (wasKf) out.println((kf.exists() ? "Failed to delete " : "Deleted ") + kf);
-                            if (wasTs) out.println((ts.exists() ? "Failed to delete " : "Deleted ") + ts);
-                        }
-                    }
-                });
-                final boolean haveKf = kf.exists();
-                final boolean haveTs = ts.exists();
-                if (haveKf || haveTs) {
-                    out.println("Will delete the following file" + (haveKf && haveTs ? "s" : "")
-                            + " when changes are saved:");
-                    out.println("    " + kf);
-                    out.println("    " + ts);
-                }
-            }
             session.getSsgManager().remove(ssg);
             session.onChangesMade();
+            if (ssg.getRuntime().getSsgKeyStoreManager().deleteStores()) {
+                if (haveKf) out.println((kf.exists() ? "Failed to delete " : "Deleted ") + kf);
+                if (haveTs) out.println((ts.exists() ? "Failed to delete " : "Deleted ") + ts);
+            }
         } catch (SsgNotFoundException e) {
             // Was it already removed in the meantime?  Oh well.  We'll eat this and just not delete it.
         }
@@ -329,4 +216,40 @@ class SsgNoun extends Noun {
             "                  create gateway ssg.example.com testuser secret\n" +
             "                  set gateway1 password\n" +
             "                  delete g3";
+
+
+    /**
+     * Property representing cached password.
+     */
+    private class PasswordProperty extends NounProperty {
+        public PasswordProperty() {
+            super(SsgNoun.this.ssg.getRuntime(), "password", "CachedPassword", "Password of account on this Gateway");
+        }
+
+        public void printValue(PrintStream out, boolean singleLine) {
+            char[] pass = (char[])getValue();
+            if (pass == null) {
+                out.print("<not yet set>");
+            } else {
+                if (pass.length < 1)
+                    out.print("<empty password>");
+                else
+                    out.print("<present but not shown>");
+            }
+            if (!singleLine) out.println();
+        }
+
+        protected Object getValue() {
+            PasswordAuthentication creds = ssg.getRuntime().getCredentials();
+            return creds == null ? null : creds.getPassword();
+        }
+
+        public void set(String[] args) throws CommandException {
+            if (args == null || args.length < 1 || args[0] == null)
+                throw new CommandException("Password must be specified.");
+            ssg.getRuntime().setCachedPassword(args[0].toCharArray());
+        }
+    }
+
+
 }
