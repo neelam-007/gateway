@@ -6,21 +6,19 @@
 package com.l7tech.proxy.cli;
 
 import com.l7tech.common.util.ArrayUtils;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.proxy.util.SslUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
-import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
 
 /**
  * Configuration noun referring to an Ssg instance.
@@ -51,9 +49,10 @@ class SsgNoun extends Noun {
 
         this.specialCommands = new Commands(Arrays.asList(new Command[] {
                 new DiscoverCommand(this),
-                new RequestCommand(),
-                new ChangePassCommand(),
-                new ImportCommand(),
+                new RequestCommand(this),
+                new ChangePassCommand(this),
+                new ImportCommand(this),
+                new CopyToCommand(this),
         }));
     }
 
@@ -72,15 +71,6 @@ class SsgNoun extends Noun {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(baos);
         EXAMPLE.printProperties(out);
-        out.close();
-        return baos.toString();
-    }
-
-    /** @return the "Special Commands:" table as a String. */
-    public static String getSpecialCommandsText() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(baos);
-        EXAMPLE.printSpecialCommands(out);
         out.close();
         return baos.toString();
     }
@@ -122,9 +112,28 @@ class SsgNoun extends Noun {
         printSpecialCommands(out);
         out.println();
         out.println(EXAMPLE_COMMANDS);
+        out.println("\nUse 'help " + getName() + " <command>' for help about a special command.");
 
         out.close();
         return baos.toString();
+    }
+
+    public void printHelp(PrintStream out, String[] args) throws CommandException {
+        if (args != null && args.length > 0 && args[0] != null && args[0].length() > 0) {
+            // Check for help about a property or special command
+            String wordstr = args[0];
+            args = ArrayUtils.shift(args);
+            Word word = specialCommands.getByName(wordstr);
+            if (word == null) word = properties.getByName(wordstr);
+            if (word == null) word = specialCommands.getByPrefix(wordstr);
+            if (word == null) word = properties.getByPrefix(wordstr);
+            if (word == null)
+                throw new CommandException(getName() + " has no property or special command matching '" + wordstr + "'\n\n" +
+                "Use 'help " + getName() + "' for a list of properties and special commands for " + getName() + ".");
+            word.printHelp(out, args);
+            return;
+        }
+        super.printHelp(out, args);
     }
 
     public void create(PrintStream out, String[] args) throws CommandException {
@@ -143,12 +152,20 @@ class SsgNoun extends Noun {
             return;
         }
 
-        if (ssg.getClientCertificate() != null) {
-            if (args == null || args.length < 1 || !args[0].equalsIgnoreCase("force")) {
-                out.println(getName() + " has a client certificate.  Deleting this gateway will destroy");
-                out.println("this certificate and private key.  To proceed, use 'delete " + getName() + " force'");
-                return;
-            }
+        X509Certificate clientCert = null;
+        try {
+            clientCert = getClientCert();
+        } catch (CommandException e) {
+            // Corrupt keystore.  We'll ignore this, since the admin appears to be trying to delete it anyway.
+            clientCert = null;
+        }
+
+        if (clientCert != null &&
+                (args == null || args.length < 1 || !args[0].equalsIgnoreCase("force")))
+        {
+            throw new CommandException(
+                    getName() + " has a client certificate.  Deleting this gateway will destroy" +
+                            "this certificate and private key.  To proceed, use 'delete " + getName() + " force'");
         }
 
         ssg.setTrustedGateway(null); // break federation prior to removing key stores
@@ -177,6 +194,56 @@ class SsgNoun extends Noun {
         if (prop == null) throw new CommandException("Unknown property '" + propertyName + "'.  Use 'help " + getName() + "' for a list.");
 
         prop.set(args);
+    }
+
+    /**
+     * Safely get the server cert, detecting if the certsNNN file is corrupt and reporting a useful error message
+     * instead of a stactrace-triggering RuntimeException.
+     *
+     * @return the server cert for ssg, or null if none has been discovered.
+     * @throws CommandException if the certsNNN file is corrupt
+     */
+    X509Certificate getServerCert() throws CommandException {
+        X509Certificate serverCert;
+        try {
+            serverCert = ssg.getServerCertificate();
+        } catch (RuntimeException e) {
+            // The only expected way to fail to get the server cert is if the certsNNN.p12 file is corrupt
+            if (ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class))
+                throw new CommandException("Bad current password, or certs or keys file is corrupt for " +
+                                           getName() + ": " + ExceptionUtils.getMessage(e) + "\n\n" +
+                                           "Use '" + getName() + " delete' to delete these key stores.",
+                                           e);
+
+            // Nope.. who knows what happened.  Throw up to trigger internal error report.
+            throw e;
+        }
+        return serverCert;
+    }
+
+    /**
+     * Safely get the server cert, detecting if the certsNNN file is corrupt and reporting a useful error message
+     * instead of a stactrace-triggering RuntimeException.
+     *
+     * @return the client cert for ssg, or null if none has been discovered.
+     * @throws CommandException if the certsNNN or keysNNN file is corrupt, or possibly the password is incorrect
+     */
+    X509Certificate getClientCert() throws CommandException {
+        X509Certificate clientCert;
+        try {
+            clientCert = ssg.getServerCertificate();
+        } catch (RuntimeException e) {
+            // The only expected way to fail to get the server cert is if the certsNNN.p12 file is corrupt
+            if (ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class))
+                throw new CommandException("Bad current password, or certs or keys file is corrupt for " +
+                                           getName() + ": " + ExceptionUtils.getMessage(e) + "\n\n" +
+                                           "Use '" + getName() + " delete' to delete these key stores.",
+                                           e);
+
+            // Nope.. who knows what happened.  Throw up to trigger internal error report.
+            throw e;
+        }
+        return clientCert;
     }
 
     // Display all relevant info about this noun to the specified output stream.
@@ -297,101 +364,4 @@ class SsgNoun extends Noun {
         }
     }
 
-    private class RequestCommand extends Command {
-        public RequestCommand() {
-            super("request", "Request client certificate");
-        }
-
-        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-            if (args == null || args.length < 1 || args[0].length() < 1)
-                throw new CommandException("Usage: " + SsgNoun.this.getName() + " request clientCert\n\n" +
-                                           "Requires that a username and password be configured.");
-
-            PasswordAuthentication creds = ssg.getRuntime().getCredentials();
-            if (creds == null)
-                throw new CommandException("To apply for a client certificate, first set a username and password:\n" +
-                                           "    " + SsgNoun.this.getName() + " set username alice\n" +
-                                           "    " + SsgNoun.this.getName() + " set password s3cr3t");
-
-            if (ssg.getServerCertificate() == null) {
-                session.getOut().println("Attempting automatic server certificate discovery...");
-                new DiscoverCommand(SsgNoun.this).execute(session, out, new String[] { "serverCert" });
-            }
-
-            try {
-                ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(creds);
-                session.onChangesMade();
-                out.println("Now using client certificate with DN: " + ssg.getClientCertificate().getSubjectDN().getName());
-            } catch (BadCredentialsException e) {
-                throw new CommandException("Gateway indicates invalid current credentials (bad password? missing cert?)", e);
-            } catch (CertificateAlreadyIssuedException e) {
-                throw new CommandException("The Gateway has already issued a certificate to this account.  Please use\n" +
-                                           "a different account, or have the Gateway administrator revoke the old cert");
-            } catch (Exception e) {
-                throw new CommandException("Unable to obtain client certificate: " + ExceptionUtils.getMessage(e), e);
-            }
-        }
-    }
-
-    private class ChangePassCommand extends Command {
-        public ChangePassCommand() {
-            super("changePass", "Ask Gateway to change password and revoke client cert");
-        }
-
-        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-            if (args == null || args.length < 1 || args[0].length() < 1)
-                throw new CommandException("Usge: " + SsgNoun.this.getName() + " changePass <new password>");
-
-            PasswordAuthentication oldpass = ssg.getRuntime().getCredentials();
-            if (oldpass == null) {
-                throw new CommandException("To change your password, first set a username and existing password:\n" +
-                                           "    " + SsgNoun.this.getName() + " set username alice\n" +
-                                           "    " + SsgNoun.this.getName() + " set password s3cr3t");
-            }
-
-            try {
-                final char[] newpass = args[0].toCharArray();
-                SslUtils.changePasswordAndRevokeClientCertificate(ssg,
-                                                                  oldpass.getUserName(),
-                                                                  oldpass.getPassword(),
-                                                                  newpass);
-                ssg.getRuntime().setCachedPassword(newpass);
-                ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
-
-            } catch (IOException e) {
-                throw new CommandException("Unable to change password and revoke client cert: " + ExceptionUtils.getMessage(e), e);
-            } catch (BadCredentialsException e) {
-                throw new CommandException("Gateway indicates invalid current credentials (bad password? missing cert?)", e);
-            } catch (BadPasswordFormatException e) {
-                throw new CommandException("Gateway rejected the new password (too short?)", e);
-            } catch (SslUtils.PasswordNotWritableException e) {
-                throw new CommandException("Gateway is unable to change the password for this account", e);
-            } catch (KeyStoreCorruptException e) {
-                throw new CommandException("Unable to revoke client certificate -- keystore damaged: " + ExceptionUtils.getMessage(e), e);
-            } catch (KeyStoreException e) {
-                throw new RuntimeException(e); // shouldn't happen
-            } finally {
-                session.onChangesMade();
-            }
-
-        }
-    }
-
-    private class ImportCommand extends Command {
-        protected ImportCommand() {
-            super("import", "Import a client or server certificate");
-        }
-
-        public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {
-            if (args == null || args.length < 2 || args[0] == null || args[1] == null)
-                throw new CommandException("Usage: " + SsgNoun.this.getName() + " import serverCert <path of PEM or DER file>\n" +
-                                           "       " + SsgNoun.this.getName() + " import clientCert <path of PKCS#12 file> <pass phrase> [<alias>]");
-
-            try {
-                throw new CommandException("Not yet implemented");
-            } finally {
-                session.onChangesMade();
-            }
-        }
-    }
 }

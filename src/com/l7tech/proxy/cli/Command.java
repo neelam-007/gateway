@@ -5,6 +5,8 @@
 
 package com.l7tech.proxy.cli;
 
+import com.l7tech.common.util.TextUtils;
+
 import java.io.PrintStream;
 
 /**
@@ -71,5 +73,12 @@ abstract class Command extends Word {
         if (noun == null)
             throw new CommandException("Unrecognized object '" + args[0] + "'.  Type 'help' for more information.");
         return noun;
+    }
+
+    protected void printHeaderLine(PrintStream out, String header) {
+        out.print(TextUtils.pad(header, 55));
+        out.print(TextUtils.pad("Cmdline:" + (isOneshot()?'Y':'N'), 10));
+        out.print(TextUtils.pad("Interactive:" + (isInteractive()?'Y':'N'), 14));
+        out.println();
     }
 }

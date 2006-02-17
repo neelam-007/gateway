@@ -5,6 +5,8 @@
 
 package com.l7tech.proxy.cli;
 
+import java.io.PrintStream;
+
 /**
  * Represents either a command or a configuration noun in the Bridge CLI.
  */
@@ -38,7 +40,8 @@ class Word {
         if (name.length() < 1 || desc.length() < 1) throw new IllegalArgumentException();
         this.name = name;
         this.desc = desc;
-        setHelpText(helpText);
+        if (helpText != null)
+            setHelpText(helpText);
     }
 
     /**
@@ -63,14 +66,6 @@ class Word {
         this.minAbbrev = minAbbrev;
     }
 
-    public String getHelp() {
-        return help;
-    }
-
-    public void setHelp(String help) {
-        this.help = help;
-    }
-
     /** @return the name of this word, ie "show". Never null or empty. */
     public String getName() {
         return name;
@@ -87,4 +82,25 @@ class Word {
     public String getHelpText() {
         return help;
     }
+
+    /**
+     * Print the header line.  Subclasses might override this to add additional info to the header line.
+     */
+    protected void printHeaderLine(PrintStream out, String header) {
+        out.println(header);
+    }
+
+    /**
+     * Print a multiline help page to the specified PrintStream.
+     *
+     * @param out the stream to which the help should be printed.  Must not be null.
+     * @param args extra arguments to request more specific help.  May be null or empty.
+     */
+    public void printHelp(PrintStream out, String[] args) throws CommandException {
+        String header = getName() + " - " + getDesc();
+        printHeaderLine(out, header);
+        out.println();
+        out.println(getHelpText());
+    }
+
 }

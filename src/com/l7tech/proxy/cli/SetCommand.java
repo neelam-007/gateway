@@ -17,10 +17,8 @@ class SetCommand extends Command {
         super("set", "Set an object property");
         setMinAbbrev(2);
         setHelpText("The set command changes the properties of an object.\n" +
-                "You can get a description of the properties for an object with 'help <object>'.\n" +
-                "You can see the current values of the properties for an object with 'show <object>'.\n" +
-                "In interactive mode, a setter may prompt for additional information (like passwords).\n" +
-                "For some other properties, the value may be omitted.\n" +
+                "Use 'help <object>' for a description of the properties for an object.\n" +
+                "You can see the current values of the properties with 'show <object>'.\n" +
                 "\n" +
                 "        Usage: <object> set <property> <value>\n" +
                 "               <object> set <property>\n" +

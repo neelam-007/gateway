@@ -175,12 +175,13 @@ public class SslUtils {
      * @param caCert  the cert of the CA that is supposed to be signing the request
      * @return
      * @throws IOException                  if there is a network problem talking to the CSR signing service
-     * @throws CertificateException         if the post to the CSR signer results in a status other than 200 (or 401)
+     * @throws CertificateException         if the post to the CSR signer results in a status other than 200, 401, or 403
      * @throws NoSuchAlgorithmException     if one of the keys uses an algorithm that isn't installed
      * @throws InvalidKeyException          if one of the keys is invalid
      * @throws NoSuchProviderException      if no X.509 cert provider is installed (can't happen)
      * @throws SignatureException           if the resulting cert was not signed by the correct CA key
      * @throws BadCredentialsException if the username or password was rejected by the CSR signer
+     * @throws CertificateAlreadyIssuedException if the Gateway has already issued a certificate for this account
      */
     public static X509Certificate obtainClientCertificate(Ssg ssg, String username, char[] password,
                                                           CertificateRequest csr,
@@ -225,5 +226,4 @@ public class SslUtils {
 
          return cert;
     }
-
 }

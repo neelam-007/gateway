@@ -15,10 +15,7 @@ import com.l7tech.proxy.ssl.SslPeer;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Credential manager for use in the interactive Bridge command line configurator.

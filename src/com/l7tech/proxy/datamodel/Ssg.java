@@ -2,6 +2,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
@@ -12,10 +13,16 @@ import com.l7tech.proxy.ssl.SslPeer;
 
 import javax.net.ssl.SSLContext;
 import javax.swing.*;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
@@ -77,6 +84,50 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private transient SsgRuntime runtime = new SsgRuntime(this);
     private transient X509Certificate lastSeenPeerCertificate = null;
     private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
+
+    /**
+     * Copy all persistent (non-Runtime) settings from that Ssg into this Ssg (except Id), overwriting this Ssg's
+     * previous state.  Afterward, this Ssg's Runtime, listeners, and other transient state will be reset.
+     * Caller is responsibile for ensuring that any necessary external state is kept in sync (ie, keystore files
+     * needed by the Runtime's keystore manager, and which need to have pass phrases matching the persistent
+     * password, if any).
+     *
+     * @param that   the Ssg from which we will copy our settings.
+     */
+    public void copyFrom(Ssg that) {
+        try {
+            BeanInfo stuff = Introspector.getBeanInfo(Ssg.class);
+            PropertyDescriptor[] props = stuff.getPropertyDescriptors();
+            for (int i = 0; i < props.length; i++) {
+                PropertyDescriptor prop = props[i];
+                if ("id".equalsIgnoreCase(prop.getName())) continue; // don't copy the Id
+                if ("defaultssg".equalsIgnoreCase(prop.getName())) continue; // don't change the default SSG
+                Method getter = prop.getReadMethod();
+                Method setter = prop.getWriteMethod();
+                if (getter != null && setter != null) {
+                    try {
+                        Object value = getter.invoke(that, new Object[0]);
+                        setter.invoke(this, new Object[] { value });
+                    } catch (IllegalAccessException e) {
+                        // Ignore this and continue
+                        log.log(Level.FINE, "Warning: unable to copy Ssg property: " + prop.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    } catch (InvocationTargetException e) {
+                        // Ignore this and continue
+                        log.log(Level.FINE, "Warning: unable to copy Ssg property: " + prop.getName() + ": " + ExceptionUtils.getMessage(e), e);
+                    }
+                }
+            }
+        } catch (IntrospectionException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+
+        // Reset local endpoint
+        this.localEndpoint = null;
+
+        // Reset transients (except listeners)
+        this.runtime = new SsgRuntime(this);
+        this.lastSeenPeerCertificate = null;
+    }
 
     /**
      * Get the {@link SsgRuntime} for this Ssg, providing access to behaviour, strategies, and transient settings.

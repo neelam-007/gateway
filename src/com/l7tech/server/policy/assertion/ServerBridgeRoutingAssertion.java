@@ -713,6 +713,10 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             throw new UnsupportedOperationException("Gateway does not have an accessible cert store file");
         }
 
+        public void importServerCertificate(File file) {
+            throw new UnsupportedOperationException("Gateway is unable to import a server certificate");
+        }
+
         public void importClientCertificate(File certFile, char[] pass, AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException("Gateway is unable to import a client certificate");
         }

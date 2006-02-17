@@ -24,12 +24,27 @@ class ServerCertProperty extends NounProperty {
         this.ssgNoun = ssgNoun;
     }
 
-    public void printValue(PrintStream out, boolean singleLine) {
-        X509Certificate cert = (X509Certificate)getValue();
+    public void printValue(PrintStream out, boolean singleLine)
+    {
+        final boolean m = !singleLine;
+        final X509Certificate cert;
+        try {
+            cert = (X509Certificate)getValue();
+        } catch (RuntimeException e) {
+            // The only expected way to fail to get the server cert is if the certsNNN.p12 file is corrupt
+            if (ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class)) {
+                out.print("<certs file damaged>");
+                if (m) out.println();
+                return;
+            }
+
+            // Nope.. who knows what happened.  Throw up to trigger internal error report.
+            throw e;
+        }
 
         if (cert == null) {
             out.print("<not yet discovered>");
-            if (!singleLine) out.println();
+            if (m) out.println();
             return;
         }
 

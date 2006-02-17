@@ -52,6 +52,7 @@ class Commands extends Words {
     private static class QuitCommand extends Command {
         public QuitCommand() {
             super("quit", "Quit interactive mode", true, false);
+            setHelpText("Use this command to end an interactive session.");
         }
 
         public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {

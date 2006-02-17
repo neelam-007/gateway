@@ -24,9 +24,12 @@ class GatewaysNoun extends Noun {
         super("gateways", "The set of all configured Gateway Accounts");
         if (session == null) throw new NullPointerException();
         this.session = session;
-        setHelpText(SsgNoun.getOverviewHelpText() + "\n\nUse 'show gateways' to list the available gateways, 'show gateway5' (or 'sh g5') to show\n" +
-                    "just Gateway Account #5, and 'create gateway' to create a new Gateway Account.\n\n" +
-                    SsgNoun.getPropertiesText() + "\n" + SsgNoun.getSpecialCommandsText());
+        setHelpText(SsgNoun.getOverviewHelpText() +
+                "\n\nUse 'show gateways' to list the available gateways, 'show gateway5'\n" +
+                "(or 'sh g5') to show just Gateway Account #5, and 'create gateway' to create\n" +
+                "a new Gateway Account.\n\n" +
+                    "Use 'help gatewayN' (where N is a positive integer) for information about\n" +
+                    "properties and special commands available for Gateway Account #N.");
     }
 
     // Display all relevant info about this noun to the specified output stream.
@@ -39,11 +42,17 @@ class GatewaysNoun extends Noun {
             return;
         }
 
-        out.println("Proxy      Hostname                         Type      User Name");
-        out.println("========== ================================ ========= =================");
+        out.println(" Proxy      Hostname                         Type      User Name");
+        out.println(" ========== ================================ ========= =================");
 
+        boolean sawDefault = false;
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
             Ssg ssg = (Ssg)i.next();
+            if (ssg.isDefaultSsg()) {
+                out.print('*');
+                sawDefault = true;
+            } else
+                out.print(' ');
             out.print(TextUtils.pad(ssg.getLocalEndpoint(), 10));
             out.print(' ');
             out.print(TextUtils.pad(ssg.getSsgAddress(), 32));
@@ -53,6 +62,7 @@ class GatewaysNoun extends Noun {
             out.print(TextUtils.pad(ssg.getUsername(), 17));
             out.println();
         }
+        if (sawDefault) out.println("\n* Default Gateway Account");
     }
 
     public void create(PrintStream out, String[] args) throws CommandException {

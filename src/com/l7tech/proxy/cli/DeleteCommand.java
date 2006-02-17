@@ -17,7 +17,6 @@ class DeleteCommand extends Command {
         super("delete", "Delete an object and all its properties");
         setMinAbbrev(3);
         setHelpText("The delete command can destroy an object.\n" +
-                "Unlike other commands, for delete, the object name must be spelled out in full.\n" +
                 "\n" +
                 "        Usage: delete <object>\n" +
                 "\n" +

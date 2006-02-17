@@ -36,4 +36,21 @@ public class SsgTest extends TestCase {
         Ssg ssg = new Ssg();
         assertTrue(ssg.getLocalEndpoint().length() > 0);
     }
+
+    public void testCopyFrom() throws Exception {
+        Ssg ssgA = new Ssg(1);
+        Ssg ssgB = new Ssg(2);
+        ssgA.setSsgAddress("blah.blah.blah");
+        ssgB.setSsgAddress("foo.foo.foo");
+        ssgB.setSavePasswordToDisk(true);
+        ssgB.setOverrideIpAddresses(new String[] {"1.2.3.4", "4.5.6.7"});
+
+        ssgA.copyFrom(ssgB);
+
+        assertEquals(ssgA.getSsgAddress(), "foo.foo.foo");
+        assertEquals(1, ssgA.getId());
+        assertEquals(2, ssgB.getId());
+        assertEquals("1.2.3.4", ssgA.getOverrideIpAddresses()[0]);
+
+    }
 }

@@ -28,7 +28,21 @@ class ClientCertProperty extends NounProperty {
 
     public void printValue(PrintStream out, boolean singleLine) {
         final boolean m = !singleLine;
-        X509Certificate clientCert = (X509Certificate)getValue();
+        final X509Certificate clientCert;
+        try {
+            clientCert = (X509Certificate)getValue();
+        } catch (RuntimeException e) {
+            // The only expected way to fail to get the client cert itself is if the certsNNN.p12 file is corrupt
+            if (ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class)) {
+                out.print("<certs file damaged>");
+                if (m) out.println();
+                return;
+            }
+
+            // Nope.. who knows what happened.  Throw up to trigger internal error report.
+            throw e;
+        }
+
         if (clientCert == null) {
             out.print("<none>");
             if (m) out.println();
@@ -50,7 +64,8 @@ class ClientCertProperty extends NounProperty {
                 } catch (BadCredentialsException e) {
                     // Ok, fair enough -- just checking
                 } catch (RuntimeException e) {
-                    if (!ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class)) throw e;
+                    if (!ExceptionUtils.causedBy(e, CommandSessionCredentialManager.BadKeystoreException.class))
+                        throw e;
                     // Ok, fair enough -- just checking
                 }
 
@@ -80,6 +95,8 @@ class ClientCertProperty extends NounProperty {
                 }
             }
         }
+
+
     }
 
     public void set(String[] args) throws CommandException {

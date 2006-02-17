@@ -11,6 +11,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -328,6 +329,21 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             ssg.getRuntime().trustStore(trustStore);
         }
         return ssg.getRuntime().trustStore();
+    }
+
+    public void importServerCertificate(File file) throws
+            IOException, CertificateException, KeyStoreCorruptException, KeyStoreException
+    {
+        InputStream fis = null;
+        try {
+            fis = new FileInputStream(file);
+            byte[] fileBytes = HexUtils.slurpStream(fis);
+            X509Certificate cert = CertUtils.decodeCert(fileBytes);
+            this.saveSsgCertificate(cert);
+        } finally {
+            if (fis != null) //noinspection EmptyCatchBlock
+                try { fis.close(); } catch (IOException e) {}
+        }
     }
 
     /**

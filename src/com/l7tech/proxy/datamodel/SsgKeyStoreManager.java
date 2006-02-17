@@ -240,6 +240,17 @@ public abstract class SsgKeyStoreManager {
         }
     }
 
+    /**
+     * Manually import the server certificate for the specified Ssg from the specified file.
+     * If this method returns, the certificate was imported successfully.
+     * @param file the File from which to import the cert.  May be in PEM or DER format.  Must not be null.
+     * @throws IOException               if the file can't be read
+     * @throws CertificateException      if the certificate can't be parsed
+     * @throws KeyStoreCorruptException  if our certs file is corrupt and in need of deletion
+     * @throws KeyStoreException         if the KeyStore driver failed "for some other reason"
+     */
+    public abstract void importServerCertificate(File file) throws IOException, CertificateException, KeyStoreCorruptException, KeyStoreException;
+
     /** Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file. */
     public static interface AliasPicker {
         /**

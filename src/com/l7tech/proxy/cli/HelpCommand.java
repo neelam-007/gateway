@@ -6,6 +6,7 @@
 package com.l7tech.proxy.cli;
 
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 
 import java.io.PrintStream;
@@ -21,11 +22,25 @@ class HelpCommand extends Command {
 
     protected HelpCommand() {
         super("help", "Show command usage information");
+                  //---------|---------|---------|---------|---------|---------|---------|       ||
+        setHelpText("The help command shows additional information about a global command, object,\n" +
+                    "property, or special command.\n" +
+                    "\n" +
+                    "    Usage: help\n" +
+                    "           help <global command>\n" +
+                    "           help <object>\n" +
+                    "           help <object> <property>\n" +
+                    "           help <object> <special command>\n" +
+                    "\n" +
+                    " Examples: help gateway1\n" +
+                    "           h g3 disco");
+
     }
 
-    public void execute(final CommandSession session, PrintStream out, String[] args) {
+    public void execute(final CommandSession session, PrintStream out, String[] args) throws CommandException {
         if (args != null && args.length > 0) {
             String wordStr = args[0];
+            args = ArrayUtils.shift(args);
 
             // Try to match a word or object
             final Commands sessionCommands = session.getCommands();
@@ -40,7 +55,7 @@ class HelpCommand extends Command {
 
             // If we matched one, show its help page and return
             if (word != null) {
-                printWordHelp(out, word);
+                word.printHelp(out, args);
                 return;
             }
 
@@ -49,13 +64,13 @@ class HelpCommand extends Command {
                 word = new Word("gatewayN",
                                 "Gateway Account #N (where N is a natural number)",
                                 SsgNoun.getGenericHelpText());
-                printWordHelp(out, word);
+                word.printHelp(out, args);
                 return;
             }
 
-            out.println("No help is available for '" + wordStr + "' -- it's not a recognized command or object.");
+            out.println("No help is available for '" + wordStr + "' -- it's not a global command or object.");
             if (session.isInteractive()) {
-                out.println("Type 'help' for a list of available commands and objects.\n");
+                out.println("Use 'help' for a list of global commands and objects.");
                 return;
             }
             out.println();
@@ -74,21 +89,6 @@ class HelpCommand extends Command {
         out.println("Most names can be abbreviated (i.e. 'show' to 'sh', or 'gateway17' to 'g17')");
         out.println("Objects may have extra commands of their own (i.e. 'gateway4 discover')");
         out.println("Use 'help <command>' or 'help <object>' for more information.");
-    }
-
-    private void printWordHelp(PrintStream out, Word word) {
-        String header = word.getName() + " - " + word.getDesc();
-        if (word instanceof Command) {
-            Command command = (Command)word;
-            out.print(TextUtils.pad(header, 55));
-            out.print(TextUtils.pad("Cmdline:" + (command.isOneshot()?'Y':'N'), 10));
-            out.print(TextUtils.pad("Interactive:" + (command.isInteractive()?'Y':'N'), 14));
-            out.println();
-        } else {
-            out.println(header);
-        }
-        out.println();
-        out.println(word.getHelpText());
     }
 
     private void printAvailableCommands(CommandSession session, PrintStream out) {

@@ -32,6 +32,18 @@ class DiscoverCommand extends Command {
     public DiscoverCommand(SsgNoun ssgNoun) {
         super("discover", "Discover Gateway SSL certificate");
         this.ssgNoun = ssgNoun;
+        setHelpText("This command attempts Gateway server certificate discovery. If a username and\n" +
+                    "password are configured for this Gateway Account, automatic verification\n" +
+                    "will be attempted using this password. Otherwise, or if automatic verification\n" +
+                    "fails, you can manually verify the server certificate by including on the\n" +
+                    "command line a leading portion of the certificate's MD5 or SHA-1 fingerprint,\n" +
+                    "expressed in hexadecimal.  The more of the fingerprint you provide, the\n" +
+                    "greater your assurance that the certificate is genuine.\n\n" +
+                    "   Usage: " + ssgNoun.getName() + " discover serverCert\n" +
+                    "          " + ssgNoun.getName() + " discover serverCert <thumbprint>\n\n" +
+                    "Examples: " + ssgNoun.getName() + " discover serverCert\n" +
+                    "          g5 disco serv 4d7721111be8b56c"
+        );
     }
 
     public void execute(CommandSession session, PrintStream realOut, String[] args) throws CommandException {
@@ -43,12 +55,15 @@ class DiscoverCommand extends Command {
         }
 
         if (prop == null || !prop.getName().startsWith("serverCert"))
-            throw new CommandException("Usage: " + ssgNoun.getName() + " discover serverCert [<thumbprint>]\n" +
-              "Include the thumbprint to force a cert to be trusted even if automatic verification fails.");
+            throw new CommandException("Usage: " + ssgNoun.getName() + " discover serverCert [<fingerprint>]\n" +
+              "Include the fingerprint to force a cert to be trusted even if automatic verification fails.");
 
         final CommandSessionCredentialManager credentialManager = session.getCredentialManager();
         final List failedCerts;
+
+        //noinspection UnusedAssignment - IDEA and javac differ in opinion about whether this can be final
         Exception caught = null;
+
         try {
             if (args.length > 0 && args[0].trim().length() > 0)
                 credentialManager.addTrustedServerCertThumbprint(args[0].trim());
@@ -107,7 +122,7 @@ class DiscoverCommand extends Command {
         {
             out.println("\nTo attempt automatic validation, first set both a username and password:");
             out.println("    " + ssgNoun.getName() + " set username alice");
-            out.print("    " + ssgNoun.getName() + " set password s3cr3t");
+            out.print(  "    " + ssgNoun.getName() + " set password s3cr3t");
         }
 
         out.close();

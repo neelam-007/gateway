@@ -110,8 +110,8 @@ class CommandSession {
 
     /** Process single command. */
     public void processCommand(String[] args) throws CommandException {
+        if (args == null || args.length < 1) return;  // ignore blank lines
         final String wordStr = args[0];
-        if (wordStr == null || wordStr.length() < 1) return; // Ignore blank line
         args = ArrayUtils.shift(args);
 
         // First, check for COMMAND NOUN ARG ARG ARG style
