@@ -41,7 +41,7 @@ public abstract class OSSpecificFunctions {
     public OSSpecificFunctions(String OSName) {
         installRoot = System.getProperty("com.l7tech.server.home");
         if (installRoot==null || installRoot.equalsIgnoreCase("")) {
-            throw new RuntimeException("please set the system property: com.l7tech.server.home to point to the SSG installation root");
+            throw new MissingPropertyException("Please set the system property: com.l7tech.server.home to point to the SSG installation root");
         }
 
         if (installRoot != null && !installRoot.endsWith("/")) {
@@ -204,5 +204,12 @@ public abstract class OSSpecificFunctions {
 
     public String getPathToDBCreateFile() {
         return installRoot + pathToDBCreateFile;
+    }
+
+    public static class MissingPropertyException extends RuntimeException
+    {
+        private MissingPropertyException(String message) {
+            super(message);
+        }
     }
 }

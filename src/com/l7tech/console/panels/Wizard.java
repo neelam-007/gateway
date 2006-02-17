@@ -3,7 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -16,6 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.KeyEvent;
 import java.util.EventListener;
 import java.util.NoSuchElementException;
 
@@ -216,7 +216,7 @@ public class Wizard extends JDialog {
      */
     private void initialize(WizardStepPanel panel) {
 
-        Actions.setEscKeyStrokeDisposes(this);
+        setEscKeyStrokeDisposes(this);
         if (panel == null) {
             throw new IllegalArgumentException("panel == null");
         }
@@ -251,6 +251,29 @@ public class Wizard extends JDialog {
     private void initializePanel(WizardStepPanel panel) {
         panel.addChangeListener(stepStateListener);
         panel.setOwner(this);
+    }
+
+    /**
+     * Update the input map of the JDialog's <code>JLayeredPane</code> so
+     * the ESC keystroke  invoke dispose on the dialog.
+     *
+     * NOTE: This method is duplicated from the Actions class to allow reuse
+     * of the Wizard framework without requiring all the other console classes.
+     *
+     * @param d the dialog
+     */
+    protected static void setEscKeyStrokeDisposes(final JDialog d) {
+        JLayeredPane layeredPane = d.getLayeredPane();
+        final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escKeyStroke, "close-it");
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(escKeyStroke, "close-it");
+        layeredPane.getActionMap().put("close-it",
+          new AbstractAction() {
+              public void actionPerformed(ActionEvent evt) {
+                  d.dispose();
+              }
+          });
     }
 
     /**

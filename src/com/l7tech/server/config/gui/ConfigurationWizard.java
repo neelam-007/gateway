@@ -3,7 +3,6 @@ package com.l7tech.server.config.gui;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.panels.Wizard;
@@ -64,15 +63,6 @@ public class ConfigurationWizard extends Wizard {
 
     private final String currentVersion = "4.0";
 
-    static {
-        try {
-            osFunctions = OSDetector.getOSSpecificActions();
-        } catch (UnsupportedOsException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-
-    }
-
     /**
      * Creates new wizard
      */
@@ -93,7 +83,7 @@ public class ConfigurationWizard extends Wizard {
     public void init(WizardStepPanel panel) {
         setTitle("SSG Configuration Wizard for " + osFunctions.getOSName());
         setShowDescription(false);
-        Actions.setEscKeyStrokeDisposes(this);
+        setEscKeyStrokeDisposes(this);
         wizardInput = new HashMap();
 
 
@@ -111,11 +101,13 @@ public class ConfigurationWizard extends Wizard {
             }
         });
         getButtonHelp().setVisible(false);
-        getButtonHelp().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Actions.invokeHelp(ConfigurationWizard.this);
-            }
-        });
+        //  Disable for now
+        //
+        //        getButtonHelp().addActionListener(new ActionListener() {
+        //            public void actionPerformed(ActionEvent e) {
+        //                Actions.invokeHelp(ConfigurationWizard.this);
+        //            }
+        //        });
         pack();
     }
 
@@ -259,12 +251,17 @@ public class ConfigurationWizard extends Wizard {
         Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
         ImageIcon imageIcon = new ImageIcon(icon);
         mainFrame.setIconImage(imageIcon.getImage());
-        ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
-
-        wizard.setSize(780, 560);
-        Utilities.centerOnScreen(wizard);
-        wizard.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        wizard.setVisible(true);
+        try {
+            osFunctions = OSDetector.getOSSpecificActions();
+            ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
+            wizard.setSize(780, 560);
+            Utilities.centerOnScreen(wizard);
+            wizard.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            wizard.setVisible(true);
+        }
+        catch(OSSpecificFunctions.MissingPropertyException mpe) {
+            System.out.println(mpe.getMessage());
+        }
     }
 
     private static void initLogging() {

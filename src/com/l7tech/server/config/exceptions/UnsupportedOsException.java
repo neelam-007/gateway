@@ -7,7 +7,7 @@ package com.l7tech.server.config.exceptions;
  * Time: 1:58:32 PM
  * To change this template use File | Settings | File Templates.
  */
-public class UnsupportedOsException extends Exception {
+public class UnsupportedOsException extends RuntimeException {
     public UnsupportedOsException() {
         super();
     }
