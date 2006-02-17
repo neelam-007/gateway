@@ -12,7 +12,7 @@ import javax.swing.*;
  */
 public class IconManager {
     /* this class classloader */
-    private final ClassLoader cl = getClass().getClassLoader();
+    private final ClassLoader cl = IconManager.class.getClassLoader();
     private static IconManager instance = new IconManager();
 
     public static IconManager getInstance() {

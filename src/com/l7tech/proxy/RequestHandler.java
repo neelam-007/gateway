@@ -271,7 +271,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * Handle a GET request for the WSIL stylesheet.
      */
     private void handleStylesheet(HttpRequest request, HttpResponse response) throws HttpException {
-        InputStream ss = getClass().getClassLoader().getResourceAsStream("com/l7tech/common/resources/wsil2xhtml.xml");
+        InputStream ss = RequestHandler.class.getClassLoader().getResourceAsStream("com/l7tech/common/resources/wsil2xhtml.xml");
         if (ss == null) throw new HttpException(404);
         response.setContentType("text/xml");
         OutputStream os = response.getOutputStream();

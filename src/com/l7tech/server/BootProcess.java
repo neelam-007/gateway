@@ -269,7 +269,7 @@ public class BootProcess extends ApplicationObjectSupport
             if (propsFile.exists()) {
                 is = new FileInputStream(propsFile);
             } else {
-                is = getClass().getClassLoader().getResourceAsStream("system.properties");
+                is = BootProcess.class.getResourceAsStream("system.properties");
             }
 
             if (is != null) props.load(is);

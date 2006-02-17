@@ -202,7 +202,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @return  JPanel  The Message Panel
      */
     private JPanel createMsgPanel() {
-        Icon icon = new ImageIcon(getClass().getClassLoader().getResource(RESOURCE_PATH + "/check16.gif"));
+        Icon icon = new ImageIcon(FederatedIPTrustedCertsPanel.class.getClassLoader().getResource(RESOURCE_PATH + "/check16.gif"));
 
         int position = 0;
         final JPanel panel1 = new JPanel();

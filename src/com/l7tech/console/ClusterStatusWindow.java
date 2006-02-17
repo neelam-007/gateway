@@ -81,7 +81,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     static Logger logger = Logger.getLogger(ClusterStatusWindow.class.getName());
-    private final ClassLoader cl = getClass().getClassLoader();
+    private final ClassLoader cl = ClusterStatusWindow.class.getClassLoader();
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
     private boolean canceled;

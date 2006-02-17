@@ -316,6 +316,6 @@ public class NewGroupForUserDialog extends JDialog {
     private final String CMD_OK = "cmd.ok";
     private static final String NON_MEMBER_LABEL = "Not a member of";
 
-    private final ClassLoader cl = getClass().getClassLoader();
+    private final ClassLoader cl = NewGroupForUserDialog.class.getClassLoader();
 }
 

@@ -153,7 +153,7 @@ public class Gui {
 
         try {
             // incors.org Kunststoff faq says we need the following line if we want to use Java Web Start:
-            UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
+            UIManager.getLookAndFeelDefaults().put( "ClassLoader", Gui.class.getClassLoader() );
         } catch ( Exception e ) {
             log.log(Level.WARNING, "Unable to update look-and-feel classloader", e);
         }

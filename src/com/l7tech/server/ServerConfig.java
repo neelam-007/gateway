@@ -207,7 +207,7 @@ public class ServerConfig extends ApplicationObjectSupport {
             if (file.exists())
                 propStream = new FileInputStream(file);
             else
-                propStream = getClass().getClassLoader().getResourceAsStream(PROPS_RESOURCE_PATH);
+                propStream = ServerConfig.class.getClassLoader().getResourceAsStream(PROPS_RESOURCE_PATH);
 
             if (propStream != null) {
                 _properties.load(propStream);

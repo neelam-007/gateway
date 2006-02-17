@@ -26,7 +26,7 @@ import java.io.IOException;
 public class AboutBox extends JDialog implements ActionListener {
     private static final String LOGO_IMAGE = "splash-screen2.gif";
     /* this class classloader */
-    private final ClassLoader cl = getClass().getClassLoader();
+    private final ClassLoader cl = AboutBox.class.getClassLoader();
 
     JTabbedPane tabPanel = new JTabbedPane();
     JLabel logoLabel =

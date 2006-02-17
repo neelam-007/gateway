@@ -26,7 +26,7 @@ public final class ImageCache {
     private final HashMap map = new HashMap();
 
     /** this instance classloader */
-    private final ClassLoader loader = getClass().getClassLoader();
+    private final ClassLoader loader = ImageCache.class.getClassLoader();
 
     /**
      * @return the singleton instance

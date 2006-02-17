@@ -25,7 +25,7 @@ import java.net.URL;
  */
 public class HomeAction extends SecureAction {
     private WorkSpacePanel wpanel;
-    private ClassLoader cl = getClass().getClassLoader();
+    private ClassLoader cl = HomeAction.class.getClassLoader();
 
     public HomeAction() {
         wpanel = TopComponents.getInstance().getCurrentWorkspace();

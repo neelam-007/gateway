@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public class Main {
     Logger log = Logger.getLogger(Main.class.getName());
     /* this class classloader */
-    private final ClassLoader cl = getClass().getClassLoader();
+    private final ClassLoader cl = Main.class.getClassLoader();
 
     // splash screen
 

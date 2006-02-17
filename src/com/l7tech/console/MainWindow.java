@@ -69,7 +69,7 @@ public class MainWindow extends JFrame {
     ResourceBundle resapplication = ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     /* this class classloader */
-    private final ClassLoader cl = getClass().getClassLoader();
+    private final ClassLoader cl = MainWindow.class.getClassLoader();
 
     private JMenuBar mainJMenuBar = null;
     private JMenu fileMenu = null;

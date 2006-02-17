@@ -73,7 +73,7 @@ public class SoapMessageGenerator {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
         }
-        ClassLoader cl = getClass().getClassLoader();
+        ClassLoader cl = SoapMessageGenerator.class.getClassLoader();
         InputStream in = cl.getResourceAsStream(wsdlResource);
         if (in == null) {
             throw new FileNotFoundException(wsdlResource);

@@ -95,7 +95,7 @@ public class LicenseGeneratorTopWindow extends JFrame {
 
     private Image loadAppIcon() {
         String path = "com/l7tech/internal/license/gui/resources/layer7_logo_small_32x32.png";
-        URL url = getClass().getClassLoader().getResource(path);
+        URL url = LicenseGeneratorTopWindow.class.getClassLoader().getResource(path);
         return url == null ? (new ImageIcon()).getImage()
                            : Toolkit.getDefaultToolkit().createImage(url);
     }
