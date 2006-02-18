@@ -161,7 +161,7 @@ sub docopy {
 	} else {
         	# use rsync instead of copy to be flexible to perform cross platform build - rsync provides modify-window options to work around NT and FAT don't store time to 1 second precision, making it it believe a source file (on Windows) and a destination file (on UNIX) had the same date
         	print "Rsync'ing(copying) $src -> $dst\n";
-        	system("rsync --modify-window=2 $src $dst") or die "Unable to rsync $src to $dst: $!"; 
+        	system("rsync --modify-window=2 $src $dst") or die "Unable to rsync $src to $dst: $!";
 	}
 }
 
@@ -199,11 +199,14 @@ extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300  -Dsun.net.inetaddr.tt
 EOF
 	if ($file eq "Bridge") {
 	    # if we're making a bridge.sh then we need to make a section to allow
-	    # "Bridge.sh -bd" to start the bridge with no gui 
-	    # un under daemon mode if invoked as Bridge.sh -bd
+	    # "Bridge.sh -bd" to start the bridge with no gui, and
+	    # "Bridge.sh -config" to run the command line configurator
+	    # run under daemon mode if invoked as Bridge.sh -bd
 	    $start_options.=<<EOF
 if [ "\$1" = "-bd" ]; then
 	run="-classpath $file.jar com.l7tech.proxy.Main"
+elif [ "\$1" = "-config" ]; then
+    run="-classpath $file.jar com.l7tech.proxy.cli.Main"
 else
 	run="-jar $file.jar"
 fi
