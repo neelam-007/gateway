@@ -3,6 +3,8 @@ package com.l7tech.server.service;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.SampleMessage;
 import org.springframework.dao.DataAccessException;
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Restrictions;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -12,32 +14,30 @@ import java.util.List;
  * Manages persistent instances of {@link SampleMessage}.
  */
 public class SampleMessageManagerImp extends HibernateEntityManager implements SampleMessageManager {
+    private static final String PROP_SERVICE_OID = "serviceOid";
+    private static final String PROP_OPERATION_NAME = "operationName";
+
     public SampleMessage findByPrimaryKey(long oid) throws FindException {
         return (SampleMessage)super.findByPrimaryKey(getImpClass(), oid);
     }
 
     public EntityHeader[] findHeaders(long serviceOid, String operationName) throws FindException {
-        StringBuffer hql = new StringBuffer(getAllQuery());
-        hql.append(" WHERE ").append(getTableName()).append(".serviceOid ");
         try {
-            List results;
-            List params = new ArrayList();
+            Criteria crit = getSession().createCriteria(SampleMessage.class);
+
             if (serviceOid == -1) {
-                hql.append("IS NULL");
+                crit.add(Restrictions.isNull(PROP_SERVICE_OID));
             } else {
-                hql.append("= ?");
-                params.add(Long.toString(serviceOid));
+                crit.add(Restrictions.eq(PROP_SERVICE_OID, new Long(serviceOid)));
             }
 
-            hql.append(" AND ").append(getTableName()).append(".operationName ");
             if (operationName == null) {
-                hql.append("IS NULL");
+                crit.add(Restrictions.isNull(PROP_OPERATION_NAME));
             } else {
-                hql.append(" = ?");
-                params.add(operationName);
+                crit.add(Restrictions.ilike(PROP_OPERATION_NAME, operationName));
             }
-            results = getHibernateTemplate().find(hql.toString(), params.toArray());
 
+            List results = crit.list();
             ArrayList out = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {
                 SampleMessage sm = (SampleMessage)i.next();
