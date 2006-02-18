@@ -81,6 +81,7 @@ Section "SecureSpan Bridge" SecCopyUI
   File "${MUI_PRODUCT}.ini"
   File "${MUI_PRODUCT}.bat"
   File "${MUI_PRODUCT} in Text Mode.bat"
+  File "ssbconfig.bat"
   File "${BUILD_DIR}\Bridge.jar"
   File /r "${J2RE_PATH}"
 
@@ -139,6 +140,7 @@ Section "Uninstall"
   Delete "$INSTDIR\${MUI_PRODUCT}.ini"
   Delete "$INSTDIR\${MUI_PRODUCT}.bat"
   Delete "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat"
+  Delete "$INSTDIR\ssbconfig.bat"
   Delete "$INSTDIR\Bridge.jar"
   Delete "$INSTDIR\systray4j.dll"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
