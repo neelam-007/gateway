@@ -36,7 +36,7 @@ class SsgNoun extends Noun {
         this.session = session;
         this.ssg = inssg;
         properties = new Words(Arrays.asList(new NounProperty[] {
-                new NounProperty(ssg, "hostname", "SsgAddress", "Hostname or IP address of SecreSpan Gateway"),
+                new NounProperty(ssg, "hostname", "SsgAddress", "Hostname or IP address of SecureSpan Gateway"),
                 new NounProperty(ssg, "username", "Username", "Username of account on this Gateway"),
                 new PasswordProperty(),
                 new NounProperty(ssg, "chainCredentials", "ChainCredentialsFromClient", "Chain credentials from client (HTTP Basic)"),
