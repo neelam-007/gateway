@@ -287,10 +287,10 @@ class SsgNoun extends Noun {
                     "Gateway Account holds a set of Bridge credentials for a target Gateway.";
 
     private static final String EXAMPLE_COMMANDS = "Example Commands: show gateways\n" +
-            "                  show gateway37\n" +
+            "                  gateway32 request clientCert\n" +
             "                  create gateway ssg.example.com testuser secret\n" +
-            "                  set gateway1 password\n" +
-            "                  delete g3";
+            "                  gateway1 set password s3cr3t\n" +
+            "                  delete gateway3";
 
 
     /**
