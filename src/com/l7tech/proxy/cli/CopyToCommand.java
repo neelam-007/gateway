@@ -59,7 +59,7 @@ class CopyToCommand extends Command {
 
         dstRuntime.getSsgKeyStoreManager().deleteStores();
         dstSsg.copyFrom(srcSsg);
-        srcRuntime.setCachedPassword(dstRuntime.getCachedPassword());
+        dstRuntime.setCachedPassword(srcRuntime.getCachedPassword());
 
         try {
             if (srcSsg.getTrustStoreFile().exists())
