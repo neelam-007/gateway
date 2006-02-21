@@ -37,6 +37,8 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_TOO_MANY_ATTEMPTS       = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
     public static final M HTTPROUTE_SAML_SV_NOT_AUTH        = m(4024, Level.WARNING, "SAML Sender-Vouches forwarding requested, but request was not authenticated.");
     public static final M HTTPROUTE_RESPONSE_STATUS_HANDLED = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}, retrying.");
+    public static final M HTTPROUTE_BAD_STRATEGY_NAME       = m(4026, Level.WARNING, "Invalid routing failover strategy name: {0}  Using default strategy");
+    public static final M HTTPROUTE_FAILOVER_FROM_TO        = m(4027, Level.WARNING, "Routing failed to host = {0}, retrying to host = {1}");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");

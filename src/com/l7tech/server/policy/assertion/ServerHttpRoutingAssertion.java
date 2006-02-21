@@ -13,6 +13,7 @@ import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
+import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.MimeKnob;
@@ -100,13 +101,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         final String[] addrs = httpRoutingAssertion.getCustomIpAddresses();
         if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs, auditor)) {
+            final String stratName = assertion.getFailoverStrategyName();
             FailoverStrategy strat;
             try {
-                strat = FailoverStrategyFactory.createFailoverStrategy(assertion.getFailoverStrategyName(), addrs);
+                strat = FailoverStrategyFactory.createFailoverStrategy(stratName, addrs);
             } catch (IllegalArgumentException e) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_BAD_STRATEGY_NAME, new String[] { stratName }, e);
                 strat = new StickyFailoverStrategy(addrs);
             }
-            failoverStrategy = strat;
+            failoverStrategy = AbstractFailoverStrategy.makeSynchronized(strat);
             maxFailoverAttempts = addrs.length;
         } else {
             failoverStrategy = null;
@@ -158,16 +161,23 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (failoverStrategy == null)
                 return tryUrl(context, u);
 
+            String failedHost = null;
             for (int tries = 0; tries < maxFailoverAttempts; tries++) {
                 String host = (String)failoverStrategy.selectService();
-                if (host == null) // strategy says it's time to give up
+                if (host == null) {
+                    // strategy says it's time to give up
                     break;
+                }
+                if (failedHost != null)
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_FAILOVER_FROM_TO,
+                                        new String[] { failedHost, host });
                 URL url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
                 AssertionStatus result = tryUrl(context, url);
                 if (result == AssertionStatus.NONE) {
                     failoverStrategy.reportSuccess(host);
                     return result;
                 }
+                failedHost = host;
                 failoverStrategy.reportFailure(host);
             }
 
@@ -210,7 +220,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
-        int status = 0;
         Throwable thrown = null;
         try {
             HttpClient client = new HttpClient(connectionManager);
@@ -270,7 +279,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 HttpState state = client.getState();
                 doAuth = true;
                 state.setAuthenticationPreemptive(true);
-                state.setCredentials(null, null, new UsernamePasswordCredentials(login, new String(password)));
+                state.setCredentials(null, null, new UsernamePasswordCredentials(login, password));
             }
 
             if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
@@ -379,7 +388,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     /**
      *
      */
-    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, HttpClient client, HostConfiguration hconf, List headers, boolean doAuth, URL url, boolean allowRetry) throws IOException, PolicyAssertionException
+    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, HttpClient client, HostConfiguration hconf, List headers, boolean doAuth, URL url, boolean allowRetry) throws PolicyAssertionException
     {
         PostMethod postMethod = null;
         try {
