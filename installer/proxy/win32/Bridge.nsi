@@ -77,6 +77,7 @@ Section "SecureSpan Bridge" SecCopyUI
 
   SetOutPath "$INSTDIR"
   File "${BUILD_DIR}\..\native\win32\systray4j.dll"
+  File "${BUILD_DIR}\..\installer\proxy\win32\SSBService.exe"
   File "${MUI_PRODUCT}.exe"
   File "${MUI_PRODUCT}.ini"
   File "${MUI_PRODUCT}.bat"
@@ -117,9 +118,14 @@ Section "SecureSpan Bridge" SecCopyUI
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
   MessageBox MB_YESNO "Would you like the SecureSpan Bridge to run as a Windows Service?" IDNO endofinstall
-    ;todo create service here
-    ;ExecWait 'sc create SSB start=auto binpath=\"$INSTDIR\${MUI_PRODUCT}.bat\"' $0
-    ;DetailPrint "creation of service returned with code $0"
+    Var homedir
+    ReadEnvStr $0 HOMEDRIVE
+    ReadEnvStr $1 HOMEPATH
+    StrCpy $2 "$0$1"
+    DetailPrint "SecureSpan Bridge service will run using home directory $0"
+    ; create service, this is actually using a renamed version of JavaService.exe
+    ExecWait '"$INSTDIR\SSBService.exe" -install SSB "$INSTDIR\jre1.5.0_02\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log"' $0
+    DetailPrint "creation of service returned with code $0"
   endofinstall:
 
 SectionEnd
@@ -140,6 +146,12 @@ SectionEnd
 
 Section "Uninstall"
 
+  ; Make sure service is stopped and removed first
+  ExecWait 'sc stop SSB' $0
+  DetailPrint "Stopping service returned with code $0"
+  ExecWait '"$INSTDIR\SSBService.exe" -uninstall SSB' $0
+  DetailPrint "Removal of service returned with code $0"
+
   ;ADD YOUR OWN STUFF HERE!
 
   Delete "$INSTDIR\${MUI_PRODUCT}.exe"
@@ -153,6 +165,7 @@ Section "Uninstall"
   RMDir "$INSTDIR\lib"
   RMDir /r "$INSTDIR\${J2RE}"
   Delete "$INSTDIR\Uninstall.exe"
+  Delete "$INSTDIR\SSBService.exe"
 
   ;Remove shortcut
   ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
