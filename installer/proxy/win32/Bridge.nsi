@@ -118,14 +118,14 @@ Section "SecureSpan Bridge" SecCopyUI
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
   MessageBox MB_YESNO "Would you like the SecureSpan Bridge to run as a Windows Service?" IDNO endofinstall
-    Var homedir
     ReadEnvStr $0 HOMEDRIVE
     ReadEnvStr $1 HOMEPATH
     StrCpy $2 "$0$1"
-    DetailPrint "SecureSpan Bridge service will run using home directory $0"
+    DetailPrint "SecureSpan Bridge service will run using home directory $2"
     ; create service, this is actually using a renamed version of JavaService.exe
     ExecWait '"$INSTDIR\SSBService.exe" -install SSB "$INSTDIR\jre1.5.0_02\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log"' $0
     DetailPrint "creation of service returned with code $0"
+    MessageBox MB_OK "The Windows Service named SSB is configured but not yet started yet. If this is a first install, you need to configure the Bridge using the GUI version. You can then start the service manually from the Service control panel or reboot the server."
   endofinstall:
 
 SectionEnd
