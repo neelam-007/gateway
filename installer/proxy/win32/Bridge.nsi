@@ -40,7 +40,7 @@
   !define MUI_UNINSTALLER
   !define MUI_UNCONFIRMPAGE
 
-    !define MUI_HEADERBITMAP "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
+  !define MUI_HEADERBITMAP "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
 
   ;Remember the Start Menu Folder
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
@@ -115,6 +115,12 @@ Section "SecureSpan Bridge" SecCopyUI
 
   ;Create uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
+
+  MessageBox MB_YESNO "Would you like the SecureSpan Bridge to run as a Windows Service?" IDNO endofinstall
+    ;todo create service here
+    ;ExecWait 'sc create SSB start=auto binpath=\"$INSTDIR\${MUI_PRODUCT}.bat\"' $0
+    ;DetailPrint "creation of service returned with code $0"
+  endofinstall:
 
 SectionEnd
 
