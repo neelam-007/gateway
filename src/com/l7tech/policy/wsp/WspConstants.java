@@ -248,6 +248,7 @@ public class WspConstants {
         new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),
         new AssertionMapping(new MappingAssertion(), "IdentityMapping"),
+        new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

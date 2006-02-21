@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
+import com.l7tech.policy.assertion.WsiBspAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.service.PublishedService;
 
@@ -36,6 +37,7 @@ class ValidatorFactory {
         assertionMap.put(ResponseWssConfidentiality.class, ResponseWssConfidentialityValidator.class);
         assertionMap.put(RequestSwAAssertion.class, SwaRequestAssertionValidator.class);
         assertionMap.put(RequestWssSaml.class, SamlStatementValidator.class);
+        assertionMap.put(WsiBspAssertion.class, WsiBspAssertionValidator.class);
         // add mapping
     }
 

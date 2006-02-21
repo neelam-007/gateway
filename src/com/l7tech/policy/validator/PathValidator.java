@@ -558,7 +558,7 @@ class PathValidator {
           a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
           a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
           a instanceof RequestWssSaml || a instanceof SwAAssertion ||
-          a instanceof RequestWssKerberos)
+          a instanceof RequestWssKerberos || a instanceof WsiBspAssertion)
             return true;
         return false;
     }

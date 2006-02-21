@@ -117,6 +117,7 @@ public class AllAssertions {
         new SqlAttackAssertion(),
         new RequestSizeLimit(),
         new RequestWssKerberos(),
+        new WsiBspAssertion(),
     };
 
 
@@ -166,6 +167,7 @@ public class AllAssertions {
         new RequestSizeLimit(),
         new RequestWssKerberos(),
         new EncryptedUsernameTokenAssertion(),
+        new WsiBspAssertion(),
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {

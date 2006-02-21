@@ -197,9 +197,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
 
     /**
-     * subclasses override this method
+     * subclasses may override this method
      */
-    protected abstract void loadChildren();
+    protected void loadChildren(){};
 
     /**
      * Get the set of actions associated with this node.

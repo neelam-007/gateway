@@ -78,6 +78,7 @@
                 <L7p:RequestSizeLimit/>
                 <L7p:Kerberos/>
                 <L7p:EncryptedUsernameToken/>
+                <L7p:WsiBspAssertion/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

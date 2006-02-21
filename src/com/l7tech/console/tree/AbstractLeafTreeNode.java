@@ -11,6 +11,7 @@ public abstract class AbstractLeafTreeNode extends AbstractTreeNode {
     //- PUBLIC
 
     /**
+     *
      */
     public AbstractLeafTreeNode(String name, String iconResource) {
         super(null);
@@ -43,15 +44,9 @@ public abstract class AbstractLeafTreeNode extends AbstractTreeNode {
      */
     public String getName() {
         return name;
-
     }
 
     //- PROTECTED
-
-    /**
-     * This does nothing since there are no children to load.
-     */
-    protected void loadChildren() {}
 
     /**
      * subclasses override this method specifying the resource name

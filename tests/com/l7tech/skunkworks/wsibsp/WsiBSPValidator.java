@@ -74,10 +74,14 @@ public class WsiBSPValidator {
         }
     }
 
+    public WsiBSPValidator() {
+        this(true);
+    }
+
     /**
      *
      */
-    public WsiBSPValidator() {
+    public WsiBSPValidator(boolean allowNonStandardFunctions) {
         XPathFactory xpf = XPathFactory.newInstance();
         xpf.setXPathFunctionResolver(getXPathFunctionResolver());
         XPath xpath = xpf.newXPath();
@@ -85,8 +89,15 @@ public class WsiBSPValidator {
         xpes = new XPathExpression[rules.length];
         for (int i = 0; i < xpes.length; i++) {
             try {
-                XPathExpression xpe = xpath.compile(rules[i].getXPath());
-                xpes[i] = xpe;
+                // hacked detection of XPaths with calls to non-standard functions
+                if(allowNonStandardFunctions || !(rules[i].getXPath().indexOf("l7:")>=0)) {
+                    XPathExpression xpe = xpath.compile(rules[i].getXPath());
+                    xpes[i] = xpe;
+                }
+                else {
+                    XPathExpression xpe = xpath.compile("0=0");
+                    xpes[i] = xpe;
+                }
             }
             catch(XPathExpressionException xpee) {
                 xpee.printStackTrace();
@@ -151,7 +162,7 @@ public class WsiBSPValidator {
                 /**
                  * Currently we only have one XPath function so we don't bother with name resolution ...
                  */
-                return new XPathFunction() {
+                return new XPathFunction() { // distinct element checker
                     public Object evaluate(List args) throws XPathFunctionException {
                         boolean result = false;
 
@@ -277,8 +288,13 @@ public class WsiBSPValidator {
      * TODO some XPaths only work when there's one reference ...
      */
     private static final XPathRule[] rules = {
+        /* Not actual WS-I BSP rules, but still required */
+        new XPathRule("E0001", "0=count(//*[namespace-uri()='http://www.w3.org/2001/06/soap-envelope' or namespace-uri()='http://www.w3.org/2001/09/soap-envelope' or namespace-uri()='http://www.w3.org/2003/05/soap-envelope' or namespace-uri()='urn:schemas-xmlsoap-org:soap.v1'])", "Invalid SOAP namespace")
+     ,  new XPathRule("E0002", "0=count(//*[namespace-uri()='http://schemas.xmlsoap.org/ws/2002/12/secext' or namespace-uri()='http://schemas.xmlsoap.org/ws/2002/07/secext' or namespace-uri()='http://schemas.xmlsoap.org/ws/2002/xx/secext' or namespace-uri()='http://schemas.xmlsoap.org/ws/2003/06/secext' or namespace-uri()='http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd'])", "Invalid WS-Security Namespace")
+     ,  new XPathRule("E0003", "0=count(//*[namespace-uri()='http://schemas.xmlsoap.org/ws/2002/07/utility' or namespace-uri()='http://schemas.xmlsoap.org/ws/2003/06/utility'])", "Invalid Utility Namespace")
+
         /* 5.1 Security Tokens */
-        new XPathRule("R3029", "0=count(//wsse:BinarySecurityToken[not(@EncodingType)])", "A SECURITY_TOKEN named wsse:BinarySecurityToken MUST specify an EncodingType attribute.")
+    ,   new XPathRule("R3029", "0=count(//wsse:BinarySecurityToken[not(@EncodingType)])", "A SECURITY_TOKEN named wsse:BinarySecurityToken MUST specify an EncodingType attribute.")
     ,   new XPathRule("R3030", "0=count(//wsse:BinarySecurityToken[@EncodingType!='http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary'])", "An EncodingType attribute of a SECURITY_TOKEN named wsse:BinarySecurityToken MUST have a value of \"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\".")
     ,   new XPathRule("R3031", "0=count(//wsse:BinarySecurityToken[not(@ValueType)])", "A SECURITY_TOKEN named wsse:BinarySecurityToken MUST specify a ValueType attribute.")
     ,   new XPathRule("R3032", "0=count(//wsse:BinarySecurityToken["+tokenCompare("@ValueType", "!=", "and")+"])", "A ValueType attribute of a SECURITY_TOKEN named wsse:BinarySecurityToken MUST have a value specified by the related security token profile.")

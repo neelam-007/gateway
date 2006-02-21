@@ -364,4 +364,12 @@ public class AssertionMessages extends Messages {
     public static final M USERDETAIL_INFO    = m(-4, Level.INFO,    "{0}");
     public static final M USERDETAIL_WARNING = m(-5, Level.WARNING, "{0}");
     public static final M NO_SUCH_VARIABLE   = m(-6, Level.WARNING, "No such variable: {0}");
+
+    public static final M WSI_BSP_REQUEST_NON_SOAP       = m(7600, Level.INFO, "Request not SOAP; unable to check for WS-I Basic Security Profile compliance");
+    public static final M WSI_BSP_RESPONSE_NON_SOAP      = m(7601, Level.INFO, "Response not SOAP; unable to check for WS-I Basic Security Profile compliance");
+    public static final M WSI_BSP_REQUEST_NON_COMPLIANT  = m(7602, Level.WARNING, "WS-I BSP rule broken in request ({0}): {1}");
+    public static final M WSI_BSP_RESPONSE_NON_COMPLIANT = m(7603, Level.WARNING, "WS-I BSP rule broken in response ({0}): {1}");
+    public static final M WSI_BSP_REQUEST_FAIL           = m(7604, Level.INFO, "Failing non WS-I BSP compliant request.");
+    public static final M WSI_BSP_RESPONSE_FAIL          = m(7605, Level.INFO, "Failing non WS-I BSP compliant response.");
+    public static final M WSI_BSP_XPATH_ERROR            = m(7606, Level.SEVERE, "Server WS-I BSP rules are incorrect.");
 }
