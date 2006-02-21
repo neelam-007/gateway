@@ -64,12 +64,8 @@
         </constructor-arg>
     </bean>
 
-    <!--    shared export properties, inherited with parent= -->
-    <bean id="baseExportProperties" abstract="true">
-        <property name="registryPort">
-            <value>2124</value>
-        </property>
-        <property name="servicePort">
+    <bean id="rmiRegistry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean">
+        <property name="port">
             <value>2124</value>
         </property>
         <property name="clientSocketFactory">
@@ -78,10 +74,20 @@
         <property name="serverSocketFactory">
             <ref bean="rmiServerSocketFactory"/>
         </property>
-        <property name="registryClientSocketFactory">
+    </bean>
+
+    <!--    shared export properties, inherited with parent= -->
+    <bean id="baseExportProperties" abstract="true">
+        <property name="registry">
+            <ref bean="rmiRegistry"/>
+        </property>
+        <property name="servicePort">
+            <value>2124</value>
+        </property>
+        <property name="clientSocketFactory">
             <ref bean="rmiClientSocketFactory"/>
         </property>
-        <property name="registryServerSocketFactory">
+        <property name="serverSocketFactory">
             <ref bean="rmiServerSocketFactory"/>
         </property>
         <property name="stubRemoteInvocationFactory">

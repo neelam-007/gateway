@@ -41,15 +41,12 @@ public class RmiServiceExporterStubFactoryBean
 
     private int servicePort = 0;  // anonymous port
 
-    private int registryPort = Registry.REGISTRY_PORT;
-
     private RMIClientSocketFactory clientSocketFactory;
 
     private RMIServerSocketFactory serverSocketFactory;
 
-    private RMIClientSocketFactory registryClientSocketFactory;
+    private Registry registry;
 
-    private RMIServerSocketFactory registryServerSocketFactory;
     private boolean singleton = true;
 
     private RmiProxyStub proxyStub; // proxy stub for singletons
@@ -58,9 +55,6 @@ public class RmiServiceExporterStubFactoryBean
 
     private final List exportedObjects;
 
-    // TODO - when we upgrade Spring (1.2.3+) we can use that to do the registry cleanup, until then ...
-    private static Registry theRegistryICreated = null;
-    private static int rmiServiceExporterStubFactoryBeanCount = 0; // The last one to leave turns out the lights.
     private static int rmiExportCount = 0;
 
     public RmiServiceExporterStubFactoryBean() {
@@ -73,8 +67,6 @@ public class RmiServiceExporterStubFactoryBean
      * If <b>null</b> the exported service will not be bound to a name in the
      * registry. This is useful when sending the remote reference directly to
      * the client.
-     * This is overriden until Spring team makes the properties protectec
-     * or offer the getter
      */
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
@@ -83,22 +75,16 @@ public class RmiServiceExporterStubFactoryBean
     /**
      * Set the port that the exported RMI service will use.
      * Default is 0 (anonymous port).
-     * This is overriden until Spring team makes the properties protectec
-     * or offer the getter
      */
     public void setServicePort(int servicePort) {
         this.servicePort = servicePort;
     }
 
     /**
-     * Set the port of the registry for the exported RMI service,
-     * i.e. rmi://localhost:PORT/name
-     * Default is Registry.REGISTRY_PORT (1099).
-     * This is overriden until Spring team makes the properties protectec
-     * or offer the getter
+     * Set the Registry to use for the exported RMI service,
      */
-    public void setRegistryPort(int registryPort) {
-        this.registryPort = registryPort;
+    public void setRegistry(Registry registry) {
+        this.registry = registry;
     }
 
     /**
@@ -120,14 +106,6 @@ public class RmiServiceExporterStubFactoryBean
      */
     public void setServerSocketFactory(RMIServerSocketFactory serverSocketFactory) {
         this.serverSocketFactory = serverSocketFactory;
-    }
-
-    public void setRegistryClientSocketFactory(RMIClientSocketFactory csf) {
-        this.registryClientSocketFactory = csf;
-    }
-
-    public void setRegistryServerSocketFactory(RMIServerSocketFactory ssf) {
-        this.registryServerSocketFactory = ssf;
     }
 
     public void setStubRemoteInvocationFactory(RemoteInvocationFactory stubRemoteInvocationFactory) {
@@ -164,6 +142,9 @@ public class RmiServiceExporterStubFactoryBean
      */
     public void afterPropertiesSet() throws RemoteException {
         checkService();
+        if (this.registry==null) {
+            throw new IllegalArgumentException("Registry not set (required).");
+        }
         if (this.clientSocketFactory instanceof RMIServerSocketFactory) {
             this.serverSocketFactory = (RMIServerSocketFactory)this.clientSocketFactory;
         }
@@ -176,9 +157,6 @@ public class RmiServiceExporterStubFactoryBean
         }
         if (singleton) {
             proxyStub = exportService();
-        }
-        synchronized(RmiServiceExporterStubFactoryBean.class) {
-            rmiServiceExporterStubFactoryBeanCount++;
         }
     }
 
@@ -204,12 +182,11 @@ public class RmiServiceExporterStubFactoryBean
         rmiExportCount++;
         if (this.serviceName != null) {
             logger.info("Binding RMI service '" + this.serviceName +  "' exported object '" + getDisplayServiceName() +
-              "' to registry at port '" + this.registryPort + "', export count is: " + rmiExportCount);
-            Registry registry = getRegistry(this.registryPort);
+              "' to registry, export count is: " + rmiExportCount);
             registry.rebind(this.serviceName, exportedObject);
         } else {
             logger.info("Unbound RMI service; exported object '" + getDisplayServiceName() +
-              "' to registry at port '" + this.registryPort + "', export count is: " + rmiExportCount);
+              "', export count is: " + rmiExportCount);
         }
         try {
             RmiProxyStub stub = new RmiProxyStub(exportedObject, objectStub, getServiceInterface(), stubRemoteInvocationFactory);
@@ -235,43 +212,13 @@ public class RmiServiceExporterStubFactoryBean
     }
 
     /**
-     * Locate or create the RMI registry for this exporter.
+     * Get the RMI registry for this exporter.
      *
      * @param registryPort the registry port to use
      * @return the RMI registry
      * @throws RemoteException if the registry couldn't be located or created
      */
-    protected Registry getRegistry(int registryPort) throws RemoteException {
-        if (logger.isInfoEnabled()) {
-            logger.info("Looking for RMI registry at port '" + registryPort + "'");
-        }
-
-        // check the registry socket factories
-        if ((this.registryClientSocketFactory != null && this.registryServerSocketFactory == null) ||
-          (this.registryClientSocketFactory == null && this.registryServerSocketFactory != null)) {
-            throw new IllegalArgumentException("Both RMIClientSocketFactory and RMIServerSocketFactory or none required");
-        }
-
-        Registry registry;
-        try {
-            // retrieve registry
-            if (registryClientSocketFactory == null) {
-                registry = LocateRegistry.getRegistry(registryPort);
-            } else {
-                registry = LocateRegistry.getRegistry(null, registryPort, registryClientSocketFactory);
-            }
-            registry.list(); // this will throw a NoSuchObjectException if the registry is not yet created.
-        } catch (RemoteException ex) {
-            if(!(ex instanceof NoSuchObjectException)) logger.warn("RMI registry access threw exception", ex);
-            logger.debug("Could not detect RMI registry - creating new one");
-            if (registryClientSocketFactory == null) {
-                registry = LocateRegistry.createRegistry(registryPort);
-            } else {
-                registry = LocateRegistry.createRegistry(registryPort, registryClientSocketFactory, registryServerSocketFactory);
-            }
-            rmiExportCount++;
-            theRegistryICreated = registry;
-        }
+    protected Registry getRegistry() throws RemoteException {
         return registry;
     }
 
@@ -279,37 +226,18 @@ public class RmiServiceExporterStubFactoryBean
      * Unbind the RMI service from the registry at bean factory shutdown.
      */
     public void destroy() throws RemoteException, NotBoundException {
-        boolean shutdownRegistry = false;
-        synchronized(RmiServiceExporterStubFactoryBean.class) {
-            rmiServiceExporterStubFactoryBeanCount--;
-            if(rmiServiceExporterStubFactoryBeanCount==0) {
-                shutdownRegistry = true;
-            }
-        }
-        try {
-            if (!singleton) {
-                unexportObjects();
-                return;
-            }
-            if (logger.isInfoEnabled()) {
-                logger.info("Unbinding RMI service '" + getDisplayServiceName() +
-                  "' from registry at port '" + this.registryPort + "', export count is: " + (rmiExportCount-1));
-            }
-            if (this.serviceName != null) {
-                Registry registry = getRegistry(this.registryPort);
-                registry.unbind(this.serviceName);
-            }
+        if (!singleton) {
             unexportObjects();
+            return;
         }
-        finally {
-            if(shutdownRegistry && theRegistryICreated!=null) {
-                logger.info("Shutting down the registry.");
-                UnicastRemoteObject.unexportObject(theRegistryICreated, true);
-                rmiExportCount--;
-
-                logger.info("Registry shutdown, export count is: " + rmiExportCount);
-            }
+        if (logger.isInfoEnabled()) {
+            logger.info("Unbinding RMI service '" + getDisplayServiceName() +
+              "' from registry, export count is: " + (rmiExportCount-1));
         }
+        if (this.serviceName != null) {
+            registry.unbind(this.serviceName);
+        }
+        unexportObjects();
     }
 
     /**
@@ -347,7 +275,7 @@ public class RmiServiceExporterStubFactoryBean
                 if(exported!=null) {
                     if (logger.isInfoEnabled()) {
                         logger.info("Unbinding RMI object '" + getDisplayServiceName() +
-                          "' from registry at port '" + this.registryPort + "', export count is: " + (rmiExportCount-1));
+                          "' from registry, export count is: " + (rmiExportCount-1));
                     }
                     try {
                         UnicastRemoteObject.unexportObject(exported, true);
