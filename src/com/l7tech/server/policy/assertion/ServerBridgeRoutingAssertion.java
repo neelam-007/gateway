@@ -397,7 +397,6 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             }
 
             public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ACCESS_DENIED);
                 throw new OperationCanceledException(((AuditDetailMessage)AssertionMessages.HTTPROUTE_ACCESS_DENIED).getMessage());
             }
         };

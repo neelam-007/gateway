@@ -12,10 +12,12 @@ import java.util.logging.Level;
  */
 public class AuditDetailMessage {
 
-    public AuditDetailMessage(int id, Level level, String message) {
+    public AuditDetailMessage(int id, Level level, String message, boolean saveRequest, boolean saveResponse) {
         this.id = id;
         this.level = level;
         this.message = message;
+        this.saveRequest = saveRequest;
+        this.saveResponse = saveResponse;
     }
 
     public int getId() {
@@ -34,7 +36,17 @@ public class AuditDetailMessage {
         return message;
     }
 
+    public boolean isSaveRequest() {
+        return saveRequest;
+    }
+
+    public boolean isSaveResponse() {
+        return saveResponse;
+    }
+
     private final int id;
     private final Level level;
     private final String message;
+    private final boolean saveRequest;
+    private final boolean saveResponse;
 }

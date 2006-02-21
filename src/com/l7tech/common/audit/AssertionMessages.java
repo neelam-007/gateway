@@ -11,13 +11,13 @@ import java.util.logging.Level;
 public class AssertionMessages extends Messages {
 
     // ServerHttpRoutingAssertion messages
-    public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.SEVERE, "Couldn't initialize SSL Context");
+    public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Couldn't initialize SSL Context");
     public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Processing HTTP routing assertion");
-    public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.WARNING, "This option is not supported for non-soap messages. This message is supposed to be soap but does not appear to be.");
+    public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.WARNING, true, false, "This option is not supported for non-soap messages. This message is supposed to be soap but does not appear to be.");
     public static final M HTTPROUTE_NON_SOAP_WRONG_POLICY   = m(4003, Level.WARNING, "This option is not supported for non-soap messages. Something is wrong with this policy.");
     public static final M HTTPROUTE_PROMOTING_ACTOR         = m(4004, Level.FINE, "promoting actor {0}");
     public static final M HTTPROUTE_NO_SECURITY_HEADER      = m(4005, Level.INFO, "Routing assertion asked for security header with actor {0} be promoted but there was no such security header present in the message.");
-    public static final M HTTPROUTE_ERROR_READING_RESPONSE  = m(4006, Level.SEVERE, "Error reading response");
+    public static final M HTTPROUTE_ERROR_READING_RESPONSE  = m(4006, Level.WARNING, true, false, "Error reading response");
     public static final M HTTPROUTE_CANT_RESOLVE_IP         = m(4007, Level.WARNING, "Couldn't resolve client IP address");
     public static final M HTTPROUTE_TAI_NOT_AUTHENTICATED   = m(4008, Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
     public static final M HTTPROUTE_TAI_CHAIN_USERNAME      = m(4009, Level.FINE, "TAI credential chaining requested; will chain username {0}");
@@ -27,11 +27,11 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_ADD_OUTGOING_COOKIE     = m(4013, Level.FINE, "Adding outgoing cookie: name = {0}");
     public static final M HTTPROUTE_LOGIN_INFO              = m(4014, Level.FINE, "Using login '{0}'");
     public static final M HTTPROUTE_OK                      = m(4015, Level.FINE, "Request routed successfully");
-    public static final M HTTPROUTE_RESPONSE_STATUS         = m(4016, Level.WARNING, "Protected service ({0}) responded with status {1}");
+    public static final M HTTPROUTE_RESPONSE_STATUS         = m(4016, Level.WARNING, true, true, "Protected service ({0}) responded with status {1}");
     public static final M HTTPROUTE_ADDCOOKIE_VERSION       = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
     public static final M HTTPROUTE_UPDATECOOKIE            = m(4018, Level.FINE,  "Updating cookie: name = {0}");
     public static final M BRIDGEROUTE_NO_ATTACHMENTS        = m(4019, Level.WARNING, "Bridge Routing Assertion does not currently support SOAP-with-attachments.  Ignoring additional MIME parts");
-    public static final M BRIDGEROUTE_BAD_CONFIG            = m(4020, Level.SEVERE, "Bridge Routing Assertion is configured with invalid protected service URL or policy XML");
+    public static final M BRIDGEROUTE_BAD_CONFIG            = m(4020, Level.WARNING, "Bridge Routing Assertion is configured with invalid protected service URL or policy XML");
     public static final M HTTPROUTE_BAD_ORIGINAL_URL        = m(4021, Level.WARNING, "Invalid original request URI -- using default");
     public static final M HTTPROUTE_ACCESS_DENIED           = m(4022, Level.WARNING, "Protected service denies access with current BridgeRoutingAssertion credentials");
     public static final M HTTPROUTE_TOO_MANY_ATTEMPTS       = m(4023, Level.WARNING, "Too many failed attempts to route to this service: giving up");
@@ -44,11 +44,11 @@ public class AssertionMessages extends Messages {
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");
 
     // ServerIdentityAssertion
-    public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.SEVERE, "Request is authenticated but request has no LoginCredentials!");
+    public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4200, Level.WARNING, "Request is authenticated but request has no LoginCredentials!");
     public static final M CREDENTIALS_NOT_FOUND                   = m(4201, Level.WARNING, "No credentials found!");
     public static final M ALREADY_AUTHENTICATED                   = m(4202, Level.FINEST, "Request already authenticated");
-    public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.SEVERE, "Can't call checkRequest() when no valid identityProviderOid has been set!");
-    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.SEVERE, "Couldn't find identity provider!");
+    public static final M ID_PROVIDER_ID_NOT_SET                  = m(4203, Level.WARNING, "Can't call checkRequest() when no valid identityProviderOid has been set!");
+    public static final M ID_PROVIDER_NOT_FOUND                   = m(4204, Level.WARNING, "Couldn't find identity provider!");
     public static final M ID_PROVIDER_NOT_EXIST                   = m(4205, Level.WARNING, "id assertion refers to an id provider which does not exist anymore");
     public static final M AUTHENTICATED                           = m(4206, Level.FINEST, "Authenticated {0}");
     public static final M INVALID_CERT                            = m(4207, Level.INFO, "Invalid client cert for {0}");
@@ -94,11 +94,11 @@ public class AssertionMessages extends Messages {
     public static final M SC_TOKEN_INVALID                        = m(4603, Level.WARNING, "The request referred to a SecureConversation token that is not recognized on this server. Perhaps the session has expired. Returning AUTH_FAILED.");
     public static final M SC_SESSION_FOR_USER                     = m(4604, Level.FINE, "Secure Conversation session recognized for user {0}");
     public static final M SC_REQUEST_NOT_REFER_TO_SC_TOKEN        = m(4605, Level.INFO, "This request did not seem to refer to a Secure Conversation token.");
-    public static final M SC_UNABLE_TO_ATTACH_SC_TOKEN            = m(4606, Level.WARNING, "Response not SOAP; unable to attach WS-SecureConversation token");
+    public static final M SC_UNABLE_TO_ATTACH_SC_TOKEN            = m(4606, Level.WARNING, false, true, "Response not SOAP; unable to attach WS-SecureConversation token");
 
     // ServerRequestXpathAssertion & ServerResponseXpathAssertion messages
-    public static final M XPATH_REQUEST_NOT_XML                   = m(4700, Level.WARNING, "Request not XML; cannot evaluate XPath expression");
-    public static final M XPATH_RESPONSE_NOT_XML                  = m(4701, Level.WARNING, "Response not XML; cannot evaluate XPath expression");
+    public static final M XPATH_REQUEST_NOT_XML                   = m(4700, Level.WARNING, true, false, "Request not XML; cannot evaluate XPath expression");
+    public static final M XPATH_RESPONSE_NOT_XML                  = m(4701, Level.WARNING, false, true, "Response not XML; cannot evaluate XPath expression");
     public static final M XPATH_PATTERN_INVALID                   = m(4702, Level.WARNING, "XPath pattern is null or empty; assertion therefore fails.");
     public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST       = m(4703, Level.INFO, "XPath pattern didn't match request; assertion therefore fails." );
     public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "XPath pattern didn't match response; assertion therefore fails." );
@@ -120,7 +120,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_X509_NON_SOAP               = m(4801, Level.INFO, "Request not SOAP; unable to check for WS-Security signature");
     public static final M REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY  = m(4802, Level.INFO, "This request did not contain any WSS level security.");
     public static final M REQUEST_WSS_X509_NO_TOKEN               = m(4803, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
-    public static final M REQUEST_WSS_X509_TOO_MANY_VALID_SIG     = m(4804, Level.SEVERE, "We got a request that presented more than one valid signature from {0} more than one client cert. This is not yet supported");
+    public static final M REQUEST_WSS_X509_TOO_MANY_VALID_SIG     = m(4804, Level.WARNING, true, false, "Request presented more than one valid signature from more than one client cert.");
     public static final M REQUEST_WSS_X509_CERT_LOADED            = m(4805, Level.FINE, "Cert loaded as principal credential for CN:{0}");
     public static final M REQUEST_WSS_X509_NO_PROVEN_CERT         = m(4806, Level.INFO, "This assertion did not find a proven x509 cert to use as credentials. Returning AUTH_REQUIRED.");
 
@@ -163,21 +163,21 @@ public class AssertionMessages extends Messages {
     // ServerResponseWssConfidentiality
     public static final M RESPONSE_WSS_CONF_REQUEST_NOT_SOAP                = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
     public static final M RESPONSE_WSS_CONF_NO_WSS_SECURITY                 = m(5401, Level.INFO, "This request did not contain any WSS level security.");
-    public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, "Request included more than one X509 security token whose key ownership was proven");
+    public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
     public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response. Request did not include x509 token or secure conversation.");
-    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, "Response not SOAP; unable to encrypt response elements");
+    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, false, true, "Response not SOAP; unable to encrypt response elements");
     public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.FINE, "No matching elements to encrypt in response.  Returning success.");
     public static final M RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
 
     // ServerResponseWssIntegrity
-    public static final M RESPONSE_WSS_INT_REQUEST_NOT_SOAP                 = m(5500, Level.INFO, "Request not SOAP; cannot verify WS-Security signature");
-    public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SOAP                = m(5501, Level.WARNING, "Response not SOAP; cannot apply WS-Security signature");
+    public static final M RESPONSE_WSS_INT_REQUEST_NOT_SOAP                 = m(5500, Level.INFO, "Request not SOAP; cannot sign response");
+    public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SOAP                = m(5501, Level.WARNING, false, true, "Response not SOAP; cannot apply WS-Security signature");
     public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SIGNED              = m(5502, Level.FINE, "No matching elements to sign in response.  Returning success.");
     public static final M RESPONSE_WSS_INT_RESPONSE_SIGNED                  = m(5503, Level.FINE, "Designated {0} response elements for signing");
 
     // ServerRequestWssIntegrity
     public static final M REQUEST_WSS_INT_RESPONSE_NOT_SOAP                 = m(5550, Level.FINE, "Response not SOAP; cannot return SignatureConfirmation");
-    public static final M REQUEST_WSS_INT_REQUEST_MULTI_SIGNED              = m(5551, Level.WARNING, "Request has multiple signers, failing.");
+    public static final M REQUEST_WSS_INT_REQUEST_MULTI_SIGNED              = m(5551, Level.WARNING, true, false, "Request has multiple signers, failing.");
 
     // ServerSchemaValidation
     public static final M SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating response document");
@@ -211,7 +211,7 @@ public class AssertionMessages extends Messages {
     // ServerJmsRoutingAssertion
     public static final M JMS_ROUTING_CONNECT_FAILED                  = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
     public static final M JMS_ROUTING_INBOUD_REQUEST_QUEUE_NOT_EMPTY  = m(6001, Level.FINE,  "Inbound request queue is not temporary; using selector to filter responses to our message");
-    public static final M JMS_ROUTING_TOPIC_NOT_SUPPORTED             = m(6002, Level.SEVERE, "Topics not supported!");
+    public static final M JMS_ROUTING_TOPIC_NOT_SUPPORTED             = m(6002, Level.WARNING, "Topics not supported!");
     public static final M JMS_ROUTING_REQUEST_ROUTED                  = m(6003, Level.FINER, "Routing request to protected service");
     public static final M JMS_ROUTING_GETTING_RESPONSE                = m(6004, Level.FINEST, "Getting response from protected service");
     public static final M JMS_ROUTING_NO_RESPONSE                     = m(6005, Level.WARNING, "Did not receive a routing reply within timeout of {0} ms. Will return empty response");
@@ -222,18 +222,18 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_RETURN_NO_REPLY                 = m(6010, Level.FINER, "Returning NO_REPLY (null) for {0}");
     public static final M JMS_ROUTING_RETURN_AUTOMATIC                = m(6011, Level.FINER, "Returning AUTOMATIC {0} for {1}");
     public static final M JMS_ROUTING_RETURN_REPLY_TO_OTHER           = m(6012, Level.FINER, "Returning REPLY_TO_OTHER {0} for {1}");
-    public static final M JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE           = m(6013, Level.SEVERE, "Unknown JmsReplyType {0}");
-    public static final M JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION    = m(6014, Level.SEVERE, "Request and reply endpoints must belong to the same connection");
+    public static final M JMS_ROUTING_UNKNOW_JMS_REPLY_TYPE           = m(6013, Level.WARNING, "Unknown JmsReplyType {0}");
+    public static final M JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION    = m(6014, Level.WARNING, "Request and reply endpoints must belong to the same connection");
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE  = m(6015, Level.FINER, "Creating request as TextMessage");
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE = m(6016, Level.FINER, "Creating request as BytesMessage");
     public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "Routed request endpoint specified NO_REPLY, won't set JMSReplyTo and JMSCorrelationID");
     public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
-    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.SEVERE, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
+    public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
 
     // ServerRequestWssSaml
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate Saml Statement");
     public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
-    public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.SEVERE, "We got a request that contained more than one SAML assertion. This is not currently supported.");
+    public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.WARNING, true, false, "Request contained more than one SAML assertion");
     public static final M SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION         = m(6103, Level.INFO, "This assertion did not find an acceptable SAML assertion to use as credentials.");
     public static final M SAML_STMT_VALIDATE_FAILED                            = m(6104, Level.INFO, "Saml Statement validation failed");
 
@@ -244,7 +244,7 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_NON_XML_MESSAGE         = m(6203, Level.INFO, "Can't replace security token in non-XML message");
     public static final M WSTRUST_DECORATION_FAILED       = m(6204, Level.WARNING, "Unable to replace security token");
     public static final M WSTRUST_ORIGINAL_TOKEN_NOT_XML  = m(6205, Level.INFO, "Original security token was not XML; cannot remove from request");
-    public static final M WSTRUST_MULTI_TOKENS            = m(6206, Level.WARNING, "Multiple Security Tokens found in request");
+    public static final M WSTRUST_MULTI_TOKENS            = m(6206, Level.WARNING, "Multiple exchangeable Security Tokens found in request");
     public static final M WSTRUST_SERVER_HTTP_FAILED      = m(6207, Level.WARNING, "HTTP failure talking to WS-Trust server");
 
     //ServerRegex
@@ -298,10 +298,10 @@ public class AssertionMessages extends Messages {
     public static final M SNMP_BAD_TRAP_OID       = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field.  Using .1 for the trap OID instead.");
 
     // HTTP Form POST
-    public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, "Request does not appear to be an HTTP form submission ({0})");
+    public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, true, false, "Request does not appear to be an HTTP form submission ({0})");
     public static final M HTTPFORM_NON_HTTP      = m(6801, Level.WARNING, "Request was not received via HTTP");
-    public static final M HTTPFORM_MULTIVALUE    = m(6802, Level.WARNING, "Field {0} had multiple values; skipping");
-    public static final M HTTPFORM_NO_SUCH_FIELD = m(6803, Level.WARNING, "Field {0} could not be found");
+    public static final M HTTPFORM_MULTIVALUE    = m(6802, Level.WARNING, true, false, "Field {0} had multiple values; skipping");
+    public static final M HTTPFORM_NO_SUCH_FIELD = m(6803, Level.WARNING, true, false, "Field {0} could not be found");
     public static final M HTTPFORM_NO_PARTS      = m(6804, Level.WARNING, "No MIME parts were found");
     public static final M HTTPFORM_BAD_MIME      = m(6805, Level.WARNING, "Unable to write new MIME message");
     public static final M HTTPFORM_TOO_BIG       = m(6806, Level.WARNING, "Field {0} is too large (>= " + 512 * 1024 + " bytes)");
@@ -321,8 +321,8 @@ public class AssertionMessages extends Messages {
     public static final M COMPARISON_NULL         = m(7103, Level.WARNING, "At least one comparison value was null");
 
     // SqlAttackAssertion
-    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.SEVERE, "Unrecognized protection name: {0}.  Assertion will always fail.");
-    public static final M SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, "Request was flagged by SQL attack protection assertion");
+    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
+    public static final M SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, true, false, "Request was flagged by SQL attack protection assertion");
     public static final M SQLATTACK_ALREADY_ROUTED          = m(7203, Level.WARNING, "Unable to protect against SQL attacks -- the request has already been routed.");
 
     // RequestSizeLimit
@@ -336,11 +336,11 @@ public class AssertionMessages extends Messages {
     public static final M WSFEDPASS_NON_XML_MESSAGE         = m(7303, Level.INFO, "Can't replace security token in non-XML message");
     public static final M WSFEDPASS_DECORATION_FAILED       = m(7304, Level.WARNING, "Unable to replace security token");
     public static final M WSFEDPASS_ORIGINAL_TOKEN_NOT_XML  = m(7305, Level.INFO, "Original security token was not XML; cannot remove from request");
-    public static final M WSFEDPASS_MULTI_TOKENS            = m(7306, Level.WARNING, "Multiple Security Tokens found in request");
+    public static final M WSFEDPASS_MULTI_TOKENS            = m(7306, Level.WARNING, true, false, "Multiple Security Tokens found in request");
     public static final M WSFEDPASS_SERVER_HTTP_FAILED      = m(7307, Level.WARNING, "HTTP failure talking to WS-Federation server");
     public static final M WSFEDPASS_SERVER_HTTP_ENCODING    = m(7308, Level.WARNING, "Unknown encoding from WS-Federation server");
     public static final M WSFEDPASS_SERVER_HTML_INVALID     = m(7309, Level.WARNING, "Cannot parse HTML from WS-Federation server");
-    public static final M WSFEDPASS_CONFIG_INVALID          = m(7310, Level.SEVERE, "Invalid IP/STS URL in policy configuration");
+    public static final M WSFEDPASS_CONFIG_INVALID          = m(7310, Level.WARNING, "Invalid IP/STS URL in policy configuration");
     public static final M WSFEDPASS_AUTH_FAILED             = m(7311, Level.WARNING, "Authentication with service failed");
 
     // ServerRequestWssKerberos messages
@@ -350,7 +350,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_KERBEROS_NO_TICKET              = m(7404, Level.INFO, "This assertion did not find a Kerberos Binary Security Token to use as credentials. Returning AUTH_REQUIRED.");
     public static final M REQUEST_WSS_KERBEROS_GOT_TICKET             = m(7405, Level.FINE, "Kerberos ticket processed, principal is:{0}");
     public static final M REQUEST_WSS_KERBEROS_GOT_SESSION            = m(7406, Level.FINE, "Kerberos session processed, principal is:{0}");
-    public static final M REQUEST_WSS_KERBEROS_INVALID_CONFIG         = m(7407, Level.SEVERE, "Server Kerberos configuration is invalid or KDC unreachable.");
+    public static final M REQUEST_WSS_KERBEROS_INVALID_CONFIG         = m(7407, Level.WARNING, "Server Kerberos configuration is invalid or KDC unreachable.");
     public static final M REQUEST_WSS_KERBEROS_INVALID_TICKET         = m(7408, Level.WARNING, "Could not process Kerberos ticket (not for this service?).");
 
     // ServerMappingAssertion messages
@@ -368,10 +368,10 @@ public class AssertionMessages extends Messages {
     public static final M NO_SUCH_VARIABLE   = m(-6, Level.WARNING, "No such variable: {0}");
 
     public static final M WSI_BSP_REQUEST_NON_SOAP       = m(7600, Level.INFO, "Request not SOAP; unable to check for WS-I Basic Security Profile compliance");
-    public static final M WSI_BSP_RESPONSE_NON_SOAP      = m(7601, Level.INFO, "Response not SOAP; unable to check for WS-I Basic Security Profile compliance");
-    public static final M WSI_BSP_REQUEST_NON_COMPLIANT  = m(7602, Level.WARNING, "WS-I BSP rule broken in request ({0}): {1}");
-    public static final M WSI_BSP_RESPONSE_NON_COMPLIANT = m(7603, Level.WARNING, "WS-I BSP rule broken in response ({0}): {1}");
+    public static final M WSI_BSP_RESPONSE_NON_SOAP      = m(7601, Level.INFO, false, true, "Response not SOAP; unable to check for WS-I Basic Security Profile compliance");
+    public static final M WSI_BSP_REQUEST_NON_COMPLIANT  = m(7602, Level.WARNING, true, false, "WS-I BSP rule broken in request ({0}): {1}");
+    public static final M WSI_BSP_RESPONSE_NON_COMPLIANT = m(7603, Level.WARNING, false, true, "WS-I BSP rule broken in response ({0}): {1}");
     public static final M WSI_BSP_REQUEST_FAIL           = m(7604, Level.INFO, "Failing non WS-I BSP compliant request.");
     public static final M WSI_BSP_RESPONSE_FAIL          = m(7605, Level.INFO, "Failing non WS-I BSP compliant response.");
-    public static final M WSI_BSP_XPATH_ERROR            = m(7606, Level.SEVERE, "Server WS-I BSP rules are incorrect.");
+    public static final M WSI_BSP_XPATH_ERROR            = m(7606, Level.WARNING, "Server WS-I BSP rules are incorrect.");
 }

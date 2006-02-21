@@ -51,6 +51,10 @@ public class Messages {
     protected Messages() { }
 
     protected static M m(int id, Level level, String msg) {
+        return m(id, level, false, false, msg);
+    }
+
+    protected static M m(int id, Level level, boolean saveRequest, boolean saveResponse, String msg) {
         M adm = new M(id, level, msg);
         Object o = messagesById.put(new Integer(id), adm);
         if (o != null) throw new IllegalArgumentException("A message with id #" + id + " already exists!");
@@ -58,8 +62,12 @@ public class Messages {
     }
 
     public static final class M extends AuditDetailMessage {
+        public M(int id, Level level, String message, boolean saveRequest, boolean saveResponse) {
+            super(id, level, message, saveRequest, saveResponse);
+        }
+
         public M(int id, Level level, String message) {
-            super(id, level, message);
+            this(id, level, message, false, false);
         }
     }
 
