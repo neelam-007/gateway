@@ -72,6 +72,9 @@
 ;Installer Sections
 
 Section "SecureSpan Bridge" SecCopyUI
+  ; Before copying anything, let's stop the Windows service (if any)
+  ExecWait 'sc stop SSB' $0
+  DetailPrint "stoped windows service SSB. return code $0"
 
   ;ADD YOUR OWN STUFF HERE!
 
