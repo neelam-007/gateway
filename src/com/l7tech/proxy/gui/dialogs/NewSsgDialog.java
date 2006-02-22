@@ -37,6 +37,16 @@ public class NewSsgDialog extends JDialog {
     private Ssg ssg;
     private boolean confirmed = false;
 
+    /**
+     * Create a New Ssg dialog.
+     *
+     * @param newSsg       the new-but-not-yet-configured-as-federated Ssg instance
+     * @param ssgFinder    SsgFinder for populating list of possible Trusted SSGs
+     * @param owner        owning object for proper swing nesting
+     * @param title        dialog title
+     * @param modal        true for modal dialog
+     * @throws HeadlessException
+     */
     public NewSsgDialog(Ssg newSsg, SsgFinder ssgFinder, Frame owner, String title, boolean modal) throws HeadlessException {
         super(owner, title, modal);
         this.ssg = newSsg;
@@ -44,6 +54,16 @@ public class NewSsgDialog extends JDialog {
         initialize();
     }
 
+    /**
+     * Create a New Ssg dialog.
+     *
+     * @param newSsg       the new-but-not-yet-configured-as-federated Ssg instance
+     * @param ssgFinder    SsgFinder for populating list of possible Trusted SSGs
+     * @param owner        owning object for proper swing nesting
+     * @param title        dialog title
+     * @param modal        true for modal dialog
+     * @throws HeadlessException
+     */
     public NewSsgDialog(Ssg newSsg, SsgFinder ssgFinder, Dialog owner, String title, boolean modal) throws HeadlessException {
         super(owner, title, modal);
         this.ssg = newSsg;

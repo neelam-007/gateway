@@ -3,6 +3,7 @@ package com.l7tech.proxy;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.util.Background;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.TimerTask;
 
 /**
  * Begin execution of daemon-mode (no UI at all) client proxy.
@@ -21,11 +23,11 @@ import java.util.logging.Logger;
  */
 public class Main {
     private static final Logger log = Logger.getLogger(Main.class.getName());
+    protected static final int CONFIG_CHECK_TIME = 5000;  // check for config file changes every 5 seconds
     protected static final int DEFAULT_PORT = 7700;
     protected static final int MIN_THREADS = 5;
     protected static final int MAX_THREADS = 300;
 
-    private static ClientProxy clientProxy = null;
     public static final String PROPERTY_LISTENER_PORT = "com.l7tech.proxy.listener.port";
     public static final String PROPERTY_LISTENER_MINTHREADS = "com.l7tech.proxy.listener.minthreads";
     public static final String PROPERTY_LISTENER_MAXTHREADS = "com.l7tech.proxy.listener.maxthreads";
@@ -61,7 +63,7 @@ public class Main {
     }
 
     /**
-     *
+     * Set up kerberos configuration.
      */
     protected static void initConfig() {
         File configDir = new File(Ssg.PROXY_CONFIG);
@@ -91,22 +93,21 @@ public class Main {
     }
 
     /**
-     * Create the client proxy.  Uses the system properties for port and threads.
+     * Create a new client proxy.  Uses the system properties for port and threads.
+     *
      * @param ssgFinder the SsgFinder to use for the new ClientProxy.
      * @return the new ClientProxy instance, which is also saved in a member field.
-     * @throws IllegalStateException if a client proxy instance has already been created.
      */
     protected static ClientProxy createClientProxy(SsgFinder ssgFinder) {
-        if (clientProxy != null) throw new IllegalStateException("client proxy already created");
-        int port = getIntProperty(PROPERTY_LISTENER_PORT, DEFAULT_PORT);
+        int port = getBindPort();
         int minThreads = getIntProperty(PROPERTY_LISTENER_MINTHREADS, MIN_THREADS);
         int maxThreads = getIntProperty(PROPERTY_LISTENER_MAXTHREADS, MAX_THREADS);
 
-        clientProxy = new ClientProxy(ssgFinder,
-          new MessageProcessor(),
-          port,
-          minThreads,
-          maxThreads);
+        ClientProxy clientProxy = new ClientProxy(ssgFinder,
+                                                  new MessageProcessor(),
+                                                  port,
+                                                  minThreads,
+                                                  maxThreads);
 
         // Clean out attachment directory after we've established that no other Client Proxy was running
         if (!Ssg.ATTACHMENT_DIR.exists())
@@ -116,9 +117,8 @@ public class Main {
         return clientProxy;
     }
 
-    /** @return the current clientProxy instance if createClientProxy() has been called; otherwise null. */
-    protected static ClientProxy getClientProxy() {
-        return clientProxy;
+    protected static int getBindPort() {
+        return getIntProperty(PROPERTY_LISTENER_PORT, DEFAULT_PORT);
     }
 
     /**
@@ -132,14 +132,22 @@ public class Main {
         initConfig();
         log.info("Starting SecureSpan Bridge in non-interactive mode; " + BuildInfo.getLongBuildString());
 
-        createClientProxy(SsgFinderImpl.getSsgFinderImpl());
+        final SsgFinderImpl ssgFinderImpl = SsgFinderImpl.getSsgFinderImpl();
+        final ClientProxy clientProxy = createClientProxy(ssgFinderImpl);
+
+        // Watch for config file changes
+        Background.schedule(new TimerTask() {
+            public void run() {
+                ssgFinderImpl.loadIfChanged();
+            }
+        }, CONFIG_CHECK_TIME, CONFIG_CHECK_TIME);
 
         // Hook up the Message Logger facility
-        getClientProxy().getRequestHandler().setRequestInterceptor(new MessageLogger());
+        clientProxy.getRequestHandler().setRequestInterceptor(new MessageLogger());
 
         // Start the client proxy or exit.
         try {
-            getClientProxy().start();
+            clientProxy.start();
         } catch (Exception e) {
             log.log(Level.SEVERE, "Unable to start Layer 7 SecureSpan Bridge", e);
             System.exit(2);

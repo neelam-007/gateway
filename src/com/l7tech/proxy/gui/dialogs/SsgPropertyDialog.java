@@ -50,11 +50,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
 
     // Model
-    private Ssg ssg; // The real Ssg instance, to which changes may be committed.
-    private ClientProxy clientProxy;  // The Client Proxy we're attached to, so we can display the bind port.
-
-    // View
-    private int gridY = 0; // Used for layout
+    private final Ssg ssg; // The real Ssg instance, to which changes may be committed.
+    private final int bindPort; // the local port the client proxy is bound to
 
     //   View for General pane
     private JComponent generalPane;
@@ -76,16 +73,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private SsgPoliciesPanel policiesPane;
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
-    private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
+    private SsgPropertyDialog(final Ssg ssg, final int bindPort) {
         super("Gateway Account Properties");
-        this.clientProxy = clientProxy;
+        this.bindPort = bindPort;
         tabbedPane.add("General", getGeneralPane(ssg));
         tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
         tabbedPane.add("Bridge Policy", getBridgePolicyPane());
         tabbedPane.add("Service Policies", getPoliciesPane());
         ssg.addSsgListener(this);
-        setSsg(ssg);
+        this.ssg = ssg;
+        modelToView();
         pack();
     }
 
@@ -97,10 +95,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /**
      * Attempt to build an "edit properties" dialog box for the given Ssg.
      * @param ssg The ssg whose properties we intend to edit
+     * @param bindPort the port the client proxy is listening on on localhost
      * @return The property dialog that will edit said properties.  Call setVisible(true) on it to run it.
      */
-    public static SsgPropertyDialog makeSsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
-        return new SsgPropertyDialog(clientProxy, ssg);
+    public static SsgPropertyDialog makeSsgPropertyDialog(final Ssg ssg, int bindPort) {
+        return new SsgPropertyDialog(ssg, bindPort);
     }
 
     private JComponent getBridgePolicyPane() {
@@ -123,7 +122,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                  new Insets(0, 0, 0, 0), 0, 0));
             cbUseSslByDefault = new JCheckBox("Use SSL by Default");
             pane.add(cbUseSslByDefault,
-                     new GridBagConstraints(0, y++, 1, 1, 1.0, 0.0,
+                     new GridBagConstraints(0, y, 1, 1, 1.0, 0.0,
                                             GridBagConstraints.WEST,
                                             GridBagConstraints.HORIZONTAL,
                                             new Insets(5, 15, 5, 0), 0, 0));
@@ -169,6 +168,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     FederatedSamlTokenStrategy stratCopy = (FederatedSamlTokenStrategy) strat.clone();
                     updateStrategyFromView(stratCopy, fp);
                     try {
+                        //noinspection UnusedAssignment
                         SecurityToken token = null;
                         for (;;) {
                             try {
@@ -215,21 +215,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             AbstractSamlTokenStrategy astrat = ssg.getWsTrustSamlTokenStrategy();
             if(astrat instanceof WsTrustSamlTokenStrategy) {
                 final WsTrustSamlTokenStrategy strat = (WsTrustSamlTokenStrategy) astrat;
-                if (strat != null) {
-                    fp.getWsTrustCertButton().addActionListener(getCertActionListener(strat, "WS-Trust"));
-
-                    fp.getRequestTypeCombo().setModel(new DefaultComboBoxModel(WsTrustRequestType.getValues()));
-
-                    fp.getWsTrustTestButton().addActionListener(getTestTokenRequestActionListener(fp, strat, "WS-Trust"));
-                }
+                fp.getWsTrustCertButton().addActionListener(getCertActionListener(strat, "WS-Trust"));
+                fp.getRequestTypeCombo().setModel(new DefaultComboBoxModel(WsTrustRequestType.getValues()));
+                fp.getWsTrustTestButton().addActionListener(getTestTokenRequestActionListener(fp, strat, "WS-Trust"));
             }
-            else if(astrat instanceof WsFederationPRPSamlTokenStrategy) {
-                final WsFederationPRPSamlTokenStrategy strat = (WsFederationPRPSamlTokenStrategy) astrat;
-                if (strat != null) {
-                    fp.getWsFedCertButton().addActionListener(getCertActionListener(strat, "WS-Federation"));
-
-                    fp.getWsFedTestButton().addActionListener(getTestTokenRequestActionListener(fp, strat, "WS-Federation"));
-                }
+            else if (astrat instanceof WsFederationPRPSamlTokenStrategy) {
+                final WsFederationPRPSamlTokenStrategy strat = (WsFederationPRPSamlTokenStrategy)astrat;
+                fp.getWsFedCertButton().addActionListener(getCertActionListener(strat, "WS-Federation"));
+                fp.getWsFedTestButton().addActionListener(getTestTokenRequestActionListener(fp, strat, "WS-Federation"));
             }
 
         } else {
@@ -349,7 +342,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             newHost = JOptionPane.showInputDialog(this, "Please enter a Gateway host name.");
             if (newHost == null) throw new OperationCanceledException();
         }
-        if (newHost == null || newHost.length() < 1) {
+        if (newHost.length() < 1) {
             JOptionPane.showMessageDialog(this,
                                           "You must set a gateway host name before you can apply for a client " +
                                           "certificate.", "Cannot apply for client certificate",
@@ -487,7 +480,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /** Create panel controls.  Should be called only from a constructor. */
     private JComponent getGeneralPane(Ssg ssg) {
         if (generalPane == null) {
-            gridY = 0;
+            int gridY = 0;
             JPanel pane = new JPanel(new GridBagLayout());
             generalPane = new JScrollPane(pane);
             generalPane.setBorder(BorderFactory.createEmptyBorder());
@@ -534,7 +527,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
-                     new GridBagConstraints(0, gridY++, 2, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, gridY, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(0, 0, 0, 0), 0, 0));
@@ -643,10 +636,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /**
      * Set the Ssg object being edited by this panel.
      */
-    private void setSsg(final Ssg ssg) {
-        this.ssg = ssg;
+    private void modelToView() {
         synchronized (ssg) {
-
             // override the default (trusted SSG) if the ssg is a federated SSG
             if (ssg.isFederatedGateway()) {
                 FederatedSsgIdentityPanel fp = (FederatedSsgIdentityPanel) ssgIdentityPane;
@@ -696,9 +687,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             updateIdentityEnableState();
             boolean customPorts = isPortsCustom(ssg);
             getNetworkPane().setCustomPorts(customPorts);
-            getNetworkPane().setLocalEndpoint("http://localhost:" + clientProxy.getBindPort() + "/" +
+            getNetworkPane().setLocalEndpoint("http://localhost:" + bindPort + "/" +
                                        ssg.getLocalEndpoint());
-            getNetworkPane().setWsdlEndpoint("http://localhost:" + clientProxy.getBindPort() + "/" +
+            getNetworkPane().setWsdlEndpoint("http://localhost:" + bindPort + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
             fieldKerberosName.setText(ssg.getKerberosName());
@@ -768,7 +759,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             }
             ssg.getRuntime().reset();
         }
-        setSsg(ssg);
+        modelToView();
     }
 
     /**
@@ -790,8 +781,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      * Called after a successful token request to update the username/password (if changed).
      */
     private void updateViewCredentialsFromStrategy(FederatedSsgIdentityPanel fp, AbstractSamlTokenStrategy strat) {
-        String username = null;
-        char[] password = null;
+        final String username;
+        char[] password;
 
         if(strat instanceof WsTrustSamlTokenStrategy) {
             username = ((WsTrustSamlTokenStrategy)strat).getUsername();
@@ -805,7 +796,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             throw new IllegalArgumentException("Unsupported strategy type");
         }
 
-        if(password==null) password = new char[0];
+        if (password == null) password = new char[0];
 
         fp.getWstUsernameField().setText(username);
         fp.getWstPasswordField().setText(new String(password));

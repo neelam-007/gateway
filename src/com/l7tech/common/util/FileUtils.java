@@ -135,6 +135,19 @@ public class FileUtils {
         }
     }
 
+    public static class LastModifiedFileInputStream extends FileInputStream {
+        private final long lastModified;
+
+        LastModifiedFileInputStream(File file) throws FileNotFoundException {
+            super(file);
+            this.lastModified = file.lastModified();
+        }
+
+        public long getLastModified() {
+            return lastModified;
+        }
+    }
+
     /**
      * Safely open a file that was saved with saveFileSafely().  Handles recovery in case the most recent
      * save to the file was interrupted.  Caller is responsible for ensuring that only one thread attempts
@@ -144,10 +157,10 @@ public class FileUtils {
      * @return
      * @throws FileNotFoundException
      */
-    public static FileInputStream loadFileSafely(String path) throws IOException {
+    public static LastModifiedFileInputStream loadFileSafely(String path) throws IOException {
         RandomAccessFile lockRaf = null;
         FileLock lock = null;
-        FileInputStream in = null;
+        LastModifiedFileInputStream in = null;
         try {
             // Get file lock
             File lckFile = new File(path + ".LCK");
@@ -155,10 +168,10 @@ public class FileUtils {
             lockRaf = new RandomAccessFile(lckFile, "rw");
             lock = lockRaf.getChannel().lock();
 
-            in = new FileInputStream(path);
+            in = new LastModifiedFileInputStream(new File(path));
         } catch (FileNotFoundException e) {
             // Check for an interrupted update operation
-            in = new FileInputStream(path + ".OLD");
+            in = new LastModifiedFileInputStream(new File(path + ".OLD"));
         } finally {
             if (lock != null)
                 try { lock.release(); }
@@ -235,7 +248,7 @@ public class FileUtils {
         if (in == null || out == null) {
             throw new IllegalArgumentException();
         }
-        ReadableByteChannel sourceChannel = null;
+        final ReadableByteChannel sourceChannel;
         FileChannel destinationChannel = null;
         try {
             sourceChannel = new InputStreamChannel(in);

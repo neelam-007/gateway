@@ -27,7 +27,8 @@ public class LogonDialogTest {
 
     public static void main(String[] args) {
         SsgManager ssgManager = new SsgManagerStub();
-        Gui.setInstance(Gui.createGui(new ClientProxy(ssgManager, null, 0, 0, 0), ssgManager));
+        final ClientProxy clientProxy = new ClientProxy(ssgManager, null, 0, 0, 0);
+        Gui.setInstance(Gui.createGui(new Gui.GuiParams(ssgManager, 0)));
         try {
             JFrame frame = new JFrame() {
                 public Dimension getPreferredSize() {

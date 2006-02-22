@@ -11,7 +11,6 @@ import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 import java.beans.XMLDecoder;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
@@ -29,11 +28,13 @@ public class SsgFinderImpl implements SsgFinder {
     private static final Logger log = Logger.getLogger(SsgFinderImpl.class.getName());
 
     protected static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7tech";
-    protected static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";
+    protected static final String STORE_PATH = STORE_DIR + File.separator + "ssgs.xml";
+    protected static final File STORE_FILE = new File(STORE_PATH);
 
+    protected long lastLoaded = Long.MIN_VALUE; // time that config file was last loaded
     protected SortedSet ssgs = new TreeSet();
     protected HashMap hostCache = new HashMap();
-    protected boolean init = false; // should be private; relaxed for performace
+    protected boolean init = false;
 
     private static class SsgFinderHolder {
         private static final SsgFinderImpl ssgFinder = new SsgFinderImpl();
@@ -49,7 +50,7 @@ public class SsgFinderImpl implements SsgFinder {
 
     /** @return the path the config file we are saving and loading from. */
     public String getStorePath() {
-        return STORE_FILE;
+        return STORE_PATH;
     }
 
     /**
@@ -78,22 +79,23 @@ public class SsgFinderImpl implements SsgFinder {
      * Unconditionally load our SSG state from disk.
      */
     public synchronized void load() {
-        FileInputStream in = null;
+        FileUtils.LastModifiedFileInputStream in = null;
         XMLDecoder decoder = null;
         try {
-            in = FileUtils.loadFileSafely(STORE_FILE);
+            in = FileUtils.loadFileSafely(STORE_PATH);
             decoder = new XMLDecoder(in);
             final Collection newssgs = (Collection)decoder.readObject();
             if (newssgs != null) {
                 ssgs.clear();
                 ssgs.addAll(newssgs);
             }
+            lastLoaded = in.getLastModified();
         } catch (FileNotFoundException e) {
             log.info("No Gateway store found -- will create a new one");
         } catch (IOException e) {
             log.log(Level.SEVERE, "Unable to load Gateway store", e);
         } catch (ClassCastException e) {
-            log.log(Level.SEVERE, "Badly formatted Gateway store " + STORE_FILE, e);
+            log.log(Level.SEVERE, "Badly formatted Gateway store " + STORE_PATH, e);
         } finally {
             if (decoder != null)
                 decoder.close();
@@ -102,6 +104,16 @@ public class SsgFinderImpl implements SsgFinder {
         }
         rebuildHostCache();
         init = true;
+    }
+
+    /**
+     * Reload config file from disk if it has changed since last time we loaded it.
+     */
+    public void loadIfChanged() {
+        if (STORE_FILE.lastModified() > lastLoaded) {
+            log.info("Reloading SSG configuration from " + STORE_PATH);
+            load();
+        }
     }
 
     /**

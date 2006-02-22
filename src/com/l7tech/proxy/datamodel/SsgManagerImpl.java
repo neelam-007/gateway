@@ -37,7 +37,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
      * calling this method at any given time.
      */
     public synchronized void save() throws IOException {
-        FileUtils.saveFileSafely(STORE_FILE, new FileUtils.Saver() {
+        FileUtils.saveFileSafely(STORE_PATH, new FileUtils.Saver() {
             public void doSave(FileOutputStream fos) {
                 XMLEncoder encoder = null;
                 try {

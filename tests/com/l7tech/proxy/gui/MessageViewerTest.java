@@ -37,7 +37,7 @@ public class MessageViewerTest {
     }
 
     public static void main(String[] args) throws Exception {
-        Gui.setInstance(Gui.createGui(null, new SsgManagerStub()));
+        Gui.setInstance(Gui.createGui(new Gui.GuiParams(new SsgManagerStub(), 0)));
         Gui.getInstance().start();
 
         MessageViewer mv = new MessageViewer("Message viewer test");

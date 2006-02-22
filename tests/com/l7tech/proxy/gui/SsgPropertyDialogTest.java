@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -136,10 +135,9 @@ public class SsgPropertyDialogTest {
         ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exsample.com/Quoater", "http://gwserg.asd.gfs", null), tp);
 
         log.info("Firing up an example SsgPropertyDialog");
-        ClientProxy clientProxy = new ClientProxyStub(9797);
-        Gui.setInstance(Gui.createGui(clientProxy, new SsgManagerStub()));
+        Gui.setInstance(Gui.createGui(new Gui.GuiParams(new SsgManagerStub(), 9797)));
         Gui.getInstance().start();
-        SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).setVisible(true);
+        SsgPropertyDialog.makeSsgPropertyDialog(ssg, 9797).setVisible(true);
         System.exit(0);
     }
 }

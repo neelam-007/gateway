@@ -22,7 +22,7 @@ public class TrustCertificateDialogTest {
     private static final Logger log = Logger.getLogger(TrustCertificateDialog.class.getName());
 
     public static void main(String[] args) throws Exception {
-        Gui.setInstance(Gui.createGui(null, new SsgManagerStub()));
+        Gui.setInstance(Gui.createGui(new Gui.GuiParams(new SsgManagerStub(), 0)));
         X509Certificate cert = TestDocuments.getDotNetServerCertificate();
         TrustCertificateDialog tcd = new TrustCertificateDialog(cert, "Blah!", "The authenticity of this Gateway server certificate could not be verified using the current username and password.  Do you want to trust the Gateway data.l7tech.com using this server certificate?  If you don't know, click Cancel.");
         tcd.setVisible(true);

@@ -1,15 +1,15 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.util.FontUtil;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -26,7 +26,9 @@ import java.util.logging.Logger;
  */
 class SsgListPanel extends JPanel {
     private final Logger log = Logger.getLogger(SsgListPanel.class.getName());
-    private final ClientProxy clientProxy;
+    private final SsgFinder ssgFinder;
+    private final int bindPort;
+    private final boolean savePass;
     private SsgTableModel ssgTableModel;
     private JTable ssgTable;
     private Action actionNewSsg;
@@ -35,33 +37,26 @@ class SsgListPanel extends JPanel {
     private Action actionDeleteSsg;
     private Action changePasswordAction;
 
-    SsgListPanel(ClientProxy clientProxy, SsgManager ssgManager) {
-        this.clientProxy = clientProxy;
-        init(ssgManager);
+    /**
+     * Create an Ssg list panel.
+     *
+     * @param ssgManager       SSG manager to use for making lists of ssgs or creating new ones
+     * @param bindPort         port that the proxy will listen on on localhost
+     * @param toolbarHasChpass true to include "Change password" button on toolbar
+     * @param savePass         true to set "Save password to disk" by default on newly created Ssgs
+     */
+    SsgListPanel(SsgManager ssgManager, int bindPort, boolean toolbarHasChpass, boolean savePass) {
+        this.bindPort = bindPort;
+        this.ssgFinder = ssgManager; // keep write privs only long enough to hand them off to the table model'
+        this.savePass = savePass;
+        init(ssgManager, toolbarHasChpass);
     }
 
-    private void init(SsgManager ssgManager) {
+    private void init(SsgManager ssgManager, boolean toolbarHasChpass) {
         setLayout(new GridBagLayout());
 
         final JPanel ssgListPanel = new JPanel(new BorderLayout());
         ssgListPanel.setPreferredSize(new Dimension(220, 90));
-
-        final JToolBar toolBar = new JToolBar(JToolBar.HORIZONTAL);
-        toolBar.setFloatable(false);
-        toolBar.setRollover(true);
-
-        add(toolBar,
-            new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                                   GridBagConstraints.NORTH,
-                                   GridBagConstraints.BOTH,
-                                   new Insets(0, 0, 0, 0),
-                                   0, 0));
-        add(ssgListPanel,
-            new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                                   GridBagConstraints.SOUTH,
-                                   GridBagConstraints.BOTH,
-                                   new Insets(0, 0, 0, 0),
-                                   0, 0));
 
         ssgTableModel = new SsgTableModel(ssgManager);
         ssgTable = new JTable(ssgTableModel) {
@@ -117,14 +112,35 @@ class SsgListPanel extends JPanel {
             }
         });
 
+        add(makeToolbar(toolbarHasChpass),
+            new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                   GridBagConstraints.NORTH,
+                                   GridBagConstraints.BOTH,
+                                   new Insets(0, 0, 0, 0),
+                                   0, 0));
+        add(ssgListPanel,
+            new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                                   GridBagConstraints.SOUTH,
+                                   GridBagConstraints.BOTH,
+                                   new Insets(0, 0, 0, 0),
+                                   0, 0));
 
         final JScrollPane ssgListPane = new JScrollPane(ssgTable);
         ssgListPanel.add(ssgListPane, BorderLayout.CENTER);
 
-        toolBar.add(new JButton(getActionNewSsg()));
-        toolBar.add(new JButton(getActionEditSsg()));
-        toolBar.add(new JButton(getActionSetDefaultSsg()));
-        toolBar.add(new JButton(getActionDeleteSsg()));
+    }
+
+    private JToolBar makeToolbar(boolean toolbarHasChpass) {
+        final JToolBar bar = new JToolBar(JToolBar.HORIZONTAL);
+        bar.setFloatable(false);
+        bar.setRollover(true);
+        bar.add(new JButton(getActionNewSsg()));
+        bar.add(new JButton(getActionEditSsg()));
+        bar.add(new JButton(getActionSetDefaultSsg()));
+        bar.add(new JButton(getActionDeleteSsg()));
+        if (toolbarHasChpass)
+            bar.add(new JButton(getChangePasswordAction()));
+        return bar;
     }
 
     private void updateEnableDisableState() {
@@ -157,7 +173,7 @@ class SsgListPanel extends JPanel {
 
     Action getActionDeleteSsg() {
         if (actionDeleteSsg == null)
-            actionDeleteSsg = new DeleteSsgAction(this, clientProxy);
+            actionDeleteSsg = new DeleteSsgAction(this, ssgFinder);
         return actionDeleteSsg;
     }
 
@@ -168,7 +184,7 @@ class SsgListPanel extends JPanel {
                     final Ssg ssg = getSelectedSsg();
                     log.info("Editing ssg " + ssg);
                     if (ssg != null) {
-                        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg);
+                        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(ssg, bindPort);
                         final boolean result = ssgPropertyDialog.runDialog();
                         if (result) {
                             if (ssg.isDefaultSsg())
@@ -195,7 +211,7 @@ class SsgListPanel extends JPanel {
 
     Action getActionNewSsg() {
         if (actionNewSsg == null)
-            actionNewSsg = new NewSsgAction(this, ssgTableModel, clientProxy);
+            actionNewSsg = new NewSsgAction(this, ssgTableModel, ssgFinder, bindPort, savePass);
         return actionNewSsg;
     }
 

@@ -5,7 +5,6 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.dialogs.AboutBox;
@@ -27,7 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Encapsulates the Client Proxy's user interface. User: mike Date: May 22, 2003 Time: 1:47:04 PM
+ * Encapsulates the Client Proxy's user interface.
  */
 public class Gui {
     private static final Logger log = Logger.getLogger( Gui.class.getName() );
@@ -47,6 +46,7 @@ public class Gui {
 
     private static final String SYSTRAY_TOOLTIP = "SecureSpan Bridge";
     private static final String WINDOW_TITLE = APP_NAME;
+    private static final String WINDOW_TITLE_CONFIG = "Configure " + APP_NAME;
     private static final String MESSAGE_WINDOW_TITLE = "Recent Message Traffic";
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Exit";
@@ -57,8 +57,11 @@ public class Gui {
     private static final String MENU_HELP_HELP = "Help System";
     private JCheckBoxMenuItem showMessages;
     private SsgListPanel ssgListPanel;
-    private SsgManager ssgManager = null;
-    private ClientProxy clientProxy;
+    private final SsgManager ssgManager;
+    private final int bindPort;
+    private final boolean configOnly;
+    private final boolean hideMenus;
+    private final String bigQuitButtonLabel;
     private SysTrayMenu sysTrayMenu = null;
 
     /**
@@ -77,11 +80,31 @@ public class Gui {
         Gui.instance = instance;
     }
 
+    public static class GuiParams {
+        private final SsgManager ssgManager;
+        private final int bindPort;
+        private final boolean configOnly;
+        private final boolean hideMenus;
+        private final String bigQuitButtonLabel;
+
+        public GuiParams(SsgManager ssgManager, int bindPort) {
+            this(ssgManager, bindPort, false, false, null);
+        }
+
+        public GuiParams(SsgManager ssgManager, int bindPort, boolean configOnly, boolean hideMenus, String bigQuitButtonLabel) {
+            this.ssgManager = ssgManager;
+            this.bindPort = bindPort;
+            this.configOnly = configOnly;
+            this.hideMenus = hideMenus;
+            this.bigQuitButtonLabel = bigQuitButtonLabel;
+        }
+    }
+
     /**
      * Configure a Gui instance.
      */
-    public static Gui createGui( ClientProxy clientProxy, SsgManager ssgManager ) {
-        return new Gui( clientProxy, ssgManager );
+    public static Gui createGui(GuiParams p) {
+        return new Gui(p);
     }
 
     private static interface LnfSetter {
@@ -135,9 +158,12 @@ public class Gui {
     /**
      * Initialize the Gui.
      */
-    private Gui( ClientProxy clientProxy, SsgManager ssgManager ) {
-        this.clientProxy = clientProxy;
-        this.ssgManager = ssgManager;
+    private Gui(GuiParams p) {
+        this.bindPort = p.bindPort;
+        this.ssgManager = p.ssgManager;
+        this.configOnly = p.configOnly;
+        this.hideMenus = p.hideMenus;
+        this.bigQuitButtonLabel = p.bigQuitButtonLabel;
 
         boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast( new int[]{1, 4, 2} );
         LnfSetter[] order = haveXpLnf ? new LnfSetter[]{windowsLnfSetter, kunststoffLnfSetter, systemLnfSetter}
@@ -161,12 +187,32 @@ public class Gui {
         initSystemTray();
     }
 
+    /** @return true if this Gui is running in configuration-only mode, not attached to an in-process ClientProxy instance. */
+    private boolean isConfigOnly() {
+        return configOnly;
+    }
+
+    /** @return true if the top level menus are hidden.  */
+    private boolean isHideMenus() {
+        return hideMenus;
+    }
+
+    /** @return label for big quit button at bottom, or null if disabled. */
+    private String getBigQuitButtonLabel() {
+        return bigQuitButtonLabel;
+    }
+
     private void initSystemTray() {
         if ( sysTrayMenu != null )
             return;
 
+        if (isConfigOnly()) {
+            log.finer("System tray disabled; running in configuration-only mode");
+            return;
+        }
+
         if ( !SysTrayMenu.isAvailable() ) {
-            log.info("System tray disabled: system tray support not available");
+            log.fine("System tray disabled: system tray support not available");
             return;
         }
 
@@ -226,7 +272,7 @@ public class Gui {
         void guiShutdown();
     }
 
-    private ShutdownListener ShutdownListener;
+    private ShutdownListener shutdownListener;
 
     /**
      * Shut down the GUI.  The actual shutdown will occur asynchronously, on the Swing thread.
@@ -252,15 +298,18 @@ public class Gui {
         frame.dispose();
         frame = null;
         started = false;
-        if ( ShutdownListener != null )
-            ShutdownListener.guiShutdown();
+        if ( shutdownListener != null ) {
+            ShutdownListener sd = shutdownListener;
+            shutdownListener = null;
+            sd.guiShutdown();
+        }
     }
 
     /**
      * Connect us to someone who wants to know when the GUI is exiting.
      */
     public void setShutdownListener( final ShutdownListener guiShutdownListener ) {
-        this.ShutdownListener = guiShutdownListener;
+        this.shutdownListener = guiShutdownListener;
     }
 
     /**
@@ -287,7 +336,7 @@ public class Gui {
      */
     public JFrame getFrame() {
         if ( frame == null ) {
-            frame = new JFrame( WINDOW_TITLE );
+            frame = new JFrame( isConfigOnly() ? WINDOW_TITLE_CONFIG : WINDOW_TITLE );
             frame.setIconImage( IconManager.getAppImage() );
             frame.addWindowListener( new WindowAdapter() {
 
@@ -309,9 +358,32 @@ public class Gui {
                 }
             } );
 
-            final JMenuBar menus = makeMenus();
-            frame.setJMenuBar( menus );
-            frame.setContentPane( getSsgListPanel() );
+            if (!isHideMenus()) {
+                final JMenuBar menus = makeMenus();
+                frame.setJMenuBar( menus );
+            }
+            if (getBigQuitButtonLabel() == null) {
+                frame.setContentPane( getSsgListPanel() );
+            } else {
+                JPanel quitStrip = new JPanel();
+                quitStrip.setLayout(new BoxLayout(quitStrip, BoxLayout.X_AXIS));
+                quitStrip.add(Box.createGlue());
+                JButton quitButton = new JButton(getBigQuitButtonLabel());
+                quitButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        closeFrame();
+                    }
+                });
+                Utilities.equalizeButtonSizes(new AbstractButton[] { quitButton });
+                quitStrip.add(quitButton);
+
+                JPanel p = new JPanel();
+                p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+                p.add(getSsgListPanel());
+                p.add(quitStrip);
+                frame.setContentPane(p);
+
+            }
             frame.pack();
             Utilities.centerOnScreen( frame );
         }
@@ -321,7 +393,7 @@ public class Gui {
 
     private SsgListPanel getSsgListPanel() {
         if ( ssgListPanel == null )
-            ssgListPanel = new SsgListPanel( clientProxy, ssgManager );
+            ssgListPanel = new SsgListPanel( ssgManager, bindPort, isHideMenus(), isConfigOnly() );
         return ssgListPanel;
     }
 
@@ -354,15 +426,17 @@ public class Gui {
 
         menus.add( fileMenu );
 
-        final JMenu windowMenu = new JMenu( MENU_WINDOW );
-        windowMenu.setMnemonic( KeyEvent.VK_W );
+        if (!isConfigOnly()) {
+            final JMenu windowMenu = new JMenu( MENU_WINDOW );
+            windowMenu.setMnemonic( KeyEvent.VK_W );
 
-        showMessages = new JCheckBoxMenuItem( MENU_MESSAGES, false );
-        showMessages.addActionListener( menuActionListener );
-        //showMessages.setMnemonic( KeyEvent.VK_M );   removed due to apparent minor Swing bug, see Bug #783
-        windowMenu.add( showMessages );
+            showMessages = new JCheckBoxMenuItem( MENU_MESSAGES, false );
+            showMessages.addActionListener( menuActionListener );
+            //showMessages.setMnemonic( KeyEvent.VK_M );   removed due to apparent minor Swing bug, see Bug #783
+            windowMenu.add( showMessages );
 
-        menus.add( windowMenu );
+            menus.add( windowMenu );
+        }
 
         final JMenu aboutMenu = new JMenu( MENU_HELP );
         aboutMenu.setMnemonic( KeyEvent.VK_H );
@@ -474,9 +548,9 @@ public class Gui {
      * This procedure adds the JavaHelp to PMC application.
      */
     public void showHelpTopics(ActionEvent e) {
-        HelpSet hs = null;
+        final HelpSet hs;
         URL url = null;
-        HelpBroker javaHelpBroker = null;
+        final HelpBroker javaHelpBroker;
         String helpsetName = "SSB Help";
 
         try {

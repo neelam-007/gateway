@@ -1,8 +1,11 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
+import com.l7tech.proxy.ClientProxy;
 import org.mortbay.util.MultiException;
 
 import java.net.BindException;
@@ -25,23 +28,74 @@ public final class Main extends com.l7tech.proxy.Main {
      * proxy could not be started.
      */
     public static void main(final String[] argv) {
+        boolean config = false;
+        boolean hideMenus = false;
+        String quitLabel = null;
+
+        for (int i = 0; i < argv.length; i++) {
+            String s = argv[i].trim().toLowerCase();
+            if ("-config".equalsIgnoreCase(s)) {
+                config = true;
+            } else if ("-hideMenus".equalsIgnoreCase(s)) {
+                hideMenus = true;
+            } else if ("-quitLabel".equalsIgnoreCase(s) && i + 1 < argv.length) {
+                quitLabel = argv[++i];
+            }
+        }
+
+        if (config)
+            startGuiConfigurator(hideMenus, quitLabel);
+        else
+            startGuiBridge();
+    }
+
+    private static void startGuiConfigurator(boolean hideMenus, String quitLabel) {
+        // apache logging layer to use the jdk logger
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+        JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/cliLogging.properties");
+        JceProvider.init();
+        log.info("Starting SecureSpan Bridge GUI Configuration Editor; " + BuildInfo.getLongBuildString());
+
+        if (hideMenus && quitLabel == null) 
+            quitLabel = "Quit";
+        if (quitLabel != null)
+            quitLabel = "      " + quitLabel + "      ";
+
+        final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
+        Gui.setInstance(Gui.createGui(new Gui.GuiParams(ssgManager, getBindPort(), true, hideMenus, quitLabel)));
+        Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
+
+        // Make sure the proxy stops when the GUI does.
+        Gui.getInstance().setShutdownListener(new Gui.ShutdownListener() {
+            public void guiShutdown() {
+                System.exit(0);
+            }
+        });
+
+        Gui.getInstance().start();
+
+        // We have nothing else for the main thread to do.
+        return;
+    }
+
+    private static void startGuiBridge() {
         initLogging();
-        initConfig();        
+        initConfig();
         log.info("Starting SecureSpan Bridge in GUI mode; " + BuildInfo.getLongBuildString());
 
         final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
-        createClientProxy(ssgManager);
+        final ClientProxy clientProxy = createClientProxy(ssgManager);
 
         // Set up the GUI
-        Gui.setInstance(Gui.createGui(getClientProxy(), ssgManager));
+        Gui.setInstance(Gui.createGui(new Gui.GuiParams(ssgManager, clientProxy.getBindPort())));
 
         // Hook up the Message Viewer window
-        getClientProxy().getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
+        clientProxy.getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
 
         Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
 
         try {
-            getClientProxy().start();
+            clientProxy.start();
         } catch (Exception e) {
             String message = "Unable to start the Bridge: " + e;
             // Friendlier error message for starting multiple instances
@@ -59,7 +113,7 @@ public final class Main extends com.l7tech.proxy.Main {
         // Make sure the proxy stops when the GUI does.
         Gui.getInstance().setShutdownListener(new Gui.ShutdownListener() {
             public void guiShutdown() {
-                getClientProxy().stop(); // orderly shutdown
+                clientProxy.stop(); // orderly shutdown
                 System.exit(0);
             }
         });

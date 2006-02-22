@@ -5,8 +5,8 @@
 
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
@@ -24,12 +24,18 @@ class DeleteSsgAction extends AbstractAction {
     private static final Logger log = Logger.getLogger(DeleteSsgAction.class.getName());
 
     private final SsgListPanel ssgListPanel;
-    private final ClientProxy clientProxy;
+    private final SsgFinder ssgFinder;
 
-    public DeleteSsgAction(SsgListPanel ssgListPanel, ClientProxy clientProxy) {
+    /**
+     * Create an action that will delete the currently selected SSG in the SsgListPanel.
+     *
+     * @param ssgListPanel  identifies which SSG to eventually delete
+     * @param ssgFinder     used to check if some federated SSG uses this SSG as its trusted SSG
+     */
+    public DeleteSsgAction(SsgListPanel ssgListPanel, SsgFinder ssgFinder) {
         super("Delete Account", IconManager.getRemove());
         this.ssgListPanel = ssgListPanel;
-        this.clientProxy = clientProxy;
+        this.ssgFinder = ssgFinder;
         putValue(Action.SHORT_DESCRIPTION, "Delete this Gateway Account");
         putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
     }
@@ -41,7 +47,7 @@ class DeleteSsgAction extends AbstractAction {
             return;
 
         // check if there is any Federated Gateway using this as a Trusted Gateway.
-        Collection ssgs = clientProxy.getSsgFinder().getSsgList();
+        Collection ssgs = ssgFinder.getSsgList();
         Collection trusting = new ArrayList();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
             Ssg s = (Ssg)i.next();
@@ -54,10 +60,10 @@ class DeleteSsgAction extends AbstractAction {
             for (Iterator i = trusting.iterator(); i.hasNext();) {
                 Ssg t = (Ssg)i.next();
                 String un = t.getUsername() == null ? "" : " (" + t.getUsername() + ")";
-                sb.append("   " + t.getLocalEndpoint() + ": " + t.getSsgAddress() + un + "\n");
+                sb.append("   ").append(t.getLocalEndpoint()).append(": ").append(t.getSsgAddress()).append(un).append("\n");
                 added++;
                 if (added >= 10) {
-                    sb.append("   ...and " + (trusting.size() - added) + " more\n");
+                    sb.append("   ...and ").append(trusting.size() - added).append(" more\n");
                     break;
                 }
             }

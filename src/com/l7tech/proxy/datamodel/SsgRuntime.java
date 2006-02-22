@@ -482,7 +482,7 @@ public class SsgRuntime {
             setCachedClientCert(null);
             setCachedServerCert(null);
             clearSessionCookies();
-            sslContext = createSslContext();
+            sslContext = null;
             serverCert = null;
             clientCert = null;
             simpleHttpClient = null;
