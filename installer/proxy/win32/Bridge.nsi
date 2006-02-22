@@ -184,6 +184,7 @@ Section "Uninstall"
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT}.lnk"
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Troubleshooting Mode.lnk"
     Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Text Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} Config.lnk"
     Delete "$SMPROGRAMS\${TEMP}\Uninstall ${MUI_PRODUCT}.lnk"
     RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
 
