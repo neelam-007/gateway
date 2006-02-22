@@ -75,12 +75,12 @@ Section "SecureSpan Bridge" SecCopyUI
   ; Before copying anything, let's stop the Windows service (if any)
   ExecWait 'sc stop SSB' $0
   DetailPrint "stoped windows service SSB. return code $0"
+  Sleep 1000
 
   ;ADD YOUR OWN STUFF HERE!
 
   SetOutPath "$INSTDIR"
   File "${BUILD_DIR}\..\native\win32\systray4j.dll"
-  File "${BUILD_DIR}\..\installer\proxy\win32\SSBService.exe"
   File "${MUI_PRODUCT}.exe"
   File "${MUI_PRODUCT}.ini"
   File "${MUI_PRODUCT}.bat"
@@ -88,6 +88,7 @@ Section "SecureSpan Bridge" SecCopyUI
   File "ssbconfig.bat"
   File "${BUILD_DIR}\Bridge.jar"
   File /r "${J2RE_PATH}"
+  File "${BUILD_DIR}\..\installer\proxy\win32\SSBService.exe"
 
   SetOutPath "$INSTDIR/lib"
   ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
@@ -158,8 +159,10 @@ Section "Uninstall"
   ; Make sure service is stopped and removed first
   ExecWait 'sc stop SSB' $0
   DetailPrint "Stopping service returned with code $0"
+  Sleep  1000
   ExecWait '"$INSTDIR\SSBService.exe" -uninstall SSB' $0
   DetailPrint "Removal of service returned with code $0"
+  Sleep  1000
 
   ;ADD YOUR OWN STUFF HERE!
 
