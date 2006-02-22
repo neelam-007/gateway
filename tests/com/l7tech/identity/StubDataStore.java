@@ -303,7 +303,7 @@ public class StubDataStore {
             jmsProviders.put(new Long(((JmsConnection)o).getOid()), o);
         } else if (o instanceof JmsEndpoint) {
             jmsEndpoints.put(new Long(((JmsEndpoint)o).getOid()), o);
-        } else {
+        } else if (o != null) {
             System.err.println("Don't know how to handle " + o.getClass());
         }
     }
