@@ -58,7 +58,7 @@ public class Messages {
         M adm = new M(id, level, msg);
         Object o = messagesById.put(new Integer(id), adm);
         if (o != null) throw new IllegalArgumentException("A message with id #" + id + " already exists!");
-        return (M)adm;
+        return adm;
     }
 
     public static final class M extends AuditDetailMessage {

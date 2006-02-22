@@ -5,7 +5,6 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.Component;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.SystemAuditRecord;
@@ -24,8 +23,8 @@ public class SystemAuditListener implements ApplicationListener {
     private final String nodeId;
     private AuditContext auditContext;
 
-    public SystemAuditListener(ClusterInfoManager clusterInfoManager, AuditContext auditContext) {
-        this.nodeId = clusterInfoManager.thisNodeId();
+    public SystemAuditListener(String nodeId, AuditContext auditContext) {
+        this.nodeId = nodeId;
         this.auditContext = auditContext;
     }
 

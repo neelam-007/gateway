@@ -137,7 +137,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
     }
 
     protected void addMembershipCriteria(Criteria crit, Group group, Identity identity) {
-        // super is fine
+        crit.add(Restrictions.eq("thisGroupProviderOid", new Long(group.getProviderId())));
     }
 
     public PersistentGroup cast(Group group) {

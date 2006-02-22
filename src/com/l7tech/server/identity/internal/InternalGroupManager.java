@@ -42,13 +42,6 @@ public class InternalGroupManager extends PersistentGroupManager {
         return InternalGroupMembership.class;
     }
 
-    protected String getGetGroupsQuery() {
-        return "select grp from grp in class " + getImpClass().getName() + ", " +
-          "membership in class " + getMembershipClass().getName() + " " +
-          "where membership.groupOid = grp.oid " +
-          "and membership.userOid = ?";
-    }
-
     protected void preDelete( PersistentGroup group ) throws DeleteException {
         // TODO don't use the name here
         if ( Group.ADMIN_GROUP_NAME.equals( group.getName() ) ) {

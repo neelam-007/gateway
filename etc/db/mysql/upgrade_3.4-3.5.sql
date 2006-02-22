@@ -1,0 +1,28 @@
+---
+--- Script to update mysql ssg database from 3.4(.1) to 3.5
+---
+--- Layer 7 Technologies, inc
+---
+
+alter table service_resolution drop index `soapaction`;
+alter table service_resolution modify column soapaction mediumtext character set latin1 BINARY default '';
+alter table service_resolution modify column urn mediumtext character set latin1 BINARY default '';
+alter table service_resolution modify column uri mediumtext character set latin1 BINARY default '';
+alter table service_resolution add digested varchar(32) default '';
+update service_resolution set digested=HEX(MD5(CONCAT(soapaction,urn,uri)));
+alter table service_resolution modify column digested varchar(32) NOT NULL;
+CREATE UNIQUE INDEX digested ON service_resolution (digested);
+
+DROP TABLE IF EXISTS service_metrics;
+CREATE TABLE service_metrics (
+  nodeid VARCHAR(18) NOT NULL,
+  published_service_oid BIGINT(20) NOT NULL,
+  resolution INTEGER NOT NULL,
+  period_start BIGINT(20) NOT NULL,
+  start_time BIGINT(20) NOT NULL,
+  end_time BIGINT(20) NOT NULL,
+  attempted INTEGER NOT NULL,
+  authorized INTEGER NOT NULL,
+  completed INTEGER NOT NULL,
+  PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
+) TYPE=InnoDB;

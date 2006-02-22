@@ -3,14 +3,14 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.hibernate.Session;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
+import org.hibernate.Session;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,9 +27,18 @@ import java.util.logging.Logger;
  *
  */
 public class ServiceUsageManager extends HibernateDaoSupport {
-    private final String deleteQuery = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName() +
-                      " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME +
-                      " = ?";
+    private final String HQL_DELETE_BY_MAC =
+            "from " + TABLE_NAME +
+                    " in class " + ServiceUsage.class.getName() +
+                    " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME + " = ?";
+
+    private final String HQL_FIND_ALL =
+            "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName();
+
+    private final String HQL_FIND_BY_SERVICE =
+            "FROM " + TABLE_NAME +
+                " IN CLASS " + ServiceUsage.class.getName() +
+                " WHERE " + SERVICE_ID_COLUMN_NAME + " = ?";
 
     /**
      * retrieves all service usage recorded in database
@@ -37,9 +46,8 @@ public class ServiceUsageManager extends HibernateDaoSupport {
      */
     public Collection getAll() throws FindException {
         try {
-            String queryall = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName();
             Session session = getSession();
-            return session.createQuery(queryall).list();
+            return session.createQuery(HQL_FIND_ALL).list();
         } catch (HibernateException e) {
             String msg = "could not retreive service usage obj";
             logger.log(Level.SEVERE, msg, e);
@@ -54,10 +62,7 @@ public class ServiceUsageManager extends HibernateDaoSupport {
      */
     public ServiceUsage[] findByServiceOid(long serviceOid) throws FindException {
         try {
-            String find = "FROM " + TABLE_NAME +
-                    " IN CLASS " + ServiceUsage.class.getName() +
-                    " WHERE " + SERVICE_ID_COLUMN_NAME + " = ?";
-            Query q = getSession().createQuery(find);
+            Query q = getSession().createQuery(HQL_FIND_BY_SERVICE);
             q.setLong(0, serviceOid);
             List results = q.list();
             return (ServiceUsage[])results.toArray(new ServiceUsage[0]);
@@ -92,7 +97,7 @@ public class ServiceUsageManager extends HibernateDaoSupport {
     public void clear(String nodeid) throws DeleteException {
         try {
             Session session = getSession();
-            Query q = session.createQuery(deleteQuery);
+            Query q = session.createQuery(HQL_DELETE_BY_MAC);
             q.setString(0, nodeid);
             for (Iterator i = q.iterate(); i.hasNext();) {
                 session.delete(i.next());

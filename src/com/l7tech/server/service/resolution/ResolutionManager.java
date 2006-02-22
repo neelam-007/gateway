@@ -26,6 +26,11 @@ import java.util.logging.Logger;
  * Date: Nov 25, 2003<br/>
  */
 public class ResolutionManager extends HibernateDaoSupport {
+    private static final String HQL_FIND_BY_SERVICE_OID =
+            "FROM sr IN CLASS " + ResolutionParameters.class.getName() +
+                    " WHERE sr.serviceid = ?";
+
+    private static final String HQL_FIND_ALL = "FROM sr IN CLASS " + ResolutionParameters.class.getName();
 
     /**
      * Records resolution parameters for the passed service.
@@ -104,12 +109,11 @@ public class ResolutionManager extends HibernateDaoSupport {
      * @param serviceOid id of the service for which recorded resolution parameters will be recorded
      */
     public void deleteResolutionParameters(long serviceOid) throws DeleteException {
-        String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
-          " where " + TABLE_NAME + "." + SVCID_COLUMN + " = " + serviceOid;
         Session session;
         try {
             session = getSession();
-            Query q = session.createQuery(query);
+            Query q = session.createQuery(HQL_FIND_BY_SERVICE_OID);
+            q.setLong(0, serviceOid);
             int deleted = 0;
             for (Iterator i = q.iterate(); i.hasNext();) {
                 session.delete(i.next());
@@ -117,7 +121,7 @@ public class ResolutionManager extends HibernateDaoSupport {
             }
             logger.finest("deleted " + deleted + " resolution parameters.");
         } catch (HibernateException e) {
-            String msg = "error deleting resolution parameters with query " + query;
+            String msg = "error deleting resolution parameters with query " + HQL_FIND_BY_SERVICE_OID;
             logger.log(Level.WARNING, msg, e);
             throw new DeleteException(msg, e);
         }
@@ -158,12 +162,10 @@ public class ResolutionManager extends HibernateDaoSupport {
     }
 
     private Collection existingResolutionParameters(long serviceid) {
-        String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
-          " where " + TABLE_NAME + "." + SVCID_COLUMN + " = ?";
 
         List hibResults;
         try {
-            Query q = getSession().createQuery(query);
+            Query q = getSession().createQuery(HQL_FIND_BY_SERVICE_OID);
             q.setLong(0, serviceid);
             hibResults = q.list();
         } catch (HibernateException e) {
@@ -196,10 +198,9 @@ public class ResolutionManager extends HibernateDaoSupport {
      */
     private void checkForDuplicateResolutionParameters(Collection parameters, long serviceIdToIgnore)
       throws HibernateException, DuplicateObjectException {
-        String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName();
 
         Set duplicates = new HashSet();
-        Query q = getSession().createQuery(query);
+        Query q = getSession().createQuery(HQL_FIND_ALL);
         List results = q.list();
         for (Iterator ir = results.iterator(); ir.hasNext();) {
             ResolutionParameters rp = (ResolutionParameters)ir.next();
@@ -218,12 +219,6 @@ public class ResolutionManager extends HibernateDaoSupport {
             throw new DuplicateObjectException(msg);
         }
     }
-
-
-    private static final String TABLE_NAME = "service_resolution";
-    private static final String SVCID_COLUMN = "serviceid";
-    //private static final String SOAPACTION_COLUMN = "soapaction";
-    //private static final String URN_COLUMN = "urn";
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }

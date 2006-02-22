@@ -37,11 +37,18 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     private ServiceCache serviceCache;
     private ApplicationContext applicationContext;
 
-    private final String versionQuery = "SELECT " + getTableName() + "." + F_VERSION + " FROM " + getTableName() +
-        " in class " + getImpClass().getName() + " WHERE " + getTableName() + "." + F_OID + " = ?";
+    private final String HQL_FIND_VERSION_BY_OID =
+            "SELECT " + getTableName() + "." + F_VERSION +
+                    " FROM " + getTableName() +
+                    " IN CLASS " + getImpClass().getName() +
+                    " WHERE " + getTableName() + "." + F_OID + " = ?";
 
-    private final String oidVersionQuery = "SELECT " + getTableName() + "." + F_OID + ", " + getTableName() + "." + F_VERSION +
-      " FROM " + getTableName() + " in class " + getImpClass().getName();
+    private final String HQL_FIND_ALL_VERSIONS = 
+            "SELECT " +
+                    getTableName() + "." + F_OID + ", " +
+                    getTableName() + "." + F_VERSION +
+            " FROM " + getTableName() +
+                " IN CLASS " + getImpClass().getName();
 
     public void setVisitorClassnames(String visitorClassnames) {
         String[] names = visitorClassnames.split(",\\s*");
@@ -117,7 +124,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public int getCurrentPolicyVersion(long policyId) throws FindException {
         try {
             Session s = getSession();
-            Query q = s.createQuery(versionQuery);
+            Query q = s.createQuery(HQL_FIND_VERSION_BY_OID);
             q.setLong(0, policyId);
             List results = q.list();
             if (results == null || results.isEmpty() || results.size() > 1) {
@@ -254,7 +261,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
         try {
             Session s = getSession();
-            Query q = s.createQuery(oidVersionQuery);
+            Query q = s.createQuery(HQL_FIND_ALL_VERSIONS);
             List results = q.list();
             if (results == null || results.isEmpty()) {
                 // logger.fine("no version info to return");

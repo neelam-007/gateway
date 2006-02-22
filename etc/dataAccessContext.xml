@@ -122,6 +122,28 @@
         </property>
     </bean>
 
+
+    <bean id="serviceMetricsManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="target">
+            <ref bean="serviceMetricsManagerTarget"/>
+        </property>
+        <property name="proxyTargetClass">
+            <value>true</value>
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <!-- This method must be transactional -->
+                <prop key="findBins">PROPAGATION_REQUIRED,-Throwable</prop>
+
+                <!-- Everything else doesn't require transactions -->
+                <prop key="*">PROPAGATION_SUPPORTS</prop>
+            </props>
+        </property>
+    </bean>
+
     <!--
        BeanNameAutoProxyCreator with proxyTargetClass option handles all beans methods to use PROPAGATION_REQUIRED
    -->

@@ -9,15 +9,15 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.identity.fed.FederatedGroupManager;
+import com.l7tech.server.identity.fed.FederatedIdentityProvider;
+import com.l7tech.server.identity.fed.FederatedUserManager;
+import com.l7tech.server.identity.internal.InternalGroupManager;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
-import com.l7tech.server.identity.internal.InternalGroupManager;
-import com.l7tech.server.identity.fed.FederatedIdentityProvider;
-import com.l7tech.server.identity.fed.FederatedGroupManager;
-import com.l7tech.server.identity.fed.FederatedUserManager;
+import com.l7tech.server.identity.ldap.LdapGroupManager;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapUserManager;
-import com.l7tech.server.identity.ldap.LdapGroupManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -25,8 +25,8 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -38,8 +38,10 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class IdentityProviderFactory extends ApplicationObjectSupport implements InitializingBean, BeanPostProcessor {
+public class IdentityProviderFactory
+        implements InitializingBean, BeanPostProcessor, ApplicationContextAware {
     private AbstractBeanFactory abstractBeanFactory;
+    private ApplicationContext springContext;
 
     public Collection findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
         List providers = new ArrayList();
@@ -77,7 +79,7 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
      * @throws FindException
      */
     public synchronized IdentityProvider getProvider(long identityProviderOid) throws FindException {
-        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)getApplicationContext().getBean("identityProviderConfigManager");
+        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)springContext.getBean("identityProviderConfigManager");
         Long oid = new Long(identityProviderOid);
 
         IdentityProvider cachedProvider = (IdentityProvider)providers.get(oid);
@@ -131,8 +133,7 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
         try {
             Class providerClass = Class.forName(classname);
             String name = getBeanName(providerClass);
-            IdentityProvider provider = (IdentityProvider)abstractBeanFactory.getBean(name, new Object[]{config});
-            return provider;
+            return (IdentityProvider)abstractBeanFactory.getBean(name, new Object[]{config});
         } catch (Exception e) {
             throw new InvalidIdProviderCfgException(e);
         }
@@ -183,7 +184,7 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
 
 
     /**
-     * Find the unique bean name in the spring bean definition repositiry for the class parameter.
+     * Find the unique bean name in the spring bean definition repository for the class parameter.
      *
      * @param providerClass the class to lookup
      * @return the bean name
@@ -191,7 +192,7 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
      * @throws IllegalStateException         if multiple bean definitions are found
      */
     private String getBeanName(Class providerClass) {
-        String[] beanNames = getApplicationContext().getBeanDefinitionNames(providerClass);
+        String[] beanNames = springContext.getBeanDefinitionNames(providerClass);
         if (beanNames.length == 0) {
             throw new NoSuchBeanDefinitionException(providerClass,
               "Could not find the definition of the provider " + providerClass.getName());
@@ -211,12 +212,11 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
      *                   as failure to set an essential property) or if initialization fails.
      */
     public void afterPropertiesSet() throws Exception {
-        ApplicationContext ctx = getApplicationContext();
-        if (!(ctx instanceof AbstractApplicationContext)) {
+        if (!(springContext instanceof AbstractApplicationContext)) {
             throw new IllegalStateException("application context is expected to be of '" + AbstractApplicationContext.class + "' received "
-              + ctx.getClass());
+              + springContext.getClass());
         }
-        AbstractApplicationContext abstractApplicationContext = (AbstractApplicationContext)ctx;
+        AbstractApplicationContext abstractApplicationContext = (AbstractApplicationContext)springContext;
         ConfigurableListableBeanFactory bf = abstractApplicationContext.getBeanFactory();
         if (!(bf instanceof AbstractBeanFactory)) {
             throw new IllegalStateException("Bean Factory is expected to be of " + AbstractBeanFactory.class + "' received "
@@ -292,4 +292,8 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
     private static final String INTERNAL_PROVIDER_BEAN_NAME = "internalIdentityProvider";
     private static final String FEDERATED_PROVIDER_BEAN_NAME = "federatedIdentityProvider";
     private static final String LDAP_PROVIDER_BEAN_NAME = "ldapIdentityProvider";
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.springContext = applicationContext;
+    }
 }

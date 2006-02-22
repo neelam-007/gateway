@@ -5,12 +5,11 @@
  */
 package com.l7tech.server.audit;
 
-import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.EntityChangeSet;
@@ -39,8 +38,8 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
     private final AuditContext auditContext;
     private static final String SERVICE_DISABLED = "disabled";
 
-    public AdminAuditListener(ClusterInfoManager clusterInfoManager, AuditContext auditContext) {
-        this.nodeId = clusterInfoManager.thisNodeId();
+    public AdminAuditListener(String nodeId, AuditContext auditContext) {
+        this.nodeId = nodeId;
         this.auditContext = auditContext;
 
         Map levels = new HashMap();

@@ -5,13 +5,14 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.fed.FederatedGroupMembership;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.ObjectNotFoundException;
-import org.springframework.dao.DataAccessException;
-import org.hibernate.*;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.dao.DataAccessException;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -22,22 +23,42 @@ import java.util.logging.Logger;
  * @author alex
  */
 public abstract class PersistentGroupManager extends HibernateEntityManager implements GroupManager {
+    private final String HQL_DELETE_BY_PROVIDEROID =
+            "FROM grp IN CLASS " + getImpClass().getName() +
+                    " WHERE grp.providerOid = ?";
+
+    private final String HQL_DELETE_MEMBERSHIPS_BY_PROVIDEROID =
+            "FROM mem IN CLASS " + getMembershipClass().getName() +
+                    " WHERE mem.thisGroupProviderOid = ?";
+
+    private static final String HQL_DELETE_VIRTUAL_BY_PROVIDEROID =
+            "FROM vg IN CLASS " + VirtualGroup.class.getName() + " WHERE vg.providerOid = ?";
+
+    private final String HQL_GETGROUPS =
+            "select grp from " +
+                    "grp in class " + getImpClass().getName() + ", " +
+                    "mem in class " + getMembershipClass().getName() +
+                " where mem.thisGroupId = grp.oid " +
+                "and mem.memberUserId = ?";
+
+    private final String HQL_ISMEMBER = "from membership in class "+ getMembershipClass().getName() +
+          " where membership.memberUserId = ? " +
+          "and membership.thisGroupId = ?";
+
+    /**
+     * Can't be defined statically; it needs information from the identity provider
+     */
+    private static String HQL_GETMEMBERS;
 
     public PersistentGroupManager(IdentityProvider identityProvider) {
         this.identityProvider = identityProvider;
-        HQL_GETUSERS = "select usr from usr in class " + getUserManager().getImpClass().getName() + ", " +
-          "membership in class " + getMembershipClass().getName() + " " +
-          "where membership.memberUserId = usr.oid " +
-          "and membership.thisGroupId = ?";
 
-        HQL_ISMEMBER = "from membership in class " + getMembershipClass().getName() + " " +
-          "where membership.memberUserId = ? " +
-          "and membership.thisGroupId = ?";
-
-        HQL_GETGROUPS = "select grp from grp in class " + getImpClass().getName() + ", " +
-          "membership in class " + getMembershipClass().getName() + " " +
-          "where membership.thisGroupId = grp.oid " +
-          "and membership.memberUserId = ?";
+        StringBuffer queryString = new StringBuffer("select usr from usr in class ");
+        queryString.append(getUserManager().getImpClass().getName()).append(", ");
+        queryString.append("membership in class ").append(getMembershipClass().getName());
+        queryString.append(" where membership.memberUserId = usr.oid ");
+        queryString.append("and membership.thisGroupId = ?");
+        HQL_GETMEMBERS = queryString.toString();
     }
 
     /**
@@ -125,7 +146,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
             return Collections.unmodifiableList(headers);
         } catch (HibernateException e) {
-            final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
+            final String msg = "Error while searching for " + getInterfaceClass().getName() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
         }
@@ -195,19 +216,11 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
      * @throws ObjectNotFoundException
      */
     public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
-        StringBuffer hqlgroup = new StringBuffer("FROM ");
-        hqlgroup.append(getTableName()).append(" IN CLASS ").append(getImpClass());
-        hqlgroup.append(" WHERE provider_oid = ?");
-
-        StringBuffer hqlgroupmember = new StringBuffer("FROM ");
-        hqlgroupmember.append(getTableName()).append(" IN CLASS ").append(FederatedGroupMembership.class.getName());
-        hqlgroupmember.append(" WHERE provider_oid = ?");
-
         try {
             final Session session = getSession();
 
             // Delete all group members
-            Query q = session.createQuery(hqlgroupmember.toString());
+            Query q = session.createQuery(HQL_DELETE_MEMBERSHIPS_BY_PROVIDEROID);
             q.setLong(0, ipoid);
 
             for (Iterator i = q.iterate(); i.hasNext();) {
@@ -215,7 +228,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
 
             // Delete all groups
-            q = session.createQuery(hqlgroup.toString());
+            q = session.createQuery(HQL_DELETE_BY_PROVIDEROID);
             q.setLong(0, ipoid);
             for (Iterator i = q.iterate(); i.hasNext();) {
                 session.delete(i.next());
@@ -239,12 +252,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
      * @throws ObjectNotFoundException
      */
     public void deleteAllVirtual(long ipoid) throws DeleteException, ObjectNotFoundException {
-        StringBuffer hql = new StringBuffer("FROM ");
-        hql.append(getTableName()).append(" IN CLASS ").append(VirtualGroup.class.getName());
-        hql.append(" WHERE provider_oid = ?");
-
         try {
-            Query q = getSession().createQuery(hql.toString());
+            Query q = getSession().createQuery(HQL_DELETE_VIRTUAL_BY_PROVIDEROID);
             q.setLong(0, ipoid);
             for (Iterator i = q.iterate(); i.hasNext();) {
                 getSession().delete(i.next());
@@ -385,9 +394,9 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         }
     }
 
-    private void deleteMembership(Session s, Group group, User user) throws HibernateException, FindException, UpdateException {
+    void deleteMembership(Session s, Group group, User user) throws HibernateException, FindException, UpdateException {
         Criteria crit = s.createCriteria(getMembershipClass());
-        crit.add(Restrictions.eq("thisGroupProviderOid", new Long(group.getProviderId())));
+        addMembershipCriteria(crit, group, user);
         crit.add(Restrictions.eq("memberUserId", user.getUniqueIdentifier()));
         crit.add(Restrictions.eq("thisGroupId", group.getUniqueIdentifier()));
         addMembershipCriteria(crit, group, user);
@@ -537,8 +546,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     private Set doGetUserHeaders(String groupId) throws HibernateException {
         Set headers = new HashSet();
         Session s = getSession();
-        String hql = HQL_GETUSERS;
-        Query query = s.createQuery(hql);
+        Query query = s.createQuery(HQL_GETMEMBERS);
         query.setString(0, groupId);
         for (Iterator i = query.iterate(); i.hasNext();) {
             PersistentUser user = (PersistentUser)i.next();
@@ -550,8 +558,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     private Set doGetGroupHeaders(String userId) throws HibernateException {
         Set headers = new HashSet();
         Session s = getSession();
-        String hql = HQL_GETGROUPS;
-        Query query = s.createQuery(hql);
+        Query query = s.createQuery(HQL_GETGROUPS);
         query.setString(0, userId);
         for (Iterator i = query.iterate(); i.hasNext();) {
             PersistentGroup group = (PersistentGroup)i.next();
@@ -612,22 +619,9 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     }
 
-    protected String getGetGroupsQuery() {
-        return HQL_GETGROUPS;
-    }
-
-    protected String getGetUsersQuery() {
-        return HQL_GETUSERS;
-    }
-
-    protected String getIsMemberQuery() {
-        return HQL_ISMEMBER;
-    }
-
     protected IdentityProvider identityProvider;
+
+    // Not static on purpose; we want to pretend to be the subclass
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private String HQL_GETGROUPS;
-    private String HQL_GETUSERS;
-    private String HQL_ISMEMBER;
 }

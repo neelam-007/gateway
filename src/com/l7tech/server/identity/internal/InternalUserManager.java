@@ -58,7 +58,7 @@ public class InternalUserManager extends PersistentUserManager {
 
     protected void preSave(PersistentUser user) throws SaveException {
         // check to see if an existing user with same login exist
-        User existingDude = null;
+        User existingDude;
         try {
             existingDude = findByLogin(user.getLogin());
         } catch (FindException e) {

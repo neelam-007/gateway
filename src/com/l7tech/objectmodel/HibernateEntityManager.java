@@ -25,25 +25,27 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     public static final String F_OID = "oid";
     public static final String F_VERSION = "version";
 
-    private final String oidVersionQuery =
-            "SELECT " + getTableName() + "." + F_OID + ", " + getTableName() + "." + F_VERSION +
+    private final String HQL_FIND_ALL_OIDS_AND_VERSIONS =
+            "SELECT " +
+                    getTableName() + "." + F_OID + ", " +
+                    getTableName() + "." + F_VERSION +
             " FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName();
 
-    private final String versionQuery =
+    private final String HQL_FIND_VERSION_BY_OID =
             "SELECT " + getTableName() + "." + F_VERSION +
             " FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
             " WHERE " + getTableName() + "." + F_OID + " = ?";
 
-    private final String findEntityQuery =
+    private final String HQL_FIND_BY_OID =
             "FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
             " WHERE " + getTableName() + "." + F_OID + " = ?";
 
-    private final String deleteQuery =
+    private final String HQL_DELETE_BY_OID =
             "FROM " + getTableName() +
-            " IN CLASS ?" +
+            " IN CLASS " + getImpClass().getName() +
             " WHERE " + getTableName() + "." + F_OID + " = ?";
 
     /**
@@ -55,7 +57,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      */
     public Integer getVersion(long oid) throws FindException {
         try {
-            Query q = getSession().createQuery(versionQuery);
+            Query q = getSession().createQuery(HQL_FIND_VERSION_BY_OID);
             q.setLong(0, oid);
             q.setFlushMode(FlushMode.NEVER);
             List results = q.list();
@@ -71,7 +73,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
 
     public Entity findEntity(long oid) throws FindException {
         try {
-            Query q = getSession().createQuery(findEntityQuery);
+            Query q = getSession().createQuery(HQL_FIND_BY_OID);
             q.setFlushMode(FlushMode.NEVER);
             q.setLong(0, oid);
             List results = q.list();
@@ -90,7 +92,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         if (!Entity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
         try {
-            Query q = getSession().createQuery(oidVersionQuery).setFlushMode(FlushMode.NEVER);
+            Query q = getSession().createQuery(HQL_FIND_ALL_OIDS_AND_VERSIONS).setFlushMode(FlushMode.NEVER);
             List results = q.list();
             if (results.size() > 0) {
                 for (Iterator i = results.iterator(); i.hasNext();) {
@@ -405,7 +407,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      */
     protected boolean delete(Class entityClass, long oid) throws DeleteException {
         try {
-            Query q = getSession().createQuery(deleteQuery);
+            Query q = getSession().createQuery(HQL_DELETE_BY_OID);
             q.setString(0, entityClass.getName());
             q.setLong(1,oid);
             List todelete = q.list();

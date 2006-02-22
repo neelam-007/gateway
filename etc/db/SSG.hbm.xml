@@ -308,4 +308,20 @@
         <property name="xml" column="xml" type="text"/>
     </class>
 
+    <class name="com.l7tech.service.MetricsBin" table="service_metrics">
+        <composite-id>
+            <key-property name="clusterNodeId" column="nodeid" type="string"/>
+            <key-property name="serviceOid" column="published_service_oid" type="long"/>
+            <key-property name="resolution" column="resolution" type="int"/>
+            <key-property name="periodStart" column="period_start" type="long"/>
+        </composite-id>
+
+        <property name="startTime" column="start_time" type="long"/>
+        <property name="endTime" column="end_time" type="long"/>
+
+        <property name="numAttemptedRequest" column="attempted" type="int"/>
+        <property name="numAuthorizedRequest" column="authorized" type="int"/>
+        <property name="numCompletedRequest" column="completed" type="int"/>
+    </class>
+
 </hibernate-mapping>

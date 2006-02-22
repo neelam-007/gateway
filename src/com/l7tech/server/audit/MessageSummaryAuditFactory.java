@@ -6,7 +6,6 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
@@ -34,11 +33,11 @@ public class MessageSummaryAuditFactory {
     private final String nodeId;
     private static final Logger logger = Logger.getLogger(MessageSummaryAuditFactory.class.getName());
 
-    public MessageSummaryAuditFactory(ClusterInfoManager clusterInfoManager) {
-        if (clusterInfoManager == null) {
-            throw new IllegalArgumentException("Cluster Info Manager is required");
+    public MessageSummaryAuditFactory(String nodeId) {
+        if (nodeId == null) {
+            throw new IllegalArgumentException("Cluster Node ID is required");
         }
-        nodeId = clusterInfoManager.thisNodeId();
+        this.nodeId = nodeId;
     }
 
     public MessageSummaryAuditRecord makeEvent(final PolicyEnforcementContext context, AssertionStatus status ) {
@@ -51,7 +50,7 @@ public class MessageSummaryAuditFactory {
         String clientAddr = null;
         long serviceOid = -1;
         String serviceName = null;
-        boolean authenticated = false;
+        boolean authenticated;
         String userId = null;
 
         // Service info
@@ -79,7 +78,7 @@ public class MessageSummaryAuditFactory {
 
         // Request info
         Message request = context.getRequest();
-        String requestId = null;
+        String requestId;
         requestId = context.getRequestId().toString();
         if (context.isAuditSaveRequest()) {
             try {
@@ -125,7 +124,7 @@ public class MessageSummaryAuditFactory {
         long end = context.getRoutingEndTime();
         if (end <= 0) end = start;
 
-        int routingLatency = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
+        int routingLatency = (int)(end - start);
 
         Object operationNameHaver = new Object() {
             public String toString() {

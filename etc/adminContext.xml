@@ -443,6 +443,9 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="serviceMetricsManager"/>
+        </constructor-arg>
     </bean>
 
     <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager" singleton="true"/>

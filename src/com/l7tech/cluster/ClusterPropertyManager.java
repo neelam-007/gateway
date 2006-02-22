@@ -29,6 +29,11 @@ public class ClusterPropertyManager extends HibernateEntityManager implements Ap
     private final Logger logger = Logger.getLogger(ClusterPropertyManager.class.getName());
     private ApplicationContext applicationContext;
 
+    private final String HQL_FIND_BY_NAME =
+            "from " + getTableName() +
+                    " in class " + ClusterProperty.class.getName() +
+                    " where " + getTableName() + ".name = ?";
+
     public ClusterPropertyManager() {}
 
     /**
@@ -43,13 +48,11 @@ public class ClusterPropertyManager extends HibernateEntityManager implements Ap
     }
 
     public ClusterProperty findByKey(String key) throws FindException {
-        String query = "from " + getTableName() + " in class " + ClusterProperty.class.getName() +
-                       " where " + getTableName() + ".name = ?";
         List hibResults;
         try {
             // Prevent reentrant ClusterProperty lookups from flushing in-progress writes
             final Session session = getSession();
-            Query q = session.createQuery(query).setFlushMode(FlushMode.NEVER);
+            Query q = session.createQuery(HQL_FIND_BY_NAME).setFlushMode(FlushMode.NEVER);
             q.setString(0, key);
             hibResults = q.list();
         }  catch (HibernateException e) {

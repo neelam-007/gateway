@@ -5,15 +5,15 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.common.audit.AuditContext;
-import com.l7tech.common.security.xml.decorator.WssDecorator;
-import com.l7tech.common.TestLicenseManager;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.TestLicenseManager;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.service.ServiceMetricsManager;
 
 import java.io.IOException;
 import java.security.PrivateKey;
@@ -40,12 +40,11 @@ public class TestMessageProcessor extends MessageProcessor {
      * @param wssd         the Wss Decorator
      * @param pkey         the server private key
      * @param pkey         the server certificate
-     * @param auditContext the audit context
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
       throws IllegalArgumentException {
-        super(sm, wssd, pkey, cert, null, new TestLicenseManager());
+        super(sm, wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo"));
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)

@@ -24,6 +24,14 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager {
+    private final String HQL_DELETE_BY_PROVIDEROID =
+            "FROM user IN CLASS " + getImpClass().getName() +
+                    " WHERE user.providerOid = ?";
+
+    private final String HQL_DELETE =
+            "FROM user IN CLASS " + getImpClass().getName() +
+                    " WHERE user.oid = ?";
+
     protected PersistentUserManager(IdentityProvider identityProvider) {
         this.identityProvider = identityProvider;
     }
@@ -101,7 +109,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             }
             return Collections.unmodifiableList(headers);
         } catch (HibernateException e) {
-            final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
+            final String msg = "Error while searching for " + getInterfaceClass().getName() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
         }
@@ -131,11 +139,11 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
                 EntityHeader groupHeader = (EntityHeader)i.next();
                 Group group = groupManager.findByPrimaryKey(groupHeader.getStrId());
-                s.delete(groupManager.newMembership(group, userImp));
+                groupManager.deleteMembership(s, group, user);
             }
             s.delete(userImp);
             revokeCert(userImp);
-        } catch (FindException e) {
+        } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException(e.toString(), e);
         } catch (HibernateException e) {
@@ -154,12 +162,8 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
      * @throws ObjectNotFoundException
      */
     public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
-        StringBuffer hql = new StringBuffer("FROM ");
-        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());
-        hql.append(" WHERE provider_oid = ?");
-
         try {
-            Query q = getSession().createQuery(hql.toString());
+            Query q = getSession().createQuery(HQL_DELETE_BY_PROVIDEROID);
             q.setLong(0, ipoid);
             for (Iterator i = q.iterate(); i.hasNext();) {
                 getSession().delete(i.next());
@@ -171,12 +175,8 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
     }
 
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
-        StringBuffer hql = new StringBuffer("FROM ");
-        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());
-        hql.append(" WHERE oid = ?");
-
         try {
-            Query q = getSession().createQuery(hql.toString());
+            Query q = getSession().createQuery(HQL_DELETE);
             q.setString(0, identifier);
             for (Iterator i = q.iterate(); i.hasNext();) {
                 getSession().delete(i.next());

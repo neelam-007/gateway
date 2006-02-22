@@ -5,11 +5,11 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.hibernate.Session;
+import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
-import org.hibernate.FlushMode;
+import org.hibernate.Session;
+import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -42,6 +42,20 @@ import java.util.regex.Pattern;
  */
 public class ClusterInfoManager extends HibernateDaoSupport {
     private KeystoreUtils keystore;
+
+    private final String HQL_FIND_ALL =
+            "from " + TABLE_NAME +
+                    " in class " + ClusterNodeInfo.class.getName();
+
+    private final String HQL_FIND_BY_NAME =
+            "from " + TABLE_NAME +
+                    " in class " + ClusterNodeInfo.class.getName() +
+                    " where " + TABLE_NAME + "." + NAME_COLUMN_NAME + " = ?";
+
+    private final String HQL_FIND_BY_MAC =
+            "from " + TABLE_NAME +
+                    " in class " + ClusterNodeInfo.class.getName() +
+                    " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = ?";
 
     public void setKeystore(KeystoreUtils keystore) {
         this.keystore = keystore;
@@ -166,9 +180,8 @@ public class ClusterInfoManager extends HibernateDaoSupport {
      */
     public Collection retrieveClusterStatus() throws FindException {
         // get all objects from that table
-        String queryall = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName();
         try {
-            Query q = getSession().createQuery(queryall).setFlushMode(FlushMode.NEVER);
+            Query q = getSession().createQuery(HQL_FIND_ALL).setFlushMode(FlushMode.NEVER);
             return q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";
@@ -234,12 +247,11 @@ public class ClusterInfoManager extends HibernateDaoSupport {
         String newnodename = null;
         for (int i = 1; i < 25; i++) {
             String maybenodename = "SSG" + i;
-            String query = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName() +
-                           " where " + TABLE_NAME + "." + NAME_COLUMN_NAME + " = \'" + maybenodename + "\'";
 
             List hibResults = null;
             try {
-                Query q = getSession().createQuery(query).setFlushMode(FlushMode.NEVER);
+                Query q = getSession().createQuery(HQL_FIND_BY_NAME).setFlushMode(FlushMode.NEVER);
+                q.setString(0, maybenodename);
                 hibResults = q.list();
             }  catch (HibernateException e) {
                 String msg = "error looking for available node name";
@@ -280,11 +292,10 @@ public class ClusterInfoManager extends HibernateDaoSupport {
     }
 
     private ClusterNodeInfo getNodeStatusFromDB(String mac) {
-        String query = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName() +
-                       " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = \'" + mac + "\'";
         List hibResults = null;
         try {
-            Query q = getSession().createQuery(query).setFlushMode(FlushMode.NEVER);
+            Query q = getSession().createQuery(HQL_FIND_BY_MAC).setFlushMode(FlushMode.NEVER);
+            q.setString(0, mac);
             hibResults = q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";

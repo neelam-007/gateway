@@ -553,5 +553,18 @@ CREATE TABLE map_token (
   FOREIGN KEY (map_id_oid) REFERENCES map_id (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
+DROP TABLE IF EXISTS service_metrics;
+CREATE TABLE service_metrics (
+  nodeid VARCHAR(18) NOT NULL,
+  published_service_oid BIGINT(20) NOT NULL,
+  resolution INTEGER NOT NULL,
+  period_start BIGINT(20) NOT NULL,
+  start_time BIGINT(20) NOT NULL,
+  end_time BIGINT(20) NOT NULL,
+  attempted INTEGER NOT NULL,
+  authorized INTEGER NOT NULL,
+  completed INTEGER NOT NULL,
+  PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
+) TYPE=InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;

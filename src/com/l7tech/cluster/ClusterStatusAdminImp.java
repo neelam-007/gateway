@@ -7,10 +7,12 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayLicenseManager;
+import com.l7tech.server.service.ServiceMetricsManager;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -21,7 +23,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 2, 2004<br/>
- * $Id$<br/>
  */
 public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     /**
@@ -35,12 +36,15 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
                                  ServiceUsageManager serviceUsageManager,
                                  ClusterPropertyManager clusterPropertyManager,
                                  AccessManager accessManager,
-                                 LicenseManager licenseManager) {
+                                 LicenseManager licenseManager,
+                                 ServiceMetricsManager metricsManager)
+    {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
         this.accessManager = accessManager;
         this.clusterPropertyManager = clusterPropertyManager;
         this.licenseManager = (GatewayLicenseManager)licenseManager; // XXX this is... Not Very Pretty
+        this.serviceMetricsManager = metricsManager;
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info manager is required");
         }
@@ -166,11 +170,18 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         licenseManager.installNewLicense(newLicenseXml);
     }
 
+    public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+        checkLicense();
+        return serviceMetricsManager.findBins(nodeId, minPeriodStart, maxPeriodStart, resolution, serviceOid);
+    }
+
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
     private final ClusterPropertyManager clusterPropertyManager;
     private final AccessManager accessManager;
     private final GatewayLicenseManager licenseManager;
+    private final ServiceMetricsManager serviceMetricsManager;
+
     private final Logger logger = Logger.getLogger(getClass().getName());
 
 }

@@ -135,7 +135,7 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-    <!-- server side Service Usage  manager -->
+    <!-- server side DistributedMessageIdManager -->
     <bean id="distributedMessageIdManager" class="com.l7tech.cluster.DistributedMessageIdManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
@@ -293,7 +293,7 @@
     <!-- server side audit message factory -->
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
         <constructor-arg>
-            <ref bean="clusterInfoManager"/>
+            <ref bean="clusterNodeId"/>
         </constructor-arg>
     </bean>
 
@@ -404,6 +404,9 @@
         </constructor-arg>
         <constructor-arg>
             <ref bean="licenseManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="serviceMetricsManager"/>
         </constructor-arg>
      </bean>
     <!-- server side policy service -->
@@ -524,7 +527,7 @@
 
     <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
         <constructor-arg>
-            <ref local="clusterInfoManager"/>
+            <ref local="clusterNodeId"/>
         </constructor-arg>
 
         <constructor-arg>
@@ -534,7 +537,7 @@
 
     <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
         <constructor-arg>
-            <ref local="clusterInfoManager"/>
+            <ref local="clusterNodeId"/>
         </constructor-arg>
 
         <constructor-arg>
@@ -613,5 +616,31 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
+
+    <!--
+    The MAC of this cluster node, so that we don't need to throw the whole
+    ClusterInfoManager around 
+    -->
+    <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject">
+            <ref local='clusterInfoManager'/>
+        </property>
+        <property name="targetMethod">
+            <value>thisNodeId</value>
+        </property>
+    </bean>
+
+    <bean id="serviceMetricsManagerTarget" class="com.l7tech.server.service.ServiceMetricsManager" singleton="true">
+        <constructor-arg>
+            <ref bean="clusterNodeId"/>
+        </constructor-arg>
+        <property name="sessionFactory">
+            <ref bean="sessionFactory"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+    </bean>
+
 
 </beans>

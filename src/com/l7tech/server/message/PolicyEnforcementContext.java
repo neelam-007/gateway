@@ -7,9 +7,9 @@
 package com.l7tech.server.message;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
@@ -20,15 +20,15 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.policy.variable.ServerVariables;
-import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.variable.VariableMap;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
 
@@ -37,15 +37,13 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  * TODO write some farking javadoc
  */
 public class PolicyEnforcementContext extends ProcessingContext {
-    private static final Logger logger = Logger.getLogger(PolicyEnforcementContext.class.getName());
-
+    private final long startTime = System.currentTimeMillis();
     private final RequestId requestId;
     private ArrayList incrementedCounters = new ArrayList();
     private final Map deferredAssertions = new LinkedHashMap();
@@ -196,6 +194,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     /**
      * Check if some authentication credentials that were expected in the request were not found.
      * This implies {@link #setRequestPolicyViolated}, as well.
+     * @return true if the policy expected credentials, but they weren't present
      */
     public boolean isAuthenticationMissing() {
         return isAuthenticationMissing;
@@ -214,6 +213,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
      * Check if a policy violation was detected while processing the request.
      * If the policy processing turns out to fail, a Policy-URL: should be sent back
      * to the requestor.
+     * @return true if the request is considered to be in violation of the policy
      */
     public boolean isRequestPolicyViolated() {
         return isRequestPolicyViolated;
@@ -353,6 +353,13 @@ public class PolicyEnforcementContext extends ProcessingContext {
      */
     public void setStealthResponseMode(boolean stealthResponseMode) {
         isStealthResponseMode = stealthResponseMode;
+    }
+
+    /**
+     * @return the time when this request's processing started
+     */
+    public long getStartTime() {
+        return startTime;
     }
 
     private boolean operationAttempted = false;

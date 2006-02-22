@@ -17,7 +17,7 @@ import java.io.Serializable;
  * @version $Revision$
  * @author flascelles
  */
-public class EntityHeader implements Serializable {
+public class EntityHeader implements Serializable, Comparable {
 
     public EntityHeader(String id, EntityType type, String name, String description) {
         setStrId(id);
@@ -111,4 +111,12 @@ public class EntityHeader implements Serializable {
     private String strId;
     protected String _name;
     private static final long DEFAULT_OID = -1;
+
+    public int compareTo(Object o) {
+        EntityHeader other = (EntityHeader)o;
+        if (strId != null && other.strId != null) {
+            if (strId.equals(other.strId)) return 0;
+        }
+        return _name.compareTo(((EntityHeader)o)._name);
+    }
 }
