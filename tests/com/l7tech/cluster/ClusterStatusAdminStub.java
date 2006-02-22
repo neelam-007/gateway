@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.UpdateException;
 import java.rmi.RemoteException;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.List;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -130,5 +131,9 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         } catch (Exception e) {
             throw new InvalidLicenseException(e.getMessage(), e);
         }
+    }
+
+    public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+        throw new UnsupportedOperationException();
     }
 }
