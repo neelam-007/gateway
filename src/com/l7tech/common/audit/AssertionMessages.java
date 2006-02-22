@@ -329,6 +329,10 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_BODY_TOO_LARGE            = m(7220, Level.WARNING,  "Request body size exceeds configured limit");
     public static final M REQUEST_FIRST_PART_TOO_LARGE      = m(7221, Level.WARNING,  "Request first part size exceeds configured limit");
 
+    // OversizedTextAssertion
+    public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against oversized text -- the request has already been routed"); 
+    public static final M OVERSIZEDTEXT_REQUEST_REJECTED    = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
+
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
     public static final M WSFEDPASS_RSTR_BAD_TYPE           = m(7301, Level.WARNING, "WS-Federation response did not contain a security token of a supported type");
