@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.UpdateException;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
@@ -122,4 +123,19 @@ public interface ClusterStatusAdmin {
      * @throws UpdateException if the license was valid, but was not installed because of a database problem.
      */
     void installNewLicense(String newLicenseXml) throws RemoteException, UpdateException, InvalidLicenseException;
+
+    /**
+     * Finds {@link com.l7tech.service.MetricsBin} instances from the database using the specified
+     * query parameters.  All parameters are optional--pass null in all parameters to find all
+     * MetricsBin instances in the database.
+     *
+     * @param nodeId the MAC address of the cluster node to query for; null = any
+     * @param minPeriodStart the minimum {@link com.l7tech.service.MetricsBin#getPeriodStart} value, inclusive; null = no minimum
+     * @param maxPeriodStart the maximum {@link com.l7tech.service.MetricsBin#getPeriodStart} value, inclusive; null = no maximum
+     * @param resolution the {@link com.l7tech.service.MetricsBin#getResolution()} value; null = any. Must be one of {@link com.l7tech.service.MetricsBin#RES_FINE}, {@link com.l7tech.service.MetricsBin#RES_HOURLY} or {@link com.l7tech.service.MetricsBin#RES_DAILY}
+     * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} to find metrics for; null = any.
+     * @return a List of {@link com.l7tech.service.MetricsBin} instances.
+     */
+    List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException;
+
 }
