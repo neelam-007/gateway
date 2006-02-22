@@ -8,6 +8,7 @@ import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -198,7 +199,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     /**
-     * Return the value of the table cell specified with its tbale coordinate.
+     * Return the value of the table cell specified with its table coordinate.
      *
      * @param row  The row index.
      * @param col  The column index.
@@ -225,6 +226,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 return msg.getReqId();
             case LogPanel.LOG_NODE_ID_COLUMN_INDEX:
                 return msg.getNodeId();
+            case LogPanel.LOG_SERVICE_COLUMN_INDEX:
+                return getServiceName(msg);
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -305,6 +308,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 case LogPanel.LOG_NODE_ID_COLUMN_INDEX:
                     elementA = logMsgA.getNodeId();
                     elementB = logMsgB.getNodeId();
+                    break;
+                case LogPanel.LOG_SERVICE_COLUMN_INDEX:
+                    elementA = getServiceName(logMsgA);
+                    elementB = getServiceName(logMsgB);
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -402,6 +409,12 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 removeLogs((String) nodeId);
             }
         }
+    }
+
+    private String getServiceName(LogMessage msg) {
+        return msg.getSSGLogRecord() instanceof MessageSummaryAuditRecord
+                        ? ((MessageSummaryAuditRecord)msg.getSSGLogRecord()).getName()
+                        : "";
     }
 
     /**

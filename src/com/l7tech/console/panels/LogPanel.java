@@ -49,6 +49,7 @@ public class LogPanel extends JPanel {
     public static final int LOG_JAVA_METHOD_COLUMN_INDEX = 6;
     public static final int LOG_REQUEST_ID_COLUMN_INDEX = 7;
     public static final int LOG_NODE_ID_COLUMN_INDEX = 8;
+    public static final int LOG_SERVICE_COLUMN_INDEX = 9;
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
@@ -748,6 +749,7 @@ public class LogPanel extends JPanel {
         columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, 30));
         columnModel.addColumn(new TableColumn(LOG_TIMESTAMP_COLUMN_INDEX, 80));
         columnModel.addColumn(new TableColumn(LOG_SEVERITY_COLUMN_INDEX, 15));
+        columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, 20));
         columnModel.addColumn(new TableColumn(LOG_MSG_DETAILS_COLUMN_INDEX, 400));
         columnModel.addColumn(new TableColumn(LOG_JAVA_CLASS_COLUMN_INDEX, 0));   // min width is used
         columnModel.addColumn(new TableColumn(LOG_JAVA_METHOD_COLUMN_INDEX, 0));   // min width is used
@@ -755,39 +757,60 @@ public class LogPanel extends JPanel {
         columnModel.addColumn(new TableColumn(LOG_NODE_ID_COLUMN_INDEX, 0));
 
         for(int i = 0; i < columnModel.getColumnCount(); i++){
-            columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
-            columnModel.getColumn(i).setHeaderValue(getLogTableModel().getColumnName(i));
+            TableColumn tc = columnModel.getColumn(i);
+            tc.setHeaderRenderer(iconHeaderRenderer);
+            tc.setHeaderValue(getLogTableModel().getColumnName(tc.getModelIndex()));
         }
 
         String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
-        if ((showMsgFlag != null) && showMsgFlag.equals(new String("true"))){
+        if ((showMsgFlag != null) && showMsgFlag.equals("true")){
             // show the message # column (mainly for debugging and testing purpose
         }
         else{
-            columnModel.getColumn(LOG_MSG_NUMBER_COLUMN_INDEX).setMinWidth(0);
-            columnModel.getColumn(LOG_MSG_NUMBER_COLUMN_INDEX).setMaxWidth(0);
-            columnModel.getColumn(LOG_MSG_NUMBER_COLUMN_INDEX).setPreferredWidth(0);
+            getColumnByModelIndex(columnModel, LOG_MSG_NUMBER_COLUMN_INDEX).setMinWidth(0);
+            getColumnByModelIndex(columnModel, LOG_MSG_NUMBER_COLUMN_INDEX).setMaxWidth(0);
+            getColumnByModelIndex(columnModel, LOG_MSG_NUMBER_COLUMN_INDEX).setPreferredWidth(0);
+        }
+
+        if(!isAuditType) { // hide the service name if we are not displaying audit messages
+            getColumnByModelIndex(columnModel, LOG_SERVICE_COLUMN_INDEX).setMinWidth(0);
+            getColumnByModelIndex(columnModel, LOG_SERVICE_COLUMN_INDEX).setMaxWidth(0);
+            getColumnByModelIndex(columnModel, LOG_SERVICE_COLUMN_INDEX).setPreferredWidth(0);
         }
 
         // we don't show following columns including method, class
         // but the data is retrieved for display in the detailed pane
-        columnModel.getColumn(LOG_JAVA_CLASS_COLUMN_INDEX).setMinWidth(0);
-        columnModel.getColumn(LOG_JAVA_CLASS_COLUMN_INDEX).setMaxWidth(0);
-        columnModel.getColumn(LOG_JAVA_CLASS_COLUMN_INDEX).setPreferredWidth(0);
+        getColumnByModelIndex(columnModel, LOG_JAVA_CLASS_COLUMN_INDEX).setMinWidth(0);
+        getColumnByModelIndex(columnModel, LOG_JAVA_CLASS_COLUMN_INDEX).setMaxWidth(0);
+        getColumnByModelIndex(columnModel, LOG_JAVA_CLASS_COLUMN_INDEX).setPreferredWidth(0);
 
-        columnModel.getColumn(LOG_JAVA_METHOD_COLUMN_INDEX).setMinWidth(0);
-        columnModel.getColumn(LOG_JAVA_METHOD_COLUMN_INDEX).setMaxWidth(0);
-        columnModel.getColumn(LOG_JAVA_METHOD_COLUMN_INDEX).setPreferredWidth(0);
+        getColumnByModelIndex(columnModel, LOG_JAVA_METHOD_COLUMN_INDEX).setMinWidth(0);
+        getColumnByModelIndex(columnModel, LOG_JAVA_METHOD_COLUMN_INDEX).setMaxWidth(0);
+        getColumnByModelIndex(columnModel, LOG_JAVA_METHOD_COLUMN_INDEX).setPreferredWidth(0);
 
-        columnModel.getColumn(LOG_REQUEST_ID_COLUMN_INDEX).setMinWidth(0);
-        columnModel.getColumn(LOG_REQUEST_ID_COLUMN_INDEX).setMaxWidth(0);
-        columnModel.getColumn(LOG_REQUEST_ID_COLUMN_INDEX).setPreferredWidth(0);
+        getColumnByModelIndex(columnModel, LOG_REQUEST_ID_COLUMN_INDEX).setMinWidth(0);
+        getColumnByModelIndex(columnModel, LOG_REQUEST_ID_COLUMN_INDEX).setMaxWidth(0);
+        getColumnByModelIndex(columnModel, LOG_REQUEST_ID_COLUMN_INDEX).setPreferredWidth(0);
 
-        columnModel.getColumn(LOG_NODE_ID_COLUMN_INDEX).setMinWidth(0);
-        columnModel.getColumn(LOG_NODE_ID_COLUMN_INDEX).setMaxWidth(0);
-        columnModel.getColumn(LOG_NODE_ID_COLUMN_INDEX).setPreferredWidth(0);
+        getColumnByModelIndex(columnModel, LOG_NODE_ID_COLUMN_INDEX).setMinWidth(0);
+        getColumnByModelIndex(columnModel, LOG_NODE_ID_COLUMN_INDEX).setMaxWidth(0);
+        getColumnByModelIndex(columnModel, LOG_NODE_ID_COLUMN_INDEX).setPreferredWidth(0);
 
         return columnModel;
+    }
+
+    private TableColumn getColumnByModelIndex(TableColumnModel tcm, int index) {
+        TableColumn tc = null;
+
+        for(int c=0; c<tcm.getColumnCount(); c++) {
+            TableColumn ctc = tcm.getColumn(c);
+            if(ctc.getModelIndex()==index) {
+                tc = ctc;
+                break;
+            }
+        }
+
+        return tc;
     }
 
     /**
@@ -814,7 +837,7 @@ public class LogPanel extends JPanel {
             return logTableModel;
         }
 
-        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class", "Method", "Request Id", "Node Id"};
+        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class", "Method", "Request Id", "Node Id", "Service"};
         String[][] rows = new String[][]{};
 
         logTableModel = new DefaultTableModel(rows, cols) {
@@ -840,9 +863,14 @@ public class LogPanel extends JPanel {
 
         // save the number of selected message
         if (selectedRowIndexOld >= 0) {
-            msgNumSelected =
-                    getMsgTable().getValueAt(selectedRowIndexOld, LOG_NODE_ID_COLUMN_INDEX).toString().trim() +
-                    getMsgTable().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX).toString().trim();
+            Object nodeId = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_NODE_ID_COLUMN_INDEX);
+            Object mesNum = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX);
+
+            if(nodeId!=null && mesNum!=null) {
+                msgNumSelected =
+                        nodeId.toString().trim() +
+                        mesNum.toString().trim();
+            }
         }
 
         return msgNumSelected;
@@ -872,16 +900,18 @@ public class LogPanel extends JPanel {
             int rowCount = getMsgTable().getRowCount();
             boolean rowFound = false;
             for (int i = 0; i < rowCount; i++) {
-                Object nodeId = getMsgTable().getValueAt(i, LOG_NODE_ID_COLUMN_INDEX);
-                Object mesNum = getMsgTable().getValueAt(i, LOG_MSG_NUMBER_COLUMN_INDEX);
+                Object nodeId = getMsgTable().getModel().getValueAt(i, LOG_NODE_ID_COLUMN_INDEX);
+                Object mesNum = getMsgTable().getModel().getValueAt(i, LOG_MSG_NUMBER_COLUMN_INDEX);
 
-                String selctedMsgNum = nodeId.toString().trim() + mesNum.toString().trim();
+                if(nodeId!=null && mesNum!=null) {
+                    String selctedMsgNum = nodeId.toString().trim() + mesNum.toString().trim();
 
-                if (selctedMsgNum.equals(msgNumber)) {
-                    getMsgTable().setRowSelectionInterval(i, i);
+                    if (selctedMsgNum.equals(msgNumber)) {
+                        getMsgTable().setRowSelectionInterval(i, i);
 
-                    rowFound = true;
-                    break;
+                        rowFound = true;
+                        break;
+                    }
                 }
             }
 
@@ -910,7 +940,7 @@ public class LogPanel extends JPanel {
 
             // save the number of selected message
             if (selectedRowIndexOld >= 0) {
-                msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
+                msgNumSelected = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX).toString();
             }
 
             ((FilteredLogTableSorter) getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
@@ -997,7 +1027,7 @@ public class LogPanel extends JPanel {
 
             setText((String) value);
 
-            if (getFilteredLogTableSorter().getSortedColumn() == column) {
+            if (getFilteredLogTableSorter().getSortedColumn() == table.convertColumnIndexToModel(column)) {
 
                 if (getFilteredLogTableSorter().isAscending()) {
                     setIcon(upArrowIcon);
@@ -1029,8 +1059,7 @@ public class LogPanel extends JPanel {
         MouseAdapter listMouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
 
-                TableColumnModel columnModel = tableView.getColumnModel();
-                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
+                int viewColumn = tableView.columnAtPoint(e.getPoint());
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
