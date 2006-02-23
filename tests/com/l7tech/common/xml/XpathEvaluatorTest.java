@@ -253,7 +253,7 @@ public class XpathEvaluatorTest extends TestCase {
 
     }
 
-    public void testLongAttributesNames() throws Exception {
+    public void testLongAttributesValues() throws Exception {
         Document doc = XmlUtil.stringToDocument("<blah foo=\"blah\">123</blah>");
         HashMap namesapces = new HashMap();
         namesapces.put("s0", "http://grrr.com/nsblah");
@@ -272,6 +272,15 @@ public class XpathEvaluatorTest extends TestCase {
         for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
             Boolean bool = (Boolean)iterator.next();
             assertTrue(bool.booleanValue());
+        }
+
+        doc = XmlUtil.stringToDocument("<blah blahblahblahblahblahblahblahblahblahblahblahblahblah=\"foo\">123</blah>");
+        xe = XpathEvaluator.newEvaluator(doc, namesapces);
+        nodes = xe.select("count(//*/@*[string-length() > 20) > 0");
+
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Boolean bool = (Boolean)iterator.next();
+            assertFalse(bool.booleanValue());
         }
     }
 
