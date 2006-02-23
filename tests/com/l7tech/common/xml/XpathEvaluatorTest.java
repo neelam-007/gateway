@@ -239,6 +239,20 @@ public class XpathEvaluatorTest extends TestCase {
         }
     }
 
+    public void testLongTextNodes() throws Exception {
+        Document doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\">123</s0:blah>");
+        HashMap namesapces = new HashMap();
+        namesapces.put("s0", "http://grrr.com/nsblah");
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namesapces);
+        List nodes = xe.select("(//*/text())[string-length() > 20]");
+        assertTrue(nodes.size() == 0);
+        doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\">blahblahblahblahblahblahblahblahblahblahblahblahblah</s0:blah>");
+        xe = XpathEvaluator.newEvaluator(doc, namesapces);
+        nodes = xe.select("(//*/text())[string-length() > 20]");
+        assertTrue(nodes.size() == 1);
+
+    }
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
