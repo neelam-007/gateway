@@ -11,8 +11,8 @@ import com.l7tech.common.audit.Messages;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import org.springframework.context.ApplicationContext;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class ServerOversizedTextAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerOversizedTextAssertion.class.getName());
     private final Auditor auditor;
-    private final ServerAssertion invertedDelegate; // runs positive tests; if it succeeds, we must fail
+    private final ServerAssertion delegate;
 
     public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) {
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
@@ -35,15 +35,15 @@ public class ServerOversizedTextAssertion implements ServerAssertion {
         PolicyFactory pf = (ServerPolicyFactory)springContext.getBean("policyFactory");
         if (pf == null || !(pf instanceof ServerPolicyFactory)) {
             auditor.logAndAudit(Messages.EXCEPTION_SEVERE, new String[] {"Missing or invalid policyFactory bean"});
-            invertedDelegate = new ServerTrueAssertion(new TrueAssertion()); // simulate detecting attack every time
+            delegate = new ServerFalseAssertion(new FalseAssertion()); // simulate detecting attack every time
         } else {
             ServerPolicyFactory policyFactory = (ServerPolicyFactory)pf;
 
-            // Set up children to do all the actual work of detecting the attack (inverted logic)
-            CompositeAssertion all = new OneOrMoreAssertion();
+            // Set up children to do all the actual work of asserting that there is no attack
+            CompositeAssertion all = new AllAssertion();
             all.addChild(new RequestXpathAssertion(new XpathExpression(data.makeTextXpath(), null)));
             all.addChild(new RequestXpathAssertion(new XpathExpression(data.makeAttrXpath(), null)));
-            invertedDelegate = policyFactory.makeServerPolicy(all);
+            delegate = policyFactory.makeServerPolicy(all);
         }
     }
 
@@ -55,9 +55,8 @@ public class ServerOversizedTextAssertion implements ServerAssertion {
             return AssertionStatus.FAILED;
         }
 
-        // If an attack detector succeeds, outer assertion (us) must fail
-        AssertionStatus result = invertedDelegate.checkRequest(context);
-        if (AssertionStatus.NONE == result) {
+        AssertionStatus result = delegate.checkRequest(context);
+        if (AssertionStatus.NONE != result) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_REQUEST_REJECTED);
             return AssertionStatus.BAD_REQUEST;
         }

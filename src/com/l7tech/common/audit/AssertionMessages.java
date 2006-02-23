@@ -330,7 +330,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_FIRST_PART_TOO_LARGE      = m(7221, Level.WARNING,  "Request first part size exceeds configured limit");
 
     // OversizedTextAssertion
-    public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against oversized text -- the request has already been routed"); 
+    public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against oversized text nodes or attribute values -- the request has already been routed"); 
     public static final M OVERSIZEDTEXT_REQUEST_REJECTED    = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
 
     // ServerWsTrustCredentialExchange
