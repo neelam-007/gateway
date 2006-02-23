@@ -408,8 +408,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
     protected boolean delete(Class entityClass, long oid) throws DeleteException {
         try {
             Query q = getSession().createQuery(HQL_DELETE_BY_OID);
-            q.setString(0, entityClass.getName());
-            q.setLong(1,oid);
+            q.setLong(0,oid);
             List todelete = q.list();
             if (todelete.size() == 0) {
                 return false;
