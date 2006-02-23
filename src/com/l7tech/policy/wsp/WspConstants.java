@@ -244,6 +244,7 @@ public class WspConstants {
         new AssertionMapping(new ComparisonAssertion(), "ComparisonAssertion"),
         new AssertionMapping(new StealthFault(), "StealthFault"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
+        new AssertionMapping(new OversizedTextAssertion(), "OversizedText"),
         new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),
         new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),

@@ -75,6 +75,7 @@
                 <L7p:ComparisonAssertion/>
                 <L7p:StealthFault/>
                 <L7p:SqlAttackProtection/>
+                <L7p:OversizedText/>
                 <L7p:RequestSizeLimit/>
                 <L7p:Kerberos/>
                 <L7p:EncryptedUsernameToken/>

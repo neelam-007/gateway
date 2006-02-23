@@ -30,6 +30,7 @@ public class ThreatProtectionFolderNode extends AbstractTreeNode {
         children = null;
         insert( new SqlAttackAssertionPaletteNode(), index++ );
         insert( new RequestSizeLimitPaletteNode(), index++ );
+        insert( new OversizedTextAssertionPaletteNode(), index++ );
         insert( new RequestWssReplayProtectionNode(), index++ );
     }
 
