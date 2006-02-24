@@ -180,13 +180,20 @@ public class ClusterInfoManager extends HibernateDaoSupport {
      */
     public Collection retrieveClusterStatus() throws FindException {
         // get all objects from that table
+        Session s = null;
+        FlushMode old = null;
         try {
-            Query q = getSession().createQuery(HQL_FIND_ALL).setFlushMode(FlushMode.NEVER);
+            s = getSession();
+            old = s.getFlushMode();
+            s.setFlushMode(FlushMode.NEVER);
+            Query q = s.createQuery(HQL_FIND_ALL);
             return q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";
             logger.log(Level.WARNING, msg, e);
             throw new FindException(msg, e);
+        } finally {
+            if (s != null && old != null) s.setFlushMode(old);
         }
     }
 
@@ -249,13 +256,20 @@ public class ClusterInfoManager extends HibernateDaoSupport {
             String maybenodename = "SSG" + i;
 
             List hibResults = null;
+            Session s = null;
+            FlushMode old = null;
             try {
-                Query q = getSession().createQuery(HQL_FIND_BY_NAME).setFlushMode(FlushMode.NEVER);
+                s = getSession();
+                old = s.getFlushMode();
+                s.setFlushMode(FlushMode.NEVER);
+                Query q = s.createQuery(HQL_FIND_BY_NAME);
                 q.setString(0, maybenodename);
                 hibResults = q.list();
-            }  catch (HibernateException e) {
+            } catch (HibernateException e) {
                 String msg = "error looking for available node name";
                 logger.log(Level.WARNING, msg, e);
+            } finally {
+                if (old != null && s != null) s.setFlushMode(old);
             }
             if (hibResults == null || hibResults.isEmpty()) {
                 newnodename = maybenodename;
@@ -293,14 +307,23 @@ public class ClusterInfoManager extends HibernateDaoSupport {
 
     private ClusterNodeInfo getNodeStatusFromDB(String mac) {
         List hibResults = null;
+        Session s = null;
+        FlushMode old = null;
+
         try {
-            Query q = getSession().createQuery(HQL_FIND_BY_MAC).setFlushMode(FlushMode.NEVER);
+            s = getSession();
+            old = s.getFlushMode();
+            s.setFlushMode(FlushMode.NEVER);
+            Query q = s.createQuery(HQL_FIND_BY_MAC);
             q.setString(0, mac);
             hibResults = q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";
             logger.log(Level.WARNING, msg, e);
+        } finally {
+            if (s != null && old != null) s.setFlushMode(old);
         }
+
         if (hibResults == null || hibResults.isEmpty()) {
             return null;
         }

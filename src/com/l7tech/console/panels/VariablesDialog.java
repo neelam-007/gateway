@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.treetable.AbstractTreeTableModel;
 import com.l7tech.console.util.treetable.JTreeTable;
 import com.l7tech.console.util.treetable.TreeTableModel;
+import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.BuiltinVariables;
@@ -45,37 +46,18 @@ public class VariablesDialog extends JDialog {
         }
     };
     private final JTreeTable treeTable;
+    private static final String BUILTIN_DESC = "Variables that are built-in to the SSG and available to all policies";
+    private static final String POLICY_DESC = "Variables that are set by policy assertions and available to subsequent assertions in the policy";
 
     public VariableMetadata getSelectedVariable() {
         return selectedVariable;
     }
 
-    private static class PairOfStrings {
-        private final String s1;
-        private final String s2;
-
-        private PairOfStrings(String s1, String s2) {
-            this.s1 = s1;
-            this.s2 = s2;
-        }
-
-        private String get(int i) {
-            if (i == 0)
-                return s1;
-            else
-                return s2;
-        }
-
-        public String toString() {
-            return s1;
-        }
-    }
-
     private final VariableMetadata[] builtinVars;
-    private final PairOfStrings BUILTIN = new PairOfStrings("Built-in Variables", "Variables that are built-in to the SSG and available to all policies");
+    private final String BUILTIN = "Built-in Variables";
 
     private final VariableMetadata[] policyVars;
-    private final PairOfStrings POLICY = new PairOfStrings("Policy Variables", "Variables that are set by policy assertions and available to subsequent assertions in the policy");
+    private final String POLICY = "Policy Variables";
 
     public VariablesDialog(Frame owner, Assertion assertion, boolean modal) throws HeadlessException {
         super(owner, "Variables", modal);
@@ -125,6 +107,16 @@ public class VariablesDialog extends JDialog {
             public Icon getLeafIcon() {
                 return null;
             }
+
+            public String getToolTipText() {
+                String text = getText();
+                if (text.equals(BUILTIN)) {
+                    return BUILTIN_DESC;
+                } else if (text.equals(POLICY)) {
+                    return POLICY_DESC;
+                } else
+                    return null;
+            }
         };
 
         treeTable = new JTreeTable(new VariableTreeTableModel(policyVars == null ? BUILTIN : FAKE), tcr, false);
@@ -154,6 +146,8 @@ public class VariablesDialog extends JDialog {
                 dispose();
             }
         });
+
+        Actions.setEscKeyStrokeDisposes(this);
 
         innerPanel.setLayout(new BorderLayout());
         JScrollPane scrollPane = new JScrollPane(treeTable);
@@ -198,7 +192,8 @@ public class VariablesDialog extends JDialog {
 
         public Object getValueAt(Object node, int column) {
             if ((node == BUILTIN || node == POLICY)) {
-                return ((PairOfStrings)node).get(column);
+                if (column == 0) return node;
+                return null;
             }
 
             if (node instanceof VariableMetadata) {

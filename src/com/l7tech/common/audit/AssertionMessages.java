@@ -109,6 +109,8 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_OTHER_NODE_FOUND                  = m(4709, Level.FINE,  "XPath pattern found some other node");
     public static final M XPATH_SUCCEED_REQUEST                   = m(4710, Level.FINE, "XPath pattern matched request; assertion therefore succeeds.");
     public static final M XPATH_SUCCEED_RESPONSE                  = m(4711, Level.FINE, "XPath pattern matched response; assertion therefore succeeds.");
+    public static final M XPATH_MULTIPLE_RESULTS                  = m(4712, Level.FINE, "XPath pattern found {0} results; .result variable will contain first value");
+    public static final M XPATH_RESULTS                           = m(4713, Level.FINE, "XPath result #{0}: \"{1}\"");
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software xpath processing.");

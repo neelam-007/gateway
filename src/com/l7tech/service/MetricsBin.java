@@ -94,11 +94,13 @@ public class MetricsBin implements Serializable, Comparable {
     public static final int RES_DAILY = 2;
     private static final SimpleDateFormat DATEFORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
+    private int interval;
+
     /**
      * Constructs a statistical bin that is open for accumulating data. Remember
      * to call {@link #setEndTime} when closing it off.
      */
-    public MetricsBin(final long startTime, int fineInterval, int resolution,
+    public MetricsBin(final long startTime, int interval, int resolution,
                       String nodeId, long serviceOid)
     {
         checkResolutionType(resolution);
@@ -106,8 +108,10 @@ public class MetricsBin implements Serializable, Comparable {
         long periodStart = -1; // Will never be visible; invariant checked already
         if (resolution == RES_FINE) {
             // Find the beginning of the current fine period
-            periodStart = (startTime / fineInterval) * fineInterval;
+            if (interval == 0) throw new IllegalArgumentException("Fine interval required");
+            periodStart = (startTime / interval) * interval;
         } else if (resolution == RES_HOURLY) {
+            interval = 60 * 60 * 1000;
             GregorianCalendar cal = new GregorianCalendar();
             cal.setTimeInMillis(startTime);
             cal.set(GregorianCalendar.MINUTE, 0);
@@ -115,6 +119,7 @@ public class MetricsBin implements Serializable, Comparable {
             cal.set(GregorianCalendar.MILLISECOND, 0);
             periodStart = cal.getTimeInMillis();
         } else if (resolution == RES_DAILY) {
+            interval = 24 * 60 * 60 * 1000;
             GregorianCalendar cal = new GregorianCalendar();
             cal.setTimeInMillis(startTime);
             cal.set(GregorianCalendar.HOUR_OF_DAY, 0);
@@ -126,6 +131,7 @@ public class MetricsBin implements Serializable, Comparable {
         _periodStart = periodStart;
         _clusterNodeId = nodeId;
         _serviceOid = serviceOid;
+        this.interval = interval;
         _endTime = _startTime;  // Signifies end time has not been set.
     }
 
@@ -437,12 +443,21 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
+    public int getInterval() {
+        return interval;
+    }
+
+    public void setInterval(int interval) {
+        this.interval = interval;
+    }
+
     public String toString() {
         StringBuffer b = new StringBuffer("<MetricsBin resolution=\"");
         b.append(getResolutionName());
         b.append("\" periodStart=\"").append(DATEFORMAT.format(new Date(_periodStart)));
         b.append("\" startTime=\"").append(DATEFORMAT.format(new Date(_startTime)));
         b.append("\" endTime=\"").append(DATEFORMAT.format(new Date(_endTime)));
+        if (_resolution == RES_FINE) b.append("\" interval=\"").append(interval);
         b.append("\" attempted=\"").append(_numAttemptedRequest);
         b.append("\" authorized=\"").append(_numAuthorizedRequest);
         b.append("\" completed=\"").append(_numCompletedRequest);
@@ -450,47 +465,32 @@ public class MetricsBin implements Serializable, Comparable {
         return b.toString();
     }
 
-
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         final MetricsBin that = (MetricsBin)o;
 
-        if (_endTime != that._endTime) return false;
-        if (_maxBackendResponseTime != that._maxBackendResponseTime) return false;
-        if (_maxFrontendResponseTime != that._maxFrontendResponseTime) return false;
-        if (_minBackendResponseTime != that._minBackendResponseTime) return false;
-        if (_minFrontendResponseTime != that._minFrontendResponseTime) return false;
-        if (_numAttemptedRequest != that._numAttemptedRequest) return false;
-        if (_numAuthorizedRequest != that._numAuthorizedRequest) return false;
-        if (_numCompletedRequest != that._numCompletedRequest) return false;
         if (_periodStart != that._periodStart) return false;
         if (_resolution != that._resolution) return false;
         if (_serviceOid != that._serviceOid) return false;
         if (_startTime != that._startTime) return false;
-        if (_sumBackendResponseTime != that._sumBackendResponseTime) return false;
-        if (_sumFrontendResponseTime != that._sumFrontendResponseTime) return false;
-        return _clusterNodeId.equals(that._clusterNodeId);
+        if (interval != that.interval) return false;
+        if (_clusterNodeId != null ? !_clusterNodeId.equals(that._clusterNodeId) : that._clusterNodeId != null)
+            return false;
+
+        return true;
     }
 
     public int hashCode() {
         int result;
         result = _resolution;
         result = 29 * result + (int)(_startTime ^ (_startTime >>> 32));
-        result = 29 * result + (int)(_endTime ^ (_endTime >>> 32));
-        result = 29 * result + _numAttemptedRequest;
-        result = 29 * result + _numAuthorizedRequest;
-        result = 29 * result + _numCompletedRequest;
-        result = 29 * result + _minFrontendResponseTime;
-        result = 29 * result + _maxFrontendResponseTime;
-        result = 29 * result + (int)(_sumFrontendResponseTime ^ (_sumFrontendResponseTime >>> 32));
-        result = 29 * result + _minBackendResponseTime;
-        result = 29 * result + _maxBackendResponseTime;
-        result = 29 * result + (int)(_sumBackendResponseTime ^ (_sumBackendResponseTime >>> 32));
         result = 29 * result + (int)(_periodStart ^ (_periodStart >>> 32));
         result = 29 * result + (int)(_serviceOid ^ (_serviceOid >>> 32));
-        result = 29 * result + _clusterNodeId.hashCode();
+        result = 29 * result + (_clusterNodeId != null ? _clusterNodeId.hashCode() : 0);
+        result = 29 * result + interval;
         return result;
     }
+
 }

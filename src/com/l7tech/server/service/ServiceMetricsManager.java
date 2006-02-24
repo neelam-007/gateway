@@ -77,7 +77,6 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 serviceMetrics.archiveFineBin(_numFineBins);
                 num++;
             }
-            logger.fine("Fine archiving task completed; archived " + num + " fine bins");
         }
     }
 
@@ -122,6 +121,13 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             while (queue.peek() != null) {
                 try {
                     final MetricsBin head = (MetricsBin)queue.take();
+
+                    int anyrequests = head.getNumAttemptedRequest() + head.getNumAuthorizedRequest() + head.getNumCompletedRequest();
+                    if (head.getResolution() == MetricsBin.RES_FINE && anyrequests == 0) {
+                        logger.fine("Current bin contains no requests; not saving");
+                        continue;
+                    }
+
                     logger.finer("Saving " + head.toString());
                     new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                         protected void doInTransactionWithoutResult(TransactionStatus status) {

@@ -26,7 +26,7 @@ import java.util.logging.Level;
 public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager {
     private final String HQL_DELETE_BY_PROVIDEROID =
             "FROM user IN CLASS " + getImpClass().getName() +
-                    " WHERE user.providerOid = ?";
+                    " WHERE user.providerId = ?";
 
     private final String HQL_DELETE =
             "FROM user IN CLASS " + getImpClass().getName() +

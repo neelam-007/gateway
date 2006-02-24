@@ -56,10 +56,14 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      * @throws FindException
      */
     public Integer getVersion(long oid) throws FindException {
+        Session s = null;
+        FlushMode old = null;
         try {
-            Query q = getSession().createQuery(HQL_FIND_VERSION_BY_OID);
+            s = getSession();
+            old = s.getFlushMode();
+            s.setFlushMode(FlushMode.NEVER);
+            Query q = s.createQuery(HQL_FIND_VERSION_BY_OID);
             q.setLong(0, oid);
-            q.setFlushMode(FlushMode.NEVER);
             List results = q.list();
             if (results.size() == 0) return null;
             if (results.size() > 1) throw new FindException("Multiple results found");
@@ -68,13 +72,19 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             return (Integer)result;
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
+        } finally {
+            if (s != null && old != null) s.setFlushMode(old);
         }
     }
 
     public Entity findEntity(long oid) throws FindException {
+        Session s = null;
+        FlushMode old = null;
         try {
-            Query q = getSession().createQuery(HQL_FIND_BY_OID);
-            q.setFlushMode(FlushMode.NEVER);
+            s = getSession();
+            old = s.getFlushMode();
+            Query q = s.createQuery(HQL_FIND_BY_OID);
+            s.setFlushMode(FlushMode.NEVER);
             q.setLong(0, oid);
             List results = q.list();
             if (results.size() == 0) return null;
@@ -84,6 +94,8 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             return (Entity)results.get(0);
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
+        } finally {
+            if (s != null && old != null) s.setFlushMode(old);
         }
     }
 
@@ -91,8 +103,13 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         Map result = new HashMap();
         if (!Entity.class.isAssignableFrom(getImpClass())) throw new FindException("Can't find non-Entities!");
 
+        Session s = null;
+        FlushMode old = null;
         try {
-            Query q = getSession().createQuery(HQL_FIND_ALL_OIDS_AND_VERSIONS).setFlushMode(FlushMode.NEVER);
+            s = getSession();
+            old = s.getFlushMode();
+            s.setFlushMode(FlushMode.NEVER);
+            Query q = s.createQuery(HQL_FIND_ALL_OIDS_AND_VERSIONS);
             List results = q.list();
             if (results.size() > 0) {
                 for (Iterator i = results.iterator(); i.hasNext();) {
@@ -106,6 +123,8 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             }
         } catch (Exception e) {
             throw new FindException(e.toString(), e);
+        } finally {
+            if (s != null && old != null) s.setFlushMode(old);
         }
 
         return result;
@@ -194,6 +213,8 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         if (name == null) throw new NullPointerException();
         if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
         Sync read = cacheLock.readLock();
+        Session session = null;
+        FlushMode old = null;
         try {
             read.acquire();
             CacheInfo cinfo = (CacheInfo)cacheInfoByName.get(name);
@@ -201,11 +222,11 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
 
             NamedEntity ne;
             if (cinfo == null) {
-                final Session session = getSession();
-
+                session = getSession();
+                old = session.getFlushMode();
+                session.setFlushMode(FlushMode.NEVER);
                 Criteria findByName = session.createCriteria(getInterfaceClass());
                 findByName.add(Restrictions.eq("name", name));
-                findByName.setFlushMode(FlushMode.NEVER);
                 List entities = findByName.list();
 
                 if (entities.size() > 1) {
@@ -229,6 +250,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             throw new FindException("Couldn't cache entity", e);
         } finally {
             if (read != null) read.release();
+            if (session != null && old != null) session.setFlushMode(old);
         }
     }
 
@@ -382,19 +404,21 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      * @throws FindException if there was an data access error
      */
     protected Object findByPrimaryKey(Class impClass, long oid) throws FindException {
+        Session s = null;
+        FlushMode beforeMode = null;
         try {
-            Session s = getSession();
-            FlushMode beforeMode = s.getFlushMode();
-            s.setFlushMode(FlushMode.COMMIT);
-            Object thing = s.load(impClass, new Long(oid));
-            s.setFlushMode(beforeMode);
-            return thing;
+            s = getSession();
+            beforeMode = s.getFlushMode();
+            s.setFlushMode(FlushMode.NEVER);
+            return s.load(impClass, new Long(oid));
         } catch (Exception e) {
             if (ExceptionUtils.causedBy(e, org.hibernate.ObjectNotFoundException.class) ||
                 ExceptionUtils.causedBy(e, ObjectDeletedException.class)) {
                 return null;
             }
             throw new FindException("Data access error ", e);
+        } finally {
+            if (s != null && beforeMode != null) s.setFlushMode(beforeMode);
         }
     }
 

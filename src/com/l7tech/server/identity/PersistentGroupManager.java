@@ -25,14 +25,14 @@ import java.util.logging.Logger;
 public abstract class PersistentGroupManager extends HibernateEntityManager implements GroupManager {
     private final String HQL_DELETE_BY_PROVIDEROID =
             "FROM grp IN CLASS " + getImpClass().getName() +
-                    " WHERE grp.providerOid = ?";
+                    " WHERE grp.providerId = ?";
 
     private final String HQL_DELETE_MEMBERSHIPS_BY_PROVIDEROID =
             "FROM mem IN CLASS " + getMembershipClass().getName() +
                     " WHERE mem.thisGroupProviderOid = ?";
 
     private static final String HQL_DELETE_VIRTUAL_BY_PROVIDEROID =
-            "FROM vg IN CLASS " + VirtualGroup.class.getName() + " WHERE vg.providerOid = ?";
+            "FROM vg IN CLASS " + VirtualGroup.class.getName() + " WHERE vg.providerId = ?";
 
     private final String HQL_GETGROUPS =
             "select grp from " +

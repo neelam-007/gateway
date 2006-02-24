@@ -249,8 +249,8 @@
     <class name="com.l7tech.identity.fed.FederatedGroupMembership" table="fed_user_group" lazy="false">
         <composite-id>
             <key-property name="thisGroupProviderOid" column="provider_oid" type="long"/>
-            <key-property name="memberUserId" column="fed_user_oid" type="long"/>
-            <key-property name="thisGroupId" column="fed_group_oid" type="long"/>
+            <key-property name="thisGroupId" column="fed_group_oid" type="string"/>
+            <key-property name="memberUserId" column="fed_user_oid" type="string"/>
         </composite-id>
     </class>
 
@@ -322,6 +322,7 @@
         <property name="numAttemptedRequest" column="attempted" type="int"/>
         <property name="numAuthorizedRequest" column="authorized" type="int"/>
         <property name="numCompletedRequest" column="completed" type="int"/>
+        <property name="interval" column="interval_size" type="int"/>
     </class>
 
 </hibernate-mapping>

@@ -560,6 +560,7 @@ CREATE TABLE service_metrics (
   resolution INTEGER NOT NULL,
   period_start BIGINT(20) NOT NULL,
   start_time BIGINT(20) NOT NULL,
+  interval_size INTEGER NOT NULL,
   end_time BIGINT(20) NOT NULL,
   attempted INTEGER NOT NULL,
   authorized INTEGER NOT NULL,

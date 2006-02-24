@@ -78,9 +78,13 @@ public class EntityHeader implements Serializable, Comparable {
         return getStrId().equals(theotherone.getStrId());
     }
 
-    public String toString() {
+    public String toStringVerbose() {
         return "EntityHeader. Name=" + getName() + ", oid=" + getStrId() + ", description=" + description +
                ", type = " + type.toString();
+    }
+
+    public String toString() {
+        return _name;
     }
 
     public int hashCode() {

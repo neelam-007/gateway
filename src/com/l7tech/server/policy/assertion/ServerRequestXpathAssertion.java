@@ -98,6 +98,14 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST);
                 return AssertionStatus.FALSIFIED;
             } else {
+                if (result.size() > 1) {
+                    auditor.logAndAudit(AssertionMessages.XPATH_MULTIPLE_RESULTS, new String[] { Integer.toString(result.size()) });
+                    int j = 0;
+                    for (Iterator i = result.iterator(); i.hasNext();) {
+                        auditor.logAndAudit(AssertionMessages.XPATH_RESULTS, new String[] { Integer.toString(++j), i.next().toString() });
+                    }
+                }
+
                 context.setVariable(assertion.foundVariable(), SimpleXpathAssertion.TRUE);
                 context.setVariable(assertion.countVariable(), Integer.toString(result.size()));
                 Object o = result.get(0);

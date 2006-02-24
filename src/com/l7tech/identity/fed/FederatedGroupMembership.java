@@ -18,19 +18,40 @@ public class FederatedGroupMembership extends GroupMembership {
             throws NumberFormatException
     {
         this.thisGroupProviderOid = providerOid;
-        setThisGroupId(Long.toString(groupOid));
+        this._oid = groupOid;
         this.memberUserId = Long.toString(userOid);
     }
 
     public String getThisGroupId() {
-        return Long.toString(getOid());
+        return Long.toString(_oid);
     }
 
     public void setThisGroupId(String thisGroupId) throws NumberFormatException {
         if (thisGroupId == null) {
-            setOid(DEFAULT_OID);
+            _oid = DEFAULT_OID;
         } else {
-            setOid(Long.parseLong(thisGroupId));
+            _oid = Long.parseLong(thisGroupId);
         }
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        final FederatedGroupMembership that = (FederatedGroupMembership)o;
+
+        if (_oid != that._oid) return false;
+        if (thisGroupProviderOid != that.thisGroupProviderOid) return false;
+        return !(memberUserId != null ? !memberUserId.equals(that.memberUserId) : that.memberUserId != null);
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 29 * result + (int)(_oid ^ (_oid >>> 32));
+        result = 29 * result + (int)(thisGroupProviderOid ^ (thisGroupProviderOid >>> 32));
+        result = 29 * result + (memberUserId != null ? memberUserId.hashCode() : 0);
+        return result;
+    }
+
 }

@@ -32,26 +32,17 @@ public class MappingAssertionDialog extends JDialog {
     private JCheckBox groupCheckbox;
     private JTextField retrieveAttrField;
 
-    private static class EH extends EntityHeader {
-        public EH(EntityHeader eh) {
-            super(eh.getStrId(), eh.getType(), eh.getName(), eh.getDescription());
-        }
-
-        public String toString() {
-            return getName();
-        }
-    }
     public MappingAssertionDialog(Frame owner, MappingAssertion ass, boolean modal) throws HeadlessException {
         super(owner, "Identity Mapping Assertion Properties", modal);
         this.assertion = ass;
 
         EntityHeader[] providers;
         ArrayList ehs = new ArrayList();
-        EH selected = null;
+        EntityHeader selected = null;
         try {
             providers = Registry.getDefault().getIdentityAdmin().findAllIdentityProviderConfig();
             for (int i = 0; i < providers.length; i++) {
-                EH eh = new EH(providers[i]);
+                EntityHeader eh = providers[i];
                 ehs.add(eh);
                 if (eh.getOid() == ass.getIdentityProviderOid()) {
                     selected = eh;
@@ -60,7 +51,7 @@ public class MappingAssertionDialog extends JDialog {
         } catch (Exception e) {
             throw new RuntimeException("Couldn't get list of identity providers");
         }
-        providerCombo.setModel(new DefaultComboBoxModel(ehs.toArray(new EH[0])));
+        providerCombo.setModel(new DefaultComboBoxModel(ehs.toArray(new EntityHeader[0])));
         providerCombo.setSelectedItem(selected);
 
         tokenTypeCombo.setModel(new DefaultComboBoxModel(new SecurityTokenType[]{SecurityTokenType.WSS_KERBEROS_BST}));

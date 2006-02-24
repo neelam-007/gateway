@@ -49,17 +49,24 @@ public class ClusterPropertyManager extends HibernateEntityManager implements Ap
 
     public ClusterProperty findByKey(String key) throws FindException {
         List hibResults;
+        Session session = null;
+        FlushMode old = null;
         try {
             // Prevent reentrant ClusterProperty lookups from flushing in-progress writes
-            final Session session = getSession();
-            Query q = session.createQuery(HQL_FIND_BY_NAME).setFlushMode(FlushMode.NEVER);
+            session = getSession();
+            old = session.getFlushMode();
+            session.setFlushMode(FlushMode.NEVER);
+            Query q = session.createQuery(HQL_FIND_BY_NAME);
             q.setString(0, key);
             hibResults = q.list();
         }  catch (HibernateException e) {
             String msg = "error retrieving property";
             logger.log(Level.WARNING, msg, e);
             throw new FindException(msg, e);
+        } finally {
+            if (old != null && session != null) session.setFlushMode(old);
         }
+
         if (hibResults == null || hibResults.isEmpty()) {
             logger.finest("property " + key + " does not exist");
             return null;
