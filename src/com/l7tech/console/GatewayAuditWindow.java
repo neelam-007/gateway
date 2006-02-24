@@ -34,7 +34,8 @@ import java.text.SimpleDateFormat;
 /**
  * To display audit records.
  *
- * @author flascelles@layer7-tech.com
+ * @author flascelles@layer7-tech.com, $Author$
+ * @version $Revision$
  */
 public class GatewayAuditWindow extends JFrame implements LogonListener {
 
@@ -45,10 +46,12 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
     private javax.swing.JMenuBar clusterWindowMenuBar = null;
     private javax.swing.JMenu fileMenu = null;
     private javax.swing.JMenu helpMenu = null;
+    private javax.swing.JMenuItem saveMenuItem = null;
     private javax.swing.JMenuItem exitMenuItem = null;
     private javax.swing.JMenuItem helpTopicsMenuItem = null;
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
+    private boolean startConnected;
 
     private static
     ResourceBundle resapplication =
@@ -58,7 +61,15 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
      * Constructor
      */
     public GatewayAuditWindow() {
+        this(true);
+    }
+
+    /**
+     * Constructor
+     */
+    public GatewayAuditWindow(boolean connected) {
         super("SecureSpan Manager - Gateway Audit Events");
+        startConnected = connected;
         ImageIcon imageIcon =
           new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
@@ -68,6 +79,14 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
 
         Actions.setEscKeyStrokeDisposes(this);
+
+        // saveMenuItem listener
+        getSaveMenuItem().
+                addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  saveMenuEventHandler();
+              }
+          });
 
         // exitMenuItem listener
         getExitMenuItem().
@@ -86,6 +105,16 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
           });
 
         pack();
+    }
+
+    /**
+     * Display the given audits.
+     *
+     * @param auditFile the audit records to display.
+     * @throws IOException on error
+     */
+    public void displayAudits(File auditFile) throws IOException {
+        getLogPane().importView(auditFile);
     }
 
     /**
@@ -141,10 +170,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
                 }
             });
 
-            JMenuItem saveItem = new JMenuItem(new SaveDisplayedAuditEventsAction("Save as ..."));
-            int mnemonic = saveItem.getText().toCharArray()[0];
-            saveItem.setMnemonic(mnemonic);
-
             // Note that if you alter the menu item order you may need to
             // change the onLogon/onLogoff functions that use menu item
             // indexes to enable and disable items.
@@ -152,10 +177,10 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
             fileMenu.add(new JMenuItem(new DownloadAuditEventsAction()));
             fileMenu.add(new JMenuItem(deleteAuditEventsAction));
             fileMenu.addSeparator();
-            fileMenu.add(saveItem);
+            fileMenu.add(getSaveMenuItem());
             fileMenu.addSeparator();
             fileMenu.add(getExitMenuItem());
-            mnemonic = fileMenu.getText().toCharArray()[0];
+            int mnemonic = fileMenu.getText().toCharArray()[0];
             fileMenu.setMnemonic(mnemonic);
         }
         return fileMenu;
@@ -192,6 +217,22 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
             helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
         }
         return helpTopicsMenuItem;
+    }
+
+    /**
+     * Get the save as menu item.
+     *
+     * @return JMenuItem for saving as
+     */
+    private JMenuItem getSaveMenuItem() {
+        if (saveMenuItem == null) {
+            saveMenuItem = new JMenuItem();
+            saveMenuItem.setText(resapplication.getString("SaveAsMenuItem.name"));
+            int mnemonic = saveMenuItem.getText().toCharArray()[0];
+            saveMenuItem.setMnemonic(mnemonic);
+            saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return saveMenuItem;
     }
 
     /**
@@ -257,7 +298,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
 
     public void setVisible(boolean visible) {
         super.setVisible(visible);
-        if(visible) {
+        if(visible && startConnected) {
             getLogPane().onConnect();
             getLogPane().refreshLogs();
         }
@@ -286,68 +327,66 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         super.dispose();
     }
 
-    private class SaveDisplayedAuditEventsAction extends AbstractAction {
-        public SaveDisplayedAuditEventsAction(String name) {
-            super(name);
-        }
-        public void actionPerformed(ActionEvent e) {
-            // File requestor
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
-            final JFileChooser fc = Utilities.createJFileChooser();
-            fc.setDialogTitle("Save audit data as ...");
-            fc.setDialogType(JFileChooser.SAVE_DIALOG);
-            FileFilter fileFilter = new FileFilter() {
-                public boolean accept(File f) {
-                    return  f.isDirectory() || f.getName().toLowerCase().endsWith(".ssga");
+    /**
+     * Save displayed audit records to file
+     */
+    private void saveMenuEventHandler() {
+        // File requestor
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+        final JFileChooser fc = Utilities.createJFileChooser();
+        fc.setDialogTitle("Save audit data as ...");
+        fc.setDialogType(JFileChooser.SAVE_DIALOG);
+        FileFilter fileFilter = new FileFilter() {
+            public boolean accept(File f) {
+                return  f.isDirectory() || f.getName().toLowerCase().endsWith(".ssga");
+            }
+            public String getDescription() {
+                return "(*.ssga) SecureSpan Gateway Audit data file.";
+            }
+        };
+        final String suggestedName = "SecureSpanGateway_Audit_" +sdf.format(new Date()) + ".ssga";
+        fc.setSelectedFile(new File(suggestedName));
+        fc.addChoosableFileFilter(fileFilter);
+        fc.setMultiSelectionEnabled(false);
+        fc.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if(JFileChooser.FILE_FILTER_CHANGED_PROPERTY.equals(e.getActionCommand())) {
+                    fc.setSelectedFile(new File(suggestedName));
                 }
-                public String getDescription() {
-                    return "(*.ssga) SecureSpan Gateway Audit data file.";
-                }
-            };
-            final String suggestedName = "SecureSpanGateway_Audit_" +sdf.format(new Date()) + ".ssga";
-            fc.setSelectedFile(new File(suggestedName));
-            fc.addChoosableFileFilter(fileFilter);
-            fc.setMultiSelectionEnabled(false);
-            fc.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if(JFileChooser.FILE_FILTER_CHANGED_PROPERTY.equals(e.getActionCommand())) {
-                        fc.setSelectedFile(new File(suggestedName));
+            }
+        });
+        int r = fc.showDialog(GatewayAuditWindow.this, "Save");
+        if(r == JFileChooser.APPROVE_OPTION) {
+            File file = fc.getSelectedFile();
+            if(file!=null) {
+                if((!file.exists() && file.getParentFile()!=null && file.getParentFile().canWrite()) ||
+                   (file.isFile() && file.canWrite())) {
+                    try {
+                        logPane.exportView(file);
                     }
-                }
-            });
-            int r = fc.showDialog(GatewayAuditWindow.this, "Save");
-            if(r == JFileChooser.APPROVE_OPTION) {
-                File file = fc.getSelectedFile();
-                if(file!=null) {
-                    if((!file.exists() && file.getParentFile()!=null && file.getParentFile().canWrite()) ||
-                       (file.isFile() && file.canWrite())) {
-                        try {
-                            logPane.exportView(file);
-                        }
-                        catch(IOException ioe) {
-                            file.delete(); // attempt to clean up
-                            ExceptionDialog d = ExceptionDialog.createExceptionDialog(
-                                    GatewayAuditWindow.this,
-                                    "SecureSpan Manager - Error",
-                                    "Error writing to file:\n'"+file.getAbsolutePath()+"'.",
-                                    ioe,
-                                    Level.WARNING);
-                            d.pack();
-                            Utilities.centerOnScreen(d);
-                            d.setVisible(true);
-                        }
-                    }
-                    else {
+                    catch(IOException ioe) {
+                        file.delete(); // attempt to clean up
                         ExceptionDialog d = ExceptionDialog.createExceptionDialog(
                                 GatewayAuditWindow.this,
                                 "SecureSpan Manager - Error",
-                                "Cannot write to file:\n'"+file.getAbsolutePath()+"'.",
-                                null,
-                                Level.INFO);
+                                "Error writing to file:\n'"+file.getAbsolutePath()+"'.",
+                                ioe,
+                                Level.WARNING);
                         d.pack();
                         Utilities.centerOnScreen(d);
                         d.setVisible(true);
                     }
+                }
+                else {
+                    ExceptionDialog d = ExceptionDialog.createExceptionDialog(
+                            GatewayAuditWindow.this,
+                            "SecureSpan Manager - Error",
+                            "Cannot write to file:\n'"+file.getAbsolutePath()+"'.",
+                            null,
+                            Level.INFO);
+                    d.pack();
+                    Utilities.centerOnScreen(d);
+                    d.setVisible(true);
                 }
             }
         }

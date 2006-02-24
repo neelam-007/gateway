@@ -21,9 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.rmi.RMISecurityManager;
 import java.security.AccessController;
-import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,7 +52,7 @@ public class Main {
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
                 Logger log = Logger.getLogger(getClass().getName());
 
-                ensureSecurityManager();
+                ensureNoSecurityManager();
                 installEventQueue();
 
                 initializeUIPreferences();
@@ -184,18 +182,14 @@ public class Main {
     }
 
     /**
-     * Utility routine that sets a security manager if one isn't already
+     * Utility routine that removes the security manager if
      * present.
+     *
+     * This ensures that we disable downloading of classes over RMI.
      */
-    private void ensureSecurityManager() {
-        if (System.getSecurityManager() == null) {
-            System.setSecurityManager(new RMISecurityManager() {
-                public void checkPermission(Permission perm) {
-                }
-
-                public void checkPermission(Permission perm, Object context) {
-                }
-            });
+    private void ensureNoSecurityManager() {
+        if (System.getSecurityManager() != null) {
+            System.setSecurityManager(null);
         }
     }
 

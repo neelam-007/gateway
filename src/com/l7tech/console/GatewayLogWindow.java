@@ -35,14 +35,33 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     //- PUBLIC
 
     /**
+     * Create a disconnected log window.
+     */
+    public GatewayLogWindow() {
+        this("[from file]", "", false);
+    }
+
+    /**
      * Create a log window for the given node.
      *
      * @param nodeName the name of the node for which logs are to be displayed
      * @param nodeId the id of the node for which logs are to be displayed
      */
     public GatewayLogWindow(String nodeName, String nodeId) {
+        this(nodeName, nodeId, true);
+    }
+
+    /**
+     * Create a log window for the given node.
+     *
+     * @param nodeName the name of the node for which logs are to be displayed
+     * @param nodeId the id of the node for which logs are to be displayed
+     */
+    private GatewayLogWindow(String nodeName, String nodeId, boolean connected) {
+
         super("SecureSpan Manager - Gateway Log Events for " + nodeName);
 
+        this.startConnected = connected;
         this.nodeName = nodeName;
         this.nodeId = nodeId;
 
@@ -96,10 +115,20 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
 
     public void setVisible(boolean visible) {
         super.setVisible(visible);
-        if(visible) {
+        if(visible && startConnected) {
             getLogPane().onConnect();
             getLogPane().refreshLogs();
         }
+    }
+
+    /**
+     * Display the given logs.
+     *
+     * @param logFile the log records to display.
+     * @throws IOException on error
+     */
+    public void displayLogs(File logFile) throws IOException {
+        getLogPane().importView(logFile);
     }
 
     /**
@@ -127,6 +156,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private static final ResourceBundle resapplication =
             ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
+    private boolean startConnected;
     private String nodeName = null;
     private String nodeId = null;
     private JLabel gatewayLogTitle = null;

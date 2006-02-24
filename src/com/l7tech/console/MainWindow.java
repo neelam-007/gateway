@@ -37,6 +37,8 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
@@ -1038,11 +1040,66 @@ public class MainWindow extends JFrame {
         mainSplitPaneRight = new JPanel();
         mainSplitPaneRight.setLayout(new GridBagLayout());
         mainSplitPaneRight.setBorder(null);
+        addComponentToGridBagContainer(mainSplitPaneRight, getDropComponent());
+
         return mainSplitPaneRight;
     }
 
     private WorkSpacePanel getWorkSpacePanel() {
         return TopComponents.getInstance().getCurrentWorkspace();
+    }
+
+    private JComponent getDropComponent() {
+        JTextPane panel = new JTextPane();
+        panel.setEditable(false);
+        panel.setBackground(Color.gray);
+
+        panel.setTransferHandler(new FileDropTransferHandler(new FileDropTransferHandler.FileDropListener(){
+            public boolean acceptFiles(File[] files) {
+                boolean accepted = false;
+                for (int i = 0; i < files.length; i++) {
+                    File file = files[i];
+                    if(file.isFile() && file.canRead()) {
+                        accepted = true;
+                        try {
+                            if(file.getName().endsWith(".ssga")) {
+                                GatewayAuditWindow gaw = new GatewayAuditWindow(false);
+                                gaw.pack();
+                                Utilities.centerOnScreen(gaw);
+                                gaw.setVisible(true);
+                                gaw.displayAudits(file);
+                            }
+                            else if(file.getName().endsWith(".ssgl")) {
+                                GatewayLogWindow gal = new GatewayLogWindow();
+                                gal.pack();
+                                Utilities.centerOnScreen(gal);
+                                gal.setVisible(true);
+                                gal.displayLogs(file);
+                            }
+                        }
+                        catch(IOException ioe) {
+                            log.log(Level.WARNING, "Error reading file.", ioe);
+                        }
+                    }
+                }
+
+                return accepted;
+            }
+
+            public boolean isDropEnabled() {
+                return true;
+            }
+        }, new FilenameFilter(){
+            public boolean accept(File dir, String name) {
+                boolean accept = false;
+                if(name != null && (name.endsWith(".ssga") || name.endsWith(".ssgl"))) {
+                    accept = true;
+                }
+                return accept;
+            }
+        }));
+
+        return panel;
     }
 
     /**
@@ -1161,19 +1218,7 @@ public class MainWindow extends JFrame {
         assertionPaletteTree.addTreeSelectionListener(treeSelectionListener);
 
         getMainSplitPaneRight().removeAll();
-        GridBagConstraints constraints
-          = new GridBagConstraints(0, // gridx
-            0, // gridy
-            1, // widthx
-            1, // widthy
-            1.0, // weightx
-            1.0, // weigthy
-            GridBagConstraints.NORTH, // anchor
-            GridBagConstraints.BOTH, //fill
-            new Insets(0, 0, 0, 0), // inses
-            0, // padx
-            0); // pady
-        getMainSplitPaneRight().add(getWorkSpacePanel(), constraints);
+        addComponentToGridBagContainer(getMainSplitPaneRight(), getWorkSpacePanel());
     }
 
 
@@ -1559,6 +1604,7 @@ public class MainWindow extends JFrame {
         getStatusMsgRight().setText("");
         getAssertionPaletteTree().setModel(null);
         getMainSplitPaneRight().removeAll();
+        addComponentToGridBagContainer(getMainSplitPaneRight(), getDropComponent());
         getMainSplitPaneRight().validate();
         getMainSplitPaneRight().repaint();
         getServicesTree().setModel(null);
@@ -1572,6 +1618,21 @@ public class MainWindow extends JFrame {
         }
     }
 
+    private void addComponentToGridBagContainer(JComponent container, JComponent component) {
+        GridBagConstraints constraints
+          = new GridBagConstraints(0, // gridx
+            0, // gridy
+            1, // widthx
+            1, // widthy
+            1.0, // weightx
+            1.0, // weigthy
+            GridBagConstraints.NORTH, // anchor
+            GridBagConstraints.BOTH, //fill
+            new Insets(0, 0, 0, 0), // inses
+            0, // padx
+            0); // pady
+        container.add(component, constraints);
+    }
 
     /**
      * update the actions, menus, buttons for the selected node.

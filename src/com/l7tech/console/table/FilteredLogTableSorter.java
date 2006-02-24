@@ -466,6 +466,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public void setLogs(final LogPanel logPane, final Hashtable logs) {
         // validate input
+        int count = 0;
         for(Iterator logEntryIter=logs.entrySet().iterator(); logEntryIter.hasNext();){
             Map.Entry me = (Map.Entry) logEntryIter.next();
             Object key = me.getKey();
@@ -475,6 +476,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 return;
             }
             Vector logMessages = (Vector) value;
+            count += logMessages.size();
             for (Iterator iterator = logMessages.iterator(); iterator.hasNext();) {
                 Object o = iterator.next();
                 if(!(o instanceof LogMessage)) {
@@ -482,6 +484,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 }
             }
         }
+        logger.info("Importing "+count+" log/audit records.");
 
         // import
         clearLogCache();

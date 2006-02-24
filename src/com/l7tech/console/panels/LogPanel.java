@@ -10,6 +10,7 @@ import com.l7tech.common.RequestId;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.console.util.FileDropTransferHandler;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.logging.GenericLogAdmin;
@@ -54,6 +55,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.beans.XMLEncoder;
 import java.net.URL;
 import java.net.URI;
@@ -192,7 +194,7 @@ public class LogPanel extends JPanel {
                 });
 
         // create import transfer handler
-        TransferHandler fdth = new FileDropTransferHandler();
+        TransferHandler fdth = getFileDropTransferHandler();
         getMsgTable().setTransferHandler(fdth);
         getMsgTable().getTableHeader().setTransferHandler(fdth);
     }
@@ -206,10 +208,12 @@ public class LogPanel extends JPanel {
             public void stateChanged(ChangeEvent e) {
                 if(viewCurrentRadioButton.isSelected()) {
                     Utilities.setEnabled(viewCurrentPane, true);
+                    Utilities.setEnabled(autoRefresh, true); // for logs this is not in the panel
                     Utilities.setEnabled(viewHistoricPane, false);
                 }
                 else {
                     Utilities.setEnabled(viewCurrentPane, false);
+                    Utilities.setEnabled(autoRefresh, false);
                     Utilities.setEnabled(viewHistoricPane, true);
                 }
                 updateLogAutoRefresh();
@@ -1206,6 +1210,38 @@ public class LogPanel extends JPanel {
         getLogsRefreshTimer().setDelay(logsRefreshInterval);
     }
 
+    private TransferHandler getFileDropTransferHandler() {
+        return new FileDropTransferHandler(new FileDropTransferHandler.FileDropListener(){
+            public boolean acceptFiles(File[] files) {
+                boolean accepted = false;
+
+                if(files.length==1) {
+                    try {
+                        importView(files[0]);
+                        accepted = true;
+                    }
+                    catch(Exception e) {
+                        logger.log(Level.WARNING, "Unable to import data", e);
+                    }
+                }
+                else {
+                    logger.info("Multiples file not supported.");
+                }
+
+                return accepted;
+            }
+
+            public boolean isDropEnabled() {
+                return !connected;
+            }
+        }, new FilenameFilter(){
+            public boolean accept(File dir, String name) {
+                return name!=null &&
+                        ((isAuditType && name.endsWith(".ssga")) || (!isAuditType && name.endsWith(".ssgl")));
+            }
+        });
+    }
+
     /**
      *  Clear the message table
      */
@@ -1366,10 +1402,12 @@ public class LogPanel extends JPanel {
                 throw new IOException("Unknown file type.");
             }
             ois = xstream.createObjectInputStream(new InputStreamReader(new GZIPInputStream(in), "UTF-8"));
-
             Object read = ois.readObject();
             if(read instanceof List) {
                 List data = (List) read;
+                if(data.isEmpty()) {
+                    logger.info("No data in file! '"+file.getAbsolutePath()+"'.");
+                }
                 Hashtable loadedLogs = new Hashtable();
                 for (Iterator iterator = data.iterator(); iterator.hasNext();) {
                     Object o = iterator.next();
@@ -1387,9 +1425,13 @@ public class LogPanel extends JPanel {
                 }
                 logTableSorter.setLogs(this, loadedLogs);
             }
+            else {
+                logger.warning("File '"+file.getAbsolutePath()+"' contains invalid data! '"+
+                        (read==null ? "null" : read.getClass().getName())+"'.");
+            }
         }
         catch(ClassNotFoundException cnfe) {
-            cnfe.printStackTrace();
+            logger.log(Level.WARNING, "Error reading data file '"+file.getAbsolutePath()+"'.", cnfe);
         }
         finally {
             ResourceUtils.closeQuietly(ois);
@@ -1408,71 +1450,6 @@ public class LogPanel extends JPanel {
 
         public int compareTo(Object o) {
             return new Long(ssgLogRecord.getMillis()).compareTo(new Long(((WriteableLogMessage)o).ssgLogRecord.getMillis()));
-        }
-    }
-
-    private class FileDropTransferHandler extends TransferHandler
-    {
-        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
-            boolean accept = false;
-
-            for (int i = 0; i < transferFlavors.length; i++) {
-                DataFlavor transferFlavor = transferFlavors[i];
-                if(transferFlavor.getMimeType().toLowerCase().equals("text/uri-list")
-                || transferFlavor.getMimeType().toLowerCase().startsWith("text/uri-list;")) {
-                    accept = true;
-                }
-            }
-
-            return accept && !connected;
-        }
-
-        public boolean importData(JComponent comp, Transferable transferable) {
-            DataFlavor[] df = transferable.getTransferDataFlavors();
-            boolean imported = false;
-
-            if(!connected) {
-                for (int i = 0; i < df.length; i++) {
-                    DataFlavor dataFlavor = df[i];
-                    if(dataFlavor.getMimeType().toLowerCase().equals("text/uri-list")
-                    || dataFlavor.getMimeType().toLowerCase().startsWith("text/uri-list;")) {
-                        try {
-                            Object data = transferable.getTransferData(dataFlavor);
-                            if(data instanceof String) {
-                                String fileUriList = (String) data;
-                                StringTokenizer str = new StringTokenizer(fileUriList);
-                                if(str.countTokens()==1) {
-                                    String fileUrl = str.nextToken().trim();
-                                    if((isAuditType && fileUrl.endsWith(".ssga")) ||
-                                       (!isAuditType && fileUrl.endsWith(".ssgl"))     ) {
-                                        File file = new File(new URI(fileUrl));
-                                        importView(file);
-                                        imported = true;
-                                    }
-                                    else {
-                                        logger.info("Incorrect file type, not importing.");
-                                    }
-                                }
-                                else {
-                                    logger.info("Multiple file not supported.");
-                                }
-                            }
-                            else {
-                                continue;
-                            }
-                        }
-                        catch(Exception e) {
-                            logger.log(Level.WARNING, "Unable to import data", e);
-                        }
-                        break;
-                    }
-                }
-            }
-
-            return imported;
-        }
-
-        public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {
         }
     }
 }
