@@ -6,12 +6,11 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.common.io.InputStreamChannel;
-
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.Channels;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -251,7 +250,7 @@ public class FileUtils {
         final ReadableByteChannel sourceChannel;
         FileChannel destinationChannel = null;
         try {
-            sourceChannel = new InputStreamChannel(in);
+            sourceChannel = Channels.newChannel(in);
             destinationChannel = new FileOutputStream(out).getChannel();
             destinationChannel.transferFrom(sourceChannel, 0, Integer.MAX_VALUE);
         }
