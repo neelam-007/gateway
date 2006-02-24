@@ -271,12 +271,18 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
         return chunk;
     }
 
-    public SSGLogRecord[] getSystemLog(final String nodeid, final int typeId, final long startMsgNumber, final long endMsgNumber, final int size)
+    public SSGLogRecord[] getSystemLog(final String nodeid,
+                                       final int typeId,
+                                       final long startMsgNumber,
+                                       final long endMsgNumber,
+                                       final Date startMsgDate,
+                                       final Date endMsgDate,
+                                       final int size)
       throws RemoteException, FindException {
         long methodTime = System.currentTimeMillis();
         if(TYPE_AUDIT==typeId) {
             logger.finest("Get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
-            return (SSGLogRecord[])auditRecordManager.find(new AuditSearchCriteria(nodeid, startMsgNumber, endMsgNumber, size)).toArray(new SSGLogRecord[] {});
+            return (SSGLogRecord[])auditRecordManager.find(new AuditSearchCriteria(startMsgDate, endMsgDate, null, null, null, nodeid, startMsgNumber, endMsgNumber, size)).toArray(new SSGLogRecord[] {});
         }
         else if(TYPE_LOG==typeId) {
             logger.finest("Get logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");

@@ -921,7 +921,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                 Object window = lwEnum.nextElement();
                 if(window instanceof LogonListener) {
                     LogonListener ll = (LogonListener) window;
-                    try { ll.onLogon(e); }
+                    try { ll.onLogoff(e); }
                     catch(Exception ex){};
                 }
             }

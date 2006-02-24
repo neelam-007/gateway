@@ -170,7 +170,7 @@ public class LogRecordManager {
                             nodeLogAdmins.put(clusterNodeInfo.getMac(), gla);
                         }
                     }
-                    return gla.getSystemLog(clusterNodeInfo.getMac(), GenericLogAdmin.TYPE_LOG, startOid, -1, size);
+                    return gla.getSystemLog(clusterNodeInfo.getMac(), GenericLogAdmin.TYPE_LOG, startOid, -1, null, null, size);
                 }
             });
         }

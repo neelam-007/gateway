@@ -3,6 +3,7 @@ package com.l7tech.console.table;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.cluster.GatewayStatus;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
 
 import java.util.Vector;
 import java.util.Hashtable;
@@ -24,6 +25,8 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     protected Hashtable rawLogCache = new Hashtable();
     protected Vector filteredLogCache = new Vector();
     private int filterLevel = LogPanel.MSG_FILTER_LEVEL_WARNING;
+    private String filterService = "";
+    private String filterMessage = "";
     protected Hashtable currentNodeList;
 
     /**
@@ -35,6 +38,14 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         this.filterLevel = filterLevel;
     }
 
+    public void setMsgFilterService(String filterService) {
+        this.filterService = filterService;
+    }
+
+    public void setMsgFilterMessage(String filterMessage) {
+        this.filterMessage = filterMessage;
+    }
+
     /**
      * Check if the message should be filtered out or not.
      *
@@ -43,16 +54,73 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
      */
     private boolean isFilteredMsg(LogMessage logMsg) {
 
-        if ((((logMsg.getSeverity().toString().equals("FINEST")) ||
-                (logMsg.getSeverity().toString().equals("FINER")) ||
-                (logMsg.getSeverity().toString().equals("FINE"))) && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_ALL)) ||
-                (logMsg.getSeverity().toString().equals("INFO") && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_INFO)) ||
-                (logMsg.getSeverity().toString().equals("WARNING") && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_WARNING)) ||
-                (logMsg.getSeverity().toString().equals("SEVERE") && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_SEVERE))) {
-            return true;
+        String logSeverity = logMsg.getSeverity().toString();
+
+        if ((((logSeverity.equals("FINEST")) ||
+              (logSeverity.equals("FINER")) ||
+              (logSeverity.equals("FINE"))) && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_ALL)) ||
+             (logSeverity.equals("INFO")    && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_INFO)) ||
+             (logSeverity.equals("WARNING") && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_WARNING)) ||
+             (logSeverity.equals("SEVERE")  && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_SEVERE))) {
+
+            String message = logMsg.getMsgDetails();
+            String service = getServiceName(logMsg);
+
+            return matches(filterService, service) && matches(filterMessage, message);
         } else {
             return false;
         }
+    }
+
+    private static boolean matches(String pattern, String data) {
+        boolean matches = true;
+
+        if(pattern!=null && pattern.trim().length()>0) {
+            if(pattern.equals("*")) {
+                matches = true;
+            }
+            else if(data==null) {
+                matches = false;
+            }
+            else {
+                String lpattern = pattern.toLowerCase();
+                String ldata = data.toLowerCase();
+
+                String[] patterns = lpattern.split("\\*");
+                boolean wildStart = lpattern.startsWith("*");
+                boolean wildEnd = lpattern.endsWith("*");
+
+                int offset = 0;
+                for (int i = 0; i < patterns.length; i++) {
+                    String pat = patterns[i];
+                    if(i==0 && !wildStart && !wildEnd && patterns.length==1 && !ldata.equals(pat)) {
+                        matches = false;
+                        break;
+                    }
+                    else if(i==0 && !wildStart && !ldata.startsWith(pat)) {
+                        matches = false;
+                        break;
+                    }
+                    else if(i==patterns.length-1 && !wildEnd && !ldata.endsWith(pat)) {
+                        matches = false;
+                        break;
+                    }
+                    else {
+                        if(pat.length()==0) continue;
+                        int patIndex = ldata.indexOf(pat, offset);
+                        if(patIndex<0) {
+                            matches = false;
+                            break;
+                        }
+                        else {
+                            offset = patIndex + pat.length();
+                        }
+                    }
+                }
+            }
+        }
+
+        return matches;
     }
 
     /**
@@ -60,9 +128,11 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
      *
      * @param msgFilterLevel
      */
-    protected void filterData(int msgFilterLevel) {
+    protected void filterData(int msgFilterLevel, String msgFilterService, String msgFilterMessage) {
 
         setMsgFilterLevel(msgFilterLevel);
+        setMsgFilterService(msgFilterService);
+        setMsgFilterMessage(msgFilterMessage);
 
         // initialize the cache
         filteredLogCache = new Vector();
@@ -71,6 +141,12 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
             Object node = i.next();
             filterData((String) node);
         }
+    }
+
+    protected String getServiceName(LogMessage msg) {
+        return msg.getSSGLogRecord() instanceof MessageSummaryAuditRecord
+                        ? ((MessageSummaryAuditRecord)msg.getSSGLogRecord()).getName()
+                        : "";
     }
 
     /**

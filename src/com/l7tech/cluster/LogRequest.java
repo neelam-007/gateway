@@ -1,5 +1,7 @@
 package com.l7tech.cluster;
 
+import java.util.Date;
+
 /*
  * This class encapsultes the request for retrieving logs from cluster nodes.
  *
@@ -10,15 +12,19 @@ package com.l7tech.cluster;
 
 public class LogRequest {
 
-    private String nodeId;
+    private final String nodeId;
     private long startMsgNumber;
     private long endMsgNumber;
+    private Date startMsgDate;
+    private Date endMsgDate;
     private int retrievedLogCount;
 
-    public LogRequest(String nodeId, long startMsgNumber, long endMsgNumber) {
+    public LogRequest(String nodeId, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate) {
         this.nodeId = nodeId;
         this.endMsgNumber = endMsgNumber;
         this.startMsgNumber = startMsgNumber;
+        this.startMsgDate = startMsgDate;
+        this.endMsgDate = endMsgDate;
         retrievedLogCount = 0;
     }
 
@@ -59,15 +65,6 @@ public class LogRequest {
     }
 
     /**
-     * Set the node Id.
-     *
-     * @param nodeId  The value of the node Id.
-     */
-    public void setNodeId(String nodeId) {
-        this.nodeId = nodeId;
-    }
-
-    /**
      * Return the endMsgNumber.
      *
      * @return long  The endMsgNumber.
@@ -101,6 +98,42 @@ public class LogRequest {
      */
     public void setStartMsgNumber(long startMsgNumber) {
         this.startMsgNumber = startMsgNumber;
+    }
+
+    /**
+     * Get the start date (may be null)
+     *
+     * @return the date if set
+     */
+    public Date getStartMsgDate() {
+        return startMsgDate;
+    }
+
+    /**
+     * Set the start date (may be null)
+     *
+     * @param startMsgDate the date to use
+     */
+    public void setStartMsgDate(Date startMsgDate) {
+        this.startMsgDate = startMsgDate;
+    }
+
+    /**
+     * Get the end date (may be null)
+     *
+     * @return the date if set
+     */
+    public Date getEndMsgDate() {
+        return endMsgDate;
+    }
+
+    /**
+     * Set the end date (may be null)
+     *
+     * @param endMsgDate the date to use
+     */
+    public void setEndMsgDate(Date endMsgDate) {
+        this.endMsgDate = endMsgDate;
     }
 
 }

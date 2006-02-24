@@ -3,12 +3,12 @@ package com.l7tech.console.table;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.LogRequest;
+import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
-import com.l7tech.common.audit.MessageSummaryAuditRecord;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -33,6 +33,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private int logType;
     private boolean canceled;
     private LogPanel logPanel;
+    private boolean displayingFromFile;
 
 
     /**
@@ -44,6 +45,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model, int logType) {
         this.logPanel = logPanel;
         this.logType = logType;
+        this.displayingFromFile = false;
         setModel(model);
     }
 
@@ -157,9 +159,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param newFilterLevel  The new filter applied
      */
-    public void applyNewMsgFilter(int newFilterLevel) {
+    public void applyNewMsgFilter(int filterLevel, String filterService, String filterMessage) {
 
-        filterData(newFilterLevel);
+        filterData(filterLevel, filterService, filterMessage);
         sortData(columnToSort, false);
 
         realModel.fireTableDataChanged();
@@ -411,10 +413,21 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
     }
 
-    private String getServiceName(LogMessage msg) {
-        return msg.getSSGLogRecord() instanceof MessageSummaryAuditRecord
-                        ? ((MessageSummaryAuditRecord)msg.getSSGLogRecord()).getName()
-                        : "";
+    /**
+     * Remove any logs that are outside the selected date range
+     */
+    private void purgeOutOfRange(Collection logMessageCollection, Date start, Date end) {
+        if(logMessageCollection!=null && (start!=null || end!=null)) {
+            for (Iterator iterator = logMessageCollection.iterator(); iterator.hasNext();) {
+                LogMessage logMessage = (LogMessage) iterator.next();
+                if(start!=null && logMessage.getSSGLogRecord().getMillis() < start.getTime()) {
+                    iterator.remove();
+                }
+                else if(end!=null && logMessage.getSSGLogRecord().getMillis() >= end.getTime()) {
+                    iterator.remove();
+                }
+            }
+        }
     }
 
     /**
@@ -422,16 +435,106 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param logPane   The object reference to the LogPanel.
      * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
+     * @param nodeId the node to filter requests by (may be null)
+     * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
+     */
+    public void refreshLogs(final LogPanel logPane, final boolean restartTimer, final String nodeId) {
+        doRefreshLogs(logPane, restartTimer, null, null, null, nodeId, true);
+    }
+
+    /**
+     * Retreive logs from the cluster.
+     *
+     * @param logPane   The object reference to the LogPanel.
+     * @param start The start date for log records.
+     * @param end The end date for log records.
+     * @param nodeId the node to filter requests by (may be null)
+     * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
+     */
+    public void refreshLogs(final LogPanel logPane, final Date start, final Date end, final String nodeId) {
+        doRefreshLogs(logPane, false, start, end, null, nodeId, true);
+    }
+
+    /**
+     * Set the log/audit data to be displayed.
+     *
+     * <p>The logs Hashtable is a map of nodeId (Strings) to Vector of log
+     * messages (LogMessage).</p>
+     *
+     * @param logPane   The object reference to the LogPanel.
+     * @param logs the data hashtable.
+     */
+    public void setLogs(final LogPanel logPane, final Hashtable logs) {
+        // validate input
+        for(Iterator logEntryIter=logs.entrySet().iterator(); logEntryIter.hasNext();){
+            Map.Entry me = (Map.Entry) logEntryIter.next();
+            Object key = me.getKey();
+            Object value = me.getValue();
+            if(!(key instanceof String) ||
+               !(value instanceof Vector)) {
+                return;
+            }
+            Vector logMessages = (Vector) value;
+            for (Iterator iterator = logMessages.iterator(); iterator.hasNext();) {
+                Object o = iterator.next();
+                if(!(o instanceof LogMessage)) {
+                    return;
+                }
+            }
+        }
+
+        // import
+        clearLogCache();
+        displayingFromFile = true;
+        for(Iterator logEntryIter=logs.entrySet().iterator(); logEntryIter.hasNext();){
+            Map.Entry me = (Map.Entry) logEntryIter.next();
+            String nodeId = (String) me.getKey();
+            Vector logVector = (Vector) me.getValue();
+            if(!logVector.isEmpty()) {
+                LogMessage logMessage = (LogMessage) logVector.firstElement();
+                ClusterNodeInfo cni = new ClusterNodeInfo();
+                cni.setName(logMessage.getNodeName());
+                cni.setMac(logMessage.getNodeId());
+                currentNodeList.put(nodeId, new GatewayStatus(cni));
+            }
+        }
+        addLogs(logs);
+
+        // filter the logs
+        filterData(logPane.getMsgFilterLevel(),
+                logPane.getMsgFilterService(),
+                logPane.getMsgFilterMessage());
+
+        // sort the logs
+        sortData(columnToSort, false);
+
+        // populate the change to the display
+        realModel.fireTableDataChanged();
+        logPane.updateTimeStamp(new Date());
+        logPane.updateMsgTotal();
+    }
+
+    /**
+     * Retreive logs from the cluster.
+     *
+     * @param logPane   The object reference to the LogPanel.
+     * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
+     * @param start The start date for log records.
+     * @param end The end date for log records.
      * @param requests  The list of requests for retrieving logs. One request per node.
      * @param nodeId the node to filter requests by (may be null)
      * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
-    public void refreshLogs(final LogPanel logPane, final boolean restartTimer, Vector requests, final String nodeId, final boolean newRefresh) {
+    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, Vector requests, final String nodeId, final boolean newRefresh) {
 
-        //long endMsgNumber = -1;
+        if(displayingFromFile) {
+            displayingFromFile = false;
+            clearLogCache();
+        }
 
+        // New request or still working on an old request?
         if (newRefresh) {
-
+            // create request for each node
             requests = new Vector();
             for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
                 GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
@@ -441,83 +544,99 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     Vector cachevector = (Vector)logCache;
                     long highest = -1;
                     if (cachevector.size() > 0) {
-                        highest = ((LogMessage) cachevector.firstElement()).getMsgNumber();
+                        // remove any cached logs that are outside of our current range.
+                        purgeOutOfRange(cachevector, start, end);
+
+                        // find limit
                         for (Iterator cc = cachevector.iterator(); cc.hasNext();) {
                             LogMessage lm = (LogMessage)cc.next();
                             if (lm.getMsgNumber() > highest) highest = lm.getMsgNumber();
                         }
-                        //endMsgNumber = ((LogMessage) cachevector.firstElement()).getMsgNumber();
                     }
 
                     // add the request for retrieving logs from the node
-                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, highest));
+                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, highest, start, end));
                 }
             }
         }
 
-        // create a worker thread to retrieve the cluster info
-        final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logAdmin, logType, nodeId, currentNodeList, requests) {
-            public void finished() {
+        try {
+            // create a worker thread to retrieve the cluster info
+            final ClusterLogWorker infoWorker = new ClusterLogWorker(
+                    clusterStatusAdmin,
+                    logAdmin,
+                    logType,
+                    nodeId,
+                    start,
+                    end,
+                    currentNodeList,
+                    requests) {
+                public void finished() {
 
-                if (isCanceled()) {
-                    logger.info("Log retrieval is canceled.");
-                    logPane.getLogsRefreshTimer().stop();
-                } else {
-                    // Note: the get() operation is a blocking operation.
-                    if (this.get() != null) {
-
-                        if (newRefresh) {
-                            removeLogsOfNonExistNodes(getNewNodeList());
-                            currentNodeList = getNewNodeList();
-                            addLogs(getNewLogs());
-                        } else {
-                            appendLogs(getNewLogs());
-                        }
-
-                        String msgNumSelected = logPane.getSelectedMsgNumber();
-
-                        // filter the logs
-                        filterData(logPane.getMsgFilterLevel());
-
-                        // sort the logs
-                        sortData(columnToSort, false);
-
-                        // populate the change to the display
-                        realModel.fireTableDataChanged();
-                        logPane.updateTimeStamp(getCurrentClusterSystemTime());
-                        logPane.updateMsgTotal();
-
-                        logPane.setSelectedRow(msgNumSelected);
-
-                        final Vector unfilledRequest = getUnfilledRequest();
-
-                        // if there unfilled requests
-                        if (unfilledRequest.size() > 0) {
-                            SwingUtilities.invokeLater(
-                                    new Runnable() {
-                                        public void run() {
-                                            refreshLogs(logPane, restartTimer, unfilledRequest, nodeId, false);
-                                        }
-                                    });
-
-                        } else {
-                            if (restartTimer) {
-                                logPane.getLogsRefreshTimer().start();
-                            }
-                        }
-
+                    if (isCanceled()) {
+                        logger.info("Log retrieval is canceled.");
+                        logPane.getLogsRefreshTimer().stop();
                     } else {
-                        if (isRemoteExceptionCaught()) {
-                            // the connection to the cluster is down
-                            logPanel.onDisconnect();
-                            onDisconnect();
+                        // Note: the get() operation is a blocking operation.
+                        if (this.get() != null) {
+
+                            if (newRefresh) {
+                                removeLogsOfNonExistNodes(getNewNodeList());
+                                currentNodeList = getNewNodeList();
+                                addLogs(getNewLogs());
+                            } else {
+                                appendLogs(getNewLogs());
+                            }
+
+                            String msgNumSelected = logPane.getSelectedMsgNumber();
+
+                            // filter the logs
+                            filterData(logPane.getMsgFilterLevel(),
+                                    logPane.getMsgFilterService(),
+                                    logPane.getMsgFilterMessage());
+
+                            // sort the logs
+                            sortData(columnToSort, false);
+
+                            // populate the change to the display
+                            realModel.fireTableDataChanged();
+                            logPane.updateTimeStamp(getCurrentClusterSystemTime());
+                            logPane.updateMsgTotal();
+
+                            logPane.setSelectedRow(msgNumSelected);
+
+                            final Vector unfilledRequest = getUnfilledRequest();
+
+                            // if there unfilled requests
+                            if (unfilledRequest.size() > 0) {
+                                SwingUtilities.invokeLater(
+                                        new Runnable() {
+                                            public void run() {
+                                                doRefreshLogs(logPane, restartTimer, start, end, unfilledRequest, nodeId, false);
+                                            }
+                                        });
+
+                            } else {
+                                if (restartTimer) {
+                                    logPane.getLogsRefreshTimer().start();
+                                }
+                            }
+
+                        } else {
+                            if (isRemoteExceptionCaught()) {
+                                // the connection to the cluster is down
+                                logPanel.onDisconnect();
+                                onDisconnect();
+                            }
                         }
                     }
                 }
-            }
-        };
+            };
 
-        infoWorker.start();
-
+            infoWorker.start();
+        }
+        catch(IllegalArgumentException iae) {
+            //can happen on disconnect when auto refresh is on.
+        }
     }
 }

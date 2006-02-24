@@ -2,7 +2,11 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.RequestId;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
@@ -11,12 +15,20 @@ import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.logging.GenericLogAdmin;
 
 import javax.swing.*;
+import javax.swing.text.Document;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DateFormatter;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -25,6 +37,31 @@ import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.ObjectOutputStream;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.beans.XMLEncoder;
+import java.net.URL;
+import java.net.URI;
+
+import net.sf.nachocalendar.CalendarFactory;
+import net.sf.nachocalendar.components.DateField;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+import com.thoughtworks.xstream.XStream;
 
 /*
  * This class creates a log panel.
@@ -35,6 +72,8 @@ import java.util.*;
  */
 
 public class LogPanel extends JPanel {
+    private static final Logger logger = Logger.getLogger(LogPanel.class.getName());
+
     public static final int MSG_FILTER_LEVEL_SEVERE = 1;
     public static final int MSG_FILTER_LEVEL_WARNING = 2;
     public static final int MSG_FILTER_LEVEL_INFO = 3;
@@ -55,33 +94,42 @@ public class LogPanel extends JPanel {
 
     private static final int LOG_REFRESH_TIMER = 3000;
     private int logsRefreshInterval;
-    private javax.swing.Timer logsRefreshTimer = null;
+    private javax.swing.Timer logsRefreshTimer;
+
+    private static final byte[] FILE_TYPE = new byte[]{0xC, 0xA, 0xF, 0xE, 0xD, 0x0, 0x0, 0xD};
+
+    private static final long MILLIS_IN_HOUR = 1000L * 60L * 60L;
+    private static final long MILLIS_IN_DAY = MILLIS_IN_HOUR * 24L;
+    private static final long MILLIS_IN_WEEK = MILLIS_IN_DAY * 7L;
+    private static final long[] UNIT_FACTOR = {MILLIS_IN_HOUR, MILLIS_IN_DAY, MILLIS_IN_WEEK};
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
+    private String msgFilterService = "";
+    private String msgFilterMessage = "";
     private boolean isAuditType;
-    private String nodeId = null;
-    private JPanel selectPane = null;
-    private JPanel filterPane = null;
-    private JPanel controlPane = null;
-    private JScrollPane msgTablePane = null;
-    private JPanel statusPane = null;
-    private JTable msgTable = null;
-    private JTabbedPane msgDetailsPane = null;
-    private JScrollPane associatedLogsScrollPane = null;
-    private JTextArea msgDetails = null;
-    private JSlider slider = null;
-    private JCheckBox autoRefresh = null;
-    private DefaultTableModel logTableModel = null;
-    private FilteredLogTableSorter logTableSorter = null;
-    private JLabel msgTotal = null;
-    private JLabel lastUpdateTimeLabel = null;
+    private String nodeId;
+    private JPanel selectPane;
+    private JPanel filterPane;
+    private JPanel controlPane;
+    private JPanel msgTablePane;
+    private JPanel statusPane;
+    private JTable msgTable;
+    private JTabbedPane msgDetailsPane;
+    private JScrollPane associatedLogsScrollPane;
+    private JTextArea msgDetails;
+    private JSlider slider;
+    private JCheckBox autoRefresh;
+    private DefaultTableModel logTableModel;
+    private FilteredLogTableSorter logTableSorter;
+    private JLabel msgTotal;
+    private JLabel lastUpdateTimeLabel;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
     private JScrollPane detailsScrollPane;
-    private LogMessage displayedLogMessage = null;
-    private AssociatedLogsTable associatedLogsTable = null;
+    private LogMessage displayedLogMessage;
+    private AssociatedLogsTable associatedLogsTable;
     private JScrollPane requestXmlScrollPane;
     private JTextArea requestXmlTextArea;
     private JPanel requestXmlPanel;
@@ -92,6 +140,17 @@ public class LogPanel extends JPanel {
     private JTextArea responseXmlTextArea;
     private String unformattedRequestXml;
     private String unformattedResponseXml;
+    private DateField startDateField;
+    private JRadioButton viewCurrentRadioButton;
+    private JRadioButton viewHistoricRadioButton;
+    private JComboBox startDateComboBox;
+    private JPanel startDatePane;
+    private JPanel viewHistoricPane;
+    private JPanel viewCurrentPane;
+    private JSpinner rangeSpinner;
+    private JButton updateSelectionButton;
+    private JComboBox limitUnitComboBox;
+    private boolean connected = false;
 
     /**
      * Constructor
@@ -103,8 +162,9 @@ public class LogPanel extends JPanel {
     /**
      * Constructor
      */
-    public LogPanel(boolean includeDetailPane, boolean isAuditType, String nodeId) {
+    public LogPanel(boolean includeDetailPane, final boolean isAuditType, String nodeId) {
         setLayout(new BorderLayout());
+        init();
 
         this.logsRefreshInterval = LOG_REFRESH_TIMER;
         this.nodeId = nodeId;
@@ -130,6 +190,103 @@ public class LogPanel extends JPanel {
                         updateMsgDetails();
                     }
                 });
+
+        // create import transfer handler
+        TransferHandler fdth = new FileDropTransferHandler();
+        getMsgTable().setTransferHandler(fdth);
+        getMsgTable().getTableHeader().setTransferHandler(fdth);
+    }
+
+    private void init() {
+        ButtonGroup viewButtonGroup = new ButtonGroup();
+        viewButtonGroup.add(viewCurrentRadioButton);
+        viewButtonGroup.add(viewHistoricRadioButton);
+
+        viewCurrentRadioButton.addChangeListener(new ChangeListener(){
+            public void stateChanged(ChangeEvent e) {
+                if(viewCurrentRadioButton.isSelected()) {
+                    Utilities.setEnabled(viewCurrentPane, true);
+                    Utilities.setEnabled(viewHistoricPane, false);
+                }
+                else {
+                    Utilities.setEnabled(viewCurrentPane, false);
+                    Utilities.setEnabled(viewHistoricPane, true);
+                }
+                updateLogAutoRefresh();
+                if(viewCurrentRadioButton.isSelected()) refreshLogs();
+            }
+        });
+
+        Utilities.setFont(controlPane, new java.awt.Font("Dialog", 0, 11));
+
+        autoRefresh.addActionListener(new ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                updateLogAutoRefresh();
+            }
+        });
+
+        limitUnitComboBox.setModel(new DefaultComboBoxModel(new String[]{"hrs.", "days", "wks."}));
+
+        startDatePane.setLayout(new BorderLayout());
+        startDateField = CalendarFactory.createDateField();
+        startDatePane.add(startDateField, BorderLayout.CENTER);
+
+        startDateComboBox.setModel(new DefaultComboBoxModel(
+                new String[]{"00:00", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00"}));
+
+        rangeSpinner.setValue(new Integer(24));
+
+        updateSelectionButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateViewSelection();
+            }
+        });
+
+        // select after adding date field to ensure correct initial enabled state
+        viewCurrentRadioButton.setSelected(true);
+    }
+
+    public boolean isAutoRefresh() {
+        Window pWin = SwingUtilities.getWindowAncestor(this);
+        return pWin!=null && pWin.isVisible()
+                && autoRefresh.isEnabled()
+                && autoRefresh.isSelected();
+    }
+
+    private void updateLogAutoRefresh() {
+        if (isAutoRefresh()) {
+            getLogsRefreshTimer().start();
+        } else {
+            getLogsRefreshTimer().stop();
+        }
+    }
+
+    private void updateViewSelection() {
+
+        // get selection dates
+        Date selectedDate = (Date) startDateField.getValue();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(selectedDate);
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, startDateComboBox.getSelectedIndex() * 3);
+
+        long range = ((Integer)rangeSpinner.getValue()).intValue();
+
+        Date startDate = null;
+        Date endDate = null;
+
+        if(range>=0) {
+            startDate = calendar.getTime();
+            endDate = new Date(startDate.getTime() + (range * UNIT_FACTOR[limitUnitComboBox.getSelectedIndex()]));
+        }
+        else {
+            endDate = calendar.getTime();
+            startDate = new Date(endDate.getTime() + (range * UNIT_FACTOR[limitUnitComboBox.getSelectedIndex()]));
+        }
+
+        refreshLogs(startDate, endDate);
     }
 
     private void updateMsgDetails() {
@@ -181,7 +338,7 @@ public class LogPanel extends JPanel {
                     msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Saved>") + "\n";
                     msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
                     msg += "Resp Status: " + sum.getResponseHttpStatus() + "\n";
-                    msg += "Resp Time  : " + sum.getRoutingLatency() + "\n";
+                    msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
                     msg += "User ID    : " + sum.getUserId() + "\n";
                     msg += "User Name  : " + sum.getUserName() + "\n";
                     msg += "Entity name: " + arec.getName() + "\n";
@@ -349,6 +506,14 @@ public class LogPanel extends JPanel {
         return msgFilterLevel;
     }
 
+    public String getMsgFilterService() {
+        return msgFilterService;
+    }
+
+    public String getMsgFilterMessage() {
+        return msgFilterMessage;
+    }
+
     /**
      * Stop the refresh timer.
      */
@@ -360,16 +525,24 @@ public class LogPanel extends JPanel {
      * Performs the necessary initialization when the connection with the cluster is established.
      */
     public void onConnect(){
+        connected = true;
         getFilteredLogTableSorter().onConnect();
         updateLogsRefreshTimerDelay();
         clearMsgTable();
         getLogsRefreshTimer().start();
+
+        Utilities.setEnabled(viewCurrentRadioButton, true);
+        Utilities.setEnabled(viewHistoricRadioButton, true);
+        Utilities.setEnabled(updateSelectionButton, true);
     }
 
     /**
      * Performs the necessary cleanup when the connection with the cluster went down.
      */
     public void onDisconnect(){
+        connected = false;
+
+        logTableSorter.clearLogCache();
         getLogsRefreshTimer().stop();
         getFilteredLogTableSorter().onDisconnect();
 
@@ -377,6 +550,9 @@ public class LogPanel extends JPanel {
             getLastUpdateTimeLabel().setText(getLastUpdateTimeLabel().getText().trim() + " [Disconnected]   ");
         }
 
+        Utilities.setEnabled(viewCurrentRadioButton, false);
+        Utilities.setEnabled(viewHistoricRadioButton, false);
+        Utilities.setEnabled(updateSelectionButton, false);
     }
 
     /**
@@ -395,11 +571,10 @@ public class LogPanel extends JPanel {
         JPanel leftPane = new JPanel();
         leftPane.setLayout(new FlowLayout());
         leftPane.add(getFilterPane());
-        leftPane.add(getControlPane());
+        leftPane.add(new JPanel());
 
         selectPane.add(leftPane, BorderLayout.WEST);
         selectPane.add(getStatusPane(), BorderLayout.EAST);
-
 
         return selectPane;
     }
@@ -414,6 +589,9 @@ public class LogPanel extends JPanel {
         filterPane = new JPanel();
         filterPane.setLayout(new FlowLayout());
         filterPane.add(getFilterSlider());
+        if(isAuditType) filterPane.add(getFilterServicePane());
+        filterPane.add(getFilterMessagePane());
+        if(!isAuditType) filterPane.add(getMicroControlPane());
 
         return filterPane;
     }
@@ -477,35 +655,81 @@ public class LogPanel extends JPanel {
         return slider;
     }
 
+    private JPanel getFilterServicePane() {
+        JPanel filterServicePane = new JPanel();
+
+        JTextField serviceTextField = new JTextField(8);
+        serviceTextField.setFont(new java.awt.Font("Dialog", 0, 11));
+        serviceTextField.getDocument().addDocumentListener(new DocumentListener(){
+            public void insertUpdate(DocumentEvent e) {
+                updateMsgFilterService(e.getDocument());
+            }
+            public void removeUpdate(DocumentEvent e) {
+                updateMsgFilterService(e.getDocument());
+            }
+            public void changedUpdate(DocumentEvent e) {
+                updateMsgFilterService(e.getDocument());
+            }
+        });
+
+        JLabel label = new JLabel("Service:");
+        label.setFont(new java.awt.Font("Dialog", 0, 11));
+
+        filterServicePane.setLayout(new BorderLayout());
+        filterServicePane.add(label, BorderLayout.NORTH);
+        filterServicePane.add(serviceTextField, BorderLayout.CENTER);
+
+        return filterServicePane;
+    }
+
+    private JPanel getFilterMessagePane() {
+        JPanel filterMessagePane = new JPanel();
+
+        JTextField messageTextField = new JTextField(8);
+        messageTextField.setFont(new java.awt.Font("Dialog", 0, 11));
+        messageTextField.getDocument().addDocumentListener(new DocumentListener(){
+            public void insertUpdate(DocumentEvent e) {
+                updateMsgFilterMessage(e.getDocument());
+            }
+            public void removeUpdate(DocumentEvent e) {
+                updateMsgFilterMessage(e.getDocument());
+            }
+            public void changedUpdate(DocumentEvent e) {
+                updateMsgFilterMessage(e.getDocument());
+            }
+        });
+
+        JLabel label = new JLabel("Message:");
+        label.setFont(new java.awt.Font("Dialog", 0, 11));
+
+        filterMessagePane.setLayout(new BorderLayout());
+        filterMessagePane.add(label, BorderLayout.NORTH);
+        filterMessagePane.add(messageTextField, BorderLayout.CENTER);
+
+        return filterMessagePane;
+    }
+
+
+    /**
+     * Get the small control panel used for log viewing
+     *
+     * @return
+     */
+    private JPanel getMicroControlPane() {
+        JPanel microControlPane = new JPanel();
+        microControlPane.setLayout(new FlowLayout());
+
+        autoRefresh.setSelected(true);
+        microControlPane.add(autoRefresh);
+
+        return microControlPane;
+    }
+
     /**
      * Return ControlPane property value
      * @return  JPanel
      */
     private JPanel getControlPane(){
-        if(controlPane != null) return controlPane;
-
-        controlPane = new JPanel();
-        controlPane.setLayout(new FlowLayout());
-
-         if(autoRefresh == null){
-            autoRefresh = new JCheckBox();
-        }
-        autoRefresh.setFont(new java.awt.Font("Dialog", 0, 12));
-        autoRefresh.setText("Auto-Refresh");
-        autoRefresh.setSelected(true);
-        autoRefresh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                if (autoRefresh.isSelected()) {
-                    getLogsRefreshTimer().start();
-                } else {
-                    getLogsRefreshTimer().stop();
-                }
-            }
-        });
-
-        controlPane.add(autoRefresh);
-        controlPane.add(getMsgTotal());
-
         return controlPane;
     }
 
@@ -541,14 +765,20 @@ public class LogPanel extends JPanel {
      * Return MsgTablePane property value
      * @return JScrollPane
      */
-    private JScrollPane getMsgTablePane(){
+    private JComponent getMsgTablePane(){
         if(msgTablePane != null) return msgTablePane;
 
-        msgTablePane = new JScrollPane();
-        msgTablePane.setViewportView(getMsgTable());
-        msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
-        msgTablePane.setMinimumSize(new Dimension(1000, 200));
-        msgTablePane.setPreferredSize(new Dimension(1000, 300));
+        msgTablePane = new JPanel();
+        msgTablePane.setLayout(new BorderLayout());
+        if(isAuditType) msgTablePane.add(getControlPane(), BorderLayout.NORTH);
+
+        JScrollPane tablePane = new JScrollPane();
+        tablePane.setViewportView(getMsgTable());
+        tablePane.getViewport().setBackground(getMsgTable().getBackground());
+        tablePane.setMinimumSize(new Dimension(1000, 200));
+        tablePane.setPreferredSize(new Dimension(1000, 300));
+        msgTablePane.add(tablePane, BorderLayout.CENTER);
+
         return msgTablePane;
     }
 
@@ -718,7 +948,11 @@ public class LogPanel extends JPanel {
         if(statusPane != null)  return statusPane;
 
         statusPane = new JPanel();
-        statusPane.setLayout(new GridLayout());
+        statusPane.setLayout(new FlowLayout());
+        statusPane.add(getMsgTotal());
+        JPanel spacer = new JPanel();
+        spacer.setSize(40,20);
+        statusPane.add(spacer);
         statusPane.add(getLastUpdateTimeLabel());
 
         return statusPane;
@@ -745,72 +979,27 @@ public class LogPanel extends JPanel {
     private DefaultTableColumnModel getLogColumnModel() {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
-        columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, 20));
+        // Add columns according to configuration
+        String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
+        if ((showMsgFlag != null) && showMsgFlag.equals("true")){
+            columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, 20));
+        }
         columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, 30));
         columnModel.addColumn(new TableColumn(LOG_TIMESTAMP_COLUMN_INDEX, 80));
         columnModel.addColumn(new TableColumn(LOG_SEVERITY_COLUMN_INDEX, 15));
-        columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, 20));
+        if(isAuditType) { // show the service name if we are displaying audit messages
+            columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, 20));
+        }
         columnModel.addColumn(new TableColumn(LOG_MSG_DETAILS_COLUMN_INDEX, 400));
-        columnModel.addColumn(new TableColumn(LOG_JAVA_CLASS_COLUMN_INDEX, 0));   // min width is used
-        columnModel.addColumn(new TableColumn(LOG_JAVA_METHOD_COLUMN_INDEX, 0));   // min width is used
-        columnModel.addColumn(new TableColumn(LOG_REQUEST_ID_COLUMN_INDEX, 0));
-        columnModel.addColumn(new TableColumn(LOG_NODE_ID_COLUMN_INDEX, 0));
 
+        // Set headers
         for(int i = 0; i < columnModel.getColumnCount(); i++){
             TableColumn tc = columnModel.getColumn(i);
             tc.setHeaderRenderer(iconHeaderRenderer);
             tc.setHeaderValue(getLogTableModel().getColumnName(tc.getModelIndex()));
         }
 
-        String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
-        if ((showMsgFlag != null) && showMsgFlag.equals("true")){
-            // show the message # column (mainly for debugging and testing purpose
-        }
-        else{
-            getColumnByModelIndex(columnModel, LOG_MSG_NUMBER_COLUMN_INDEX).setMinWidth(0);
-            getColumnByModelIndex(columnModel, LOG_MSG_NUMBER_COLUMN_INDEX).setMaxWidth(0);
-            getColumnByModelIndex(columnModel, LOG_MSG_NUMBER_COLUMN_INDEX).setPreferredWidth(0);
-        }
-
-        if(!isAuditType) { // hide the service name if we are not displaying audit messages
-            getColumnByModelIndex(columnModel, LOG_SERVICE_COLUMN_INDEX).setMinWidth(0);
-            getColumnByModelIndex(columnModel, LOG_SERVICE_COLUMN_INDEX).setMaxWidth(0);
-            getColumnByModelIndex(columnModel, LOG_SERVICE_COLUMN_INDEX).setPreferredWidth(0);
-        }
-
-        // we don't show following columns including method, class
-        // but the data is retrieved for display in the detailed pane
-        getColumnByModelIndex(columnModel, LOG_JAVA_CLASS_COLUMN_INDEX).setMinWidth(0);
-        getColumnByModelIndex(columnModel, LOG_JAVA_CLASS_COLUMN_INDEX).setMaxWidth(0);
-        getColumnByModelIndex(columnModel, LOG_JAVA_CLASS_COLUMN_INDEX).setPreferredWidth(0);
-
-        getColumnByModelIndex(columnModel, LOG_JAVA_METHOD_COLUMN_INDEX).setMinWidth(0);
-        getColumnByModelIndex(columnModel, LOG_JAVA_METHOD_COLUMN_INDEX).setMaxWidth(0);
-        getColumnByModelIndex(columnModel, LOG_JAVA_METHOD_COLUMN_INDEX).setPreferredWidth(0);
-
-        getColumnByModelIndex(columnModel, LOG_REQUEST_ID_COLUMN_INDEX).setMinWidth(0);
-        getColumnByModelIndex(columnModel, LOG_REQUEST_ID_COLUMN_INDEX).setMaxWidth(0);
-        getColumnByModelIndex(columnModel, LOG_REQUEST_ID_COLUMN_INDEX).setPreferredWidth(0);
-
-        getColumnByModelIndex(columnModel, LOG_NODE_ID_COLUMN_INDEX).setMinWidth(0);
-        getColumnByModelIndex(columnModel, LOG_NODE_ID_COLUMN_INDEX).setMaxWidth(0);
-        getColumnByModelIndex(columnModel, LOG_NODE_ID_COLUMN_INDEX).setPreferredWidth(0);
-
         return columnModel;
-    }
-
-    private TableColumn getColumnByModelIndex(TableColumnModel tcm, int index) {
-        TableColumn tc = null;
-
-        for(int c=0; c<tcm.getColumnCount(); c++) {
-            TableColumn ctc = tcm.getColumn(c);
-            if(ctc.getModelIndex()==index) {
-                tc = ctc;
-                break;
-            }
-        }
-
-        return tc;
     }
 
     /**
@@ -883,8 +1072,21 @@ public class LogPanel extends JPanel {
         getLogsRefreshTimer().stop();
 
         // retrieve the new logs
-        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, autoRefresh.isSelected(), new Vector(), nodeId, true);
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if(window!=null && window.isVisible())
+            ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, isAutoRefresh(), nodeId);
+    }
 
+    /**
+     * Performs the log retrieval. This function is called when the refresh timer is expired.
+     */
+    public void refreshLogs(Date first, Date last) {
+        getLogsRefreshTimer().stop();
+
+        // retrieve the new logs
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if(window!=null && window.isVisible())
+            ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, first, last, nodeId);
     }
 
     /**
@@ -924,33 +1126,72 @@ public class LogPanel extends JPanel {
         }
     }
 
+    private void updateMsgFilter() {
+        // get the selected row index
+        int selectedRowIndexOld = getMsgTable().getSelectedRow();
+        String msgNumSelected = null;
+
+        // save the number of selected message
+        if (selectedRowIndexOld >= 0) {
+            msgNumSelected = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX).toString();
+        }
+
+        ((FilteredLogTableSorter) getMsgTable().getModel()).applyNewMsgFilter(msgFilterLevel, msgFilterService, msgFilterMessage);
+
+        if (msgNumSelected != null) {
+            setSelectedRow(msgNumSelected);
+        }
+
+        updateMsgTotal();
+    }
+
     /**
      * Update the filter level.
      *
      * @param newFilterLevel  The new filter level to be applied.
      */
     private void updateMsgFilterLevel(int newFilterLevel) {
-
         if (msgFilterLevel != newFilterLevel) {
-
             msgFilterLevel = newFilterLevel;
-            // get the selected row index
-            int selectedRowIndexOld = getMsgTable().getSelectedRow();
-            String msgNumSelected = null;
-
-            // save the number of selected message
-            if (selectedRowIndexOld >= 0) {
-                msgNumSelected = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX).toString();
-            }
-
-            ((FilteredLogTableSorter) getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
-
-            if (msgNumSelected != null) {
-                setSelectedRow(msgNumSelected);
-            }
-
-            updateMsgTotal();
+            updateMsgFilter();
         }
+    }
+
+    private void updateMsgFilterService(Document document) {
+        updateMsgFilterService(toString(document));
+    }
+
+    private void updateMsgFilterService(String serviceMatch) {
+        if (serviceMatch!=null && !serviceMatch.equals(msgFilterService)) {
+            msgFilterService = serviceMatch;
+            updateMsgFilter();
+        }
+    }
+
+    private void updateMsgFilterMessage(Document document) {
+        updateMsgFilterMessage(toString(document));
+    }
+
+    private void updateMsgFilterMessage(String messageMatch) {
+        if (messageMatch!=null && !messageMatch.equals(msgFilterMessage)) {
+            msgFilterMessage = messageMatch;
+            updateMsgFilter();
+        }
+    }
+
+    private String toString(Document document) {
+        String text = null;
+
+        if(document!=null) {
+            try {
+                text = document.getText(0, document.getLength()).trim();
+            }
+            catch(BadLocationException ble) {
+                text = "";
+            }
+        }
+
+        return text;
     }
 
     private void updateLogsRefreshTimerDelay() {
@@ -961,6 +1202,7 @@ public class LogPanel extends JPanel {
 
         if(logsRefreshInterval==0) logsRefreshInterval = Integer.MAX_VALUE; // disable refresh
 
+        getLogsRefreshTimer().setInitialDelay(logsRefreshInterval);
         getLogsRefreshTimer().setDelay(logsRefreshInterval);
     }
 
@@ -969,7 +1211,7 @@ public class LogPanel extends JPanel {
      */
     public void clearMsgTable(){
         getMsgDetails().setText("Loading data...");
-        msgTotal.setText(MSG_TOTAL_PREFIX + "0");
+        getMsgTotal().setText(MSG_TOTAL_PREFIX + "0");
         displayedLogMessage = null;
         getFilteredLogTableSorter().clearLogCache();
     }
@@ -997,7 +1239,7 @@ public class LogPanel extends JPanel {
      * Update the message total.
      */
     public void updateMsgTotal(){
-         msgTotal.setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
+         getMsgTotal().setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
     }
 
     /**
@@ -1075,5 +1317,162 @@ public class LogPanel extends JPanel {
         };
         JTableHeader th = tableView.getTableHeader();
         th.addMouseListener(listMouseListener);
+    }
+
+    /**
+     * Export the currently displayed log/audit data.
+     *
+     * @param out the stream to output to.
+     */
+    public void exportView(File file) throws IOException {
+        // process
+        JTable table = getMsgTable();
+        int rows = table.getRowCount();
+        List data = new ArrayList(rows);
+        for(int i=0; i<rows; i++) {
+            LogMessage rowMessage = logTableSorter.getLogMessageAtRow(i);
+            data.add(new WriteableLogMessage(rowMessage));
+        }
+        Collections.sort(data);
+
+        // write
+        XStream xstream = new XStream(new DomDriver());
+        ObjectOutputStream oos = null;
+        OutputStream out = null;
+        try {
+            out = new BufferedOutputStream(new FileOutputStream(file));
+            out.write(FILE_TYPE);
+            oos = xstream.createObjectOutputStream(new OutputStreamWriter(new GZIPOutputStream(out), "UTF-8"));
+            oos.writeObject(data);
+        }
+        finally {
+            // necessary to get the closing object tag
+            ResourceUtils.closeQuietly(oos);
+            ResourceUtils.closeQuietly(out);
+        }
+    }
+
+    public void importView(File file) throws IOException {
+        viewHistoricRadioButton.setSelected(true);
+
+        XStream xstream = new XStream(new DomDriver());
+        InputStream in = null;
+        ObjectInputStream ois = null;
+        try {
+            in = new BufferedInputStream(new FileInputStream(file));
+            byte[] header = HexUtils.slurpStream(in, FILE_TYPE.length);
+            if(header.length < FILE_TYPE.length ||
+               !HexUtils.compareArrays(FILE_TYPE, 0, header, 0, FILE_TYPE.length)) {
+                throw new IOException("Unknown file type.");
+            }
+            ois = xstream.createObjectInputStream(new InputStreamReader(new GZIPInputStream(in), "UTF-8"));
+
+            Object read = ois.readObject();
+            if(read instanceof List) {
+                List data = (List) read;
+                Hashtable loadedLogs = new Hashtable();
+                for (Iterator iterator = data.iterator(); iterator.hasNext();) {
+                    Object o = iterator.next();
+                    if(o instanceof WriteableLogMessage) {
+                        WriteableLogMessage message = (WriteableLogMessage) o;
+                        Vector logsForNode = (Vector) loadedLogs.get(message.ssgLogRecord.getNodeId());
+                        if(logsForNode==null) {
+                            logsForNode = new Vector();
+                            loadedLogs.put(message.ssgLogRecord.getNodeId(), logsForNode);
+                        }
+                        LogMessage lm = new LogMessage(message.ssgLogRecord);
+                        lm.setNodeName(message.nodeName);
+                        logsForNode.add(lm);
+                    }
+                }
+                logTableSorter.setLogs(this, loadedLogs);
+            }
+        }
+        catch(ClassNotFoundException cnfe) {
+            cnfe.printStackTrace();
+        }
+        finally {
+            ResourceUtils.closeQuietly(ois);
+            ResourceUtils.closeQuietly(in);
+        }
+    }
+
+    public static class WriteableLogMessage implements Comparable {
+        private String nodeName;
+        private SSGLogRecord ssgLogRecord;
+
+        public WriteableLogMessage(LogMessage lm) {
+            nodeName = lm.getNodeName();
+            ssgLogRecord = lm.getSSGLogRecord();
+        }
+
+        public int compareTo(Object o) {
+            return new Long(ssgLogRecord.getMillis()).compareTo(new Long(((WriteableLogMessage)o).ssgLogRecord.getMillis()));
+        }
+    }
+
+    private class FileDropTransferHandler extends TransferHandler
+    {
+        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+            boolean accept = false;
+
+            for (int i = 0; i < transferFlavors.length; i++) {
+                DataFlavor transferFlavor = transferFlavors[i];
+                if(transferFlavor.getMimeType().toLowerCase().equals("text/uri-list")
+                || transferFlavor.getMimeType().toLowerCase().startsWith("text/uri-list;")) {
+                    accept = true;
+                }
+            }
+
+            return accept && !connected;
+        }
+
+        public boolean importData(JComponent comp, Transferable transferable) {
+            DataFlavor[] df = transferable.getTransferDataFlavors();
+            boolean imported = false;
+
+            if(!connected) {
+                for (int i = 0; i < df.length; i++) {
+                    DataFlavor dataFlavor = df[i];
+                    if(dataFlavor.getMimeType().toLowerCase().equals("text/uri-list")
+                    || dataFlavor.getMimeType().toLowerCase().startsWith("text/uri-list;")) {
+                        try {
+                            Object data = transferable.getTransferData(dataFlavor);
+                            if(data instanceof String) {
+                                String fileUriList = (String) data;
+                                StringTokenizer str = new StringTokenizer(fileUriList);
+                                if(str.countTokens()==1) {
+                                    String fileUrl = str.nextToken().trim();
+                                    if((isAuditType && fileUrl.endsWith(".ssga")) ||
+                                       (!isAuditType && fileUrl.endsWith(".ssgl"))     ) {
+                                        File file = new File(new URI(fileUrl));
+                                        importView(file);
+                                        imported = true;
+                                    }
+                                    else {
+                                        logger.info("Incorrect file type, not importing.");
+                                    }
+                                }
+                                else {
+                                    logger.info("Multiple file not supported.");
+                                }
+                            }
+                            else {
+                                continue;
+                            }
+                        }
+                        catch(Exception e) {
+                            logger.log(Level.WARNING, "Unable to import data", e);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            return imported;
+        }
+
+        public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {
+        }
     }
 }

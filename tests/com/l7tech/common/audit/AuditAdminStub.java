@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.logging.Level;
 
 /**
@@ -42,7 +43,7 @@ public class AuditAdminStub implements AuditAdmin {
         throw new UnsupportedOperationException("Not supoprted in stub mode");
     }
 
-    public SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+    public SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException {
         return new SSGLogRecord[0];
     }
 

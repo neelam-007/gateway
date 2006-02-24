@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.FindException;
 import java.rmi.RemoteException;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,6 +39,8 @@ public class ClusterLogWorker extends SwingWorker {
     private Hashtable retrievedLogs;
     private boolean remoteExceptionCaught;
     private java.util.Date currentClusterSystemTime = null;
+    private final Date startDate;
+    private final Date endDate;
     static Logger logger = Logger.getLogger(ClusterLogWorker.class.getName());
 
     /**
@@ -45,14 +48,26 @@ public class ClusterLogWorker extends SwingWorker {
      *
      * @param clusterStatusService  An object reference to the <CODE>ClusterStatusAdmin</CODE>service
      * @param logService  An object reference to the <CODE>GenericLogAdmin</CODE> service
+     * @param logType the type (log or audit)
+     * @param startDate the earliest date to fetch
+     * @param endDate the latest date to fetch
      * @param currentNodeList  A list of nodes obtained from the last retrieval
      * @param requests  A list of requests for retrieving logs. One request per node.
      */
-    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, GenericLogAdmin logService, int logType, String nodeId, Hashtable currentNodeList, Vector requests) {
+    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService,
+                            GenericLogAdmin logService,
+                            int logType,
+                            String nodeId,
+                            Date startDate,
+                            Date endDate,
+                            Hashtable currentNodeList,
+                            Vector requests) {
         this.clusterStatusService = clusterStatusService;
         this.logService = logService;
         this.logType = logType;
         this.nodeId = nodeId;
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.currentNodeList = currentNodeList;
 
         if (currentNodeList == null || logService == null || clusterStatusService == null) {
@@ -144,7 +159,7 @@ public class ClusterLogWorker extends SwingWorker {
                 if (currentNodeList.get(clusterNodeId) == null
                  && (nodeId==null || nodeId.equals(clusterNodeId))) {
                     // add the new node to the request array with the startMsgNumber and endMsgNumber set to -1
-                    requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1));
+                    requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1, startDate, endDate));
                 }
 
                 // add the node to the new list
@@ -166,7 +181,14 @@ public class ClusterLogWorker extends SwingWorker {
 
                     rawLogs = new SSGLogRecord[]{};
 
-                    rawLogs = logService.getSystemLog(logRequest.getNodeId(), this.logType, logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
+                    //System.out.println("Calling getSystemLog with start#='"+logRequest.getStartMsgNumber()+"', end#='"+logRequest.getEndMsgNumber()+"', startDate='"+logRequest.getStartMsgDate()+"', endDate='"+logRequest.getEndMsgDate()+"'.");
+                    rawLogs = logService.getSystemLog(logRequest.getNodeId(),
+                            this.logType,
+                            logRequest.getStartMsgNumber(),
+                            logRequest.getEndMsgNumber(),
+                            logRequest.getStartMsgDate(),
+                            logRequest.getEndMsgDate(),
+                            FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
                     //System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
                     //System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());

@@ -508,6 +508,28 @@ public class Utilities {
     }
 
     /**
+     * Set the font for a component and its children.
+     *
+     * @param component the component to be enabled/disabled
+     * @param enabled true to enable the component
+     */
+    public static void setFont(JComponent component, Font font) {
+        if(component != null) {
+            // this component
+            component.setFont(font);
+
+            // children
+            Component[] components = component.getComponents();
+            for(int c=0; c<components.length; c++) {
+                Component subComp = components[c];
+                if(subComp instanceof JComponent) {
+                    setFont((JComponent) subComp, font);
+                }
+            }
+        }
+    }
+
+    /**
      * Configure the specified component to change its foreground color to Gray whenever it is disabled.
      *
      * @param component the component whose behaviour will be altered

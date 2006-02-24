@@ -9,6 +9,7 @@ package com.l7tech.logging;
 import com.l7tech.objectmodel.FindException;
 
 import java.rmi.RemoteException;
+import java.util.Date;
 
 /**
  * Provides a remote interface for retrieving server system log.
@@ -68,13 +69,15 @@ public interface GenericLogAdmin {
      *                       Start from beginning of the SecureSpan Gateway message buffer if it equals to -1.
      * @param endMsgNumber   the message number to locate the end point.
      *                       Retrieve messages until the end of the SecureSpan Gateway message buffer is hit if it equals to -1.
+     * @param startDate the earliest date to use
+     * @param endDate the latest date to use
      * @param size  the max. number of logsto be retrieved
      * @return SSGLogRecord[] the array of logs retrieved
      * @see com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus
      * @see com.l7tech.logging.SSGLogRecord
      *
      */
-    SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, int size) throws RemoteException, FindException;
+    SSGLogRecord[] getSystemLog(String nodeid, int typeId, long startMsgNumber, long endMsgNumber, Date startMsgDate, Date endMsgDate, int size) throws RemoteException, FindException;
 
     /**
      * Get the configured refresh period for the log type.

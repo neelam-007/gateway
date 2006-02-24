@@ -1,6 +1,8 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.DeleteAuditEventsAction;
@@ -10,11 +12,17 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
+import java.util.Date;
+import java.util.logging.Level;
+import java.text.SimpleDateFormat;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * To display log records.
@@ -50,6 +58,15 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
 
         Actions.setEscKeyStrokeDisposes(this);
 
+        // saveMenuItem listener
+        getSaveMenuItem().
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  saveAsEventHandler();
+              }
+          });
+
+
         // exitMenuItem listener
         getExitMenuItem().
           addActionListener(new ActionListener() {
@@ -67,9 +84,6 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
           });
 
         pack();
-
-        getLogPane().onConnect();
-        getLogPane().refreshLogs();
     }
 
     public String getNodeId() {
@@ -78,6 +92,14 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
 
     public String getNodeName() {
         return nodeName;
+    }
+
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if(visible) {
+            getLogPane().onConnect();
+            getLogPane().refreshLogs();
+        }
     }
 
     /**
@@ -114,10 +136,75 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private JMenu fileMenu = null;
     private JMenu helpMenu = null;
     private JMenuItem exitMenuItem = null;
+    private JMenuItem saveMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
 
+    /**
+     * Save currently displayed logs records to file
+     */
+    private void saveAsEventHandler() {
+        // File requestor
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
+        final JFileChooser fc = Utilities.createJFileChooser();
+        fc.setDialogTitle("Save log data as ...");
+        fc.setDialogType(JFileChooser.SAVE_DIALOG);
+        FileFilter fileFilter = new FileFilter() {
+            public boolean accept(File f) {
+                return  f.isDirectory() || f.getName().toLowerCase().endsWith(".ssgl");
+            }
+            public String getDescription() {
+                return "(*.ssgl) SecureSpan Gateway Log data file.";
+            }
+        };
+        final String suggestedName = "SecureSpanGateway_Log_" +sdf.format(new Date()) + ".ssgl";
+        fc.setSelectedFile(new File(suggestedName));
+        fc.addChoosableFileFilter(fileFilter);
+        fc.setMultiSelectionEnabled(false);
+        fc.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if(JFileChooser.FILE_FILTER_CHANGED_PROPERTY.equals(e.getActionCommand())) {
+                    fc.setSelectedFile(new File(suggestedName));
+                }
+            }
+        });
+        int r = fc.showDialog(GatewayLogWindow.this, "Save");
+        if(r == JFileChooser.APPROVE_OPTION) {
+            File file = fc.getSelectedFile();
+            if(file!=null) {
+                if((!file.exists() && file.getParentFile()!=null && file.getParentFile().canWrite()) ||
+                   (file.isFile() && file.canWrite())) {
+                    try {
+                        logPane.exportView(file);
+                    }
+                    catch(IOException ioe) {
+                        file.delete(); // attempt to clean up
+                        ExceptionDialog d = ExceptionDialog.createExceptionDialog(
+                                GatewayLogWindow.this,
+                                "SecureSpan Manager - Error",
+                                "Error writing to file:\n'"+file.getAbsolutePath()+"'.",
+                                ioe,
+                                Level.WARNING);
+                        d.pack();
+                        Utilities.centerOnScreen(d);
+                        d.setVisible(true);
+                    }
+                }
+                else {
+                    ExceptionDialog d = ExceptionDialog.createExceptionDialog(
+                            GatewayLogWindow.this,
+                            "SecureSpan Manager - Error",
+                            "Cannot write to file:\n'"+file.getAbsolutePath()+"'.",
+                            null,
+                            Level.INFO);
+                    d.pack();
+                    Utilities.centerOnScreen(d);
+                    d.setVisible(true);
+                }
+            }
+        }
+    }
 
     /**
      * Clean up the resources of the window when the user exits the window.
@@ -164,6 +251,8 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         if (fileMenu == null) {
             fileMenu = new JMenu();
             fileMenu.setText(resapplication.getString("File"));
+            fileMenu.add(getSaveMenuItem());
+            fileMenu.addSeparator();
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
             fileMenu.setMnemonic(mnemonic);
@@ -218,6 +307,22 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
             exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
         }
         return exitMenuItem;
+    }
+
+    /**
+     * Return saveMenuItem property value
+     *
+     * @return JMenuItem
+     */
+    private JMenuItem getSaveMenuItem() {
+        if (saveMenuItem == null) {
+            saveMenuItem = new JMenuItem();
+            saveMenuItem.setText(resapplication.getString("SaveAsMenuItem.name"));
+            int mnemonic = 'S';
+            saveMenuItem.setMnemonic(mnemonic);
+            saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return saveMenuItem;
     }
 
     /**
