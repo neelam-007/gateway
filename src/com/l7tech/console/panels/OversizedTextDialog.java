@@ -33,7 +33,7 @@ public class OversizedTextDialog extends JDialog {
     }
 
     public OversizedTextDialog(Frame owner, OversizedTextAssertion assertion, boolean modal) throws HeadlessException {
-        super(owner, "Configure Oversized Text Protection", modal);
+        super(owner, "Configure Oversized Element Protection", modal);
         this.assertion = assertion;
         doInit();
     }

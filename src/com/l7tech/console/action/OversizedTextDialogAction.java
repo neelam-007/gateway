@@ -30,14 +30,14 @@ public class OversizedTextDialogAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Oversized Text Protection Properties";
+        return "Oversized Element Protection Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View and edit oversized text protection properties";
+        return "View and edit oversized element protection properties";
     }
 
     /**

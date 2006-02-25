@@ -22,7 +22,7 @@ public class OversizedTextAssertionPaletteNode extends AbstractTreeNode {
     }
 
     public String getName() {
-        return "Oversized Text Protection";
+        return "Oversized Element Protection";
     }
 
     protected String iconResource(boolean open) {
