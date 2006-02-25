@@ -110,6 +110,7 @@ public class Advices {
         advicesMap.put(CommentAssertion.class, new Class[]{CommentAssertionAdvice.class});
         advicesMap.put(ComparisonAssertion.class, new Class[]{ComparisonAssertionAdvice.class});
         advicesMap.put(SqlAttackAssertion.class, new Class[]{SqlAttackAssertionAdvice.class});
+        advicesMap.put(OversizedTextAssertion.class, new Class[]{OversizedTextAssertionAdvice.class});
         advicesMap.put(RequestSizeLimit.class, new Class[]{RequestSizeLimitAdvice.class});
         advicesMap.put(HardcodedResponseAssertion.class, new Class[]{HardcodedResponseAssertionAdvice.class});
         advicesMap.put(MappingAssertion.class, new Class[] {MappingAssertionAdvice.class});
