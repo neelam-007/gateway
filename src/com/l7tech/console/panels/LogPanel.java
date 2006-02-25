@@ -206,18 +206,7 @@ public class LogPanel extends JPanel {
 
         viewCurrentRadioButton.addChangeListener(new ChangeListener(){
             public void stateChanged(ChangeEvent e) {
-                if(viewCurrentRadioButton.isSelected()) {
-                    Utilities.setEnabled(viewCurrentPane, true);
-                    Utilities.setEnabled(autoRefresh, true); // for logs this is not in the panel
-                    Utilities.setEnabled(viewHistoricPane, false);
-                }
-                else {
-                    Utilities.setEnabled(viewCurrentPane, false);
-                    Utilities.setEnabled(autoRefresh, false);
-                    Utilities.setEnabled(viewHistoricPane, true);
-                }
-                updateLogAutoRefresh();
-                if(viewCurrentRadioButton.isSelected()) refreshLogs();
+                updateControlState();
             }
         });
 
@@ -248,6 +237,23 @@ public class LogPanel extends JPanel {
 
         // select after adding date field to ensure correct initial enabled state
         viewCurrentRadioButton.setSelected(true);
+    }
+
+    private void updateControlState() {
+        if(connected) {
+            if(viewCurrentRadioButton.isSelected()) {
+                Utilities.setEnabled(viewCurrentPane, true);
+                Utilities.setEnabled(autoRefresh, true); // for logs this is not in the panel
+                Utilities.setEnabled(viewHistoricPane, false);
+            }
+            else {
+                Utilities.setEnabled(viewCurrentPane, false);
+                Utilities.setEnabled(autoRefresh, false);
+                Utilities.setEnabled(viewHistoricPane, true);
+            }
+            updateLogAutoRefresh();
+            if(viewCurrentRadioButton.isSelected()) refreshLogs();
+        }
     }
 
     public boolean isAutoRefresh() {
@@ -537,7 +543,7 @@ public class LogPanel extends JPanel {
 
         Utilities.setEnabled(viewCurrentRadioButton, true);
         Utilities.setEnabled(viewHistoricRadioButton, true);
-        Utilities.setEnabled(updateSelectionButton, true);
+        updateControlState();
     }
 
     /**
@@ -554,9 +560,8 @@ public class LogPanel extends JPanel {
             getLastUpdateTimeLabel().setText(getLastUpdateTimeLabel().getText().trim() + " [Disconnected]   ");
         }
 
-        Utilities.setEnabled(viewCurrentRadioButton, false);
-        Utilities.setEnabled(viewHistoricRadioButton, false);
-        Utilities.setEnabled(updateSelectionButton, false);
+        Utilities.setEnabled(controlPane, false);
+        Utilities.setEnabled(autoRefresh, false);
     }
 
     /**

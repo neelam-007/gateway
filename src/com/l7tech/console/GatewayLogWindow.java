@@ -115,9 +115,14 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
 
     public void setVisible(boolean visible) {
         super.setVisible(visible);
-        if(visible && startConnected) {
-            getLogPane().onConnect();
-            getLogPane().refreshLogs();
+        if(visible) {
+            if(startConnected) {
+                getLogPane().onConnect();
+                getLogPane().refreshLogs();
+            }
+            else {
+                getLogPane().onDisconnect();
+            }
         }
     }
 

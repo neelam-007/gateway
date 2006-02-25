@@ -243,7 +243,7 @@ public class ServicePanel extends WizardStepPanel {
                 if (result instanceof Throwable) {
                     Throwable t = (Throwable)result;
                     logger.log(Level.WARNING, msg, (Throwable)result);
-                    msg = "Unable to parse the WSDL at this location: " + ExceptionUtils.getMessage(t);
+                    msg = "Unable to parse the WSDL at this location: \n" + ExceptionUtils.getMessage(t);
                 }
                 final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
                 JOptionPane.showMessageDialog(mainWindow,

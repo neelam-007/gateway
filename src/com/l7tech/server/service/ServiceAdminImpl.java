@@ -4,6 +4,9 @@ import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
@@ -108,10 +111,27 @@ public class ServiceAdminImpl implements ServiceAdmin {
             }
             byte[] body = null;
             if (ret == 200) {
+                Header contentTypeHeader = get.getResponseHeader(
+                        com.l7tech.common.http.HttpConstants.HEADER_CONTENT_TYPE);
+                if(contentTypeHeader!=null) {
+                    ContentTypeHeader cth = null;
+                    try {
+                        cth = ContentTypeHeader.parseValue(contentTypeHeader.getValue());
+                    }
+                    catch(Exception e) {
+                        logger.info("Error parsing content type header '"+e.getMessage()+"'.");
+                    }
+                    if(cth!=null) {
+                        if(!cth.isXml()) {
+                            throw new CausedIOException("The document with URL '" + url +
+                                    "' is not WSDL (incorrect content type).");
+                        }
+                    }
+                }
                 body = get.getResponseBody();
                 return new String(body, get.getResponseCharSet());
             } else {
-                String msg = "The URL " + url + " is returning code " + ret;
+                String msg = "The URL '" + url + "' is returning code " + ret;
                 logger.info(msg);
                 logger.info("error detail: " + get.getResponseBodyAsString());
                 throw new RemoteException(msg);
