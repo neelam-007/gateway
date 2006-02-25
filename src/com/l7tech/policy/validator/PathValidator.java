@@ -119,6 +119,8 @@ class PathValidator {
             processUnknown((UnknownAssertion)a);
         } else if (a instanceof SqlAttackAssertion) {
             processSQL((SqlAttackAssertion)a);
+        } else if (a instanceof OversizedTextAssertion) {
+            processOversizedText((OversizedTextAssertion)a);
         } else if (a instanceof SamlBrowserArtifact) {
             seenAccessControl = true;
             setSeenCredentials(a, true);
@@ -133,6 +135,14 @@ class PathValidator {
         }
 
         setSeen(a.getClass());
+    }
+
+    private void processOversizedText(OversizedTextAssertion oversizedTextAssertion) {
+        if (oversizedTextAssertion != null && seenRouting) {
+            result.addWarning(new PolicyValidatorResult.Warning(oversizedTextAssertion, assertionPath,
+                                                                "This assertion should occur before the request is routed.",
+                                                                null));
+        }
     }
 
     private void processSQL(SqlAttackAssertion sqlAttackAssertion) {
