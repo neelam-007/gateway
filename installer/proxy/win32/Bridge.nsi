@@ -145,6 +145,7 @@ Section "SecureSpan Bridge" SecCopyUI
   endofserviceinstall:
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "sc" 'start SSB' "$INSTDIR\${MUI_PRODUCT}.exe"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Stop ${MUI_PRODUCT}.lnk" "sc" 'stop SSB' "$INSTDIR\${MUI_PRODUCT}.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} Config.lnk" "$INSTDIR\${J2RE}\bin\javaw.exe" '-Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Bridge.jar" -config' "$INSTDIR\${MUI_PRODUCT}.exe"
 
   endofinstall:
 
