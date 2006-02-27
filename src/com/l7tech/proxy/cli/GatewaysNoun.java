@@ -86,4 +86,25 @@ class GatewaysNoun extends Noun {
         ssgManager.add(ssg);
         out.println(ssg.getLocalEndpoint() + " created");
     }
+
+    public void printHelp(PrintStream out, String[] args) throws CommandException {
+        if (args != null && args.length > 0) {
+            // Argument was given.  Try to find an SsgNoun to take over.
+            Words nouns = session.getNouns();
+            List all = nouns.getAll();
+            for (Iterator i = all.iterator(); i.hasNext();) {
+                Word word = (Word)i.next();
+                if (word instanceof SsgNoun) {
+                    word.printHelp(out, args);
+                    return;
+                }
+            }
+
+            // We'll have to make something up
+            new SsgNoun(session, new Ssg(1)).printHelp(out, args);
+            return;
+        }
+
+        super.printHelp(out, args);
+    }
 }

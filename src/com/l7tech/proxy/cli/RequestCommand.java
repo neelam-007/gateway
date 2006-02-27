@@ -25,7 +25,9 @@ class RequestCommand extends Command {
         setHelpText("Use this command to generate a new Certificate Signing Request and send it\n" +
                     "to the Gateway.  This requires that a username and password be set.  If\n" +
                     "the server certificate has not yet been set, server certificate discovery\n" +
-                    "will be attempted first.");
+                    "will be attempted first.\n\n" +
+                    "    Usage: <gateway> request clientCert\n\n" +
+                    "  Example: " + ssgNoun.getName() + " request clientCert");
     }
 
     public void execute(CommandSession session, PrintStream out, String[] args) throws CommandException {

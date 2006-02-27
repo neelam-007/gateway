@@ -29,7 +29,7 @@ class SsgNoun extends Noun {
     final Words properties;
     private final Commands specialCommands;
 
-    private static final SsgNoun EXAMPLE = new SsgNoun(null, new Ssg(0));
+    private static final SsgNoun EXAMPLE = new SsgNoun(null, new Ssg(1));
 
     public SsgNoun(CommandSession session, Ssg inssg) {
         super(inssg.getLocalEndpoint(), "Gateway Account for " + inssg.getUsername() + "@" + inssg.getSsgAddress());
@@ -164,7 +164,7 @@ class SsgNoun extends Noun {
                 (args == null || args.length < 1 || !args[0].equalsIgnoreCase("force")))
         {
             throw new CommandException(
-                    getName() + " has a client certificate.  Deleting this gateway will destroy" +
+                    getName() + " has a client certificate.  Deleting this gateway will destroy\n" +
                             "this certificate and private key.  To proceed, use 'delete " + getName() + " force'");
         }
 
