@@ -72,6 +72,17 @@
 ;Installer Sections
 
 Section "SecureSpan Bridge" SecCopyUI
+  ; First, let's check that the product was not already installed.
+  Call CheckInstallDir
+  ; check if ssg is already installed
+  ReadRegStr ${0} HKLM "Software\${COMPANY}\${MUI_PRODUCT}" ""
+  StrCmp ${0} "" cleaninstall
+    DetailPrint "existing ${MUI_PRODUCT} installation detected at ${0}"
+    MessageBox MB_YESNO "The ${MUI_PRODUCT} appears to be already installed on this system at location ${0}. Do you want to install over the existing installation?" IDNO endofinstall
+      MessageBox MB_OK "Make sure the current version is stopped and click OK to continue."
+
+  cleaninstall:
+
   ; Before copying anything, let's stop the Windows service (if any)
   ExecWait 'sc stop SSB' $0
   DetailPrint "stopped windows service SSB. return code $0"
