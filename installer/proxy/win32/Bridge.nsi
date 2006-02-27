@@ -74,7 +74,7 @@
 Section "SecureSpan Bridge" SecCopyUI
   ; First, let's check that the product was not already installed.
   ; check if ssg is already installed
-  ReadRegStr ${TEMP} HKLM "Software\${COMPANY}\${MUI_PRODUCT}" ""
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT}" ""
   StrCmp ${TEMP} "" cleaninstall
     DetailPrint "existing ${MUI_PRODUCT} installation detected at ${TEMP}"
     MessageBox MB_YESNO "The ${MUI_PRODUCT} appears to be already installed on this system at location ${TEMP}. Do you want to install over the existing installation?" IDNO endofinstall
