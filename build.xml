@@ -934,7 +934,7 @@
             <fileset dir="${build.dir}/lib" includes="jh.jar,kunststoff.jar,
                                                        looks-1.1.3.jar,odmg.jar,hibernate3.jar,oswego-concurrent.jar,0500-wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                        axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
-                                                       jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j-1.6.1.jar, commons-discovery.jar"/>
+                                                       jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j-1.6.1.jar, commons-discovery.jar, lib/jcommon-1.0.0.jar, lib/jfreechart-1.0.1.jar"/>
         </signjar>
         <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer"
                  storepass="password"/>
@@ -947,7 +947,7 @@
             <zipfileset dir="${build.dir}/lib" includes="jh.jar,kunststoff.jar,
                                                          looks-1.1.3.jar,odmg.jar,hibernate3.jar,oswego-concurrent.jar,0500-wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                          axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
-                                                         jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j-1.6.1.jar,commons-discovery.jar"
+                                                         jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j-1.6.1.jar,commons-discovery.jar, lib/jcommon-1.0.0.jar, lib/jfreechart-1.0.1.jar"
                         prefix="ssm/lib"/>
             <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
         </war>
