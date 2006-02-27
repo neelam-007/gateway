@@ -73,7 +73,6 @@
 
 Section "SecureSpan Bridge" SecCopyUI
   ; First, let's check that the product was not already installed.
-  Call CheckInstallDir
   ; check if ssg is already installed
   ReadRegStr ${TEMP} HKLM "Software\${COMPANY}\${MUI_PRODUCT}" ""
   StrCmp ${TEMP} "" cleaninstall
