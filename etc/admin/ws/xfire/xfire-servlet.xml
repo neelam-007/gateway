@@ -25,10 +25,10 @@
         <property name="xfire">
             <ref bean="xfire"/>
         </property>
-        <property name="service">
+        <property name="serviceBean">
             <ref bean="serviceAdmin"/>
         </property>
-        <property name="serviceInterface">
+        <property name="serviceClass">
             <value>com.l7tech.service.ServiceAdminPublic</value>
         </property>
     </bean>
