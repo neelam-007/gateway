@@ -104,8 +104,9 @@ Section "SecureSpan Bridge" SecCopyUI
   ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
   SetOutPath "$INSTDIR"
 
-  ;Store install folder
+  ;Store install folder, version installed
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
+  WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "version" ${MUI_VERSION}
 
   !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
