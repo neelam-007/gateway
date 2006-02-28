@@ -70,7 +70,7 @@ public interface AuditContext {
     /**
      * Sets the current {@link com.l7tech.common.audit.AuditRecord} for this context.
      *
-     * @record the record to set
+     * @param record the record to set
      */
     void setCurrentRecord(AuditRecord record);
 
