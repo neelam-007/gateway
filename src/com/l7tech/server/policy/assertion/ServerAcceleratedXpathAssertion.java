@@ -355,6 +355,4 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
         }
         super.finalize();
     }
-
-    protected abstract String getDefaultVariablePrefix();
 }

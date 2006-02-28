@@ -2,12 +2,15 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -32,7 +35,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,7 +49,13 @@ import java.util.logging.Logger;
  *
  */
 public class ServerXslTransformation implements ServerAssertion {
-    private final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
+    private static final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
+
+    private static final ThreadLocal xmlSource = new ThreadLocal() {
+        protected Object initialValue() {
+            return new XmlSource(new EmptyInputStream());
+        }
+    };
 
     private final Auditor auditor;
     private Templates template;
@@ -156,18 +164,29 @@ public class ServerXslTransformation implements ServerAssertion {
             return AssertionStatus.FAILED;
         } else { // tarari-style xslt
             try {
-                Stylesheet transformer = new Stylesheet(master);
+                XmlSource source = null;
 
-                for (Iterator i = vars.keySet().iterator(); i.hasNext();) {
-                    String name = (String)i.next();
-                    Object value = vars.get(name);
-                    transformer.setParameter(name, value);
+                // If we are transforming the first part, first try to reuse an existing RaxDocument
+                if (whichMimePart == 0) {
+                    TarariKnob tk = (TarariKnob)msgtotransform.getKnob(TarariKnob.class);
+                    if (tk != null) {
+                        TarariMessageContextImpl tc = (TarariMessageContextImpl)tk.getContext();
+                        if (tc != null) {
+                            source = (XmlSource)xmlSource.get();
+                            source.setData(tc.getRaxDocument());
+                        }
+                    }
                 }
+
+                Stylesheet transformer = new Stylesheet(master);
 
                 transformer.setValidate(false);
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
                 XmlResult result = new XmlResult(output);
-                XmlSource source = new XmlSource(msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false));
+                if (source == null) {
+                    // have to make a new one
+                    source = new XmlSource(msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false));
+                }
 
                 transformer.transform(source, result);
                 byte[] transformedmessage = output.toByteArray();
@@ -183,6 +202,9 @@ public class ServerXslTransformation implements ServerAssertion {
                 logger.log(Level.WARNING, "Tarari exception when attempting xsl transformation", e);
             } catch (XsltException e) {
                 logger.log(Level.WARNING, "Tarari exception when attempting xsl transformation", e);
+            } catch (SAXException e) {
+                String msg = "cannot get document to tranform";
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
             }
             return AssertionStatus.FAILED;
         }

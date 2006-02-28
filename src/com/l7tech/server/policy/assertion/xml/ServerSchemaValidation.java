@@ -1,30 +1,5 @@
 package com.l7tech.server.policy.assertion.xml;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-
-import com.tarari.xml.validation.ValidationException;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
-import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
@@ -41,9 +16,31 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Validates the soap body's contents of a soap request or soap response against
@@ -66,8 +63,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
         this.schemaValidationAssertion = data;
         this.auditor = new Auditor(this, springContext, logger);
-        this.tarariContext = TarariLoader.getGlobalContext();
-        this.springContext = springContext;
+        GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
 
         if (tarariContext != null) {
             try {
@@ -88,7 +84,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                                                                               PolicyAssertionException {
         // decide which document to act upon based on routing status
         RoutingStatus routing = context.getRoutingStatus();
-        Message msg = null;
+        final Message msg;
         try {
             msg = getMessageToValidate(routing, context);
         }
@@ -108,7 +104,7 @@ public class ServerSchemaValidation implements ServerAssertion {
      * @return the AssertionStatus
      */
     AssertionStatus validateDocument(Document soapmsg) throws IOException {
-        Element[] elementsToValidate = null;
+        final Element[] elementsToValidate;
         try {
             elementsToValidate = getXMLElementsToValidate(soapmsg);
         } catch (InvalidDocumentFormatException e) {
@@ -171,9 +167,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
-    private final GlobalTarariContext tarariContext;
     private String tarariNamespaceUri;
-    private ApplicationContext springContext;
     private Schema schema;
     private SchemaValidation schemaValidationAssertion;
 
@@ -267,7 +261,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     /**
      * Get the Elements to perform validation on
      */
-    private Element[] getXMLElementsToValidate(Document doc) throws InvalidDocumentFormatException, IOException {
+    private Element[] getXMLElementsToValidate(Document doc) throws InvalidDocumentFormatException {
         if (SoapUtil.isSoapMessage(doc)) {
             if (schemaValidationAssertion.isApplyToArguments()) {
                 logger.finest("validating against the body 'arguments'");
@@ -284,7 +278,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     /**
      * Goes one level deeper than getRequestBodyChild
      */
-    private Element[] getBodyArguments(Document soapenvelope) throws InvalidDocumentFormatException, IOException {
+    private Element[] getBodyArguments(Document soapenvelope) throws InvalidDocumentFormatException {
         // first, get the body
         Element bodyel = SoapUtil.getBodyElement(soapenvelope);
         // then, get the body's first child element
@@ -320,7 +314,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     /**
      *
      */
-    private Element[] getRequestBodyChild(Document soapenvelope) throws InvalidDocumentFormatException, IOException {
+    private Element[] getRequestBodyChild(Document soapenvelope) throws InvalidDocumentFormatException {
         Element bodyel = SoapUtil.getBodyElement(soapenvelope);
         NodeList bodychildren = bodyel.getChildNodes();
         ArrayList children = new ArrayList();

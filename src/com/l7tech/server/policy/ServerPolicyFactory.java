@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.server.policy;
@@ -9,13 +8,11 @@ package com.l7tech.server.policy;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.PolicyFactory;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.ResponseXpathAssertion;
-import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerRequestAcceleratedXpathAssertion;
 import com.l7tech.server.policy.assertion.ServerResponseAcceleratedXpathAssertion;
+import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -26,7 +23,6 @@ import java.lang.reflect.InvocationTargetException;
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
  * @author alex
- * @version $Revision$
  */
 public class ServerPolicyFactory extends PolicyFactory implements ApplicationContextAware {
     private ApplicationContext applicationContext;
@@ -53,6 +49,9 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
 
                 if (genericAssertion instanceof ResponseXpathAssertion)
                     return new ServerResponseAcceleratedXpathAssertion((ResponseXpathAssertion)genericAssertion, applicationContext);
+
+                if (genericAssertion instanceof OversizedTextAssertion)
+                    return new ServerAcceleratedOversizedTextAssertion((OversizedTextAssertion)genericAssertion, applicationContext);
             }
 
             if (genericAssertion instanceof CommentAssertion) return null;
