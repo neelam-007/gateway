@@ -3,8 +3,8 @@
 require 5.005;
 use strict;
 
-my ($jar, $manifest) = @ARGV;
-die "Usage: $0 jarfile manifestfile\n" unless $manifest;
+my ($jar, $manifest, @ignoreclasses) = @ARGV;
+die "Usage: $0 jarfile manifestfile ignoreclasses\n" unless $manifest;
 
 my $JAVA_HOME = $ENV{JAVA_HOME};
 
@@ -23,7 +23,7 @@ my $stuff = shift @stuff;
 $stuff =~ s/^Class-Path:\s*|\s+$|^\s+//gi;
 $stuff =~ s/\s+/$pathsep/g;
 
-my $cmd = qq{$JAVA_HOME/bin/java -cp "tools$pathsep$stuff$pathsep$jar" -Djava.awt.headless=true com.l7tech.tools.JarChecker $jar};
+my $cmd = qq{$JAVA_HOME/bin/java -cp "tools$pathsep$stuff$pathsep$jar" -Djava.awt.headless=true com.l7tech.tools.JarChecker $jar @ignoreclasses};
 warn "Running command: $cmd\n";
 
 system $cmd;
