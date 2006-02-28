@@ -393,6 +393,7 @@
             <link href="http://www.dom4j.org/apidocs"/>
             <link href="http://jetty.mortbay.org/javadoc"/>
             <link href="http://tomcat.apache.org/tomcat-5.5-doc/catalina/docs/api"/>
+            <link href="http://www.jfree.org/jfreechart/api/javadoc"/>
         </javadoc>
     </target>
 
