@@ -62,7 +62,6 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private JLabel numRoutingFailImageLabel;
     private JLabel numPolicyFailImageLabel;
     private JLabel numSuccessImageLabel;
-    private JLabel numTotalImageLabel;
 
     private ClusterNodeInfo[] currentClusterNodes = null;
     private EntityHeader[] currentServiceHeaders = null;
