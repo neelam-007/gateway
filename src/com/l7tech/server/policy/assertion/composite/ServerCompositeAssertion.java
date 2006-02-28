@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -50,6 +51,12 @@ public abstract class ServerCompositeAssertion implements ServerAssertion {
 
     public String toString() {
         return "<" + this.getClass().getName() + " children=" + children + ">";
+    }
+
+    protected void seenAssertionStatus(PolicyEnforcementContext context, AssertionStatus assertionStatus) {
+        if(context != null) {
+            context.addSeenAssertionStatus(assertionStatus);
+        }
     }
 
     protected void rollbackDeferredAssertions(PolicyEnforcementContext context) {

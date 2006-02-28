@@ -12,6 +12,7 @@ import com.l7tech.server.ServerConfig;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -76,7 +77,27 @@ public class AuditContextImpl implements AuditContext {
             // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
             detail.setOrdinal(ordinal++);
             details.add(detail);
+            if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
+                highestLevelYetSeen = severity;
+            }
         }
+    }
+
+    /**
+     * Get the currently acumulated hints.
+     *
+     * @return the Set of AuditDetailMessage.Hint's
+     */
+    public Set getHints() {
+        Set hints = new HashSet();
+        for(Iterator i=details.iterator(); i.hasNext(); ) {
+            AuditDetail ad = (AuditDetail) i.next();
+            Set dHints = Messages.getHintsById(ad.getMessageId());
+            if(dHints!=null) {
+                hints.addAll(dHints);
+            }
+        }
+        return Collections.unmodifiableSet(hints);
     }
 
     public void flush() {
@@ -89,18 +110,22 @@ public class AuditContextImpl implements AuditContext {
 
         try {
             if (currentRecord instanceof MessageSummaryAuditRecord) {
-                if (currentRecord.getLevel().intValue() < getSystemMessageThreshold().intValue()) {
-                    logger.fine("MessageSummaryAuditRecord generated with level " +
-                                currentRecord.getLevel() +
-                                " will not be saved; current message audit threshold is " +
-                                getSystemMessageThreshold().getName() );
+                if (highestLevelYetSeen.intValue() < getSystemMessageThreshold().intValue()) {
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine("MessageSummaryAuditRecord generated with level " +
+                                    currentRecord.getLevel() +
+                                    " will not be saved; current message audit threshold is " +
+                                    getSystemMessageThreshold().getName() );
+                    }
                     return;
                 }
             } else if (currentRecord instanceof AdminAuditRecord) {
                 if (currentRecord.getLevel().intValue() < getSystemAdminThreshold().intValue()) {
-                    logger.fine("AdminAuditRecord generated with level " + currentRecord.getLevel()
-                                + " will not be saved; current admin audit threshold is " +
-                                getSystemAdminThreshold().getName() );
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine("AdminAuditRecord generated with level " + currentRecord.getLevel()
+                                    + " will not be saved; current admin audit threshold is " +
+                                    getSystemAdminThreshold().getName() );
+                    }
                     return;
                 }
             } else {
@@ -113,6 +138,7 @@ public class AuditContextImpl implements AuditContext {
             }
 
             currentRecord.setDetails(details);
+            currentRecord.setLevel(highestLevelYetSeen);
             auditRecordManager.save(currentRecord);
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
@@ -121,6 +147,7 @@ public class AuditContextImpl implements AuditContext {
             currentRecord = null;
             currentAdminThreshold = null;
             currentAssociatedLogsThreshold = null;
+            currentUseAssociatedLogsThreshold = null;
             currentMessageThreshold = null;
             details.clear();
             highestLevelYetSeen = Level.ALL;
@@ -179,6 +206,21 @@ public class AuditContextImpl implements AuditContext {
         return currentAssociatedLogsThreshold;
     }
 
+    private boolean getUseAssociatedLogsThreshold() {
+        if (currentUseAssociatedLogsThreshold == null) {
+            String configStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD);
+            Boolean configValue = null;
+            if (configStr != null) {
+                configValue = Boolean.valueOf(configStr);
+            }
+            if (configValue == null) {
+                configValue = DEFAULT_USE_ASSOCIATED_LOGS_THRESHOLD;
+            }
+            currentUseAssociatedLogsThreshold = configValue;
+        }
+        return currentUseAssociatedLogsThreshold.booleanValue();
+    }
+
     private Level getSystemAdminThreshold() {
         if (currentAdminThreshold == null) {
             String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
@@ -202,6 +244,7 @@ public class AuditContextImpl implements AuditContext {
     private Level currentMessageThreshold;
     private Level currentAdminThreshold;
     private Level currentAssociatedLogsThreshold;
+    private Boolean currentUseAssociatedLogsThreshold;
     private final AuditRecordManager auditRecordManager;
 
     private AuditRecord currentRecord;

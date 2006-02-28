@@ -34,6 +34,7 @@ public class ServerAllAssertion extends ServerCompositeAssertion implements Serv
             child = kids[i];
             result = child.checkRequest(context);
             if (result != AssertionStatus.NONE) {
+                seenAssertionStatus(context,result);
                 rollbackDeferredAssertions(context);
                 return result;
             }

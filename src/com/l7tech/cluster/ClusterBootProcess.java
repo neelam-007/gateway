@@ -12,6 +12,7 @@ import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerComponentLifecycle;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class ClusterBootProcess implements ServerComponentLifecycle {
+public class ClusterBootProcess implements ServerComponentLifecycle, ApplicationContextAware {
     private ServerConfig serverConfig;
 
     public static class AddressAlreadyInUseException extends Exception {
@@ -37,11 +38,15 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
         private String address;
     }
 
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
+        this.applicationContext = applicationContext;
+    }
+
     public void setServerConfig( ServerConfig config ) throws LifecycleException {
         this.serverConfig = config;
-        final ApplicationContext springContext = config.getSpringContext();
-        clusterInfoManager = (ClusterInfoManager)springContext.getBean("clusterInfoManager");
-        distributedMessageIdManager = (DistributedMessageIdManager)springContext.getBean("distributedMessageIdManager");
+        clusterInfoManager = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
+        distributedMessageIdManager = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
         multicastAddress = config.getProperty(ServerConfig.PARAM_MULTICAST_ADDRESS);
         if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
     }
@@ -73,8 +78,6 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
                     clusterInfoManager.updateSelfStatus(myInfo);
                 }
             }
-
-            final ApplicationContext springContext = serverConfig.getSpringContext();
 
             logger.info("Initializing DistributedMessageIdManager");
             distributedMessageIdManager.initialize(multicastAddress, PORT);
@@ -121,6 +124,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
+    private ApplicationContext applicationContext;
     private ClusterInfoManager clusterInfoManager;
     private DistributedMessageIdManager distributedMessageIdManager;
     private String multicastAddress;

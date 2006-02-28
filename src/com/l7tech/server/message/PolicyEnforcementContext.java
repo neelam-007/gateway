@@ -20,6 +20,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMap;
@@ -60,6 +61,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean isRequestPolicyViolated = false;
     private PublishedService service;
     private Set cookies = new LinkedHashSet();
+    private Set seenAssertionStatus = new HashSet();
     private AuditContext auditContext = null;
     private final Map variables = new HashMap();
     private long routingStartTime;
@@ -123,6 +125,15 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public RequestId getRequestId() {
         return requestId;
+    }
+
+    public void addSeenAssertionStatus(AssertionStatus assertionStatus) {
+        if(assertionStatus==null) throw new NullPointerException("assertionStatus must not be null");
+        seenAssertionStatus.add(assertionStatus);
+    }
+
+    public Set getSeenAssertionStatus() {
+        return Collections.unmodifiableSet(seenAssertionStatus);
     }
 
     public boolean isAuditSaveRequest() {

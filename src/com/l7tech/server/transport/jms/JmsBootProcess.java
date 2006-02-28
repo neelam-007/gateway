@@ -17,6 +17,7 @@ import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -26,10 +27,16 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsBootProcess implements ServerComponentLifecycle {
+public class JmsBootProcess implements ServerComponentLifecycle, ApplicationContextAware {
+    private ApplicationContext applicationContext;
     private ServerConfig serverConfig;
 
     public JmsBootProcess() {
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
+        this.applicationContext = applicationContext;
     }
 
     public String toString() {
@@ -38,10 +45,9 @@ public class JmsBootProcess implements ServerComponentLifecycle {
 
     public synchronized void setServerConfig(ServerConfig config) throws LifecycleException {
         if (initialized) throw new LifecycleException("Can't boot JmsBootProcess twice!");
-        ApplicationContext spx = config.getSpringContext();
         try {
-            _connectionManager = (JmsConnectionManager)spx.getBean("jmsConnectionManager");
-            _endpointManager = (JmsEndpointManager)spx.getBean("jmsEndpointManager");
+            _connectionManager = (JmsConnectionManager)applicationContext.getBean("jmsConnectionManager");
+            _endpointManager = (JmsEndpointManager)applicationContext.getBean("jmsEndpointManager");
         } catch (NoSuchBeanDefinitionException e) {
             throw new LifecycleException("Couldn't find JMS Managers! JMS functionality will be disabled!", e);
         }
@@ -111,6 +117,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                     JmsReceiver receiver = makeReceiver( connection, endpoint );
 
                     try {
+                        receiver.setApplicationContext(applicationContext);
                         receiver.setServerConfig(serverConfig);
                         receiver.start();
                         _activeReceivers.add( receiver );
@@ -280,6 +287,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             try {
                 JmsConnection connection = _connectionManager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
                 receiver = makeReceiver( connection, updatedEndpoint);
+                receiver.setApplicationContext(applicationContext);
                 receiver.setServerConfig(serverConfig);
                 receiver.start();
                 _activeReceivers.add(receiver);

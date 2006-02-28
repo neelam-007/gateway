@@ -30,11 +30,13 @@ public class Auditor {
 
         if(logger == null) return;
 
-        LogRecord rec = new AuditHackLogRecord(msg);
-        rec.setLoggerName(logger.getName());
-        if (e != null) rec.setThrown(e);
-        if (params != null) rec.setParameters(params);
-        logger.log(rec);
+        if(logger.isLoggable(msg.getLevel())) {
+            LogRecord rec = new AuditHackLogRecord(msg);
+            rec.setLoggerName(logger.getName());
+            if (e != null) rec.setThrown(e);
+            if (params != null) rec.setParameters(params);
+            logger.log(rec);
+        }
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params) {

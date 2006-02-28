@@ -5,6 +5,9 @@
  */
 package com.l7tech.server.audit;
 
+import java.util.Set;
+import java.util.Collections;
+
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.AuditRecord;
@@ -17,6 +20,10 @@ public class AuditContextStub implements AuditContext {
     }
 
     public void addDetail(AuditDetail detail) {
+    }
+
+    public Set getHints() {
+        return Collections.EMPTY_SET;
     }
 
     public void flush() {

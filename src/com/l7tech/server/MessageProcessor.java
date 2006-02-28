@@ -7,8 +7,11 @@ package com.l7tech.server;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseManager;
 import com.l7tech.common.LicenseException;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.MessageProcessingMessages;
+import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.message.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.SecurityTokenResolver;
@@ -46,6 +49,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
@@ -63,6 +67,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final SecurityTokenResolver securityTokenResolver;
     private final LicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
+    private final AuditContext auditContext;
+    private final ServerConfig serverConfig;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -83,7 +89,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             X509Certificate cert,
                             SecurityTokenResolver securityTokenResolver,
                             LicenseManager licenseManager,
-                            ServiceMetricsManager metricsManager)
+                            ServiceMetricsManager metricsManager,
+                            AuditContext auditContext,
+                            ServerConfig serverConfig)
       throws IllegalArgumentException {
         if (sm == null) throw new IllegalArgumentException("Service Manager is required");
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
@@ -91,6 +99,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (cert == null) throw new IllegalArgumentException("Server Certificate is required");
         if (licenseManager == null) throw new IllegalArgumentException("License Manager is required");
         if (metricsManager == null) throw new IllegalArgumentException("Service Metrics Manager is required");
+        if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
+        if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
         this.serviceManager = sm;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
@@ -98,6 +108,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.securityTokenResolver = securityTokenResolver;
         this.licenseManager = licenseManager;
         this.serviceMetricsManager = metricsManager;
+        this.auditContext = auditContext;
+        this.serverConfig = serverConfig;
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
@@ -328,6 +340,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             final int delta = (int)(System.currentTimeMillis() - context.getStartTime());
             if (metrics != null) metrics.addAttemptedRequest(delta);
 
+            // Check auditing hints, position here since our "success" may be a back end service fault
+            if(isAuditHintingEnabled()) {
+                if(!context.isAuditSaveRequest() || !context.isAuditSaveResponse()) {
+                    Set auditingHints = auditContext.getHints();
+                    if(auditingHints.contains(HINT_SAVE_REQUEST)) context.setAuditSaveRequest(true);
+                    if(auditingHints.contains(HINT_SAVE_RESPONSE)) context.setAuditSaveResponse(true);
+                }
+            }
+
             if (status == AssertionStatus.NONE) {
                 // Policy execution concluded successfully
                 if (metrics != null) metrics.addAuthorizedRequest();
@@ -343,12 +364,22 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     status = AssertionStatus.SERVER_ERROR;
                 }
             } else {
-                // Policy execution concluded unsuccessfully
+                // Policy execution was not successful
+
+                // Add audit details
                 if (rstat == RoutingStatus.ATTEMPTED) {
                     // Most likely the failure was in the routing assertion
                     auditor.logAndAudit(MessageProcessingMessages.ROUTING_FAILED, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
                     status = AssertionStatus.FAILED;
                 } else {
+                    // Bump up the audit level to that of the highest AssertionStatus level
+                    if(isAuditAssertionStatusEnabled()) {
+                        Set statusSet = context.getSeenAssertionStatus();
+                        Level highestLevel = getHighestAssertionStatusLevel(statusSet);
+                        if(highestLevel.intValue() > context.getAuditLevel().intValue())
+                            context.setAuditLevel(highestLevel);
+                    }
+
                     // Most likely the failure was in some other assertion
                     auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
                 }
@@ -376,10 +407,42 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
+    private static final AuditDetailMessage.Hint HINT_SAVE_REQUEST = AuditDetailMessage.Hint.getHint("MessageProcessor.saveRequest");
+    private static final AuditDetailMessage.Hint HINT_SAVE_RESPONSE = AuditDetailMessage.Hint.getHint("MessageProcessor.saveRequest");
+
     private Auditor auditor;
     final Logger logger = Logger.getLogger(getClass().getName());
 
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
+    }
+
+    private Level getHighestAssertionStatusLevel(Set assertionStatusSet) {
+        Level level = Level.ALL;
+        for (Iterator iterator = assertionStatusSet.iterator(); iterator.hasNext();) {
+            AssertionStatus assertionStatus = (AssertionStatus) iterator.next();
+            if(assertionStatus.getLevel().intValue() > level.intValue()) {
+                level = assertionStatus.getLevel();
+            }
+        }
+        return level;
+    }
+
+    private boolean isAuditHintingEnabled() {
+        String propHintingStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_HINTING_ENABLED);
+        boolean hintingEnabled = false;
+        if(propHintingStr!=null) {
+            hintingEnabled = Boolean.valueOf(propHintingStr).booleanValue();
+        }
+        return hintingEnabled;
+    }
+
+    private boolean isAuditAssertionStatusEnabled() {
+        String propStatusStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
+        boolean statusEnabled = false;
+        if(propStatusStr!=null) {
+            statusEnabled = Boolean.valueOf(propStatusStr).booleanValue();
+        }
+        return statusEnabled;
     }
 }

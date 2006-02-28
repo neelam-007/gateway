@@ -26,6 +26,9 @@ public final class HttpConstants {
     public static final int STATUS_UNAUTHORIZED = 401;
     public static final int STATUS_SERVER_ERROR = 500;
 
+    public static final int STATUS_ERROR_RANGE_START = 400; // inclusive
+    public static final int STATUS_ERROR_RANGE_END = 600; // non inclusive
+
     // encodings
     public static final String ENCODING_UTF8 = "UTF-8";
 

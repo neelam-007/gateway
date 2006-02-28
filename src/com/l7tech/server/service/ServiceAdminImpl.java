@@ -24,6 +24,8 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -49,12 +51,13 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public class ServiceAdminImpl implements ServiceAdmin {
+public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
     private final String UDDI_CONFIG_FILENAME = "uddi.properties";
     private static final String UDDI_PROP_MAX_ROWS = "uddi.result.max_rows";
     private static final String UDDI_PROP_BATCH_SIZE = "uddi.result.batch_size";
 
+    private ApplicationContext applicationContext;
     private ServiceManager serviceManager;
     private SampleMessageManager sampleMessageManager;
     private PolicyValidator policyValidator;
@@ -68,6 +71,11 @@ public class ServiceAdminImpl implements ServiceAdmin {
     public ServiceAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
         this.accessManager = accessManager;
         this.licenseManager = licenseManager;
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        if(this.applicationContext != null) throw new IllegalStateException("applicationContext is already initialized.");
+        this.applicationContext = applicationContext;
     }
 
     private void checkLicense() throws RemoteException {
@@ -332,7 +340,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
     public String[] listExistingCounterNames() throws RemoteException, FindException {
         // get all the names for the counters
-        CounterIDManager counterIDManager = (CounterIDManager)serverConfig.getSpringContext().getBean("counterIDManager");
+        CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
         return counterIDManager.getDistinctCounterNames();
     }
 
@@ -448,7 +456,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
         if (sslContext == null) {
             try {
                 sslContext = SSLContext.getInstance("SSL");
-                final SslClientTrustManager trustManager = (SslClientTrustManager)serverConfig.getSpringContext().getBean("httpRoutingAssertionTrustManager");
+                final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
                 sslContext.init(null, new TrustManager[]{trustManager}, null);
             } catch (NoSuchAlgorithmException e) {
                 logger.log(Level.SEVERE, "Unable to get sslcontext", e);

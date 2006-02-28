@@ -9,6 +9,7 @@ package com.l7tech.common.audit;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.http.HttpConstants;
 
 import java.util.logging.Level;
 
@@ -58,7 +59,13 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         super(level, nodeId, clientAddr, identityProviderOid, userName, userId, serviceName, null);
         StringBuffer msg = new StringBuffer("Message ");
         if (status == AssertionStatus.NONE) {
-            msg.append("processed successfully");
+            if(httpRespStatus >= HttpConstants.STATUS_ERROR_RANGE_START &&
+               httpRespStatus < HttpConstants.STATUS_ERROR_RANGE_END) {
+                msg.append("processed with HTTP error code");
+            }
+            else {
+                msg.append("processed successfully");
+            }
         } else {
             msg.append("was not processed: ");
             msg.append(status.getMessage());

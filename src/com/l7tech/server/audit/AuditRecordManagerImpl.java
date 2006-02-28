@@ -19,6 +19,8 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -33,8 +35,14 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager {
-    private ServerConfig serverConfig;
+public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager, ApplicationContextAware {
+
+    //- PUBLIC
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        if(this.applicationContext != null) throw new IllegalStateException("applicationContext is already initialized.");
+        this.applicationContext = applicationContext;
+    }
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
         Object obj = findByPrimaryKey(AuditRecord.class, oid);
@@ -93,7 +101,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public long save(AuditRecord rec) throws SaveException {
         try {
-            logger.fine("Saving AuditRecord " + rec);
+            if(logger.isLoggable(Level.FINE)) logger.fine("Saving AuditRecord " + rec);
             Object id = getSession().save(rec);
             if (id instanceof Long)
                 return ((Long)id).longValue();
@@ -105,7 +113,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
     }
 
     public void deleteOldAuditRecords() throws DeleteException {
-        serverConfig.getSpringContext().publishEvent(new AuditPurgeInitiated(this));
+        applicationContext.publishEvent(new AuditPurgeInitiated(this));
         String sMinAgeHours = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
         int minAgeHours = 168;
@@ -125,7 +133,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             deleteStmt.setString(1, Level.SEVERE.getName());
             deleteStmt.setLong(2, maxTime);
             int numDeleted = deleteStmt.executeUpdate();
-            serverConfig.getSpringContext().publishEvent(new AuditPurgeEvent(this, numDeleted));
+            applicationContext.publishEvent(new AuditPurgeEvent(this, numDeleted));
         } catch (Exception e) {
             throw new DeleteException("Couldn't delete audit records", e);
         } finally {
@@ -148,4 +156,9 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
+
+    //- PRIVATE
+
+    private ServerConfig serverConfig;
+    private ApplicationContext applicationContext;
 }

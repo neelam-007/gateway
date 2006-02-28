@@ -480,12 +480,12 @@
                 <include name="nekohtml.jar"/>
 
                 <!-- AdminWS Stuff -->
-                <include name="stax-1.1.1-dev.jar"/>
                 <include name="stax-api-1.0.jar"/>
-                <include name="xfire-aegis-1.0-SNAPSHOT.jar"/>
-                <include name="xfire-core-1.0-SNAPSHOT.jar"/>
-                <include name="xfire-spring-1.0-SNAPSHOT.jar"/>
-                <include name="yom-1.0-SNAPSHOT.jar"/>
+                <include name="jdom.jar"/>
+                <include name="wstx-asl-2.9.jar"/>
+                <include name="xfire-aegis-1.0.jar"/>
+                <include name="xfire-core-1.0.jar"/>
+                <include name="xfire-spring-1.0.jar"/>
                 <include name="spring-webmvc.jar"/>
                 <include name="0500-wsdl4j.jar"/>
 
@@ -782,14 +782,13 @@
 
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar" manifest="${src.root}/etc/ConfigWizard.mf">
             <fileset dir="${build.dir}/classes">
-               <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
+                <include name="com/l7tech/identity/CannotDeleteAdminAccountException.class"/>
 
                 <include name="com/l7tech/common/util/FileUtils.class"/>
                 <include name="com/l7tech/common/util/ResourceUtils.class"/>
                 <include name="com/l7tech/common/util/XmlUtil*.class"/>
                 <include name="com/l7tech/common/util/HexUtils*.class"/>
 
-                <include name="com/l7tech/common/security/prov/luna/LunaCmu*Exception.class"/>
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
                 <include name="com/l7tech/common/util/ExceptionUtils.class"/>
                 <include name="com/l7tech/common/gui/util/Utilities*.class"/>
@@ -813,7 +812,10 @@
                 <include name="com/l7tech/common/security/*.class"/>
                 <include name="com/l7tech/common/security/prov/luna/*.class"/>
                 <include name="com/l7tech/common/security/prov/bc/*.class"/>
-
+<!--
+                <exclude name="com/l7tech/common/security/TrustedCert.class"/>
+                <exclude name="com/l7tech/common/security/X509Entity.class"/>
+-->
                 <exclude name="com/l7tech/common/xml/SoapMessageGenerator.class"/>
                 <exclude name="com/l7tech/common/xml/Wsdl.class"/>
                 <exclude name="com/l7tech/common/xml/XpathEvaluator.class"/>
@@ -902,12 +904,16 @@
             <arg line="etc/Bridge.mf"/>
         </exec>
         <!--
-          Commented out until DBActionsTest.java is moved to "tests"
+          Commented out until:
+               DBActionsTest.java 
+               ConfigurationWizardTest.java
+           are moved to "tests"
         <exec executable="perl" failonerror="true">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
             <arg line="${build.dir}/configwizard/ConfigWizard.jar"/>
             <arg line="${src.root}/etc/ConfigWizard.mf"/>
+            <arg line="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine"/>
         </exec>
         -->
     </target>
@@ -1124,6 +1130,7 @@
             </fileset>
 
             <fileset dir="${src.root}/src">
+                <include name="com/l7tech/server/**/*.properties"/>
                 <include name="com/l7tech/console/**/*.properties"/>
                 <include name="com/l7tech/console/resources/helpset/**/*"/>
             </fileset>

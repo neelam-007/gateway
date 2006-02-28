@@ -20,6 +20,9 @@ import javax.naming.NamingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
 /**
  * Message processing runtime support for JMS messages.
  * <p/>
@@ -28,7 +31,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsReceiver implements ServerComponentLifecycle {
+public class JmsReceiver implements ServerComponentLifecycle, ApplicationContextAware {
     // Statics
     private static final Logger _logger = Logger.getLogger(JmsReceiver.class.getName());
     private static final int MAXIMUM_OOPSES = 5;
@@ -46,6 +49,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
 
     // Runtime stuff
     private boolean _initialized = false;
+    private ApplicationContext applicationContext;
     private ServerConfig serverConfig;
 
 
@@ -132,7 +136,17 @@ public class JmsReceiver implements ServerComponentLifecycle {
     }
 
     /**
+     * Set the context to use.
+     *
+     * @param applicationContext the spring application context
+     */
+    public synchronized void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
+    /**
      * Initializes the JMS receiver.
+     *
      * @param config
      * @throws LifecycleException
      */
@@ -141,7 +155,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
         _logger.info( "Initializing " + toString() + "..." );
         try {
             _initialized = true;
-            _handler = new JmsRequestHandler(serverConfig.getSpringContext());
+            _handler = new JmsRequestHandler(applicationContext);
             _loop = new MessageLoop();
             _logger.info( toString() + " initialized successfully" );
         } finally {

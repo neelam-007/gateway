@@ -48,7 +48,11 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_AUDIT_REFRESH_PERIOD_SECS = "auditViewerRefreshSeconds";
     public static final String PARAM_AUDIT_LOG_REFRESH_PERIOD_SECS = "auditLogViewerRefreshSeconds";
 
+    public static final String PARAM_AUDIT_HINTING_ENABLED = "auditHintingEnabled";
+    public static final String PARAM_AUDIT_ASSERTION_STATUS_ENABLED = "auditAssertionStatusEnabled";
+
     public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
+    public static final String PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThresholdRespected";
 
     public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";
     public static final String PARAM_ANTIVIRUS_HOST = "savseHost";
@@ -484,13 +488,6 @@ public class ServerConfig extends ApplicationObjectSupport {
         }
 
         return attachmentsDir;
-    }
-
-    /**
-     * shortcut
-     */
-    public final ApplicationContext getSpringContext() {
-        return super.getApplicationContext();
     }
 
     public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {

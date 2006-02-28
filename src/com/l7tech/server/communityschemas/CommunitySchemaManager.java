@@ -21,6 +21,8 @@ import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.EntityResolver;
@@ -42,10 +44,16 @@ import java.util.logging.Logger;
  *
  * @author flascelles@layer7-tech.com
  */
-public class CommunitySchemaManager extends HibernateDaoSupport {
+public class CommunitySchemaManager extends HibernateDaoSupport implements ApplicationContextAware {
+    private ApplicationContext applicationContext;
     private ServerConfig serverConfig;
 
     public CommunitySchemaManager() {
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        if(this.applicationContext!=null) throw new IllegalStateException("applicationContext already initialized!");
+        this.applicationContext = applicationContext;
     }
 
     public void setServerConfig(ServerConfig serverConfig) {
@@ -97,7 +105,7 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     logger.fine("updating tarari schemas post-save from " + CommunitySchemaManager.class.getName());
                     try {
-                        TarariLoader.updateSchemasToCard(serverConfig.getSpringContext());
+                        TarariLoader.updateSchemasToCard(applicationContext);
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     } catch (IOException e) {
@@ -123,7 +131,7 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     logger.fine("updating tarari schemas post-update from " + CommunitySchemaManager.class.getName());
                     try {
-                        TarariLoader.updateSchemasToCard(serverConfig.getSpringContext());
+                        TarariLoader.updateSchemasToCard(applicationContext);
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     } catch (IOException e) {
@@ -145,7 +153,7 @@ public class CommunitySchemaManager extends HibernateDaoSupport {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     logger.fine("updating tarari schemas post-delete from " + CommunitySchemaManager.class.getName());
                     try {
-                        TarariLoader.updateSchemasToCard(serverConfig.getSpringContext());
+                        TarariLoader.updateSchemasToCard(applicationContext);
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
                     } catch (IOException e) {

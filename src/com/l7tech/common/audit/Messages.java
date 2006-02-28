@@ -6,6 +6,7 @@ package com.l7tech.common.audit;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -55,7 +56,7 @@ public class Messages {
     }
 
     protected static M m(int id, Level level, boolean saveRequest, boolean saveResponse, String msg) {
-        M adm = new M(id, level, msg);
+        M adm = new M(id, level, msg, saveRequest, saveResponse);
         Object o = messagesById.put(new Integer(id), adm);
         if (o != null) throw new IllegalArgumentException("A message with id #" + id + " already exists!");
         return adm;
@@ -88,4 +89,11 @@ public class Messages {
         if(message != null) return message.getLevel().getName();
         return null;
     }
+
+    public static Set getHintsById(int id) {
+        M message = (M) messagesById.get(new Integer(id));
+        if(message != null) return message.getHints();
+        return null;
+    }
+
 }

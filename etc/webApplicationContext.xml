@@ -408,6 +408,12 @@
         <constructor-arg>
             <ref bean="serviceMetricsManager"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="auditContext"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="serverConfig"/>
+        </constructor-arg>
      </bean>
     <!-- server side policy service -->
     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">

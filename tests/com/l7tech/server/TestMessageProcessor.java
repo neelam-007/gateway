@@ -14,6 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceMetricsManager;
+import com.l7tech.server.audit.AuditContextStub;
 
 import java.io.IOException;
 import java.security.PrivateKey;
@@ -44,7 +45,7 @@ public class TestMessageProcessor extends MessageProcessor {
      */
     public TestMessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
       throws IllegalArgumentException {
-        super(sm, wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo"));
+        super(sm, wssd, pkey, cert, null, new TestLicenseManager(), new ServiceMetricsManager("yo"), new AuditContextStub(), ServerConfig.getInstance());
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)

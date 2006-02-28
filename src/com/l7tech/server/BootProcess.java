@@ -21,6 +21,7 @@ import com.l7tech.cluster.ClusterPropertyManager;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.dao.DataAccessException;
 
@@ -156,12 +157,12 @@ public class BootProcess extends ApplicationObjectSupport
      *                   as failure to set an essential property) or if initialization fails.
      */
     public void afterPropertiesSet() throws Exception {
-        final ApplicationContext springContext = serverConfig.getSpringContext();
+        ApplicationContext applicationContext = getApplicationContext();
         logger = Logger.getLogger(BootProcess.class.getName());
 
-        auditor = new Auditor(this, springContext, logger);
+        auditor = new Auditor(this, applicationContext, logger);
 
-        ClusterPropertyManager clusterPropertyManager = (ClusterPropertyManager)getApplicationContext().getBean("clusterPropertyManager");
+        ClusterPropertyManager clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         if (clusterPropertyManager == null) throw new LifecycleException("ClusterPropertyManager not available yet");
         serverConfig.setClusterPropertyManager(clusterPropertyManager);
 
@@ -184,7 +185,7 @@ public class BootProcess extends ApplicationObjectSupport
         try {
             // This needs to happen here, early enough that it will notice early events but after the database init
 
-            getApplicationContext().publishEvent(new Initializing(this, Component.GW_SERVER, ipAddress));
+            applicationContext.publishEvent(new Initializing(this, Component.GW_SERVER, ipAddress));
             logger.info("Initializing server");
 
             setSystemProperties(serverConfig);
@@ -214,6 +215,9 @@ public class BootProcess extends ApplicationObjectSupport
 
                 if (component != null) {
                     try {
+                        if(component instanceof ApplicationContextAware) {
+                            ((ApplicationContextAware)component).setApplicationContext(applicationContext);
+                        }
                         component.setServerConfig(serverConfig);
                         _components.add(component);
                     } catch (LifecycleException e) {
@@ -222,22 +226,22 @@ public class BootProcess extends ApplicationObjectSupport
                 }
             }
 
-            getApplicationContext().publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
+            applicationContext.publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
 
             // initialize service cache after all this
-            ServiceManagerImp serviceManager = (ServiceManagerImp)springContext.getBean("serviceManagerTarget");
+            ServiceManagerImp serviceManager = (ServiceManagerImp)applicationContext.getBean("serviceManagerTarget");
             logger.info("initializing the service cache");
             serviceManager.initiateServiceCache();
 
             // Make sure certs without thumbprints get them
             try {
-                TrustedCertManager tcm = (TrustedCertManager)getApplicationContext().getBean("trustedCertManager");
+                TrustedCertManager tcm = (TrustedCertManager)applicationContext.getBean("trustedCertManager");
                 tcm.findByThumbprint(null);
                 tcm.findByThumbprint("");
                 tcm.findBySki(null);
                 tcm.findBySki("");
 
-                ClientCertManager ccm = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
+                ClientCertManager ccm = (ClientCertManager)applicationContext.getBean("clientCertManager");
                 ccm.findByThumbprint(null);
                 ccm.findByThumbprint("");
                 ccm.findBySki(null);
