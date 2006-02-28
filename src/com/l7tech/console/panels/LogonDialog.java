@@ -103,7 +103,7 @@ public class LogonDialog extends JDialog {
      * @param parent the parent Frame. May be <B>null</B>
      */
     public LogonDialog(Frame parent) {
-        super(parent, false);
+        super(parent, true);
         this.parentFrame = parent;
         setTitle("");
         initResources();
@@ -446,7 +446,9 @@ public class LogonDialog extends JDialog {
         authenticationCredentials = new PasswordAuthentication(userNameTextField.getText(), passwordField.getPassword());
         Container parentContainer = getParent();
         // service URL
-        final String sHost = (String) serverComboBox.getSelectedItem();;
+        String selectedHost = (String) serverComboBox.getSelectedItem();
+        if(selectedHost!=null) selectedHost = selectedHost.trim();
+        final String sHost = selectedHost;
 
         try {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -641,7 +643,16 @@ public class LogonDialog extends JDialog {
             VersionException versionex = (VersionException)cause;
             log.log(Level.WARNING, "logon()", e);
             String msg = null;
-            if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
+            if (versionex.getExpectedVersion() != null &&
+                versionex.getExpectedVersion().equals(BuildInfo.getProductVersion())) {
+                msg = MessageFormat.format(resources.getString("logon.version.mismatch3"),
+                                           new Object[]{
+                                               "'" + versionex.getReceivedVersion() + "'",
+                                               "'" + versionex.getExpectedVersion() + "'",
+                                               BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
+                                           });
+            }
+            else if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
                 msg = MessageFormat.format(resources.getString("logon.version.mismatch2"),
                                            new Object[]{
                                                "'" + versionex.getReceivedVersion() + "'",

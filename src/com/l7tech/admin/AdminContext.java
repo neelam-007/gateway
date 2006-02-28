@@ -31,6 +31,13 @@ public interface AdminContext {
     String getVersion();
 
     /**
+     * Retrieve the server software product version string.
+     *
+     * @return the server admin protocol version string, ie "4.0".  Never null
+     */
+    String getSoftwareVersion();
+
+    /**
      * @return the {@link com.l7tech.identity.IdentityAdmin} implementation
      * @throws SecurityException on security error accessing the interface
      * @throws RemoteException   on remote communication error

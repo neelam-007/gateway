@@ -98,7 +98,7 @@ public class SecureSpanConstants {
      * The console compares this value with the value returned by IdentityAdmin.echoVersion()
      * this ensures that the console can talk to the server.
      */
-    public static final String ADMIN_PROTOCOL_VERSION = "20040603";
+    public static final String ADMIN_PROTOCOL_VERSION = "20060228";
 
     public static final String CERT_INVALID = "invalid";
     public static final String CERT_VALID = "valid";

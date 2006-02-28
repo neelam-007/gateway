@@ -12,6 +12,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -53,6 +54,10 @@ public class AdminContextImpl
 
     public String getVersion() {
         return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
+    }
+
+    public String getSoftwareVersion() {
+        return BuildInfo.getProductVersion();
     }
 
     public IdentityAdmin getIdentityAdmin() throws RemoteException, SecurityException {

@@ -24,6 +24,7 @@ import sun.security.x509.X500Name;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.admin.AdminLoginResult;
 import com.l7tech.common.VersionException;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.ExceptionUtils;
@@ -82,10 +83,14 @@ public class SecurityProviderImpl extends SecurityProvider
             AdminLoginResult result = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
             setCredentials(result.getSessionCookie(), "");
 
-            // version check
+            // version checks
             String remoteVersion = result.getAdminContext().getVersion();
             if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
                 throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
+            }
+            String remoteSoftwareVersion = result.getAdminContext().getSoftwareVersion();
+            if (!BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
+                throw new VersionException("Version mismatch", BuildInfo.getProductVersion(), remoteSoftwareVersion);
             }
 
             authenticated = true;
