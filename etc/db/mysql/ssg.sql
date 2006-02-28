@@ -565,6 +565,12 @@ CREATE TABLE service_metrics (
   attempted INTEGER NOT NULL,
   authorized INTEGER NOT NULL,
   completed INTEGER NOT NULL,
+  back_min INTEGER NOT NULL,
+  back_max INTEGER NOT NULL,
+  back_sum INTEGER NOT NULL,
+  front_min INTEGER NOT NULL,
+  front_max INTEGER NOT NULL,
+  front_sum INTEGER NOT NULL,
   PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
 ) TYPE=InnoDB;
 

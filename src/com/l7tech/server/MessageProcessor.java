@@ -5,17 +5,16 @@
 package com.l7tech.server;
 
 import com.l7tech.common.Feature;
-import com.l7tech.common.LicenseManager;
 import com.l7tech.common.LicenseException;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.MessageProcessingMessages;
+import com.l7tech.common.LicenseManager;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetailMessage;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
@@ -27,15 +26,15 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.event.MessageProcessed;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.HttpSessionPolicyContextCache;
+import com.l7tech.server.message.PolicyContextCache;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.ServiceMetrics;
+import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
@@ -48,11 +47,11 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * The server side component processing messages from any transport layer.
@@ -337,8 +336,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return AssertionStatus.SERVER_ERROR;
         } finally {
             RoutingStatus rstat = context.getRoutingStatus();
-            final int delta = (int)(System.currentTimeMillis() - context.getStartTime());
-            if (metrics != null) metrics.addAttemptedRequest(delta);
+            final int frontTime = (int)(System.currentTimeMillis() - context.getStartTime());
+            final int backTime = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
+            if (metrics != null) metrics.addAttemptedRequest(frontTime);
 
             // Check auditing hints, position here since our "success" may be a back end service fault
             if(isAuditHintingEnabled()) {
@@ -357,7 +357,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     for a policy to contain no RoutingAssertion */
                     auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
                     if (stats != null) stats.completedRequest();
-                    if (metrics != null) metrics.addCompletedRequest(delta);
+                    if (metrics != null) metrics.addCompletedRequest(backTime);
                 } else {
                     // This can only happen when a post-routing assertion fails
                     auditor.logAndAudit(MessageProcessingMessages.SERVER_ERROR);

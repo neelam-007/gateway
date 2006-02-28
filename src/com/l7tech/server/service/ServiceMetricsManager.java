@@ -2,7 +2,9 @@ package com.l7tech.server.service;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.MetricsBin;
+import com.l7tech.common.util.ISO8601Date;
 import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
@@ -33,16 +35,16 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private final Timer fineTimer = new Timer("ServiceMetricsManager.fineTimer" /* name */, true /* isDaemon */);
     private final Timer hourlyTimer = new Timer("ServiceMetricsManager.hourlyTimer" /* name */, true /* isDaemon */);
     private final Timer dailyTimer = new Timer("ServiceMetricsManager.dailyTimer" /* name */, true /* isDaemon */);
-    private final Timer flushTimer = new Timer("ServiceMetricsManager.flushTimer", true);
 
     private final FineTask fineTask = new FineTask();
     private final HourlyTask hourlyTask = new HourlyTask();
     private final DailyTask dailyTask = new DailyTask();
-    private final FlushTask flushTask = new FlushTask();
+    private final Flusher flusher = new Flusher();
 
     private PlatformTransactionManager transactionManager;
 
     private static final BoundedPriorityQueue queue = new BoundedPriorityQueue(500);
+    private ServiceManager serviceManager;
 
     public ServiceMetricsManager(String clusterNodeId) {
         this._clusterNodeId = clusterNodeId;
@@ -50,6 +52,10 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
+    }
+
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
     }
 
     /**
@@ -62,6 +68,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         fineTimer.cancel();
         hourlyTimer.cancel();
         dailyTimer.cancel();
+        flusher.quit();
     }
 
     /**
@@ -70,12 +77,11 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     private class FineTask extends TimerTask {
         public void run() {
-            int num = 0;
+            logger.fine("FineTask running at " + ISO8601Date.format(new Date()));
             Iterator itor = _serviceMetricsMap.values().iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
                 serviceMetrics.archiveFineBin(_numFineBins);
-                num++;
             }
         }
     }
@@ -114,19 +120,23 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
     }
 
-    private class FlushTask extends TimerTask {
+    private class Flusher extends Thread {
+        private volatile boolean quit;
+
+        public Flusher() {
+            setDaemon(true);
+        }
+
+        public void quit() {
+            quit = true;
+            interrupt();
+        }
+
         public void run() {
-            logger.fine("Database flush task beginning");
-            int num = 0;
-            while (queue.peek() != null) {
+            logger.info("Database flusher beginning");
+            while (!quit) {
                 try {
                     final MetricsBin head = (MetricsBin)queue.take();
-
-                    int anyrequests = head.getNumAttemptedRequest() + head.getNumAuthorizedRequest() + head.getNumCompletedRequest();
-                    if (head.getResolution() == MetricsBin.RES_FINE && anyrequests == 0) {
-                        logger.fine("Current bin contains no requests; not saving");
-                        continue;
-                    }
 
                     logger.finer("Saving " + head.toString());
                     new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
@@ -138,14 +148,12 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                             }
                         }
                     });
-                    num++;
                 } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Interrupted waiting for queue", e);
+                    logger.info("Database flusher exiting");
                 } catch (RuntimeException e) {
                     logger.log(Level.SEVERE, "Couldn't save MetricsBin", e);
                 }
             }
-            logger.fine("Database flush task completed; flushed " + num + " bins");
         }
     }
 
@@ -296,6 +304,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
 
     protected void initDao() throws Exception {
         if (transactionManager == null) throw new IllegalStateException("TransactionManager must be set");
+        if (serviceManager == null) throw new IllegalStateException("ServiceManager must be set");
         if (_clusterNodeId == null) throw new IllegalStateException("clusterNodeId must be set");
 
         _enabled = Boolean.valueOf(System.getProperty("com.l7tech.service.statistics.enabled", "true")).booleanValue();
@@ -320,13 +329,20 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                                        MAX_NUM_DAILY_BINS,
                                        DEF_NUM_DAILY_BINS);
 
+        // Populate initial bins
+        Collection serviceHeaders = serviceManager.findAllHeaders();
+        for (Iterator i = serviceHeaders.iterator(); i.hasNext();) {
+            EntityHeader service = (EntityHeader)i.next();
+            getServiceMetrics(service.getOid());
+        }
+
         // Gets current time in local time zone and locale.
         final GregorianCalendar now = new GregorianCalendar();
         now.setLenient(true);
 
         // Sets fine resolution timer task; starting a fine interval from now.
         GregorianCalendar nextFineStart = (GregorianCalendar)now.clone();
-        nextFineStart.set(Calendar.MILLISECOND, now.get(Calendar.MILLISECOND) + _fineBinInterval);
+        nextFineStart.setTimeInMillis(((now.getTimeInMillis() / _fineBinInterval) + 1) * _fineBinInterval);
         fineTimer.scheduleAtFixedRate(fineTask, nextFineStart.getTime(), _fineBinInterval);
         logger.config("Fine archive interval is " + _fineBinInterval + "ms");
         logger.config("Scheduled first fine archive task for " + nextFineStart.getTime());
@@ -348,9 +364,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         dailyTimer.scheduleAtFixedRate(dailyTask, nextDayStart.getTime(), 24 * 60 * 60 * 1000);
         logger.config("Scheduled first daily archive task for " + nextDayStart.getTime());
 
-        // First flush should happen after the first fine interval, and be delay-scheduled
-        // (not rate-scheduled) subsequently.
-        flushTimer.schedule(flushTask, _fineBinInterval + 100, _fineBinInterval);
+        // Flusher waits forever on {@link #queue}
+        flusher.start();
     }
 
 }

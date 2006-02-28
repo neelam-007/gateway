@@ -8,7 +8,6 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterProperty;
 import com.l7tech.cluster.ClusterPropertyManager;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.naming.InitialContext;
@@ -57,6 +56,8 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";
     public static final String PARAM_ANTIVIRUS_HOST = "savseHost";
     public static final String PARAM_ANTIVIRUS_PORT = "savsePort";
+
+    public static final String PARAM_METRICS_FINE_INTERVAL = "metricsFineInterval";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 

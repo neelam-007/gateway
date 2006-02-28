@@ -43,32 +43,32 @@ public class MetricsBin implements Serializable, Comparable {
     /**
      * Minimum frontend response time (in milliseconds) of all attempted requests.
      */
-    private int _minFrontendResponseTime;
+    private int minFrontendResponseTime;
 
     /**
      * Maximum frontend response time (in milliseconds) of all attempted requests.
      */
-    private int _maxFrontendResponseTime;
+    private int maxFrontendResponseTime;
 
     /**
      * Sum over frontend response times (in milliseconds) of all attempted requests.
      */
-    private long _sumFrontendResponseTime;
+    private long sumFrontendResponseTime;
 
     /**
      * Minimum backend response time (in milliseconds) of all completed requests.
      */
-    private int _minBackendResponseTime;
+    private int minBackendResponseTime;
 
     /**
      * Maximum backend response time (in milliseconds) of all completed requests.
      */
-    private int _maxBackendResponseTime;
+    private int maxBackendResponseTime;
 
     /**
      * Sum over backend response times (in milliseconds) of all completed requests.
      */
-    private long _sumBackendResponseTime;
+    private long sumBackendResponseTime;
 
     /**
      * Time at which the period represented by this bin started, as distinct from
@@ -140,19 +140,18 @@ public class MetricsBin implements Serializable, Comparable {
      * Records an attempted request.
      */
     public void addAttemptedRequest(final int frontendResponseTime) {
-        checkNotClosed();
         if (_numAttemptedRequest == 0) {
-            _minFrontendResponseTime = frontendResponseTime;
-            _maxFrontendResponseTime = frontendResponseTime;
+            minFrontendResponseTime = frontendResponseTime;
+            maxFrontendResponseTime = frontendResponseTime;
         } else {
-            if (frontendResponseTime < _minFrontendResponseTime) {
-                _minFrontendResponseTime = frontendResponseTime;
+            if (frontendResponseTime < minFrontendResponseTime) {
+                minFrontendResponseTime = frontendResponseTime;
             }
-            if (frontendResponseTime > _maxFrontendResponseTime) {
-                _maxFrontendResponseTime = frontendResponseTime;
+            if (frontendResponseTime > maxFrontendResponseTime) {
+                maxFrontendResponseTime = frontendResponseTime;
             }
         }
-        _sumFrontendResponseTime += frontendResponseTime;
+        sumFrontendResponseTime += frontendResponseTime;
         ++ _numAttemptedRequest;
     }
 
@@ -160,7 +159,6 @@ public class MetricsBin implements Serializable, Comparable {
      * Records an authorized request.
      */
     public void addAuthorizedRequest() {
-        checkNotClosed();
         ++ _numAuthorizedRequest;
     }
 
@@ -168,19 +166,18 @@ public class MetricsBin implements Serializable, Comparable {
      * Records a completed request.
      */
     public void addCompletedRequest(final int backendResponseTime) {
-        checkNotClosed();
         if (_numCompletedRequest == 0) {
-            _minBackendResponseTime = backendResponseTime;
-            _maxBackendResponseTime = backendResponseTime;
+            minBackendResponseTime = backendResponseTime;
+            maxBackendResponseTime = backendResponseTime;
         } else {
-            if (backendResponseTime < _minBackendResponseTime) {
-                _minBackendResponseTime = backendResponseTime;
+            if (backendResponseTime < minBackendResponseTime) {
+                minBackendResponseTime = backendResponseTime;
             }
-            if (backendResponseTime > _maxBackendResponseTime) {
-                _maxBackendResponseTime = backendResponseTime;
+            if (backendResponseTime > maxBackendResponseTime) {
+                maxBackendResponseTime = backendResponseTime;
             }
         }
-        _sumBackendResponseTime += backendResponseTime;
+        sumBackendResponseTime += backendResponseTime;
         ++ _numCompletedRequest;
     }
 
@@ -220,7 +217,6 @@ public class MetricsBin implements Serializable, Comparable {
      * Returns the rate of attempted requests (per second).
      */
     public double getAttemptedRate() {
-        checkClosed();
         if (_startTime == _endTime) {
             // End time has not been set. Returns zero instead of ArithmeticException.
             return 0.0;
@@ -254,7 +250,6 @@ public class MetricsBin implements Serializable, Comparable {
      * Returns the rate of authorized requests (per second).
      */
     public double getAuthorizedRate() {
-        checkClosed();
         if (_startTime == _endTime) {
             // End time has not been set. Returns zero instead of ArithmeticException.
             return 0.0;
@@ -267,7 +262,6 @@ public class MetricsBin implements Serializable, Comparable {
      * Returns the rate of completed requests (per second).
      */
     public double getCompletedRate() {
-        checkClosed();
         if (_startTime == _endTime) {
             // End time has not been set. Returns zero instead of ArithmeticException.
             return 0.0;
@@ -280,27 +274,24 @@ public class MetricsBin implements Serializable, Comparable {
      * Returns the minimum frontend response time (in milliseconds) of all attempted requests.
      */
     public int getMinFrontendResponseTime() {
-        checkClosed();
-        return _minFrontendResponseTime;
+        return minFrontendResponseTime;
     }
 
     /**
      * Returns the maximum frontend response time (in milliseconds) of all attempted requests.
      */
     public int getMaxFrontendResponseTime() {
-        checkClosed();
-        return _maxFrontendResponseTime;
+        return maxFrontendResponseTime;
     }
 
     /**
      * Returns the average frontend response time (in milliseconds) of all attempted requests.
      */
     public double getAverageFrontendResponseTime() {
-        checkClosed();
         if (_numAttemptedRequest == 0) {
             return 0.0;
         } else {
-            return (double) _sumFrontendResponseTime / _numAttemptedRequest;
+            return (double) sumFrontendResponseTime / _numAttemptedRequest;
         }
     }
 
@@ -308,27 +299,24 @@ public class MetricsBin implements Serializable, Comparable {
      * Returns the minimum backend response time (in milliseconds) of all completed requests.
      */
     public int getMinBackendResponseTime() {
-        checkClosed();
-        return _minBackendResponseTime;
+        return minBackendResponseTime;
     }
 
     /**
      * Returns the maximum backend response time (in milliseconds) of all completed requests.
      */
     public int getMaxBackendResponseTime() {
-        checkClosed();
-        return _maxBackendResponseTime;
+        return maxBackendResponseTime;
     }
 
     /**
      * Returns the average backend response time (in milliseconds) of all completed requests.
      */
     public double getAverageBackendResponseTime() {
-        checkClosed();
         if (_numCompletedRequest == 0) {
             return 0.0;
         } else {
-            return (double) _sumBackendResponseTime / _numCompletedRequest;
+            return (double) sumBackendResponseTime / _numCompletedRequest;
         }
     }
 
@@ -360,6 +348,14 @@ public class MetricsBin implements Serializable, Comparable {
         return _clusterNodeId;
     }
 
+    public long getSumFrontendResponseTime() {
+        return sumFrontendResponseTime;
+    }
+
+    public long getSumBackendResponseTime() {
+        return sumBackendResponseTime;
+    }
+
     /**
      * Used for ordering the extraction of bins from a {@link EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue}, which
      * prioritizes "lesser" objects.  Bins with finer resolution are prioritized over those of coarser
@@ -380,12 +376,46 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
-    private void checkClosed() {
-        if (_startTime == _endTime) throw new IllegalStateException("Bin is not yet closed");
+    /**
+     * @deprecated should be used only for serialization and persistence
+     */
+    public void setMinFrontendResponseTime(int minFrontendResponseTime) {
+        this.minFrontendResponseTime = minFrontendResponseTime;
     }
 
-    private void checkNotClosed() {
-        if (_startTime != _endTime) throw new IllegalStateException("Bin is no longer open");
+    /**
+     * @deprecated should be used only for serialization and persistence
+     */
+    public void setMaxFrontendResponseTime(int maxFrontendResponseTime) {
+        this.maxFrontendResponseTime = maxFrontendResponseTime;
+    }
+
+    /**
+     * @deprecated should be used only for serialization and persistence
+     */
+    public void setSumFrontendResponseTime(long sumFrontendResponseTime) {
+        this.sumFrontendResponseTime = sumFrontendResponseTime;
+    }
+
+    /**
+     * @deprecated should be used only for serialization and persistence
+     */
+    public void setMinBackendResponseTime(int minBackendResponseTime) {
+        this.minBackendResponseTime = minBackendResponseTime;
+    }
+
+    /**
+     * @deprecated should be used only for serialization and persistence
+     */
+    public void setMaxBackendResponseTime(int maxBackendResponseTime) {
+        this.maxBackendResponseTime = maxBackendResponseTime;
+    }
+
+    /**
+     * @deprecated should be used only for serialization and persistence
+     */
+    public void setSumBackendResponseTime(long sumBackendResponseTime) {
+        this.sumBackendResponseTime = sumBackendResponseTime;
     }
 
     /**
@@ -476,10 +506,8 @@ public class MetricsBin implements Serializable, Comparable {
         if (_serviceOid != that._serviceOid) return false;
         if (_startTime != that._startTime) return false;
         if (interval != that.interval) return false;
-        if (_clusterNodeId != null ? !_clusterNodeId.equals(that._clusterNodeId) : that._clusterNodeId != null)
-            return false;
+        return !(_clusterNodeId != null ? !_clusterNodeId.equals(that._clusterNodeId) : that._clusterNodeId != null);
 
-        return true;
     }
 
     public int hashCode() {

@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.DashboardWindow">
+  <grid id="485e6" binding="mainPanel" row-count="7" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="47" y="130" width="861" height="645"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="bf59a" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="20" y="594" width="821" height="31"/>
+          <grid row="5" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="a6ee8" class="javax.swing.JButton" binding="closeButton">
+            <constraints>
+              <xy x="752" y="0" width="69" height="31"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Close"/>
+            </properties>
+          </component>
+          <component id="b28bd" class="javax.swing.JLabel" binding="statusLabel">
+            <constraints>
+              <xy x="0" y="5" width="742" height="20"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Status"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <hspacer id="b0a5">
+        <constraints>
+          <xy x="0" y="315" width="20" height="11"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="12" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <hspacer id="af9e6">
+        <constraints>
+          <xy x="841" y="315" width="20" height="11"/>
+          <grid row="3" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="12" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <vspacer id="13d59">
+        <constraints>
+          <xy x="306" y="0" width="11" height="20"/>
+          <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="3948d">
+        <constraints>
+          <xy x="306" y="625" width="11" height="20"/>
+          <grid row="6" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="6"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="a1c10">
+        <constraints>
+          <xy x="291" y="574" width="11" height="20"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="6"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="1b6af">
+        <constraints>
+          <xy x="291" y="53" width="11" height="20"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="6"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <hspacer id="1c28">
+        <constraints>
+          <xy x="583" y="315" width="20" height="11"/>
+          <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="6" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <grid id="c95fb" row-count="1" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="20" y="20" width="821" height="28"/>
+          <grid row="1" column="1" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="d79f8" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="0" y="4" width="97" height="20"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Gateway Node:"/>
+            </properties>
+          </component>
+          <component id="5719c" class="javax.swing.JComboBox" binding="clusterNodeCombo">
+            <constraints>
+              <xy x="107" y="0" width="281" height="28"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
+            </constraints>
+            <properties/>
+          </component>
+          <hspacer id="492c1">
+            <constraints>
+              <xy x="398" y="8" width="20" height="11"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+                <minimum-size width="12" height="-1"/>
+              </grid>
+            </constraints>
+          </hspacer>
+          <component id="2ddc" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="418" y="4" width="112" height="20"/>
+              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Published Service:"/>
+            </properties>
+          </component>
+          <component id="dbeed" class="javax.swing.JComboBox" binding="publishedServiceCombo">
+            <constraints>
+              <xy x="540" y="0" width="281" height="28"/>
+              <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
+            </constraints>
+            <properties/>
+          </component>
+        </children>
+      </grid>
+      <xy id="b4066" binding="chartPanel" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="20" y="73" width="553" height="496"/>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="bevel-raised"/>
+        <children/>
+      </xy>
+      <tabbedpane id="b6097" binding="rightTabbedPane">
+        <constraints>
+          <xy x="603" y="73" width="238" height="496"/>
+          <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
+            <preferred-size width="200" height="200"/>
+          </grid>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="7a302" row-count="14" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <tabbedpane title="Last 5 seconds"/>
+            </constraints>
+            <properties/>
+            <border type="none" title=""/>
+            <children>
+              <component id="76e47" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="40" width="25" height="20"/>
+                  <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="ms"/>
+                </properties>
+              </component>
+              <component id="7c239" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="75" width="25" height="20"/>
+                  <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="ms"/>
+                </properties>
+              </component>
+              <component id="30d85" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="110" width="25" height="20"/>
+                  <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="ms"/>
+                </properties>
+              </component>
+              <component id="b88ad" class="javax.swing.JTextField" binding="frontMinField">
+                <constraints>
+                  <xy x="136" y="37" width="50" height="26"/>
+                  <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value=""/>
+                </properties>
+              </component>
+              <component id="5ba1d" class="javax.swing.JTextField" binding="frontAvgField">
+                <constraints>
+                  <xy x="136" y="72" width="50" height="26"/>
+                  <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+              <component id="d367" class="javax.swing.JTextField" binding="frontMaxField">
+                <constraints>
+                  <xy x="136" y="107" width="50" height="26"/>
+                  <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+              <component id="af3f6" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="56" y="40" width="50" height="20"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="min."/>
+                </properties>
+              </component>
+              <component id="ac3ad" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="56" y="75" width="50" height="20"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="avg."/>
+                </properties>
+              </component>
+              <component id="6d3c3" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="56" y="110" width="50" height="20"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="max."/>
+                </properties>
+              </component>
+              <component id="ec7a" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="41" y="8" width="150" height="20"/>
+                  <grid row="0" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="0" anchor="0" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Frontend response time"/>
+                </properties>
+              </component>
+              <component id="fa248" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="43" y="171" width="145" height="20"/>
+                  <grid row="5" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="0" anchor="0" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Backend response time"/>
+                </properties>
+              </component>
+              <component id="f26de" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="56" y="202" width="50" height="20"/>
+                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="min."/>
+                </properties>
+              </component>
+              <component id="e2ca1" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="56" y="236" width="50" height="20"/>
+                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="avg."/>
+                </properties>
+              </component>
+              <component id="c13fa" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="56" y="270" width="50" height="20"/>
+                  <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="max."/>
+                </properties>
+              </component>
+              <component id="9639e" class="javax.swing.JTextField" binding="backMinField">
+                <constraints>
+                  <xy x="136" y="199" width="50" height="26"/>
+                  <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+              <component id="b9e4d" class="javax.swing.JTextField" binding="backAvgField">
+                <constraints>
+                  <xy x="136" y="233" width="50" height="26"/>
+                  <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+              <component id="bdb93" class="javax.swing.JTextField" binding="backMaxField">
+                <constraints>
+                  <xy x="136" y="267" width="50" height="26"/>
+                  <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+              <component id="1541e" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="202" width="25" height="20"/>
+                  <grid row="6" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="ms"/>
+                </properties>
+              </component>
+              <component id="bfa9c" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="236" width="25" height="20"/>
+                  <grid row="7" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="ms"/>
+                </properties>
+              </component>
+              <component id="bd39d" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="270" width="25" height="20"/>
+                  <grid row="8" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="ms"/>
+                </properties>
+              </component>
+              <xy id="3a7bf" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <xy x="6" y="150" width="220" height="3"/>
+                  <grid row="4" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="0" fill="1">
+                    <maximum-size width="-1" height="3"/>
+                  </grid>
+                </constraints>
+                <properties/>
+                <border type="bevel-lowered"/>
+                <children/>
+              </xy>
+              <xy id="455f3" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <xy x="6" y="310" width="220" height="3"/>
+                  <grid row="9" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="3" anchor="0" fill="1">
+                    <maximum-size width="-1" height="3"/>
+                  </grid>
+                </constraints>
+                <properties/>
+                <border type="bevel-lowered"/>
+                <children/>
+              </xy>
+              <component id="cd5f8" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="6" y="332" width="100" height="20"/>
+                  <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <preferred-size width="100" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="Routing failure"/>
+                </properties>
+              </component>
+              <component id="2acc6" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="6" y="366" width="100" height="20"/>
+                  <grid row="11" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <preferred-size width="100" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="Policy violation"/>
+                </properties>
+              </component>
+              <component id="e341e" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="6" y="400" width="100" height="20"/>
+                  <grid row="12" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <preferred-size width="100" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="Success"/>
+                </properties>
+              </component>
+              <component id="4a127" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="6" y="434" width="100" height="20"/>
+                  <grid row="13" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                    <preferred-size width="100" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <text value="Total"/>
+                </properties>
+              </component>
+              <component id="cc15d" class="javax.swing.JTextField" binding="numRoutingFailField">
+                <constraints>
+                  <xy x="136" y="329" width="50" height="26"/>
+                  <grid row="10" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+              <component id="f443c" class="javax.swing.JTextField" binding="numPolicyFailField">
+                <constraints>
+                  <xy x="136" y="363" width="50" height="26"/>
+                  <grid row="11" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                  <inheritsPopupMenu value="false"/>
+                </properties>
+              </component>
+              <component id="317d6" class="javax.swing.JTextField" binding="numSuccessField">
+                <constraints>
+                  <xy x="136" y="397" width="50" height="26"/>
+                  <grid row="12" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+              <component id="4d563" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="332" width="30" height="20"/>
+                  <grid row="10" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="msg"/>
+                </properties>
+              </component>
+              <component id="2ad14" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="366" width="30" height="20"/>
+                  <grid row="11" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="msg"/>
+                </properties>
+              </component>
+              <component id="921f3" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="400" width="30" height="20"/>
+                  <grid row="12" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="msg"/>
+                </properties>
+              </component>
+              <component id="7eb3c" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="196" y="434" width="30" height="20"/>
+                  <grid row="13" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                    <preferred-size width="25" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value="msg"/>
+                </properties>
+              </component>
+              <component id="6c8e" class="javax.swing.JTextField" binding="numTotalField">
+                <constraints>
+                  <xy x="136" y="431" width="50" height="26"/>
+                  <grid row="13" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                    <minimum-size width="50" height="-1"/>
+                    <preferred-size width="50" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="11"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+        </children>
+      </tabbedpane>
+    </children>
+  </grid>
+</form>

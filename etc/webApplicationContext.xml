@@ -646,6 +646,9 @@
         <property name="transactionManager">
             <ref bean="transactionManager"/>
         </property>
+        <property name="serviceManager">
+            <ref bean="serviceManager"/>
+        </property>
     </bean>
 
 

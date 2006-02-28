@@ -90,6 +90,7 @@ public class MainWindow extends JFrame {
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem manageGlobalSchemasMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
+    private JMenuItem dashboardMenuItem;
     private JMenuItem manageClusterLicensesMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
@@ -121,6 +122,7 @@ public class MainWindow extends JFrame {
     private ManageCertificatesAction manageCertificatesAction = null;
     private ManageGlobalSchemasAction manageGlobalSchemasAction = null;
     private ManageClusterPropertiesAction manageClusterPropertiesAction = null;
+    private ShowDashboardAction showDashboardAction = null;
     private ManageClusterLicensesAction manageClusterLicensesAction = null;
     private NewInternalUserAction newInernalUserAction;
 
@@ -481,6 +483,7 @@ public class MainWindow extends JFrame {
             // Disabled for 3.4 -- there are currently no cluster properties to manage with this GUI
             // ("license" is managed with a seperate GUI of its own, and is hidden in the cluster property list.)
             editMenu.add(getManageClusterPropertiesActionMenuItem());
+            editMenu.add(getDashboardMenuItem());
             editMenu.add(getManageJmsEndpointsMenuItem());
 
             int mnemonic = editMenu.getText().toCharArray()[0];
@@ -1279,6 +1282,14 @@ public class MainWindow extends JFrame {
         return manageClusterPropertiesAction;
     }
 
+    private Action getShowDashboardAction() {
+        if (showDashboardAction != null) return showDashboardAction;
+        showDashboardAction = new ShowDashboardAction();
+        showDashboardAction.setEnabled(true);
+        this.addLogonListener(showDashboardAction);
+        return showDashboardAction;
+    }
+
     private Action getManagerClusterLicensesAction() {
         if (manageClusterLicensesAction != null) return manageClusterLicensesAction;
         manageClusterLicensesAction = new ManageClusterLicensesAction();
@@ -1984,6 +1995,12 @@ public class MainWindow extends JFrame {
         if (manageClusterPropertiesMenuItem != null) return manageClusterPropertiesMenuItem;
         manageClusterPropertiesMenuItem = new JMenuItem(getManageClusterPropertiesAction());
         return manageClusterPropertiesMenuItem;
+    }
+
+    private JMenuItem getDashboardMenuItem() {
+        if (dashboardMenuItem != null) return dashboardMenuItem;
+        dashboardMenuItem = new JMenuItem(getShowDashboardAction());
+        return dashboardMenuItem;
     }
 
     private JMenuItem getManageClusterLicensesMenuItem() {

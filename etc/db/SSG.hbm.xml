@@ -322,6 +322,15 @@
         <property name="numAttemptedRequest" column="attempted" type="int"/>
         <property name="numAuthorizedRequest" column="authorized" type="int"/>
         <property name="numCompletedRequest" column="completed" type="int"/>
+
+        <property name="minBackendResponseTime" column="back_min" type="int"/>
+        <property name="sumBackendResponseTime" column="back_sum" type="long"/>
+        <property name="maxBackendResponseTime" column="back_max" type="int"/>
+
+        <property name="minFrontendResponseTime" column="front_min" type="int"/>
+        <property name="sumFrontendResponseTime" column="front_sum" type="long"/>
+        <property name="maxFrontendResponseTime" column="front_max" type="int"/>
+
         <property name="interval" column="interval_size" type="int"/>
     </class>
 
