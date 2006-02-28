@@ -249,15 +249,17 @@ public class JdkLoggerConfigurator {
      * Return the probe interval.
      */
     private static long getInterval() {
+        long interval = 5L;
         LogManager logManager = LogManager.getLogManager();
         String val = logManager.getProperty("com.l7tech.logging.interval");
         if (val != null) {
             try {
-                return Long.decode(val).longValue();
+                interval = Long.decode(val.trim()).longValue();
             } catch (NumberFormatException e) {
+                e.printStackTrace(); // can't really log from this class
             }
         }
-        return 5;
+        return interval;
     }
 
 }
