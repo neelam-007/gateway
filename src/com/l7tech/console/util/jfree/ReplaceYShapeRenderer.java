@@ -1,4 +1,4 @@
-package com.l7tech.common.gui.jfree;
+package com.l7tech.console.util.jfree;
 
 import org.jfree.chart.renderer.xy.AbstractXYItemRenderer;
 import org.jfree.chart.renderer.xy.XYItemRendererState;

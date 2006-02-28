@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.jfree.ReplaceYShapeRenderer;
-import com.l7tech.common.gui.jfree.TimePeriodValueWithHighLowRenderer;
-import com.l7tech.common.gui.jfree.TimePeriodValuesWithHighLow;
-import com.l7tech.common.gui.jfree.TimePeriodValuesWithHighLowCollection;
+import com.l7tech.console.util.jfree.ReplaceYShapeRenderer;
+import com.l7tech.console.util.jfree.TimePeriodValueWithHighLowRenderer;
+import com.l7tech.console.util.jfree.TimePeriodValuesWithHighLow;
+import com.l7tech.console.util.jfree.TimePeriodValuesWithHighLowCollection;
 import com.l7tech.service.MetricsBin;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
