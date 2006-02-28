@@ -152,7 +152,7 @@ public class MetricsChartPanel extends ChartPanel {
             int max = dataset_.getEndY(series, item).intValue();
             String seriesLabel = dataset_.getSeriesKey(series).toString();
             return seriesLabel + ": avg=" + avg + " min=" + min + " max=" + max +
-                    " (" + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
+                    " (from " + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
         }
     }
 
@@ -164,11 +164,12 @@ public class MetricsChartPanel extends ChartPanel {
             TimePeriod period = ((TimeTableXYDataset) dataset).getTimePeriod(item);
             Date startTime = period.getStart();
             Date endTime = period.getEnd();
+            double numSec = (endTime.getTime() - startTime.getTime()) / 1000.;
             double msgPerSec = dataset.getY(series, item).doubleValue();
-            long numMsg = Math.round(msgPerSec * (endTime.getTime() - startTime.getTime()) / 1000.);
+            long numMsg = Math.round(msgPerSec * numSec);
             String seriesLabel = dataset.getSeriesKey(series).toString();
-            return seriesLabel + ": " + numMsg + " msg (" +
-                    fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
+            return seriesLabel + ": " + numMsg + " msg (in " + numSec + " sec from "
+                   + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
         }
     }
 
@@ -296,10 +297,14 @@ public class MetricsChartPanel extends ChartPanel {
                 combinedPlot,
                 false                   // generate legend?
         );
+        _chart.setAntiAlias(false);
 
         setChart(_chart);
-        setPopupMenu(null);            // Suppresses right-click pop menu.
-        setRangeZoomable(false);       // Suppresses range (y-axis) zooming.
+        setPopupMenu(null);             // Suppresses right-click pop menu.
+        setRangeZoomable(false);        // Suppresses range (y-axis) zooming.
+        setInitialDelay(100);           // Makes tool tip respond fast.
+        setDismissDelay(Integer.MAX_VALUE); // Makes tool tip display indefinitely.
+        setReshowDelay(100);
     }
 
     /**
