@@ -115,7 +115,6 @@ public class MainWindow extends JFrame {
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private HomeAction homeAction = new HomeAction();
-    Action monitorAction = null;
     private NewGroupAction newInernalGroupAction;
     private NewLdapProviderAction newLDAPProviderAction;
     private NewFederatedIdentityProviderAction newPKIProviderAction;
@@ -1069,15 +1068,25 @@ public class MainWindow extends JFrame {
                                 GatewayAuditWindow gaw = new GatewayAuditWindow(false);
                                 gaw.pack();
                                 Utilities.centerOnScreen(gaw);
-                                gaw.setVisible(true);
-                                gaw.displayAudits(file);
+                                gaw.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+                                if(gaw.displayAudits(file)) {
+                                    gaw.setVisible(true);
+                                }
+                                else {
+                                    gaw.dispose();
+                                }
                             }
                             else if(file.getName().endsWith(".ssgl")) {
                                 GatewayLogWindow gal = new GatewayLogWindow();
                                 gal.pack();
+                                gal.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
                                 Utilities.centerOnScreen(gal);
-                                gal.setVisible(true);
-                                gal.displayLogs(file);
+                                if(gal.displayLogs(file)){
+                                    gal.setVisible(true);
+                                }
+                                else {
+                                    gal.dispose();
+                                }
                             }
                         }
                         catch(IOException ioe) {

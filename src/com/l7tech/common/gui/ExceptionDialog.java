@@ -143,6 +143,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
      * @param throwable .
      */
     private void initialize(String title, String message, Throwable throwable, Level level) {
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         Container pane = getContentPane();
         setTitle(title);
         if (JDialog.isDefaultLookAndFeelDecorated()) {
@@ -319,6 +320,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         final Object source = e.getSource();
         if (source == close || source == ignore) {
+            this.setVisible(false);
             this.dispose();
         } else if (source == shutdown) {
             System.exit(-1);

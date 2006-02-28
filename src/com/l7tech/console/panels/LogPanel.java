@@ -3,10 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.RequestId;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
@@ -99,7 +101,7 @@ public class LogPanel extends JPanel {
     private int logsRefreshInterval;
     private javax.swing.Timer logsRefreshTimer;
 
-    private static final byte[] FILE_TYPE = new byte[]{0xC, 0xA, 0xF, 0xE, 0xD, 0x0, 0x0, 0xD};
+    private static final byte[] FILE_TYPE = new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xD0, (byte)0x0D};
 
     private static final long MILLIS_IN_HOUR = 1000L * 60L * 60L;
     private static final long MILLIS_IN_DAY = MILLIS_IN_HOUR * 24L;
@@ -1478,6 +1480,8 @@ public class LogPanel extends JPanel {
             out = new BufferedOutputStream(new FileOutputStream(file));
             out.write(FILE_TYPE);
             oos = xstream.createObjectOutputStream(new OutputStreamWriter(new GZIPOutputStream(out), "UTF-8"));
+            oos.writeObject(BuildInfo.getProductVersion());
+            oos.writeObject(BuildInfo.getBuildNumber());
             oos.writeObject(data);
         }
         finally {
@@ -1487,7 +1491,19 @@ public class LogPanel extends JPanel {
         }
     }
 
-    public void importView(File file) throws IOException {
+    private void importError(final String dialogMessage) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                ExceptionDialog d = ExceptionDialog.createExceptionDialog(
+                        null, "SecureSpan Manager - Error", dialogMessage, null, Level.WARNING);
+                d.pack();
+                Utilities.centerOnScreen(d);
+                d.setVisible(true);
+            }
+        });
+    }
+
+    public boolean importView(File file) throws IOException {
         viewHistoricRadioButton.setSelected(true);
 
         XStream xstream = new XStream(new DomDriver());
@@ -1498,11 +1514,34 @@ public class LogPanel extends JPanel {
             byte[] header = HexUtils.slurpStream(in, FILE_TYPE.length);
             if(header.length < FILE_TYPE.length ||
                !HexUtils.compareArrays(FILE_TYPE, 0, header, 0, FILE_TYPE.length)) {
-                throw new IOException("Unknown file type.");
+                importError("Cannot import file, incorrect type.");
+                return false;
             }
             ois = xstream.createObjectInputStream(new InputStreamReader(new GZIPInputStream(in), "UTF-8"));
+            Object fileProductVersionObj = ois.readObject();
+            Object fileBuildNumberObj = ois.readObject();
             Object read = ois.readObject();
-            if(read instanceof List) {
+            if(fileProductVersionObj instanceof String &&
+               fileBuildNumberObj instanceof String &&
+               read instanceof List) {
+                String fileProductVersion = (String) fileProductVersionObj;
+                String fileBuildNumber = (String) fileBuildNumberObj;
+
+                boolean buildMatch = fileBuildNumber.equals(BuildInfo.getBuildNumber());
+                boolean versionMatch = fileProductVersion.equals(BuildInfo.getProductVersion());
+
+                if(!buildMatch) {
+                    String message = "";
+                    if(!versionMatch) {
+                        message = "Cannot import file for product version '"+fileProductVersion+"'.";
+                    }
+                    else {
+                        message = "Cannot import file for product build '"+fileBuildNumber+"'.";
+                    }
+                    importError(message);
+                    return false;
+                }
+
                 List data = (List) read;
                 if(data.isEmpty()) {
                     logger.info("No data in file! '"+file.getAbsolutePath()+"'.");
@@ -1536,6 +1575,7 @@ public class LogPanel extends JPanel {
             ResourceUtils.closeQuietly(ois);
             ResourceUtils.closeQuietly(in);
         }
+        return true;
     }
 
     public static class WriteableLogMessage implements Comparable {

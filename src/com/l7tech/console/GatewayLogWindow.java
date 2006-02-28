@@ -103,6 +103,8 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
           });
 
         pack();
+
+        if(!startConnected) getLogPane().onDisconnect();
     }
 
     public String getNodeId() {
@@ -120,9 +122,6 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
                 getLogPane().onConnect();
                 getLogPane().refreshLogs();
             }
-            else {
-                getLogPane().onDisconnect();
-            }
         }
     }
 
@@ -132,8 +131,8 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
      * @param logFile the log records to display.
      * @throws IOException on error
      */
-    public void displayLogs(File logFile) throws IOException {
-        getLogPane().importView(logFile);
+    public boolean displayLogs(File logFile) throws IOException {
+        return getLogPane().importView(logFile);
     }
 
     /**

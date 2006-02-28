@@ -105,6 +105,8 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
           });
 
         pack();
+
+        if(!startConnected) getLogPane().onDisconnect();
     }
 
     /**
@@ -113,8 +115,8 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
      * @param auditFile the audit records to display.
      * @throws IOException on error
      */
-    public void displayAudits(File auditFile) throws IOException {
-        getLogPane().importView(auditFile);
+    public boolean displayAudits(File auditFile) throws IOException {
+        return getLogPane().importView(auditFile);
     }
 
     /**
@@ -302,9 +304,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
             if(startConnected) {
                 getLogPane().onConnect();
                 getLogPane().refreshLogs();
-            }
-            else {
-                getLogPane().onDisconnect();                
             }
         }
     }
