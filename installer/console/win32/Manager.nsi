@@ -1,4 +1,3 @@
-;$Id$
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
