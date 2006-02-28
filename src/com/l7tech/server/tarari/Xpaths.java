@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 package com.l7tech.server.tarari;
 
@@ -27,7 +26,7 @@ class Xpaths {
     /** The current list of XPath expressions.  The built-in expressions live at the bottom of the list */
     private ArrayList expressions;
 
-    /** The indices of the XPath expressions used by {@link com.tarari.xml.xpath.RAXContext#isSoap} */
+    /** The indices of the XPath expressions used by {@link com.tarari.xml.rax.fastxpath.XPathResult#isSoap} */
     private final int[] soapUriIndices;
 
     /** A Map&lt;Integer,XpathHandle&gt; */

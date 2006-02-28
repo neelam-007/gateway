@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
+import com.l7tech.common.gui.widgets.SpeedIndicator;
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.xml.XencAlgorithm;
 import com.l7tech.common.util.SoapUtil;
@@ -38,6 +39,7 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
@@ -78,8 +80,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JPanel mainPanel;
     private JPanel messageViewerPanel;
     private JPanel messageViewerToolbarPanel;
-    /** @noinspection UNUSED_SYMBOL*/
-    private JLabel operationsLabel;
     private JTree operationsTree;
     private JButton okButton;
     private JButton cancelButton;
@@ -89,8 +89,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private XpathBasedAssertion assertion;
     private ServiceNode serviceNode;
     private Wsdl serviceWsdl;
-    /** @noinspection UNUSED_SYMBOL*/
-    private JScrollPane treeScrollPane;
     private Message[] soapMessages;
     private String blankMessage = "<empty />";
     private Map namespaces = new HashMap();
@@ -100,9 +98,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private ExchangerDocument exchangerDocument;
     private ActionListener okActionListener;
     private boolean isEncryption;
+    private boolean haveTarari;
     private XpathEvaluator testEvaluator;
     private JButton namespaceButton;
     private JLabel hardwareAccelStatusLabel;
+    private JPanel speedIndicatorPanel;
     private JPanel encryptionConfigPanel;
     private JPanel signatureResponseConfigPanel;
     private JRadioButton aes128radioButton;
@@ -113,7 +113,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JRadioButton skiReferenceRadioButton;
     private JTextField varPrefixField;
     private JLabel varPrefixLabel;
-
+    private SpeedIndicator speedIndicator;
     private JComboBox sampleMessagesCombo;
     private DefaultComboBoxModel sampleMessagesComboModel;
     private JButton addSampleButton;
@@ -301,6 +301,22 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 }
             }
         });
+
+        haveTarari = checkForTarari();
+        speedIndicator = new SpeedIndicator(0);
+        speedIndicatorPanel.setLayout(new BorderLayout());
+        speedIndicatorPanel.add(speedIndicator, BorderLayout.CENTER);
+    }
+
+    private boolean checkForTarari() {
+        try {
+            final ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
+            String accel = clusterStatusAdmin.getHardwareCapability(ClusterStatusAdmin.CAPABILITY_HWXPATH);
+            return ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI.equals(accel);
+        } catch (Exception e) {
+            // Oh well, it's cosmetic anyway
+            return false;
+        }
     }
 
     private SampleMessageDialog showSampleMessageDialog(SampleMessage sm) {
@@ -886,16 +902,32 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }*/
 
         private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
-            if (hardwareFeedBack == null) {
-                hardwareAccelStatusLabel.setText(" ");
+            if (!haveTarari) {
+                hardwareAccelStatusLabel.setText("");
                 hardwareAccelStatusLabel.setToolTipText(null);
-            } else {
-                hardwareAccelStatusLabel.setText("This expression cannot be hardware accelerated (reason: " +
-                  hardwareFeedBack.getShortMessage() + "); it  will be " +
-                  "processed in the software layer instead.");
-                hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
+                speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
+                String n = hardwareFeedBack == null ? "" : " be too complex to";
+                speedIndicator.setToolTipText("Hardware accelerated XPath not present on Gateway, but if it were, this expression would" + n + " run in parallel at full speed");
+                return;
+            }
 
-                if (xpathField instanceof SquigglyTextField) {
+            if (hardwareFeedBack == null) {
+                hardwareAccelStatusLabel.setText("");
+                hardwareAccelStatusLabel.setToolTipText(null);
+                speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
+                speedIndicator.setToolTipText("Expression will be hardware accelerated in parallel at full speed");
+            } else {
+//                hardwareAccelStatusLabel.setText("This expression cannot be hardware accelerated (reason: " +
+//                  hardwareFeedBack.getShortMessage() + "); it  will be " +
+//                  "processed in the software layer instead.");
+//                hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
+                hardwareAccelStatusLabel.setText("");
+                hardwareAccelStatusLabel.setToolTipText(null);
+                speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
+                speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
+
+                // Squiggles and detailed parse error messages are disabled for now
+                if (false && xpathField instanceof SquigglyTextField) {
                     SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
                     int pos = hardwareFeedBack.errorPosition;
                     if (pos >= 0)
@@ -922,6 +954,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             }
 
             processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
+            speedIndicator.setSpeed(0);
+            speedIndicator.setToolTipText(null);
             StringBuffer tooltip = new StringBuffer();
             boolean htmlOpenAdded = false;
             if (feedBack.getErrorPosition() != -1) {

@@ -227,7 +227,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                         if (tmc instanceof TarariMessageContextImpl) {
                             TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
                             try {
-                                if (tarariMessageContext.getStreamContext().isValid()) {
+                                if (tarariMessageContext.getRaxDocument().validate()) {
                                     logger.fine("Hardware schema validation success. Checking for right namespace.");
                                     // this only applies to soap messages
                                     if (msgisSoap) {
@@ -249,7 +249,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                                     logger.info("Hardware schema validation failed. The assertion will " +
                                                 "fallback on software schema validation");
                                 }
-                            } catch (ValidationException e) {
+                            } catch (com.tarari.xml.XmlException e) {
                                 auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
                             }
                         }

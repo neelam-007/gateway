@@ -15,7 +15,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
-import com.tarari.xml.schema.SchemaResolver;
+import com.tarari.xml.rax.schema.SchemaResolver;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.support.TransactionSynchronization;

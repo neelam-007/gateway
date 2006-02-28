@@ -138,4 +138,15 @@ public interface ClusterStatusAdmin {
      */
     List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException;
 
+    /**
+     * Check hardware capabilities of the node that receives this admin request.
+     * TODO this information should be moved to ClusterNodeInfo instead, since it is really per-node.
+     *
+     * @param capability the capability to interrogate.  Must not be null.
+     * @return a string describing the support for the requested capability, or null if the capability is not supported.
+     */
+    String getHardwareCapability(String capability);
+
+    public static final String CAPABILITY_HWXPATH = "hardwareXpath";
+    public static final String CAPABILITY_HWXPATH_TARARI = "tarari";
 }

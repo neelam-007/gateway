@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.policy.assertion;
@@ -21,7 +20,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.tarari.xml.xpath.RAXContext;
+import com.tarari.xml.rax.fastxpath.XPathResult;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -111,7 +110,7 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
             return null;
         }
 
-        TarariKnob tknob = null;
+        final TarariKnob tknob;
         try {
             // Ensure Tarari context is attached, if possible
             // TODO need a better way to attach this
@@ -135,8 +134,8 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
                 return null;
             }
 
-            RAXContext raxContext = tmContext.getRaxContext();
-            int numMatches = raxContext.getCount(index);
+            XPathResult xpathResult = tmContext.getXpathResult();
+            int numMatches = xpathResult.getCount(index);
             if (numMatches > 0) {
                 final String r = isRequest ? "request" : "response";
                 logger.log(Level.FINE, "XPath pattern matched " + r + "; assertion therefore succeeds.");

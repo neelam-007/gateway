@@ -1,22 +1,18 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.xml.tarari;
 
+import com.tarari.xml.XmlParseException;
+import com.tarari.xml.XmlConfigException;
+import com.tarari.xml.rax.RaxErrorCode;
 import com.l7tech.common.xml.SoftwareFallbackException;
-import com.tarari.xml.XMLDocumentException;
-import com.tarari.xml.XMLErrorCode;
-import com.tarari.xml.xpath.XPathCompilerException;
-import com.tarari.xml.xpath.XPathLoaderException;
-import com.tarari.xml.xpath.XPathProcessorException;
 import org.xml.sax.SAXException;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class TarariUtil {
     public static final String[] ISSOAP_XPATHS = {
@@ -47,37 +43,20 @@ public class TarariUtil {
             throws SAXException, SoftwareFallbackException, RuntimeException
     {
         switch (code) {
-            case XMLErrorCode.CANNOT_TOKENIZE:
-            case XMLErrorCode.XPATH_UNDECLARED_PREFIX:
-            case XMLErrorCode.PREFIX_NOT_FOUND:
-            case XMLErrorCode.NAMESPACE_NOT_FOUND:
+            case RaxErrorCode.CANNOT_TOKENIZE:
+            case RaxErrorCode.XPATH_UNDECLARED_PREFIX:
+            case RaxErrorCode.PREFIX_NOT_FOUND:
+            case RaxErrorCode.NAMESPACE_NOT_FOUND:
                 throw new SAXException(cause);
         }
         throw new SoftwareFallbackException(cause);
     }
 
-    public static void translateException(XPathCompilerException e) 
-            throws SAXException, SoftwareFallbackException, RuntimeException
-    {
-        translateTarariErrorCode(e, e.getCompilerErrorCode());
+    public static void translateException(XmlParseException e) throws SAXException {
+        throw new SAXException(e);
     }
 
-    public static void translateException(XPathLoaderException e)
-            throws SAXException, SoftwareFallbackException, RuntimeException
-    {
-        translateTarariErrorCode(e, e.getStatus());
+    public static void translateException(XmlConfigException e) throws SoftwareFallbackException, SAXException {
+        translateTarariErrorCode(e, e.getErrorCode());
     }
-
-    public static void translateException(XPathProcessorException e)
-            throws SAXException, SoftwareFallbackException, RuntimeException
-    {
-        translateTarariErrorCode(e, e.getStatus());
-    }
-
-    public static void translateException(XMLDocumentException e)
-            throws SAXException, SoftwareFallbackException, RuntimeException
-    {
-        translateTarariErrorCode(e, e.getStatus());
-    }
-
 }

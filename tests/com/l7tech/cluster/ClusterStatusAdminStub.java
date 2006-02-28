@@ -136,4 +136,8 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
+
+    public String getHardwareCapability(String capability) {
+        return null;
+    }
 }

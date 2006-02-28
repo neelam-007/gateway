@@ -1,50 +1,39 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.xml.tarari;
 
-import com.tarari.xml.XMLDocument;
-import com.tarari.xml.XMLStreamContext;
-import com.tarari.xml.xpath.RAXContext;
+import com.tarari.xml.rax.RaxDocument;
+import com.tarari.xml.rax.fastxpath.XPathResult;
 
 /**
- * Represents resources held in kernel-memory by the Tarari driver, namely
- * a document in one buffer and a token list in the other.
+ * Represents resources held by the Tarari driver in the form of a RaxDocument and simultaneous XPathResult.
  */
 public class TarariMessageContextImpl implements TarariMessageContext {
-    private final XMLDocument tarariDoc;
-    private final RAXContext raxContext;
-    private final XMLStreamContext streamContext;
+    private final RaxDocument raxDocument;
+    private final XPathResult xpathResult;
     private final long compilerGeneration;
 
-    TarariMessageContextImpl(XMLDocument doc, RAXContext raxContext, XMLStreamContext streamContext, long compilerGeneration) {
-        if (streamContext == null || raxContext == null) throw new IllegalArgumentException();
-        this.tarariDoc = doc;
-        this.raxContext = raxContext;
-        this.streamContext = streamContext;
+    TarariMessageContextImpl(RaxDocument doc, XPathResult xpathResult, long compilerGeneration) {
+        if (doc == null || xpathResult == null) throw new IllegalArgumentException();
+        this.raxDocument = doc;
+        this.xpathResult = xpathResult;
         this.compilerGeneration = compilerGeneration;
     }
 
+    /** Free resources used by this Tarari context.  After this is called, behavior of this instance is undefined. */
     public void close() {
-        tarariDoc.release();
+        raxDocument.release();
     }
 
     /**
-     * @return the {@link GlobalTarariContext} compiler generation count that was in effect when this
-     *         TarariMessageContext was produced.
+     * @return the {@link GlobalTarariContext} compiler generation count that was in effect when
+     *         the Simultaneous XPaths were evaluated against this document.
      */
     public long getCompilerGeneration() {
         return compilerGeneration;
-    }
-
-    /**
-     * @return the RAXContext. Never null.
-     */
-    public RAXContext getRaxContext() {
-        return raxContext;
     }
 
     protected void finalize() throws Throwable {
@@ -55,7 +44,13 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         }
     }
 
-    public XMLStreamContext getStreamContext() {
-        return streamContext;
+    /** @return the RaxDocument.  Never null. */
+    public RaxDocument getRaxDocument() {
+        return raxDocument;
+    }
+
+    /** @return the Simultaneous XPath results for this document.  Never null. */
+    public XPathResult getXpathResult() {
+        return xpathResult;
     }
 }

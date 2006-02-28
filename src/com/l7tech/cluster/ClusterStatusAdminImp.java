@@ -2,6 +2,7 @@ package com.l7tech.cluster;
 
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.*;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -173,6 +174,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
         checkLicense();
         return serviceMetricsManager.findBins(nodeId, minPeriodStart, maxPeriodStart, resolution, serviceOid);
+    }
+
+    public String getHardwareCapability(String capability) {
+        if (!ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) return null;
+        return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_HWXPATH_TARARI : null;
     }
 
     private final ClusterInfoManager clusterInfoManager;

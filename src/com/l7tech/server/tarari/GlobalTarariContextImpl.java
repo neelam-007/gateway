@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 package com.l7tech.server.tarari;
 
@@ -13,13 +12,13 @@ import com.l7tech.common.xml.tarari.TarariUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.service.ServiceCache;
-import com.tarari.xml.schema.SchemaLoader;
-import com.tarari.xml.schema.SchemaLoadingException;
-import com.tarari.xml.xpath.XPathCompiler;
-import com.tarari.xml.xpath.XPathCompilerException;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
+import com.tarari.xml.rax.fastxpath.XPathCompiler;
+import com.tarari.xml.rax.fastxpath.XPathCompilerException;
+import com.tarari.xml.rax.schema.SchemaLoader;
+import com.tarari.xml.XmlConfigException;
 import org.springframework.beans.factory.BeanFactory;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
+import org.apache.xmlbeans.XmlException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -44,23 +43,28 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
 
     public void compile() {
         // fla added 20-07-05 to avoid compiling xpath all the time for no reason
-        if (!xpathChangedSinceLastCompilation) {
-            logger.fine("skipping compilation since no changes to xpath expressions were detected");
-            return;
+        synchronized (this) {
+            if (!xpathChangedSinceLastCompilation) {
+                logger.fine("skipping compilation since no changes to xpath expressions were detected");
+                return;
+            }
         }
         logger.fine("compiling xpath expressions");
         while (true) {
-            try {
-                String[] expressions = currentXpaths.getExpressions();
-                XPathCompiler.compile(expressions, 0);
-                currentXpaths.installed(expressions, nextCompilerGeneration());
-                xpathChangedSinceLastCompilation = false;
-                return; // No exception, we're done
-            } catch (XPathCompilerException e) {
-                int badIndex = e.getCompilerErrorLine() - 1; // Silly Tarari, 1-based arrays are for kids!
-                currentXpaths.remove(currentXpaths.getExpression(badIndex));
-                if (currentXpaths.getExpression(0) == null)
-                    throw new IllegalStateException("Last XPath was removed without successful compilation");
+            synchronized (this) {
+                try {
+                    String[] expressions = currentXpaths.getExpressions();
+                    XPathCompiler.compile(expressions, 0);
+                    currentXpaths.installed(expressions, nextCompilerGeneration());
+                    xpathChangedSinceLastCompilation = false;
+                    return; // No exception, we're done
+                } catch (XPathCompilerException e) {
+                    // TODO double check if XPathCompilerException.getErrorLine() still returns a 1-based index
+                    int badIndex = e.getErrorLine() - 1; // Silly Tarari, 1-based arrays are for kids!
+                    currentXpaths.remove(currentXpaths.getExpression(badIndex));
+                    if (currentXpaths.getExpression(0) == null)
+                        throw new IllegalStateException("Last XPath was removed without successful compilation");
+                }
             }
         }
     }
@@ -69,16 +73,16 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         return ++compilerGeneration;
     }
 
-    public long getCompilerGeneration() {
+    public synchronized long getCompilerGeneration() {
         return compilerGeneration;
     }
 
-    public void addXpath(String expression) throws InvalidXpathException {
+    public synchronized void addXpath(String expression) throws InvalidXpathException {
         currentXpaths.add(expression);
         xpathChangedSinceLastCompilation = true;
     }
 
-    public void removeXpath(String expression) {
+    public synchronized void removeXpath(String expression) {
         currentXpaths.remove(expression);
         xpathChangedSinceLastCompilation = true;
     }
@@ -149,7 +153,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                     logger.finest("loading schema to card " + s);
                     try {
                         SchemaLoader.loadSchema(new ByteArrayInputStream(s.getBytes("UTF-8")), "");
-                    } catch (SchemaLoadingException e) {
+                    } catch (XmlConfigException e) {
                         logger.log(Level.WARNING, "exception loading schema to tarari card. perhaps " +
                                                   "the schema is incorrect or it refers to a targetnamespace " +
                                                   "that is already declared in another schema", e);
@@ -187,7 +191,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         }
     }
 
-    public int targetNamespaceLoadedMoreThanOnce(String targetNamespace) {
+    public synchronized int targetNamespaceLoadedMoreThanOnce(String targetNamespace) {
         if (tnss == null) {
             logger.severe("tnss not loaded");
             return 0;
