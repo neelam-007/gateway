@@ -222,7 +222,8 @@ Section "Uninstall"
   RMDir "$INSTDIR"
   RMDir "$PROGRAMFILES\${COMPANY}"
 
-  DeleteRegKey /ifempty HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
+  DeleteRegKey HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
+  DeleteRegKey HKCU "Software\${COMPANY}\${MUI_PRODUCT}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}"
 
   ;Display the Finish header
