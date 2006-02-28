@@ -9,12 +9,11 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.labels.XYToolTipGenerator;
-import org.jfree.chart.plot.CombinedDomainXYPlot;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.SeriesRenderingOrder;
-import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.plot.*;
 import org.jfree.chart.renderer.xy.StackedXYBarRenderer;
+import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.data.time.SimpleTimePeriod;
 import org.jfree.data.time.TimePeriod;
 import org.jfree.data.time.TimeTableXYDataset;
@@ -31,7 +30,12 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Chart panel containing plots of metrics bins data.
+ * Chart panel containing plots of metrics bins data. The chart contains 3 plots
+ * stacked vertically and shares the same time (x-)axis.
+ * <p>
+ * Top plot shows frontend and backend response times.
+ * Middle plot shows indicators of routing failure and policy violation.
+ * Bottom plot shows message rates.
  *
  * @author rmak
  */
@@ -181,7 +185,10 @@ public class MetricsChartPanel extends ChartPanel {
         _responseTimes.addSeries(_backendResponseTimes);
         _messageRates = new TimeTableXYDataset();
 
+        //
         // Top plot for response time.
+        //
+
         NumberAxis rYAxis = new NumberAxis("Response Time (ms)");
         rYAxis.setAutoRange(true);
         TimePeriodValueWithHighLowRenderer rRenderer = new TimePeriodValueWithHighLowRenderer();
@@ -196,10 +203,13 @@ public class MetricsChartPanel extends ChartPanel {
         XYPlot rPlot = new XYPlot(_responseTimes, null, rYAxis, rRenderer);
         rPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
+        //
         // Middle plot for indicators of policy violations and routing failures.
         // This augments the message rate plot below since small values there
         // may shows up too small to see.
-        NumberAxis iYAxis = new NumberAxis(){
+        //
+
+        NumberAxis iYAxis = new NumberAxis() {
             /**
              * Overrides parent method to prevent any zooming, particularly
              * autozoom. We need to do this because although {@link #setRange}
@@ -229,11 +239,37 @@ public class MetricsChartPanel extends ChartPanel {
         iPlot.setRangeGridlinesVisible(false);
         iPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
+        //
         // Bottom plot for message rate.
+        //
+
         NumberAxis mYAxis = new NumberAxis("Message Rate (per sec)");
         mYAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         mYAxis.setAutoRange(true);
-        StackedXYBarRenderer mRenderer = new StackedXYBarRenderer();
+        StackedXYBarRenderer mRenderer = new StackedXYBarRenderer() {
+            public void drawItem(Graphics2D g2,
+                                 XYItemRendererState state,
+                                 Rectangle2D dataArea,
+                                 PlotRenderingInfo info,
+                                 XYPlot plot,
+                                 ValueAxis domainAxis,
+                                 ValueAxis rangeAxis,
+                                 XYDataset dataset,
+                                 int series,
+                                 int item,
+                                 CrosshairState crosshairState,
+                                 int pass) {
+                // Enclose parent method in try-catch block to prevent
+                // IndexOutOfBoundsException from bubbling up. This exception may arise
+                // when plot is updating while the underlying data is being modified.
+                try {
+                    super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis, dataset, series, item, crosshairState, pass);
+                } catch (IndexOutOfBoundsException e) {
+                    // Can be ignored. Simply skip rendering of this data item.
+                }
+            }
+
+        };
         mRenderer.setDrawBarOutline(false);
         mRenderer.setSeriesPaint(0, SUCCESS_COLOR);
         mRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);
@@ -241,7 +277,10 @@ public class MetricsChartPanel extends ChartPanel {
         mRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
         XYPlot mPlot = new XYPlot(_messageRates, null, mYAxis, mRenderer);
 
+        //
         // Now combine all plots to share the same time (x-)axis.
+        //
+
         DateAxis xAxis = new DateAxis(null);
         xAxis.setAutoRange(true);
         xAxis.setFixedAutoRange(_maxTimeRange);
@@ -252,10 +291,10 @@ public class MetricsChartPanel extends ChartPanel {
         combinedPlot.add(mPlot, 60);    // next to the corresponding plots.
         combinedPlot.setOrientation(PlotOrientation.VERTICAL);
 
-        _chart = new JFreeChart(null,     // chart title
-                null,     // title font
+        _chart = new JFreeChart(null,   // chart title
+                null,                   // title font
                 combinedPlot,
-                false     // generate legend?
+                false                   // generate legend?
         );
 
         setChart(_chart);

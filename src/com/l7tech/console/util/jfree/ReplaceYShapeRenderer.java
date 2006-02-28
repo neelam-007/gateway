@@ -85,53 +85,60 @@ public class ReplaceYShapeRenderer extends AbstractXYItemRenderer {
                          int item,
                          CrosshairState crosshairState,
                          int pass) {
-        // do nothing if item is not visible
-        if (!getItemVisible(series, item)) {
-            return;
-        }
+        // Enclose whole method in try-catch block to prevent
+        // IndexOutOfBoundsException from bubbling up. This exception may arise
+        // when plot is updating while the underlying data is being modified.
+        try {
+            // do nothing if item is not visible
+            if (!getItemVisible(series, item)) {
+                return;
+            }
 
-        // get the data point...
-        TimeTableXYDataset dataset_ = (TimeTableXYDataset) dataset;
-        TimePeriod period = dataset_.getTimePeriod(item);
-        double x = ((double) period.getStart().getTime() + (double) period.getEnd().getTime()) / 2.;
-        double y = dataset_.getYValue(series, item);
-        if (y == 0.) {
-            return;     // Don't plot shape if actual y value is zero.
-        }
-        if (Double.isNaN(y)) {
-            return;
-        }
-        // Now apply the replacement y value.
-        y = getSeriesYValue(series);
+            // get the data point...
+            TimeTableXYDataset dataset_ = (TimeTableXYDataset) dataset;
+            TimePeriod period = dataset_.getTimePeriod(item);
+            double x = ((double) period.getStart().getTime() + (double) period.getEnd().getTime()) / 2.;
+            double y = dataset_.getYValue(series, item);
+            if (y == 0.) {
+                return;     // Don't plot shape if actual y value is zero.
+            }
+            if (Double.isNaN(y)) {
+                return;
+            }
+            // Now apply the replacement y value.
+            y = getSeriesYValue(series);
 
-        PlotOrientation orientation = plot.getOrientation();
-        RectangleEdge xAxisLocation = plot.getDomainAxisEdge();
-        RectangleEdge yAxisLocation = plot.getRangeAxisEdge();
-        double transX = domainAxis.valueToJava2D(x, dataArea, xAxisLocation);
-        double transY = rangeAxis.valueToJava2D(y, dataArea, yAxisLocation);
+            PlotOrientation orientation = plot.getOrientation();
+            RectangleEdge xAxisLocation = plot.getDomainAxisEdge();
+            RectangleEdge yAxisLocation = plot.getRangeAxisEdge();
+            double transX = domainAxis.valueToJava2D(x, dataArea, xAxisLocation);
+            double transY = rangeAxis.valueToJava2D(y, dataArea, yAxisLocation);
 
-        Shape shape = getItemShape(series, item);
-        if (orientation == PlotOrientation.HORIZONTAL) {
-            shape = ShapeUtilities.createTranslatedShape(shape, transY, transX);
-        } else if (orientation == PlotOrientation.VERTICAL) {
-            shape = ShapeUtilities.createTranslatedShape(shape, transX, transY);
-        }
+            Shape shape = getItemShape(series, item);
+            if (orientation == PlotOrientation.HORIZONTAL) {
+                shape = ShapeUtilities.createTranslatedShape(shape, transY, transX);
+            } else if (orientation == PlotOrientation.VERTICAL) {
+                shape = ShapeUtilities.createTranslatedShape(shape, transX, transY);
+            }
 
-        Shape entityArea = shape;
-        if (shape.intersects(dataArea)) {
-            g2.setPaint(getItemPaint(series, item));
-            g2.fill(shape);
-        }
+            Shape entityArea = shape;
+            if (shape.intersects(dataArea)) {
+                g2.setPaint(getItemPaint(series, item));
+                g2.fill(shape);
+            }
 
-        // add an entity for the item...
-        // setup for collecting optional entity info...
-        EntityCollection entities = null;
-        if (info != null) {
-            entities = info.getOwner().getEntityCollection();
-        }
+            // add an entity for the item...
+            // setup for collecting optional entity info...
+            EntityCollection entities = null;
+            if (info != null) {
+                entities = info.getOwner().getEntityCollection();
+            }
 
-        if (entities != null) {
-            addEntity(entities, entityArea, dataset, series, item, transX, transY);
+            if (entities != null) {
+                addEntity(entities, entityArea, dataset, series, item, transX, transY);
+            }
+        } catch (IndexOutOfBoundsException e) {
+            // Can be ignored. Simply skip rendering of this data item.
         }
     }
 }

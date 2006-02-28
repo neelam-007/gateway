@@ -63,45 +63,52 @@ public class TimePeriodValueWithHighLowRenderer extends XYBarRenderer {
                          int item,
                          CrosshairState crosshairState,
                          int pass) {
-        // First, draws the high-low bar.
-        super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis, dataset, series, item, crosshairState, pass);
+        // Enclose whole method in try-catch block to prevent
+        // IndexOutOfBoundsException from bubbling up. This exception may arise
+        // when plot is updating while the underlying data is being modified.
+        try {
+            // First, draws the high-low bar.
+            super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis, dataset, series, item, crosshairState, pass);
 
-        if (!getItemVisible(series, item)) {
-            return;
+            if (!getItemVisible(series, item)) {
+                return;
+            }
+
+            // Next, draws the y value horizontal line in front.
+
+            TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
+
+            Number yNumber = dataset_.getY(series, item);
+            if (yNumber == null) {
+                return;
+            }
+            double y = yNumber.doubleValue();
+            if (Double.isNaN(y)) {
+                return;
+            }
+
+            double translatedY = rangeAxis.valueToJava2D(y, dataArea, plot.getRangeAxisEdge());
+
+            RectangleEdge location = plot.getDomainAxisEdge();
+            Number startXNumber = dataset_.getStartX(series, item);
+            if (startXNumber == null) {
+                return;
+            }
+            double translatedStartX = domainAxis.valueToJava2D(startXNumber.doubleValue(), dataArea, location);
+
+            Number endXNumber = dataset_.getEndX(series, item);
+            if (endXNumber == null) {
+                return;
+            }
+            double translatedEndX = domainAxis.valueToJava2D(endXNumber.doubleValue(), dataArea, location);
+
+            Line2D line = state.workingLine;
+            line.setLine(translatedStartX, translatedY, translatedEndX, translatedY);
+            g2.setStroke(getSeriesStroke(series));
+            g2.setPaint(getSeriesFillPaint(series));
+            g2.draw(line);
+        } catch (IndexOutOfBoundsException e) {
+            // Can be ignored. Simply skip rendering of this data item.
         }
-
-        // Next, draws the y value horizontal line in front.
-
-        TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
-
-        Number yNumber = dataset_.getY(series, item);
-        if (yNumber == null) {
-            return;
-        }
-        double y = yNumber.doubleValue();
-        if (Double.isNaN(y)) {
-            return;
-        }
-
-        double translatedY = rangeAxis.valueToJava2D(y, dataArea, plot.getRangeAxisEdge());
-
-        RectangleEdge location = plot.getDomainAxisEdge();
-        Number startXNumber = dataset_.getStartX(series, item);
-        if (startXNumber == null) {
-            return;
-        }
-        double translatedStartX = domainAxis.valueToJava2D(startXNumber.doubleValue(), dataArea, location);
-
-        Number endXNumber = dataset_.getEndX(series, item);
-        if (endXNumber == null) {
-            return;
-        }
-        double translatedEndX = domainAxis.valueToJava2D(endXNumber.doubleValue(), dataArea, location);
-
-        Line2D line = state.workingLine;
-        line.setLine(translatedStartX, translatedY, translatedEndX, translatedY);
-        g2.setStroke(getSeriesStroke(series));
-        g2.setPaint(getSeriesFillPaint(series));
-        g2.draw(line);
     }
 }
