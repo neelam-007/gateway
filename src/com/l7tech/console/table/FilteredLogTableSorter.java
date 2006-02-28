@@ -159,9 +159,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param newFilterLevel  The new filter applied
      */
-    public void applyNewMsgFilter(int filterLevel, String filterService, String filterMessage) {
+    public void applyNewMsgFilter(int filterLevel,
+                                  String filterNodeName,
+                                  String filterService,
+                                  String filterThreadId,
+                                  String filterMessage) {
 
-        filterData(filterLevel, filterService, filterMessage);
+        filterData(filterLevel, filterNodeName, filterService, filterThreadId, filterMessage);
         sortData(columnToSort, false);
 
         realModel.fireTableDataChanged();
@@ -230,6 +234,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 return msg.getNodeId();
             case LogPanel.LOG_SERVICE_COLUMN_INDEX:
                 return getServiceName(msg);
+            case LogPanel.LOG_THREAD_COLUMN_INDEX:
+                return Integer.toString(msg.getSSGLogRecord().getThreadID());
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -314,6 +320,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 case LogPanel.LOG_SERVICE_COLUMN_INDEX:
                     elementA = getServiceName(logMsgA);
                     elementB = getServiceName(logMsgB);
+                    break;
+                case LogPanel.LOG_THREAD_COLUMN_INDEX:
+                    elementA = Integer.toString(logMsgA.getSSGLogRecord().getThreadID());
+                    elementB = Integer.toString(logMsgB.getSSGLogRecord().getThreadID());
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -439,7 +449,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
     public void refreshLogs(final LogPanel logPane, final boolean restartTimer, final String nodeId) {
-        doRefreshLogs(logPane, restartTimer, null, null, null, nodeId, true);
+        // Load the last 3 hours initially
+        Date startDate =  new Date(System.currentTimeMillis()-(1000L*60L*60L*3L));
+        doRefreshLogs(logPane, restartTimer, startDate, null, null, nodeId, true);
     }
 
     /**
@@ -505,7 +517,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
         // filter the logs
         filterData(logPane.getMsgFilterLevel(),
+                logPane.getMsgFilterNodeName(),
                 logPane.getMsgFilterService(),
+                logPane.getMsgFilterThreadId(),
                 logPane.getMsgFilterMessage());
 
         // sort the logs
@@ -595,7 +609,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
                             // filter the logs
                             filterData(logPane.getMsgFilterLevel(),
+                                    logPane.getMsgFilterNodeName(),
                                     logPane.getMsgFilterService(),
+                                    logPane.getMsgFilterThreadId(),
                                     logPane.getMsgFilterMessage());
 
                             // sort the logs

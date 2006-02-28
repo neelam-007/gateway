@@ -26,7 +26,7 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     /**
      * Constructs a <CODE>SSGLogRecord</CODE> given the log record and the node Id.
      *
-     * @param record  the <CODE>LogRecord</CODE> containing the log information.
+     * @param record  the <CODE>LogRecord</CODE> containing the log information.                                         
      * @param nodeId  the id of the node generating the log.
      */
     public SSGLogRecord(LogRecord record, String nodeId) {
@@ -34,6 +34,7 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         setLoggerName(record.getLoggerName());
         setParameters(record.getParameters());
         setMillis(record.getMillis());
+        setThreadID(record.getThreadID());
         setSequenceNumber(record.getSequenceNumber());
         setOid(record.getSequenceNumber());
 

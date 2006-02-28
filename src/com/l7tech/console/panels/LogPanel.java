@@ -91,6 +91,7 @@ public class LogPanel extends JPanel {
     public static final int LOG_REQUEST_ID_COLUMN_INDEX = 7;
     public static final int LOG_NODE_ID_COLUMN_INDEX = 8;
     public static final int LOG_SERVICE_COLUMN_INDEX = 9;
+    public static final int LOG_THREAD_COLUMN_INDEX = 10;
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
@@ -108,7 +109,9 @@ public class LogPanel extends JPanel {
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
+    private String msgFilterNode = "";
     private String msgFilterService = "";
+    private String msgFilterThreadId = "";
     private String msgFilterMessage = "";
     private boolean isAuditType;
     private String nodeId;
@@ -516,8 +519,16 @@ public class LogPanel extends JPanel {
         return msgFilterLevel;
     }
 
+    public String getMsgFilterNodeName() {
+        return msgFilterNode;
+    }
+
     public String getMsgFilterService() {
         return msgFilterService;
+    }
+
+    public String getMsgFilterThreadId() {
+        return msgFilterThreadId;
     }
 
     public String getMsgFilterMessage() {
@@ -598,7 +609,13 @@ public class LogPanel extends JPanel {
         filterPane = new JPanel();
         filterPane.setLayout(new FlowLayout());
         filterPane.add(getFilterSlider());
-        if(isAuditType) filterPane.add(getFilterServicePane());
+        if(isAuditType) {
+            filterPane.add(getFilterNodePane());
+            filterPane.add(getFilterServicePane());
+        }
+        else {
+            filterPane.add(getFilterThreadPane());
+        }
         filterPane.add(getFilterMessagePane());
         if(!isAuditType) filterPane.add(getMicroControlPane());
 
@@ -664,6 +681,33 @@ public class LogPanel extends JPanel {
         return slider;
     }
 
+    private JPanel getFilterNodePane() {
+        JPanel filterNodePane = new JPanel();
+
+        JTextField nodeTextField = new JTextField(5);
+        nodeTextField.setFont(new java.awt.Font("Dialog", 0, 11));
+        nodeTextField.getDocument().addDocumentListener(new DocumentListener(){
+            public void insertUpdate(DocumentEvent e) {
+                updateMsgFilterNode(e.getDocument());
+            }
+            public void removeUpdate(DocumentEvent e) {
+                updateMsgFilterNode(e.getDocument());
+            }
+            public void changedUpdate(DocumentEvent e) {
+                updateMsgFilterNode(e.getDocument());
+            }
+        });
+
+        JLabel label = new JLabel("Node:");
+        label.setFont(new java.awt.Font("Dialog", 0, 11));
+
+        filterNodePane.setLayout(new BorderLayout());
+        filterNodePane.add(label, BorderLayout.NORTH);
+        filterNodePane.add(nodeTextField, BorderLayout.CENTER);
+
+        return filterNodePane;
+    }
+
     private JPanel getFilterServicePane() {
         JPanel filterServicePane = new JPanel();
 
@@ -689,6 +733,33 @@ public class LogPanel extends JPanel {
         filterServicePane.add(serviceTextField, BorderLayout.CENTER);
 
         return filterServicePane;
+    }
+
+    private JPanel getFilterThreadPane() {
+        JPanel filterThreadPane = new JPanel();
+
+        JTextField threadTextField = new JTextField(8);
+        threadTextField.setFont(new java.awt.Font("Dialog", 0, 11));
+        threadTextField.getDocument().addDocumentListener(new DocumentListener(){
+            public void insertUpdate(DocumentEvent e) {
+                updateMsgFilterThreadId(e.getDocument());
+            }
+            public void removeUpdate(DocumentEvent e) {
+                updateMsgFilterThreadId(e.getDocument());
+            }
+            public void changedUpdate(DocumentEvent e) {
+                updateMsgFilterThreadId(e.getDocument());
+            }
+        });
+
+        JLabel label = new JLabel("Thread Id:");
+        label.setFont(new java.awt.Font("Dialog", 0, 11));
+
+        filterThreadPane.setLayout(new BorderLayout());
+        filterThreadPane.add(label, BorderLayout.NORTH);
+        filterThreadPane.add(threadTextField, BorderLayout.CENTER);
+
+        return filterThreadPane;
     }
 
     private JPanel getFilterMessagePane() {
@@ -957,12 +1028,9 @@ public class LogPanel extends JPanel {
         if(statusPane != null)  return statusPane;
 
         statusPane = new JPanel();
-        statusPane.setLayout(new FlowLayout());
-        statusPane.add(getMsgTotal());
-        JPanel spacer = new JPanel();
-        spacer.setSize(40,20);
-        statusPane.add(spacer);
-        statusPane.add(getLastUpdateTimeLabel());
+        statusPane.setLayout(new BorderLayout());
+        statusPane.add(getMsgTotal(), BorderLayout.NORTH);
+        statusPane.add(getLastUpdateTimeLabel(), BorderLayout.CENTER);
 
         return statusPane;
     }
@@ -995,6 +1063,9 @@ public class LogPanel extends JPanel {
         }
         columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, 30));
         columnModel.addColumn(new TableColumn(LOG_TIMESTAMP_COLUMN_INDEX, 80));
+        if(!isAuditType) {
+            columnModel.addColumn(new TableColumn(LOG_THREAD_COLUMN_INDEX, 15));
+        }
         columnModel.addColumn(new TableColumn(LOG_SEVERITY_COLUMN_INDEX, 15));
         if(isAuditType) { // show the service name if we are displaying audit messages
             columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, 20));
@@ -1035,7 +1106,8 @@ public class LogPanel extends JPanel {
             return logTableModel;
         }
 
-        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class", "Method", "Request Id", "Node Id", "Service"};
+        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class",
+                "Method", "Request Id", "Node Id", "Service", "Thread Id"};
         String[][] rows = new String[][]{};
 
         logTableModel = new DefaultTableModel(rows, cols) {
@@ -1145,7 +1217,7 @@ public class LogPanel extends JPanel {
             msgNumSelected = getMsgTable().getModel().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX).toString();
         }
 
-        ((FilteredLogTableSorter) getMsgTable().getModel()).applyNewMsgFilter(msgFilterLevel, msgFilterService, msgFilterMessage);
+        ((FilteredLogTableSorter) getMsgTable().getModel()).applyNewMsgFilter(msgFilterLevel, msgFilterNode, msgFilterService, msgFilterThreadId, msgFilterMessage);
 
         if (msgNumSelected != null) {
             setSelectedRow(msgNumSelected);
@@ -1166,6 +1238,17 @@ public class LogPanel extends JPanel {
         }
     }
 
+    private void updateMsgFilterNode(Document document) {
+        updateMsgFilterNode(toString(document));
+    }
+
+    private void updateMsgFilterNode(String nodeMatch) {
+        if (nodeMatch!=null && !nodeMatch.equals(msgFilterNode)) {
+            msgFilterNode = nodeMatch;
+            updateMsgFilter();
+        }
+    }
+
     private void updateMsgFilterService(Document document) {
         updateMsgFilterService(toString(document));
     }
@@ -1173,6 +1256,17 @@ public class LogPanel extends JPanel {
     private void updateMsgFilterService(String serviceMatch) {
         if (serviceMatch!=null && !serviceMatch.equals(msgFilterService)) {
             msgFilterService = serviceMatch;
+            updateMsgFilter();
+        }
+    }
+
+    private void updateMsgFilterThreadId(Document document) {
+        updateMsgFilterThreadId(toString(document));
+    }
+
+    private void updateMsgFilterThreadId(String threadIdMatch) {
+        if (threadIdMatch!=null && !threadIdMatch.equals(msgFilterThreadId)) {
+            msgFilterThreadId = threadIdMatch;
             updateMsgFilter();
         }
     }

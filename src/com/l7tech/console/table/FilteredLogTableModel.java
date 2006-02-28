@@ -25,7 +25,9 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     protected Hashtable rawLogCache = new Hashtable();
     protected Vector filteredLogCache = new Vector();
     private int filterLevel = LogPanel.MSG_FILTER_LEVEL_WARNING;
+    private String filterNodeName = "";
     private String filterService = "";
+    private String filterThreadId = "";
     private String filterMessage = "";
     protected Hashtable currentNodeList;
 
@@ -38,8 +40,16 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         this.filterLevel = filterLevel;
     }
 
+    public void setMsgFilterNodeName(String filterNodeName) {
+        this.filterNodeName = filterNodeName;
+    }
+
     public void setMsgFilterService(String filterService) {
         this.filterService = filterService;
+    }
+
+    public void setMsgFilterThreadId(String filterThreadId) {
+        this.filterThreadId = filterThreadId;
     }
 
     public void setMsgFilterMessage(String filterMessage) {
@@ -63,10 +73,15 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
              (logSeverity.equals("WARNING") && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_WARNING)) ||
              (logSeverity.equals("SEVERE")  && (filterLevel >= LogPanel.MSG_FILTER_LEVEL_SEVERE))) {
 
+            String name = logMsg.getNodeName();
             String message = logMsg.getMsgDetails();
+            String threadId = Integer.toString(logMsg.getSSGLogRecord().getThreadID());
             String service = getServiceName(logMsg);
 
-            return matches(filterService, service) && matches(filterMessage, message);
+            return matches(filterNodeName, name) &&
+                   matches(filterService, service) &&
+                   matches(filterThreadId, threadId) &&
+                   matches(filterMessage, message);
         } else {
             return false;
         }
@@ -128,10 +143,16 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
      *
      * @param msgFilterLevel
      */
-    protected void filterData(int msgFilterLevel, String msgFilterService, String msgFilterMessage) {
+    protected void filterData(int msgFilterLevel,
+                              String msgFilterNodeName,
+                              String msgFilterService,
+                              String msgFilterThreadId,
+                              String msgFilterMessage) {
 
         setMsgFilterLevel(msgFilterLevel);
+        setMsgFilterNodeName(msgFilterNodeName);
         setMsgFilterService(msgFilterService);
+        setMsgFilterThreadId(msgFilterThreadId);
         setMsgFilterMessage(msgFilterMessage);
 
         // initialize the cache
