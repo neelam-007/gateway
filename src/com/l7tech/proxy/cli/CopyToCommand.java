@@ -61,6 +61,11 @@ class CopyToCommand extends Command {
         dstSsg.copyFrom(srcSsg);
         dstRuntime.setCachedPassword(srcRuntime.getCachedPassword());
 
+        // Restore the keystore and trust store files to default before copying
+        final Ssg defaultDst = new Ssg(dstSsg.getId());
+        dstSsg.setKeyStoreFile(defaultDst.getKeyStoreFile());
+        dstSsg.setTrustStoreFile(defaultDst.getTrustStoreFile());
+
         try {
             if (srcSsg.getTrustStoreFile().exists())
                 FileUtils.copyFile(srcSsg.getTrustStoreFile(), dstSsg.getTrustStoreFile());
