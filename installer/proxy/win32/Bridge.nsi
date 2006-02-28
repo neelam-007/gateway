@@ -75,9 +75,12 @@ Section "SecureSpan Bridge" SecCopyUI
   ; First, let's check that the product was not already installed.
   ; check if ssg is already installed
   ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT}" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" ""
   StrCmp ${TEMP} "" cleaninstall
+  foundpreviousinstall:
     DetailPrint "existing ${MUI_PRODUCT} installation detected at ${TEMP}"
-    MessageBox MB_YESNO "The ${MUI_PRODUCT} appears to be already installed on this system at location ${TEMP}. Do you want to install over the existing installation?" IDNO endofinstall
+    MessageBox MB_YESNO "The ${MUI_PRODUCT} appears to be already installed on this system at location ${TEMP}. Do you want to continue anyway?" IDNO endofinstall
       MessageBox MB_OK "Make sure the current version is stopped and click OK to continue."
 
   cleaninstall:
@@ -106,7 +109,8 @@ Section "SecureSpan Bridge" SecCopyUI
 
   ;Store install folder, version installed
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
-  WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "version" ${MUI_VERSION}
+  WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT}" "" $INSTDIR
+  WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT}" "version" ${MUI_VERSION}
 
   !insertmacro MUI_STARTMENU_WRITE_BEGIN
 
