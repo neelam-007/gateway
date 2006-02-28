@@ -72,7 +72,18 @@
 ;Installer Sections
 
 Section "Policy Editor" SecCopyUI
+  ; First, let's check that the product was not already installed.
+  ; check if ssm is already installed
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT}" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" ""
+  StrCmp ${TEMP} "" cleaninstall
+  foundpreviousinstall:
+    DetailPrint "existing ${MUI_PRODUCT} installation detected at ${TEMP}"
+    MessageBox MB_YESNO "The ${MUI_PRODUCT} appears to be already installed on this system at location ${TEMP}. Do you want to continue anyway?" IDNO endofinstall
+      MessageBox MB_OK "Make sure the current version is stopped and click OK to continue."
 
+  cleaninstall:
   ;ADD YOUR OWN STUFF HERE!
 
   SetOutPath "$INSTDIR"
@@ -90,6 +101,8 @@ Section "Policy Editor" SecCopyUI
   
   ;Store install folder
   WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" "" $INSTDIR
+  WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT}" "" $INSTDIR
+  WriteRegStr HKCU "Software\${COMPANY}\${MUI_PRODUCT}" "version" ${MUI_VERSION}
 
   !insertmacro MUI_STARTMENU_WRITE_BEGIN
     
@@ -159,7 +172,8 @@ Section "Uninstall"
   RMDir "$INSTDIR"
   RMDir "$PROGRAMFILES\${COMPANY}"
 
-  DeleteRegKey /ifempty HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
+  DeleteRegKey HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
+  DeleteRegKey HKCU "Software\${COMPANY}\${MUI_PRODUCT}"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}"
   
   ;Display the Finish header
