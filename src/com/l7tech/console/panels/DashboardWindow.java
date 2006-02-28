@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
@@ -52,6 +53,17 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private JTextField numSuccessField;
     private JTextField numTotalField;
     private JTabbedPane rightTabbedPane;
+    private JLabel frontMinImageLabel;
+    private JLabel frontAvgImageLabel;
+    private JLabel frontMaxImageLabel;
+    private JLabel backMinImageLabel;
+    private JLabel backAvgImageLabel;
+    private JLabel backMaxImageLabel;
+    private JLabel numRoutingFailImageLabel;
+    private JLabel numPolicyFailImageLabel;
+    private JLabel numSuccessImageLabel;
+    private JLabel numTotalImageLabel;
+
     private ClusterNodeInfo[] currentClusterNodes = null;
     private EntityHeader[] currentServiceHeaders = null;
 
@@ -121,6 +133,19 @@ public class DashboardWindow extends JFrame implements LogonListener {
                 resetData();
             }
         });
+
+        ImageCache cache = ImageCache.getInstance();
+        backMinImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/BackendResponseTimeMinLegend.gif")));
+        backAvgImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/BackendResponseTimeAvgLegend.gif")));
+        backMaxImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/BackendResponseTimeMaxLegend.gif")));
+
+        frontMinImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/FrontendResponseTimeMinLegend.gif")));
+        frontAvgImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/FrontendResponseTimeAvgLegend.gif")));
+        frontMaxImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/FrontendResponseTimeMaxLegend.gif")));
+
+        numPolicyFailImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/MsgRatePolicyViolationLegend.gif")));
+        numRoutingFailImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/MsgRateRoutingFailureLegend.gif")));
+        numSuccessImageLabel.setIcon(new ImageIcon(cache.getIcon("com/l7tech/console/resources/MsgRateSuccessLegend.gif")));
 
         resetData();
 
@@ -214,9 +239,13 @@ public class DashboardWindow extends JFrame implements LogonListener {
                     addBin(bin.getResolution(), bin.getPeriodStart(), bin);
                 }
 
-                Long lastPeriod = (Long)fineEntriesByPeriodStart.lastKey();
-                PeriodData lastEntry = (PeriodData)fineEntriesByPeriodStart.get(lastPeriod);
-                MetricsBin lastBin = lastEntry.get(whichNode, whichService);
+                MetricsBin lastBin = null;
+                Long lastPeriod = null;
+                if (!fineEntriesByPeriodStart.isEmpty()) {
+                    lastPeriod = (Long)fineEntriesByPeriodStart.lastKey();
+                    PeriodData lastEntry = (PeriodData)fineEntriesByPeriodStart.get(lastPeriod);
+                    lastBin = lastEntry.get(whichNode, whichService);
+                }
 
                 if (lastBin != null) {
                     lastRefresh = lastBin.getPeriodStart() + 1;
@@ -234,7 +263,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
                     if (lastPeriod.longValue() + (lastBin.getInterval()*2) > System.currentTimeMillis()) {
                         // Next bin is still likely in the future
                         logger.info("New last bin: " + lastBin);
-                        numPolicyFail = lastBin.getNumAttemptedRequest() - lastBin.getNumCompletedRequest();
+                        numPolicyFail = lastBin.getNumAttemptedRequest() - lastBin.getNumAuthorizedRequest();
                         numRoutingFail = lastBin.getNumAuthorizedRequest() - lastBin.getNumCompletedRequest();
                         numSuccess = lastBin.getNumCompletedRequest();
                         numTotal = lastBin.getNumAttemptedRequest();

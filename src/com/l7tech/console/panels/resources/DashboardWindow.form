@@ -668,19 +668,6 @@
                       <text value=""/>
                     </properties>
                   </component>
-                  <component id="9ea10" class="javax.swing.JLabel" binding="numTotalImageLabel">
-                    <constraints>
-                      <xy x="110" y="94" width="24" height="24"/>
-                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
-                        <minimum-size width="24" height="24"/>
-                        <preferred-size width="24" height="24"/>
-                        <maximum-size width="24" height="24"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <text value=""/>
-                    </properties>
-                  </component>
                 </children>
               </grid>
               <vspacer id="ca805">
