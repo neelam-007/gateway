@@ -594,6 +594,9 @@
                 <!-- Exclude unless Log4j is used -->
                 <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
 
+                <!-- Exclude Charting -->
+                <exclude name="com/l7tech/common/gui/jfree/**/*"/>
+
                 <exclude name="com/l7tech/common/audit/**/*"/>
                 <exclude name="com/l7tech/common/alert/**/*"/>
 
@@ -905,7 +908,7 @@
         </exec>
         <!--
           Commented out until:
-               DBActionsTest.java 
+               DBActionsTest.java
                ConfigurationWizardTest.java
            are moved to "tests"
         <exec executable="perl" failonerror="true">
