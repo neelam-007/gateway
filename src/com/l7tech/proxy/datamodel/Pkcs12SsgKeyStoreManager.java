@@ -309,7 +309,6 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
                 if (e instanceof FileNotFoundException)
                     log.info("Creating new trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg);
                 else {
-                    log.log(Level.SEVERE, "Unable to load existing trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg, e);
                     throw new KeyStoreCorruptException(e);
                 }
                 try {
