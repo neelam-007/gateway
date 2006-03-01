@@ -188,8 +188,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             }
             Map rstTypes = getTrustTokenTypeAndRequestTypeValues(context);
             Document response;
-            if (isRequestForSecureConversationContext(rstTypes)) {
-                response = handleSecureConversationContextRequest(context, authenticatedUser);
+            if (isRequestForSecureConversationContext(rstTypes) || isRequestForSecureConversationContext0502(rstTypes)) {
+                response = handleSecureConversationContextRequest(rstTypes, context, authenticatedUser);
             } else if (isRequestForSAML20Token(rstTypes)) {
                 // todo, implement this
                 String msg = "SAML 2.0 token requested but not yet supported.";
@@ -197,7 +197,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 context.setFaultDetail(new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER, msg, null));
                 return AssertionStatus.NOT_YET_IMPLEMENTED;
             } else if (isRequestForSAMLToken(rstTypes)) {
-                response = handleSamlRequest(context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
+                response = handleSamlRequest(rstTypes, context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);
             } else {
                 status = AssertionStatus.BAD_REQUEST;
                 throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
@@ -284,8 +284,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return base;
     }
 
-    private Document handleSamlRequest(PolicyEnforcementContext context, boolean useThumbprintForSignature, boolean useThumbprintForSubject) throws TokenServiceException,
-                                                                                GeneralSecurityException
+    private Document handleSamlRequest(Map rstTypes, PolicyEnforcementContext context,
+                                       boolean useThumbprintForSignature, boolean useThumbprintForSubject)
+                                       throws TokenServiceException, GeneralSecurityException
     {
         String clientAddress = null;
         TcpKnob tcpKnob = context.getRequest().getTcpKnob();
@@ -293,7 +294,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             clientAddress = tcpKnob.getRemoteAddress();
         LoginCredentials creds = context.getCredentials();
 
-        StringBuffer responseXml = new StringBuffer(WST_RST_RESPONSE_PREFIX);
+        StringBuffer responseXml = new StringBuffer(rstResponsePrefix((String)rstTypes.get(TRUSTNS), (String)rstTypes.get(SCNS)));
         try {
             SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
             if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
@@ -317,8 +318,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         }
     }
 
-    private Document handleSecureConversationContextRequest(PolicyEnforcementContext context, User requestor)
-                                                                throws TokenServiceException, GeneralSecurityException {
+    private Document handleSecureConversationContextRequest(Map rstTypes, PolicyEnforcementContext context,
+                                                            User requestor) throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession;
         try {
             newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor, context.getCredentials());
@@ -356,21 +357,21 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         if (clientCert != null) {
             secretXml = produceEncryptedKeyXml(newSession.getSharedSecret(), clientCert);
         } else {
-            secretXml = produceBinarySecretXml(newSession.getSharedSecret());
+            secretXml = produceBinarySecretXml(newSession.getSharedSecret(), (String)rstTypes.get(TRUSTNS));
         }
         try {
-            String xmlStr = WST_RST_RESPONSE_PREFIX +
+            String xmlStr = rstResponsePrefix((String)rstTypes.get(TRUSTNS), (String)rstTypes.get(SCNS)) +
                                       "<wsc:SecurityContextToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
                                       "</wsc:SecurityContextToken>" +
-                            WST_RST_RESPONSE_INFIX +
+                                      WST_RST_RESPONSE_INFIX +
                                     "<wst:RequestedProofToken>" +
                                       secretXml +
                                     "</wst:RequestedProofToken>" +
                                     "<wst:Lifetime>" +
                                       "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
                                     "</wst:Lifetime>" +
-                            WST_RST_RESPONSE_SUFFIX;
+                                    WST_RST_RESPONSE_SUFFIX;
             response = XmlUtil.stringToDocument(xmlStr);
         } catch (SAXException e) {
             throw new TokenServiceException(e);
@@ -405,9 +406,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return response;
     }
 
-    private String produceBinarySecretXml(SecretKey sharedSecret) {
+    private String produceBinarySecretXml(SecretKey sharedSecret, String trustns) {
         StringBuffer output = new StringBuffer();
-        output.append("<wst:BinarySecret Type=\"" + SoapUtil.WST_NAMESPACE + "/SymmetricKey" + "\">");
+        output.append("<wst:BinarySecret Type=\"" + trustns + "/SymmetricKey" + "\">");
         byte[] actualkey = sharedSecret.getEncoded();
         output.append(HexUtils.encodeBase64(actualkey, true));
         output.append("</wst:BinarySecret>");
@@ -460,12 +461,33 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         if (val == null || !"http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct".equals(val)) {
             return false;
         }
-
         val = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
         if (val == null || !val.endsWith("/trust/Issue")) {
             logger.warning("RequestType not supported." + val);
             return false;
         }
+        // will be set to WSSC_NAMESPACE2 if caught by isRequestForSecureConversationContext0502
+        rstTypes.put(SCNS, SoapUtil.WSSC_NAMESPACE);
+        return true;
+    }
+
+    /**
+     * checks if this request is for a sec conv context
+     * does not check things like whether the body is signed since this is the
+     * responsibility of the policy
+     */
+    private boolean isRequestForSecureConversationContext0502(Map rstTypes) {
+        String val = (String)rstTypes.get(SoapUtil.WST_TOKENTYPE);
+        if (val == null || !"http://schemas.xmlsoap.org/ws/2005/02/sc/sct".equals(val)) {
+            return false;
+        }
+        if (val == null || !val.endsWith("/trust/Issue")) {
+            logger.warning("RequestType not supported." + val);
+            return false;
+        }
+        // will be set to WSSC_NAMESPACE if caught by isRequestForSecureConversationContext
+        rstTypes.put(SCNS, SoapUtil.WSSC_NAMESPACE2);
+        val = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
         return true;
     }
 
@@ -499,6 +521,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      */
     private Map getTrustTokenTypeAndRequestTypeValues(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
         Map output = new HashMap();
+        // initial value important (dont remove)
+        output.put(SCNS, SoapUtil.WSSC_NAMESPACE);
         Document doc;
         try {
             XmlKnob knob = context.getRequest().getXmlKnob();
@@ -524,7 +548,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
             return output;
         }
-
+        output.put(TRUSTNS, maybeRSTEl.getNamespaceURI());
         Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, SoapUtil.WST_TOKENTYPE);
         if (tokenTypeEl == null) {
             logger.warning("Token type not specified. This is not supported.");
@@ -593,18 +617,26 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         return user.getName()!=null ? user.getName() : user.getLogin();      
     }
 
-    private final String WST_RST_RESPONSE_PREFIX =
-            "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+    private static String rstResponsePrefix(String wstns, String wsscns) {
+        return "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
               "<soap:Body>" +
-                "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\" " +
+                "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + wstns + "\" " +
                   "xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE + "\" " +
                   "xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\" " +
-                  "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
+                  "xmlns:wsc=\"" + wsscns + "\">" +
                   "<wst:RequestedSecurityToken>";
+    }
     private static final String WST_RST_RESPONSE_INFIX =
                   "</wst:RequestedSecurityToken>";
     private static final String WST_RST_RESPONSE_SUFFIX =
                 "</wst:RequestSecurityTokenResponse>" +
               "</soap:Body>" +
             "</soap:Envelope>";
+
+    /**
+     * a key in the Map returned by getTrustTokenTypeAndRequestTypeValues that tells us the ws trust ns value used in the RST
+     * so that we can use the same ns in the response document
+     */
+    private static final String TRUSTNS = "trustns";
+    private static final String SCNS = "scns";
 }

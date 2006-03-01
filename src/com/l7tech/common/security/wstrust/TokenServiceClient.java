@@ -466,12 +466,19 @@ public class TokenServiceClient {
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
                    UnrecognizedServerCertException
     {
+        // tmp
+        try {
+            log.severe(XmlUtil.nodeToFormattedString(response));
+        } catch (IOException e) {
+
+        }
+        // todo, must remove
+
         Element env = response.getDocumentElement();
         if (env == null) throw new InvalidDocumentFormatException("Response had no document element"); // can't happen
         Element body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), "Body");
         if (body == null) throw new MessageNotSoapException("Response has no SOAP Body");
-        Element rstr = XmlUtil.findOnlyOneChildElementByName(body, tscWstNs, "RequestSecurityTokenResponse");
-        if (rstr == null) rstr = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WST_NAMESPACE_ARRAY, "RequestSecurityTokenResponse");
+        Element rstr = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WST_NAMESPACE_ARRAY, "RequestSecurityTokenResponse");
         if (rstr == null) throw new InvalidDocumentFormatException("Response body does not contain wst:RequestSecurityTokenResponse");
 
         if (serverCertificate != null)
@@ -484,7 +491,7 @@ public class TokenServiceClient {
         // See what kind of requested security token we got
 
         // Check for SecurityContextToken
-        Element scTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE,
+        Element scTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE_ARRAY,
                                                                   SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME);
         if (scTokenEl != null) {
             // It's a SecurityContextToken
@@ -572,7 +579,7 @@ public class TokenServiceClient {
                                             throws InvalidDocumentFormatException, GeneralSecurityException
     {
         // Extract session ID
-        Element identifierEl = XmlUtil.findOnlyOneChildElementByName(scTokenEl, SoapUtil.WSSC_NAMESPACE, "Identifier");
+        Element identifierEl = XmlUtil.findOnlyOneChildElementByName(scTokenEl, SoapUtil.WSSC_NAMESPACE_ARRAY, "Identifier");
         if (identifierEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:Identifier");
         String identifier = XmlUtil.getTextValue(identifierEl).trim();
         if (identifier == null || identifier.length() < 4) throw new InvalidDocumentFormatException("Response wsc:Identifier was empty or too short");
@@ -601,7 +608,7 @@ public class TokenServiceClient {
         if (rpt == null) throw new InvalidDocumentFormatException("Response contained no RequestedProofToken");
 
         Element encryptedKeyEl = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.XMLENC_NS, "EncryptedKey");
-        Element binarySecretEl = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.WST_NAMESPACE, "BinarySecret");
+        Element binarySecretEl = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.WST_NAMESPACE_ARRAY, "BinarySecret");
         byte[] sharedSecret = null;
         if (encryptedKeyEl != null) {
             // If there's a KeyIdentifier, log whether it's talking about our key
