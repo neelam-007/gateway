@@ -552,7 +552,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     private boolean isRequestForSAMLToken(Map rstTypes) {
         String tokenType = (String)rstTypes.get(SoapUtil.WST_TOKENTYPE);
         if (tokenType == null || !PSAML.matcher(tokenType).find()) {
-            logger.warning("TokenType '" + tokenType + "' is not recognized as calling for a saml:Assertion");
+            logger.fine("TokenType '" + tokenType + "' is not recognized as calling for a saml:Assertion");
             return false;
         }
         String requestType = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
