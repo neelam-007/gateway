@@ -63,9 +63,6 @@ public class TimePeriodValueWithHighLowRenderer extends XYBarRenderer {
                          int item,
                          CrosshairState crosshairState,
                          int pass) {
-        // Enclose whole method in try-catch block to prevent
-        // IndexOutOfBoundsException from bubbling up. This exception may arise
-        // when plot is updating while the underlying data is being modified.
         try {
             // First, draws the high-low bar.
             super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis, dataset, series, item, crosshairState, pass);
@@ -108,7 +105,7 @@ public class TimePeriodValueWithHighLowRenderer extends XYBarRenderer {
             g2.setPaint(getSeriesFillPaint(series));
             g2.draw(line);
         } catch (IndexOutOfBoundsException e) {
-            // Can be ignored. Simply skip rendering of this data item.
+            // Probably the data item has just been deleted. Just skip rendering it.
         }
     }
 }

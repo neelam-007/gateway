@@ -24,84 +24,90 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
- * stacked vertically and shares the same time (x-)axis.
+ * stacked vertically sharing the same time (x-)axis.
  * <p>
- * Top plot shows frontend and backend response times.
- * Middle plot shows indicators of routing failure and policy violation.
- * Bottom plot shows message rates.
+ * Top plot shows frontend and backend response times; with avg, min and max.
+ * Middle plot shows alert indicators of routing failure and policy violation
+ * for higher visibility.
+ * Bottom plot shows message rates divided into success, policy violation and
+ * routing failure.
  *
  * @author rmak
  */
 public class MetricsChartPanel extends ChartPanel {
-    /** Color for success messages stack bars and indicators. */
-    public static final Color SUCCESS_COLOR = new Color(0, 120, 0);
+    /** Color for the horizontal line representing average frontend response times. */
+    public static final Color FRONTEND_RESPONSE_AVG_COLOR = new Color(95, 83, 173);
 
-    /** Color for policy violation messages stack bars and indicators. */
-    public static final Color POLICY_VIOLATION_COLOR = new Color(255, 255, 0);
+    /** Color for the high-low bars representing min-max frontend response times. */
+    public static final Color FRONTEND_RESPONSE_MINMAX_COLOR = new Color(186, 189, 255, 128);
 
-    /** Color for routing failure messages stack bars and indicators. */
-    public static final Color ROUTING_FAILURE_COLOR = new Color(255, 0, 0);
+    /** Color for the horizontal line representing average backend response times. */
+    public static final Color BACKEND_RESPONSE_AVG_COLOR = new Color(49, 53, 17);
 
-    /**
-     * Background color of the indicator plot. Chosen to enhance visibility of
-     * the indicator shape colors for policy violation and routing failure.
-     */
-    private static final Color INDICATOR_PLOT_BACKCOLOR = new Color(128, 128, 128);
+    /** Color for the high-low bars representing min-max backend response times. */
+    public static final Color BACKEND_RESPONSE_MINMAX_COLOR = new Color(217, 225, 78, 128);
 
     /** Stroke for the horizontal line representing average response times. */
     public static final BasicStroke RESPONSE_AVG_STROKE = new BasicStroke(2.f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
 
-    /** Color for the horizontal line representing frontend response times. */
-    public static final Color FRONTEND_RESPONSE_AVG_COLOR = new Color(95, 83, 173);
+    /** Color for success messages stack bars and alert indicators. */
+    public static final Color SUCCESS_COLOR = new Color(0, 120, 0);
 
-    /** Color for the high-low bars representing frontend response times. */
-    public static final Color FRONTEND_RESPONSE_MINMAX_COLOR = new Color(186, 189, 255, 128);
+    /** Color for policy violation messages stack bars and alert indicators. */
+    public static final Color POLICY_VIOLATION_COLOR = new Color(255, 255, 0);
 
-    /** Color for the horizontal line representing backend response times. */
-    public static final Color BACKEND_RESPONSE_AVG_COLOR = new Color(49, 53, 17);
+    /** Color for routing failure messages stack bars and alert indicators. */
+    public static final Color ROUTING_FAILURE_COLOR = new Color(255, 0, 0);
 
-    /** Color for the high-low bars representing backend response times. */
-    public static final Color BACKEND_RESPONSE_MINMAX_COLOR = new Color(217, 225, 78, 128);
+    /**
+     * Background color of the indicator plot. Chosen to enhance visibility of
+     * the alert indicator colors ({@link POLICY_VIOLATION_COLOR} and
+     * {@link ROUTING_FAILURE_COLOR}).
+     */
+    private static final Color INDICATOR_PLOT_BACKCOLOR = new Color(128, 128, 128);
 
-    /** Shape for routing failure and policy violation indicators. */
+    /** Shape for alert indicators (routing failure and policy violation). */
     private static final Rectangle2D.Double INDICATOR_SHAPE = new Rectangle2D.Double(-3., -3., 6., 6.);
 
     /**
-     * Name of the series in {@link #_messageRates} that contains success messages.
-     * Will appear in tooltips.
+     * Name of series in {@link #_messageRates} and {@link #_messageCounts} that
+     * contains success message rate and counts.
+     * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_NAME_SUCCESS = "Success";
+    private static final String SERIES_SUCCESS = "Success";
 
     /**
-     * Name of the series in {@link #_messageRates} that contains policy violation messages.
-     * Will appear in tooltips.
+     * Name of series in {@link #_messageRates} and {@link #_messageCounts} that
+     * contains policy violation message rate and counts.
+     * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_NAME_POLICY_VIOLATION = "Policy Violation";
+    private static final String SERIES_POLICY_VIOLATION = "Policy Violation";
 
     /**
-     * Name of the series in {@link #_messageRates} that contains routing failure messages.
-     * Will appear in tooltips.
+     * Name of series in {@link #_messageRates} and {@link #_messageCounts} that
+     * contains routing failure message rate and counts.
+     * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_NAME_ROUTING_FAILURE = "Routing Failure";
+    private static final String SERIES_ROUTING_FAILURE = "Routing Failure";
 
     /**
-     * Name of the series {@link #_frontendResponseTimes} that contains frontend response times.
-     * Will appear in tooltips.
+     * Name of the series {@link #_frontendResponseTimes} that contains frontend
+     * response times.
+     * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_NAME_FRONTEND_RESPONSE = "Frontend";
+    private static final String SERIES_FRONTEND_RESPONSE = "Frontend";
 
     /**
-     * Name of the series {@link #_backendResponseTimes} that contains backend response times.
-     * Will appear in tooltips.
+     * Name of the series {@link #_backendResponseTimes} that contains backend
+     * response times.
+     * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_NAME_BACKEND_RESPONSE = "Backend";
+    private static final String SERIES_BACKEND_RESPONSE = "Backend";
 
     /** Maximum time range of data to keep around (in milliseconds). */
     private long _maxTimeRange;
@@ -128,12 +134,23 @@ public class MetricsChartPanel extends ChartPanel {
 
     /**
      * Data structure containing message rate data.
-     * The indicator plot and the stack bar plot rely on the series order:
-     * Series 0 must be success.
-     * Series 1 must be policy violation.
-     * Series 2 must be routing failure.
+     * The alert indicator plot and the stack bar plot rely on the series order:
+     * Series 0 must be success message rate.
+     * Series 1 must be policy violation message rate.
+     * Series 2 must be routing failure message rate.
      */
     private final TimeTableXYDataset _messageRates;
+
+    /**
+     * Data structure containing message count data.
+     * The member series corresponds to those of {@link _messageRates}.
+     * Used for tool tip generation only (not for plotting).
+     *
+     * Note: We cannot combine {@link _messageRates} and {@link _messageCounts}
+     * into one data structure because {@link StackedXYBarRenderer} does not
+     * honour setSeriesVisible(false).
+     */
+    private final TimeTableXYDataset _messageCounts;
 
     /** Chart containing all plots with shared time axis. */
     private JFreeChart _chart;
@@ -143,31 +160,43 @@ public class MetricsChartPanel extends ChartPanel {
         private static final SimpleDateFormat fmt = new SimpleDateFormat("HH:mm:ss");
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
-            TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
-            TimePeriod period = dataset_.getSeries(series).getTimePeriod(item);
-            Date startTime = period.getStart();
-            Date endTime = period.getEnd();
-            int avg = dataset_.getY(series, item).intValue();
-            int min = dataset_.getStartY(series, item).intValue();
-            int max = dataset_.getEndY(series, item).intValue();
-            String seriesLabel = dataset_.getSeriesKey(series).toString();
+            final TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
+            final TimePeriod period = dataset_.getSeries(series).getTimePeriod(item);
+            final Date startTime = period.getStart();
+            final Date endTime = period.getEnd();
+            final int avg = dataset_.getY(series, item).intValue();
+            final int min = dataset_.getStartY(series, item).intValue();
+            final int max = dataset_.getEndY(series, item).intValue();
+            final String seriesLabel = dataset_.getSeriesKey(series).toString();
             return seriesLabel + ": avg=" + avg + " min=" + min + " max=" + max +
                     " (from " + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
         }
     }
 
-    /** A tool tip generator for the indicator plot and the message rate plot. */
+    /** A tool tip generator for the alert indicator plot and the message rate plot. */
     private static class MessageRateToolTipGenerator implements XYToolTipGenerator {
         private static final SimpleDateFormat fmt = new SimpleDateFormat("HH:mm:ss");
 
+        private final TimeTableXYDataset _messageCounts;
+
+        public MessageRateToolTipGenerator(TimeTableXYDataset messageCounts) {
+            _messageCounts = messageCounts;
+        }
+
         public String generateToolTip(XYDataset dataset, int series, int item) {
-            TimePeriod period = ((TimeTableXYDataset) dataset).getTimePeriod(item);
-            Date startTime = period.getStart();
-            Date endTime = period.getEnd();
-            double numSec = (endTime.getTime() - startTime.getTime()) / 1000.;
-            double msgPerSec = dataset.getY(series, item).doubleValue();
-            long numMsg = Math.round(msgPerSec * numSec);
-            String seriesLabel = dataset.getSeriesKey(series).toString();
+            final TimePeriod period = ((TimeTableXYDataset) dataset).getTimePeriod(item);
+            final Date startTime = period.getStart();
+            final Date endTime = period.getEnd();
+            final double numSec = (endTime.getTime() - startTime.getTime()) / 1000.;
+
+            // The series being plotted contains message rates. But in the
+            // tool tip we want to show the number of messages in the bin.
+            // This cannot be computed from rate and period because the period
+            // in the dataset covers the interval boundary, not the actual start
+            // end time.
+            final int numMsg = _messageCounts.getY(series, item).intValue();
+
+            final String seriesLabel = dataset.getSeriesKey(series).toString();
             return seriesLabel + ": " + numMsg + " msg (in " + numSec + " sec from "
                    + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
         }
@@ -179,20 +208,21 @@ public class MetricsChartPanel extends ChartPanel {
         _maxTimeRange = maxTimeRange;
 
         // Creates the empty data structures.
-        _frontendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_NAME_FRONTEND_RESPONSE);
-        _backendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_NAME_BACKEND_RESPONSE);
+        _frontendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_FRONTEND_RESPONSE);
+        _backendResponseTimes = new TimePeriodValuesWithHighLow(SERIES_BACKEND_RESPONSE);
         _responseTimes = new TimePeriodValuesWithHighLowCollection();
         _responseTimes.addSeries(_frontendResponseTimes);
         _responseTimes.addSeries(_backendResponseTimes);
         _messageRates = new TimeTableXYDataset();
+        _messageCounts = new TimeTableXYDataset();
 
         //
         // Top plot for response time.
         //
 
-        NumberAxis rYAxis = new NumberAxis("Response Time (ms)");
+        final NumberAxis rYAxis = new NumberAxis("Response Time (ms)");
         rYAxis.setAutoRange(true);
-        TimePeriodValueWithHighLowRenderer rRenderer = new TimePeriodValueWithHighLowRenderer();
+        final TimePeriodValueWithHighLowRenderer rRenderer = new TimePeriodValueWithHighLowRenderer();
         rRenderer.setDrawBarOutline(false);
         rRenderer.setSeriesStroke(0, RESPONSE_AVG_STROKE);
         rRenderer.setSeriesPaint(0, FRONTEND_RESPONSE_AVG_COLOR);
@@ -201,16 +231,16 @@ public class MetricsChartPanel extends ChartPanel {
         rRenderer.setSeriesPaint(1, BACKEND_RESPONSE_AVG_COLOR);
         rRenderer.setSeriesFillPaint(1, BACKEND_RESPONSE_MINMAX_COLOR);
         rRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator());
-        XYPlot rPlot = new XYPlot(_responseTimes, null, rYAxis, rRenderer);
+        final XYPlot rPlot = new XYPlot(_responseTimes, null, rYAxis, rRenderer);
         rPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
         //
-        // Middle plot for indicators of policy violations and routing failures.
+        // Middle plot for alert indicators of policy violations and routing failures.
         // This augments the message rate plot below since small values there
         // may shows up too small to see.
         //
 
-        NumberAxis iYAxis = new NumberAxis() {
+        final NumberAxis iYAxis = new NumberAxis() {
             /**
              * Overrides parent method to prevent any zooming, particularly
              * autozoom. We need to do this because although {@link #setRange}
@@ -222,20 +252,20 @@ public class MetricsChartPanel extends ChartPanel {
         };
         iYAxis.setRange(0., 10.);   // This y-range and the forced y values
                                     // below are chosen to space out the
-                                    // indicator shapes evenly.
+                                    // alert indicator shapes evenly.
         iYAxis.setTickLabelsVisible(false);
         iYAxis.setTickMarksVisible(false);
-        ReplaceYShapeRenderer iRenderer = new ReplaceYShapeRenderer();
-        iRenderer.setSeriesVisible(0, Boolean.FALSE);   // success messages
-        iRenderer.setSeriesYValue(1, 3.);               // policy violation messages
-        iRenderer.setSeriesYValue(2, 7.);               // routing failure messages
+        final ReplaceYShapeRenderer iRenderer = new ReplaceYShapeRenderer();
+        iRenderer.setSeriesVisible(0, Boolean.FALSE);   // success message rate
+        iRenderer.setSeriesYValue(1, 3.);               // policy violation message rate
+        iRenderer.setSeriesYValue(2, 7.);               // routing failure message rate
         iRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);
         iRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR);
         iRenderer.setSeriesShape(1, INDICATOR_SHAPE);
         iRenderer.setSeriesShape(2, INDICATOR_SHAPE);
-        MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator();
+        final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator(_messageCounts);
         iRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
-        XYPlot iPlot = new XYPlot(_messageRates, null, iYAxis, iRenderer);
+        final XYPlot iPlot = new XYPlot(_messageRates, null, iYAxis, iRenderer);
         iPlot.setBackgroundPaint(INDICATOR_PLOT_BACKCOLOR);
         iPlot.setRangeGridlinesVisible(false);
         iPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
@@ -244,10 +274,10 @@ public class MetricsChartPanel extends ChartPanel {
         // Bottom plot for message rate.
         //
 
-        NumberAxis mYAxis = new NumberAxis("Message Rate (per sec)");
+        final NumberAxis mYAxis = new NumberAxis("Message Rate (per sec)");
         mYAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         mYAxis.setAutoRange(true);
-        StackedXYBarRenderer mRenderer = new StackedXYBarRenderer() {
+        final StackedXYBarRenderer mRenderer = new StackedXYBarRenderer() {
             public void drawItem(Graphics2D g2,
                                  XYItemRendererState state,
                                  Rectangle2D dataArea,
@@ -260,32 +290,30 @@ public class MetricsChartPanel extends ChartPanel {
                                  int item,
                                  CrosshairState crosshairState,
                                  int pass) {
-                // Enclose parent method in try-catch block to prevent
-                // IndexOutOfBoundsException from bubbling up. This exception may arise
-                // when plot is updating while the underlying data is being modified.
                 try {
-                    super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis, dataset, series, item, crosshairState, pass);
+                    super.drawItem(g2, state, dataArea, info, plot, domainAxis,
+                                   rangeAxis, dataset, series, item, crosshairState, pass);
                 } catch (IndexOutOfBoundsException e) {
-                    // Can be ignored. Simply skip rendering of this data item.
+                    // Probably the data item has just been deleted. Just skip rendering it.
                 }
             }
 
         };
         mRenderer.setDrawBarOutline(false);
-        mRenderer.setSeriesPaint(0, SUCCESS_COLOR);
-        mRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);
-        mRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR);
+        mRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
+        mRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
+        mRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
         mRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
-        XYPlot mPlot = new XYPlot(_messageRates, null, mYAxis, mRenderer);
+        final XYPlot mPlot = new XYPlot(_messageRates, null, mYAxis, mRenderer);
 
         //
         // Now combine all plots to share the same time (x-)axis.
         //
 
-        DateAxis xAxis = new DateAxis(null);
+        final DateAxis xAxis = new DateAxis(null);
         xAxis.setAutoRange(true);
         xAxis.setFixedAutoRange(_maxTimeRange);
-        CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(xAxis);
+        final CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(xAxis);
         combinedPlot.setGap(0.);
         combinedPlot.add(rPlot, 35);    // These weights are tweaked to match
         combinedPlot.add(iPlot, 5);     // the matching numeric display panel
@@ -314,14 +342,18 @@ public class MetricsChartPanel extends ChartPanel {
      */
     public void addData(List metricsBins) {
         // Temporarily disable notification so plots won't be redrawn when
-        // datasets are changing, otherwise IndexOutOfBoundsException could happen.
+        // datasets are changing. Note that this does not entirely prevent
+        // the datasets from being accessed.
         _chart.setNotify(false);
 
-        // Adds new data from the MetricsBin to our JFreeChart data structures.
+        // Adds new data from the MetricsBin's to our JFreeChart data structures.
         Iterator itor = metricsBins.iterator();
         while (itor.hasNext()) {
-            MetricsBin bin = (MetricsBin) itor.next();
-            SimpleTimePeriod period = new SimpleTimePeriod(bin.getStartTime(), bin.getEndTime());
+            final MetricsBin bin = (MetricsBin) itor.next();
+
+            // We are using the bin's boundary times instead of actual start and
+            // end times, in order to avoid unsightly gaps in the bar charts.
+            final SimpleTimePeriod period = new SimpleTimePeriod(bin.getPeriodStart(), bin.getPeriodStart() + bin.getInterval());
 
             _frontendResponseTimes.add(period,
                     bin.getAverageFrontendResponseTime(),
@@ -332,16 +364,25 @@ public class MetricsChartPanel extends ChartPanel {
                     bin.getMaxBackendResponseTime(),
                     bin.getMinBackendResponseTime());
 
-            double successRate = bin.getCompletedRate();
-            double policyViolationRate = bin.getAttemptedRate() - bin.getAuthorizedRate();
-            double routingFailureRate = bin.getAuthorizedRate() - bin.getCompletedRate();
-            _messageRates.add(period, new Double(successRate), SERIES_NAME_SUCCESS, false);
-            _messageRates.add(period, new Double(policyViolationRate), SERIES_NAME_POLICY_VIOLATION, false);
-            _messageRates.add(period, new Double(routingFailureRate), SERIES_NAME_ROUTING_FAILURE, false);
+            final double successRate = bin.getCompletedRate();
+            final double policyViolationRate = bin.getAttemptedRate() - bin.getAuthorizedRate();
+            final double routingFailureRate = bin.getAuthorizedRate() - bin.getCompletedRate();
+            _messageRates.add(period, new Double(successRate), SERIES_SUCCESS, false);
+            _messageRates.add(period, new Double(policyViolationRate), SERIES_POLICY_VIOLATION, false);
+            _messageRates.add(period, new Double(routingFailureRate), SERIES_ROUTING_FAILURE, false);
+
+            final int numSuccess = bin.getNumCompletedRequest();
+            final int numPolicyViolation = bin.getNumAttemptedRequest() - bin.getNumAuthorizedRequest();
+            final int numRoutingFailure = bin.getNumAuthorizedRequest() - bin.getNumCompletedRequest();
+            _messageCounts.add(period, new Integer(numSuccess), SERIES_SUCCESS, false);
+            _messageCounts.add(period, new Integer(numPolicyViolation), SERIES_POLICY_VIOLATION, false);
+            _messageCounts.add(period, new Integer(numRoutingFailure), SERIES_ROUTING_FAILURE, false);
         }
 
-        // Remove data older than our maximum allowed time range.
-        long newLowerBound = (long) _responseTimes.getDomainUpperBound(true) - _maxTimeRange;
+        // Now that the overall time range has change, remove data older than
+        // our maximum allowed time range.
+        final long newLowerBound = (long) _responseTimes.getDomainUpperBound(true) - _maxTimeRange;
+
         int deleteStart = -1;
         int deleteEnd = -1;
         for (int i = 0; i < _frontendResponseTimes.getItemCount(); ++ i) {
@@ -355,6 +396,18 @@ public class MetricsChartPanel extends ChartPanel {
             _backendResponseTimes.delete(deleteStart, deleteEnd);
         }
 
+        for (int item = _messageRates.getItemCount() - 1; item >= 0; -- item) {
+            final TimePeriod period = _messageRates.getTimePeriod(item);
+            if (period.getStart().getTime() < newLowerBound) {
+                _messageRates.remove(period, SERIES_SUCCESS, false);
+                _messageRates.remove(period, SERIES_POLICY_VIOLATION, false);
+                _messageRates.remove(period, SERIES_ROUTING_FAILURE, false);
+                _messageCounts.remove(period, SERIES_SUCCESS, false);
+                _messageCounts.remove(period, SERIES_POLICY_VIOLATION, false);
+                _messageCounts.remove(period, SERIES_ROUTING_FAILURE, false);
+            }
+        }
+
         // Re-enable notification now that all dataset change is done.
         _chart.setNotify(true);
 
@@ -362,6 +415,7 @@ public class MetricsChartPanel extends ChartPanel {
         try {
             _responseTimes.validateObject();
             _messageRates.validateObject();
+            _messageCounts.validateObject();
         } catch (InvalidObjectException e) {
             // Should not get here.
         }
@@ -370,16 +424,21 @@ public class MetricsChartPanel extends ChartPanel {
     /** Clears all data and updates the plots. */
     public void clearData() {
         // Temporarily disable notification so plots won't be redrawn when
-        // datasets are changing, otherwise IndexOutOfBoundsException could happen.
+        // datasets are changing. Note that this does not entirely prevent
+        // the datasets from being accessed.
         _chart.setNotify(false);
 
         _frontendResponseTimes.delete(0, _frontendResponseTimes.getItemCount() - 1);
         _backendResponseTimes.delete(0, _backendResponseTimes.getItemCount() - 1);
 
-        for (int i = _messageRates.getItemCount(0) - 1; i >= 0; -- i) {
-            _messageRates.remove(_messageRates.getTimePeriod(i), SERIES_NAME_SUCCESS, false);
-            _messageRates.remove(_messageRates.getTimePeriod(i), SERIES_NAME_POLICY_VIOLATION, false);
-            _messageRates.remove(_messageRates.getTimePeriod(i), SERIES_NAME_ROUTING_FAILURE, false);
+        for (int item = _messageRates.getItemCount(0) - 1; item >= 0; -- item) {
+            final TimePeriod period = _messageRates.getTimePeriod(item);
+            _messageRates.remove(period, SERIES_SUCCESS, false);
+            _messageRates.remove(period, SERIES_POLICY_VIOLATION, false);
+            _messageRates.remove(period, SERIES_ROUTING_FAILURE, false);
+            _messageCounts.remove(period, SERIES_SUCCESS, false);
+            _messageCounts.remove(period, SERIES_POLICY_VIOLATION, false);
+            _messageCounts.remove(period, SERIES_ROUTING_FAILURE, false);
         }
 
         // Re-enable notification now that all dataset change is done.
@@ -389,6 +448,7 @@ public class MetricsChartPanel extends ChartPanel {
         try {
             _responseTimes.validateObject();
             _messageRates.validateObject();
+            _messageCounts.validateObject();
         } catch (InvalidObjectException e) {
             // Should not get here.
         }
@@ -396,20 +456,20 @@ public class MetricsChartPanel extends ChartPanel {
 
     /** Creates a fake metrics bin. For testing only. */
     private static MetricsBin fakeMetricsBin(long startTime, long endTime, int binInterval) {
-        MetricsBin bin = new MetricsBin(startTime, binInterval, MetricsBin.RES_FINE, "SSG1", 123456);
-        double cosine = Math.cos(2. * Math.PI * startTime / (100. * 5 * 1000));
-        int numSuccess = (int) (1000. + 100. * cosine);
-        int numViolation = (int) (100. + 100. * cosine);
-        int numFailure = (int) (50. + 50. * cosine);
-        int numAttempted = numSuccess + numViolation + numFailure;
-        int numAuthorized = numSuccess + numFailure;
-        int numCompleted = numSuccess;
-        int frontendResponseTimeAvg = (int) (800. + 100. * cosine);
-        int frontendResponseTimeMin = (int) (700. + 100. * cosine);
-        int frontendResponseTimeMax = (int) (900. + 100. * cosine);
-        int backendResponseTimeAvg = (int) (600. - 100. * cosine);
-        int backendResponseTimeMin = (int) (500. - 100. * cosine);
-        int backendResponseTimeMax = (int) (700. - 100. * cosine);
+        final MetricsBin bin = new MetricsBin(startTime, binInterval, MetricsBin.RES_FINE, "SSG1", 123456);
+        final double cosine = Math.cos(2. * Math.PI * startTime / (100. * 5 * 1000));
+        final int numSuccess = (int) (1000. + 100. * cosine);
+        final int numViolation = (int) (100. + 100. * cosine);
+        final int numFailure = (int) (50. + 50. * cosine);
+        final int numAttempted = numSuccess + numViolation + numFailure;
+        final int numAuthorized = numSuccess + numFailure;
+        final int numCompleted = numSuccess;
+        final int frontendResponseTimeAvg = (int) (800. + 100. * cosine);
+        final int frontendResponseTimeMin = (int) (700. + 100. * cosine);
+        final int frontendResponseTimeMax = (int) (900. + 100. * cosine);
+        final int backendResponseTimeAvg = (int) (600. - 100. * cosine);
+        final int backendResponseTimeMin = (int) (500. - 100. * cosine);
+        final int backendResponseTimeMax = (int) (700. - 100. * cosine);
         for (int i = 0; i < numAttempted; ++ i) {
             int responseTime = frontendResponseTimeAvg;
             if (numAttempted == 2) {
@@ -444,9 +504,9 @@ public class MetricsChartPanel extends ChartPanel {
         final int FINE_INTERVAL = 5 * 1000;
         final long MAX_TIME_RANGE = 15 * 60 * 1000;
 
-        MetricsChartPanel chartPanel = new MetricsChartPanel(MAX_TIME_RANGE);
+        final MetricsChartPanel chartPanel = new MetricsChartPanel(MAX_TIME_RANGE);
 
-        JFrame mainFrame = new JFrame("MetricsChartPanel Test");
+        final JFrame mainFrame = new JFrame("MetricsChartPanel Test");
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.add(chartPanel);
         mainFrame.pack();
@@ -458,10 +518,10 @@ public class MetricsChartPanel extends ChartPanel {
         } catch (InterruptedException e) {
         }
 
-        // Fakes metric bins.
-        long dataStart = ((System.currentTimeMillis() - MAX_TIME_RANGE) / FINE_INTERVAL) * FINE_INTERVAL;
-        long dataEnd = dataStart + MAX_TIME_RANGE;
-        List metricsBins = new ArrayList();
+        // Fakes a bunch of historical fine bins.
+        final long dataStart = ((System.currentTimeMillis() - MAX_TIME_RANGE) / FINE_INTERVAL) * FINE_INTERVAL;
+        final long dataEnd = dataStart + MAX_TIME_RANGE;
+        final List metricsBins = new ArrayList();
         for (long binStart = dataStart, binEnd = dataStart + FINE_INTERVAL;
              binStart < dataEnd;
              binStart += FINE_INTERVAL, binEnd += FINE_INTERVAL) {
@@ -476,10 +536,10 @@ public class MetricsChartPanel extends ChartPanel {
                 Thread.sleep(FINE_INTERVAL);
             } catch (InterruptedException e) {
             }
-            long endTime = System.currentTimeMillis();
-            long startTime = endTime - FINE_INTERVAL;
-            MetricsBin bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL);
-            List bins = new ArrayList();
+            final long endTime = System.currentTimeMillis();
+            final long startTime = endTime - FINE_INTERVAL;
+            final MetricsBin bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL);
+            final List bins = new ArrayList();
             bins.add(bin);
             chartPanel.addData(bins);
         }

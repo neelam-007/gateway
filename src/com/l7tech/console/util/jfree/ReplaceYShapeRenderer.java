@@ -85,9 +85,6 @@ public class ReplaceYShapeRenderer extends AbstractXYItemRenderer {
                          int item,
                          CrosshairState crosshairState,
                          int pass) {
-        // Enclose whole method in try-catch block to prevent
-        // IndexOutOfBoundsException from bubbling up. This exception may arise
-        // when plot is updating while the underlying data is being modified.
         try {
             // do nothing if item is not visible
             if (!getItemVisible(series, item)) {
@@ -138,7 +135,7 @@ public class ReplaceYShapeRenderer extends AbstractXYItemRenderer {
                 addEntity(entities, entityArea, dataset, series, item, transX, transY);
             }
         } catch (IndexOutOfBoundsException e) {
-            // Can be ignored. Simply skip rendering of this data item.
+            // Probably the data item has just been deleted. Just skip rendering it.
         }
     }
 }
