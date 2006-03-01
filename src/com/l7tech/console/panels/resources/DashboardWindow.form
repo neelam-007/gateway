@@ -205,18 +205,6 @@
                       <text value="ms"/>
                     </properties>
                   </component>
-                  <component id="d367" class="javax.swing.JTextField" binding="frontMaxField">
-                    <constraints>
-                      <xy x="108" y="113" width="50" height="26"/>
-                      <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
-                        <minimum-size width="50" height="-1"/>
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <horizontalAlignment value="11"/>
-                    </properties>
-                  </component>
                   <component id="ac3ad" class="javax.swing.JLabel">
                     <constraints>
                       <xy x="14" y="85" width="50" height="20"/>
@@ -227,18 +215,6 @@
                     <properties>
                       <horizontalAlignment value="11"/>
                       <text value="avg."/>
-                    </properties>
-                  </component>
-                  <component id="6d3c3" class="javax.swing.JLabel">
-                    <constraints>
-                      <xy x="14" y="116" width="50" height="20"/>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
-                        <minimum-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <horizontalAlignment value="11"/>
-                      <text value="max."/>
                     </properties>
                   </component>
                   <component id="76e47" class="javax.swing.JLabel">
@@ -263,19 +239,6 @@
                       <text value="ms"/>
                     </properties>
                   </component>
-                  <component id="b88ad" class="javax.swing.JTextField" binding="frontMinField">
-                    <constraints>
-                      <xy x="108" y="51" width="50" height="26"/>
-                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
-                        <minimum-size width="50" height="-1"/>
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <horizontalAlignment value="11"/>
-                      <text value=""/>
-                    </properties>
-                  </component>
                   <component id="5ba1d" class="javax.swing.JTextField" binding="frontAvgField">
                     <constraints>
                       <xy x="108" y="82" width="50" height="26"/>
@@ -288,46 +251,10 @@
                       <horizontalAlignment value="11"/>
                     </properties>
                   </component>
-                  <component id="af3f6" class="javax.swing.JLabel">
-                    <constraints>
-                      <xy x="14" y="54" width="50" height="20"/>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <horizontalAlignment value="11"/>
-                      <text value="min."/>
-                    </properties>
-                  </component>
-                  <component id="9639e" class="javax.swing.JTextField" binding="backMinField">
-                    <constraints>
-                      <xy x="237" y="51" width="50" height="26"/>
-                      <grid row="1" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
-                        <minimum-size width="50" height="-1"/>
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <horizontalAlignment value="11"/>
-                    </properties>
-                  </component>
                   <component id="b9e4d" class="javax.swing.JTextField" binding="backAvgField">
                     <constraints>
                       <xy x="237" y="82" width="50" height="26"/>
                       <grid row="2" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
-                        <minimum-size width="50" height="-1"/>
-                        <preferred-size width="50" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <horizontalAlignment value="11"/>
-                    </properties>
-                  </component>
-                  <component id="bdb93" class="javax.swing.JTextField" binding="backMaxField">
-                    <constraints>
-                      <xy x="237" y="113" width="50" height="26"/>
-                      <grid row="3" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
                         <minimum-size width="50" height="-1"/>
                         <preferred-size width="50" height="-1"/>
                       </grid>
@@ -399,49 +326,10 @@
                       <text value="Frontend"/>
                     </properties>
                   </component>
-                  <component id="347b6" class="javax.swing.JLabel" binding="frontMinImageLabel">
-                    <constraints>
-                      <xy x="74" y="52" width="24" height="24"/>
-                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
-                        <minimum-size width="24" height="24"/>
-                        <preferred-size width="24" height="24"/>
-                        <maximum-size width="24" height="24"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <text value=""/>
-                    </properties>
-                  </component>
                   <component id="d7849" class="javax.swing.JLabel" binding="frontAvgImageLabel">
                     <constraints>
                       <xy x="74" y="83" width="24" height="24"/>
                       <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
-                        <minimum-size width="24" height="24"/>
-                        <preferred-size width="24" height="24"/>
-                        <maximum-size width="24" height="24"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <text value=""/>
-                    </properties>
-                  </component>
-                  <component id="f5d74" class="javax.swing.JLabel" binding="frontMaxImageLabel">
-                    <constraints>
-                      <xy x="74" y="114" width="24" height="24"/>
-                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
-                        <minimum-size width="24" height="24"/>
-                        <preferred-size width="24" height="24"/>
-                        <maximum-size width="24" height="24"/>
-                      </grid>
-                    </constraints>
-                    <properties>
-                      <text value=""/>
-                    </properties>
-                  </component>
-                  <component id="4d37f" class="javax.swing.JLabel" binding="backMinImageLabel">
-                    <constraints>
-                      <xy x="203" y="52" width="24" height="24"/>
-                      <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
                         <minimum-size width="24" height="24"/>
                         <preferred-size width="24" height="24"/>
                         <maximum-size width="24" height="24"/>
@@ -464,7 +352,7 @@
                       <text value=""/>
                     </properties>
                   </component>
-                  <component id="a8320" class="javax.swing.JLabel" binding="backMaxImageLabel">
+                  <component id="4d37f" class="javax.swing.JLabel" binding="backMinImageLabel">
                     <constraints>
                       <xy x="203" y="114" width="24" height="24"/>
                       <grid row="3" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
@@ -475,6 +363,118 @@
                     </constraints>
                     <properties>
                       <text value=""/>
+                    </properties>
+                  </component>
+                  <component id="a8320" class="javax.swing.JLabel" binding="backMaxImageLabel">
+                    <constraints>
+                      <xy x="203" y="52" width="24" height="24"/>
+                      <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                        <minimum-size width="24" height="24"/>
+                        <preferred-size width="24" height="24"/>
+                        <maximum-size width="24" height="24"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                  <component id="347b6" class="javax.swing.JLabel" binding="frontMinImageLabel">
+                    <constraints>
+                      <xy x="74" y="114" width="24" height="24"/>
+                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                        <minimum-size width="24" height="24"/>
+                        <preferred-size width="24" height="24"/>
+                        <maximum-size width="24" height="24"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                  <component id="f5d74" class="javax.swing.JLabel" binding="frontMaxImageLabel">
+                    <constraints>
+                      <xy x="74" y="52" width="24" height="24"/>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                        <minimum-size width="24" height="24"/>
+                        <preferred-size width="24" height="24"/>
+                        <maximum-size width="24" height="24"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                  <component id="af3f6" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="14" y="116" width="50" height="20"/>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                        <preferred-size width="50" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="11"/>
+                      <text value="min."/>
+                    </properties>
+                  </component>
+                  <component id="6d3c3" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="14" y="54" width="50" height="20"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                        <minimum-size width="50" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="11"/>
+                      <text value="max."/>
+                    </properties>
+                  </component>
+                  <component id="b88ad" class="javax.swing.JTextField" binding="frontMinField">
+                    <constraints>
+                      <xy x="108" y="113" width="50" height="26"/>
+                      <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                        <minimum-size width="50" height="-1"/>
+                        <preferred-size width="50" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="11"/>
+                      <text value=""/>
+                    </properties>
+                  </component>
+                  <component id="d367" class="javax.swing.JTextField" binding="frontMaxField">
+                    <constraints>
+                      <xy x="108" y="51" width="50" height="26"/>
+                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                        <minimum-size width="50" height="-1"/>
+                        <preferred-size width="50" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="11"/>
+                    </properties>
+                  </component>
+                  <component id="9639e" class="javax.swing.JTextField" binding="backMinField">
+                    <constraints>
+                      <xy x="237" y="113" width="50" height="26"/>
+                      <grid row="3" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                        <minimum-size width="50" height="-1"/>
+                        <preferred-size width="50" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="11"/>
+                    </properties>
+                  </component>
+                  <component id="bdb93" class="javax.swing.JTextField" binding="backMaxField">
+                    <constraints>
+                      <xy x="751" y="165" width="50" height="26"/>
+                      <grid row="1" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0">
+                        <minimum-size width="50" height="-1"/>
+                        <preferred-size width="50" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <horizontalAlignment value="11"/>
                     </properties>
                   </component>
                 </children>

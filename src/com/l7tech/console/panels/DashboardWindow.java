@@ -34,7 +34,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private final ClusterStatusAdmin clusterStatusAdmin;
     private final ServiceAdmin serviceAdmin;
 
-    private final MetricsChartPanel metricsChartPanel = new MetricsChartPanel(5 * 60 * 1000);
+    private final MetricsChartPanel metricsChartPanel = new MetricsChartPanel(chartRange);
 
     private JPanel mainPanel;
     private JPanel chartPanel;
@@ -66,13 +66,24 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private ClusterNodeInfo[] currentClusterNodes = null;
     private EntityHeader[] currentServiceHeaders = null;
 
-    private final ActionListener refreshListener = new DataRefreshListener();
+    private final ActionListener refreshListener = new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            refreshData();
+        }
+    };
 
     private final DefaultComboBoxModel serviceComboModel;
     private final DefaultComboBoxModel nodeComboModel;
 
-    private long lastRefresh = 0;
-    private final Timer refreshTimer = new Timer(500, refreshListener);
+    private final TreeMap allFinePeriods = new TreeMap();
+    private final Set chartedFinePeriods = new HashSet();
+
+    private final TreeMap hourlyEntriesByPeriodStart = new TreeMap();
+    private final TreeMap dailyEntriesByPeriodStart = new TreeMap();
+
+    private long lastPeriodSeen;
+
+    private final Timer refreshTimer = new Timer(900, refreshListener);
 
     private static final EntityHeader ALL_SERVICES = new EntityHeader() {
         public String toString() {
@@ -85,6 +96,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
             return "<All Nodes>";
         }
     };
+
+    private static final int chartRange = 5 * 60 * 1000;
 
     public DashboardWindow() throws HeadlessException {
         super("Dashboard");
@@ -155,12 +168,9 @@ public class DashboardWindow extends JFrame implements LogonListener {
         refreshTimer.start();
     }
 
-    private long oneHourAgo() {
-        return System.currentTimeMillis() - (3600 * 1000);
-    }
-
     private void resetData() {
-        lastRefresh = oneHourAgo();
+        chartedFinePeriods.clear();
+        metricsChartPanel.clearData();
     }
 
     public void onLogon(LogonEvent e) {
@@ -184,146 +194,142 @@ public class DashboardWindow extends JFrame implements LogonListener {
         super.dispose();
     }
 
-    private class DataRefreshListener implements ActionListener {
-        private final TreeMap fineEntriesByPeriodStart = new TreeMap();
-        private final TreeMap hourlyEntriesByPeriodStart = new TreeMap();
-        private final TreeMap dailyEntriesByPeriodStart = new TreeMap();
-
-        public void actionPerformed(ActionEvent ev) {
-            try {
-                final EntityHeader[] newServiceHeaders;
-                final ClusterNodeInfo[] newNodes;
-                try {
-                    newServiceHeaders = serviceAdmin.findAllPublishedServices();
-                    if (!Arrays.equals(currentServiceHeaders, newServiceHeaders)) {
-                        updateComboModel(currentServiceHeaders, newServiceHeaders, serviceComboModel);
-                    }
-                    currentServiceHeaders = newServiceHeaders;
-
-                    newNodes = clusterStatusAdmin.getClusterStatus();
-                    if (!Arrays.equals(currentClusterNodes, newNodes)) {
-                        updateComboModel(currentClusterNodes, newNodes, nodeComboModel);
-                    }
-                    currentClusterNodes = newNodes;
-                } catch (RemoteException e) {
-                    logger.log(Level.WARNING, "Error getting data from SSG", e);
-                    statusLabel.setText("Error receiving data: " + e.toString());
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "SSG can't get data", e);
-                    statusLabel.setText("SSG can't get data: " + e.toString());
-                }
-
-                EntityHeader currentService = (EntityHeader)serviceComboModel.getSelectedItem();
-
-                Long whichService;
-                if (currentService == null || currentService == ALL_SERVICES)
-                    whichService = null;
-                else
-                    whichService = new Long(currentService.getOid());
-
-                ClusterNodeInfo currentNode = (ClusterNodeInfo)nodeComboModel.getSelectedItem();
-                String whichNode;
-                if (currentNode == null || currentNode == ALL_NODES)
-                    whichNode = null;
-                else
-                    whichNode = currentNode.getMac();
-
-                long start = lastRefresh;
-                List bins = clusterStatusAdmin.findMetricsBins(whichNode, new Long(start), null, new Integer(MetricsBin.RES_FINE), whichService);
-                if (bins.size() > 0)
-                    logger.info("Found " + bins.size() + " MetricsBins");
-
-                for (Iterator i = bins.iterator(); i.hasNext();) {
-                    MetricsBin bin = (MetricsBin)i.next();
-                    addBin(bin.getResolution(), bin.getPeriodStart(), bin);
-                }
-
-                MetricsBin lastBin = null;
-                Long lastPeriod = null;
-                if (!fineEntriesByPeriodStart.isEmpty()) {
-                    lastPeriod = (Long)fineEntriesByPeriodStart.lastKey();
-                    PeriodData lastEntry = (PeriodData)fineEntriesByPeriodStart.get(lastPeriod);
-                    lastBin = lastEntry.get(whichNode, whichService);
-                }
-
-                if (lastBin != null) {
-                    lastRefresh = lastBin.getPeriodStart() + 1;
-                } else {
-                    lastRefresh = System.currentTimeMillis();
-                }
-
-                int numPolicyFail = 0, numRoutingFail = 0, numSuccess = 0, numTotal = 0;
-                int frontMin = 0, frontMax = 0, backMin = 0, backMax = 0;
-                double frontAvg = 0.0, backAvg = 0.0;
-
-                long now = System.currentTimeMillis();
-                if (lastBin != null && lastPeriod != null) {
-                    logger.info("lastBin is " + (now - lastPeriod.longValue()) + "ms old");
-                    if (lastPeriod.longValue() + (lastBin.getInterval()*2) > System.currentTimeMillis()) {
-                        // Next bin is still likely in the future
-                        logger.info("New last bin: " + lastBin);
-                        numPolicyFail = lastBin.getNumAttemptedRequest() - lastBin.getNumAuthorizedRequest();
-                        numRoutingFail = lastBin.getNumAuthorizedRequest() - lastBin.getNumCompletedRequest();
-                        numSuccess = lastBin.getNumCompletedRequest();
-                        numTotal = lastBin.getNumAttemptedRequest();
-
-                        frontMin = lastBin.getMinFrontendResponseTime();
-                        frontAvg = lastBin.getAverageFrontendResponseTime();
-                        frontMax = lastBin.getMaxFrontendResponseTime();
-
-                        backMin = lastBin.getMinBackendResponseTime();
-                        backAvg = lastBin.getAverageBackendResponseTime();
-                        backMax = lastBin.getMaxBackendResponseTime();
-
-                        List data = new ArrayList();
-                        data.add(lastBin);
-
-                        metricsChartPanel.addData(data);
-                    } else {
-                        logger.fine("Last bin was >" + lastBin.getInterval() + "ms ago.");
-                    }
-                }
-
-                numPolicyFailField.setText(Integer.toString(numPolicyFail));
-                numSuccessField.setText(Integer.toString(numSuccess));
-                numRoutingFailField.setText(Integer.toString(numRoutingFail));
-                numTotalField.setText(Integer.toString(numTotal));
-
-                frontMinField.setText(Integer.toString(frontMin));
-                frontAvgField.setText(Integer.toString((int)frontAvg));
-                frontMaxField.setText(Integer.toString(frontMax));
-
-                backMinField.setText(Integer.toString(backMin));
-                backAvgField.setText(Integer.toString((int)backAvg));
-                backMaxField.setText(Integer.toString(backMax));
-
-                statusLabel.setText("Last updated: " + new Date());
-            } catch (RemoteException e) {
-                logger.log(Level.WARNING, "Error getting data from SSG", e);
-                statusLabel.setText("Error receiving data: " + e.toString());
-            } catch (FindException e) {
-                logger.log(Level.WARNING, "SSG can't get data", e);
-                statusLabel.setText("SSG can't get data: " + e.toString());
+    private void refreshData() {
+        final EntityHeader[] newServiceHeaders;
+        final ClusterNodeInfo[] newNodes;
+        try {
+            newServiceHeaders = serviceAdmin.findAllPublishedServices();
+            if (!Arrays.equals(currentServiceHeaders, newServiceHeaders)) {
+                updateComboModel(currentServiceHeaders, newServiceHeaders, serviceComboModel);
             }
+            currentServiceHeaders = newServiceHeaders;
+
+            newNodes = clusterStatusAdmin.getClusterStatus();
+            if (!Arrays.equals(currentClusterNodes, newNodes)) {
+                updateComboModel(currentClusterNodes, newNodes, nodeComboModel);
+            }
+            currentClusterNodes = newNodes;
+
+            // Find all new bins since last period
+            List newBins = clusterStatusAdmin.findMetricsBins(null, new Long(lastPeriodSeen + 1), null, new Integer(MetricsBin.RES_FINE), null);
+            if (newBins.size() > 0)
+                logger.info("Found " + newBins.size() + " MetricsBins");
+
+            // Add new bins to allFinePeriods etc.
+            for (Iterator i = newBins.iterator(); i.hasNext();) {
+                MetricsBin newBin = (MetricsBin)i.next();
+                final long ps = newBin.getPeriodStart();
+                if (ps > lastPeriodSeen) lastPeriodSeen = ps;
+                addBin(newBin.getResolution(), ps, newBin);
+            }
+
+            EntityHeader currentService = (EntityHeader)serviceComboModel.getSelectedItem();
+
+            Long whichService;
+            if (currentService == null || currentService == ALL_SERVICES)
+                whichService = null;
+            else
+                whichService = new Long(currentService.getOid());
+
+            ClusterNodeInfo currentNode = (ClusterNodeInfo)nodeComboModel.getSelectedItem();
+            String whichNode;
+            if (currentNode == null || currentNode == ALL_NODES)
+                whichNode = null;
+            else
+                whichNode = currentNode.getMac();
+
+            // Find all current data that hasn't been charted yet, and add it to the chart
+            {
+                List chartBins = new ArrayList();
+                long now = System.currentTimeMillis();
+
+                Map currentPeriods = allFinePeriods.subMap(new Long(now - chartRange), new Long(now));
+                for (Iterator i = currentPeriods.keySet().iterator(); i.hasNext();) {
+                    Long period = (Long)i.next();
+                    if (!chartedFinePeriods.contains(period)) {
+                        PeriodData data = (PeriodData)allFinePeriods.get(period);
+                        MetricsBin bin = data.get(whichNode, whichService);
+                        if (bin != null) chartBins.add(bin);
+                        chartedFinePeriods.add(period);
+                    }
+                }
+                metricsChartPanel.addData(chartBins);
+            }
+
+            Long lastPeriod = (Long)allFinePeriods.lastKey();
+            MetricsBin lastBin = null;
+            if (lastPeriod != null) {
+                PeriodData data = (PeriodData)allFinePeriods.get(lastPeriod);
+                lastBin = data.get(whichNode, whichService);
+            }
+
+            int numPolicyFail = 0, numRoutingFail = 0, numSuccess = 0, numTotal = 0;
+            int frontMin = 0, frontMax = 0, backMin = 0, backMax = 0;
+            double frontAvg = 0.0, backAvg = 0.0;
+
+            if (lastBin != null) {
+                if (lastPeriod.longValue() + (lastBin.getInterval() * 2) > System.currentTimeMillis()) {
+                    // Next bin is still likely in the future
+                    logger.info("New last bin: " + lastBin);
+                    numPolicyFail = lastBin.getNumAttemptedRequest() - lastBin.getNumAuthorizedRequest();
+                    numRoutingFail = lastBin.getNumAuthorizedRequest() - lastBin.getNumCompletedRequest();
+                    numSuccess = lastBin.getNumCompletedRequest();
+                    numTotal = lastBin.getNumAttemptedRequest();
+
+                    frontMin = lastBin.getMinFrontendResponseTime();
+                    frontAvg = lastBin.getAverageFrontendResponseTime();
+                    frontMax = lastBin.getMaxFrontendResponseTime();
+
+                    backMin = lastBin.getMinBackendResponseTime();
+                    backAvg = lastBin.getAverageBackendResponseTime();
+                    backMax = lastBin.getMaxBackendResponseTime();
+                } else {
+                    logger.fine("Last bin was >" + lastBin.getInterval() + "ms ago, displaying zeros for current data");
+                }
+            }
+
+            numPolicyFailField.setText(Integer.toString(numPolicyFail));
+            numSuccessField.setText(Integer.toString(numSuccess));
+            numRoutingFailField.setText(Integer.toString(numRoutingFail));
+            numTotalField.setText(Integer.toString(numTotal));
+
+            frontMinField.setText(Integer.toString(frontMin));
+            frontAvgField.setText(Integer.toString((int)frontAvg));
+            frontMaxField.setText(Integer.toString(frontMax));
+
+            backMinField.setText(Integer.toString(backMin));
+            backAvgField.setText(Integer.toString((int)backAvg));
+            backMaxField.setText(Integer.toString(backMax));
+
+            statusLabel.setText("Last updated: " + new Date());
+
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "Error getting data from SSG", e);
+            statusLabel.setText("Error receiving data: " + e.toString());
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "SSG can't get data", e);
+            statusLabel.setText("SSG can't get data: " + e.toString());
+        }
+    }
+
+    private void addBin(int res, long ps, MetricsBin bin) {
+        TreeMap map;
+        switch(res) {
+            case MetricsBin.RES_FINE:
+                map = allFinePeriods;
+                break;
+            case MetricsBin.RES_HOURLY:
+                map = hourlyEntriesByPeriodStart;
+                break;
+            case MetricsBin.RES_DAILY:
+                map = dailyEntriesByPeriodStart;
+                break;
+            default:
+                throw new IllegalArgumentException("MetricsBin " + bin + " has unsupported resolution");
         }
 
-        private void addBin(int res, long ps, MetricsBin bin) {
-            TreeMap map;
-            switch(res) {
-                case MetricsBin.RES_FINE:
-                    map = fineEntriesByPeriodStart;
-                    break;
-                case MetricsBin.RES_HOURLY:
-                    map = hourlyEntriesByPeriodStart;
-                    break;
-                case MetricsBin.RES_DAILY:
-                    map = dailyEntriesByPeriodStart;
-                    break;
-                default:
-                    throw new IllegalArgumentException("MetricsBin " + bin + " has unsupported resolution");
-            }
-
-            Long lps = new Long(ps);
+        Long lps = new Long(ps);
+        synchronized(map) {
             PeriodData data = (PeriodData)map.get(lps);
             if (data == null) {
                 data = new PeriodData(res, ps, bin.getInterval());
@@ -331,55 +337,111 @@ public class DashboardWindow extends JFrame implements LogonListener {
             }
             data.add(bin);
         }
+    }
 
-        private void updateComboModel(Object[] oldObjs, Object[] newObjs, DefaultComboBoxModel comboModel) {
-            Set news = new HashSet(Arrays.asList(newObjs));
-            Set olds = new HashSet(Arrays.asList(oldObjs));
-            Set olds2 = new HashSet(Arrays.asList(oldObjs));
+    private void updateComboModel(Object[] oldObjs, Object[] newObjs, DefaultComboBoxModel comboModel) {
+        Set news = new HashSet(Arrays.asList(newObjs));
+        Set olds = new HashSet(Arrays.asList(oldObjs));
+        Set olds2 = new HashSet(Arrays.asList(oldObjs));
 
-            // Remove deleted stuff from model
-            olds.removeAll(news);
-            for (Iterator i = olds.iterator(); i.hasNext();) {
-                Object o = i.next();
-                logger.info(o + " has been removed");
-                comboModel.removeElement(o);
-            }
+        // Remove deleted stuff from model
+        olds.removeAll(news);
+        for (Iterator i = olds.iterator(); i.hasNext();) {
+            Object o = i.next();
+            logger.info(o + " has been removed");
+            comboModel.removeElement(o);
+        }
 
-            // Add new stuff to model
-            news.removeAll(olds2);
-            for (Iterator i = olds2.iterator(); i.hasNext();) {
-                Object o = i.next();
-                logger.info(o + " is new");
-                comboModel.addElement(o);
-            }
+        // Add new stuff to model
+        news.removeAll(olds2);
+        for (Iterator i = olds2.iterator(); i.hasNext();) {
+            Object o = i.next();
+            logger.info(o + " is new");
+            comboModel.addElement(o);
         }
     }
 
     private static class PeriodData {
+        private final long periodStart;
+        private final int resolution;
+        private final int interval;
+
+        private final Set allBins = new HashSet();
+        private final Map binsByNodeId = new HashMap();
+        private final Map binsByServiceOid = new HashMap();
+
+        private final MetricsBin bigBin;
+
         public PeriodData(int resolution, long periodStart, int interval) {
             this.periodStart = periodStart;
             this.resolution = resolution;
             this.interval = interval;
+
+            bigBin = new MetricsBin(periodStart, interval, resolution, null, -1);
         }
 
-        void add(MetricsBin bin) {
-            if (bin.getPeriodStart() != periodStart) throw new IllegalArgumentException();
-            if (bin.getResolution() != resolution) throw new IllegalArgumentException();
-            binsByNodeId.put(bin.getClusterNodeId(), bin);
-            binsByServiceOid.put(new Long(bin.getServiceOid()), bin);
-        }
+        synchronized void add(MetricsBin newBin) {
+            if (newBin.getPeriodStart() != periodStart) throw new IllegalArgumentException();
+            if (newBin.getResolution() != resolution) throw new IllegalArgumentException();
 
-        MetricsBin get(String nodeId, Long serviceOid) {
-            if (nodeId != null) {
-                return (MetricsBin)binsByNodeId.get(nodeId);
-            } else if (serviceOid != null) {
-                return (MetricsBin)binsByServiceOid.get(serviceOid);
-            } else {
-                return makeMegaBin(nodeId, serviceOid);
+            bigBin.setMinBackendResponseTime(Math.min(bigBin.getMinBackendResponseTime(), newBin.getMinBackendResponseTime()));
+            bigBin.setMaxBackendResponseTime(Math.max(bigBin.getMaxBackendResponseTime(), newBin.getMaxBackendResponseTime()));
+            bigBin.setMinFrontendResponseTime(Math.min(bigBin.getMinFrontendResponseTime(), newBin.getMinFrontendResponseTime()));
+            bigBin.setMaxFrontendResponseTime(Math.max(bigBin.getMaxFrontendResponseTime(), newBin.getMaxFrontendResponseTime()));
+
+            bigBin.setStartTime(Math.min(bigBin.getStartTime(), newBin.getStartTime()));
+            bigBin.setEndTime(Math.max(bigBin.getEndTime(), newBin.getEndTime()));
+
+            bigBin.setNumAttemptedRequest(bigBin.getNumAttemptedRequest() + newBin.getNumAttemptedRequest());
+            bigBin.setNumAuthorizedRequest(bigBin.getNumAuthorizedRequest() + newBin.getNumAuthorizedRequest());
+            bigBin.setNumCompletedRequest(bigBin.getNumCompletedRequest() + newBin.getNumCompletedRequest());
+
+            bigBin.setSumFrontendResponseTime(bigBin.getSumFrontendResponseTime() + newBin.getSumFrontendResponseTime());
+            bigBin.setSumBackendResponseTime(bigBin.getSumBackendResponseTime() + newBin.getSumBackendResponseTime());
+
+            allBins.add(newBin);
+
+            {
+                Set bins = (Set)binsByNodeId.get(newBin.getClusterNodeId());
+                if (bins == null) {
+                    bins = new HashSet();
+                    binsByNodeId.put(newBin.getClusterNodeId(), bins);
+                }
+                bins.add(newBin);
             }
+
+            {
+                Long serviceOid = new Long(newBin.getServiceOid());
+                Set bins = (Set)binsByServiceOid.get(serviceOid);
+                if (bins == null) {
+                    bins = new HashSet();
+                    binsByServiceOid.put(serviceOid, bins);
+                }
+                bins.add(newBin);
+            }
+
         }
 
-        private MetricsBin makeMegaBin(String nodeId, Long serviceOid) {
+        synchronized MetricsBin get(String nodeId, Long serviceOid) {
+            Set binsToAdd;
+            if (nodeId == null && serviceOid == null) {
+                return bigBin;
+            } else if (nodeId != null && serviceOid != null) {
+                Set sbins = (Set)binsByServiceOid.get(serviceOid);
+                Set nbins = (Set)binsByNodeId.get(nodeId);
+                sbins.retainAll(nbins);
+                if (sbins.size() != 1) logger.warning(sbins.size() + " bins for period " + periodStart);
+                binsToAdd = sbins;
+            } else if (nodeId != null) {
+                binsToAdd = (Set)binsByNodeId.get(nodeId);
+            } else {
+                binsToAdd = (Set)binsByServiceOid.get(serviceOid);
+            }
+
+            Iterator bins = binsToAdd.iterator();
+
+            if (binsToAdd.size() == 1) return (MetricsBin)bins.next();
+
             MetricsBin megabin;
             int numAttempted = 0, numAuthorized = 0, numCompleted = 0;
             int backTime = 0, frontTime = 0, backMin = 0, frontMin = 0;
@@ -387,8 +449,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
             long start = 0;
             long end = 0;
 
-            for (Iterator i = binsByNodeId.values().iterator(); i.hasNext();) {
-                MetricsBin bin = (MetricsBin)i.next();
+            while (bins.hasNext()) {
+                MetricsBin bin = (MetricsBin)bins.next();
                 if (nodeId == null || bin.getClusterNodeId().equals(nodeId) ||
                     serviceOid == null || bin.getServiceOid() == serviceOid.longValue()) {
                     numAttempted += bin.getNumAttemptedRequest();
@@ -427,11 +489,6 @@ public class DashboardWindow extends JFrame implements LogonListener {
             return megabin;
         }
 
-        private final long periodStart;
-        private final int resolution;
-        private final int interval;
-        private final Map binsByNodeId = new HashMap();
-        private final Map binsByServiceOid = new HashMap();
     }
 
 

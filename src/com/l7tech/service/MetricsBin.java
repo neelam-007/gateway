@@ -225,23 +225,14 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
-    /**
-     * @deprecated only for serialization and persistence
-     */
     public void setNumAttemptedRequest(int numAttemptedRequest) {
         this._numAttemptedRequest = numAttemptedRequest;
     }
 
-    /**
-     * @deprecated only for serialization and persistence
-     */
     public void setNumAuthorizedRequest(int numAuthorizedRequest) {
         this._numAuthorizedRequest = numAuthorizedRequest;
     }
 
-    /**
-     * @deprecated only for serialization and persistence
-     */
     public void setNumCompletedRequest(int numCompletedRequest) {
         this._numCompletedRequest = numCompletedRequest;
     }
@@ -376,80 +367,47 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setMinFrontendResponseTime(int minFrontendResponseTime) {
         this.minFrontendResponseTime = minFrontendResponseTime;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setMaxFrontendResponseTime(int maxFrontendResponseTime) {
         this.maxFrontendResponseTime = maxFrontendResponseTime;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setSumFrontendResponseTime(long sumFrontendResponseTime) {
         this.sumFrontendResponseTime = sumFrontendResponseTime;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setMinBackendResponseTime(int minBackendResponseTime) {
         this.minBackendResponseTime = minBackendResponseTime;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setMaxBackendResponseTime(int maxBackendResponseTime) {
         this.maxBackendResponseTime = maxBackendResponseTime;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setSumBackendResponseTime(long sumBackendResponseTime) {
         this.sumBackendResponseTime = sumBackendResponseTime;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setPeriodStart(long periodStart) {
         this._periodStart = periodStart;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setClusterNodeId(String clusterNodeId) {
         this._clusterNodeId = clusterNodeId;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setResolution(int res) {
         checkResolutionType(res);
         this._resolution = res;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setServiceOid(long serviceOid) {
         this._serviceOid = serviceOid;
     }
 
-    /**
-     * @deprecated should be used only for serialization and persistence
-     */
     public void setStartTime(long startTime) {
         this._startTime = startTime;
     }
