@@ -20,6 +20,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -59,8 +61,16 @@ import java.util.logging.Level;
  * Date: Sep 15, 2003<br/>
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
+    private ServerConfig serverConfig;
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
+    }
+
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+        WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        serverConfig = (ServerConfig)appcontext.getBean("serverConfig");
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -132,7 +142,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return;
             }
             // make sure this service is indeed anonymously accessible
-            if (results == null || results.length < 1) {
+            if (systemAllowsAnonymousDownloads(req)) {
+            } else if (results == null || results.length < 1) {
                 if (!policyAllowAnonymous(svc)) {
                     logger.info("user denied access to service description");
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "you need to provide valid credentials to see this service's description");
@@ -160,7 +171,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             ListResults listres;
 
             try {
-                if (results == null || results.length < 1)
+                if (systemAllowsAnonymousDownloads(req)) {
+                    listres = listAllServices();
+                } else if (results == null || results.length < 1)
                     listres = listAnonymouslyViewableServices();
                 else
                     listres = listAnonymouslyViewableAndProtectedServices(results);
@@ -188,6 +201,23 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             outputServiceDescriptions(req, res, services);
             logger.info("Returned list of service description targets");
         }
+    }
+
+    private boolean systemAllowsAnonymousDownloads(HttpServletRequest req) {
+        // split strings into seperate values
+        // check whether any of those can match start of
+        String allPassthroughs = serverConfig.getProperty("passthroughDownloads");
+        StringTokenizer st = new StringTokenizer(allPassthroughs);
+        String remote = req.getRemoteAddr();
+        while (st.hasMoreTokens()) {
+            String passthroughVal = st.nextToken();
+            if (remote.startsWith(passthroughVal)) {
+                logger.fine("remote ip " + remote + " was authorized by passthrough value " + passthroughVal);
+                return true;
+            }
+        }
+        logger.finest("remote ip " + remote + " was not authorized by any passthrough in " + allPassthroughs);
+        return false;
     }
 
     private void sendAuthChallenge(HttpServletResponse res) throws IOException {
@@ -271,6 +301,18 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     interface ListResults {
         Collection allowed();
         boolean anyServices();
+    }
+
+    private ListResults listAllServices() throws FindException {
+        final Collection allServices = serviceManager.findAll();
+        return new ListResults() {
+            public Collection allowed() {
+                return allServices;
+            }
+            public boolean anyServices() {
+                return allServices.size() >= 1;
+            }
+        };
     }
 
     private ListResults listAnonymouslyViewableServices() throws IOException, FindException {
