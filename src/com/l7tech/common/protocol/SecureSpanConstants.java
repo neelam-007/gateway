@@ -209,6 +209,13 @@ public class SecureSpanConstants {
          * </ul>
          */
         public static final String PARAM_NONCE = "nonce";
+
+        /**
+         * Parameter alongside a policy download URL that is meant to indicate that the requestor wants to get back
+         * the full (non-filtered) policy document. This will be used when publishing service description and associated
+         * policy document to a Systinet (or other UDDI implementation) registry. Usage is &fulldoc=yes
+         */
+        public static final String PARAM_FULLDOC = "fulldoc";
     }
 
     /**

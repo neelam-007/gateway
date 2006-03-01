@@ -22,6 +22,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
@@ -66,6 +67,7 @@ import java.util.logging.Level;
 public class PolicyServlet extends AuthenticatableHttpServlet {
     private AuditContext auditContext;
     private byte[] serverCertificate;
+    private ServerConfig serverConfig;
 
     /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
     private static final String PRE32_DISCO_URI = "disco.modulator";
@@ -77,6 +79,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
             KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
             serverCertificate = ku.readSSLCert();
+            serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
         }
         catch (BeansException be) {
             throw new ServletException(be);
@@ -216,6 +219,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         String getCert = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_GETCERT);
         String username = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
         String nonce = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
+        String fullDoc = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_FULLDOC);
 
         // See if it's actually a certificate download request
         if (getCert != null) {
@@ -247,16 +251,29 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             return;
         }
 
+        boolean isFullDoc = false;
+        if (fullDoc != null && fullDoc.length() > 0) {
+            if ("yes".equals(fullDoc) || "Yes".equals(fullDoc) || "YES".equals(fullDoc)) {
+                isFullDoc = true;
+            } else {
+                isFullDoc = Boolean.parseBoolean(fullDoc);
+            }
+        }
+        // if user asking for full doc, make sure it's allowed
+        if (isFullDoc) {
+            isFullDoc = systemAllowsAnonymousDownloads(req);
+        }
+
         // pass over to the service
         PolicyService service = getPolicyService();
         Document response = null;
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(), pre32PolicyCompat);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(), pre32PolicyCompat, isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(), pre32PolicyCompat);
+                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(), pre32PolicyCompat, isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)
@@ -288,6 +305,23 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             logger.finest("returning policy");
             outputPolicyDoc(res, response);
         }
+    }
+
+    private boolean systemAllowsAnonymousDownloads(HttpServletRequest req) {
+        // split strings into seperate values
+        // check whether any of those can match start of
+        String allPassthroughs = serverConfig.getProperty("passthroughDownloads");
+        StringTokenizer st = new StringTokenizer(allPassthroughs);
+        String remote = req.getRemoteAddr();
+        while (st.hasMoreTokens()) {
+            String passthroughVal = st.nextToken();
+            if (remote.startsWith(passthroughVal)) {
+                logger.fine("remote ip " + remote + " was authorized by passthrough value " + passthroughVal);
+                return true;
+            }
+        }
+        logger.finest("remote ip " + remote + " was not authorized by any passthrough in " + allPassthroughs);
+        return false;
     }
 
     private boolean isDocFault(Document doc) {

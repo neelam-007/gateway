@@ -159,7 +159,8 @@ public class PolicyService extends ApplicationObjectSupport {
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
                                                    PolicyGetter policyGetter,
-                                                   boolean pre32PolicyCompat)
+                                                   boolean pre32PolicyCompat,
+                                                   boolean isFullDoc)
             throws FilteringException, IOException, SAXException
     {
         WspWriter wspWriter = new WspWriter();
@@ -170,6 +171,10 @@ public class PolicyService extends ApplicationObjectSupport {
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
             return null;
+        }
+
+        if (isFullDoc) {
+            // todo, just return the full policy document here
         }
 
         boolean isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
@@ -287,7 +292,7 @@ public class PolicyService extends ApplicationObjectSupport {
                     ub.setLogin(context.getCredentials().getLogin());
                     user = ub;
                 }
-                policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, pre32PolicyCompat);
+                policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, pre32PolicyCompat, false);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(e));
                 return;
