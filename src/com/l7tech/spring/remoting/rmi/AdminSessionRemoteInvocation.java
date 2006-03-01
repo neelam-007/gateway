@@ -26,7 +26,7 @@ import java.rmi.server.ServerNotActiveException;
  * @version Dec 6, 2004
  */
 class AdminSessionRemoteInvocation extends RemoteInvocation {
-    protected final Log logger = LogFactory.getLog(getClass());
+    private static final Log logger = LogFactory.getLog(AdminSessionRemoteInvocation.class);
     private final Subject subject;
 
     AdminSessionRemoteInvocation(MethodInvocation methodInvocation, Subject subject) {

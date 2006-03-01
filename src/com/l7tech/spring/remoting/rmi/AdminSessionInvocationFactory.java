@@ -25,7 +25,7 @@ import java.util.Iterator;
  * @version Dec 6, 2004
  */
 final class AdminSessionInvocationFactory implements RemoteInvocationFactory, Serializable {
-    protected final Log logger = LogFactory.getLog(getClass());
+    private static final Log logger = LogFactory.getLog(AdminSessionInvocationFactory.class);
 
     public RemoteInvocation createRemoteInvocation(MethodInvocation methodInvocation) {
         logger.debug("In createRemoteInvocation for method: '"+methodInvocation.getMethod().getName()+"'");
