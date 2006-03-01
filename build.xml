@@ -1598,6 +1598,7 @@
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="tarari-initd"/>
+                <include name="mysql-binlog"/>
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
                 <include name="snmpd.conf"/>

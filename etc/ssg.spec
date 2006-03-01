@@ -31,6 +31,7 @@ mkdir %{buildroot}/etc/snmp/
 mkdir %{buildroot}/etc/profile.d/
 mkdir %{buildroot}/etc/init.d/
 mkdir %{buildroot}/etc/sysconfig
+mkdir %{buildroot}/etc/logrotate.d/
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
 mv %{buildroot}/ssg/bin/tarari-initd %{buildroot}/etc/init.d/tarari
@@ -38,8 +39,10 @@ mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
 mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
+mv %{buildroot}/ssg/bin/mysql-binlog %{buildroot}/etc/logrotate.d/mysql-binlog
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
+
 rm -f %{buildroot}/ssg/dist/*
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
