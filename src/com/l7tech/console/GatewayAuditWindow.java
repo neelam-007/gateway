@@ -303,7 +303,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         if(visible) {
             if(startConnected) {
                 getLogPane().onConnect();
-                getLogPane().refreshLogs();
             }
         }
     }

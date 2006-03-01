@@ -120,7 +120,6 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         if(visible) {
             if(startConnected) {
                 getLogPane().onConnect();
-                getLogPane().refreshLogs();
             }
         }
     }

@@ -585,18 +585,10 @@ public class LogPanel extends JPanel {
         if(selectPane != null) return selectPane;
 
         selectPane = new JPanel();
-        selectPane.setMinimumSize(new Dimension((int)selectPane.getSize().getWidth(), 50));
-        selectPane.setPreferredSize(new Dimension((int)selectPane.getSize().getWidth(), 50));
-       // selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
-        selectPane.setLayout(new BorderLayout());
-
-        JPanel leftPane = new JPanel();
-        leftPane.setLayout(new FlowLayout());
-        leftPane.add(getFilterPane());
-        leftPane.add(new JPanel());
-
-        selectPane.add(leftPane, BorderLayout.WEST);
-        selectPane.add(getStatusPane(), BorderLayout.EAST);
+        selectPane.setLayout(new BoxLayout(selectPane, BoxLayout.X_AXIS));
+        selectPane.add(getFilterPane());
+        selectPane.add(Box.createHorizontalGlue());
+        selectPane.add(getStatusPane());
 
         return selectPane;
     }
@@ -609,7 +601,8 @@ public class LogPanel extends JPanel {
         if(filterPane != null) return filterPane;
 
         filterPane = new JPanel();
-        filterPane.setLayout(new FlowLayout());
+        filterPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        filterPane.setLayout(new BoxLayout(filterPane, BoxLayout.X_AXIS));
         filterPane.add(getFilterSlider());
         if(isAuditType) {
             filterPane.add(getFilterNodePane());
@@ -620,6 +613,7 @@ public class LogPanel extends JPanel {
         }
         filterPane.add(getFilterMessagePane());
         if(!isAuditType) filterPane.add(getMicroControlPane());
+        filterPane.add(Box.createHorizontalGlue());
 
         return filterPane;
     }
@@ -704,6 +698,7 @@ public class LogPanel extends JPanel {
         label.setFont(new java.awt.Font("Dialog", 0, 11));
 
         filterNodePane.setLayout(new BorderLayout());
+        filterNodePane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
         filterNodePane.add(label, BorderLayout.NORTH);
         filterNodePane.add(nodeTextField, BorderLayout.CENTER);
 
@@ -731,6 +726,7 @@ public class LogPanel extends JPanel {
         label.setFont(new java.awt.Font("Dialog", 0, 11));
 
         filterServicePane.setLayout(new BorderLayout());
+        filterServicePane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
         filterServicePane.add(label, BorderLayout.NORTH);
         filterServicePane.add(serviceTextField, BorderLayout.CENTER);
 
@@ -758,6 +754,7 @@ public class LogPanel extends JPanel {
         label.setFont(new java.awt.Font("Dialog", 0, 11));
 
         filterThreadPane.setLayout(new BorderLayout());
+        filterThreadPane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
         filterThreadPane.add(label, BorderLayout.NORTH);
         filterThreadPane.add(threadTextField, BorderLayout.CENTER);
 
@@ -785,6 +782,7 @@ public class LogPanel extends JPanel {
         label.setFont(new java.awt.Font("Dialog", 0, 11));
 
         filterMessagePane.setLayout(new BorderLayout());
+        filterMessagePane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
         filterMessagePane.add(label, BorderLayout.NORTH);
         filterMessagePane.add(messageTextField, BorderLayout.CENTER);
 
@@ -799,7 +797,7 @@ public class LogPanel extends JPanel {
      */
     private JPanel getMicroControlPane() {
         JPanel microControlPane = new JPanel();
-        microControlPane.setLayout(new FlowLayout());
+        microControlPane.setLayout(new BoxLayout(microControlPane, BoxLayout.X_AXIS));
 
         autoRefresh.setSelected(true);
         microControlPane.add(autoRefresh);
@@ -822,6 +820,7 @@ public class LogPanel extends JPanel {
         if(msgTotal != null) return msgTotal;
         msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
         msgTotal.setFont(new java.awt.Font("Dialog", 0, 12));
+        msgTotal.setAlignmentY(0);
         return msgTotal;
     }
 
@@ -1030,9 +1029,11 @@ public class LogPanel extends JPanel {
         if(statusPane != null)  return statusPane;
 
         statusPane = new JPanel();
-        statusPane.setLayout(new BorderLayout());
-        statusPane.add(getMsgTotal(), BorderLayout.NORTH);
-        statusPane.add(getLastUpdateTimeLabel(), BorderLayout.CENTER);
+        statusPane.setLayout(new BoxLayout(statusPane, BoxLayout.Y_AXIS));
+        statusPane.add(Box.createVerticalGlue());
+        statusPane.add(getMsgTotal());
+        statusPane.add(getLastUpdateTimeLabel());
+        statusPane.add(Box.createVerticalGlue());
 
         return statusPane;
     }
@@ -1048,6 +1049,8 @@ public class LogPanel extends JPanel {
         lastUpdateTimeLabel = new JLabel();
         lastUpdateTimeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
         lastUpdateTimeLabel.setText("");
+        lastUpdateTimeLabel.setAlignmentY(0);
+
         return lastUpdateTimeLabel;
     }
 
@@ -1492,6 +1495,7 @@ public class LogPanel extends JPanel {
     }
 
     private void importError(final String dialogMessage) {
+        logger.info(dialogMessage);
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 ExceptionDialog d = ExceptionDialog.createExceptionDialog(
