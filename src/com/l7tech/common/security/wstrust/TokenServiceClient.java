@@ -466,14 +466,6 @@ public class TokenServiceClient {
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
                    UnrecognizedServerCertException
     {
-        // tmp
-        try {
-            log.severe(XmlUtil.nodeToFormattedString(response));
-        } catch (IOException e) {
-
-        }
-        // todo, must remove
-
         Element env = response.getDocumentElement();
         if (env == null) throw new InvalidDocumentFormatException("Response had no document element"); // can't happen
         Element body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), "Body");

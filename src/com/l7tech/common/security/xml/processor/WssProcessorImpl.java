@@ -114,14 +114,14 @@ public class WssProcessorImpl implements WssProcessor {
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
-                if (elementHasNamespace(securityChildToProcess, SoapUtil.WSU_URIS_ARRAY)) {
+                if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.WSU_URIS_ARRAY)) {
                     processTimestamp(cntx, securityChildToProcess);
                 } else {
                     logger.fine("Encountered Timestamp element but not of right namespace (" +
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
-                if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
+                if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processBinarySecurityToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered BinarySecurityToken element but not of right namespace (" +
@@ -135,14 +135,14 @@ public class WssProcessorImpl implements WssProcessor {
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.USERNAME_TOK_EL_NAME)) {
-                if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
+                if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processUsernameToken(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered UsernameToken element but not of expected namespace (" +
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME)) {
-                if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
+                if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.WSSC_NAMESPACE_ARRAY)) {
                     String identifier = extractIdentifierFromSecConTokElement(securityChildToProcess);
                     if (identifier == null) {
                         throw new InvalidDocumentFormatException("SecurityContextToken element found, " +
@@ -165,7 +165,7 @@ public class WssProcessorImpl implements WssProcessor {
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.WSSC_DK_EL_NAME)) {
-                if (elementHasNamespace(securityChildToProcess,SoapUtil.WSSC_NAMESPACE_ARRAY)) {
+                if (XmlUtil.elementInNamespace(securityChildToProcess,SoapUtil.WSSC_NAMESPACE_ARRAY)) {
                     processDerivedKey(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered DerivedKey element but not of expected namespace (" +
@@ -188,14 +188,14 @@ public class WssProcessorImpl implements WssProcessor {
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITYTOKENREFERENCE_EL_NAME)) {
-                if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
+                if (XmlUtil.elementInNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processSecurityTokenReference(securityChildToProcess, securityContextFinder, cntx);
                 } else {
                     logger.fine("Encountered SecurityTokenReference element but not of expected namespace (" +
                             securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals("SignatureConfirmation")) {
-                if (elementHasNamespace(securityChildToProcess, new String[] { SoapUtil.SECURITY11_NAMESPACE } )) {
+                if (XmlUtil.elementInNamespace(securityChildToProcess, new String[] { SoapUtil.SECURITY11_NAMESPACE } )) {
                     processSignatureConfirmation(securityChildToProcess, cntx);
                 } else {
                     logger.fine("Encountered SignatureConfirmation element but not of expected namespace (" +
@@ -608,18 +608,10 @@ public class WssProcessorImpl implements WssProcessor {
     private String extractIdentifierFromSecConTokElement(Element secConTokEl) {
         // look for the wssc:Identifier child
         Element id = XmlUtil.findFirstChildElementByName(secConTokEl,
-                                                         SoapUtil.WSSC_NAMESPACE,
+                                                         SoapUtil.WSSC_NAMESPACE_ARRAY,
                                                          SoapUtil.WSSC_ID_EL_NAME);
         if (id == null) return null;
         return XmlUtil.getTextValue(id);
-    }
-
-    /**
-     * checks that the namespace of the passed element is one of the namespaces
-     * passed
-     */
-    private boolean elementHasNamespace(Element el, String[] possibleNamespaces) {
-        return XmlUtil.elementInNamespace(el, possibleNamespaces);
     }
 
     private void processUsernameToken(final Element usernameTokenElement, ProcessingStatusHolder cntx)
