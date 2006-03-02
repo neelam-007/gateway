@@ -284,6 +284,19 @@ public class XpathEvaluatorTest extends TestCase {
         }
     }
 
+    public void testDeepNested() throws Exception {
+        Document doc = XmlUtil.stringToDocument("<blah foo=\"blah\"><foo><bar/></foo></blah>");
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new HashMap());
+        List res = xe.select("count(/*/*/*) > 0");
+        Boolean bool = (Boolean)res.iterator().next();
+        assertTrue(bool.booleanValue());
+        doc = XmlUtil.stringToDocument("<blah foo=\"blah\"><foo/></blah>");
+        xe = XpathEvaluator.newEvaluator(doc, new HashMap());
+        res = xe.select("count(/*/*/*) > 0");
+        bool = (Boolean)res.iterator().next();
+        assertFalse(bool.booleanValue());
+    }
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
