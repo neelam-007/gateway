@@ -49,7 +49,7 @@ class CopyToCommand extends Command {
                 (args == null || args.length < 1 || !args[0].equalsIgnoreCase("force")))
         {
             throw new CommandException(
-                    dstNoun.getName() + " has a client certificate.  Copying a configuration onto this gateway" +
+                    dstNoun.getName() + " has a client certificate.  Copying a configuration onto this gateway\n" +
                             "will destroy its private key.  To proceed, use '" +
                             ssgNoun.getName() + " copyTo " + dstNoun.getName() + " force'");
         }
