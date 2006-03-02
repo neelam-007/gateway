@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -30,7 +31,10 @@ public class JarChecker {
         String[] ignoreClassNames = new String[args.length-1];
         System.arraycopy(args, 1, ignoreClassNames, 0, args.length-1);
         try {
-            checkJar(jar, ignoreClassNames);
+            if (!checkJar(jar, ignoreClassNames)) {
+                System.out.println("\nERROR: There was an error loading at least one class in " + jar);
+                System.exit(1);
+            }
         } catch (Throwable e) {
             fatalErr(e);
         }
@@ -39,8 +43,14 @@ public class JarChecker {
         System.exit(0);
     }
 
-    private static void checkJar(String jar, String[] ignoreClassNames) throws IOException {
-        boolean hadErrors = false;
+    private static class ClassLoadingException extends Exception {
+        public ClassLoadingException(String mess, Throwable cause) {
+            super(mess, cause);
+        }
+    }
+
+    private static boolean checkJar(String jar, String[] ignoreClassNames) throws IOException {
+        List errors = new ArrayList();
         List toIgnore = Arrays.asList(ignoreClassNames);
         JarFile jarFile = new JarFile(jar);
         Enumeration entries = jarFile.entries();
@@ -50,10 +60,6 @@ public class JarChecker {
             if (name.endsWith(".class")) {
                 String truncName = name.substring(0, name.length() - ".class".length());
                 String className = truncName.replace('/', '.').replace('\\', '.');
-                if (className.indexOf('$') > -1) {
-                    log("Undecorating inner class " + name);
-                    
-                }
                 if(toIgnore.contains(className)) {
                     log("Skipping class: " + className);
                 }                
@@ -62,16 +68,24 @@ public class JarChecker {
                     try {
                         Class.forName(className);
                     } catch (Throwable e) {
-                        System.out.println("ERROR: while loading class: " + className + ": " + e);
-                        e.printStackTrace(System.out);
-                        hadErrors = true;
+                        final String mess = "ERROR: while loading class: " + className + ": " + e;
+                        System.out.println("\n" + mess + "\n");
+                        errors.add(new ClassLoadingException(mess, e));
                     }
                 }
             }
         }
 
-        if (hadErrors)
-            throw new RuntimeException("There were errors while loading at least one class.");
+        if (!errors.isEmpty()) {
+            for(java.util.Iterator i = errors.iterator(); i.hasNext(); ) {
+                ClassLoadingException c = (ClassLoadingException)i.next();
+                System.out.println("\n" + c.getMessage());
+                c.printStackTrace(System.out);
+            }
+            return false;
+        }
+
+        return true;
     }
 
     private static void log(String s) {
@@ -80,8 +94,8 @@ public class JarChecker {
     }
 
     private static void fatalErr(Throwable e) {
-        System.out.println("ERROR: Fatal error: " + e.getMessage());
+        System.out.println("\nERROR: Fatal error: " + e.getMessage());
         e.printStackTrace(System.out);
-        System.exit(1);
+        System.exit(2);
     }
 }
