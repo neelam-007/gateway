@@ -6,15 +6,21 @@
 package com.l7tech.common.xml.tarari;
 
 import com.tarari.xml.rax.RaxDocument;
+import com.tarari.xml.rax.cursor.RaxCursor;
+import com.tarari.xml.rax.cursor.RaxCursorFactory;
 import com.tarari.xml.rax.fastxpath.XPathResult;
+import com.l7tech.common.xml.ElementCursor;
 
 /**
  * Represents resources held by the Tarari driver in the form of a RaxDocument and simultaneous XPathResult.
  */
 public class TarariMessageContextImpl implements TarariMessageContext {
+    private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();
+
     private final RaxDocument raxDocument;
     private final XPathResult xpathResult;
     private final long compilerGeneration;
+    private RaxCursor raxCursor = null;
 
     TarariMessageContextImpl(RaxDocument doc, XPathResult xpathResult, long compilerGeneration) {
         if (doc == null || xpathResult == null) throw new IllegalArgumentException();
@@ -34,6 +40,13 @@ public class TarariMessageContextImpl implements TarariMessageContext {
      */
     public long getCompilerGeneration() {
         return compilerGeneration;
+    }
+
+    public ElementCursor getElementCursor() {
+        if (raxCursor == null) {
+            raxCursor = raxCursorFactory.createCursor("", getRaxDocument());
+        }
+        return new TarariElementCursor(raxCursor);
     }
 
     protected void finalize() throws Throwable {

@@ -42,4 +42,34 @@ public class ArrayUtils {
         ret[0] = obj;
         return ret;
     }
+
+    /** @return true if the target string is contained in the list. */
+    public static boolean contains(String[] list, String target) {
+        for (int i = 0; i < list.length; i++) {
+            String s = list[i];
+            if (s == null) {
+                if (target == null)
+                    return true;
+            } else {
+                if (s.equals(target))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /** @return true if target string is contained in the list, disregarding case during comparisons. */
+    public static boolean containsIgnoreCase(String[] list, String target) {
+        for (int i = 0; i < list.length; i++) {
+            String s = list[i];
+            if (s == null) {
+                if (target == null)
+                    return true;
+            } else {
+                if (s.equalsIgnoreCase(target))
+                    return true;
+            }
+        }
+        return false;
+    }
 }

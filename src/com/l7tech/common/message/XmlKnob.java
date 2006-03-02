@@ -6,6 +6,7 @@
 
 package com.l7tech.common.message;
 
+import com.l7tech.common.xml.ElementCursor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -17,6 +18,24 @@ import java.io.IOException;
  * TODO investigate employing {@link org.apache.xerces.dom.NodeImpl#isReadOnly()} 
  */
 public interface XmlKnob extends MessageKnob {
+    /**
+     * Get a read-only cursor view of the current working document.  This will use an existing Tarari RaxDocument
+     * if one is available; otherwise, it will use a DOM cursor.
+     * <p/>
+     * The returned cursor, and any duplicates made by the caller, are only guaranteed to remain valid as long as
+     * no changes are made to this Message through other means.  In particular, calling {@link #getDocumentWritable}
+     * or using the {@link MimeKnob} should be assumed to render any cursors invalid, and using such invalid
+     * cursors may cause misbehavior up to and including runtime exceptions.
+     *
+     * @return an ElementCursor, which will be pointed at an element in the document but may have been left in
+     *         an unexpected position by the last user of this cursor -- use moveToDocumentRoot() on the returned
+     *         cursor (or a duplicate) to be sure of where it is pointed.
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream
+     * @throws IOException if there is a problem reading from or writing to a stash
+     */
+    ElementCursor getElementCursor() throws SAXException, IOException;
+
     /**
      * Get a read-only reference to the current working Document.  There is currently no way to enforce
      * that the returned Document is not modified; callers are expected to keep their word and avoid changing

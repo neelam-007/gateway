@@ -6,6 +6,10 @@ package com.l7tech.common.message;
 
 import com.l7tech.common.mime.*;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.DomElementCursor;
+import com.l7tech.common.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -17,7 +21,7 @@ import java.io.InputStream;
  */
 public class XmlFacet extends MessageFacet {
     private Document originalDocument = null;  // the original Document
-    private Document workingDocument = null;  // the working Document
+    private DomElementCursor workingDocument = null;  // the working Document
 
     /** Can be assumed to be true if {@link #workingDocument} == null */
     private boolean firstPartValid = true;
@@ -123,7 +127,7 @@ public class XmlFacet extends MessageFacet {
             }
 
             final ContentTypeHeader textXml = ContentTypeHeader.XML_DEFAULT;
-            final byte[] bytes = XmlUtil.nodeToString(workingDocument).getBytes(textXml.getEncoding());
+            final byte[] bytes = XmlUtil.nodeToString(workingDocument.getDocument()).getBytes(textXml.getEncoding());
             if (bytes != null) {
                 final PartInfo firstPart = mk.getFirstPart();
                 firstPart.setBodyBytes(bytes);
@@ -161,18 +165,38 @@ public class XmlFacet extends MessageFacet {
             this.mk = mk;
         }
 
+        public ElementCursor getElementCursor() throws SAXException, IOException {
+            // Use a Tarari accelerated cursor if possible
+            getMessage().isSoap(); // force Tarari evaluation, if hardware is available
+            TarariKnob tk = (TarariKnob)getMessage().getKnob(TarariKnob.class);
+            if (tk != null) {
+                try {
+                    TarariMessageContext tmc = tk.getContext();
+                    if (tmc != null)
+                        return tmc.getElementCursor();
+                    /** FALLTHROUGH to software - no Tarari message context could be created */
+                } catch (NoSuchPartException e) {
+                    throw new SAXException("Unable to parse XML: " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
+            // Fall back to the DOM cursor
+            getDocumentReadOnly();
+            return workingDocument;
+        }
+
         public Document getDocumentReadOnly() throws SAXException, IOException {
             if (workingDocument == null) {
                 final PartInfo firstPart = mk.getFirstPart();
                 if (!firstPart.getContentType().isXml())
                     throw new SAXException("Content type of first part of message is not XML");
                 try {
-                    workingDocument = XmlUtil.parse(firstPart.getInputStream(false));
+                    workingDocument = new DomElementCursor(XmlUtil.parse(firstPart.getInputStream(false)));
                 } catch (NoSuchPartException e) {
-                    throw new SAXException("Unable to parse XML: " + e);
+                    throw new SAXException("Unable to parse XML: " + ExceptionUtils.getMessage(e), e);
                 }
             }
-            return workingDocument;
+            return workingDocument.getDocument();
         }
 
         public Document getDocumentWritable() throws SAXException, IOException {
@@ -194,7 +218,7 @@ public class XmlFacet extends MessageFacet {
 
         public void setDocument(Document document) {
             firstPartValid = false;
-            workingDocument = document;
+            workingDocument = new DomElementCursor(document);
             TarariKnob.invalidate(getMessage());
         }
     }
@@ -221,8 +245,8 @@ public class XmlFacet extends MessageFacet {
         public void setBodyBytes(byte[] newBody) throws IOException {
             delegate.setBodyBytes(newBody);
             if (isFirstPart()) {
-                if (workingDocument != null && getMessage().isEnableOriginalDocument() && originalDocument == null)
-                    originalDocument = (Document)workingDocument.cloneNode(true); // todo find a way to skip this if it wont be needed
+                if (workingDocument != null && originalDocument == null && getMessage().isEnableOriginalDocument())
+                    originalDocument = (Document)workingDocument.getDocument().cloneNode(true); // todo find a way to skip this if it wont be needed
                 workingDocument = null;
                 firstPartValid = false;
                 TarariKnob.invalidate(getMessage());

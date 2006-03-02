@@ -114,6 +114,12 @@ public class XmlUtil {
         return (DocumentBuilder)documentBuilderAllowingDoctype.get();
     }
 
+    /** @return a new, empty DOM document with absolutely nothing in it. */
+    public static Document createEmptyDocument() {
+        return getDocumentBuilder().newDocument();
+    }
+
+    /** @return a new DOM document contianing only a single empty element. */ 
     public static Document createEmptyDocument(String rootElementName, String rootPrefix, String rootNs) {
         // TODO make a better-performing version of this
         try {
@@ -621,7 +627,7 @@ public class XmlUtil {
 
     /**
      * Gets the child text node value for an element.
-     * @return a String consisting of all text nodes trimmed and glued together.  May be empty but never null.
+     * @return a String consisting of all text nodes glued together and then trimmed.  May be empty but never null.
      */
     public static String getTextValue(Element node) {
         StringBuffer output = new StringBuffer();
@@ -630,15 +636,11 @@ public class XmlUtil {
             Node kid = children.item(i);
             if (kid.getNodeType() == Node.TEXT_NODE || kid.getNodeType() == Node.CDATA_SECTION_NODE) {
                 String thisTxt = kid.getNodeValue();
-                if (thisTxt != null) {
-                    thisTxt = thisTxt.trim();
-                    if (thisTxt != null && thisTxt.length() > 0) {
-                        output.append(thisTxt);
-                    }
-                }
+                if (thisTxt != null)
+                    output.append(thisTxt);
             }
         }
-        return output.toString();
+        return output.toString().trim();
     }
 
     /**

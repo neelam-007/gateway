@@ -1,5 +1,7 @@
 package com.l7tech.common.xml.tarari;
 
+import com.l7tech.common.xml.ElementCursor;
+
 /**
  * Represents resources held in kernel-memory by the Tarari driver, namely
  * a document in one buffer and a token list in the other.
@@ -13,7 +15,8 @@ package com.l7tech.common.xml.tarari;
  */
 public interface TarariMessageContext {
     /**
-     * Free all resources used by this message context.
+     * Free all resources used by this message context.  After this is called, behavior of this instance
+     * is not defined.
      */
     void close();
 
@@ -22,4 +25,16 @@ public interface TarariMessageContext {
      *         TarariMessageContext was produced.
      */
     long getCompilerGeneration();
+
+    /**
+     * Get the shared ElementCursor for this message context.  Caller is responsible for ensuring that only
+     * one scope at a time tries to make use of this cursor without duplicating it first.
+     *
+     * @return the ElementCursor wrapping the RaxCursor that lives in this context.  Never null.
+     *         <p/>
+     *         Note that it may have been
+     *         left in a strange position by the last caller that used it.  Caller might want to immediately
+     *         duplicate it and call moveToDocumentRoot() on the duplicate.
+     */
+    ElementCursor getElementCursor();
 }
