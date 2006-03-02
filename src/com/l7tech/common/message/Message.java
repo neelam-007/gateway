@@ -35,6 +35,7 @@ public final class Message {
     private HttpServletResponseKnob httpServletResponseKnob;
     private TcpKnob tcpKnob;
     private XmlKnob xmlKnob;
+    private SoapKnob soapKnob;
 
 
     /**
@@ -447,8 +448,11 @@ public final class Message {
      * @return the requested MessageKnob, if its facet is installed on this Message, or null.
      */
     public MessageKnob getKnob(Class c) {
+        if (c == null) throw new NullPointerException();
+        if (rootFacet == null) return null;
+
         // These knobs account for at least 2/3rds of the dozens of calls to this method that are made
-        // per request.
+        // per request.  Traversing the knob list so much was starting to show up in the profile.
         if (c == HttpRequestKnob.class && httpRequestKnob != null)
             return httpRequestKnob;
         if (c == HttpServletRequestKnob.class && httpServletRequestKnob != null)
@@ -461,9 +465,9 @@ public final class Message {
             return tcpKnob;
         if (c == XmlKnob.class && xmlKnob != null)
             return xmlKnob;
+        if (c == SoapKnob.class && soapKnob != null)
+            return soapKnob;
 
-        if (c == null) throw new NullPointerException();
-        if (rootFacet == null) return null;
         final MessageKnob got = rootFacet.getKnob(c);
 
         if (c == HttpRequestKnob.class && httpRequestKnob == null)
@@ -478,6 +482,8 @@ public final class Message {
             return tcpKnob = (TcpKnob)got;
         if (c == XmlKnob.class && xmlKnob == null)
             return xmlKnob = (XmlKnob)got;
+        if (c == SoapKnob.class && soapKnob == null)
+            return soapKnob = (SoapKnob)got;
 
         return got;
     }
@@ -489,6 +495,7 @@ public final class Message {
         httpServletResponseKnob = null;
         tcpKnob = null;
         xmlKnob = null;
+        soapKnob = null;
     }
 
     /**
