@@ -258,6 +258,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             } else {
                 isFullDoc = Boolean.parseBoolean(fullDoc);
             }
+            logger.finest("Passed value for " + SecureSpanConstants.HttpQueryParameters.PARAM_FULLDOC + " was " + fullDoc);
+            if (isFullDoc)
+                logger.finest("Will passthrough and return full policy document");
         }
         // if user asking for full doc, make sure it's allowed
         if (isFullDoc) {

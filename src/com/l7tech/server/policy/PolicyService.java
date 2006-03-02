@@ -161,11 +161,10 @@ public class PolicyService extends ApplicationObjectSupport {
                                                    PolicyGetter policyGetter,
                                                    boolean pre32PolicyCompat,
                                                    boolean isFullDoc)
-            throws FilteringException, IOException, SAXException
-    {
+            throws FilteringException, IOException, SAXException {
+        // prepare writer, get policy
         WspWriter wspWriter = new WspWriter();
         wspWriter.setPre32Compat(pre32PolicyCompat);
-
         final ServiceInfo gotPolicy = policyGetter.getPolicy(policyId);
         Assertion targetPolicy = gotPolicy != null ? gotPolicy.getPolicy() : null;
         if (targetPolicy == null) {
@@ -173,13 +172,19 @@ public class PolicyService extends ApplicationObjectSupport {
             return null;
         }
 
+        // in this case, we're returning a non-filtered policy document as per the
+        // the passed argument. this flag trumps the case below where the policy
+        // does not allow anonymous and there are no authenticated requestors
         if (isFullDoc) {
-            // todo, just return the full policy document here
+            wspWriter.setPolicy(targetPolicy);
+            return XmlUtil.stringToDocument(wspWriter.getPolicyXmlAsString());
         }
 
+        // in case where the request is anonyymous but request was not authenticated, we return null
         boolean isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
         if (preAuthenticatedUser == null && !isanonymous) return null;
 
+        // filter the policy for the requestor's identity and return the resulting policy
         Assertion filteredAssertion = filterManager.applyAllFilters(preAuthenticatedUser, targetPolicy);
         if (filteredAssertion == null) {
             if (isanonymous) {
