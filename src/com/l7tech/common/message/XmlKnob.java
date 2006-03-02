@@ -40,15 +40,17 @@ public interface XmlKnob extends MessageKnob {
      * Get a read-only reference to the current working Document.  There is currently no way to enforce
      * that the returned Document is not modified; callers are expected to keep their word and avoid changing
      * the document in any way.
-     * <p>
+     * <p/>
      * The actual Document instance returned by this method is guaranteed to refer to the same underlying
      * object as would be returned by a later call to {@link #getDocumentWritable}, assuming no other major changes
      * have been made to the content of the Message in the meantime (ie, a call to @{link #setDocument} or changing
      * the MIME part out from underneath it with {@link MimeKnob#getFirstPart()}.setBytes()).
-     * <p>
+     * <p/>
      * Thus, a caller can initially call {@link #getDocumentReadOnly} to get a read-only document,
      * but then upgrade their returned Document reference to be writable
      * simply by calling getDocumentWritable() in void context.
+     * <p/>
+     * TODO use {@link #getElementCursor} instead, for read-only access that will work quickly with Tarari
      *
      * @see #getDocumentWritable for the method to use if you have any chance of modifying the Document
      * @return the current working Document.  Caller must not modify this in any way.

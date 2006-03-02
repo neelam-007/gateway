@@ -114,6 +114,7 @@ class SoapFacet extends MessageFacet {
                     if (soapInfo != null && soapInfo.payloadNsUri != null) {
                         return soapInfo.payloadNsUri;
                     } else {
+                        // No tarari, or DOM was changed.  Just use DOM-based lookup
                         return SoapUtil.getPayloadNamespaceUri(getMessage().getXmlKnob().getDocumentReadOnly());
                     }
                 }
