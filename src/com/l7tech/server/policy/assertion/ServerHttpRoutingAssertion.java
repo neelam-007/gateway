@@ -469,6 +469,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             return AssertionStatus.NONE;
         } catch (MalformedURLException mfe) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
+        } catch (UnknownHostException uhe) {
+            auditor.logAndAudit(AssertionMessages.HTTP_UNKNOWN_HOST, new String[]{uhe.getMessage()});
+            return AssertionStatus.FAILED;
+        } catch (SocketException se) {
+            auditor.logAndAudit(AssertionMessages.HTTP_SOCKET_EXCEPTION, new String[]{se.getMessage()});
+            return AssertionStatus.FAILED;
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);

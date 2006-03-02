@@ -25,7 +25,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_TAI_CHAIN_LOGIN         = m(4011, Level.FINE, "TAI credential chaining requested, but there is no User; will chain pc.login {0}");
     public static final M HTTPROUTE_TAI_NO_USER             = m(4012, Level.WARNING, "TAI credential chaining requested, and request was authenticated, but had no User or pc.login");
     public static final M HTTPROUTE_ADD_OUTGOING_COOKIE     = m(4013, Level.FINE, "Adding outgoing cookie: name = {0}");
-    public static final M HTTPROUTE_LOGIN_INFO              = m(4014, Level.FINE, "Using login '{0}'");
+    public static final M HTTPROUTE_LOGIN_INFO              = m(4014, Level.FINE, "Using login ''{0}''");
     public static final M HTTPROUTE_OK                      = m(4015, Level.FINE, "Request routed successfully");
     public static final M HTTPROUTE_RESPONSE_STATUS         = m(4016, Level.WARNING, true, true, "Protected service ({0}) responded with status {1}");
     public static final M HTTPROUTE_ADDCOOKIE_VERSION       = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
@@ -39,6 +39,8 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_RESPONSE_STATUS_HANDLED = m(4025, Level.INFO, "Protected service ({0}) responded with status {1}, retrying.");
     public static final M HTTPROUTE_BAD_STRATEGY_NAME       = m(4026, Level.WARNING, "Invalid routing failover strategy name: {0}  Using default strategy");
     public static final M HTTPROUTE_FAILOVER_FROM_TO        = m(4027, Level.WARNING, "Routing failed to host = {0}, retrying to host = {1}");
+    public static final M HTTP_UNKNOWN_HOST                 = m(4028, Level.WARNING, "Routing failed, unable to resolve IP for host = {0}");
+    public static final M HTTP_SOCKET_EXCEPTION             = m(4029, Level.WARNING, "Routing failed, connection error; {0}");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");
@@ -64,8 +66,8 @@ public class AssertionMessages extends Messages {
     public static final M SWA_NOT_MULTIPART               = m(4401, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
     public static final M SWA_OPERATION_NOT_FOUND         = m(4402, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
     public static final M SWA_REPEATED_OPERATION          = m(4403, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
-    public static final M SWA_OPERATION_NOT_ELEMENT_NODE  = m(4404, Level.INFO, "XPath pattern {0} found non-element node '{1}'");
-    public static final M SWA_PARAMETER_NOT_ELEMENT_NODE  = m(4405, Level.INFO, "XPath pattern {0}/{1} found non-element node '{2}'");
+    public static final M SWA_OPERATION_NOT_ELEMENT_NODE  = m(4404, Level.INFO, "XPath pattern {0} found non-element node ''{1}''");
+    public static final M SWA_PARAMETER_NOT_ELEMENT_NODE  = m(4405, Level.INFO, "XPath pattern {0}/{1} found non-element node ''{2}''");
     public static final M SWA_OPERATION_FOUND             = m(4406, Level.FINEST, "The operation {0} is found in the request");
     public static final M SWA_PART_NOT_FOUND              = m(4407, Level.FINE, "MIME Part not found in the request. Xpath expression is: {0}/{1})");
     public static final M SWA_REPEATED_MIME_PART          = m(4408, Level.FINE, "Same MIME Part appears more than once in the request. Xpath expression is: {0}/{1}");
@@ -250,7 +252,7 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_SERVER_HTTP_FAILED      = m(6207, Level.WARNING, "HTTP failure talking to WS-Trust server");
 
     //ServerRegex
-    public static final M REGEX_PATTERN_INVALID   = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
+    public static final M REGEX_PATTERN_INVALID   = m(6300, Level.WARNING, "Regex pattern ''{0}'' compile error: {1}; assertion therefore fails.");
     public static final M REGEX_TOO_BIG           = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + 1024 * 512 + " bytes)");
     public static final M REGEX_NO_REPLACEMENT    = m(6302, Level.WARNING, "Replace requested, and no replace string specified (null).");
     public static final M REGEX_NO_SUCH_PART      = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");

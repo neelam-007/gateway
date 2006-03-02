@@ -240,6 +240,7 @@
 
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
+            <test name="com.l7tech.common.audit.MessagesTest" haltonfailure="no" />
             <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no" />
             <test name="com.l7tech.proxy.policy.ClientXpathAssertionsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no" fork="yes"/>

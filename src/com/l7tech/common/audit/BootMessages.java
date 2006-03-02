@@ -20,6 +20,6 @@ public class BootMessages extends Messages {
     public static final M CRYPTO_INIT           = m(1005, Level.INFO,    "Initializing cryptography subsystem");
     public static final M CRYPTO_ASYMMETRIC     = m(1006, Level.INFO,    "Using asymmetric cryptography provider: {0}");
     public static final M CRYPTO_SYMMETRIC      = m(1007, Level.INFO,    "Using symmetric cryptography provider: {0}");
-    public static final M COMPONENT_INIT_FAILED = m(1008, Level.WARNING,  "Couldn't initialize server component '{0}'");
+    public static final M COMPONENT_INIT_FAILED = m(1008, Level.WARNING,  "Couldn't initialize server component ''{0}''");
     // MAX -                                      m(1999
 }
