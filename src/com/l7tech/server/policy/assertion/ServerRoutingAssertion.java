@@ -18,6 +18,8 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.ServerConfig;
+
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -49,8 +51,6 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
     protected ServerRoutingAssertion(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         this.auditor = new Auditor(this, applicationContext, logger);
-        this.timeout = -1;
-        this.connectionTimeout = -1;
     }
     
     /**
@@ -177,10 +177,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
      * @return the configured or default timeout.
      */
     protected int getConnectionTimeout() {
-        if(connectionTimeout == -1) {
-            connectionTimeout = getIntProperty(PROPERTY_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
-        }
-        return connectionTimeout;
+        return getIntProperty(ServerConfig.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 
     /**
@@ -189,10 +186,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
      * @return the configured or default timeout.
      */
     protected int getTimeout() {
-        if(timeout == -1) {
-            timeout = getIntProperty(PROPERTY_TIMEOUT,0,Integer.MAX_VALUE,0);
-        }
-        return timeout;
+        return getIntProperty(ServerConfig.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
     }
 
     //- PRIVATE
@@ -200,13 +194,8 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
     // class
     private static final Logger logger = Logger.getLogger(ServerRoutingAssertion.class.getName());
 
-    private static final String PROPERTY_CONNECTION_TIMEOUT = ServerRoutingAssertion.class.getName() + ".connectionTimeout";
-    private static final String PROPERTY_TIMEOUT = ServerRoutingAssertion.class.getName() + ".timeout";
-
     // instance
     private final Auditor auditor;
-    private int connectionTimeout;
-    private int timeout;
 
     /**
      * Get a system property using the configured min, max and default values.
@@ -215,7 +204,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
         int value = defaultValue;
 
         try {
-            String configuredValue = System.getProperty(propName);
+            String configuredValue = ServerConfig.getInstance().getProperty(propName);
             if(configuredValue!=null) {
                 value = Integer.parseInt(configuredValue);
 

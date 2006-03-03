@@ -19,18 +19,20 @@ public class CaptureProperty extends JDialog {
     private JPanel mainPanel;
     private JTextArea valueField;
     private JTextField keyField;
+    private JTextArea descField;
     private JButton cancelButton;
     private JButton okButton;
 
+    private String description;
     private String initialKey;
     private String initialValue;
     private String title;
     private boolean oked = false;
-    private JTextArea textArea1;
 
-    public CaptureProperty(JDialog parent, String title, String initialKey, String initialValue) {
+    public CaptureProperty(JDialog parent, String title, String description, String initialKey, String initialValue) {
         super(parent, true);
         this.title = title;
+        this.description = description;
         this.initialKey = initialKey;
         this.initialValue = initialValue;
         initialize();
@@ -39,7 +41,11 @@ public class CaptureProperty extends JDialog {
     private void initialize() {
         setContentPane(mainPanel);
         setTitle(title);
-        keyField.setText(initialKey);
+        descField.setText(description);
+        if(initialKey!=null) {
+            keyField.setText(initialKey);
+            keyField.setEditable(false);
+        }
         valueField.setText(initialValue);
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

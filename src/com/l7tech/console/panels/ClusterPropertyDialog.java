@@ -21,6 +21,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableModel;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -78,6 +79,20 @@ public class ClusterPropertyDialog extends JDialog {
         };
         propsTable.setModel(model);
         propsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        propsTable.getTableHeader().setReorderingAllowed(false);
+
+        //Set up tool tips for the sport cells.
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer(){
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if(comp instanceof JComponent) {
+                    ((JComponent)comp).setToolTipText(((ClusterProperty)properties.get(row)).getDescription());
+                }
+                return comp;
+            }
+        };
+        propsTable.getColumnModel().getColumn(0).setCellRenderer(renderer);
+
         setListeners();
 
         // support Enter and Esc keys
@@ -160,7 +175,7 @@ public class ClusterPropertyDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
-            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, null);
+            CaptureProperty dlg = new CaptureProperty(this, "New Cluster Property", null, null, null);
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             dlg.setVisible(true);
@@ -192,7 +207,8 @@ public class ClusterPropertyDialog extends JDialog {
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getClusterStatusAdmin() != null) {
 
-            CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property", prop.getName(), prop.getValue());
+            CaptureProperty dlg = new CaptureProperty(this, "Edit Cluster Property",
+                    prop.getDescription(), prop.getName(), prop.getValue());
             dlg.pack();
             Utilities.centerOnScreen(dlg);
             dlg.setVisible(true);

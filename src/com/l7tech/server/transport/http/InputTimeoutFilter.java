@@ -12,6 +12,8 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
+import com.l7tech.server.ServerConfig;
+
 /**
  * Filter that wraps the input stream for http requests that (may) have a body.
  *
@@ -81,7 +83,7 @@ public class InputTimeoutFilter implements Filter {
         TimeoutServletRequest tsr = null;
 
         if(servletRequest instanceof HttpServletRequest) {
-            tsr = new TimeoutServletRequest((HttpServletRequest) servletRequest, timeout, readTime, readRate);
+            tsr = new TimeoutServletRequest((HttpServletRequest) servletRequest, getTimeout(), getReadTime(), getReadRate());
             requestForNextFilter = tsr;
         }
 
@@ -168,6 +170,33 @@ public class InputTimeoutFilter implements Filter {
             }
         }
         return parsed;
+    }
+
+    /**
+     * Get the timeout from server config, use servlet config as default.
+     */
+    private long getTimeout() {
+        String rawVal = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
+        long scTimeout = parseLong(rawVal, 500, 3600000, timeout, ServerConfig.PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT);
+        return scTimeout;
+    }
+
+    /**
+     * Get the slow read threshold from server config, use servlet config as default.
+     */
+    private long getReadTime() {
+        String rawVal = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
+        long scReadTimeout = parseLong(rawVal, 500, 3600000, readTime, ServerConfig.PARAM_IO_FRONT_SLOW_READ_THRESHOLD);
+        return scReadTimeout;
+    }
+
+    /**
+     * Get the slow read rate from server config, use servlet config as default.
+     */
+    private int getReadRate() {
+        String rawVal = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
+        int scReadRate = parseInt(rawVal, 0, 1000000, readRate, ServerConfig.PARAM_IO_FRONT_SLOW_READ_RATE);
+        return scReadRate;
     }
 
     /**

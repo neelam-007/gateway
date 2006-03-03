@@ -59,6 +59,12 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     public static final String PARAM_METRICS_FINE_INTERVAL = "metricsFineInterval";
 
+    public static final String PARAM_IO_FRONT_BLOCKED_READ_TIMEOUT = "ioInReadTimeout";
+    public static final String PARAM_IO_FRONT_SLOW_READ_THRESHOLD = "ioInSlowReadThreshold";
+    public static final String PARAM_IO_FRONT_SLOW_READ_RATE = "ioInSlowReadRate";
+    public static final String PARAM_IO_BACK_CONNECTION_TIMEOUT = "ioOutConnectionTimeout";
+    public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
+
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
@@ -154,6 +160,35 @@ public class ServerConfig extends ApplicationObjectSupport {
         }
 
         return value;
+    }
+
+    public String getNameFromClusterName(String clusterPropertyName) {
+        return getServerConfigPropertyName(SUFFIX_CLUSTER_KEY, clusterPropertyName);
+    }
+
+    public String getPropertyDescription(String propName) {
+        String sysPropDesc = propName + SUFFIX_DESC;
+        return getServerConfigProperty(sysPropDesc);
+    }
+
+    private String getServerConfigPropertyName(String suffix, String value) {
+        String name = null;
+        if(suffix!=null && value!=null) {
+            Set propEntries = _properties.entrySet();
+            for (Iterator iterator = propEntries.iterator(); iterator.hasNext();) {
+                Map.Entry propEntry = (Map.Entry) iterator.next();
+                String propKey = (String) propEntry.getKey();
+                String propVal = (String) propEntry.getValue();
+
+                if(propKey==null || propVal==null) continue;
+
+                if(propKey.endsWith(suffix) && propVal.equals(value)) {
+                    name = propKey.substring(0, propKey.length()-suffix.length());
+                    break;
+                }
+            }
+        }
+        return name;
     }
 
     private String getServerConfigProperty(String prop) {
