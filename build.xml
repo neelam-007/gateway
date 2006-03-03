@@ -429,14 +429,18 @@
       -->
     <target name="package"
             description="Create the SSG WAR file and SSB/SSM installers."
-            depends="compile, package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz"/>
+            depends="package.gateway, package.bridge, package.manager, package.installclients, package.api, package.bcluna-jce, package.configwiz"/>
+
+    <target name="bridge" description="Build and package the SSB" depends="package.installbridge"/>
+    <target name="manager" description="Build and package the SSM" depends="package.installmanager"/>
+    <target name="gateway" description="Build and package the SSG" depends="package.gateway"/>
 
 <!--
       ** Non 'build' targets from this point; just various helper targets.
       ** Please do not invoke below targets as main targets.
     -->
 
-    <target name="package.gateway">
+    <target name="package.gateway" depends="compile">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
@@ -570,7 +574,7 @@
         </jar>
     </target>
 
-    <target name="package.bridge" unless="ssg.only">
+    <target name="package.bridge" unless="ssg.only" depends="compile">
         <!-- the client proxy jar -->
         <jar jarfile="${build.dir}/Bridge.jar" manifest="${src.root}/etc/Bridge.mf">
             <fileset dir="${build.dir}/classes">
@@ -634,7 +638,7 @@
         <copy todir="${build.lib}" file="${customassertions.jar.path}"/>
     </target>
 
-    <target name="package.manager" unless="ssg.only" depends="package.manager.ca">
+    <target name="package.manager" unless="ssg.only" depends="compile, package.manager.ca">
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/internal/**/*"/>
@@ -744,7 +748,7 @@
         </exec>
     </target>
 
-    <target name="package.installclients" unless="ssg.only">
+    <target name="package.installclients" unless="ssg.only" depends="compile">
         <exec executable="perl" failonerror="true" dir="installer">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="make_installers.pl"/>
@@ -753,7 +757,25 @@
         <!-- invoke the dssm webstart target (conditional) -->
     </target>
 
-    <target name="package.bcluna-jce">
+    <target name="package.installbridge" depends="package.bridge">
+        <exec executable="perl" failonerror="true" dir="installer">
+            <env key="JAVA_HOME" value="${java.home}"/>
+            <arg line="make_installers.pl"/>
+            <arg line="-N"/>
+            <arg line="Bridge"/>
+        </exec>
+    </target>
+
+    <target name="package.installmanager" depends="package.manager">
+        <exec executable="perl" failonerror="true" dir="installer">
+            <env key="JAVA_HOME" value="${java.home}"/>
+            <arg line="make_installers.pl"/>
+            <arg line="-N"/>
+            <arg line="Manager"/>
+        </exec>
+    </target>
+
+    <target name="package.bcluna-jce" depends="compile">
         <jar jarfile="${build.dir}/bcluna-jce.jar" manifest="${src.root}/etc/bcluna-jce.mf">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/common/security/prov/luna/BouncyCastleToLunaProvider.class"/>
@@ -761,7 +783,7 @@
         </jar>
     </target>
 
-    <target name="package.configwiz" unless="ssg.only">
+    <target name="package.configwiz" unless="ssg.only" depends="compile">
         <mkdir dir="${build.dir}/configwizard"/>
         <mkdir dir="${build.dir}/configwizard/lib"/>
 
@@ -828,7 +850,7 @@
     </target>
 
 
-    <target name="package.api" unless="ssg.only">
+    <target name="package.api" unless="ssg.only" depends="compile">
 <!--
            ** Layer7 API jar, pack and sign
          -->

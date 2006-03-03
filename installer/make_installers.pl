@@ -256,15 +256,23 @@ EOM
 # -N   skip Nullsoft installer step
 getopts('bN', \%opt);
 
+if(@ARGV) {
+  print "Building installer(s) for @ARGV\n";
+  @FILES = @ARGV;
+}
+
 # special step for SSG.nsi (no manifest here nor includes)
-my $newnsi = nsi_file_replace("server/win32/SSG.nsi", "server/win32/SSG", "", "");
-print "Building installer for SSG.nsi ...\n";
-build_installer($newnsi);
+unless(@ARGV) {
+  my $newnsi = nsi_file_replace("server/win32/SSG.nsi", "server/win32/SSG", "", "");
+  print "Building installer for SSG.nsi ...\n";
+  build_installer($newnsi);
+}
 
 # ssm, ssb nsis
 foreach my $file (@FILES) {
+	print "Processing $file\n";
 	my @jars = get_jarlist_from_manifest("$MANIFEST_PATH/$file$MANIFEST_EXT");
-        my @includes = get_include_filelist("$MANIFEST_PATH/$file$INCLUDES_EXT");
+	my @includes = get_include_filelist("$MANIFEST_PATH/$file$INCLUDES_EXT");
 
 	my $nsi = $nsis{$file};
 	die "No NSI path for $file" unless $nsi;
