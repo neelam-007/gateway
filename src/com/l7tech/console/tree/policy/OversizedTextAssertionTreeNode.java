@@ -32,7 +32,7 @@ public class OversizedTextAssertionTreeNode extends LeafAssertionTreeNode{
     }
 
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/SQLProtection16x16.gif";
+        return "com/l7tech/console/resources/OversizedElement16.gif";
     }
 
     public Action getPreferredAction() {
