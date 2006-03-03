@@ -28,6 +28,7 @@ public class ServerOversizedTextAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerOversizedTextAssertion.class.getName());
     private final Auditor auditor;
     private final ServerAssertion delegate;
+    private final ServerAssertion nestingDepthChecker;
 
     public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) {
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
@@ -36,14 +37,24 @@ public class ServerOversizedTextAssertion implements ServerAssertion {
         if (pf == null || !(pf instanceof ServerPolicyFactory)) {
             auditor.logAndAudit(Messages.EXCEPTION_SEVERE, new String[] {"Missing or invalid policyFactory bean"});
             delegate = new ServerFalseAssertion(new FalseAssertion()); // simulate detecting attack every time
+            nestingDepthChecker = new ServerTrueAssertion(new TrueAssertion()); // simulate detecting attack every time
         } else {
             ServerPolicyFactory policyFactory = (ServerPolicyFactory)pf;
 
             // Set up children to do all the actual work of asserting that there is no attack
             CompositeAssertion all = new AllAssertion();
-            all.addChild(new RequestXpathAssertion(new XpathExpression(data.makeTextXpath(), null)));
-            all.addChild(new RequestXpathAssertion(new XpathExpression(data.makeAttrXpath(), null)));
-            delegate = policyFactory.makeServerPolicy(all);
+            if (data.isLimitTextChars())
+                all.addChild(new RequestXpathAssertion(new XpathExpression(data.makeTextXpath(), null)));
+            if (data.isLimitAttrChars())
+                all.addChild(new RequestXpathAssertion(new XpathExpression(data.makeAttrXpath(), null)));
+            delegate = all.isEmpty() ? null : policyFactory.makeServerPolicy(all);
+
+            // Set up a nesting depth checker, if so indicated
+            if (data.isLimitNestingDepth()) {
+                RequestXpathAssertion rxa = new RequestXpathAssertion(new XpathExpression(data.makeNestingXpath()));
+                nestingDepthChecker = policyFactory.makeServerPolicy(rxa);
+            } else
+                nestingDepthChecker = null;
         }
     }
 
@@ -55,10 +66,20 @@ public class ServerOversizedTextAssertion implements ServerAssertion {
             return AssertionStatus.FAILED;
         }
 
-        AssertionStatus result = delegate.checkRequest(context);
-        if (AssertionStatus.NONE != result) {
-            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_REQUEST_REJECTED);
-            return AssertionStatus.BAD_REQUEST;
+        if (delegate != null) {
+            AssertionStatus result = delegate.checkRequest(context);
+            if (AssertionStatus.NONE != result) {
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_REQUEST_REJECTED);
+                return AssertionStatus.BAD_REQUEST;
+            }
+        }
+
+        if (nestingDepthChecker != null) {
+            if (nestingDepthChecker.checkRequest(context) == AssertionStatus.NONE) {
+                // Nesting depth matched -- fail
+                auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
+                return AssertionStatus.BAD_REQUEST;
+            }
         }
 
         return AssertionStatus.NONE;

@@ -27,6 +27,10 @@ public class OversizedTextDialog extends JDialog {
     private boolean confirmed = false;
     private JTextField textLengthField;
     private JTextField attrLengthField;
+    private JTextField nestingDepthField;
+    private JCheckBox textLengthCheckBox;
+    private JCheckBox attrLengthCheckBox;
+    private JCheckBox nestingDepthCheckBox;
 
     public boolean wasConfirmed() {
         return confirmed;
@@ -56,15 +60,23 @@ public class OversizedTextDialog extends JDialog {
         });
 
         Actions.setEscKeyStrokeDisposes(this);
+        getRootPane().setDefaultButton(okButton);
 
         Utilities.constrainTextFieldToLongRange(textLengthField, 0, Long.MAX_VALUE);
         Utilities.constrainTextFieldToLongRange(attrLengthField, 0, Long.MAX_VALUE);
+        Utilities.constrainTextFieldToIntegerRange(nestingDepthField,
+                                                   OversizedTextAssertion.MIN_NESTING_LIMIT,
+                                                   OversizedTextAssertion.MAX_NESTING_LIMIT);
         modelToView();
     }
 
     private void modelToView() {
         textLengthField.setText(Long.toString(assertion.getMaxTextChars()));
+        textLengthCheckBox.setSelected(assertion.isLimitTextChars());
         attrLengthField.setText(Long.toString(assertion.getMaxAttrChars()));
+        attrLengthCheckBox.setSelected(assertion.isLimitAttrChars());
+        nestingDepthField.setText(Integer.toString(assertion.getMaxNestingDepth()));
+        nestingDepthCheckBox.setSelected(assertion.isLimitNestingDepth());
     }
 
     private void doCancel() {
@@ -77,20 +89,35 @@ public class OversizedTextDialog extends JDialog {
         String err = null;
 
         long textLen = assertion.getMaxTextChars();
+        final boolean limitTextLen = textLengthCheckBox.isSelected();
         try {
             textLen = Long.parseLong(textLengthField.getText());
         } catch (NumberFormatException nfe) {
-            err = "Maximum text characters must be a number.";
+            if (limitTextLen)
+                err = "Maximum text characters must be a number.";
         }
 
         long attrLen = assertion.getMaxAttrChars();
+        final boolean limitAttrLen = attrLengthCheckBox.isSelected();
         try {
             attrLen = Long.parseLong(attrLengthField.getText());
         } catch (NumberFormatException nfe) {
-            err = "Maximum attribute characters must be a number.";
+            if (limitAttrLen)
+                err = "Maximum attribute characters must be a number.";
         }
 
-        if (attrLen < 0 || textLen < 0) err = "Limit must be nonnegative.";
+        int nestDepth = assertion.getMaxNestingDepth();
+        final boolean limitNestDepth = nestingDepthCheckBox.isSelected();
+        try {
+            nestDepth = Integer.parseInt(nestingDepthField.getText());
+        } catch (NumberFormatException nfe) {
+            if (limitNestDepth)
+                err = "Maximum nesting depth must be a number.";
+        }
+
+        if (limitAttrLen && attrLen < 0) err = "Limits must be nonnegative.";
+        if (limitTextLen && textLen < 0) err = "Limits must be nonnegative.";
+        if (limitNestDepth && nestDepth < 0) err = "Limits must be nonnegative.";
 
         if (err != null) {
             JOptionPane.showMessageDialog(this, err, "Error", JOptionPane.ERROR_MESSAGE);
@@ -99,6 +126,10 @@ public class OversizedTextDialog extends JDialog {
 
         assertion.setMaxAttrChars(attrLen);
         assertion.setMaxTextChars(textLen);
+        assertion.setMaxNestingDepth(nestDepth);
+        assertion.setLimitTextChars(limitTextLen);
+        assertion.setLimitAttrChars(limitAttrLen);
+        assertion.setLimitNestingDepth(limitNestDepth);
         confirmed = true;
         modified = true;
         setVisible(false);

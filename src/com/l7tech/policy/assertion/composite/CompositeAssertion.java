@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.assertion.composite;
@@ -13,7 +12,6 @@ import java.util.*;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public abstract class CompositeAssertion extends Assertion implements Cloneable, Serializable {
     protected List children = new ArrayList();
@@ -102,6 +100,16 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
                 return kidResult;
         }
         return null;
+    }
+
+    /**
+     * Check if this composite assertion currently has any children.  Empty composite assertions are invalid, and will
+     * always throw PolicyException at runtime.
+     *
+     * @return true if this composition assertion lacks children and hence will always fail at runtime
+     */
+    public boolean isEmpty() {
+        return children.isEmpty();
     }
 
     /**

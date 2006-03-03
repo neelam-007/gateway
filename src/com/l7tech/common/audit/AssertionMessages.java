@@ -336,6 +336,7 @@ public class AssertionMessages extends Messages {
     // OversizedTextAssertion
     public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against oversized text nodes or attribute values -- the request has already been routed"); 
     public static final M OVERSIZEDTEXT_REQUEST_REJECTED    = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
+    public static final M XML_NESTING_DEPTH_EXCEEDED        = m(7232, Level.WARNING, "Request XML nesting depth exceeds the policy limit");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");

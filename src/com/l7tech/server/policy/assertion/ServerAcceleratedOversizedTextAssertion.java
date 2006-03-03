@@ -12,9 +12,11 @@ import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.rax.token.XmlToken;
@@ -35,11 +37,18 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
     private final Auditor auditor;
     private final ServerAssertion softwareFallback;
     private final OversizedTextAssertion ota;
+    private final ServerRequestAcceleratedXpathAssertion nestingLimitChecker;
 
     public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) {
         auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
         softwareFallback = new ServerOversizedTextAssertion(data, springContext);
         this.ota = data;
+        if (ota.isLimitNestingDepth()) {
+            RequestXpathAssertion rxa = new RequestXpathAssertion(new XpathExpression(ota.makeNestingXpath()));
+            this.nestingLimitChecker = new ServerRequestAcceleratedXpathAssertion(rxa, springContext);
+        } else {
+            this.nestingLimitChecker = null;
+        }
     }
 
     private static final int TEXT = 0;
@@ -59,6 +68,15 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
         if (ServerRegex.isPostRouting(context)) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_ALREADY_ROUTED);
             return AssertionStatus.FAILED;
+        }
+
+        // Are we to check nesting depth?  If so, do that first
+        if (nestingLimitChecker != null) {
+            if (nestingLimitChecker.checkRequest(context) == AssertionStatus.NONE) {
+                // It matched, so nesting depth is too long -- fail
+                auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
+                return AssertionStatus.FALSIFIED;
+            }
         }
 
         Message mess = context.getRequest();
