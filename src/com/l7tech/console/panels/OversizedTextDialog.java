@@ -10,6 +10,8 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -59,15 +61,28 @@ public class OversizedTextDialog extends JDialog {
             }
         });
 
+        final ChangeListener changeListener = new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                updateEnableState();
+            }
+        };
+        textLengthCheckBox.addChangeListener(changeListener);
+        attrLengthCheckBox.addChangeListener(changeListener);
+        nestingDepthCheckBox.addChangeListener(changeListener);
+
         Actions.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(okButton);
 
+        Utilities.enableGrayOnDisabled(textLengthField);
+        Utilities.enableGrayOnDisabled(attrLengthField);
+        Utilities.enableGrayOnDisabled(nestingDepthField);
         Utilities.constrainTextFieldToLongRange(textLengthField, 0, Long.MAX_VALUE);
         Utilities.constrainTextFieldToLongRange(attrLengthField, 0, Long.MAX_VALUE);
         Utilities.constrainTextFieldToIntegerRange(nestingDepthField,
                                                    OversizedTextAssertion.MIN_NESTING_LIMIT,
                                                    OversizedTextAssertion.MAX_NESTING_LIMIT);
         modelToView();
+        updateEnableState();
     }
 
     private void modelToView() {
@@ -77,6 +92,12 @@ public class OversizedTextDialog extends JDialog {
         attrLengthCheckBox.setSelected(assertion.isLimitAttrChars());
         nestingDepthField.setText(Integer.toString(assertion.getMaxNestingDepth()));
         nestingDepthCheckBox.setSelected(assertion.isLimitNestingDepth());
+    }
+
+    private void updateEnableState() {
+        textLengthField.setEnabled(textLengthCheckBox.isSelected());
+        attrLengthField.setEnabled(attrLengthCheckBox.isSelected());
+        nestingDepthField.setEnabled(nestingDepthCheckBox.isSelected());
     }
 
     private void doCancel() {
