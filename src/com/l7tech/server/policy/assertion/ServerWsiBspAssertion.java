@@ -20,10 +20,8 @@ import javax.xml.namespace.NamespaceContext;
 
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
 
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.WsiBspAssertion;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -32,6 +30,8 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.xml.xpath.CursorXPathFactory;
+import com.l7tech.common.xml.ElementCursor;
 
 /**
  * Server assertion for WSI-BSP compliance.
@@ -115,13 +115,17 @@ public class ServerWsiBspAssertion implements ServerAssertion {
                                                   PolicyEnforcementContext context) throws IOException {
         AssertionStatus result = AssertionStatus.SERVER_ERROR;
 
+        if(logger.isLoggable(Level.FINE)) {
+            logger.fine("Processing request message.");
+        }
+
         if(!ensureSoap(requestMessage)) {
             auditor.logAndAudit(AssertionMessages.WSI_BSP_REQUEST_NON_SOAP);
             result = AssertionStatus.BAD_REQUEST;
         }
         else {
-            Document requestDocument = getDocument(requestMessage);
-            if(requestDocument==null) {
+            Object xpathContext = getXPathContext(requestMessage);
+            if(xpathContext==null) {
                 result = AssertionStatus.BAD_REQUEST;
             }
             else {
@@ -129,7 +133,13 @@ public class ServerWsiBspAssertion implements ServerAssertion {
                     boolean success = true;
                     for(Iterator ruleIter=rulesMap.keySet().iterator(); ruleIter.hasNext();) {
                         XPathExpression xpe = (XPathExpression) ruleIter.next();
-                        if(!"true".equals(xpe.evaluate(requestDocument))) {
+                        if(logger.isLoggable(Level.FINEST)) {
+                            logger.finest("Evaluating XPath '"+xpe.toString()+"'.");
+                        }
+                        if(!"true".equals(xpe.evaluate(xpathContext))) {
+                            if(logger.isLoggable(Level.FINEST)) {
+                                logger.finest("XPath evaluated to false.");
+                            }
                             if(wsiBspAssertion.isAuditResponseNonCompliance())
                                 auditor.logAndAudit(AssertionMessages.WSI_BSP_REQUEST_NON_COMPLIANT, getDetails(xpe));
                             success = false;
@@ -142,7 +152,7 @@ public class ServerWsiBspAssertion implements ServerAssertion {
 
                     if(AssertionStatus.FALSIFIED.equals(result)) {
                         auditor.logAndAudit(AssertionMessages.WSI_BSP_REQUEST_FAIL);
-                    }                    
+                    }
                 }
                 catch(XPathExpressionException xpee) {
                     auditor.logAndAudit(AssertionMessages.WSI_BSP_XPATH_ERROR, null, xpee);
@@ -161,13 +171,17 @@ public class ServerWsiBspAssertion implements ServerAssertion {
                                                    PolicyEnforcementContext context) throws IOException {
         AssertionStatus result = AssertionStatus.SERVER_ERROR;
 
+        if(logger.isLoggable(Level.FINE)) {
+            logger.fine("Processing response message.");
+        }
+
         if(!ensureSoap(responseMessage)) {
             auditor.logAndAudit(AssertionMessages.WSI_BSP_RESPONSE_NON_SOAP);
             result = AssertionStatus.BAD_REQUEST;
         }
         else {
-            Document responseDocument = getDocument(responseMessage);
-            if(responseDocument==null) {
+            Object xpathContext = getXPathContext(responseMessage);
+            if(xpathContext==null) {
                 result = AssertionStatus.FALSIFIED;
             }
             else {
@@ -175,7 +189,13 @@ public class ServerWsiBspAssertion implements ServerAssertion {
                     boolean success = true;
                     for(Iterator ruleIter=rulesMap.keySet().iterator(); ruleIter.hasNext();) {
                         XPathExpression xpe = (XPathExpression) ruleIter.next();
-                        if(!"true".equals(xpe.evaluate(responseDocument))) {
+                        if(logger.isLoggable(Level.FINEST)) {
+                            logger.finest("Evaluating XPath '"+xpe.toString()+"'.");
+                        }
+                        if(!"true".equals(xpe.evaluate(xpathContext))) {
+                            if(logger.isLoggable(Level.FINEST)) {
+                                logger.finest("XPath evaluated to false.");
+                            }
                             if(wsiBspAssertion.isAuditResponseNonCompliance())
                                 auditor.logAndAudit(AssertionMessages.WSI_BSP_RESPONSE_NON_COMPLIANT, getDetails(xpe));
                             success = false;
@@ -230,17 +250,19 @@ public class ServerWsiBspAssertion implements ServerAssertion {
     /**
      *
      */
-    private Document getDocument(Message message) throws IOException {
-        Document document = null;
+    private Object getXPathContext(Message message) throws IOException {
+        Object context = null;
 
         try {
-            document = message.getXmlKnob().getDocumentReadOnly();
+            ElementCursor ec = message.getXmlKnob().getElementCursor();
+            ec.moveToRoot();
+            context = ec;
         }
         catch(SAXException se) {
             throw new CausedIOException(se);
         }
 
-        return document;
+        return context;
     }
 
     /**
@@ -258,11 +280,11 @@ public class ServerWsiBspAssertion implements ServerAssertion {
                 Map newNsPreToUri = new HashMap();
                 Map newNsUriToPre = new HashMap();
 
-                XPathFactory xpf = XPathFactory.newInstance();
+                XPathFactory xpf = new CursorXPathFactory();//XPathFactory.newInstance();
 
                 loadNamespaces(props, newNsPreToUri, newNsUriToPre);
                 nsPreToUriMap = Collections.unmodifiableMap(newNsPreToUri);
-                nsUriToPreMap = Collections.unmodifiableMap(newNsUriToPre);  //TODO do we care about the mutable List?
+                nsUriToPreMap = Collections.unmodifiableMap(newNsUriToPre);  //TODO wrap mutable List?
 
                 loadRules(xpf, props, newRules);
                 rulesMap = Collections.unmodifiableMap(newRules);
