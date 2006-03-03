@@ -33,7 +33,12 @@ public class RequestXpathAssertionTest extends TestCase {
     public void testOKExpression() throws Exception {
         for (int i = 0 ; i < passingXpaths.length; i++) {
             AssertionStatus ret = null;
-            ret = getResultForXPath(passingXpaths[i]);
+            final String xp = passingXpaths[i];
+            System.out.println("xpath should succeed: " + xp);
+            if (!xp.startsWith("/")) {
+                System.out.println("** note: xpath relative to root");
+            }
+            ret = getResultForXPath(xp);
             assertTrue(ret == AssertionStatus.NONE);
         }
     }
@@ -41,7 +46,9 @@ public class RequestXpathAssertionTest extends TestCase {
     public void testBadExpression() throws Exception {
         for (int i = 0 ; i < failingXpaths.length; i++) {
             AssertionStatus ret = null;
-            ret = getResultForXPath(failingXpaths[i]);
+            final String xp = failingXpaths[i];
+            System.out.println("xpath should fail: " + xp);
+            ret = getResultForXPath(xp);
             assertTrue((ret == AssertionStatus.FALSIFIED || ret == AssertionStatus.SERVER_ERROR));
         }
     }

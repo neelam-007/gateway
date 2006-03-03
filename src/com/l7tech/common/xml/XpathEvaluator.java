@@ -19,7 +19,8 @@ import java.util.HashMap;
  * It is based on <a href="http://www.jaxen.org">Jaxen</a> XPath
  * implementation.
  * <p/>
- *
+ * TODO either move this into xpath subpackage or delete it if it's no longer needed
+  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class XpathEvaluator {

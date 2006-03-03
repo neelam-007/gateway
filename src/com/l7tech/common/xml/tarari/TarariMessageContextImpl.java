@@ -46,7 +46,7 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         if (raxCursor == null) {
             raxCursor = raxCursorFactory.createCursor("", getRaxDocument());
         }
-        return new TarariElementCursor(raxCursor);
+        return new TarariElementCursor(raxCursor, this);
     }
 
     protected void finalize() throws Throwable {

@@ -169,7 +169,7 @@ public class BootProcess extends ApplicationObjectSupport
         GlobalTarariContext context = TarariLoader.getGlobalContext();
         if (context != null) {
             auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
-            context.compile();
+            TarariLoader.compile();
         } else {
             auditor.logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
         }
@@ -266,7 +266,7 @@ public class BootProcess extends ApplicationObjectSupport
         Properties props = new Properties();
 
         // Set default properties
-        props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", new Integer(30 * 1000).toString());
+        props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", Integer.toString(30 * 1000));
 
         InputStream is = null;
         try {

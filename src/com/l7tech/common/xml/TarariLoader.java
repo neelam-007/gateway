@@ -10,15 +10,15 @@ import com.l7tech.common.message.SoapInfoFactory;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.tarari.GlobalTarariContextImpl;
+import org.apache.xmlbeans.XmlException;
+import org.springframework.beans.factory.BeanFactory;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-
-import org.springframework.beans.factory.BeanFactory;
-import org.apache.xmlbeans.XmlException;
 
 /**
  * Probe presence of Tarari without introducing any static classloader dependencies on Tarari.
@@ -105,10 +105,11 @@ public class TarariLoader {
     }
 
     /**
-     * If there's a GlobalTarariContext, calls compile() on it.
+     * If there's a GlobalTarariContext, calls compile() on it.  This will only do a full compile
+     * if the set of registered global xpaths has changed since the last time a compile was done.
      */
     public static void compile() {
-        GlobalTarariContext context = getGlobalContext();
+        GlobalTarariContextImpl context = (GlobalTarariContextImpl)getGlobalContext();
         if (context != null)
             context.compile();
     }

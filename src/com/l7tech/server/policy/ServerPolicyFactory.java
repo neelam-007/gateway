@@ -8,11 +8,11 @@ package com.l7tech.server.policy;
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.PolicyFactory;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.ServerRequestAcceleratedXpathAssertion;
-import com.l7tech.server.policy.assertion.ServerResponseAcceleratedXpathAssertion;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -44,12 +44,6 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
             if (TarariLoader.getGlobalContext() != null) {
-                if (genericAssertion instanceof RequestXpathAssertion)
-                    return new ServerRequestAcceleratedXpathAssertion((RequestXpathAssertion)genericAssertion, applicationContext);
-
-                if (genericAssertion instanceof ResponseXpathAssertion)
-                    return new ServerResponseAcceleratedXpathAssertion((ResponseXpathAssertion)genericAssertion, applicationContext);
-
                 if (genericAssertion instanceof OversizedTextAssertion)
                     return new ServerAcceleratedOversizedTextAssertion((OversizedTextAssertion)genericAssertion, applicationContext);
             }

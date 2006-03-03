@@ -7,7 +7,8 @@ package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.xml.ElementCursor;
-import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.xpath.XpathResult;
 import com.tarari.io.Encoding;
 import com.tarari.xml.XmlResult;
 import com.tarari.xml.cursor.XmlCursor;
@@ -24,80 +25,79 @@ import java.io.OutputStream;
  * read-only use of a WSS processor, but not so much for generic XML processing.
  */
 public class TarariElementCursor extends ElementCursor {
-    private final XmlCursor c;
+    private final TarariMessageContextImpl tarariMessageContext;
+    private XmlCursor c;
 
-    public TarariElementCursor(XmlCursor xmlCursor) {
-        if (xmlCursor == null) throw new IllegalArgumentException("A RaxCursor must be provided");
+    public TarariElementCursor(XmlCursor xmlCursor, TarariMessageContextImpl tarariMessageContext) {
+        if (xmlCursor == null) throw new IllegalArgumentException("An XmlCursor must be provided");
         this.c = xmlCursor;
+        this.tarariMessageContext = tarariMessageContext;
         c.toDocumentElement(); // Make sure it's pointing at an element
-        assert c.getNodeType() == XmlCursor.ELEMENT;
+    }
+
+    /**
+     * Get the XmlCursor.  Package private.
+     * @return the XmlCursor.  Never null.
+     */
+    XmlCursor getXmlCursor() {
+        return c;
+    }
+
+    /**
+     * Get the current TarariMessageContextImpl.  Package private.
+     * @return the TarariMessageContextImpl.  Never null.
+     */
+    TarariMessageContextImpl getTarariMessageContext() {
+        return tarariMessageContext;
     }
 
     public ElementCursor duplicate() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        return new TarariElementCursor(c.duplicate());
+        return new TarariElementCursor(c.duplicate(), tarariMessageContext);
     }
 
     public void pushPosition() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         c.pushPosition();
     }
 
     public void popPosition() throws IllegalStateException {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         c.popPosition();
     }
 
     public void popPosition(boolean discard) throws IllegalStateException {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         c.popPosition(discard);
     }
 
     public void moveToDocumentElement() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         c.toDocumentElement();
     }
 
-    public boolean moveToParentElement() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        return c.toParent();
+    public void moveToRoot() {
+        c.toRoot();
     }
 
-    public boolean moveToOnlyOneChildElement() throws TooManyChildElementsException {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        boolean b = c.toFirstChild(XmlCursor.ELEMENT);
-        if (!b)
+    public boolean moveToParentElement() {
+        boolean b = c.toParent();
+        if (!b) return false;
+        if (c.getNodeType() == XmlCursor.ROOT) {
+            c.toDocumentElement();
             return false;
-
-        // It worked -- now just make sure it's the only one
-        c.pushPosition();
-        if (c.toNextSibling(XmlCursor.ELEMENT)) {
-            c.toParent();
-            String localName = c.getNodeLocalName();
-            String nsuri = c.getNodeNamespaceUri();
-            c.popPosition(true); // Leave it pointing at parent
-            throw new TooManyChildElementsException(nsuri, localName);
         }
-        c.popPosition();
-        return true;
+        return b;
     }
 
     public boolean moveToFirstChildElement() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         return c.toFirstChild(XmlCursor.ELEMENT);
     }
 
     public boolean moveToNextSiblingElement() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         return c.toNextSibling(XmlCursor.ELEMENT);
     }
 
     public boolean moveToNextSiblingElement(String localName, String[] namespaceUris) {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        c.pushPosition();
+        pushPosition();
         for (;;) {
             if (!c.toNextSibling(XmlCursor.ELEMENT)) {
-                c.popPosition();
+                popPosition();
                 return false;
             }
             if (localName.equals(c.getNodeLocalName()) &&
@@ -110,11 +110,10 @@ public class TarariElementCursor extends ElementCursor {
     }
 
     public boolean moveToNextSiblingElement(String localName, String namespaceUri) {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        c.pushPosition();
+        pushPosition();
         for (;;) {
             if (!c.toNextSibling(XmlCursor.ELEMENT)) {
-                c.popPosition();
+                popPosition();
                 return false;
             }
             if (localName.equals(c.getNodeLocalName()) &&
@@ -127,8 +126,7 @@ public class TarariElementCursor extends ElementCursor {
     }
 
     public String getAttributeValue(String name) {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        c.pushPosition();
+        pushPosition();
         try {
             for (;;) {
                 if (!c.toNextAttribute()) {
@@ -138,13 +136,12 @@ public class TarariElementCursor extends ElementCursor {
                     return c.getNodeValue();
             }
         } finally {
-            c.popPosition();
+            popPosition();
         }
     }
 
     public String getAttributeValue(String localName, String namespaceUri) {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        c.pushPosition();
+        pushPosition();
         try {
             for (;;) {
                 if (!c.toNextAttribute()) {
@@ -154,13 +151,12 @@ public class TarariElementCursor extends ElementCursor {
                     return c.getNodeValue();
             }
         } finally {
-            c.popPosition();
+            popPosition();
         }
     }
 
     public String getAttributeValue(String localName, String[] namespaceUris) {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        c.pushPosition();
+        pushPosition();
         try {
             for (;;) {
                 if (!c.toNextAttribute()) {
@@ -171,28 +167,24 @@ public class TarariElementCursor extends ElementCursor {
                     return c.getNodeValue();
             }
         } finally {
-            c.popPosition();
+            popPosition();
         }
     }
 
     public String getLocalName() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         return c.getNodeLocalName();
     }
 
     public String getNamespaceUri() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         return c.getNodeNamespaceUri();
     }
 
     public String getPrefix() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         return c.getNodePrefix();
     }
 
     public String getTextValue() {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-        c.pushPosition();
+        pushPosition();
         try {
             if (!c.toFirstChild(XmlCursor.TEXT))
                 return "";
@@ -204,13 +196,11 @@ public class TarariElementCursor extends ElementCursor {
 
             return sb.toString().trim();
         } finally {
-            c.popPosition();
+            popPosition();
         }
     }
 
     public void write(OutputStream outputStream) throws IOException {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
-
         OutputFormat of = new OutputFormat();
         of.setOmitXmlDeclaration(true);
         of.setIndent(false);
@@ -220,7 +210,6 @@ public class TarariElementCursor extends ElementCursor {
     }
 
     public Element asDomElement(Document factory) {
-        assert c.getNodeType() == XmlCursor.ELEMENT;
         DomOutput output = new DomOutput(factory);
         try {
             c.writeTo(output);
@@ -228,5 +217,21 @@ public class TarariElementCursor extends ElementCursor {
             throw new RuntimeException(e); // shouldn't be possible
         }
         return (Element)output.getResultRoot();
+    }
+
+    public XpathResult getXpathResult(CompiledXpath compiledXpath) {
+        if (compiledXpath == CompiledXpath.ALWAYS_TRUE)
+            return XpathResult.RESULT_TRUE;
+        if (compiledXpath == CompiledXpath.ALWAYS_FALSE)
+            return XpathResult.RESULT_FALSE;
+
+        if (compiledXpath instanceof TarariCompiledXpath) {
+            TarariCompiledXpath tarariCompiledXpath = (TarariCompiledXpath)compiledXpath;
+            return tarariCompiledXpath.getXpathResult(this);
+        }
+
+        // Someone passed a non-Tarari CompiledXpath to a Tarari cursor.  It shouldn't be possible to even
+        // construct a non-Tarari CompiledXpath if you are able to construct Tarari cursors.
+        throw new IllegalArgumentException("Non-Tarari CompiledXpath passed to TarariElementCursor");
     }
 }

@@ -597,6 +597,7 @@
                 <exclude name="com/l7tech/common/xml/tarari/TarariFactories.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariMessageContextImpl.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariElementCursor.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariCompiledXpath.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/util/**/*"/>
 
                 <!-- Exclude unless Log4j is used -->

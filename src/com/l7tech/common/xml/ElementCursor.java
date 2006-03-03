@@ -7,6 +7,8 @@ package com.l7tech.common.xml;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ArrayUtils;
+import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.xpath.XpathResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -14,10 +16,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Represents an element position in an abstract XML document which may use DOM or Tarari XmlCursor as its
- * underlying implementation.  This is the central abstraction in the Layer 7 XML API.
+ * Represents an element position (or the root Document node) in an abstract XML document which
+ * may use DOM or Tarari XmlCursor as its underlying implementation.
+ * This is the central abstraction in the Layer 7 XML API.
  * <p/>
- * Cursors can be cheaply copied, however, it is strongly encouraged to avoid creating new cursors when existing
+ * Cursors can be cheaply copied; however, it is strongly encouraged to avoid creating new cursors whenever existing
  * ones can be reused instead.
  */
 public abstract class ElementCursor {
@@ -56,6 +59,11 @@ public abstract class ElementCursor {
     public abstract void moveToDocumentElement();
 
     /**
+     * Position cursor at ROOT (the node representing the Document, right above the Document element).  Always succeeds.
+     */
+    public abstract void moveToRoot();
+
+    /**
      * Position cursor at parent element of current element, unless current element is the document element.
      *
      * @return true if the cursor was moved.
@@ -70,7 +78,23 @@ public abstract class ElementCursor {
      * @throws TooManyChildElementsException if current element has more than one child element.  Cursor is
      *                                       left unmoved, pointing at the original current element.
      */
-    public abstract boolean moveToOnlyOneChildElement() throws TooManyChildElementsException;
+    public boolean moveToOnlyOneChildElement() throws TooManyChildElementsException {
+        boolean b = moveToFirstChildElement();
+        if (!b)
+            return false;
+
+        // It worked -- now just make sure it's the only one
+        pushPosition();
+        if (moveToNextSiblingElement()) {
+            moveToParentElement();
+            String localName = getLocalName();
+            String nsuri = getNamespaceUri();
+            popPosition(true); // Leave it pointing at parent
+            throw new TooManyChildElementsException(nsuri, localName);
+        }
+        popPosition();
+        return true;
+    }
 
     /**
      * Position cursor at first child element of current element, if it has one.
@@ -273,11 +297,21 @@ public abstract class ElementCursor {
     /**
      * Get a DOM tree representation of the current element, using or reusing any that's avialable.
      * <p/>
-     * This is still expensive, and still creates a lot of garbage.
+     * Unless this cursor already happens to be based on a DOM tree, this is expensive and creates a lot of garbage.
      *
      * @return a DOM Element view of the current element, which must not be modified in any way.  Never null.
      */
     public Element asDomElement() {
         return asDomElement(XmlUtil.createEmptyDocument());
     }
+
+    /**
+     * Run the specified already-compiled XPath expression against this cursor at its current position and return
+     * a new XpathResult instance.
+     *
+     * @param compiledXpath the compiled XPath to run against this cursor.  Must not be null.
+     * @return the results of running this XPath against this cursor at its current position, or null if
+     *         the only appropriate result is no result at all.
+     */
+    public abstract XpathResult getXpathResult(CompiledXpath compiledXpath);
 }

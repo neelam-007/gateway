@@ -10,6 +10,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.server.tarari.GlobalTarariContextImpl;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -21,7 +22,7 @@ public class TarariPlayground {
     private static GlobalTarariContext tarariContext;
 
     public static void main(String[] args) throws Exception {
-        GlobalTarariContext gtc = TarariLoader.getGlobalContext();
+        GlobalTarariContextImpl gtc = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         if (gtc != null) gtc.compile();
 
         if (args.length > 0) {

@@ -9,7 +9,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.XmlSource;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -42,8 +42,7 @@ public class KnobblyMessageTest extends TestCase {
      * KnobblyMessageTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite(KnobblyMessageTest.class);
-        return suite;
+        return new TestSuite(KnobblyMessageTest.class);
     }
 
     public void testFacetlessMessage() {
@@ -238,7 +237,7 @@ public class KnobblyMessageTest extends TestCase {
             // ok
         }
 
-        GlobalTarariContext context = TarariLoader.getGlobalContext();
+        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         if (context != null) {
             logger.info("Initializing XML Hardware Acceleration");
             context.compile();

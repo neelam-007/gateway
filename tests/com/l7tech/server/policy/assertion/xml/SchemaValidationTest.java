@@ -9,11 +9,11 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
-import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -39,8 +39,7 @@ public class SchemaValidationTest extends TestCase {
     }
 
     public static Test suite() {
-        TestSuite suite = new TestSuite(SchemaValidationTest.class);
-        return suite;
+        return new TestSuite(SchemaValidationTest.class);
     }
 
     public static void main(String[] args) throws Throwable {
@@ -49,7 +48,7 @@ public class SchemaValidationTest extends TestCase {
     }
 
     protected void setUp() throws Exception {
-        GlobalTarariContext context = TarariLoader.getGlobalContext();
+        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         if (context != null) {
             context.compile();
         }

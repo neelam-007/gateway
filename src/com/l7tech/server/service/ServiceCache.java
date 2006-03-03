@@ -441,7 +441,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                             cacheNoLock(toUpdateOrAdd);
                         } // otherwise, next integrity check shall delete this service from cache
                     }
-                    // TODO can we skip this step if no xpath assertions have changed?
+                    // Trigger xpath compilation if the set of registered xpaths has changed
                     TarariLoader.compile();
                     // todo, need to check for right schemas there as well
                     for (Iterator i = deletions.iterator(); i.hasNext();) {

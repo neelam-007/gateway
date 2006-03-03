@@ -4,7 +4,6 @@
  */
 package com.l7tech.server.tarari;
 
-import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.XpathHandle;
 
@@ -29,8 +28,6 @@ class Xpaths {
     /** The indices of the XPath expressions used by {@link com.tarari.xml.rax.fastxpath.XPathResult#isSoap} */
     private final int[] soapUriIndices;
 
-    /** A Map&lt;Integer,XpathHandle&gt; */
-    private final Map indicesToHandles = new HashMap();
     /** A Map&lt;String,XpathHandle&gt; */
     private final Map expressionsToHandles = new HashMap();
     private static final String UNUSED = "/UNUSED";
@@ -52,8 +49,13 @@ class Xpaths {
         this.nextHole = builtInXpaths.size();
     }
 
-    synchronized void add(String expr) throws InvalidXpathException {
-        if (expr == null) throw new InvalidXpathException("Expression must not be null");
+    /**
+     * Register the specified xpath.
+     *
+     * @param expr  the xpath expression to register.  Must a non-null String holding a Tarari Normal Form xpath.
+     */
+    synchronized void add(String expr) {
+        if (expr == null) throw new NullPointerException("Expression must not be null");
         XpathHandle handle = (XpathHandle)expressionsToHandles.get(expr);
         if (handle == null) {
 /*
@@ -66,7 +68,6 @@ class Xpaths {
             int index = findNextHole();
             handle = new XpathHandle(index, expr);
             expressionsToHandles.put(expr, handle);
-            indicesToHandles.put(new Integer(index), handle);
             expressions.set(index, expr);
         }
         handle.ref();
@@ -74,7 +75,7 @@ class Xpaths {
 
     /** Caller must hold lock */
     private int findNextHole() {
-        while (expressions.size() < nextHole+1) {
+        if (expressions.size() < nextHole+1) {
             expressions.add(UNUSED);
             return nextHole++;
         }
@@ -97,7 +98,6 @@ class Xpaths {
         handle.unref();
         if (!handle.inUse()) {
             expressionsToHandles.remove(expr);
-            indicesToHandles.remove(new Integer(handle.getIndex()));
             expressions.set(handle.getIndex(), UNUSED);
             if (nextHole > handle.getIndex()) {
                 nextHole = handle.getIndex();

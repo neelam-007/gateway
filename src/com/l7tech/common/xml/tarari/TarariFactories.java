@@ -11,6 +11,7 @@ import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.rax.fastxpath.XPathResult;
 import com.tarari.xml.rax.fastxpath.FNodeSet;
 import com.tarari.xml.rax.fastxpath.FNode;
@@ -54,7 +55,7 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
         String payloadNs = null;
         boolean hasSecurityHeaders = false;
         XPathResult xpathResult = messageContext.getXpathResult();
-        if (xpathResult.isSoap(globalContext.getSoapNamespaceUriIndices())) {
+        if (xpathResult.isSoap(((GlobalTarariContextImpl)globalContext).getSoapNamespaceUriIndices())) {
             int numUris = xpathResult.getCount(TarariUtil.XPATH_INDEX_PAYLOAD);
             if (numUris <= 0) {
                 logger.info("Couldn't find a namespace URI for SOAP payload");
@@ -111,7 +112,7 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
      */
     static TarariMessageContextImpl getProcessedContext(InputStream inputStream)
             throws SoftwareFallbackException, SAXException, IOException {
-        final GlobalTarariContext globalContext = TarariLoader.getGlobalContext();
+        final GlobalTarariContextImpl globalContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         if (globalContext == null)
             throw new SoftwareFallbackException("No GlobalTarariContext");
 

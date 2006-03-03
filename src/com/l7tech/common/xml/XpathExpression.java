@@ -1,20 +1,23 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.xpath.CompilableXpath;
 
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.SOAPConstants;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Class <code>XpathExpression</code> contains the XPath expression
  * and the namespace array.
- * 
+ *
+ * TODO move this into xpath subpackage, but not right now while we are maintaining two branches (HEAD and rel3_5) and hence merging constantly
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class XpathExpression implements Serializable {
+public class XpathExpression extends CompilableXpath implements Serializable {
     private String expression;
     private Map namespaces = new LinkedHashMap();
 

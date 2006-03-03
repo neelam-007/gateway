@@ -5,19 +5,16 @@
 
 package com.l7tech.common.xml;
 
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.xml.tarari.TarariElementCursor;
-import com.tarari.xml.XmlConfigException;
-import com.tarari.xml.XmlSource;
-import com.tarari.xml.rax.RaxDocument;
-import com.tarari.xml.rax.cursor.RaxCursor;
-import com.tarari.xml.rax.cursor.RaxCursorFactory;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
+import com.l7tech.common.message.TarariMessageContextFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -52,13 +49,17 @@ public class ElementCursorTest extends TestCase {
     private static class TarariElementCursorFactory implements ElementCursorFactory {
         public ElementCursor newElementCursor(String xml) throws SAXException {
             try {
-                RaxDocument raxDocument = RaxDocument.createDocument(new XmlSource(xml.getBytes("UTF-8")));
-                RaxCursor cursor = new RaxCursorFactory().createCursor("", raxDocument);
-                return new TarariElementCursor(cursor);
+                final TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
+                if (mcf == null)
+                    throw new UnsatisfiedLinkError("No tarari hardware detected");
+                TarariMessageContextImpl tmci =
+                        (TarariMessageContextImpl)mcf.
+                                makeMessageContext(new ByteArrayInputStream(xml.getBytes("UTF-8")));
+                return tmci.getElementCursor();
             } catch (IOException e) {
                 throw new SAXException(e);
-            } catch (XmlConfigException e) {
-                throw new SAXException(e);
+            } catch (SoftwareFallbackException e) {
+                throw new RuntimeException(e); // can't happen
             }
         }
     }

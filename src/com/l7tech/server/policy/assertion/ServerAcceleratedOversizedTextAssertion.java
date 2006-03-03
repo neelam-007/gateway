@@ -10,13 +10,16 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.InvalidXpathException;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.rax.token.XmlToken;
@@ -30,25 +33,30 @@ import java.util.logging.Logger;
 /**
  * Server side implementation of the OversizedTextAssertion convenience assertion.
  * This is a special version optimized to run very quickly on a request that has already
- * been examined by Tarari.
+ * been examined by Tarari, and works by scanning the token buffer in one pass (two if nesting depth
+ * is being checked).
  */
 public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerAcceleratedOversizedTextAssertion.class.getName());
     private final Auditor auditor;
     private final ServerAssertion softwareFallback;
     private final OversizedTextAssertion ota;
-    private final ServerRequestAcceleratedXpathAssertion nestingLimitChecker;
+    private final CompiledXpath nestingLimitChecker;
 
     public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) {
         auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
         softwareFallback = new ServerOversizedTextAssertion(data, springContext);
         this.ota = data;
+        CompiledXpath nestingLimitChecker = null;
         if (ota.isLimitNestingDepth()) {
-            RequestXpathAssertion rxa = new RequestXpathAssertion(new XpathExpression(ota.makeNestingXpath()));
-            this.nestingLimitChecker = new ServerRequestAcceleratedXpathAssertion(rxa, springContext);
-        } else {
-            this.nestingLimitChecker = null;
+            try {
+                nestingLimitChecker = new XpathExpression(ota.makeNestingXpath()).compile();
+            } catch (InvalidXpathException e) {
+                // Can't happen, but just in case, make one that always succeeds so checkRequest() always fails
+                nestingLimitChecker = CompiledXpath.ALWAYS_TRUE;
+            }
         }
+        this.nestingLimitChecker = nestingLimitChecker;
     }
 
     private static final int TEXT = 0;
@@ -70,18 +78,23 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
             return AssertionStatus.FAILED;
         }
 
-        // Are we to check nesting depth?  If so, do that first
-        if (nestingLimitChecker != null) {
-            if (nestingLimitChecker.checkRequest(context) == AssertionStatus.NONE) {
-                // It matched, so nesting depth is too long -- fail
-                auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
-                return AssertionStatus.FALSIFIED;
-            }
-        }
 
         Message mess = context.getRequest();
         try {
+            // Force Tarari evaluation to have occurred
             mess.isSoap();
+
+            // Are we to check nesting depth?  If so, do that first
+            if (nestingLimitChecker != null) {
+                ElementCursor cursor = mess.getXmlKnob().getElementCursor();
+                XpathResult xr = cursor.getXpathResult(nestingLimitChecker);
+                if (xr != null && xr.matches()) {
+                    // It matched, so nesting depth is too long -- fail
+                    auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
+                    return AssertionStatus.FALSIFIED;
+                }
+            }
+
             TarariKnob tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
             if (tknob == null) {
                 auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
@@ -200,5 +213,4 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
     private AssertionStatus fallbackToSoftwareOnly(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
         return softwareFallback.checkRequest(context);
     }
-
 }

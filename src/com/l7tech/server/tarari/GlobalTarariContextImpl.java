@@ -5,30 +5,31 @@
 package com.l7tech.server.tarari;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.common.xml.tarari.TarariCompiledXpath;
 import com.l7tech.common.xml.tarari.TarariUtil;
+import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
+import com.l7tech.common.xml.xpath.CompilableXpath;
+import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.service.ServiceCache;
+import com.tarari.xml.XmlConfigException;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathCompilerException;
 import com.tarari.xml.rax.schema.SchemaLoader;
-import com.tarari.xml.XmlConfigException;
-import org.springframework.beans.factory.BeanFactory;
-import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
+import org.springframework.beans.factory.BeanFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.logging.Logger;
+import java.text.ParseException;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Holds the server-side Tarari state
@@ -41,6 +42,9 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private String[] tnss;
     private static boolean communitySchemaResolverSet = false;
 
+    /**
+     * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
+     */
     public void compile() {
         // fla added 20-07-05 to avoid compiling xpath all the time for no reason
         synchronized (this) {
@@ -59,7 +63,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                     xpathChangedSinceLastCompilation = false;
                     return; // No exception, we're done
                 } catch (XPathCompilerException e) {
-                    // TODO double check if XPathCompilerException.getErrorLine() still returns a 1-based index
                     int badIndex = e.getErrorLine() - 1; // Silly Tarari, 1-based arrays are for kids!
                     currentXpaths.remove(currentXpaths.getExpression(badIndex));
                     if (currentXpaths.getExpression(0) == null)
@@ -73,15 +76,45 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         return ++compilerGeneration;
     }
 
+    /**
+     * Get the compiler generation count of the most recently installed set of xpaths.  This is used to check whether
+     * a particular xpath was present in the hardware when a particular TarariMessageContext was created.
+     *
+     * @return the compiler generation count of the most recently installed set of xpaths.
+     */
     public synchronized long getCompilerGeneration() {
         return compilerGeneration;
     }
 
-    public synchronized void addXpath(String expression) throws InvalidXpathException {
+    public CompiledXpath compileXpath(CompilableXpath compilableXpath) {
+        return new TarariCompiledXpath(compilableXpath, this);
+    }
+
+    public String toTarariNormalForm(String xpathToSimplify, Map namespaceMap) {
+        try {
+            return TarariXpathConverter.convertToTarariXpath(namespaceMap, xpathToSimplify);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Adds an XPath expression to the context.
+     * <p>
+     * If this expression is valid, after {@link #compile} is called, and assuming the expression is a valid
+     * Tarari Normal Form xpath that is accepted by the compiler, then subsequent calls to {@link #getXpathIndex}
+     * will return a positive result.
+     *
+     * @param expression the XPath expression to add to the context.
+     */
+    public synchronized void addXpath(String expression) {
         currentXpaths.add(expression);
         xpathChangedSinceLastCompilation = true;
     }
 
+    /**
+     * Indicates that the caller is no longer interested in the specified expression.
+     */
     public synchronized void removeXpath(String expression) {
         currentXpaths.remove(expression);
         xpathChangedSinceLastCompilation = true;
@@ -206,6 +239,15 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         return output;
     }
 
+    /**
+     * @param expression the expression to look for.
+     * @param targetCompilerGeneration the GlobalTarariContext compiler generation count that was in effect when your
+     *                                 {@link com.l7tech.common.xml.tarari.TarariMessageContext} was produced.
+     *                                 This is a mandatory parameter.
+     *                                 See {@link #getCompilerGeneration}.
+     * @return the 1-based Tarari index for the given expression, or a number less than 1
+     *         if the given expression was not included in the specified compiler generation count.
+     */
     public int getXpathIndex(String expression, long targetCompilerGeneration) {
         if (expression == null) return -1;
         return currentXpaths.getIndex(expression, targetCompilerGeneration) + 1;
@@ -231,6 +273,9 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         return new Xpaths(xpaths0, uriIndices);
     }
 
+    /**
+     * @return the indices corresponding to the xpath expressions that match namespace URIs for isSoap
+     */
     public int[] getSoapNamespaceUriIndices() {
         return currentXpaths.getSoapUriIndices();
     }
