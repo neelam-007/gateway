@@ -89,6 +89,9 @@ case "$foo" in
 		#target="com.l7tech.console.Main";
 		#exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $* 
 		;;
+	manager)
+		exec installer/Manager-*/Manager.sh $*
+		;;
 	textproxy)
 		target="com.l7tech.proxy.Main";
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
