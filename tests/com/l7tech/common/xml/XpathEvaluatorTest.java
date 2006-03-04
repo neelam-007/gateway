@@ -284,6 +284,28 @@ public class XpathEvaluatorTest extends TestCase {
         }
     }
 
+    public void testWsiBspXpathsThatDontWorkWithTarariDirectXpath() throws InvalidXpathException {
+        Map m = new HashMap();
+        m.put("soap", "http://schemas.xmlsoap.org/soap/envelope/");
+        m.put("xsd", "http://www.w3.org/2001/XMLSchema");
+        m.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        m.put("xenc", "http://www.w3.org/2001/04/xmlenc#");
+        m.put("c14n", "http://www.w3.org/2001/10/xml-exc-c14n#");
+        m.put("wsse", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd");
+        m.put("wsu", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd");
+
+        String R5426 = "0=count(//xenc:EncryptedKey//ds:KeyInfo[count(wsse:SecurityTokenReference)!=1])";
+        new XpathExpression(R5426, m).compile();
+
+        String R5427 = "0=count(//xenc:EncryptedData//ds:KeyInfo[count(wsse:SecurityTokenReference)!=1])";
+        new XpathExpression(R5427, m).compile();
+
+        String R3065 = "0=count(//ds:Signature/ds:SignedInfo/ds:Reference/ds:Transforms/ds:Transform[@Algorithm=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform\" and count(wsse:TransformationParameters/ds:CanonicalizationMethod)=0])";
+        new XpathExpression(R3065, m).compile();
+    }
+
+
+
     public void testDeepNested() throws Exception {
         Document doc = XmlUtil.stringToDocument("<blah foo=\"blah\"><foo><bar/></foo></blah>");
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new HashMap());
