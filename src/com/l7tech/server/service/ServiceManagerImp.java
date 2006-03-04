@@ -8,6 +8,7 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ResolutionManager;
@@ -55,7 +56,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         for (int i = 0; i < names.length; i++) {
             String name = names[i];
             try {
-                Class clazz = Class.forName(name);
+                Class.forName(name);
             } catch (ClassNotFoundException e) {
                 logger.log(Level.WARNING, "PolicyVisitor classname " + name + " could not be loaded.", e);
             }
@@ -98,7 +99,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     // get service. version property must be up-to-date
-                    PublishedService svcnow = null;
+                    PublishedService svcnow;
                     try {
                         svcnow = findByPrimaryKey(passedServiceId);
                     } catch (FindException e) {
@@ -111,7 +112,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                             TarariLoader.compile();
                             TarariLoader.updateSchemasToCard(applicationContext);
                         } catch (Exception e) {
-                            logger.log(Level.WARNING, "could not update cache", e);
+                            logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
                         }
                     }
                 }
@@ -138,7 +139,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     public void update(PublishedService service) throws UpdateException, VersionException {
-        PublishedService original = null;
+        final PublishedService original;
         // check for original service
         try {
             original = findByPrimaryKey(service.getOid());
@@ -182,7 +183,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             public void afterCompletion(int status) {
                 if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     // get service. version property must be up-to-date
-                    PublishedService svcnow = null;
+                    PublishedService svcnow;
                     try {
                         svcnow = findByPrimaryKey(passedServiceId);
                     } catch (FindException e) {
@@ -195,7 +196,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                             TarariLoader.compile();
                             TarariLoader.updateSchemasToCard(applicationContext);
                         } catch (Exception e) {
-                            logger.log(Level.WARNING, "could not update cache", e);
+                            logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
                         }
                     }
                 }
@@ -215,7 +216,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     try {
                         serviceCache.removeFromCache(deletedService);
                     } catch (InterruptedException e) {
-                        logger.log(Level.WARNING, "could not update cache", e);
+                        logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
                     }
                 }
             }
