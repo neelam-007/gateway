@@ -79,10 +79,13 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                 if (xpathResult.getBoolean()) {
                     auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE);
                     context.setVariable(resultVariable, SimpleXpathAssertion.TRUE);
+                    context.setVariable(countVariable, "1");
+                    context.setVariable(foundVariable, SimpleXpathAssertion.TRUE);
                     return AssertionStatus.NONE;
                 }
                 auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
                 context.setVariable(resultVariable, SimpleXpathAssertion.FALSE);
+                context.setVariable(countVariable, "1");
                 context.setVariable(foundVariable, SimpleXpathAssertion.FALSE);
                 return AssertionStatus.FALSIFIED;
 
