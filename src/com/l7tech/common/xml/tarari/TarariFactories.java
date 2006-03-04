@@ -126,7 +126,6 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
             final XPathProcessor xpathProcessor = new XPathProcessor(doc);
             XPathResult xpathResult = xpathProcessor.processXPaths();
 
-            // Have to mutex here to make sure nobody changes the compiler generation while we are preparing the result :(
             return new TarariMessageContextImpl(doc,
                                                 xpathResult,
                                                 generation);
