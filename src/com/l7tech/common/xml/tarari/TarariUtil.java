@@ -14,7 +14,7 @@ import org.xml.sax.SAXException;
 /**
  * @author alex
  */
-public class TarariUtil {
+class TarariUtil {
     public static final String[] ISSOAP_XPATHS = {
         // Don't change the first five, they're important for Tarari's magical isSoap() method
         "/*[local-name()=\"Envelope\"]",

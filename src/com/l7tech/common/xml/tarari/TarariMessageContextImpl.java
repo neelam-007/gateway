@@ -13,6 +13,9 @@ import com.l7tech.common.xml.ElementCursor;
 
 /**
  * Represents resources held by the Tarari driver in the form of a RaxDocument and simultaneous XPathResult.
+ * This class should only be referenced by other classes that are already contaminated with direct or indirect
+ * static references to Tarari classes.  Anyone else should instead reference the uncontaminated interface 
+ * {@link TarariMessageContext} instead.
  */
 public class TarariMessageContextImpl implements TarariMessageContext {
     private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();

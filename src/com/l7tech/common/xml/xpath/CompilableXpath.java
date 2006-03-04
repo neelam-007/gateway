@@ -108,6 +108,7 @@ public abstract class CompilableXpath {
      */
     public String toTarariNormalForm() {
         GlobalTarariContext gtc = TarariLoader.getGlobalContext();
+        if (gtc == null) return null;
         return gtc.toTarariNormalForm(getExpressionForTarariFastxpath(), getNamespaces());
     }
 
@@ -117,7 +118,7 @@ public abstract class CompilableXpath {
      * current XPath expression can be expressed in Tarari normal form.
      *
      * @return a compiled xpath.  Never null.
-     * @throws com.l7tech.common.xml.InvalidXpathException if this CompilableXpath turned out not to be quite so compilable after all
+     * @throws InvalidXpathException if this CompilableXpath turned out not to be quite so compilable after all
      */
     public CompiledXpath compile() throws InvalidXpathException {
         CompiledXpath result = null;

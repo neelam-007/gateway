@@ -9,8 +9,8 @@ package com.l7tech.common.xml;
 import com.l7tech.common.message.SoapInfoFactory;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.beans.factory.BeanFactory;
 
@@ -29,9 +29,9 @@ public class TarariLoader {
      */
     public static final String ENABLE_PROPERTY = "com.l7tech.common.xml.tarari.enable";
 
-    private static final String XPATH_COMPILER_CLASSNAME = "com.tarari.xml.xpath.XPathCompiler";
+    private static final String XPATH_COMPILER_CLASSNAME = "com.tarari.xml.rax.fastxpath.XPathCompiler";
     private static final String FACTORIES_CLASSNAME = "com.l7tech.common.xml.tarari.TarariFactories";
-    private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.server.tarari.GlobalTarariContextImpl";
+    private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.common.xml.tarari.GlobalTarariContextImpl";
 
     private static Boolean tarariPresent = null;
     private static SoapInfoFactory soapInfoFactory = null;

@@ -6,9 +6,9 @@
 package com.l7tech.common.xml.tarari;
 
 /**
- * A handle for an xpath expression managed by the current {@link com.l7tech.server.tarari.Xpaths} object.
+ * A handle for an xpath expression managed by the current {@link Xpaths} object.
  */
-public class XpathHandle {
+class XpathHandle {
     private int refCount = 0;
     private final int index;
     private final String expression;

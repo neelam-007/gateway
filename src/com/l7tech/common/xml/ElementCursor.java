@@ -289,7 +289,7 @@ public abstract class ElementCursor {
      * <p/>
      * Keep in mind that this is expensive and produces lots of garbage.
      *
-     * @param factory the DOM Document to use to build the new
+     * @param factory the DOM Document to use to build the new DOM tree.  Must not be null.
      * @return a DOM Element view of the current element.  Never null.
      */
     public abstract Element asDomElement(Document factory);

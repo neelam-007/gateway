@@ -11,7 +11,6 @@ import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.rax.fastxpath.XPathResult;
 import com.tarari.xml.rax.fastxpath.FNodeSet;
 import com.tarari.xml.rax.fastxpath.FNode;
@@ -29,7 +28,7 @@ import java.util.logging.Logger;
 /**
  * Tarari hardware-accelerated SoapInfoFactory.
  */
-public class TarariFactories implements SoapInfoFactory, TarariMessageContextFactory {
+class TarariFactories implements SoapInfoFactory, TarariMessageContextFactory {
     private static final Logger logger = Logger.getLogger(TarariFactories.class.getName());
 
     public SoapInfo getSoapInfo(TarariMessageContext messageContext) throws SAXException {

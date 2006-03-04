@@ -2,16 +2,14 @@
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
  */
-package com.l7tech.server.tarari;
+package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.schema.SchemaEntry;
-import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.common.xml.tarari.TarariCompiledXpath;
-import com.l7tech.common.xml.tarari.TarariUtil;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.service.ServiceCache;
@@ -32,7 +30,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Holds the server-side Tarari state
+ * Holds the server-side Tarari state.
+ * This class should only be referenced by other classes that are already contaminated with direct or indirect
+ * static references to Tarari classes.  Anyone else should instead reference the uncontaminated interface
+ * {@link GlobalTarariContext} instead.
  */
 public class GlobalTarariContextImpl implements GlobalTarariContext {
     private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
@@ -86,7 +87,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         return compilerGeneration;
     }
 
-    public CompiledXpath compileXpath(CompilableXpath compilableXpath) {
+    public CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException {
         return new TarariCompiledXpath(compilableXpath, this);
     }
 
@@ -107,7 +108,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      *
      * @param expression the XPath expression to add to the context.
      */
-    public synchronized void addXpath(String expression) {
+    synchronized void addXpath(String expression) {
         currentXpaths.add(expression);
         xpathChangedSinceLastCompilation = true;
     }
@@ -115,7 +116,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     /**
      * Indicates that the caller is no longer interested in the specified expression.
      */
-    public synchronized void removeXpath(String expression) {
+    synchronized void removeXpath(String expression) {
         currentXpaths.remove(expression);
         xpathChangedSinceLastCompilation = true;
     }

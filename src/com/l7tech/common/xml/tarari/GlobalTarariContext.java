@@ -7,6 +7,7 @@ package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.beans.factory.BeanFactory;
@@ -37,8 +38,9 @@ public interface GlobalTarariContext {
      *
      * @param compilableXpath the CompilableXpath to compile.  Must not be null.
      * @return A TarariCompiledXpath instance.  Never null.
+     * @throws InvalidXpathException if the XPath could not be parsed, even with Tarari direct XPath 1.0.
      */
-    CompiledXpath compileXpath(CompilableXpath compilableXpath);
+    CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException;
 
     /**
      * Attempts to convert the specified XPath expression into Tarari Normal Form.  Expressions in normal form

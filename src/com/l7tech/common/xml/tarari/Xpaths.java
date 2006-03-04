@@ -2,10 +2,7 @@
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
  */
-package com.l7tech.server.tarari;
-
-import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.common.xml.tarari.XpathHandle;
+package com.l7tech.common.xml.tarari;
 
 import java.util.ArrayList;
 import java.util.HashMap;

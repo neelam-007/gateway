@@ -1,7 +1,7 @@
 /*
  * $Id$
  */
-package com.l7tech.skunkworks.tarari;
+package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
@@ -9,8 +9,6 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.server.tarari.GlobalTarariContextImpl;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

@@ -46,10 +46,10 @@ public class DomCompiledXpath extends CompiledXpath {
      * {@link com.l7tech.common.xml.XpathExpression#compile()}, which will produce a hardware-accelerated
      * CompiledXpath if the hardware is available.
      *
-     * @param xp
-     * @throws com.l7tech.common.xml.InvalidXpathException if the expression is invalid or uses an undeclared namespace prefix.
+     * @param xp the expression to compile.  Must not be null.
+     * @throws InvalidXpathException if the expression is invalid or uses an undeclared namespace prefix.
      */
-    public DomCompiledXpath(CompilableXpath xp) throws InvalidXpathException {
+    protected DomCompiledXpath(CompilableXpath xp) throws InvalidXpathException {
         super(xp.getExpressionForJaxen(), xp.getNamespaces());
         domXpath = makeJaxenXpath();
     }

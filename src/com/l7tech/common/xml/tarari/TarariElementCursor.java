@@ -24,7 +24,7 @@ import java.io.OutputStream;
  * An {@link ElementCursor} implementation that wraps a Tarari XmlCursor and provides features tuned for the
  * read-only use of a WSS processor, but not so much for generic XML processing.
  */
-public class TarariElementCursor extends ElementCursor {
+class TarariElementCursor extends ElementCursor {
     private final TarariMessageContextImpl tarariMessageContext;
     private XmlCursor c;
 

@@ -5,12 +5,9 @@
 
 package com.l7tech.common.xml.tarari;
 
-import com.l7tech.common.xml.DomElementCursor;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.InvalidXpathException;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.xpath.*;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.cursor.XmlCursor;
 import com.tarari.xml.rax.cursor.RaxCursor;
 import com.tarari.xml.rax.cursor.RaxCursorFactory;
@@ -37,7 +34,7 @@ import java.util.logging.Logger;
  * A CompiledXpath implementation that uses Tarari RAXJ features directly, and which will set up a fastxpath
  * expression if possible, but will fall back (lazily) to a DOM-based Jaxen xpath if all else fails.
  */
-public class TarariCompiledXpath extends DomCompiledXpath {
+class TarariCompiledXpath extends CompiledXpath {
     private static final Logger logger = Logger.getLogger(TarariCompiledXpath.class.getName());
     private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();
 
@@ -51,28 +48,25 @@ public class TarariCompiledXpath extends DomCompiledXpath {
      * Create a TarariCompiledXpath.  Do not call this directly unless you are GlobalTarariContextImpl.
      *
      * @param compilableXpath the XPath to compile.  Must not be null.
+     * @param tarariContext the global tarari context.  Must not be null.
      */
-    public TarariCompiledXpath(CompilableXpath compilableXpath, GlobalTarariContextImpl tarariContext) {
+    public TarariCompiledXpath(CompilableXpath compilableXpath, GlobalTarariContextImpl tarariContext) throws InvalidXpathException {
         super(compilableXpath.getExpressionForJaxen(), compilableXpath.getNamespaces());
-
+        if (tarariContext == null) throw new NullPointerException();
         this.globallyRegisteredExpr = setupSimultaneousXpath(tarariContext, compilableXpath);
-        this.parsedDirectExpression = setupDirectXpath(tarariContext, compilableXpath);
+        this.parsedDirectExpression = setupDirectXpath(compilableXpath);
+        if (parsedDirectExpression == null) throw new InvalidXpathException("No direct XPath"); // can't happen
     }
 
     /**
      * Prepare a parsed expression for use with Tarari XPath 1.0.  Will fail if hardware isn't present,
      * or if the expression isn't valid XPath 1.0.
      *
-     * @param tarariContext the global tarari context, or null if no hardware is available.
      * @param xp  the expression to attempt to preparse.  Must not be null.
-     * @return the parsed Expression, or null if hardware not present or expression is invalid.
+     * @return the parsed Expression.  Never null.
+     * @throws InvalidXpathException if the expression can't be parsed.
      */
-    private static Expression setupDirectXpath(GlobalTarariContext tarariContext, CompilableXpath xp) {
-        if (tarariContext == null) {
-            // No hardware.
-            return null;
-        }
-
+    private static Expression setupDirectXpath(CompilableXpath xp) throws InvalidXpathException {
         ExpressionParser expressionParser = new ExpressionParser();
 
         // Configure the namespace map for Direct XPath 1.0
@@ -88,8 +82,7 @@ public class TarariCompiledXpath extends DomCompiledXpath {
         try {
             return expressionParser.parseExpression(xp.getExpressionForTarari());
         } catch (XPathParseException e) {
-            // This expression isn't valid XPath 1.0.
-            return null;
+            throw new InvalidXpathException(e);
         }
     }
 
@@ -119,24 +112,14 @@ public class TarariCompiledXpath extends DomCompiledXpath {
     }
 
     public XpathResult getXpathResult(TarariElementCursor cursor) {
-        if (globallyRegisteredExpr == null && parsedDirectExpression == null)
-            return fallbackToSoftwareOnly(cursor);
-
-        GlobalTarariContextImpl tarariContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
-        if (tarariContext == null) {
-            return fallbackToSoftwareOnly(cursor);
-        }
-
-        TarariMessageContextImpl tmContext = cursor.getTarariMessageContext();
-        if (tmContext == null)
-            return fallbackToSoftwareOnly(cursor);
-
+        final TarariMessageContextImpl tmContext = cursor.getTarariMessageContext();
         if (globallyRegisteredExpr == null)
-            return fallbackToDirectXPath(cursor, tmContext);
+            return fallbackToDirectXPath(tmContext); // expression was too complex to simplify into TNF
 
+        final GlobalTarariContextImpl tarariContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         final int index = tarariContext.getXpathIndex(globallyRegisteredExpr, tmContext.getCompilerGeneration());
         if (index < 1)
-            return fallbackToDirectXPath(cursor, tmContext);
+            return fallbackToDirectXPath(tmContext); // expression wasn't loaded into the card yet
 
         // We're now committed to using Simultaneous XPath results for this
 
@@ -236,11 +219,8 @@ public class TarariCompiledXpath extends DomCompiledXpath {
         }
     }
 
-    private XpathResult fallbackToDirectXPath(TarariElementCursor tec, TarariMessageContextImpl tctx)
+    private XpathResult fallbackToDirectXPath(TarariMessageContextImpl tctx)
     {
-        if (parsedDirectExpression == null)
-            return fallbackToSoftwareOnly(tec);
-
         // We're now committed to using Direct XPath results for this
 
         RaxCursor cursor = raxCursorFactory.createCursor("", tctx.getRaxDocument());
@@ -383,17 +363,6 @@ public class TarariCompiledXpath extends DomCompiledXpath {
                 return Node.DOCUMENT_NODE;
             default:
                 return -1;
-        }
-    }
-
-    private XpathResult fallbackToSoftwareOnly(TarariElementCursor cursor) {
-        logger.warning("TarariElementCursor running TarariCompiledXpath has fallen all the way back to Jaxen");
-        try {
-            return super.getXpathResult(new DomElementCursor(cursor.asDomElement().getOwnerDocument()));
-        } catch (InvalidXpathException e) {
-            // Shouldn't be possible
-            logger.log(Level.WARNING, "Invalid xpath expression: " + ExceptionUtils.getMessage(e), e);
-            return null;
         }
     }
 
