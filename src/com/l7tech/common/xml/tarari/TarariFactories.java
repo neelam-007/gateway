@@ -28,8 +28,10 @@ import java.util.logging.Logger;
 /**
  * Tarari hardware-accelerated SoapInfoFactory.
  */
-class TarariFactories implements SoapInfoFactory, TarariMessageContextFactory {
+public class TarariFactories implements SoapInfoFactory, TarariMessageContextFactory {
     private static final Logger logger = Logger.getLogger(TarariFactories.class.getName());
+
+    public TarariFactories() {}
 
     public SoapInfo getSoapInfo(TarariMessageContext messageContext) throws SAXException {
         GlobalTarariContext globalContext = TarariLoader.getGlobalContext();
