@@ -668,13 +668,13 @@ public class LogonDialog extends JDialog {
         }
         else if (cause instanceof ConnectException ||
           cause instanceof UnknownHostException) {
-            log.log(Level.WARNING, "logon()", e);
+            log.log(Level.WARNING, "Could not connect, '"+cause.getMessage()+"'");
             String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{
                 host});
             JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
-            log.log(Level.WARNING, "logon()", e);
+            log.log(Level.WARNING, "Cound not connect, authentication error.");
             showInvalidCredentialsMessage();
         }
         else if (cause instanceof MalformedURLException) {
