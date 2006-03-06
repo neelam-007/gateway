@@ -210,7 +210,7 @@ class CursorXPathExpression implements XPathExpression {
         Map nsMap = Collections.EMPTY_MAP;
 
         if(namespaceContext != null) {
-            StringTokenizer potentialPrefixTokenizer = new StringTokenizer(expression, "/:@ ");
+            StringTokenizer potentialPrefixTokenizer = new StringTokenizer(expression, "/:@( ");
             if(potentialPrefixTokenizer.countTokens()>0) {
                 nsMap = new HashMap();
                 while(potentialPrefixTokenizer.hasMoreTokens()) {
