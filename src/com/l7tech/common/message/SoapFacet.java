@@ -91,12 +91,12 @@ class SoapFacet extends MessageFacet {
      */
     private static SoapInfo getSoapInfoDom(Document document) throws SAXException {
         boolean hasSecurityNode = false;
-        String payloadNs = null;
+        String[] payloadNs = null;
         if (SoapUtil.isSoapMessage(document)) {
             try {
                 List els = SoapUtil.getSecurityElements(document);
                 if (els != null && !els.isEmpty()) hasSecurityNode = true;
-                payloadNs = SoapUtil.getPayloadNamespaceUri(document);
+                payloadNs = SoapUtil.getPayloadNamespaceUris(document);
                 return new SoapInfo(true, payloadNs, hasSecurityNode);
             } catch (InvalidDocumentFormatException e) {
                 throw new SAXException(e);
@@ -110,12 +110,12 @@ class SoapFacet extends MessageFacet {
         if (c == SoapKnob.class) {
             return new SoapKnob() {
 
-                public String getPayloadNamespaceUri() throws IOException, SAXException {
-                    if (soapInfo != null && soapInfo.payloadNsUri != null) {
-                        return soapInfo.payloadNsUri;
+                public String[] getPayloadNamespaceUris() throws IOException, SAXException {
+                    if (soapInfo != null) {
+                        return soapInfo.getPayloadNsUris();
                     } else {
                         // No tarari, or DOM was changed.  Just use DOM-based lookup
-                        return SoapUtil.getPayloadNamespaceUri(getMessage().getXmlKnob().getDocumentReadOnly());
+                        return SoapUtil.getPayloadNamespaceUris(getMessage().getXmlKnob().getDocumentReadOnly());
                     }
                 }
 

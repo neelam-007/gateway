@@ -204,7 +204,8 @@ public class ServerVariables {
             }
 
             try {
-                return soapKnob.getPayloadNamespaceUri();
+                String[] uris = soapKnob.getPayloadNamespaceUris();
+                return uris == null || uris.length < 1 ? null : uris[0];
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Couldn't get SOAP namespace", e);
                 return null;

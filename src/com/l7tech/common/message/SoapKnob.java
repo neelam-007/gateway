@@ -22,7 +22,14 @@ public interface SoapKnob extends MessageKnob {
     void addHeader(Element headerElement);
     */
 
-    String getPayloadNamespaceUri() throws IOException, SAXException;
+    /**
+     * Get the payload namespace URIs for this soap document.
+     *
+     * @return an array of namespace URIs.  May contain duplicates.  Never null or empty.
+     * @throws SAXException if the first part's content type is not text/xml.
+     * @throws IOException if there is a problem reading XML from the first part's InputStream
+     */
+    String[] getPayloadNamespaceUris() throws IOException, SAXException;
 
     /**
      * Check if this SOAP message is actually a SOAP fault.  If this returns true, fault details will be

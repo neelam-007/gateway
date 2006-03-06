@@ -111,7 +111,7 @@ public class TarariLoader {
     public static void compile() {
         GlobalTarariContextImpl context = (GlobalTarariContextImpl)getGlobalContext();
         if (context != null)
-            context.compile();
+            context.compileAllXpaths();
     }
 
     public static void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {

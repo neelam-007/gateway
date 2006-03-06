@@ -75,11 +75,12 @@ public class RequestHandler extends AbstractHttpHandler {
         this.bindPort = bindPort;
     }
 
+    // TODO what if the document includes multiple payload elements?  should probably fail if there's more than one nsuri used at once
     private PolicyAttachmentKey gatherPolicyAttachmentKey(final HttpRequest request, Document requestEnvelope, URL originalUrl) {
         String sa = request.getField("SOAPAction");
-        String namespaceUri = SoapUtil.getPayloadNamespaceUri(requestEnvelope);
-        PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, sa, originalUrl.getFile());
-        return pak;
+        String[] namespaceUris = SoapUtil.getPayloadNamespaceUris(requestEnvelope);
+        String nsUri = namespaceUris == null || namespaceUris.length < 1 ? null :namespaceUris[0];
+        return new PolicyAttachmentKey(nsUri, sa, originalUrl.getFile());
     }
 
     private HttpHeaders gatherHeaders(final HttpRequest request) {

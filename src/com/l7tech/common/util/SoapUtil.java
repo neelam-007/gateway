@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 public class SoapUtil {
     public static final Logger log = Logger.getLogger(SoapUtil.class.getName());
     public static final List ENVELOPE_URIS = new ArrayList();
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
     static {
         ENVELOPE_URIS.add(SOAPConstants.URI_NS_SOAP_ENVELOPE);
@@ -111,7 +112,7 @@ public class SoapUtil {
         SECURITY_URIS.add(SECURITY_NAMESPACE5);
     }
 
-    public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(new String[0]);
+    public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(EMPTY_STRING_ARRAY);
 
     public static final String WSU_PREFIX = "wsu";
     public static final List WSU_URIS = new ArrayList();
@@ -122,7 +123,7 @@ public class SoapUtil {
         WSU_URIS.add(WSU_NAMESPACE3);
     }
 
-    public static final String[] WSU_URIS_ARRAY = (String[])WSU_URIS.toArray(new String[0]);
+    public static final String[] WSU_URIS_ARRAY = (String[])WSU_URIS.toArray(EMPTY_STRING_ARRAY);
 
     // Attribute names
     public static final String ID_ATTRIBUTE_NAME = "Id";
@@ -293,10 +294,9 @@ public class SoapUtil {
      * The SOAP payload is the first and only child element of the mandatory SOAP Body element.
      *
      * @param request the Document to examine.  May not be null.
-     * @return the SOAP payload namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
+     * @return the SOAP payload namespace URIs if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.  Never empty.
      */
-    public static String getPayloadNamespaceUri(Document request) {
-
+    public static String[] getPayloadNamespaceUris(Document request) {
         Element env = request.getDocumentElement();
         if (!ENVELOPE_EL_NAME.equals(env.getLocalName())) {
             log.finer("Request document element not " + ENVELOPE_EL_NAME + "; assuming non-SOAP request");
@@ -335,14 +335,9 @@ public class SoapUtil {
         if (payloadNamespaces.isEmpty()) {
             log.warning("There is no payload namespace");
             return null;
-        } else if (payloadNamespaces.size() > 1) {
-            String valtoreturn = (String)payloadNamespaces.get(0);
-            log.warning("More than one body child element have a namespace. Returning the first one: " +
-                           valtoreturn);
-            return valtoreturn;
-        } else {
-            return (String)payloadNamespaces.get(0);
         }
+        
+        return (String[])payloadNamespaces.toArray(EMPTY_STRING_ARRAY);
     }
 
     /**

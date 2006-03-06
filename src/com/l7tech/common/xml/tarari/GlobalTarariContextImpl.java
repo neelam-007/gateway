@@ -4,12 +4,14 @@
  */
 package com.l7tech.common.xml.tarari;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
-import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.service.ServiceCache;
@@ -34,6 +36,13 @@ import java.util.logging.Logger;
  * This class should only be referenced by other classes that are already contaminated with direct or indirect
  * static references to Tarari classes.  Anyone else should instead reference the uncontaminated interface
  * {@link GlobalTarariContext} instead.
+ *
+ * Locks used in this class:
+ * <ul>
+ * <li>instance monitor - used to protect xpath compilation, compiler generation count, and xpathChangedSinceLastCompilation
+ * <li>schemaLock - rwlock used to protect schemas in the card when they are being resynched with the database
+ * </ul>
+ *
  */
 public class GlobalTarariContextImpl implements GlobalTarariContext {
     private final Logger logger = Logger.getLogger(GlobalTarariContextImpl.class.getName());
@@ -41,22 +50,20 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private long compilerGeneration = 1;
     boolean xpathChangedSinceLastCompilation = true;
     private String[] tnss;
-    private static boolean communitySchemaResolverSet = false;
+    private boolean communitySchemaResolverSet = false;
+    private ReadWriteLock schemaLock = new WriterPreferenceReadWriteLock();
 
     /**
      * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
      */
-    public void compile() {
-        // fla added 20-07-05 to avoid compiling xpath all the time for no reason
-        synchronized (this) {
-            if (!xpathChangedSinceLastCompilation) {
-                logger.fine("skipping compilation since no changes to xpath expressions were detected");
-                return;
-            }
-        }
+    public void compileAllXpaths() {
         logger.fine("compiling xpath expressions");
         while (true) {
             synchronized (this) {
+                if (!xpathChangedSinceLastCompilation) {
+                    logger.fine("skipping compilation since no changes to xpath expressions were detected");
+                    return;
+                }
                 try {
                     String[] expressions = currentXpaths.getExpressions();
                     XPathCompiler.compile(expressions, 0);
@@ -102,7 +109,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     /**
      * Adds an XPath expression to the context.
      * <p>
-     * If this expression is valid, after {@link #compile} is called, and assuming the expression is a valid
+     * If this expression is valid, after {@link #compileAllXpaths} is called, and assuming the expression is a valid
      * Tarari Normal Form xpath that is accepted by the compiler, then subsequent calls to {@link #getXpathIndex}
      * will return a positive result.
      *
@@ -127,7 +134,9 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      * be called whenever a published service is updated or saved
      */
     public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {
-        synchronized (this) {
+        try {
+            schemaLock.writeLock().acquire();
+
             // List schemas on card
             ArrayList schemasOnCard = new ArrayList();
             String[] schemas = SchemaLoader.listSchemas();
@@ -174,7 +183,11 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
             // are there any discrepencies?
             if (!schemasOnCardThatShouldNotBeThere.isEmpty() || !schemasMissingFromCard.isEmpty()) {
                 // everytime we load schemas, we check that the resolver is set.
-                checkSchemaResolver(manager);
+                if (!communitySchemaResolverSet) {
+                    logger.finest("setting the community schema resolver");
+                    SchemaLoader.setSchemaResolver(manager.communitySchemaResolver());
+                    communitySchemaResolverSet = true;
+                }
 
                 // asper note above, we need to remove everything for now
                 if (!schemasOnCard.isEmpty()) {
@@ -214,30 +227,53 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                 }
             }
             tnss = (String[])allTNSs.toArray(new String[0]);
+        } catch (InterruptedException e) {
+            logger.warning("Interrupted while waiting for Tarari schema write lock"); // probably being shut down
+            Thread.currentThread().interrupt();
+        } finally {
+            schemaLock.writeLock().release();
         }
     }
 
-    private synchronized void checkSchemaResolver(CommunitySchemaManager manager) {
-        if (!communitySchemaResolverSet) {
-            logger.finest("setting the community schema resolver");
-            SchemaLoader.setSchemaResolver(manager.communitySchemaResolver());
-            communitySchemaResolverSet = true;
-        }
-    }
-
-    public synchronized int targetNamespaceLoadedMoreThanOnce(String targetNamespace) {
-        if (tnss == null) {
-            logger.severe("tnss not loaded");
-            return 0;
-        }
-        int output = 0;
-        for (int i = 0; i < tnss.length; i++) {
-            String tns = tnss[i];
-            if (tns.equals(targetNamespace)) {
-                ++output;
+    /** @return the number of times the specified target namespace has been loaded. */
+    public int targetNamespaceLoadedMoreThanOnce(String targetNamespace) {
+        try {
+            schemaLock.readLock().acquire();
+            if (tnss == null) {
+                logger.severe("tnss not loaded");
+                return 0;
             }
+            int output = 0;
+            for (int i = 0; i < tnss.length; i++) {
+                String tns = tnss[i];
+                if (tns.equals(targetNamespace)) {
+                    ++output;
+                }
+            }
+            return output;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari schema read lock", e);
+        } finally {
+            schemaLock.readLock().release();
         }
-        return output;
+    }
+
+    public Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri) {
+        try {
+            schemaLock.readLock().acquire();
+            if (targetNamespaceLoadedMoreThanOnce(desiredTargetNamespaceUri) != 1) {
+                // Fall back to software
+                return null;
+            }
+            //noinspection UnnecessaryBoxing
+            return Boolean.valueOf(((TarariMessageContextImpl)doc).getRaxDocument().validate());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari schema read lock", e);
+        } finally {
+            schemaLock.readLock().release();
+        }
     }
 
     /**

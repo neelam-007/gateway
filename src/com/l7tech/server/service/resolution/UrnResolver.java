@@ -60,7 +60,21 @@ public class UrnResolver extends WsdlOperationServiceResolver {
     protected Object getRequestValue(Message request) throws ServiceResolutionException {
         try {
             if (request.isSoap()) {
-                return request.getSoapKnob().getPayloadNamespaceUri();
+                String[] uris = request.getSoapKnob().getPayloadNamespaceUris();
+                if (uris == null || uris.length < 1)
+                    return null;
+
+                // TODO there might be a way to properly handle a request with multiple payload URIs 
+                String sawUri = null;
+                for (int i = 0; i < uris.length; i++) {
+                    String uri = uris[i];
+                    if (sawUri == null)
+                        sawUri = uri;
+                    else
+                        if (!sawUri.equals(uri))
+                            throw new ServiceResolutionException("Request uses more than one payload namespace URI");
+                }
+                return sawUri;
             } else {
                 return null;
             }

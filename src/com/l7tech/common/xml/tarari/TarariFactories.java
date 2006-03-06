@@ -24,12 +24,15 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Tarari hardware-accelerated SoapInfoFactory.
  */
 public class TarariFactories implements SoapInfoFactory, TarariMessageContextFactory {
     private static final Logger logger = Logger.getLogger(TarariFactories.class.getName());
+    private static final String[] EMPTY_STRING = new String[0];
 
     public TarariFactories() {}
 
@@ -42,18 +45,12 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
         return getProcessedContext(messageBody);
     }
 
-    private static class TarariSoapInfo extends SoapInfo {
-        public TarariSoapInfo(boolean isSoap, String payloadNsUri, boolean hasSecurityNode) {
-            super(isSoap, payloadNsUri, hasSecurityNode);
-        }
-    }
-
     /** Hardware version of getSoapInfo.  Might require software fallback if hardware processing can't be done. */
     public static SoapInfo getSoapInfoTarari(GlobalTarariContext globalContext, TarariMessageContext messageContext1)
             throws SAXException
     {
         TarariMessageContextImpl messageContext = (TarariMessageContextImpl) messageContext1;
-        String payloadNs = null;
+        List payloadNamespaces = new ArrayList();
         boolean hasSecurityHeaders = false;
         XPathResult xpathResult = messageContext.getXpathResult();
         if (xpathResult.isSoap(((GlobalTarariContextImpl)globalContext).getSoapNamespaceUriIndices())) {
@@ -66,9 +63,14 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
                     throw new SAXException("SOAP payload NodeSet was null or empty but count was >= 1");
                 }
 
-                FNode first = payloadNodes.getNode(0);
-                if (first.getType() == FNode.ELEMENT_NODE) {
-                    payloadNs = first.getNamespace(first.getPrefix());
+                int numPayloads = payloadNodes.size();
+                for (int i = 0; i < numPayloads; ++i) {
+                    FNode first = payloadNodes.getNode(0);
+                    if (first.getType() == FNode.ELEMENT_NODE) {
+                        String ns = first.getNamespace(first.getPrefix());
+                        if (ns == null) ns = ""; // treat no namespace as same as namespace URI of empty string
+                        payloadNamespaces.add(ns);
+                    }
                 }
             }
 
@@ -91,9 +93,9 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
                     }
                 }
             }
-            return new TarariSoapInfo(true, payloadNs, hasSecurityHeaders);
+            return new SoapInfo(true, (String[])payloadNamespaces.toArray(EMPTY_STRING), hasSecurityHeaders);
         } else {
-            return new TarariSoapInfo(false, null, false);
+            return new SoapInfo(false, EMPTY_STRING, false);
         }
     }
 

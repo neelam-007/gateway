@@ -14,6 +14,7 @@ import java.util.Map;
  * - the array of indices in the expression array that correspond to the expressions used by isSoap
  * - the Map&lt;Integer,String&gt; of array indices to xpath expressions
  * - the Map&lt;String,Integer&gt; of xpath expressions to array indices
+ * TODO this should be non-static inner class of GlobalTarariContextImpl, and share its mutex
  */
 class Xpaths {
     /** The lowest-numbered empty element in the {@link #expressions} list */

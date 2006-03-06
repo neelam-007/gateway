@@ -123,7 +123,7 @@ public class KnobblyMessageTest extends TestCase {
         msg.getMimeKnob().getFirstPart().setBodyBytes(got);
 
         // now SOAP should succeed
-        assertEquals(MimeBodyTest.MESS_PAYLOAD_NS, msg.getSoapKnob().getPayloadNamespaceUri());
+        assertEquals(MimeBodyTest.MESS_PAYLOAD_NS, msg.getSoapKnob().getPayloadNamespaceUris()[0]);
     }
 
     public void testGetXmlKnob() throws Exception {
@@ -240,19 +240,19 @@ public class KnobblyMessageTest extends TestCase {
         GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         if (context != null) {
             logger.info("Initializing XML Hardware Acceleration");
-            context.compile();
+            context.compileAllXpaths();
         }
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
                               TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT));
         SoapKnob soapKnob = msg.getSoapKnob();
         if (msg.isSoap()) {
-            String uri = soapKnob.getPayloadNamespaceUri();
+            String uri = soapKnob.getPayloadNamespaceUris()[0];
             boolean sec = soapKnob.isSecurityHeaderPresent();
             logger.info("SOAP payload namespace URI = " + uri);
             logger.info("Security header " + (sec ? "" : "not ") + "found");
         }
-        logger.info(soapKnob.getPayloadNamespaceUri());
+        logger.info(soapKnob.getPayloadNamespaceUris()[0]);
         assertNotNull(msg.getXmlKnob());
         assertNotNull(msg.getMimeKnob());
     }

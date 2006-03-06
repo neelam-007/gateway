@@ -50,7 +50,7 @@ public class SchemaValidationTest extends TestCase {
     protected void setUp() throws Exception {
         GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
         if (context != null) {
-            context.compile();
+            context.compileAllXpaths();
         }
     }
 

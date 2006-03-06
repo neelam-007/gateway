@@ -9,9 +9,9 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
-import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -54,6 +54,8 @@ import java.util.logging.Logger;
  *
  */
 public class ServerSchemaValidation implements ServerAssertion {
+    private static final String MSG_PAYLOAD_NS = "Hardware schema validation succeeded but the tns " +
+            "did not match the assertion at hand. Returning failure.";
 
     //- PUBLIC
 
@@ -80,8 +82,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     /**
      * Validates the soap envelope's body's child against the schema
      */
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException,
-                                                                              PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // decide which document to act upon based on routing status
         RoutingStatus routing = context.getRoutingStatus();
         final Message msg;
@@ -207,55 +208,92 @@ public class ServerSchemaValidation implements ServerAssertion {
      */
     private AssertionStatus validateMessage(Message msg) throws IOException, PolicyAssertionException {
         try {
-            if (tarariNamespaceUri != null) {
-                if (TarariLoader.getGlobalContext().targetNamespaceLoadedMoreThanOnce(tarariNamespaceUri) != 1) {
-                    logger.fine("Falling back to software validation because the tns is not used by exactly one schema");
-                } else if (schemaValidationAssertion.isApplyToArguments()) {
-                    logger.fine("Falling back to software validation because assertion requests " +
-                                "that only arguments be validated");
-                } else {
-                    boolean msgisSoap = msg.isSoap(); // Prime the pump
-                    TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
-                    if (tk != null) {
-                        TarariMessageContext tmc = tk.getContext();
-                        if (tmc instanceof TarariMessageContextImpl) {
-                            TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
-                            try {
-                                if (tarariMessageContext.getRaxDocument().validate()) {
-                                    logger.fine("Hardware schema validation success. Checking for right namespace.");
-                                    // this only applies to soap messages
-                                    if (msgisSoap) {
-                                        // todo, there could be more than one element under the body, we need to check all of their ns
-                                        if (!tk.getSoapInfo().getPayloadNsUri().equals(tarariNamespaceUri)) {
-                                            logger.info("Hardware schema validation succeeded but the tns " +
-                                                        "did not match the assertion at hand. Returning failure.");
-                                            return AssertionStatus.FAILED;
-                                        } else {
-                                            logger.fine("Tns match. Returning success.");
-                                            return AssertionStatus.NONE;
-                                        }
-                                    } else {
-                                        // todo, need to check the ns of first element without parsing the document (?)
-                                        logger.fine("Skipping tns check because not soap. Returning success.");
-                                        return AssertionStatus.NONE;
-                                    }
-                                } else {
-                                    logger.info("Hardware schema validation failed. The assertion will " +
-                                                "fallback on software schema validation");
-                                }
-                            } catch (com.tarari.xml.XmlException e) {
-                                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
-                            }
-                        }
-                    }
-                }
+            if (tarariNamespaceUri == null)
+                return softwareFallback(msg); // no hardware
+
+            final GlobalTarariContext globalContext = TarariLoader.getGlobalContext();
+
+            if (schemaValidationAssertion.isApplyToArguments()) {
+                logger.fine("Falling back to software validation because assertion requests " +
+                        "that only arguments be validated");
+                return softwareFallback(msg);
             }
-            return validateDocument(msg.getXmlKnob().getDocumentReadOnly());
+
+            boolean msgisSoap = msg.isSoap(); // Prime the pump
+            TarariKnob tarariKnob = (TarariKnob) msg.getKnob(TarariKnob.class);
+            if (tarariKnob == null) {
+                // No hardware?  Invalidated knob already? weird. shouldn't be possible
+                logger.fine("Falling back to software validation because there is no message hardware context");
+                return softwareFallback(msg);
+            }
+
+            TarariMessageContext doc = tarariKnob.getContext();
+            Boolean result = globalContext.validateDocument(doc, tarariNamespaceUri);
+            if (result == null) {
+                logger.fine("Falling back to software validation because the tns is not used by exactly one schema");
+                return softwareFallback(msg);
+            }
+
+            if (Boolean.FALSE.equals(result)) {
+                logger.info("Hardware schema validation failed. The assertion will " +
+                        "fallback on software schema validation");
+                // TODO do we still need to do this? does Tarari schema val still have spurious failures?
+                return softwareFallback(msg);
+            }
+
+            // Hardware schema val succeeded.
+            if (msgisSoap)
+                return checkPayloadNamespaces(tarariKnob);
+            return checkRootNamespace(doc);
+
         } catch (SAXException e) {
             throw new PolicyAssertionException("could not parse request or response document", e);
         } catch (NoSuchPartException e) {
-            throw new RuntimeException(e); // Can't happen
+            throw new RuntimeException(e); // Can't happen -- first part is currently never read destructively
         }
+    }
+
+    /** Ensure that all payload namespaces of this SOAP message match the tarariNamespaceUri. */
+    private AssertionStatus checkPayloadNamespaces(TarariKnob tk) {
+        // SOAP message -- ensure that the payload namespace URI matches up.
+        String[] payloadUris = tk.getSoapInfo().getPayloadNsUris();
+        if (payloadUris == null || payloadUris.length < 1) {
+            logger.info(MSG_PAYLOAD_NS);
+            return AssertionStatus.FAILED;
+        }
+
+        // They must all match up
+        for (int i = 0; i < payloadUris.length; i++) {
+            String payloadUri = payloadUris[i];
+            if (!tarariNamespaceUri.equals(payloadUri)) {
+                logger.info(MSG_PAYLOAD_NS);
+                return AssertionStatus.FAILED;
+            }
+        }
+
+        // They all matched up.
+        logger.fine("Tns match. Returning success.");
+        return AssertionStatus.NONE;
+    }
+
+    /** Ensure that the root namespace of this XML message matches the tarariNamespaceUri. */
+    private AssertionStatus checkRootNamespace(TarariMessageContext tmc) {
+        // Non-SOAP message.  Ensure root namespace URI matches up.
+        ElementCursor cursor = tmc.getElementCursor();
+        cursor.moveToDocumentElement();
+        String docNs = cursor.getNamespaceUri();
+        if (!tarariNamespaceUri.equals(docNs)) {
+            logger.fine("Hardware schema validation succeeded against non-SOAP message, " +
+                    "but the document element namespace URI did not match the asseriton at hand.");
+            return AssertionStatus.FAILED;
+        }
+
+        logger.fine("Non-SOAP message validated and root namespace URI matches.  Returning success.");
+        return AssertionStatus.NONE;
+    }
+
+    private AssertionStatus softwareFallback(Message msg) throws IOException, SAXException {
+        return validateDocument(msg.getXmlKnob().getDocumentReadOnly());
     }
 
     /**

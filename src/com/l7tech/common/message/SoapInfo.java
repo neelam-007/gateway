@@ -10,9 +10,16 @@ package com.l7tech.common.message;
  * The same SoapInfo class is used for both software or hardware processing.
  */
 public class SoapInfo {
-    protected SoapInfo(boolean soap, String payloadNsUri, boolean hasSecurityNode) {
+    /**
+     * Create a new SoapInfo.
+     *
+     * @param soap  true if message is soap
+     * @param payloadNsUris  list of payload namespace URIs.  May be empty, but must not be null.  Must not contain nulls or empty strings.
+     * @param hasSecurityNode true if this message is soap and contains at least one wsse:Security soap header.
+     */
+    public SoapInfo(boolean soap, String[] payloadNsUris, boolean hasSecurityNode) {
         this.soap = soap;
-        this.payloadNsUri = payloadNsUri;
+        this.payloadNsUris = payloadNsUris;
         this.hasSecurityNode = hasSecurityNode;
     }
 
@@ -20,8 +27,9 @@ public class SoapInfo {
         return soap;
     }
 
-    public String getPayloadNsUri() {
-        return payloadNsUri;
+    /** @return payload namespace URIs.  Might be empty but never null.  If non-empty, will not contain nulls or empty strings. */
+    public String[] getPayloadNsUris() {
+        return payloadNsUris;
     }
 
     public boolean isHasSecurityNode() {
@@ -29,6 +37,6 @@ public class SoapInfo {
     }
 
     final boolean soap;
-    final String payloadNsUri;
+    final String[] payloadNsUris;
     final boolean hasSecurityNode;
 }

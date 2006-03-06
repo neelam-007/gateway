@@ -21,7 +21,7 @@ public class TarariPlayground {
 
     public static void main(String[] args) throws Exception {
         GlobalTarariContextImpl gtc = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
-        if (gtc != null) gtc.compile();
+        if (gtc != null) gtc.compileAllXpaths();
 
         if (args.length > 0) {
             Boolean soap = args.length == 2 ? Boolean.valueOf(args[1]) : Boolean.FALSE;

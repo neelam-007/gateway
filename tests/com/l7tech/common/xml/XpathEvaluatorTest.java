@@ -304,8 +304,6 @@ public class XpathEvaluatorTest extends TestCase {
         new XpathExpression(R3065, m).compile();
     }
 
-
-
     public void testDeepNested() throws Exception {
         Document doc = XmlUtil.stringToDocument("<blah foo=\"blah\"><foo><bar/></foo></blah>");
         XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new HashMap());

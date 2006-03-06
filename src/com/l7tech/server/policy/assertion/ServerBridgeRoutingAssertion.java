@@ -156,7 +156,9 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                 try {
                     // TODO support non-SOAP messaging with SSB api
                     String soapAction = context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SoapUtil.SOAPACTION);
-                    String nsUri = context.getRequest().getSoapKnob().getPayloadNamespaceUri();
+                    String[] uris = context.getRequest().getSoapKnob().getPayloadNamespaceUris();
+                    // TODO decide what to do if there are multiple payload namespace URIs 
+                    String nsUri = uris == null || uris.length < 1 ? null : uris[0];
 
                     // TODO support SOAP-with-attachments with SSB api
                     if (context.getRequest().getMimeKnob().isMultipart())
