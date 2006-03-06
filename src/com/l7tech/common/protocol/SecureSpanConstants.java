@@ -174,6 +174,30 @@ public class SecureSpanConstants {
         public static final String PARAM_SERVICEOID = "serviceoid";
 
         /**
+         * When downloading WSDL, this parameter can be used as an alternative to
+         * SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID and represents the
+         * routing uri property of a published service whose WSDL is desired.
+         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         */
+        public static final String PARAM_URI = "uri";
+
+        /**
+         * When downloading WSDL, this parameter can be used as an alternative to
+         * SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID and represents a
+         * soapaction used by the published service whose WSDL is desired.
+         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         */
+        public static final String PARAM_SACTION = "soapaction";
+
+        /**
+         * When downloading WSDL, this parameter can be used as an alternative to
+         * SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID and represents a
+         * namespace used by the published service whose WSDL is desired.
+         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         */
+        public static final String PARAM_NS = "ns";
+
+        /**
          * Contains a nonzero value if the Bridge desires to perform certificate discovery.
          * TODO: This is a total mess; cert discovery should be a different servlet, not piggyback on policy servlet
          *

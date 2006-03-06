@@ -15,6 +15,8 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
+import com.l7tech.server.service.resolution.SoapActionResolver;
+import com.l7tech.server.service.resolution.UrnResolver;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -62,6 +64,8 @@ import java.util.logging.Level;
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private ServerConfig serverConfig;
+    SoapActionResolver sactionResolver = new SoapActionResolver();
+    UrnResolver nsResolver = new UrnResolver();
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -74,24 +78,17 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        // resolve service if given
-        String serviceStr = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
         PublishedService ps = null;
         try {
-            Long serviceId = parseLong(serviceStr);
-
-            if(serviceStr!=null && serviceId==null) {
-                throw new FindException();
-            }
-
-            if (serviceId != null) {
-                ps = resolveService(serviceId.longValue());
-                if(ps==null) throw new FindException();
-            }
-        } catch(FindException fe) {
+            ps = getRequestedService(req);
+        } catch (FindException e) {
             // if they ask for an invalid services WSDL return 404 since that WSDL doc does not exist
-            logger.log(Level.INFO, "Invalid service requested '" + serviceStr + "'.");
-            res.sendError(HttpServletResponse.SC_NOT_FOUND);
+            logger.log(Level.INFO, "Invalid service requested", e);
+            sendBackError(res, HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+            return;
+        } catch (AmbiguousServiceException e) {
+            logger.log(Level.INFO, "Service request ambiguous", e);
+            sendBackError(res, HttpServletResponse.SC_MULTIPLE_CHOICES, e.getMessage());
             return;
         }
 
@@ -122,6 +119,101 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         } else {
             doAnonymous(req, res, ps);
         }
+    }
+
+    class AmbiguousServiceException extends Exception {
+        public AmbiguousServiceException(String s) {
+            super(s);
+        }
+    }
+
+    /**
+     * HTTP GET request can contain parameters that tells us which service is desired. 'serviceoid', 'uri', 'ns',
+     * 'soapaction' or a combination of the later 3.
+     *
+     * @param req the http get that contains the parameters that hint towards which service is wanted
+     * @return either the requested service or null if no service appear to be requested
+     * @throws AmbiguousServiceException thrown if the parameters resolve more than one possible service
+     */
+    private PublishedService getRequestedService(HttpServletRequest req) throws AmbiguousServiceException, FindException {
+        // resolution using traditional serviceoid param
+        String serviceStr = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
+        if (serviceStr != null) {
+            PublishedService ps;
+            long serviceId;
+            try {
+                serviceId = Long.parseLong(serviceStr);
+                ps = resolveService(serviceId);
+                if (ps == null) {
+                    throw new FindException("Service id " + serviceStr + " did not resovle any service");
+                }
+            } catch (NumberFormatException e) {
+                throw new FindException("cannot parse long from " + serviceStr, e);
+            }
+            return ps;
+        }
+
+        // resolution using alternative parameters
+        String uriparam = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_URI);
+        String nsparam = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NS);
+        String sactionparam = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SACTION);
+        if (uriparam == null && nsparam == null && sactionparam == null) {
+            // no service seems to be requested
+            return null;
+        }
+        // get all current services
+        Collection services = serviceManager.findAll();
+        // if uri param provided, narrow down list using it
+        if (uriparam != null) {
+            for (Iterator iterator = services.iterator(); iterator.hasNext();) {
+                PublishedService publishedService = (PublishedService) iterator.next();
+                if (uriparam.length() <= 0 && publishedService.getRoutingUri() == null) continue;
+                if (!uriparam.equals(publishedService.getRoutingUri())) iterator.remove();
+            }
+            if (services.size() == 1) {
+                return (PublishedService)services.iterator().next();
+            }
+            if (services.size() == 0) {
+                throw new FindException("URI param " + uriparam + " did not resovle any service");
+            }
+        }
+        // narrow it down using soapaction (if provided)
+        if (sactionparam != null) {
+            for (Iterator iterator = services.iterator(); iterator.hasNext();) {
+                PublishedService publishedService = (PublishedService) iterator.next();
+                Set sactionparams = sactionResolver.getDistinctParameters(publishedService);
+                if (!sactionparams.contains(sactionparam)) iterator.remove();
+            }
+            if (services.size() == 1) {
+                return (PublishedService)services.iterator().next();
+            }
+            if (services.size() == 0) {
+                throw new FindException("SoapAction param " + sactionparam + " did not resovle any service");
+            }
+        }
+        // narrow it down using ns (if provided)
+        if (nsparam != null) {
+            for (Iterator iterator = services.iterator(); iterator.hasNext();) {
+                PublishedService publishedService = (PublishedService) iterator.next();
+                Set nsparams = nsResolver.getDistinctParameters(publishedService);
+                if (!nsparams.contains(nsparam)) iterator.remove();
+            }
+            if (services.size() == 1) {
+                return (PublishedService)services.iterator().next();
+            }
+            if (services.size() == 0) {
+                throw new FindException("ns param " + nsparam + " did not resovle any service");
+            }
+        }
+
+        // could not narrow it down enough -> throw AmbiguousServiceException
+        StringBuffer names = new StringBuffer();
+        for (Iterator iterator = services.iterator(); iterator.hasNext();) {
+            PublishedService publishedService = (PublishedService) iterator.next();
+            names.append(publishedService.getName()).append(" ");
+        }
+        logger.info("service query too wide: " + names.toString());
+        throw new AmbiguousServiceException("Too many services fit the mold: " + names.toString());
     }
 
     private void doAnonymous(HttpServletRequest req, HttpServletResponse res, PublishedService ps) throws IOException {
@@ -428,17 +520,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return outDoc.toString();
     }
 
-    private Long parseLong(String longStr) {
-        Long result = null;
-
-        if(longStr!=null){
-            try {
-                result = Long.valueOf(longStr);
-            }
-            catch(NumberFormatException nfe) {
-            }
-        }
-
-        return result;
+    protected void sendBackError(HttpServletResponse res, int status, String msg) throws IOException {
+        res.setStatus(status);
+        res.getOutputStream().print(msg);
+        res.getOutputStream().close();
     }
 }
