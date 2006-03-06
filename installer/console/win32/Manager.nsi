@@ -126,6 +126,7 @@ Section "Policy Editor" SecCopyUI
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "NoModify" "1"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "NoRepair" "1"
 
+  endofinstall:
 SectionEnd
 
 ;Display the Finish header
