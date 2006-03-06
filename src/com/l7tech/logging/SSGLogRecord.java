@@ -188,6 +188,8 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         this.oid = oid;
     }
 
+    private static final long serialVersionUID = -2234601153074484000L;
+
     private long oid;
     protected String requestId;
     protected String nodeId;

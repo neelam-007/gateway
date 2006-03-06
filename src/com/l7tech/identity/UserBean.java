@@ -137,6 +137,8 @@ public class UserBean implements User, Serializable {
         return result;
     }
 
+    private static final long serialVersionUID = -2689153614711342567L;
+
     protected long _providerId = Entity.DEFAULT_OID;
     protected String _uniqueId;
     protected String _name;

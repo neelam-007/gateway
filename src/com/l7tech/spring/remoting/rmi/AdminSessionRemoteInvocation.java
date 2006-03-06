@@ -6,8 +6,6 @@
 package com.l7tech.spring.remoting.rmi;
 
 import org.aopalliance.intercept.MethodInvocation;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.RemoteAccessException;
 
@@ -18,21 +16,21 @@ import java.security.PrivilegedActionException;
 import java.security.Principal;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.server.ServerNotActiveException;
 
 /**
- * @author emil
- * @version Dec 6, 2004
+ * SSM/SSG remote invocation with security context.
+ *
+ * @author emil, $Author$
+ * @version Dec 6, 2004, $Revision$
+ * @see AdminSessionInvocationFactory
  */
 class AdminSessionRemoteInvocation extends RemoteInvocation {
-    private static final Log logger = LogFactory.getLog(AdminSessionRemoteInvocation.class);
-    private final Subject subject;
 
-    AdminSessionRemoteInvocation(MethodInvocation methodInvocation, Subject subject) {
-        super(methodInvocation);
-        this.subject = subject;
-    }
+    //- PUBLIC
 
     public Object invoke(final Object targetObject)
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
@@ -43,8 +41,8 @@ class AdminSessionRemoteInvocation extends RemoteInvocation {
             } catch (ServerNotActiveException e) {
                 logger.info("Unable to obtain admin IP address, assuming '"+remoteAddress+"'");
             }
-            if (logger.isTraceEnabled()) {
-                logger.trace("The subject is " + (subject == null ? "null" : "'"+extractPrincipalName(subject)+"', from address '"+remoteAddress+"'"));
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer("The subject is " + (subject == null ? "null" : "'"+extractPrincipalName(subject)+"', from address '"+remoteAddress+"'"));
             }
             return
               Subject.doAs(subject, new PrivilegedExceptionAction() {
@@ -70,6 +68,20 @@ class AdminSessionRemoteInvocation extends RemoteInvocation {
     public Subject getSubject() {
         return subject;
     }
+
+    //- PACKAGE
+
+    AdminSessionRemoteInvocation(MethodInvocation methodInvocation, Subject subject) {
+        super(methodInvocation);
+        this.subject = subject;
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(AdminSessionRemoteInvocation.class.getName());
+    private static final long serialVersionUID = -1067291570340905266L;
+
+    private final Subject subject;
 
     private String extractPrincipalName(Subject subject) {
            Set principals = subject.getPrincipals();

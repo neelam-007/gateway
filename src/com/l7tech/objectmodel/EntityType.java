@@ -1,18 +1,18 @@
 package com.l7tech.objectmodel;
 
+import java.io.ObjectStreamException;
+import java.io.Serializable;
+
+import com.l7tech.common.alert.AlertEvent;
+import com.l7tech.common.alert.Notification;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.alert.AlertEvent;
-import com.l7tech.common.alert.Notification;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.SampleMessage;
-
-import java.io.ObjectStreamException;
-import java.io.Serializable;
 
 /**
  * Type of entity represented by an EntityHeader.
@@ -36,6 +36,8 @@ public class EntityType implements Serializable {
     public static final EntityType SAMPLE_MESSAGE = new EntityType(10, SampleMessage.class);
     public static final EntityType MAXED_OUT_SEARCH_RESULT = new EntityType(11, String.class);
     public static final EntityType UNDEFINED = new EntityType(-1, null);
+
+    private static final long serialVersionUID = -5485680679515491927L;
 
     private int val;
     private Class entityClass;

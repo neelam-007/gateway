@@ -15,8 +15,6 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.cluster.ClusterStatusAdmin;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -24,6 +22,8 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
 
 import java.rmi.RemoteException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -35,7 +35,7 @@ import java.rmi.RemoteException;
  */
 public final class RegistryImpl extends Registry
   implements ApplicationContextAware, ApplicationListener {
-    protected final Log logger = LogFactory.getLog(getClass());
+    protected final Logger logger = Logger.getLogger(RegistryImpl.class.getName());
 
     private ApplicationContext applicationContext;
     private AdminContext adminContext = null;
@@ -245,7 +245,7 @@ public final class RegistryImpl extends Registry
 
 
      private void onLogoff(LogonEvent e) {
-         logger.trace("Logoff message received, invalidating admin context");
+         if(logger.isLoggable(Level.FINER)) logger.finer("Logoff message received, invalidating admin context");
          resetAdminContext();
      }
 

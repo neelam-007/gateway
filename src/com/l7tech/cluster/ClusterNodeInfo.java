@@ -174,6 +174,8 @@ public class ClusterNodeInfo implements Serializable {
         return result;
     }
 
+    private static final long serialVersionUID = 3387085760350960428L;
+    
     private String mac;
     private String address;
     private String name;

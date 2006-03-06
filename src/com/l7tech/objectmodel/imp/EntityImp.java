@@ -27,6 +27,8 @@ public class EntityImp implements Entity, Serializable {
     public int getVersion() { return _version; }
     public void setVersion(int version) { _version = version; }
 
+    private static final long serialVersionUID = -1265669197588490571L;
+
     protected int _version;
 	protected long _oid;
     protected transient long _loadTime;

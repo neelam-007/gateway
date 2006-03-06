@@ -110,6 +110,9 @@ public class EntityHeader implements Serializable, Comparable {
     // ************************************************
     // PRIVATES
     // ************************************************
+
+    private static final long serialVersionUID = -1752153501322477805L;
+
     private EntityType type;
     private String description;
     private String strId;

@@ -94,6 +94,8 @@ public class IdentityProviderType implements Serializable {
         FEDERATED
     };
 
+    private static final long serialVersionUID = 5766402770013082083L;
+
     private final int type;
     private final String description;
     private final String classname;

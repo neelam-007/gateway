@@ -83,6 +83,8 @@ public class GroupBean implements Group, Serializable {
         this.providerId = providerId;
     }
 
+    private static final long serialVersionUID = -2260828785148311161L;
+
     private String _uniqueId;
     private String _name;
     private String _description;

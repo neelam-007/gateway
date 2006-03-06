@@ -71,6 +71,8 @@ public class DeletedEntity implements NamedEntity, Serializable {
         throw new UnsupportedOperationException();
     }
 
+    private static final long serialVersionUID = 5741062976640065826L;
+
     private final Class entityClass;
     private String uniqueId;
     private long oid;

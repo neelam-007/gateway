@@ -74,6 +74,8 @@ final class RmiProxyStub implements InvocationHandler, Serializable {
 
     //- PRIVATE
 
+    private static final long serialVersionUID = -7877086141153801344L;
+
     private final transient Object exported; // only hold until serialized
     private final Object serviceProxy;
     private final Remote serviceStub;

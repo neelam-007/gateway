@@ -9,10 +9,10 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.util.Iterator;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null
@@ -32,7 +32,7 @@ import java.util.Iterator;
  * $Id$
  */
 public class IdentityRule implements Filter {
-    private static final Log logger = LogFactory.getLog(IdentityRule.class);
+    private static final Logger logger = Logger.getLogger(IdentityRule.class.getName());
     private final IdentityProviderConfigManager identityProviderConfigManager;
 
     public IdentityRule(FilterManager filterManager) {
@@ -49,7 +49,7 @@ public class IdentityRule implements Filter {
         if (assertionTree == null) return null;
         applyRules(assertionTree, null, null);
         if (anIdentityAssertionWasFound && !userPassedAtLeastOneIdentityAssertion && requestor != null) {
-            logger.error("This user is not authorized to consume this service. Policy filter returning null.");
+            logger.warning("This user is not authorized to consume this service. Policy filter returning null.");
             return null;
         }
         return assertionTree;
@@ -147,7 +147,7 @@ public class IdentityRule implements Filter {
                        return true;
                    }
                 } else {
-                    logger.warn("The assertion " + userass.toString() + " has no login nor name to compare with");
+                    logger.warning("The assertion " + userass.toString() + " has no login nor name to compare with");
                 }
             }
             return false;
@@ -158,21 +158,21 @@ public class IdentityRule implements Filter {
                 try {
                     IdentityProvider prov = identityProviderConfigManager.getIdentityProvider(idprovider);
                     if (prov == null) {
-                        logger.warn("IdentityProvider #" + idprovider + " no longer exists");
+                        logger.warning("IdentityProvider #" + idprovider + " no longer exists");
                         return false;
                     }
                     GroupManager gman = prov.getGroupManager();
                     Group grp = gman.findByPrimaryKey(grpmemship.getGroupId());
                     if (grp == null) {
-                        logger.warn("The group " + grpmemship.getGroupId() + " does not exist.");
+                        logger.warning("The group " + grpmemship.getGroupId() + " does not exist.");
                         return false;
                     }
                     return gman.isMember(user, grp);
                 } catch (FindException e) {
-                    logger.warn("Cannot get group from provider", e);
+                    logger.log(Level.WARNING, "Cannot get group from provider", e);
                     return false;
                 } catch (IllegalStateException e) {
-                    logger.warn("Cannot get group from provider", e);
+                    logger.log(Level.WARNING, "Cannot get group from provider", e);
                     return false;
                 }
             }

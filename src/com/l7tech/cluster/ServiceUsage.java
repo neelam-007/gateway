@@ -141,6 +141,8 @@ public class ServiceUsage implements Serializable {
 	return com.l7tech.common.util.HashCode.compute(serviceid, nodeid);
     }
 
+    private static final long serialVersionUID = 7989882004981151855L;
+
     private long serviceid;
     private String nodeid;
     private long requests;

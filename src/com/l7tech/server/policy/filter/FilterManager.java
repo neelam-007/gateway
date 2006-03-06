@@ -8,12 +8,11 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Logger;
 
 /**
  * Manages the filters that are applied to the policies before they are sent back to a requestor.
@@ -23,7 +22,7 @@ import java.lang.reflect.InvocationTargetException;
  * Date: Aug 14, 2003<br/>
  */
 public class FilterManager {
-    private final Log logger = LogFactory.getLog(getClass());
+    private final Logger logger = Logger.getLogger(FilterManager.class.getName());
     private final IdentityProviderConfigManager identityProviderConfigManager;
     private Class[] filterTypes = null;
 
@@ -32,7 +31,7 @@ public class FilterManager {
             throw new IllegalArgumentException("Identity Provider Config Manager cannot be null");
         }
         this.identityProviderConfigManager = identityProviderConfigManager;
-        
+
         if (filters == null) {
             throw new IllegalArgumentException("Filters cannot be null");
         }
@@ -67,7 +66,7 @@ public class FilterManager {
 
                 rootAssertion = filter.filter(policyRequestor, rootAssertion);
                 if (rootAssertion == null) {
-                    logger.warn("filter returned null root assertion " + filterTypes[i].getName());
+                    logger.warning("filter returned null root assertion " + filterTypes[i].getName());
                     return null;
                 }
             } catch (InstantiationException e) {
