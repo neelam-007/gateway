@@ -383,7 +383,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) throws IOException {
         String uri = req.getRequestURI();
         uri = uri.replaceAll("wsil", "wsdl");
-        String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), uri);
+        String output = createWSILDoc(req, services, req.getServerName(), Integer.toString(req.getServerPort()), uri);
         res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
         ServletOutputStream os = res.getOutputStream();
         os.print(output);
@@ -486,8 +486,39 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return false;
     }
 
+    private String resModeQueryString(PublishedService service) {
+        String urival = service.getRoutingUri();
+        if (urival == null) urival = "";
+        String nsval = "";
+        Set nsparams = nsResolver.getDistinctParameters(service);
+        // pick the first one not null or empty
+        for (Iterator iterator = nsparams.iterator(); iterator.hasNext();) {
+            String s = (String) iterator.next();
+            if (s != null) nsval = s;
+            if (s != null && s.length() > 0) break;
+        }
+        String sactionval = "";
+        Set sactionparams = sactionResolver.getDistinctParameters(service);
+        // pick the first one not null or empty
+        for (Iterator iterator = sactionparams.iterator(); iterator.hasNext();) {
+            String s = (String) iterator.next();
+            if (s != null) sactionval = s;
+            if (s != null && s.length() > 0) break;
+        }
+        return SecureSpanConstants.HttpQueryParameters.PARAM_URI + "=" + urival + "&amp;" +
+               SecureSpanConstants.HttpQueryParameters.PARAM_SACTION + "=" + sactionval + "&amp;" +
+               SecureSpanConstants.HttpQueryParameters.PARAM_NS + "=" + nsval;
+    }
 
-    private String createWSILDoc(Collection services, String host, String port, String uri) {
+    private boolean isResModeRequested(HttpServletRequest req) {
+        String modeparam = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_MODE);
+        if (modeparam != null) {
+            if (modeparam.toLowerCase().startsWith("res")) return true;
+        }
+        return false;
+    }
+
+    private String createWSILDoc(HttpServletRequest req, Collection services, String host, String port, String uri) {
         /*  Format of document:
             <?xml version="1.0"?>
             <inspection xmlns="http://schemas.xmlsoap.org/ws/2001/10/inspection/">
@@ -497,6 +528,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
               </service>
             </inspection>
         */
+        boolean isResModeRequested = isResModeRequested(req);
         String protocol = "http";
         if (port.equals("8443") || port.equals("443")) protocol = "https";
         StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -510,7 +542,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 outDoc.append("\t\t<abstract>").append(svc.getName()).append("</abstract>\n");
                 outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
                 outDoc.append("location=\"");
-                String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+                String query;
+                if (isResModeRequested) {
+                    query = resModeQueryString(svc);
+                } else {
+                    query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid());
+                }
                 outDoc.append(protocol).append("://").append(host).append(":").append(port).append(uri).append("?").append(query);
                 outDoc.append("\"/>\n");
                 outDoc.append("\t</service>\n");

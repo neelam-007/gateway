@@ -198,6 +198,16 @@ public class SecureSpanConstants {
         public static final String PARAM_NS = "ns";
 
         /**
+         * When getting WSIL document, this indicates whether the WSDL URL produced should
+         * use queries with PARAM_SERVICEOID or a combination or PARAM_URI, PARAM_SACTION and
+         * PARAM_NS.
+         * Omiting this param means use serviceoid. A value of 'res' means use later option.
+         *
+         * @see {@link com.l7tech.server.WsdlProxyServlet}
+         */
+        public static final String PARAM_MODE = "mode";
+
+        /**
          * Contains a nonzero value if the Bridge desires to perform certificate discovery.
          * TODO: This is a total mess; cert discovery should be a different servlet, not piggyback on policy servlet
          *
