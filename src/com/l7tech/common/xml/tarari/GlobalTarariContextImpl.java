@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * This class should only be referenced by other classes that are already contaminated with direct or indirect
  * static references to Tarari classes.  Anyone else should instead reference the uncontaminated interface
  * {@link GlobalTarariContext} instead.
- *
+ * <p/>
  * Locks used in this class:
  * <ul>
  * <li>instance monitor - used to protect xpath compilation, compiler generation count, and xpathChangedSinceLastCompilation

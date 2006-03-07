@@ -21,12 +21,6 @@ public interface TarariMessageContext {
     void close();
 
     /**
-     * @return the {@link GlobalTarariContext} compiler generation count that was in effect when this
-     *         TarariMessageContext was produced.
-     */
-    long getCompilerGeneration();
-
-    /**
      * Get the shared ElementCursor for this message context.  Caller is responsible for ensuring that only
      * one scope at a time tries to make use of this cursor without duplicating it first.
      *
