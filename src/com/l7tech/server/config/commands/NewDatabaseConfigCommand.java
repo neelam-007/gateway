@@ -2,8 +2,6 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.NewDatabaseConfigBean;
-import com.l7tech.server.config.beans.DatabaseConfigBean;
-import com.l7tech.server.config.DBActions;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
