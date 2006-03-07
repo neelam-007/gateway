@@ -235,37 +235,23 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         }
     }
 
-    /** @return the number of times the specified target namespace has been loaded. */
-    public int targetNamespaceLoadedMoreThanOnce(String targetNamespace) {
+    public Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri) {
         try {
             schemaLock.readLock().acquire();
             if (tnss == null) {
+                // shouldn't be possible -- supposed to call updateSchemasToCard after saving new policy but before making it active
                 logger.severe("tnss not loaded");
-                return 0;
+                return null; // fall back to software
             }
             int output = 0;
             for (int i = 0; i < tnss.length; i++) {
                 String tns = tnss[i];
-                if (tns.equals(targetNamespace)) {
+                if (tns.equals(desiredTargetNamespaceUri)) {
                     ++output;
                 }
             }
-            return output;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari schema read lock", e);
-        } finally {
-            schemaLock.readLock().release();
-        }
-    }
-
-    public Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri) {
-        try {
-            schemaLock.readLock().acquire();
-            if (targetNamespaceLoadedMoreThanOnce(desiredTargetNamespaceUri) != 1) {
-                // Fall back to software
-                return null;
-            }
+            if (output != 1)
+                return null; // Fall back to software
             //noinspection UnnecessaryBoxing
             return Boolean.valueOf(((TarariMessageContextImpl)doc).getRaxDocument().validate());
         } catch (InterruptedException e) {

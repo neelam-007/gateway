@@ -29,11 +29,6 @@ public interface GlobalTarariContext {
     public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException;
 
     /**
-     * returns the number of schemas loaded on the card that refers to a targetnamespace
-     */
-    public int targetNamespaceLoadedMoreThanOnce(String targetNamespace);
-
-    /**
      * Prepare a {@link com.l7tech.common.xml.xpath.CompiledXpath} instance that will use Tarari hardware acceleration features.
      *
      * @param compilableXpath the CompilableXpath to compile.  Must not be null.
