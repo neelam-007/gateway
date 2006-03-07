@@ -10,6 +10,8 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
+import com.l7tech.common.security.kerberos.KerberosException;
+import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.*;
@@ -355,7 +357,8 @@ public class WssProcessorImpl implements WssProcessor {
                 logger.warning(msg); // TODO remove redundant logging after debugging complete
                 throw new InvalidDocumentFormatException(msg);
             }
-            logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
+            if(logger.isLoggable(Level.FINEST))
+                logger.finest("Remembering SecurityTokenReference ID=" + id + " pointing at SAML assertion " + value);
             cntx.securityTokenReferenceElementToTargetElement.put(str, target);
         } if (SoapUtil.isValueTypeKerberos(valueType) && isKeyIdentifier) {
             if (encodingType == null || !encodingType.equals(SoapUtil.ENCODINGTYPE_BASE64BINARY)) {
@@ -370,17 +373,17 @@ public class WssProcessorImpl implements WssProcessor {
 
             String identifier = KerberosUtils.getSessionIdentifier(value);
             SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
-            if (secContext == null) {
-                //TODO kerberosize (so Kerberos SOAP fault is generated, or at least not a WS-SecureConv fault)
-                throw new BadSecurityContextException(identifier);
+            if (secContext != null) {
+                SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
+                                                                                  keyIdentifierElement,
+                                                                                  identifier);
+                cntx.securityTokens.add(secConTok);
             }
-            SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
-                                                                              keyIdentifierElement,
-                                                                              identifier);
-            cntx.securityTokens.add(secConTok);
+            else {
+                logger.warning("Could not find referenced Kerberos security token '"+value+"'.");
+            }
         } else {
             logger.warning("Ignoring SecurityTokenReference ID=" + id + " with ValueType of " + valueType);
-            return;
         }
     }
 
@@ -638,7 +641,7 @@ public class WssProcessorImpl implements WssProcessor {
                                         ProcessingStatusHolder cntx)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
-        logger.finest("Processing EncryptedKey");
+        if(logger.isLoggable(Level.FINEST)) logger.finest("Processing EncryptedKey");
 
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
@@ -887,7 +890,7 @@ public class WssProcessorImpl implements WssProcessor {
     private void processTimestamp(ProcessingStatusHolder ctx, final Element timestampElement)
             throws InvalidDocumentFormatException
     {
-        logger.finest("Processing Timestamp");
+        if(logger.isLoggable(Level.FINEST)) logger.finest("Processing Timestamp");
         if (ctx.timestamp != null)
             throw new InvalidDocumentFormatException("More than one Timestamp element was encountered in the Security header");
 
@@ -914,7 +917,7 @@ public class WssProcessorImpl implements WssProcessor {
                                             ProcessingStatusHolder cntx)
             throws ProcessorException, GeneralSecurityException, InvalidDocumentFormatException
     {
-        logger.finest("Processing BinarySecurityToken");
+        if(logger.isLoggable(Level.FINEST)) logger.finest("Processing BinarySecurityToken");
 
         // assume that this is a b64ed binary x509 cert, get the value
         String valueType = binarySecurityTokenElement.getAttribute("ValueType");
@@ -956,16 +959,26 @@ public class WssProcessorImpl implements WssProcessor {
             cntx.x509TokensById.put(wsuId, rememberedSecToken);
         }
         else {
-            cntx.securityTokens.add(new KerberosSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
+            try {
+                cntx.securityTokens.add(new KerberosSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
                                                                   wsuId,
                                                                   binarySecurityTokenElement));
+            }
+            catch(GeneralSecurityException gse) {
+                if(ExceptionUtils.causedBy(gse, KerberosConfigException.class)) {
+                    logger.info("Request contained Kerberos BinarySecurityToken but Kerberos is not configured.");
+                }
+                else {
+                    logger.log(Level.WARNING, "Request contained Kerberos BinarySecurityToken that could not be processed.", gse);
+                }
+            }
         }
     }
 
     private void processSamlSecurityToken(final Element securityTokenElement, ProcessingStatusHolder context)
             throws InvalidDocumentFormatException
     {
-        logger.finest("Processing saml:Assertion XML SecurityToken");
+        if(logger.isLoggable(Level.FINEST)) logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
             final SamlAssertion samlToken = new SamlAssertion(securityTokenElement, context.securityTokenResolver);
             if (samlToken.hasEmbeddedIssuerSignature()) {
@@ -1078,13 +1091,13 @@ public class WssProcessorImpl implements WssProcessor {
                 // try to see if this reference matches a previously parsed SigningSecurityToken
                 final X509SigningSecurityTokenImpl token = (X509SigningSecurityTokenImpl)cntx.x509TokensById.get(uriAttr);
                 if (token != null) {
-                    logger.finest("The keyInfo referred to a previously parsed Security Token '" + uriAttr + "'");
+                    if(logger.isLoggable(Level.FINEST)) logger.finest("The keyInfo referred to a previously parsed Security Token '" + uriAttr + "'");
                     return token;
                 }
 
                 final EncryptedKey ekToken = (EncryptedKey)cntx.encryptedKeyById.get(uriAttr);
                 if (ekToken != null) {
-                    logger.finest("The KeyInfo referred to a previously decrypted EncryptedKey '" + uriAttr + "'");
+                    if(logger.isLoggable(Level.FINEST)) logger.finest("The KeyInfo referred to a previously decrypted EncryptedKey '" + uriAttr + "'");
                     return ekToken;
                 }
 
@@ -1100,16 +1113,19 @@ public class WssProcessorImpl implements WssProcessor {
                     } else {
                         EncryptedKey found = cntx.securityTokenResolver.getEncryptedKeyBySha1(value);
                         if (found != null) {
-                            logger.finest("The KeyInfo referred to an already-known EncryptedKey token");
+                            if(logger.isLoggable(Level.FINEST))
+                                logger.finest("The KeyInfo referred to an already-known EncryptedKey token");
                             return found;
                         } else {
-                            logger.finest("The KeyInfo referred to an EncryptedKey token, but we did not recognize the EncryptedKeySHA1.");
+                            if(logger.isLoggable(Level.FINEST))
+                                logger.finest("The KeyInfo referred to an EncryptedKey token, but we did not recognize the EncryptedKeySHA1.");
                         }
                     }
                 } else if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_X509_THUMB_SHA1_SUFFIX)) {
                     SigningSecurityToken token = (SigningSecurityToken)cntx.x509TokensByThumbprint.get(value);
                     if (token != null) {
-                        logger.finest("The KeyInfo referred to a previously used X.509 token.");
+                        if(logger.isLoggable(Level.FINEST))
+                            logger.finest("The KeyInfo referred to a previously used X.509 token.");
                         return token;
                     }
 
@@ -1120,7 +1136,8 @@ public class WssProcessorImpl implements WssProcessor {
                         if (foundCert == null) {
                             logger.info("The KeyInfo referred to a ThumbprintSHA1, but we were unable to locate a matching cert");
                         } else {
-                            logger.finest("The KeyInfo referred to a recognized X.509 certificate by its thumbprint: " + foundCert.getSubjectDN().getName());
+                            if(logger.isLoggable(Level.FINEST))
+                                logger.finest("The KeyInfo referred to a recognized X.509 certificate by its thumbprint: " + foundCert.getSubjectDN().getName());
                             token = new X509BinarySecurityTokenImpl(foundCert, keyId);
                             cntx.securityTokens.add(token);
                             cntx.x509TokensByThumbprint.put(value, token);
@@ -1130,7 +1147,8 @@ public class WssProcessorImpl implements WssProcessor {
                 } else if (valueType != null && valueType.endsWith(SoapUtil.VALUETYPE_SKI_SUFFIX)) {
                     SigningSecurityToken token = (SigningSecurityToken)cntx.x509TokensBySki.get(value);
                     if (token != null) {
-                        logger.finest("The KeyInfo referred to a previously used X.509 token.");
+                        if(logger.isLoggable(Level.FINEST))
+                            logger.finest("The KeyInfo referred to a previously used X.509 token.");
                         return token;
                     }
 
@@ -1141,7 +1159,8 @@ public class WssProcessorImpl implements WssProcessor {
                         if (foundCert == null) {
                             logger.info("The KeyInfo referred to a SKI, but we were unable to locate a matching cert");
                         } else {
-                            logger.finest("The KeyInfo referred to a recognized X.509 certificate by its SKI: " + foundCert.getSubjectDN().getName());
+                            if(logger.isLoggable(Level.FINEST))
+                                logger.finest("The KeyInfo referred to a recognized X.509 certificate by its SKI: " + foundCert.getSubjectDN().getName());
                             token = new X509BinarySecurityTokenImpl(foundCert, keyId);
                             cntx.securityTokens.add(token);
                             cntx.x509TokensBySki.put(value, token);
@@ -1149,7 +1168,8 @@ public class WssProcessorImpl implements WssProcessor {
                         }
                     }
                 } else {
-                    logger.finest("The KeyInfo used an unsupported KeyIdentifier ValueType: " + valueType);
+                    if(logger.isLoggable(Level.FINEST))
+                        logger.finest("The KeyInfo used an unsupported KeyIdentifier ValueType: " + valueType);
                 }
             } else {
                 logger.warning("SecurityTokenReference does not contain any References");
@@ -1227,7 +1247,7 @@ public class WssProcessorImpl implements WssProcessor {
     private void processSignature(final Element sigElement, final ProcessingStatusHolder cntx)
             throws ProcessorException, InvalidDocumentFormatException
     {
-        logger.finest("Processing Signature");
+        if(logger.isLoggable(Level.FINEST)) logger.finest("Processing Signature");
 
         // 1st, process the KeyInfo
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);

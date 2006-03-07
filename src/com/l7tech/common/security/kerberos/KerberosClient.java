@@ -186,6 +186,31 @@ public class KerberosClient {
     }
 
     /**
+     * Used to check validity of server configuration.
+     *
+     * @throws KerberosException on error
+     */
+    public void checkKerberosService(final String servicePrincipalName) throws KerberosException {
+        KerberosServiceTicket ticket = null;
+        try {
+            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(servicePrincipalName));
+            loginContext.login();
+            try{
+                loginContext.logout();
+            }
+            catch(LoginException le) {
+                //whatever.
+            }
+        }
+        catch(SecurityException se) {
+            throw new KerberosConfigException("Kerberos configuration error.", se);
+        }
+        catch(LoginException le) {
+            throw new KerberosException("Could not login", le);
+        }
+    }
+
+    /**
      * Used to get a ticket in acceptance of a session.
      *
      * @return the ticket
@@ -233,6 +258,9 @@ public class KerberosClient {
             catch(LoginException le) {
                 //whatever.
             }
+        }
+        catch(SecurityException se) {
+            throw new KerberosConfigException("Kerberos configuration error.", se);
         }
         catch(LoginException le) {
             throw new KerberosException("Could not login", le);

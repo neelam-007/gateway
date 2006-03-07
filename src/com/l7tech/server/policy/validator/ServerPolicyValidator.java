@@ -2,6 +2,9 @@ package com.l7tech.server.policy.validator;
 
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.kerberos.KerberosException;
+import com.l7tech.common.security.kerberos.KerberosConfigException;
+import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
@@ -24,6 +27,7 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
@@ -238,6 +242,27 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 }
                 msg.append(".");
                 r.addError(new PolicyValidatorResult.Error(a, ap, msg.toString(), null));
+            }
+        }
+
+        // not else-if since this is also a credential source
+        if (a instanceof RequestWssKerberos) {
+            try {
+                KerberosClient client = new KerberosClient();
+                String spn = KerberosClient.getGSSServiceName();
+                client.checkKerberosService(spn);
+            }
+            catch(KerberosConfigException kce) {
+                r.addError(new PolicyValidatorResult.Error(a,
+                  ap,
+                  "Kerberos is not configured on the Gateway.",
+                  null));
+            }
+            catch(KerberosException ke) {
+                r.addError(new PolicyValidatorResult.Error(a,
+                  ap,
+                  "Gateway Kerberos configuration is invalid.",
+                  null));
             }
         }
     }
