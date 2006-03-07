@@ -39,6 +39,7 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -719,7 +720,9 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @return the ticket
      * @throws GeneralSecurityException is a ticket could not be obtained.
      */
-    public KerberosServiceTicket getKerberosServiceTicket() throws GeneralSecurityException {
+    public KerberosServiceTicket getKerberosServiceTicket() throws GeneralSecurityException, OperationCanceledException, HttpChallengeRequiredException {
+        final int flagCanceled = 0;
+        final boolean[] flags = new boolean[1];
         try {
             // determine the kerberos service/host
             String kerberosName = ssg.getKerberosName();
@@ -733,18 +736,25 @@ public class PolicyApplicationContext extends ProcessingContext {
             KerberosClient client = new KerberosClient();
             client.setCallbackHandler(new CallbackHandler(){
                 public void handle(Callback[] callbacks) {
-                    PasswordAuthentication pa = ssg.getRuntime().getCredentials();
-                    for (int i = 0; i < callbacks.length; i++) {
-                        Callback callback = callbacks[i];
-                        if(callback instanceof PasswordCallback) {
-                            PasswordCallback pc = (PasswordCallback) callback;
-                            if(pa!=null) pc.setPassword(pa.getPassword());
-                            else pc.setPassword(new char[]{' '});
+                    if(!flags[flagCanceled]) {
+                        try {
+                            PasswordAuthentication pa = getCredentialsForTrustedSsg();
+                            for (int i = 0; i < callbacks.length; i++) {
+                                Callback callback = callbacks[i];
+                                if(callback instanceof PasswordCallback) {
+                                    PasswordCallback pc = (PasswordCallback) callback;
+                                    if(pa!=null) pc.setPassword(pa.getPassword());
+                                    else pc.setPassword(new char[]{' '});
+                                }
+                                else if(callback instanceof NameCallback) {
+                                    NameCallback nc = (NameCallback) callback;
+                                    if(pa!=null) nc.setName(pa.getUserName());
+                                    else nc.setName(System.getProperty("user.name", ""));
+                                }
+                            }
                         }
-                        else if(callback instanceof NameCallback) {
-                            NameCallback nc = (NameCallback) callback;
-                            if(pa!=null) nc.setName(pa.getUserName());
-                            else nc.setName(System.getProperty("user.name", ""));
+                        catch(OperationCanceledException oce) {
+                            flags[flagCanceled] = true;
                         }
                     }
                 }
@@ -756,7 +766,14 @@ public class PolicyApplicationContext extends ProcessingContext {
             return kst;
         }
         catch(KerberosException ke) {
-            throw new GeneralSecurityException("Could not get Kerberos Ticket", ke);
+            if(flags[flagCanceled]) throw new OperationCanceledException("User did not supply credentials.");
+            if(ExceptionUtils.causedBy(ke, LoginException.class)) {
+                getNewCredentials();
+                return getKerberosServiceTicket();
+            }
+            else {
+                throw new GeneralSecurityException("Could not get Kerberos Ticket", ke);
+            }
         }
     }
 
