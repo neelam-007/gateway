@@ -26,9 +26,28 @@ import java.util.logging.Logger;
  */
 public class ServiceMetrics {
     private static final Logger logger = Logger.getLogger(ServiceMetrics.class.getName());
+
+    /**
+     * Protects {@link _currentFineBin}. This is reader-prefernce because the MessageProcessor "reads"
+     * the currentFineBin, whereas the archive task "writes."
+     */
     private final ReadWriteLock fineLock = new ReaderPreferenceReadWriteLock();
+
+    /**
+     * Protects {@link _currentHourlyBin}.  Not a ReadWriteLock due to infrequent use.
+     */
     private final Object hourlyLock = new Object();
+
+    /**
+     * Protects {@link _currentDailyBin}.  Not a ReadWriteLock due to infrequent use.
+     */
     private final Object dailyLock = new Object();
+
+    /**
+     * Archived bins are added to this {@link Channel} when they are finished.
+     *
+     * The {@link ServiceMetricsManager.Flusher} reads from this queue and writes to the database.
+     */
     private final Channel _queue;
 
     /**
