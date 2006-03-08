@@ -568,6 +568,15 @@
         </property>
     </bean>
 
+    <bean id="registryPublicationManager" class="com.l7tech.server.systinet.RegistryPublicationManager">
+        <property name="serverConfig">
+            <ref local="serverConfig"/>
+        </property>
+        <property name="keystore">
+            <ref local="keystore"/>
+        </property>
+    </bean>
+
     <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>

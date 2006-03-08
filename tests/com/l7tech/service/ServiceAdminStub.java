@@ -215,4 +215,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return output;
     }
 
+    public String publishToSystinetRegistry(String serviceoid) throws RemoteException, FindException {
+        throw new RuntimeException("Not Implemented");
+    }
+
 }

@@ -52,4 +52,10 @@ public interface ServiceAdminPublic {
      * @throws MalformedURLException thrown on malformed WSDL url
      */
     String resolveWsdlTarget(String url) throws RemoteException, IOException, MalformedURLException;
+
+    /**
+     * @param serviceoid id of the service to publish on the systinet registry
+     * @return registrykey
+     */
+    String publishToSystinetRegistry(String serviceoid) throws RemoteException, FindException;
 }

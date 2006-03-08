@@ -13,6 +13,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.systinet.RegistryPublicationManager;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.service.uddi.UddiAgentV3;
 import com.l7tech.server.sla.CounterIDManager;
@@ -45,7 +46,7 @@ import java.util.logging.Logger;
 
 /**
  * Server side implementation of the ServiceAdmin admin api.
- * 
+ *
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
@@ -64,6 +65,7 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     private Properties uddiProps = null;
     private ServerConfig serverConfig;
     private SSLContext sslContext;
+    private RegistryPublicationManager registryPublicationManager;
 
     private final AccessManager accessManager;
     private final LicenseManager licenseManager;
@@ -76,6 +78,7 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     public void setApplicationContext(ApplicationContext applicationContext) {
         if(this.applicationContext != null) throw new IllegalStateException("applicationContext is already initialized.");
         this.applicationContext = applicationContext;
+        registryPublicationManager = (RegistryPublicationManager)applicationContext.getBean("registryPublicationManager");
     }
 
     private void checkLicense() throws RemoteException {
@@ -489,5 +492,9 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
             hconf.setHost(url.getHost(), port, protocol);
         }
         return hconf;
+    }
+
+    public String publishToSystinetRegistry(String serviceoid) throws RemoteException, FindException {
+        return registryPublicationManager.publishServiceWSDLAndPolicy(serviceoid);
     }
 }
