@@ -1,7 +1,6 @@
 package com.l7tech.server.service;
 
-import EDU.oswego.cs.dl.util.concurrent.BoundedChannel;
-import EDU.oswego.cs.dl.util.concurrent.Channel;
+import EDU.oswego.cs.dl.util.concurrent.*;
 import com.l7tech.service.MetricsBin;
 
 import java.util.logging.Level;
@@ -24,10 +23,18 @@ import java.util.logging.Logger;
  * and the daily bin at midnight.
  *
  * @author rmak
- * @noinspection SynchronizeOnNonFinalField
  */
 public class ServiceMetrics {
     private static final Logger logger = Logger.getLogger(ServiceMetrics.class.getName());
+    private final ReadWriteLock fineLock = new ReaderPreferenceReadWriteLock();
+    private final Object hourlyLock = new Object();
+    private final Object dailyLock = new Object();
+    private final Channel _queue;
+
+    /**
+     * The OID of the {@link com.l7tech.service.PublishedService} for which these MetricsBins were
+     * collected.
+     */
     private final long _serviceOid;
 
     /**
@@ -45,15 +52,22 @@ public class ServiceMetrics {
      */
     private MetricsBin _currentDailyBin;
 
-    private final Channel _queue;
-
+    /**
+     * The interval, in milliseconds, to be used for fine bins.
+     * TODO what happens when the interval changes?
+     */
     private final int _fineInterval;
+
+    /**
+     * The MAC address of the cluster node for which these MetricsBins were collected.
+     */
     private final String _clusterNodeId;
 
     /**
      * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} for which metrics are being gathered
      * @param nodeId the MAC address of the cluster node for which metrics are being gathered
      * @param fineInterval the interval currently being used for buckets of {@link MetricsBin#RES_FINE} resolution
+     * TODO what happens when the interval changes?
      * @param queue the ServiceMetricsManager queue to which archived bins should be added
      */
     public ServiceMetrics(long serviceOid, String nodeId, int fineInterval, BoundedChannel queue) {
@@ -65,7 +79,7 @@ public class ServiceMetrics {
         this._queue = queue;
         _serviceOid = serviceOid;
         _clusterNodeId = nodeId;
-        _fineInterval = fineInterval;
+        _fineInterval = fineInterval; // TODO what happens when the interval changes?
 
         final long now = System.currentTimeMillis();
         _currentFineBin = new MetricsBin(now, fineInterval, MetricsBin.RES_FINE, nodeId, serviceOid);
@@ -78,7 +92,7 @@ public class ServiceMetrics {
     }
 
 
-    public String get_clusterNodeId() {
+    public String getClusterNodeId() {
         return _clusterNodeId;
     }
 
@@ -87,13 +101,21 @@ public class ServiceMetrics {
      */
     public void addAttemptedRequest(final int frontendResponseTime) {
         // Use locking to prevent the current bins from being archived when they are being modified.
-        synchronized (_currentFineBin) {
+        try {
+            fineLock.readLock().acquire();
             _currentFineBin.addAttemptedRequest(frontendResponseTime);
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted waiting for fine read lock");
+            Thread.currentThread().interrupt();
+        } finally {
+            fineLock.readLock().release();
         }
-        synchronized (_currentHourlyBin) {
+
+        synchronized (hourlyLock) {
             _currentHourlyBin.addAttemptedRequest(frontendResponseTime);
         }
-        synchronized (_currentDailyBin) {
+
+        synchronized (dailyLock) {
             _currentDailyBin.addAttemptedRequest(frontendResponseTime);
         }
     }
@@ -103,13 +125,21 @@ public class ServiceMetrics {
      */
     public void addAuthorizedRequest() {
         // Use locking to prevent the current bins from being archived when they are being modified.
-        synchronized (_currentFineBin) {
+        try {
+            fineLock.readLock().acquire();
             _currentFineBin.addAuthorizedRequest();
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted waiting for fine read lock");
+            Thread.currentThread().interrupt();
+        } finally {
+            fineLock.readLock().release();
         }
-        synchronized (_currentHourlyBin) {
+
+        synchronized (hourlyLock) {
             _currentHourlyBin.addAuthorizedRequest();
         }
-        synchronized (_currentDailyBin) {
+
+        synchronized (dailyLock) {
             _currentDailyBin.addAuthorizedRequest();
         }
     }
@@ -119,13 +149,21 @@ public class ServiceMetrics {
      */
     public void addCompletedRequest(final int backendResponseTime) {
         // Use locking to prevent the current bins from being archived when they are being modified.
-        synchronized (_currentFineBin) {
+        try {
+            fineLock.readLock().acquire();
             _currentFineBin.addCompletedRequest(backendResponseTime);
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted waiting for fine read lock");
+            Thread.currentThread().interrupt();
+        } finally {
+            fineLock.readLock().release();
         }
-        synchronized (_currentHourlyBin) {
+
+        synchronized (hourlyLock) {
             _currentHourlyBin.addCompletedRequest(backendResponseTime);
         }
-        synchronized (_currentDailyBin) {
+
+        synchronized (dailyLock) {
             _currentDailyBin.addCompletedRequest(backendResponseTime);
         }
     }
@@ -137,7 +175,8 @@ public class ServiceMetrics {
      */
     public void archiveFineBin(final int limit) {
         // Use locking to stop further modification to the current bin before it is archived.
-        synchronized (_currentFineBin) {
+        try {
+            fineLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
             _currentFineBin.setEndTime(now);
             try {
@@ -146,7 +185,13 @@ public class ServiceMetrics {
                 logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
             }
+            // TODO what happens when the interval changes?
             _currentFineBin = new MetricsBin(now, _fineInterval, MetricsBin.RES_FINE, _clusterNodeId, _serviceOid);
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "Interrupted waiting for fine write lock");
+            Thread.currentThread().interrupt();
+        } finally {
+            fineLock.writeLock().release();
         }
     }
 
@@ -157,7 +202,7 @@ public class ServiceMetrics {
      */
     public void archiveHourlyBin(final int limit) {
         // Use locking to stop further modification to the current bin before it is archived.
-        synchronized (_currentHourlyBin) {
+        synchronized (hourlyLock) {
             final long now = System.currentTimeMillis();
             _currentHourlyBin.setEndTime(now);
             try {
@@ -177,7 +222,7 @@ public class ServiceMetrics {
      */
     public void archiveDailyBin(final int limit) {
         // Use locking to stop further modification to the current bin before it is archived.
-        synchronized (_currentDailyBin) {
+        synchronized (dailyLock) {
             final long now = System.currentTimeMillis();
             _currentDailyBin.setEndTime(now);
             try {
