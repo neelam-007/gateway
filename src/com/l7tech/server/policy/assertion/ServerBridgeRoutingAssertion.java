@@ -61,7 +61,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     //- PUBLIC
 
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
-        super(ctx);
+        super(assertion, ctx);
         this.bridgeRoutingAssertion = assertion;
         this.auditor = new Auditor(this, ctx, logger);
 
@@ -146,7 +146,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                                               bridgeRoutingAssertion.getXmlSecurityActorToPromote());
 
                 if (bridgeRoutingAssertion.isTaiCredentialChaining()) {
-                    throw new PolicyAssertionException("BridgeRoutingAssertion unable to support TAI credential chaining");
+                    throw new PolicyAssertionException(data, "BridgeRoutingAssertion unable to support TAI credential chaining");
                 }
 
                 if (bridgeRoutingAssertion.isAttachSamlSenderVouches()) {

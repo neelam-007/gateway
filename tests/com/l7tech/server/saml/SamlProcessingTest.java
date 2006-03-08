@@ -30,6 +30,7 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import junit.extensions.TestSetup;
@@ -299,8 +300,8 @@ public class SamlProcessingTest extends TestCase {
     }
 
     private static void initializeServicesAndPolicies(ApplicationContext context)
-      throws IOException, FindException, DeleteException, UpdateException,
-      SaveException, VersionException, SAXException {
+            throws IOException, FindException, DeleteException, UpdateException,
+            SaveException, VersionException, SAXException, ServerPolicyException {
 
         ServiceAdmin serviceAdmin = (ServiceAdmin)context.getBean("serviceAdmin");
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
@@ -311,14 +312,14 @@ public class SamlProcessingTest extends TestCase {
 
         serviceDescriptors = new ServiceDescriptor[]{
             new ServiceDescriptor(TestDocuments.WSDL_DOC_LITERAL,
-              TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL),
-              getAuthenticationAssertionPolicy()),
+                                  TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL),
+                                  getAuthenticationAssertionPolicy()),
             new ServiceDescriptor(TestDocuments.WSDL_DOC_LITERAL2,
-              TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL2),
-              getAuthorizationAssertionPolicy()),
+                                  TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL2),
+                                  getAuthorizationAssertionPolicy()),
             new ServiceDescriptor(TestDocuments.WSDL_DOC_LITERAL3,
-              TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL3),
-              getAttributeAssertionPolicy())
+                                  TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL3),
+                                  getAttributeAssertionPolicy())
         };
 
         for (int i = 0; i < serviceDescriptors.length; i++) {

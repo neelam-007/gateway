@@ -323,7 +323,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         wssDecorator.decorateMessage(doc, responseDecoReq);
                     }
                 } catch (Exception e) {
-                    throw new PolicyAssertionException("Failed to apply WSS decoration to response", e);
+                    throw new PolicyAssertionException(null, "Failed to apply WSS decoration to response", e);
                 }
             }
 

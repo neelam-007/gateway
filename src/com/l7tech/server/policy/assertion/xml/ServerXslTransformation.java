@@ -146,7 +146,7 @@ public class ServerXslTransformation implements ServerAssertion {
                 } catch (TransformerException e) {
                     String msg = "error transforming document";
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-                    throw new PolicyAssertionException(msg, e);
+                    throw new PolicyAssertionException(subject, msg, e);
                 }
                 if (whichMimePart == 0) {
                     msgtotransform.getXmlKnob().setDocument(output);

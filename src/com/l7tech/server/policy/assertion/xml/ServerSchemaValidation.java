@@ -247,7 +247,7 @@ public class ServerSchemaValidation implements ServerAssertion {
             return checkRootNamespace(doc);
 
         } catch (SAXException e) {
-            throw new PolicyAssertionException("could not parse request or response document", e);
+            throw new PolicyAssertionException(null, "could not parse request or response document", e);
         } catch (NoSuchPartException e) {
             throw new RuntimeException(e); // Can't happen -- first part is currently never read destructively
         }

@@ -2,9 +2,11 @@ package com.l7tech.service;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
@@ -18,6 +20,7 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Class ServiceManagerStub.
@@ -36,9 +39,9 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     /**
      * Retreive the actual PublishedService object from it's oid.
      * 
-     * @param oid 
-     * @return 
-     * @throws FindException 
+     * @param oid
+     * @return
+     * @throws FindException
      */
     public PublishedService findByPrimaryKey(long oid) throws FindException {
         return (PublishedService)services.get(new Long(oid));
@@ -52,7 +55,7 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * Used by the console to retreive the actual wsdl located at a target
      * as seen by the ssg.
      * 
-     * @param url 
+     * @param url
      * @return a string containing the xml document
      */
     public String resolveWsdlTarget(String url) throws RemoteException {
@@ -72,11 +75,11 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     /**
      * saves a published service along with it's policy assertions
      * 
-     * @param service 
-     * @return 
-     * @throws SaveException 
+     * @param service
+     * @return
+     * @throws SaveException
      */
-    public long save(PublishedService service) throws SaveException {
+    public long save(PublishedService service) throws SaveException, ServerPolicyException {
         long oid = StubDataStore.defaultStore().nextObjectId();
         service.setOid(oid);
         Long key = new Long(oid);
@@ -114,10 +117,10 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * either way and the oid will dictate whether the object should be saved
      * or updated.
      * 
-     * @param service 
-     * @throws UpdateException 
+     * @param service
+     * @throws UpdateException
      */
-    public void update(PublishedService service) throws UpdateException {
+    public void update(PublishedService service) throws UpdateException, ServerPolicyException {
         Long key = new Long(service.getOid());
         if (services.get(key) == null) {
             throw new UpdateException("Record missing, service oid= " + service.getOid());
@@ -136,8 +139,8 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     /**
      * deletes the service
      * 
-     * @param service 
-     * @throws DeleteException 
+     * @param service
+     * @throws DeleteException
      */
     public void delete(PublishedService service) throws DeleteException {
         if (services.remove(new Long(service.getOid())) == null) {
@@ -182,8 +185,8 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
      * called at run time to discover which service is being invoked based
      * on the request headers and/or document.
      * 
-     * @param request 
-     * @return 
+     * @param request
+     * @return
      */
     public PublishedService resolveService(Message request) throws ServiceResolutionException {
         return null;
@@ -311,7 +314,11 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
                 PublishedService service;
                 for (Iterator i = services.iterator(); i.hasNext();) {
                     service = (PublishedService)i.next();
-                    serviceCache.cache(service);
+                    try {
+                        serviceCache.cache(service);
+                    } catch (ServerPolicyException e) {
+                        logger.log(Level.WARNING, "Service disabled: " + ExceptionUtils.getMessage(e));
+                    }
                 }
             }
             // make sure the integrity check is running

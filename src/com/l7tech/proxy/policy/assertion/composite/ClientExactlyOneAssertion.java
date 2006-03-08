@@ -24,7 +24,7 @@ import java.security.GeneralSecurityException;
  * @version $Revision$
  */
 public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
-    public ClientExactlyOneAssertion( ExactlyOneAssertion data ) {
+    public ClientExactlyOneAssertion( ExactlyOneAssertion data ) throws PolicyAssertionException {
         super( data );
         this.data = data;
     }

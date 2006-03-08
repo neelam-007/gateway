@@ -92,7 +92,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
                                                         elements,
                                                         getPastTenseOperationName());
         } catch (ProcessorException e) {
-            throw new PolicyAssertionException(e);
+            throw new PolicyAssertionException(data, e);
         }
         if (result.isFoundButWasntOperatedOn())
             context.setRequestPolicyViolated();

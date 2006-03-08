@@ -5,6 +5,8 @@
 
 package com.l7tech.common.xml.xpath;
 
+import java.util.NoSuchElementException;
+
 /**
  * Represents a set of nodes matched by a {@link com.l7tech.common.xml.xpath.CompiledXpath}.
  */
@@ -103,4 +105,49 @@ public interface XpathResultNodeSet {
      * @return the value, per the above, or null if the ordinal is out of range.
      */
     String getNodeValue(int ordinal);
+
+    /** A nodeset that is always empty. */
+    static final XpathResultNodeSet EMPTY_NODESET = new XpathResultNodeSet() {
+        public boolean isEmpty() {
+            return true;
+        }
+
+        public int size() {
+            return 0;
+        }
+
+        public XpathResultIterator getIterator() {
+            return EMPTY_ITERATOR;
+        }
+
+        public int getType(int ordinal) {
+            return -1;
+        }
+
+        public String getNodePrefix(int ordinal) {
+            return null;
+        }
+
+        public String getNodeLocalName(int ordinal) {
+            return null;
+        }
+
+        public String getNodeName(int ordinal) {
+            return null;
+        }
+
+        public String getNodeValue(int ordinal) {
+            return null;
+        }
+
+        protected final XpathResultIterator EMPTY_ITERATOR = new XpathResultIterator() {
+            public boolean hasNext() {
+                return false;
+            }
+
+            public void next(XpathResultNode template) throws NoSuchElementException {
+                throw new NoSuchElementException();
+            }
+        };
+    };
 }

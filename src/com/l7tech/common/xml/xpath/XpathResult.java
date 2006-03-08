@@ -9,16 +9,27 @@ package com.l7tech.common.xml.xpath;
  * Represents the result of passing a {@link com.l7tech.common.xml.xpath.CompiledXpath} to {@link com.l7tech.common.xml.ElementCursor#getXpathResult(com.l7tech.common.xml.xpath.CompiledXpath)}.
  */
 public interface XpathResult {
+    public static final short TYPE_NODESET = 1;
+    public static final short TYPE_BOOLEAN = 2;
+    public static final short TYPE_NUMBER  = 3;
+    public static final short TYPE_STRING  = 4;
+
     /** A utility result that is Boolean.TRUE. */
     XpathResult RESULT_TRUE = new Truth();
 
     /** A utility result that is Boolean.FALSE. */
     XpathResult RESULT_FALSE = new Falsehood();
 
-    public static final short TYPE_NODESET = 1;
-    public static final short TYPE_BOOLEAN = 2;
-    public static final short TYPE_NUMBER  = 3;
-    public static final short TYPE_STRING  = 4;
+    /** A utility result that is always an empty nodeset. */
+    XpathResult RESULT_EMPTY = new XpathResultAdapter() {
+        public short getType() {
+            return TYPE_NODESET;
+        }
+
+        public XpathResultNodeSet getNodeSet() {
+            return XpathResultNodeSet.EMPTY_NODESET;
+        }
+    };
 
     /**
      * Quickly check if the expression matched anything, depending on the result type.

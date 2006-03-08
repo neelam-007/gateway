@@ -275,8 +275,8 @@ public class PolicyService extends ApplicationObjectSupport {
         AssertionStatus status = null;
         if (!canSkipMetaPolicyStep) {
             logger.fine("Running meta-policy.");
-            ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
             try {
+                ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
                 status = policyPolicy.checkRequest(context);
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));
@@ -472,7 +472,7 @@ public class PolicyService extends ApplicationObjectSupport {
          * @param targetPolicy the policy targeted by a requestor.
          * @return the policy that should be validated by the policy download request for the passed target
          */
-    ServerAssertion constructPolicyPolicy(Assertion targetPolicy) {
+    ServerAssertion constructPolicyPolicy(Assertion targetPolicy) throws ServerPolicyException {
         AllAssertion base = new AllAssertion();
         base.addChild(new OneOrMoreAssertion(allCredentialAssertions));
         List allTargetIdentities = new ArrayList();

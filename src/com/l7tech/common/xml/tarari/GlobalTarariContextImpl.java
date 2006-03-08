@@ -12,6 +12,7 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.xpath.FastXpath;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.service.ServiceCache;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
  * <p/>
  * Locks used in this class:
  * <ul>
- * <li>instance monitor - used to protect xpath compilation, compiler generation count, and xpathChangedSinceLastCompilation
+ * <li>fastxpathLock - used to protect currentXpaths, XPathCompiler's static data structure, compilerGeneration, and xpathChangedSinceLastCompilation
  * <li>schemaLock - rwlock used to protect schemas in the card when they are being resynched with the database
  * </ul>
  *
@@ -52,6 +53,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     private String[] tnss;
     private boolean communitySchemaResolverSet = false;
     private ReadWriteLock schemaLock = new WriterPreferenceReadWriteLock();
+    ReadWriteLock fastxpathLock = new WriterPreferenceReadWriteLock();
 
     /**
      * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
@@ -59,29 +61,74 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     public void compileAllXpaths() {
         logger.fine("compiling xpath expressions");
         while (true) {
-            synchronized (this) {
+            try {
+                fastxpathLock.writeLock().acquire();
                 if (!xpathChangedSinceLastCompilation) {
                     logger.fine("skipping compilation since no changes to xpath expressions were detected");
                     return;
                 }
                 try {
                     String[] expressions = currentXpaths.getExpressions();
-                    XPathCompiler.compile(expressions, 0);
-                    currentXpaths.installed(expressions, nextCompilerGeneration());
+                    XPathCompiler.compile(expressions);
+                    currentXpaths.installed(expressions, ++compilerGeneration);
                     xpathChangedSinceLastCompilation = false;
                     return; // No exception, we're done
                 } catch (XPathCompilerException e) {
                     int badIndex = e.getErrorLine() - 1; // Silly Tarari, 1-based arrays are for kids!
-                    currentXpaths.remove(currentXpaths.getExpression(badIndex));
-                    if (currentXpaths.getExpression(0) == null)
-                        throw new IllegalStateException("Last XPath was removed without successful compilation");
+                    if (badIndex < 1) {
+                        // work around Tarari bug in latest RAXJ where it doesn't report the error line
+                        logger.warning("At least one fastxpath could not be compiled -- probing for and removing bad fastxpaths");
+                        probeForBadXpaths();
+                        /* FALLTHROUGH and try compiling again */
+                    } else {
+                        logger.fine("Disabling fastxpath for non-TNF expression with index #" + badIndex);
+                        currentXpaths.markInvalid(currentXpaths.getExpression(badIndex));
+                        if (currentXpaths.getExpression(0) == null)
+                            throw new IllegalStateException("Last XPath was removed without successful compilation");
+                        /* FALLTHROUGH and try compiling again */
+                    }
                 }
+            } catch (InterruptedException e) {
+                logger.warning("Interrupted while waiting for Tarari fastxpath write lock"); // probably being shut down
+                Thread.currentThread().interrupt();
+            } finally {
+                fastxpathLock.writeLock().release();
             }
         }
     }
 
-    private synchronized long nextCompilerGeneration() {
-        return ++compilerGeneration;
+    /**
+     * Attempt to work around RAXJ bug where error index is always zero by probing for bad xpaths, one by one.
+     * Must be called by someone who holds the fastxpath write lock.
+     * <p/>
+     * This method adds each current xpath to the set one at a time and tries to compile.  This way it can detect
+     * the bad expressions.
+     */
+    private void probeForBadXpaths() {
+        Set bad = new HashSet();
+        String[] exprs = currentXpaths.getExpressions();
+        String[] test = new String[exprs.length];
+        for (int i = 0; i < test.length; i++)
+            test[i] = "/UNUSED";
+        for (int i = 0; i < exprs.length; i++) {
+            final String expr = exprs[i];
+            try {
+                test[i] = expr;
+                logger.finest("Test compile of fastxpath: " + expr);
+                XPathCompiler.compile(test);
+            } catch (Exception e) {
+                test[i] = "/UNUSED";
+                bad.add(expr);
+                logger.fine("Compile failed for fastxpath: " + expr);
+            }
+        }
+        for (Iterator i = bad.iterator(); i.hasNext();) {
+            String expr = (String)i.next();
+            logger.fine("Disabling fastxpath for non-TNF expression: " + expr);
+            currentXpaths.markInvalid(expr);
+            if (currentXpaths.getExpression(0) == null)
+                throw new IllegalStateException("Last XPath was removed without successful compilation");
+        }
     }
 
     /**
@@ -90,17 +137,25 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      *
      * @return the compiler generation count of the most recently installed set of xpaths.
      */
-    public synchronized long getCompilerGeneration() {
-        return compilerGeneration;
+    public long getCompilerGeneration() {
+        try {
+            fastxpathLock.readLock().acquire();
+            return compilerGeneration;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari fastxpath read lock");
+        } finally {
+            fastxpathLock.readLock().release();
+        }
     }
 
     public CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException {
         return new TarariCompiledXpath(compilableXpath, this);
     }
 
-    public String toTarariNormalForm(String xpathToSimplify, Map namespaceMap) {
+    public FastXpath toTarariNormalForm(String xpathToSimplify, Map namespaceMap) {
         try {
-            return TarariXpathConverter.convertToTarariXpath(namespaceMap, xpathToSimplify);
+            return TarariXpathConverter.convertToFastXpath(namespaceMap, xpathToSimplify);
         } catch (ParseException e) {
             return null;
         }
@@ -115,17 +170,33 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      *
      * @param expression the XPath expression to add to the context.
      */
-    synchronized void addXpath(String expression) {
-        currentXpaths.add(expression);
-        xpathChangedSinceLastCompilation = true;
+    void addXpath(String expression) {
+        try {
+            fastxpathLock.writeLock().acquire();
+            currentXpaths.add(expression);
+            xpathChangedSinceLastCompilation = true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari fastxpath write lock");
+        } finally {
+            fastxpathLock.writeLock().release();
+        }
     }
 
     /**
      * Indicates that the caller is no longer interested in the specified expression.
      */
-    synchronized void removeXpath(String expression) {
-        currentXpaths.remove(expression);
-        xpathChangedSinceLastCompilation = true;
+    void removeXpath(String expression) {
+        try {
+            fastxpathLock.writeLock().acquire();
+            currentXpaths.remove(expression);
+            xpathChangedSinceLastCompilation = true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted while waiting for Tarari fastxpath write lock");
+        } finally {
+            fastxpathLock.writeLock().release();
+        }
     }
 
     /**

@@ -20,7 +20,7 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class ServerExactlyOneAssertion extends ServerCompositeAssertion implements ServerAssertion {
-    public ServerExactlyOneAssertion( ExactlyOneAssertion data, ApplicationContext applicationContext ) {
+    public ServerExactlyOneAssertion( ExactlyOneAssertion data, ApplicationContext applicationContext ) throws PolicyAssertionException {
         super( data, applicationContext );
         this.data = data;
     }

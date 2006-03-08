@@ -14,7 +14,8 @@ import java.util.Map;
  * - the array of indices in the expression array that correspond to the expressions used by isSoap
  * - the Map&lt;Integer,String&gt; of array indices to xpath expressions
  * - the Map&lt;String,Integer&gt; of xpath expressions to array indices
- * TODO this should be non-static inner class of GlobalTarariContextImpl, and share its mutex
+ *
+ * User is responsible for any needed synchronization.
  */
 class Xpaths {
     /** The lowest-numbered empty element in the {@link #expressions} list */
@@ -48,21 +49,14 @@ class Xpaths {
     }
 
     /**
-     * Register the specified xpath.
+     * Register the specified xpath.  Caller must hold the write lock.
      *
      * @param expr  the xpath expression to register.  Must a non-null String holding a Tarari Normal Form xpath.
      */
-    synchronized void add(String expr) {
+    void add(String expr) {
         if (expr == null) throw new NullPointerException("Expression must not be null");
         XpathHandle handle = (XpathHandle)expressionsToHandles.get(expr);
         if (handle == null) {
-/*
-            try {
-                new DOMXPath(expr);
-            } catch (Exception e) {
-                throw new InvalidXpathException(e);
-            }
-*/
             int index = findNextHole();
             handle = new XpathHandle(index, expr);
             expressionsToHandles.put(expr, handle);
@@ -71,7 +65,7 @@ class Xpaths {
         handle.ref();
     }
 
-    /** Caller must hold lock */
+    /** Caller must hold write lock. */
     private int findNextHole() {
         if (expressions.size() < nextHole+1) {
             expressions.add(UNUSED);
@@ -90,7 +84,8 @@ class Xpaths {
         return nextHole++;
     }
 
-    synchronized void remove(String expr) {
+    /** Caller must hold write lock. */
+    void remove(String expr) {
         XpathHandle handle = (XpathHandle)expressionsToHandles.get(expr);
         if (handle == null) return;
         handle.unref();
@@ -103,11 +98,21 @@ class Xpaths {
         }
     }
 
-    synchronized int[] getSoapUriIndices() {
+    /** Mark this expression as having been rejected by Tarari XPathCompiler. */
+    void markInvalid(String expr) {
+        XpathHandle handle = (XpathHandle)expressionsToHandles.get(expr);
+        if (handle == null) return;
+        handle.markInvalid();
+        expressions.set(handle.getIndex(), UNUSED);
+    }
+
+    /** Caller must hold read lock. */
+    int[] getSoapUriIndices() {
         return soapUriIndices;
     }
 
-    synchronized String[] getExpressions() {
+    /** Caller must hold read lock. */
+    String[] getExpressions() {
         return (String[])expressions.toArray(new String[0]);
     }
 
@@ -119,31 +124,33 @@ class Xpaths {
      *         or NO_SUCH_EXPRESSION otherwise.  Note that this is the zero-based Java index rather than the one-based
      *         Tarari index.
      */
-    synchronized int getIndex(String expression, long targetCompilerGeneration) {
+    int getIndex(String expression, long targetCompilerGeneration) {
         XpathHandle handle = (XpathHandle)expressionsToHandles.get(expression);
-        if (handle == null || !handle.isInstalled(targetCompilerGeneration)) {
+        if (handle == null || handle.isInvalid() || !handle.isInstalled(targetCompilerGeneration)) {
             return GlobalTarariContext.NO_SUCH_EXPRESSION;
         } else {
             return handle.getIndex();
         }
     }
 
-    synchronized String getExpression(int index) {
+    /** Caller must hold read lock. */
+    String getExpression(int index) {
         return (String)expressions.get(index);
     }
 
-    synchronized XpathHandle getHandle(String expression) {
+    /** Caller must hold read lock. */
+    XpathHandle getHandle(String expression) {
         return (XpathHandle)expressionsToHandles.get(expression);
     }
 
     /**
      * Mark the specified expression as installed and available in the hardware as of the specified compiler
-     * generation count.
+     * generation count.  Caller must hold read lock.
      *
      * @param expressions   the expression strings that have been installed.
      * @param compilerGeneration  the compiler generation in which they were installed.
      */
-    synchronized void installed(String[] expressions, long compilerGeneration) {
+    void installed(String[] expressions, long compilerGeneration) {
         for (int i = 0; i < expressions.length; i++) {
             String expression = expressions[i];
             XpathHandle handle = (XpathHandle)expressionsToHandles.get(expression);

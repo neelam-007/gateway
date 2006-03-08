@@ -7,6 +7,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
@@ -152,14 +153,14 @@ public class WspConstants {
             }
         },
 
-        new BasicTypeMapping(ComparisonAssertion.Operator.class, "operator") {
+        new BasicTypeMapping(ComparisonOperator.class, "operator") {
             protected String objectToString(Object target) {
-                ComparisonAssertion.Operator op = (ComparisonAssertion.Operator)target;
+                ComparisonOperator op = (ComparisonOperator)target;
                 return op.getShortName();
             }
 
             protected Object stringToObject(String value) throws InvalidPolicyStreamException {
-                ComparisonAssertion.Operator op = ComparisonAssertion.Operator.getByShortName(value);
+                ComparisonOperator op = ComparisonOperator.getByShortName(value);
                 if (op == null) throw new InvalidPolicyStreamException("Unknown Operator short name: '" + value + "'");
                 return op;
             }

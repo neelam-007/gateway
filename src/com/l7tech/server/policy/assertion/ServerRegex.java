@@ -80,7 +80,7 @@ public class ServerRegex implements ServerAssertion {
             // replacement set and replacement null
             if (isReplacement && replacement == null) {
                 auditor.logAndAudit(AssertionMessages.REGEX_NO_REPLACEMENT);
-                throw new PolicyAssertionException(AssertionMessages.REGEX_NO_REPLACEMENT.getMessage());
+                throw new PolicyAssertionException(regexAssertion, AssertionMessages.REGEX_NO_REPLACEMENT.getMessage());
             }
 
             InputStream is = messagePart.getInputStream(false);

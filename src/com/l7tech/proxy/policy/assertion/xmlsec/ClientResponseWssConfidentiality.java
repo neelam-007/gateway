@@ -83,7 +83,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
                                                         elementsThatWereEncrypted,
                                                         "encrypted");
         } catch (ProcessorException e) {
-            throw new PolicyAssertionException(e);
+            throw new PolicyAssertionException(data, e);
         }
         switch (result.getResultCode()) {
             case ProcessorResultUtil.NO_ERROR:

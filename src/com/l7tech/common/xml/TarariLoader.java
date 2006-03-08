@@ -10,6 +10,7 @@ import com.l7tech.common.message.SoapInfoFactory;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.beans.factory.BeanFactory;
@@ -110,8 +111,13 @@ public class TarariLoader {
      */
     public static void compile() {
         GlobalTarariContextImpl context = (GlobalTarariContextImpl)getGlobalContext();
-        if (context != null)
-            context.compileAllXpaths();
+        if (context != null) {
+            try {
+                context.compileAllXpaths();
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Unable to compile fastxpaths: all expressions will fallback to direct xpath: " + ExceptionUtils.getMessage(e), e);
+            }
+        }
     }
 
     public static void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {

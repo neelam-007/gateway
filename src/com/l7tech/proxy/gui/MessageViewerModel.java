@@ -12,6 +12,7 @@ import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -320,7 +321,13 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param policy
      */
     public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
-        appendMessage(new SavedPolicyMessage("Policy updated", binding, policy.getClientAssertion()));
+        ClientAssertion clientAssertion = null;
+        try {
+            clientAssertion = policy.getClientAssertion();
+        } catch (PolicyAssertionException e) {
+            // Fallthrough and use null
+        }
+        appendMessage(new SavedPolicyMessage("Policy updated", binding, clientAssertion));
     }
 
     /** Remove all saved messages from the list. */

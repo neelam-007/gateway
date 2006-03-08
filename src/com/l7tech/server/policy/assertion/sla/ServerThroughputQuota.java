@@ -6,26 +6,25 @@
  */
 package com.l7tech.server.policy.assertion.sla;
 
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.sla.CounterIDManager;
-import com.l7tech.server.sla.CounterManager;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultDetailImpl;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.variable.ExpandVariables;
-import com.l7tech.identity.User;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.common.xml.SoapFaultDetailImpl;
-import com.l7tech.common.util.SoapFaultUtils;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.sla.CounterIDManager;
+import com.l7tech.server.sla.CounterManager;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * Server side implementation of the ThroughputQuota assertion.
@@ -57,7 +56,7 @@ public class ServerThroughputQuota implements ServerAssertion {
                 return doDecrement(context);
         }
         // not supposed to happen
-        throw new PolicyAssertionException("This assertion is not configured properly. " +
+        throw new PolicyAssertionException(assertion, "This assertion is not configured properly. " +
                                            "Unsupported counterStrategy: " + assertion.getCounterStrategy());
     }
 

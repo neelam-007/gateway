@@ -31,7 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A CompiledXpath implementation that uses Tarari RAXJ features directly, and which will set up a fastxpath
+ * A CompiledXpath implementation that uses Tarari RAXJ features directly, and which will set up a fastXpath
  * expression if possible, but will fall back (lazily) to a DOM-based Jaxen xpath if all else fails.
  */
 class TarariCompiledXpath extends CompiledXpath {
@@ -39,10 +39,10 @@ class TarariCompiledXpath extends CompiledXpath {
     private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();
 
     // Globally registered expr for simultaneous xpath, or null if it couldn't be registered.
-    private final String globallyRegisteredExpr;
+    private final FastXpath fastXpath;
 
     // Parsed expression for direct XPath 1.0, or null if not available.
-    private final Expression parsedDirectExpression;
+    private final Expression directxpath;
 
     /**
      * Create a TarariCompiledXpath.  Do not call this directly unless you are GlobalTarariContextImpl.
@@ -53,9 +53,9 @@ class TarariCompiledXpath extends CompiledXpath {
     public TarariCompiledXpath(CompilableXpath compilableXpath, GlobalTarariContextImpl tarariContext) throws InvalidXpathException {
         super(compilableXpath.getExpressionForJaxen(), compilableXpath.getNamespaces());
         if (tarariContext == null) throw new NullPointerException();
-        this.globallyRegisteredExpr = setupSimultaneousXpath(tarariContext, compilableXpath);
-        this.parsedDirectExpression = setupDirectXpath(compilableXpath);
-        if (parsedDirectExpression == null) throw new InvalidXpathException("No direct XPath"); // can't happen
+        this.fastXpath = setupSimultaneousXpath(tarariContext, compilableXpath);
+        this.directxpath = setupDirectXpath(compilableXpath);
+        if (directxpath == null) throw new InvalidXpathException("No direct XPath"); // can't happen
     }
 
     /**
@@ -94,30 +94,30 @@ class TarariCompiledXpath extends CompiledXpath {
      * @param xp the expression to attempt to convert and register.  Must not be null.
      * @return  the registered expression, if and only if it was registered successfully; otherwise null.
      */
-    private static String setupSimultaneousXpath(GlobalTarariContextImpl tarariContext, CompilableXpath xp) {
+    private static FastXpath setupSimultaneousXpath(GlobalTarariContextImpl tarariContext, CompilableXpath xp) {
         if (tarariContext == null)
             throw new NullPointerException();
 
         // Convert this Xpath into tarari format
-        String expr = xp.toTarariNormalForm();
-        if (expr == null) {
-            logger.log(Level.FINE, "Expression not supported by simultaneous XPath -- will fallback to direct XPath: " +
+        FastXpath fastXpath = xp.toTarariNormalForm();
+        if (fastXpath == null) {
+            logger.log(Level.FINE, "Expression not supported by simultaneous XPath (too complex) -- will fallback to direct XPath: " +
                     xp.getExpressionForTarariFastxpath());
             return null;
         }
 
         // Register this Xpath with the tarari hardware
-        tarariContext.addXpath(expr);
-        return expr;
+        tarariContext.addXpath(fastXpath.getExpression());
+        return fastXpath;
     }
 
     public XpathResult getXpathResult(TarariElementCursor cursor) {
         final TarariMessageContextImpl tmContext = cursor.getTarariMessageContext();
-        if (globallyRegisteredExpr == null)
+        if (fastXpath == null || fastXpath.getExpression() == null)
             return fallbackToDirectXPath(tmContext); // expression was too complex to simplify into TNF
 
         final GlobalTarariContextImpl tarariContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
-        final int index = tarariContext.getXpathIndex(globallyRegisteredExpr, tmContext.getCompilerGeneration());
+        final int index = tarariContext.getXpathIndex(fastXpath.getExpression(), tmContext.getCompilerGeneration());
         if (index < 1)
             return fallbackToDirectXPath(tmContext); // expression wasn't loaded into the card yet
 
@@ -126,7 +126,24 @@ class TarariCompiledXpath extends CompiledXpath {
         final XPathResult xpathResult = tmContext.getXpathResult();
         final int numMatches = xpathResult.getCount(index);
 
-        // Bundle up the fastxpath result
+        // See if we are supposed to transform the result to a boolean
+        if (fastXpath.getCountComparison() != null) {
+            // Yep -- convert to simple boolean
+            return new XpathResult.XpathResultAdapter() {
+                public short getType() {
+                    return TYPE_BOOLEAN;
+                }
+
+                public boolean getBoolean() {
+                    return fastXpath.getCountComparison().compare(Integer.valueOf(numMatches), fastXpath.getCountValue(), false);
+                }
+            };
+        }
+
+        if (numMatches < 1)
+            return XpathResult.RESULT_EMPTY;
+
+        // Bundle up the fastXpath result
         return new XpathResult.XpathResultAdapter() {
             FNodeSet ns = null;
 
@@ -139,15 +156,18 @@ class TarariCompiledXpath extends CompiledXpath {
             }
 
             public XpathResultNodeSet getNodeSet() {
-                if (ns == null) ns = xpathResult.getNodeSet(index);
-
                 return new XpathResultNodeSet() {
+                    private FNodeSet ns() {
+                        if (ns == null) ns = xpathResult.getNodeSet(index);
+                        return ns;
+                    }
+
                     public boolean isEmpty() {
-                        return ns.size() > 0;
+                        return numMatches > 0;
                     }
 
                     public int size() {
-                        return ns.size();
+                        return numMatches;
                     }
 
                     public XpathResultIterator getIterator() {
@@ -157,12 +177,12 @@ class TarariCompiledXpath extends CompiledXpath {
                             FNode node = null;
 
                             public boolean hasNext() {
-                                return cur < ns.size();
+                                return ns() != null && cur < ns().size();
                             }
 
                             public void next(XpathResultNode t) throws NoSuchElementException {
-                                if (cur >= size) throw new NoSuchElementException("No more matching nodes");
-                                node = ns.getNode(cur++);
+                                if (cur >= size || ns() == null) throw new NoSuchElementException("No more matching nodes");
+                                node = ns().getNode(cur++);
                                 t.type = getDomTypeForFnode(node);
                                 t.localNameHaver = node.getLocalName();
                                 t.nodeNameHaver = node.getQName();
@@ -178,27 +198,32 @@ class TarariCompiledXpath extends CompiledXpath {
                     }
 
                     public int getType(int ordinal) {
-                        FNode node = ns.getNode(ordinal);
+                        if (ns() == null) return -1;
+                        FNode node = ns().getNode(ordinal);
                         return getDomTypeForFnode(node);
                     }
 
                     public String getNodePrefix(int ordinal) {
-                        FNode node = ns.getNode(ordinal);
+                        if (ns() == null) return null;
+                        FNode node = ns().getNode(ordinal);
                         return node.getPrefix();
                     }
 
                     public String getNodeLocalName(int ordinal) {
-                        FNode node = ns.getNode(ordinal);
+                        if (ns() == null) return null;
+                        FNode node = ns().getNode(ordinal);
                         return node.getLocalName();
                     }
 
                     public String getNodeName(int ordinal) {
-                        FNode node = ns.getNode(ordinal);
+                        if (ns() == null) return null;
+                        FNode node = ns().getNode(ordinal);
                         return node.getQName();
                     }
 
                     public String getNodeValue(int ordinal) {
-                        FNode node = ns.getNode(ordinal);
+                        if (ns() == null) return null;
+                        FNode node = ns().getNode(ordinal);
                         return node.getXPathValue();
                     }
                 };
@@ -227,7 +252,7 @@ class TarariCompiledXpath extends CompiledXpath {
         XPathContext xpathContext = new XPathContext();
         xpathContext.setNode(cursor);
 
-        final XObject xo = parsedDirectExpression.toXObject(xpathContext);
+        final XObject xo = directxpath.toXObject(xpathContext);
         int resultType = xo.getType();
         switch (resultType) {
             case XObject.TYPE_BOOLEAN:
@@ -275,6 +300,8 @@ class TarariCompiledXpath extends CompiledXpath {
 
         // It's a nodeset.
         final XNodeSet ns = xo.toNodeSet();
+        if (ns.size() < 1)
+            return XpathResult.RESULT_EMPTY;
 
         // Bundle up the direct xpath nodeset
         return new XpathResult.XpathResultAdapter() {
@@ -367,11 +394,11 @@ class TarariCompiledXpath extends CompiledXpath {
     }
 
     protected void finalize() throws Throwable {
-        if (globallyRegisteredExpr != null) {
+        if (fastXpath != null && fastXpath.getExpression() != null) {
             // Decrement the reference count for this Xpath with the Tarari hardware
             GlobalTarariContextImpl tarariContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
             if (tarariContext != null)
-                tarariContext.removeXpath(globallyRegisteredExpr);
+                tarariContext.removeXpath(fastXpath.getExpression());
             else
                 logger.severe("Registered a global xpath, the global context isn't here anymore"); // can't happen
         }

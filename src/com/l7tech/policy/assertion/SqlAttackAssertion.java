@@ -110,7 +110,7 @@ public class SqlAttackAssertion extends Assertion {
     public static String getProtectionLabel(String protection) throws PolicyAssertionException {
         String got = lookupName(protection, LABEL);
         if (got == null)
-            throw new PolicyAssertionException("No label for protection \"" + protection + "\"");
+            throw new PolicyAssertionException(null, "No label for protection \"" + protection + "\"");
         return got;
     }
 
@@ -124,7 +124,7 @@ public class SqlAttackAssertion extends Assertion {
     public static String getProtectionDescription(String protection) throws PolicyAssertionException {
         String got = lookupName(protection, DESC);
         if (got == null)
-            throw new PolicyAssertionException("No label for protection \"" + protection + "\"");
+            throw new PolicyAssertionException(null, "No label for protection \"" + protection + "\"");
         return got;
     }
 

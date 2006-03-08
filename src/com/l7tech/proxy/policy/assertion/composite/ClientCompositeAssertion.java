@@ -17,14 +17,16 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
  * @version $Revision$
  */
 public abstract class ClientCompositeAssertion extends ClientAssertion {
+    private CompositeAssertion bean;
     protected ClientAssertion[] children;
 
     public ClientCompositeAssertion() {
         super();
     }
 
-    public ClientCompositeAssertion( CompositeAssertion composite ) {
+    public ClientCompositeAssertion( CompositeAssertion composite ) throws PolicyAssertionException {
         this.children = (ClientAssertion[])ClientPolicyFactory.getInstance().makeCompositePolicy(composite).toArray( new ClientAssertion[0] );
+        this.bean = composite;
     }
 
     /**
@@ -57,7 +59,7 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
      */
     public void mustHaveChildren() throws PolicyAssertionException {
         if ( children.length == 0 )
-            throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
+            throw new PolicyAssertionException(bean, "CompositeAssertion has no children: " + this);
     }
 
     public String toString() {
@@ -73,6 +75,6 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
 
     protected void mustHaveChildren(CompositeAssertion data) throws PolicyAssertionException {
         if (data.getChildren().isEmpty())
-            throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
+            throw new PolicyAssertionException(bean, "CompositeAssertion has no children: " + this);
     }
 }

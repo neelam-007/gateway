@@ -8,6 +8,7 @@ package com.l7tech.proxy.gui.dialogs;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.proxy.datamodel.Policy;
@@ -17,6 +18,7 @@ import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -496,7 +498,13 @@ class SsgPoliciesPanel extends JPanel {
             if (lastSelectedPolicy != null)
                 policy = policyCache.getPolicy(lastSelectedPolicy);
         }
-        policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
+        ClientAssertion clientAssertion = null;
+        try {
+            clientAssertion = policy == null ? null : policy.getClientAssertion();
+        } catch (PolicyAssertionException e) {
+            // fallthrough and use null
+        }
+        policyTree.setModel((policy == null || clientAssertion == null) ? null : new PolicyTreeModel(clientAssertion));
         int erow = 0;
         while (erow < policyTree.getRowCount()) {
             policyTree.expandRow(erow++);

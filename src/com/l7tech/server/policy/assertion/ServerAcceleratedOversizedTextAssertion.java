@@ -21,6 +21,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.rax.token.XmlToken;
 import com.tarari.xml.rax.token.XmlTokenList;
@@ -43,7 +44,7 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
     private final OversizedTextAssertion ota;
     private final CompiledXpath nestingLimitChecker;
 
-    public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) {
+    public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
         auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
         softwareFallback = new ServerOversizedTextAssertion(data, springContext);
         this.ota = data;

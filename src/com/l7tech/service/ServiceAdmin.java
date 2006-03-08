@@ -3,6 +3,7 @@ package com.l7tech.service;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.server.policy.ServerPolicyException;
 
 import java.rmi.RemoteException;
 
@@ -37,9 +38,10 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @throws SaveException   if the requested information could not be saved
      * @throws UpdateException if the requested information could not be updated
      * @throws VersionException if the service version conflict is detected
+     * @throws ServerPolicyException if the server policy could not be instantiated for this policy
      */
     long savePublishedService(PublishedService service)
-                    throws RemoteException, UpdateException, SaveException, VersionException;
+            throws RemoteException, UpdateException, SaveException, VersionException, ServerPolicyException;
 
     /**
      * Validate the service policy and return the policy validation result. Only the server side validation rules

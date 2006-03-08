@@ -44,12 +44,14 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
 
     // instance
     protected final ApplicationContext applicationContext;
+    protected final RoutingAssertion data;
 
     /**
      *
      */
-    protected ServerRoutingAssertion(ApplicationContext applicationContext) {
+    protected ServerRoutingAssertion(RoutingAssertion data, ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+        this.data = data;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
     
@@ -88,7 +90,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                     String msg = "this option is not supported for non-soap messages. this message is " +
                                  "supposed to be soap but does not appear to be";
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
-                    throw new PolicyAssertionException(msg);
+                    throw new PolicyAssertionException(data, msg);
                 }
                 if (defaultSecHeader != null) {
                     defaultSecHeader.getParentNode().removeChild(defaultSecHeader);
@@ -101,7 +103,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                         String msg = "this option is not supported for non-soap messages. this message is " +
                                      "supposed to be soap but does not appear to be";
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
-                        throw new PolicyAssertionException(msg);
+                        throw new PolicyAssertionException(data, msg);
                     }
                     if (header != null) {
                         if (XmlUtil.elementIsEmpty(header)) {
@@ -138,7 +140,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                     String msg = "this option is not supported for non-soap messages. this message is " +
                                  "supposed to be soap but does not appear to be";
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_FORMAT, null, e);
-                    throw new PolicyAssertionException(msg);
+                    throw new PolicyAssertionException(data, msg);
                 }
             }
 
@@ -156,7 +158,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
                     String msg = "this option is not supported for non-soap messages. " +
                                  "something is wrong with this policy";
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_NON_SOAP_WRONG_POLICY, null, e);
-                    throw new PolicyAssertionException(msg);
+                    throw new PolicyAssertionException(data, msg);
                 }
                 if (secHeaderToPromote != null) {
                     // do it

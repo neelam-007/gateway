@@ -60,7 +60,7 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
                     try {
                         wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
                     } catch (CertificateException e) {
-                        throw new PolicyAssertionException("cannot initialize recipient", e);
+                        throw new PolicyAssertionException(data, "cannot initialize recipient", e);
                     }
                 }
 

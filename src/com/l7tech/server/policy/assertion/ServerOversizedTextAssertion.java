@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.ServerPolicyException;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class ServerOversizedTextAssertion implements ServerAssertion {
     private final ServerAssertion delegate;
     private final ServerAssertion nestingDepthChecker;
 
-    public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) {
+    public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
 
         PolicyFactory pf = (ServerPolicyFactory)springContext.getBean("policyFactory");

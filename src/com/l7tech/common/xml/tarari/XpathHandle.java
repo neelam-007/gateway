@@ -13,6 +13,7 @@ class XpathHandle {
     private final int index;
     private final String expression;
     private long firstCompilerGeneration = -1;
+    private boolean invalid = false;
 
     /**
      * Create a handle for tracking a compilable xpath.
@@ -36,6 +37,16 @@ class XpathHandle {
 
     public synchronized void ref() {
         refCount++;
+    }
+
+    /** Mark this expression as having been rejected by the Tarari XPathCompiler. */
+    synchronized void markInvalid() {
+        invalid = true;
+    }
+
+    /** @return true if this handle has been marked as invalid. */
+    synchronized boolean isInvalid() {
+        return invalid;
     }
 
     public synchronized void unref() {

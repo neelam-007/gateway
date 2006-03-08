@@ -20,7 +20,7 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class ServerAllAssertion extends ServerCompositeAssertion implements ServerAssertion {
-    public ServerAllAssertion(AllAssertion data, ApplicationContext applicationContext) {
+    public ServerAllAssertion(AllAssertion data, ApplicationContext applicationContext) throws PolicyAssertionException {
         super(data, applicationContext);
         this.data = data;
     }

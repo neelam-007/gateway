@@ -39,6 +39,7 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.event.system.TokenServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
@@ -94,7 +95,11 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         this.serverPrivateKey = privateServerKey;
         this.serverCert = serverCert;
         this.securityTokenResolver = securityTokenResolver;
-        this.tokenServicePolicy = policyFactory.makeServerPolicy(getGenericEnforcementPolicy());
+        try {
+            this.tokenServicePolicy = policyFactory.makeServerPolicy(getGenericEnforcementPolicy());
+        } catch (ServerPolicyException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     public class TokenServiceException extends Exception {

@@ -29,13 +29,13 @@ public class InetAddressAssertion extends Assertion {
                 if ( b >= 0 && b < 256 )
                     netBytes[i] = (byte)(b & 0x7f);
                 else
-                    throw new PolicyAssertionException( "Invalid octet value " + b );
+                    throw new PolicyAssertionException(this, "Invalid octet value " + b );
 
                 InetAddress ia = InetAddress.getByAddress( netBytes );
             } catch ( UnknownHostException uhe ) {
-                throw new PolicyAssertionException( uhe.getMessage(), uhe );
+                throw new PolicyAssertionException(this, uhe.getMessage(), uhe );
             } catch ( NumberFormatException nfe ) {
-                throw new PolicyAssertionException( nfe.getMessage(), nfe );
+                throw new PolicyAssertionException(this, nfe.getMessage(), nfe );
             }
         }
 

@@ -77,7 +77,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             AssertionStatus status = cfe.getStatus();
             if (status == null) {
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO, null, cfe);
-                throw new PolicyAssertionException(cfe.getMessage(), cfe);
+                throw new PolicyAssertionException(_data, cfe.getMessage(), cfe);
             } else {
                 context.addResult( new AssertionResult( _data, status, cfe.getMessage() ) );
                 challenge( context, authParams );

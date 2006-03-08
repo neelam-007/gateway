@@ -56,6 +56,7 @@ import java.util.logging.Logger;
 public class ServerCustomAssertionHolder implements ServerAssertion {
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
+    private final CustomAssertionHolder data;
     final protected CustomAssertion customAssertion;
     final private boolean isAuthAssertion;
     private CustomAssertionDescriptor descriptor;
@@ -68,6 +69,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         if (ca == null || ca.getCustomAssertion() == null) {
             throw new IllegalArgumentException();
         }
+        this.data = ca;
         this.applicationContext = springContext;
         customAssertion = ca.getCustomAssertion(); // ignore hoder
         isAuthAssertion = Category.ACCESS_CONTROL.equals(ca.getCategory());
@@ -81,16 +83,16 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         if (!checkDescriptor(descriptor)) {
             logger.warning("Invalid custom assertion descriptor detected for '" + customAssertion.getClass() + "'\n" +
               " this policy element is misconfigured and will cause the policy to fail.");
-            throw new PolicyAssertionException("Custom assertion is misconfigured");
+            throw new PolicyAssertionException(data, "Custom assertion is misconfigured");
         }
         Class sa = descriptor.getServerAssertion();
         try {
             serviceInvocation = (ServiceInvocation)sa.newInstance();
             serviceInvocation.setCustomAssertion(customAssertion);
         } catch (InstantiationException e) {
-            throw new PolicyAssertionException("Custom assertion is misconfigured", e);
+            throw new PolicyAssertionException(data, "Custom assertion is misconfigured", e);
         } catch (IllegalAccessException e) {
-            throw new PolicyAssertionException("Custom assertion is misconfigured", e);
+            throw new PolicyAssertionException(data, "Custom assertion is misconfigured", e);
         }
     }
 
@@ -125,7 +127,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
             if (!checkDescriptor(descriptor)) {
                 auditor.logAndAudit(AssertionMessages.CA_INVALID_CA_DESCRIPTOR, new String[] {customAssertion.getClass().getName()});
-                throw new PolicyAssertionException("Custom assertion is misconfigured, service '" + service.getName() + "'");
+                throw new PolicyAssertionException(data, "Custom assertion is misconfigured, service '" + service.getName() + "'");
             }
             Subject subject = new Subject();
             LoginCredentials principalCredentials = context.getCredentials();

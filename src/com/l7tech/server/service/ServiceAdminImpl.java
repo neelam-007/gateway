@@ -4,16 +4,16 @@ import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.service.uddi.UddiAgentV3;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
@@ -24,8 +24,8 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -200,8 +200,7 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
      *
      */
     public long savePublishedService(PublishedService service)
-            throws RemoteException, UpdateException, SaveException, VersionException
-    {
+            throws RemoteException, UpdateException, SaveException, VersionException, ServerPolicyException {
             accessManager.enforceAdminRole();
             checkLicense();
             long oid = PublishedService.DEFAULT_OID;

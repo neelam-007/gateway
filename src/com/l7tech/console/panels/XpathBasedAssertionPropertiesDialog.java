@@ -10,6 +10,7 @@ import com.l7tech.common.security.xml.XencAlgorithm;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.*;
+import com.l7tech.common.xml.xpath.FastXpath;
 import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.console.action.Actions;
@@ -1015,7 +1016,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         // Check if hardware accel is known not to work with this xpath
         String convertedXpath = xpath;
         try {
-            convertedXpath = TarariXpathConverter.convertToTarariXpath(nsMap, xpath);
+            FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
+            convertedXpath = fastXpath.getExpression();
             testEvaluator.evaluate(convertedXpath);
             hardwareFeedback = null;
         } catch (ParseException e) {

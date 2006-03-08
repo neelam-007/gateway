@@ -24,7 +24,7 @@ import java.security.GeneralSecurityException;
  * @version $Revision$
  */
 public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
-    public ClientOneOrMoreAssertion( OneOrMoreAssertion data ) {
+    public ClientOneOrMoreAssertion( OneOrMoreAssertion data ) throws PolicyAssertionException {
         super( data );
         this.data = data;
     }

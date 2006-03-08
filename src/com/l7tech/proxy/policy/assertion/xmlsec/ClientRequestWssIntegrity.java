@@ -83,17 +83,17 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
                     wssReqs.getElementsToSign().addAll(elements);
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {
-                    throw new PolicyAssertionException("ClientRequestWssIntegrity: " +
+                    throw new PolicyAssertionException(requestWssIntegrity, "ClientRequestWssIntegrity: " +
                                                        "Unable to execute xpath expression \"" +
                                                        xpathExpression.getExpression() + "\"", e);
                 } catch (IOException e) {
                     String msg = "Cannot initialize the recipient's  DecorationRequirements";
                     log.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(msg, e);
+                    throw new PolicyAssertionException(requestWssIntegrity, msg, e);
                 } catch (CertificateException e) {
                     String msg = "Cannot initialize the recipient's  DecorationRequirements";
                     log.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(msg, e);
+                    throw new PolicyAssertionException(requestWssIntegrity, msg, e);
                 }
             }
         });

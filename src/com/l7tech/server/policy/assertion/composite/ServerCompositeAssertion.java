@@ -19,11 +19,13 @@ import org.springframework.context.ApplicationContext;
  * @version $Revision$
  */
 public abstract class ServerCompositeAssertion implements ServerAssertion {
+    private final CompositeAssertion bean;
     protected ServerAssertion[] children;
     private ApplicationContext applicationContext;
 
-    public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext context ) {
+    public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext context ) throws PolicyAssertionException {
         this.applicationContext = context;
+        this.bean = composite;
         if (applicationContext == null) {
             throw new IllegalArgumentException("The Application Context is required");
         }
@@ -41,12 +43,12 @@ public abstract class ServerCompositeAssertion implements ServerAssertion {
      */
     public void mustHaveChildren() throws PolicyAssertionException {
         if ( children.length == 0 )
-            throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
+            throw new PolicyAssertionException(bean, "CompositeAssertion has no children: " + this);
     }
 
-    protected final static void mustHaveChildren(CompositeAssertion ca) throws PolicyAssertionException {
+    protected final void mustHaveChildren(CompositeAssertion ca) throws PolicyAssertionException {
         if (ca.getChildren().isEmpty())
-            throw new PolicyAssertionException("CompositeAssertion has no children: " + ca);            
+            throw new PolicyAssertionException(bean, "CompositeAssertion has no children: " + ca);            
     }
 
     public String toString() {

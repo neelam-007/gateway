@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.xml.XpathExpression;
@@ -222,7 +223,7 @@ public class WspReaderTest extends TestCase {
         ComparisonAssertion comp = (ComparisonAssertion)ass.getChildren().get(0);
         assertEquals(comp.getExpression1(), "foo");
         assertEquals(comp.getExpression2(), "bar");
-        assertEquals(comp.getOperator(), ComparisonAssertion.Operator.EQ);
+        assertEquals(comp.getOperator(), ComparisonOperator.EQ);
         assertFalse(comp.isNegate());
     }
 

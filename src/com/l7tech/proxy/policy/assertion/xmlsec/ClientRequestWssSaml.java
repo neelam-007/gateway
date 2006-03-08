@@ -97,11 +97,11 @@ public class ClientRequestWssSaml extends ClientAssertion {
                 } catch (IOException e) {
                     String msg = "Cannot initialize the recipient's  DecorationRequirements";
                     logger.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(msg, e);
+                    throw new PolicyAssertionException(data, msg, e);
                 } catch (CertificateException e) {
                     String msg = "Cannot initialize the recipient's  DecorationRequirements";
                     logger.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(msg, e);
+                    throw new PolicyAssertionException(data, msg, e);
                 }
             }
         });

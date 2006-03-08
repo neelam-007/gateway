@@ -59,7 +59,7 @@ public class ClientResponseXpathAssertion extends ClientXpathAssertion {
             return AssertionStatus.NONE;
         } catch (JaxenException e) {
             log.warning("Invalid expath expression: " + e.getMessage());
-            throw new PolicyAssertionException("Unable to execute xpath expression \"" +
+            throw new PolicyAssertionException(xpathBasedAssertion, "Unable to execute xpath expression \"" +
                                                xpathExpression.getExpression() + "\"", e);
         }
     }

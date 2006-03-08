@@ -91,13 +91,13 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
                     }
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {
-                    throw new PolicyAssertionException("ClientRequestWssConfidentiality: " +
+                    throw new PolicyAssertionException(requestWssConfidentiality, "ClientRequestWssConfidentiality: " +
                                                        "Unable to execute xpath expression \"" +
                                                        xpathExpression.getExpression() + "\"", e);
                 } catch (CertificateException e) {
                     String msg = "Cannot initialize the recipient's  DecorationRequirements";
                     log.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(msg, e);
+                    throw new PolicyAssertionException(requestWssConfidentiality, msg, e);
                 }
             }
         });

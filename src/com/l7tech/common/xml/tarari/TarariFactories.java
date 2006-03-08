@@ -123,6 +123,7 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
         final long generation = globalContext.getCompilerGeneration();
 
         try {
+            globalContext.fastxpathLock.readLock().acquire();
             XmlSource xmlSource = new XmlSource(inputStream);
             RaxDocument doc = RaxDocument.createDocument(xmlSource);
             final XPathProcessor xpathProcessor = new XPathProcessor(doc);
@@ -135,6 +136,11 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
             TarariUtil.translateException(e);
         } catch (XmlConfigException e) {
             TarariUtil.translateException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Thread interrupted while waiting for Tarari fastxpath read lock");
+        } finally {
+            globalContext.fastxpathLock.readLock().release();
         }
         throw new RuntimeException(); // unreachable
     }

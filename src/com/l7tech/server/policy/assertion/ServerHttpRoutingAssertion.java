@@ -75,7 +75,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private final int maxFailoverAttempts;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
-        super(ctx);
+        super(assertion, ctx);
         this.httpRoutingAssertion = assertion;
 
         int max = httpRoutingAssertion.getMaxConnections();

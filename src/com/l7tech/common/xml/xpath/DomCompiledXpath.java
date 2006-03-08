@@ -118,8 +118,10 @@ public class DomCompiledXpath extends CompiledXpath {
             throw new InvalidXpathException(rte);
         }
 
-        if (result == null || result.size() < 1)
+        if (result == null)
             return null;
+        if (result.size() < 1)
+            return XpathResult.RESULT_EMPTY;
 
         Object o = result.get(0);
         if (o instanceof Boolean) {

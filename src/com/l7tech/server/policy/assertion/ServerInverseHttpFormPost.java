@@ -73,7 +73,7 @@ public class ServerInverseHttpFormPost implements ServerAssertion {
                     new ByteArrayInputStream(baos.toByteArray()));
             return AssertionStatus.NONE;
         } catch (NoSuchPartException e) {
-            throw new PolicyAssertionException(e);
+            throw new PolicyAssertionException(assertion, e);
         }
     }
 }

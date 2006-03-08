@@ -109,7 +109,7 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 } catch (JaxenException e) {
                     // this is thrown when there is an error in the expression
                     // this is therefore a bad policy
-                    throw new PolicyAssertionException(e);
+                    throw new PolicyAssertionException(responseWssIntegrity, e);
                 }
 
                 if (selectedElements == null || selectedElements.size() < 1) {

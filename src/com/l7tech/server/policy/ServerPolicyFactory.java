@@ -18,7 +18,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * This is for getting a tree of ServerAssertion objects from the corresponding Assertion objects (data).
@@ -27,7 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 public class ServerPolicyFactory extends PolicyFactory implements ApplicationContextAware {
     private ApplicationContext applicationContext;
 
-    public ServerAssertion makeServerPolicy(Assertion rootAssertion) {
+    public ServerAssertion makeServerPolicy(Assertion rootAssertion) throws ServerPolicyException {
         return (ServerAssertion)makeSpecificPolicy(rootAssertion);
     }
 
@@ -39,7 +38,7 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
         return "Server";
     }
 
-    protected Object makeSpecificPolicy(Assertion genericAssertion) {
+    protected Object makeSpecificPolicy(Assertion genericAssertion) throws ServerPolicyException {
         try {
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
@@ -57,16 +56,8 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
                 return ctor.newInstance(new Object[]{genericAssertion, applicationContext});
             }
             return getConstructor(genericAssertionClass).newInstance(new Object[]{genericAssertion});
-        } catch (InstantiationException ie) {
-            throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ie);
-        } catch (IllegalAccessException iae) {
-            throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", iae);
-        } catch (InvocationTargetException ite) {
-            throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ite);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", e);
-        } catch (UnimplementedAssertionException e) {
-            throw new RuntimeException("Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", e);
+        } catch (Exception ie) {
+            throw new ServerPolicyException(genericAssertion, "Error creating specific assertion for '"+genericAssertion.getClass().getName()+"'", ie);
         }
     }
 

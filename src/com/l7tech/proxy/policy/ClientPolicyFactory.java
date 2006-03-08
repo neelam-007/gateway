@@ -8,9 +8,6 @@ package com.l7tech.proxy.policy;
 
 import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
@@ -19,9 +16,6 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.policy.assertion.*;
-import com.l7tech.proxy.policy.assertion.composite.ClientAllAssertion;
-import com.l7tech.proxy.policy.assertion.composite.ClientExactlyOneAssertion;
-import com.l7tech.proxy.policy.assertion.composite.ClientOneOrMoreAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpDigest;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientEncryptedUsernameTokenAssertion;
@@ -35,7 +29,7 @@ import com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity;
  * @version $Revision$
  */
 public class ClientPolicyFactory extends PolicyFactory {
-    public ClientAssertion makeClientPolicy( Assertion rootAssertion ) {
+    public ClientAssertion makeClientPolicy( Assertion rootAssertion ) throws PolicyAssertionException {
         return (ClientAssertion)makeSpecificPolicy( rootAssertion );
     }
 
@@ -52,7 +46,7 @@ public class ClientPolicyFactory extends PolicyFactory {
         return "Client";
     }
 
-    protected Object makeSpecificPolicy(Assertion genericAssertion) {
+    protected Object makeSpecificPolicy(Assertion genericAssertion) throws PolicyAssertionException {
         if (genericAssertion instanceof CommentAssertion) return null;
 
         return super.makeSpecificPolicy(genericAssertion);
@@ -71,9 +65,9 @@ public class ClientPolicyFactory extends PolicyFactory {
         new ClientHttpDigest(new HttpDigest()),
         new ClientWssBasic(new WssBasic()),
         new ClientEncryptedUsernameTokenAssertion(new EncryptedUsernameTokenAssertion()),
-        new ClientAllAssertion(new AllAssertion()),
-        new ClientExactlyOneAssertion(new ExactlyOneAssertion()),
-        new ClientOneOrMoreAssertion(new OneOrMoreAssertion()),
+        //new ClientAllAssertion(new AllAssertion()),
+        //new ClientExactlyOneAssertion(new ExactlyOneAssertion()),
+        //new ClientOneOrMoreAssertion(new OneOrMoreAssertion()),
         new ClientFalseAssertion(new FalseAssertion()),
         new ClientSslAssertion(new SslAssertion()),
         new ClientTrueAssertion(new TrueAssertion()),

@@ -11,19 +11,30 @@ package com.l7tech.policy.assertion;
  * @author alex
  */
 public class PolicyAssertionException extends Exception {
-    public PolicyAssertionException() {
+    private final Assertion assertion;
+
+    public PolicyAssertionException(Assertion ass) {
         super();
+        this.assertion = ass;
     }
 
-    public PolicyAssertionException( String message ) {
+    public PolicyAssertionException(Assertion ass, String message) {
         super( message );
+        this.assertion = ass;
     }
 
-    public PolicyAssertionException( Throwable cause ) {
+    public PolicyAssertionException(Assertion ass, Throwable cause) {
         super( cause );
+        this.assertion = ass;
     }
 
-    public PolicyAssertionException( String message, Throwable cause ) {
+    public PolicyAssertionException(Assertion ass, String message, Throwable cause) {
         super( message, cause );
+        this.assertion = ass;
+    }
+
+    /** @return the assertion bean that threw, or null if not known. */
+    public Assertion getAssertion() {
+        return assertion;
     }
 }

@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.ComparisonAssertionPropertiesAction;
 import com.l7tech.policy.assertion.ComparisonAssertion;
+import com.l7tech.common.util.ComparisonOperator;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class ComparisonAssertionPolicyNode extends LeafAssertionTreeNode {
     public String getName() {
         StringBuffer name = new StringBuffer("Proceed if ");
         name.append(assertion.getExpression1());
-        if (assertion.getOperator() == ComparisonAssertion.Operator.CONTAINS) {
+        if (assertion.getOperator() == ComparisonOperator.CONTAINS) {
             if (assertion.isNegate()) {
                 name.append(" does not contain ");
             } else {

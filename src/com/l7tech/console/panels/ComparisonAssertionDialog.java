@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.ComparisonAssertion;
+import com.l7tech.common.util.ComparisonOperator;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -30,10 +31,10 @@ public class ComparisonAssertionDialog extends JDialog {
 
         add(mainPanel);
 
-        operatorCombo.setModel(new DefaultComboBoxModel(ComparisonAssertion.Operator.getValues()));
+        operatorCombo.setModel(new DefaultComboBoxModel(ComparisonOperator.getValues()));
         operatorCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                ComparisonAssertion.Operator op = (ComparisonAssertion.Operator)operatorCombo.getSelectedItem();
+                ComparisonOperator op = (ComparisonOperator)operatorCombo.getSelectedItem();
                 if (op.isUnary()) {
                     expr2Field.setEnabled(false);
                 } else {
@@ -64,7 +65,7 @@ public class ComparisonAssertionDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 assertion.setNegate(negateCheckbox.isSelected());
                 assertion.setExpression1(expr1Field.getText());
-                ComparisonAssertion.Operator op = (ComparisonAssertion.Operator) operatorCombo.getSelectedItem();
+                ComparisonOperator op = (ComparisonOperator) operatorCombo.getSelectedItem();
                 assertion.setOperator(op);
                 if (op.isUnary()) {
                     assertion.setExpression2(null);
@@ -88,7 +89,7 @@ public class ComparisonAssertionDialog extends JDialog {
     private void enableButtons() {
         okButton.setEnabled(
             expr1Field.getText().length() > 0 &&
-            (((ComparisonAssertion.Operator)operatorCombo.getSelectedItem()).isUnary() || expr2Field.getText().length() > 0)
+            (((ComparisonOperator)operatorCombo.getSelectedItem()).isUnary() || expr2Field.getText().length() > 0)
         );
     }
 

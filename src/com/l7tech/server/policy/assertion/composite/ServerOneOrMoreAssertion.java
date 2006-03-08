@@ -11,17 +11,16 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerOneOrMoreAssertion extends ServerCompositeAssertion implements ServerAssertion {
-    public ServerOneOrMoreAssertion( OneOrMoreAssertion data, ApplicationContext applicationContext) {
+    public ServerOneOrMoreAssertion( OneOrMoreAssertion data, ApplicationContext applicationContext) throws PolicyAssertionException {
         super(data, applicationContext);
         this.data = data;
     }

@@ -1,18 +1,19 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.Echo;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.StashManagerFactory;
-import com.l7tech.common.mime.*;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.StashManager;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.Echo;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * Test assertion that echoes the request into the response
@@ -21,7 +22,7 @@ import org.springframework.context.ApplicationContext;
  */
 public class ServerEcho extends ServerRoutingAssertion {
     public ServerEcho(Echo ea, ApplicationContext applicationContext) {
-        super(applicationContext);
+        super(ea, applicationContext);
     }
 
     /**

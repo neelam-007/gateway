@@ -8,6 +8,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import java.lang.reflect.Constructor;
@@ -35,7 +36,7 @@ public abstract class PolicyFactory {
 
     public static final String PACKAGE_PREFIX = "com.l7tech.policy.assertion";
 
-    public List makeCompositePolicy(CompositeAssertion compositeAssertion) {
+    public List makeCompositePolicy(CompositeAssertion compositeAssertion) throws PolicyAssertionException {
         Assertion child;
         List result = new ArrayList();
         for (Iterator i = compositeAssertion.children(); i.hasNext();) {
@@ -111,7 +112,7 @@ public abstract class PolicyFactory {
         return specificClass;
     }
 
-    protected Object makeSpecificPolicy(Assertion genericAssertion) {
+    protected Object makeSpecificPolicy(Assertion genericAssertion) throws PolicyAssertionException {
         try {
             Class genericClass = genericAssertion.getClass();
             if (genericClass == CommentAssertion.class) {

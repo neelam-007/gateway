@@ -5,8 +5,10 @@ import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
@@ -177,8 +179,9 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     /**
      * adds or update a service to the cache. this should be called when the cache is initially populated and
      * when a service is saved or updated locally
+     * @throws ServerPolicyException if a server assertion contructor for this service threw an exception
      */
-    public void cache(PublishedService service) throws InterruptedException {
+    public void cache(PublishedService service) throws InterruptedException, ServerPolicyException {
         Sync write = rwlock.writeLock();
         try {
             write.acquire();
@@ -194,8 +197,9 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
 
     /**
      * Caller must hold locks protecting {@link #services} and {@link #serverPolicies}
+     * @throws ServerPolicyException if a server policy tree can't be created for this service
      */
-    private void cacheNoLock(PublishedService service) {
+    private void cacheNoLock(PublishedService service) throws ServerPolicyException {
         boolean update = false;
         Long key = new Long(service.getOid());
         if (services.get(key) != null) update = true;
@@ -438,7 +442,21 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                               "cannot be retrieved", e);
                         }
                         if (toUpdateOrAdd != null) {
-                            cacheNoLock(toUpdateOrAdd);
+                            final Long oid = new Long(toUpdateOrAdd.getOid());
+                            try {
+                                final Integer throwingVersion = (Integer)servicesThatAreThrowing.get(oid);
+                                if (throwingVersion == null || throwingVersion.intValue() != toUpdateOrAdd.getVersion()) {
+                                    // Try to cache it again
+                                    cacheNoLock(toUpdateOrAdd);
+                                    if (throwingVersion != null) {
+                                        logger.log(Level.INFO, "Policy for service #" + oid + " is no longer invalid");
+                                        servicesThatAreThrowing.remove(oid);
+                                    }
+                                }
+                            } catch (ServerPolicyException e) {
+                                logger.log(Level.WARNING, "Policy for service #" + oid + " is invalid: " + ExceptionUtils.getMessage(e), e);
+                                servicesThatAreThrowing.put(oid, new Integer(toUpdateOrAdd.getVersion()));
+                            }
                         } // otherwise, next integrity check shall delete this service from cache
                     }
                     // Trigger xpath compilation if the set of registered xpaths has changed
@@ -502,6 +520,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     private final Map services = new HashMap();
     private final Map serverPolicies = new HashMap();
     private final Map serviceStatistics = new HashMap();
+    private final Map servicesThatAreThrowing = new HashMap();
 
     // the resolvers
     private final NameValueServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};

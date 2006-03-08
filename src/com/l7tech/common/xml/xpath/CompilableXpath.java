@@ -106,7 +106,7 @@ public abstract class CompilableXpath {
      * @return the current expression expressed in Tarari Normal Form, or null if the converter is not available or
      *         if this expression can't be expressed in Tarari Normal Form.
      */
-    public String toTarariNormalForm() {
+    public FastXpath toTarariNormalForm() {
         GlobalTarariContext gtc = TarariLoader.getGlobalContext();
         if (gtc == null) return null;
         return gtc.toTarariNormalForm(getExpressionForTarariFastxpath(), getNamespaces());

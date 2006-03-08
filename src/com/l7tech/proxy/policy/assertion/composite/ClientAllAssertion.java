@@ -24,7 +24,7 @@ import java.security.GeneralSecurityException;
  * @version $Revision$
  */
 public class ClientAllAssertion extends ClientCompositeAssertion {
-    public ClientAllAssertion( AllAssertion data ) {
+    public ClientAllAssertion( AllAssertion data ) throws PolicyAssertionException {
         super( data );
         this.data = data;
     }

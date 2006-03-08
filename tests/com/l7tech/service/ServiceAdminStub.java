@@ -7,6 +7,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.policy.ServerPolicyException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -54,8 +55,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @throws RemoteException
      */
     public long savePublishedService(PublishedService service)
-            throws RemoteException, UpdateException, SaveException, VersionException
-    {
+            throws RemoteException, UpdateException, SaveException, VersionException, ServerPolicyException {
         return serviceManager.save(service);
     }
 

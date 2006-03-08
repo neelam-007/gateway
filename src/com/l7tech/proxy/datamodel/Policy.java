@@ -7,6 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
@@ -34,7 +35,7 @@ public class Policy implements Serializable, Cloneable {
         return assertion;
     }
 
-    public synchronized ClientAssertion getClientAssertion() {
+    public synchronized ClientAssertion getClientAssertion() throws PolicyAssertionException {
         if (clientAssertion != null)
             return clientAssertion;
         if (assertion != null)

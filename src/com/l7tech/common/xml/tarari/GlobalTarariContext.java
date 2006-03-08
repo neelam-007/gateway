@@ -7,6 +7,7 @@ package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.xml.xpath.FastXpath;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xmlbeans.XmlException;
@@ -46,7 +47,7 @@ public interface GlobalTarariContext {
      *                     May be null if xpathToSimplify does not contain any qualified names.
      * @return the XPath simplified into Tarari Normal Form, suitable for use with Tarari fastxpath.  Never null.
      */
-    String toTarariNormalForm(String xpathToSimplify, Map namespaceMap);
+    FastXpath toTarariNormalForm(String xpathToSimplify, Map namespaceMap);
 
     /**
      * Validate the given document in hardare using the current schemas, if possible to do so.

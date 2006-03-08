@@ -2,15 +2,13 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.token.*;
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -85,7 +83,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             if (recipientContextCert == null) {
                 String msg = "cannot retrieve the recipient cert";
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg});
-                throw new PolicyAssertionException(msg);
+                throw new PolicyAssertionException(responseWssConfidentiality, msg);
             }
             clientCert = recipientContextCert;
             context.addDeferredAssertion(this,
@@ -209,7 +207,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     } catch (JaxenException e) {
                         // this is thrown when there is an error in the expression
                         // this is therefore a bad policy
-                        throw new PolicyAssertionException(e);
+                        throw new PolicyAssertionException(responseWssConfidentiality, e);
                     }
 
                     if (selectedElements == null || selectedElements.size() < 1) {

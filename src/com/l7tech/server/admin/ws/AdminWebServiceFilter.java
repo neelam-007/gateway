@@ -12,6 +12,7 @@ import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
@@ -29,6 +30,7 @@ import com.l7tech.server.event.system.AdminWebServiceEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import org.springframework.beans.BeansException;
@@ -128,7 +130,12 @@ public class AdminWebServiceFilter implements Filter {
         if (policyFactory == null) {
             throw new ServletException(ERR_PREFIX + "ServerPolicyFactory");
         }
-        adminPolicy = policyFactory.makeServerPolicy(policy);
+        try {
+            adminPolicy = policyFactory.makeServerPolicy(policy);
+        } catch (ServerPolicyException e) {
+            log.log(Level.SEVERE, "Unable to instantiate admin service policy: " + ExceptionUtils.getMessage(e), e);
+            // fallthrough and complain
+        }
         if (adminPolicy == null) {
             throw new ServletException(ERR_PREFIX + "policy");
         }

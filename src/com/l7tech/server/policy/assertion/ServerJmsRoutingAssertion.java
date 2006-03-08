@@ -45,7 +45,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private final Auditor auditor;
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext ctx) {
-        super(ctx);
+        super(data, ctx);
         this.data = data;
         auditor = new Auditor(this, ctx, logger);
     }
@@ -97,7 +97,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
             if ( jmsSession == null || jmsOutboundRequest == null ) {
                 String msg = "Null session or request escaped from retry loop!";
-                throw new PolicyAssertionException(msg);
+                throw new PolicyAssertionException(data, msg);
             }
 
             Destination jmsOutboundDest = getRoutedRequestDestination(auditor);
@@ -115,7 +115,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                               && jmsInboundDest != null;
 
             if ( jmsSession instanceof QueueSession ) {
-                if ( !(jmsOutboundDest instanceof Queue ) ) throw new PolicyAssertionException( "Destination/Session type mismatch" );
+                if ( !(jmsOutboundDest instanceof Queue ) ) throw new PolicyAssertionException(data, "Destination/Session type mismatch" );
                 jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDest );
                 if ( inbound )
                     jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, selector );
@@ -179,11 +179,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         } catch ( FindException e ) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             String msg = "Caught FindException";
-            throw new PolicyAssertionException(msg, e);
+            throw new PolicyAssertionException(data, msg, e);
         } catch ( JmsConfigException e ) {
             String msg = "Invalid JMS configuration";
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
-            throw new PolicyAssertionException(msg, e);
+            throw new PolicyAssertionException(data, msg, e);
         } catch ( Throwable t ) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing"}, t );
 
