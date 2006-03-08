@@ -28,8 +28,11 @@ public class ServiceMetrics {
     private static final Logger logger = Logger.getLogger(ServiceMetrics.class.getName());
 
     /**
-     * Protects {@link _currentFineBin}. This is reader-prefernce because the MessageProcessor "reads"
+     * Protects {@link _currentFineBin}. This is reader-preference because the MessageProcessor "reads"
      * the currentFineBin, whereas the archive task "writes."
+     * <p/>
+     * Note that we can't use {@link _currentFineBin}'s monitor to protect the field,
+     * since the monitor belongs to the object, not the field, which gets reset constantly.
      */
     private final ReadWriteLock fineLock = new ReaderPreferenceReadWriteLock();
 
