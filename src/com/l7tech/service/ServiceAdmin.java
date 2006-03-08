@@ -103,4 +103,10 @@ public interface ServiceAdmin extends ServiceAdminPublic {
      * @throws com.l7tech.objectmodel.DeleteException if the requested information could not be deleted
      */
     void deletePublishedService(String oid) throws RemoteException, DeleteException;
+
+    /**
+     * @param serviceoid id of the service to publish on the systinet registry
+     * @return registrykey
+     */
+    String publishToSystinetRegistry(String serviceoid) throws RemoteException, FindException;
 }
