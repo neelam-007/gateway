@@ -124,6 +124,12 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         if (size > 1)
             auditor.logAndAudit(AssertionMessages.XPATH_MULTIPLE_RESULTS, new String[] { Integer.toString(size) });
 
+        if (size < 1) {
+            auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST
+                                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE);
+            return AssertionStatus.FALSIFIED;
+        }
+
         context.setVariable(foundVariable, SimpleXpathAssertion.TRUE);
         context.setVariable(countVariable, Integer.toString(size));
 
