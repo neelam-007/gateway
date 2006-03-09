@@ -60,6 +60,8 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpRoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionTreeNode.class);
         assertionMap.put(JmsRoutingAssertion.class, JmsRoutingAssertionTreeNode.class);
+        assertionMap.put(EchoRoutingAssertion.class, EchoRoutingAssertionPolicyNode.class);
+        
         assertionMap.put(RequestWssIntegrity.class, RequestWssIntegrityTreeNode.class);
         assertionMap.put(ResponseWssIntegrity.class, ResponseWssIntegrityTreeNode.class);
         assertionMap.put(RequestWssConfidentiality.class, RequestWssConfidentialityTreeNode.class);

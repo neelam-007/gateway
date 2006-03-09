@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.ServerEcho;
+import com.l7tech.server.policy.assertion.ServerEchoRoutingAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -129,13 +129,13 @@ public class ServerPolicyFactoryTest extends TestCase {
      */
     public void testInstantiateEchoAssertion() throws Exception {
         AllAssertion echo = new AllAssertion(Arrays.asList(new Assertion[]{
-            new Echo()
+            new EchoRoutingAssertion()
         }));
         PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
         pp.setAuditContext(new AuditContextStub());
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
         ServerAssertion serverAll = pfac.makeServerPolicy(echo);
-        assertTrue(((ServerCompositeAssertion)serverAll).getChildren()[0] instanceof ServerEcho);
+        assertTrue(((ServerCompositeAssertion)serverAll).getChildren()[0] instanceof ServerEchoRoutingAssertion);
     }
 
 

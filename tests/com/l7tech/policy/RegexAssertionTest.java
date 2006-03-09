@@ -10,7 +10,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.Echo;
+import com.l7tech.policy.assertion.EchoRoutingAssertion;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
@@ -253,7 +253,7 @@ public class RegexAssertionTest extends TestCase {
         regex.setReplace(true);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
                                                               regex,
-                                                              new Echo()
+                                                              new EchoRoutingAssertion()
                                                             }));
 
         return policy;
@@ -274,7 +274,7 @@ public class RegexAssertionTest extends TestCase {
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
                                                               regex,
                                                               regex2,
-                                                              new Echo()
+                                                              new EchoRoutingAssertion()
                                                             }));
 
         return policy;

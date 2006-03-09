@@ -116,7 +116,7 @@ public class EchoAssertionTest extends TestCase {
 
     private static Assertion getPolicy() {
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
-                    new Echo(),
+                    new EchoRoutingAssertion(),
                   }));
 
         return policy;

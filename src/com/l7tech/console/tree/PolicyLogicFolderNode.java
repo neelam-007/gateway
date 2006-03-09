@@ -47,6 +47,7 @@ public class PolicyLogicFolderNode extends AbstractTreeNode {
         insert(new TrueNode(), index++);
         insert(new FalseNode(), index++);
         insert(new HardcodedResponsePaletteNode(), index++);
+        insert(new EchoRoutingAssertionPaletteNode(), index++);
     }
 
     /**

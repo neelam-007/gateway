@@ -7,10 +7,7 @@ import com.l7tech.console.panels.JmsRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.service.PublishedService;
 
 import javax.wsdl.WSDLException;
@@ -83,6 +80,8 @@ public class AddRoutingAssertionAdvice implements Advice {
                     pc.proceed();
             } else
                 pc.proceed();
+        } else if (assertions[0] instanceof EchoRoutingAssertion) {
+            pc.proceed();
         }
     }
 }
