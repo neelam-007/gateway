@@ -80,6 +80,7 @@
                 <L7p:Kerberos/>
                 <L7p:EncryptedUsernameToken/>
                 <L7p:WsiBspAssertion/>
+                <L7p:EchoRoutingAssertion/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">
