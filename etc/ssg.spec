@@ -1,6 +1,6 @@
 Summary: Secure Span Gateway
 Name: ssg
-Version: 4.0m1
+Version: 4.0m4
 Release: 1
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2005
@@ -34,11 +34,9 @@ mkdir %{buildroot}/etc/sysconfig
 mkdir %{buildroot}/etc/logrotate.d/
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
-mv %{buildroot}/ssg/bin/tarari-initd %{buildroot}/etc/init.d/tarari
 mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
-mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 mv %{buildroot}/ssg/bin/mysql-binlogs %{buildroot}/etc/logrotate.d/mysql-binlogs
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
@@ -51,11 +49,9 @@ chmod 755 %{buildroot}/ssg/configwizard/*.sh
 %files 
 %defattr(-,root,root)
 /etc/init.d/ssg 
-/etc/init.d/tarari
 /etc/init.d/tcp_tune
 /etc/snmp/snmpd.conf_example
 /etc/profile.d/ssgruntimedefs.sh
-/etc/profile.d/tarari.sh
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(-,gateway,gateway)
@@ -107,9 +103,9 @@ fi
 
 %post
 
-echo "Layer 7 SecureSpan(tm) Gateway v4.0m1" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v4.0m4" >/etc/issue
 echo "Kernel \r on an \m" >>/etc/issue
-echo "Layer 7 SecureSpan(tm) Gateway v4.0m1" >/etc/issue.net
+echo "Layer 7 SecureSpan(tm) Gateway v4.0m4" >/etc/issue.net
 echo "Kernel \r on an \m" >>/etc/issue.net
 
 %preun
