@@ -4,7 +4,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.BeansException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.KeystoreUtils;
 
@@ -27,8 +26,9 @@ public class RegistryPublicationManager implements ApplicationContextAware {
     private ApplicationContext applicationContext;
     private ServerConfig serverConfig;
     private KeystoreUtils keystoreUtils;
+    private String myhostname;
 
-    public String publishServiceWSDLAndPolicy(String serviceid) throws FindException {
+    public String publishServiceWSDLAndPolicy(String serviceid) {
         // todo, the real thing
         return getExternalSSGWSDLURLForPublishedService(serviceid);
     }
@@ -47,21 +47,31 @@ public class RegistryPublicationManager implements ApplicationContextAware {
         this.keystoreUtils = keystore;
     }
 
-    private String getExternalSSGWSDLURLForPublishedService(String serviceoid) throws FindException {
-        try {
-            String hostname = keystoreUtils.getSslCert().getSubjectDN().getName();
-            if (hostname.startsWith("CN=") || hostname.startsWith("cn=")) hostname = hostname.substring(3);
-            hostname = hostname.trim();
-            String port = serverConfig.getProperty("clusterhttpport");
-            String uri = SecureSpanConstants.WSDL_PROXY_FILE;
-            String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceoid;
-            return "http://" + hostname + ":" + port + uri + "?" + query;
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "cannot get hostname from ssl cert", e);
-            throw new FindException("cannot get hostname from ssl cert", e);
-        } catch (CertificateException e) {
-            logger.log(Level.WARNING, "cannot get hostname from ssl cert", e);
-            throw new FindException("cannot get hostname from ssl cert", e);
+    private String getMyHostName() {
+        // caching this. no reason this should change without a reboot anyway
+        if (myhostname == null) {
+            // most reliable hostname referencable from the outside is probably the subject of
+            // the ssl cert for this server
+            try {
+                myhostname = keystoreUtils.getSslCert().getSubjectDN().getName();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "cannot get hostname from ssl cert", e);
+                myhostname = serverConfig.getHostname();
+            } catch (CertificateException e) {
+                logger.log(Level.WARNING, "cannot get hostname from ssl cert", e);
+                myhostname = serverConfig.getHostname();
+            }
+            if (myhostname.startsWith("CN=") || myhostname.startsWith("cn=")) myhostname = myhostname.substring(3);
+            myhostname = myhostname.trim();
         }
+        assert(myhostname != null);
+        return myhostname;
+    }
+
+    private String getExternalSSGWSDLURLForPublishedService(String serviceoid) {
+        String port = serverConfig.getProperty("clusterhttpport");
+        String uri = SecureSpanConstants.WSDL_PROXY_FILE;
+        String query = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + serviceoid;
+        return "http://" + getMyHostName() + ":" + port + uri + "?" + query;
     }
 }
