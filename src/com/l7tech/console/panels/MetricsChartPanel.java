@@ -24,6 +24,8 @@ import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
 import java.text.SimpleDateFormat;
+import java.text.MessageFormat;
+import java.text.FieldPosition;
 import java.util.*;
 import java.util.List;
 
@@ -40,6 +42,8 @@ import java.util.List;
  * @author rmak
  */
 public class MetricsChartPanel extends ChartPanel {
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.MetricsChartPanel");
+
     /** Color for the horizontal line representing average frontend response times. */
     public static final Color FRONTEND_RESPONSE_AVG_COLOR = new Color(95, 83, 173);
 
@@ -79,35 +83,37 @@ public class MetricsChartPanel extends ChartPanel {
      * contains success message rate and counts.
      * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_SUCCESS = "Success";
+    private static final String SERIES_SUCCESS = resources.getString("seriesSuccess");
 
     /**
      * Name of series in {@link #_messageRates} and {@link #_messageCounts} that
      * contains policy violation message rate and counts.
      * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_POLICY_VIOLATION = "Policy Violation";
+    private static final String SERIES_POLICY_VIOLATION = resources.getString("seriesPolicyViolation");
 
     /**
      * Name of series in {@link #_messageRates} and {@link #_messageCounts} that
      * contains routing failure message rate and counts.
      * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_ROUTING_FAILURE = "Routing Failure";
+    private static final String SERIES_ROUTING_FAILURE = resources.getString("seriesRoutingFailure");
 
     /**
      * Name of the series {@link #_frontendResponseTimes} that contains frontend
      * response times.
      * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_FRONTEND_RESPONSE = "Frontend";
+    private static final String SERIES_FRONTEND_RESPONSE = resources.getString("seriesFrontend");
 
     /**
      * Name of the series {@link #_backendResponseTimes} that contains backend
      * response times.
      * This text string will be displayed in tooltips.
      */
-    private static final String SERIES_BACKEND_RESPONSE = "Backend";
+    private static final String SERIES_BACKEND_RESPONSE = resources.getString("seriesBackend");
+
+    private static final MessageFormat tooltipFormat = new MessageFormat(resources.getString("tooltipFormat"));
 
     /** Maximum time range of data to keep around (in milliseconds). */
     private long _maxTimeRange;
@@ -157,7 +163,7 @@ public class MetricsChartPanel extends ChartPanel {
 
     /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
-        private static final SimpleDateFormat fmt = new SimpleDateFormat("HH:mm:ss");
+        private static final SimpleDateFormat fmt = new SimpleDateFormat(/*"HH:mm:ss"*/);
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
             final TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
@@ -168,8 +174,21 @@ public class MetricsChartPanel extends ChartPanel {
             final int min = dataset_.getStartY(series, item).intValue();
             final int max = dataset_.getEndY(series, item).intValue();
             final String seriesLabel = dataset_.getSeriesKey(series).toString();
+            StringBuffer tooltip = new StringBuffer();
+            tooltipFormat.format(
+                    new Object[] {
+                        seriesLabel,
+                        new Integer(avg),
+                        new Integer(min),
+                        new Integer(max),
+                        fmt.format(startTime),
+                        fmt.format(endTime)
+                    }, tooltip, new FieldPosition(0));
+            return tooltip.toString();
+/*
             return seriesLabel + ": avg=" + avg + " min=" + min + " max=" + max +
                     " (from " + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
+*/
         }
     }
 

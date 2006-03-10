@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.service.MetricsBin;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -136,7 +137,22 @@ public interface ClusterStatusAdmin {
      * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} to find metrics for; null = any.
      * @return a List of {@link com.l7tech.service.MetricsBin} instances.
      */
-    List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException;
+    List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart,
+                         Integer resolution, Long serviceOid) throws RemoteException, FindException;
+
+    /**
+     * Finds or creates a {@link com.l7tech.service.MetricsBin} based on information available in
+     * the database using the specified query parameters.
+     *
+     * @param resolution the resolution of the MetricsBins to use in constructing the results. Required.
+     * @param startTime the beginning of the time window, inclusive.  Required.
+     * @param duration the length of the time window.  Required.
+     * @param nodeId the MAC address of the cluster node to query for; null = any
+     * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} to find metrics for; null = any.
+     * @return a {@link MetricsBin} aggregating all information available for the specified time period.
+     */
+    MetricsBin getMetricsSummary(int resolution, long startTime, int duration, String nodeId, Long serviceOid)
+            throws RemoteException, FindException;
 
     /**
      * Check hardware capabilities of the node that receives this admin request.

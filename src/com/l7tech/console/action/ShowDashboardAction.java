@@ -4,22 +4,26 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.DashboardWindow;
+import com.l7tech.console.panels.dashboard.DashboardWindow;
+
+import java.util.ResourceBundle;
 
 /**
- * Action to show a {@link DashboardWindow} from the SSM.
+ * Action to show a {@link com.l7tech.console.panels.dashboard.DashboardWindow} from the SSM.
  */
 public class ShowDashboardAction extends SecureAction {
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
+
     public String getName() {
-        return "Show Dashboard";
+        return resources.getString("menu.text");
     }
 
     public String getDescription() {
-        return "Shows Dashboard";
+        return resources.getString("menu.description");
     }
 
     protected String iconResource() {
-        return "com/l7tech/console/resources/Refresh16.gif";
+        return resources.getString("menu.icon");
     }
 
     protected void performAction() {

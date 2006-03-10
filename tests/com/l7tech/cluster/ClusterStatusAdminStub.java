@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.service.MetricsBin;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
@@ -134,6 +135,10 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     }
 
     public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public MetricsBin getMetricsSummary(int resolution, long startTime, int duration, String nodeId, Long serviceOid) throws RemoteException, FindException {
         throw new UnsupportedOperationException();
     }
 

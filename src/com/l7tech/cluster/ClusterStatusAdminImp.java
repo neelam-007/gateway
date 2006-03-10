@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.GatewayLicenseManager;
 import com.l7tech.server.service.ServiceMetricsManager;
+import com.l7tech.service.MetricsBin;
 
 import java.rmi.RemoteException;
 import java.util.Calendar;
@@ -174,6 +175,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     public List findMetricsBins(String nodeId, Long minPeriodStart, Long maxPeriodStart, Integer resolution, Long serviceOid) throws RemoteException, FindException {
         checkLicense();
         return serviceMetricsManager.findBins(nodeId, minPeriodStart, maxPeriodStart, resolution, serviceOid);
+    }
+
+    public MetricsBin getMetricsSummary(int resolution, long startTime, int duration, String nodeId, Long serviceOid) throws RemoteException, FindException {
+        checkLicense();
+        return serviceMetricsManager.getMetricsSummary(resolution, startTime, duration, nodeId, serviceOid);
     }
 
     public String getHardwareCapability(String capability) {

@@ -1,14 +1,16 @@
 package com.l7tech.server.service;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.service.MetricsBin;
 import com.l7tech.common.util.ISO8601Date;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.MetricsBin;
 import org.hibernate.Criteria;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.criterion.ProjectionList;
+import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -301,6 +303,98 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             if (session != null && old != null) session.setFlushMode(old);
         }
     }
+
+    public MetricsBin getMetricsSummary(int resolution, long startTime, int duration, String nodeId, Long serviceOid) throws FindException {
+        Criteria crit = getSession().createCriteria(MetricsBin.class);
+        crit.add(Restrictions.eq("resolution", new Integer(resolution)));
+
+        crit.add(Restrictions.ne("numAttemptedRequest", new Integer(0)));
+
+        if (nodeId != null) {
+            crit.add(Restrictions.eq("clusterNodeId", nodeId));
+        }
+
+        if (serviceOid != null) {
+            crit.add(Restrictions.eq("serviceOid", serviceOid));
+        }
+
+        crit.add(Restrictions.ge("periodStart", new Long(startTime)));
+        crit.add(Restrictions.le("periodStart", new Long(startTime + duration)));
+
+        ProjectionList plist = Projections.projectionList();
+        plist.add(Projections.rowCount());
+        plist.add(Projections.sum("sumBackendResponseTime"));
+        plist.add(Projections.min("minBackendResponseTime"));
+        plist.add(Projections.max("maxBackendResponseTime"));
+
+        plist.add(Projections.sum("sumFrontendResponseTime"));
+        plist.add(Projections.min("minFrontendResponseTime"));
+        plist.add(Projections.max("maxFrontendResponseTime"));
+
+        plist.add(Projections.sum("numAttemptedRequest"));
+        plist.add(Projections.sum("numAuthorizedRequest"));
+        plist.add(Projections.sum("numCompletedRequest"));
+
+        plist.add(Projections.min("startTime"));
+        plist.add(Projections.max("endTime"));
+
+        crit.setProjection(plist);
+
+        List results = crit.list();
+        Object[] row = (Object[])results.get(0);
+
+        int n = 0;
+        long backSum = 0;
+        int backMin = 0;
+        int backMax = 0;
+
+        long frontSum = 0;
+        int frontMin = 0;
+        int frontMax = 0;
+
+        int attempted = 0;
+        int authorized = 0;
+        int completed = 0;
+
+        long stime = startTime;
+        long etime = startTime + duration;
+
+        int count = ((Integer)row[n++]).intValue();
+        if (count > 0) {
+            backSum = ((Long)row[n++]).longValue();
+            backMin = ((Integer)row[n++]).intValue();
+            backMax = ((Integer)row[n++]).intValue();
+
+            frontSum = ((Long)row[n++]).longValue();
+            frontMin = ((Integer)row[n++]).intValue();
+            frontMax = ((Integer)row[n++]).intValue();
+
+            attempted = ((Integer)row[n++]).intValue();
+            authorized = ((Integer)row[n++]).intValue();
+            completed = ((Integer)row[n++]).intValue();
+
+            stime = ((Long)row[n++]).longValue();
+            etime = ((Long)row[n]).longValue();
+        }
+
+        MetricsBin rollup = new MetricsBin(stime, duration, resolution, nodeId, serviceOid == null ? -1 : serviceOid.longValue());
+        rollup.setMinFrontendResponseTime(frontMin);
+        rollup.setMaxFrontendResponseTime(frontMax);
+        rollup.setSumFrontendResponseTime(frontSum);
+
+        rollup.setMinBackendResponseTime(backMin);
+        rollup.setMaxBackendResponseTime(backMax);
+        rollup.setSumBackendResponseTime(backSum);
+
+        rollup.setNumAttemptedRequest(attempted);
+        rollup.setNumAuthorizedRequest(authorized);
+        rollup.setNumCompletedRequest(completed);
+
+        rollup.setEndTime(etime);
+
+        return rollup;
+    }
+
 
     protected void initDao() throws Exception {
         if (transactionManager == null) throw new IllegalStateException("TransactionManager must be set");
