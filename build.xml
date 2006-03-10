@@ -578,6 +578,7 @@
         <!-- the client proxy jar -->
         <jar jarfile="${build.dir}/Bridge.jar" manifest="${src.root}/etc/Bridge.mf">
             <fileset dir="${build.dir}/classes">
+                <exclude name="**/*.form"/>
                 <exclude name="com/l7tech/internal/**/*"/>
 
                 <!-- Omit the third-party crypto drivers unless we need to ship with one or more of them.  Including it causes testpackage to fail -->
@@ -643,6 +644,7 @@
     <target name="package.manager" unless="ssg.only" depends="compile, package.manager.ca">
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
+                <exclude name="**/*.form"/>
                 <exclude name="com/l7tech/internal/**/*"/>
 
                 <include name="com/l7tech/admin/Admin*.class"/>
