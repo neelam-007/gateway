@@ -82,6 +82,30 @@ public class XslTransformationTest extends TestCase {
         assertEquals(after, EXPECTED);
     }
 
+    public void testBenchmark() throws Exception {
+        XslTransformation ass = new XslTransformation();
+        ass.setXslSrc(getResAsString(XSL_MASK_WSSE));
+        ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        ass.setWhichMimePart(0);
+
+        ServerXslTransformation serverAss = new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
+
+        long before = System.currentTimeMillis();
+        int num = 5000;
+        for (int i = 0; i < num; i++) {
+            Message req = new Message(StashManagerFactory.createStashManager(), ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(getResAsString(SOAPMSG_WITH_WSSE).getBytes("UTF-8")));
+            Message res = new Message();
+            PolicyEnforcementContext context = new PolicyEnforcementContext(req, res);
+
+            serverAss.checkRequest(context);
+            String after = XmlUtil.nodeToString(req.getXmlKnob().getDocumentReadOnly());
+            assertEquals(after, EXPECTED);
+        }
+        long after = System.currentTimeMillis();
+        System.out.println(num + " messages in " + (after - before) + "ms (" + num / ((after - before)/1000d) + "/s)" );
+    }
+
+
     public void testMaskWsse() throws Exception {
         String xslStr = getResAsString(XSL_MASK_WSSE);
         String xmlStr = getResAsString(SOAPMSG_WITH_WSSE);
