@@ -12,7 +12,7 @@
 <beans>
 
     <!-- SSG boot process -->
-    <bean id="ssgBoot" class="com.l7tech.server.BootProcess">
+    <bean id="ssgBoot" class="com.l7tech.server.BootProcess" depends-on="systemAuditListener">
         <property name="serverConfig">
             <ref local="serverConfig"/>
         </property>
