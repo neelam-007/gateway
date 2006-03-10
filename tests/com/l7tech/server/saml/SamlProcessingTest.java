@@ -7,8 +7,8 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
-import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.DsigUtil;
+import com.l7tech.common.security.xml.SecurityTokenResolver;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -23,6 +23,7 @@ import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -30,7 +31,6 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import junit.extensions.TestSetup;
@@ -301,7 +301,7 @@ public class SamlProcessingTest extends TestCase {
 
     private static void initializeServicesAndPolicies(ApplicationContext context)
             throws IOException, FindException, DeleteException, UpdateException,
-            SaveException, VersionException, SAXException, ServerPolicyException {
+            SaveException, VersionException, SAXException, PolicyAssertionException {
 
         ServiceAdmin serviceAdmin = (ServiceAdmin)context.getBean("serviceAdmin");
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();

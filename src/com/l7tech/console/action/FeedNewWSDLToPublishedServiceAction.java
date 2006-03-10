@@ -1,8 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WSILSelectorPanel;
@@ -14,7 +14,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
-import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -168,7 +168,7 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
             logger.log(Level.WARNING, "version mismatch", e);
             throw new RuntimeException("The service's version number is no longer valid. Perhaps " +
                                        "another administrator has changed the service since you loaded it?", e);
-        } catch (ServerPolicyException e) {
+        } catch (PolicyAssertionException e) {
             logger.log(Level.WARNING, "policy invalid", e);
             throw new RuntimeException("The server policy cannot be created: " + ExceptionUtils.getMessage(e), e);
         }

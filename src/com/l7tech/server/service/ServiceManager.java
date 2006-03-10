@@ -2,8 +2,8 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
@@ -45,9 +45,9 @@ public interface ServiceManager extends EntityManager {
      * @param service
      * @return
      * @throws SaveException
-     * @throws ServerPolicyException if a server assertion constructor threw an exception
+     * @throws PolicyAssertionException if a server assertion constructor threw an exception
      */
-    long save(PublishedService service) throws SaveException, ServerPolicyException;
+    long save(PublishedService service) throws SaveException, PolicyAssertionException;
 
     /**
      * updates a policy service. call this instead of save if the service
@@ -57,9 +57,9 @@ public interface ServiceManager extends EntityManager {
      *
      * @param service
      * @throws UpdateException
-     * @throws ServerPolicyException if a server assertion constructor threw an exception
+     * @throws PolicyAssertionException if a server assertion constructor threw an exception
      */
-    void update(PublishedService service) throws UpdateException, VersionException, ServerPolicyException;
+    void update(PublishedService service) throws UpdateException, VersionException, PolicyAssertionException;
 
     /**
      * deletes the service

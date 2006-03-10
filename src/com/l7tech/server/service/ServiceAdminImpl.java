@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.systinet.RegistryPublicationManager;
@@ -203,7 +204,7 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
      *
      */
     public long savePublishedService(PublishedService service)
-            throws RemoteException, UpdateException, SaveException, VersionException, ServerPolicyException {
+            throws RemoteException, UpdateException, SaveException, VersionException, PolicyAssertionException {
             accessManager.enforceAdminRole();
             checkLicense();
             long oid = PublishedService.DEFAULT_OID;

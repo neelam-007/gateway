@@ -3,7 +3,7 @@ package com.l7tech.service;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -46,7 +46,7 @@ public class ServicesHelper {
      * @return the service descritpor corresponding to the published service
      */
     public ServiceDescriptor publish(String name, String wsdlResource, final Assertion policy)
-            throws IOException, SAXException, SaveException, VersionException, UpdateException, ServerPolicyException {
+            throws IOException, SAXException, SaveException, VersionException, UpdateException, PolicyAssertionException {
 
         ServiceDescriptor descriptor =
           new ServiceDescriptor(name, TestDocuments.getTestDocumentAsXml(wsdlResource), policy);
