@@ -85,6 +85,7 @@ public class MainWindow extends JFrame {
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
     private JMenuItem auditMenuItem = null;
+    private JMenuItem fromFileMenuItem = null;
     private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
@@ -113,6 +114,7 @@ public class MainWindow extends JFrame {
     private NewPolicyAction newPolicyAction;
     private SavePolicyAction savePolicyAction;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
+    private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
     private HomeAction homeAction = new HomeAction();
     private NewGroupAction newInernalGroupAction;
@@ -491,6 +493,7 @@ public class MainWindow extends JFrame {
             editMenu.addSeparator();
             editMenu.add(getStatMenuItem());
             editMenu.add(getAuditMenuItem());
+            editMenu.add(getFromFileMenuItem());
         }
         return editMenu;
     }
@@ -1061,38 +1064,7 @@ public class MainWindow extends JFrame {
                 boolean accepted = false;
                 for (int i = 0; i < files.length; i++) {
                     File file = files[i];
-                    if(file.isFile() && file.canRead()) {
-                        accepted = true;
-                        try {
-                            if(file.getName().endsWith(".ssga")) {
-                                GatewayAuditWindow gaw = new GatewayAuditWindow(false);
-                                gaw.pack();
-                                Utilities.centerOnScreen(gaw);
-                                gaw.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-                                if(gaw.displayAudits(file)) {
-                                    gaw.setVisible(true);
-                                }
-                                else {
-                                    gaw.dispose();
-                                }
-                            }
-                            else if(file.getName().endsWith(".ssgl")) {
-                                GatewayLogWindow gal = new GatewayLogWindow();
-                                gal.pack();
-                                gal.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-                                Utilities.centerOnScreen(gal);
-                                if(gal.displayLogs(file)){
-                                    gal.setVisible(true);
-                                }
-                                else {
-                                    gal.dispose();
-                                }
-                            }
-                        }
-                        catch(IOException ioe) {
-                            log.log(Level.WARNING, "Error reading file.", ioe);
-                        }
-                    }
+                    accepted = accepted | getAuditOrLogsFromFileAction().openFile(file);
                 }
 
                 return accepted;
@@ -1315,6 +1287,11 @@ public class MainWindow extends JFrame {
         return viewGatewayAuditsWindowAction;
     }
 
+    private ViewAuditsOrLogsFromFileAction getAuditOrLogsFromFileAction() {
+        if (auditOrLogFromFileAction != null) return auditOrLogFromFileAction;
+        auditOrLogFromFileAction = new ViewAuditsOrLogsFromFileAction();
+        return auditOrLogFromFileAction;
+    }
 
     private Action getClusterStatusAction() {
         if (viewClusterStatusAction != null) return viewClusterStatusAction;
@@ -1976,6 +1953,13 @@ public class MainWindow extends JFrame {
         auditMenuItem = new JMenuItem(getGatewayAuditWindowAction());
 
         return auditMenuItem;
+    }
+
+    public JMenuItem getFromFileMenuItem() {
+        if (fromFileMenuItem != null) return fromFileMenuItem;
+        fromFileMenuItem = new JMenuItem(getAuditOrLogsFromFileAction());
+
+        return fromFileMenuItem;
     }
 
     public JMenuItem getManageJmsEndpointsMenuItem() {

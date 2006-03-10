@@ -11,7 +11,6 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
-import com.l7tech.console.util.FileDropTransferHandler;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
@@ -26,10 +25,17 @@ import javax.swing.table.*;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.Clipboard;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.ComponentAdapter;
 import java.io.*;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
@@ -93,8 +99,9 @@ public class LogPanel extends JPanel {
     private String nodeId;
     private JPanel selectPane;
     private JPanel filterPane;
+    private JLabel filterLabel;
     private JPanel controlPane;
-    private JPanel msgTablePane;
+    private JScrollPane msgTablePane;
     private JPanel statusPane;
     private JTable msgTable;
     private JTabbedPane msgDetailsPane;
@@ -131,6 +138,8 @@ public class LogPanel extends JPanel {
     private JSpinner rangeSpinner;
     private JButton updateSelectionButton;
     private JComboBox limitUnitComboBox;
+    private JSplitPane logSplitPane;
+    private JSplitPane selectionSplitPane;
     private boolean connected = false;
 
     /**
@@ -152,12 +161,57 @@ public class LogPanel extends JPanel {
         this.isAuditType = isAuditType;
 
         if(includeDetailPane) {
-            JSplitPane logSplitPane = new JSplitPane();
-            logSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+            logSplitPane = new JSplitPane();
+            logSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
             logSplitPane.setTopComponent(getMsgTablePane());
             logSplitPane.setBottomComponent(getMsgDetailsPane());
-            logSplitPane.setDividerLocation(0.5);
-            add(logSplitPane, BorderLayout.CENTER);
+            logSplitPane.setOneTouchExpandable(true);
+            logSplitPane.setDividerLocation(300);
+            logSplitPane.setResizeWeight(1.0);
+
+            selectionSplitPane = new JSplitPane();
+            selectionSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+            selectionSplitPane.setTopComponent(getControlPane());
+
+            JPanel bottomSplitPanel = new JPanel();
+            bottomSplitPanel.setLayout(new BorderLayout());
+            bottomSplitPanel.add(logSplitPane, BorderLayout.CENTER);
+
+            selectionSplitPane.setBottomComponent(bottomSplitPanel);
+            selectionSplitPane.setOneTouchExpandable(true);
+            selectionSplitPane.setDividerLocation(0);
+            selectionSplitPane.setResizeWeight(0);
+
+            // this listener ensures that the control pane cannot be maximized
+            getControlPane().addComponentListener(new ComponentAdapter(){
+                public void componentResized(ComponentEvent e) {
+                    if(getControlPane().getSize().getHeight() > getControlPane().getPreferredSize().getHeight()) {
+                        selectionSplitPane.resetToPreferredSizes();
+                    }
+                }
+
+                public void componentShown(ComponentEvent e) {
+                    componentResized(e);
+                }
+            });
+
+            // this listener ensures that the control pane cannot be resized (the divider is fixed)
+            selectionSplitPane.addComponentListener(new ComponentAdapter(){
+                public void componentResized(ComponentEvent e) {
+                    Component comp = selectionSplitPane.getBottomComponent();
+                    int size = (int) (selectionSplitPane.getSize().getHeight() -
+                                      getControlPane().getPreferredSize().getHeight());
+                    if(size > 0) {
+                        comp.setMinimumSize(new Dimension(100, size));
+                    }
+                }
+
+                public void componentShown(ComponentEvent e) {
+                    componentResized(e);
+                }
+            });
+
+            add(selectionSplitPane, BorderLayout.CENTER);
         }
         else {
             add(getMsgTablePane(), BorderLayout.CENTER);
@@ -173,9 +227,7 @@ public class LogPanel extends JPanel {
                 });
 
         // create import transfer handler
-        TransferHandler fdth = getFileDropTransferHandler();
-        getMsgTable().setTransferHandler(fdth);
-        getMsgTable().getTableHeader().setTransferHandler(fdth);
+        getMsgTable().setTransferHandler(getCopyPasteDisablingTransferHandler());
     }
 
     private void init() {
@@ -231,7 +283,31 @@ public class LogPanel extends JPanel {
                 Utilities.setEnabled(viewHistoricPane, true);
             }
             updateLogAutoRefresh();
-            if(viewCurrentRadioButton.isSelected()) refreshLogs();
+            if(viewCurrentRadioButton.isSelected()) {
+                refreshLogs();
+            }
+
+            setHint(isAutoRefresh() ? "Auto-Refresh" : null);
+        }
+    }
+
+
+    /**
+     * Set the status hint, e.g. Disconnected, Auto-Refresh, etc
+     */
+    private void setHint(String hintText) {
+        JLabel hintLabel = getLastUpdateTimeLabel();
+        String currentLabel = hintLabel.getText();
+        int hintIndex = currentLabel.lastIndexOf('[');
+        if(hintText==null || hintText.length()==0) { // then clear
+            if(hintIndex>0) {
+                hintLabel.setText(currentLabel.substring(0, hintIndex-1));
+            }
+        }
+        else { // set hint to given text
+            String newLabel = hintIndex > 0 ? currentLabel.substring(0, hintIndex-1) : currentLabel;
+            newLabel = newLabel.trim() + " [" + hintText + "]   ";
+            hintLabel.setText(newLabel);
         }
     }
 
@@ -244,8 +320,10 @@ public class LogPanel extends JPanel {
 
     private void updateLogAutoRefresh() {
         if (isAutoRefresh()) {
+            setHint("Auto-Refresh");
             getLogsRefreshTimer().start();
         } else {
+            setHint(null);
             getLogsRefreshTimer().stop();
         }
     }
@@ -543,10 +621,7 @@ public class LogPanel extends JPanel {
         getLogsRefreshTimer().stop();
         getFilteredLogTableSorter().onDisconnect();
 
-        if(!getLastUpdateTimeLabel().getText().trim().endsWith("[Disconnected]")) {
-            getLastUpdateTimeLabel().setText(getLastUpdateTimeLabel().getText().trim() + " [Disconnected]   ");
-        }
-
+        setHint("Disconnected");
         Utilities.setEnabled(controlPane, false);
         Utilities.setEnabled(autoRefresh, false);
     }
@@ -558,11 +633,16 @@ public class LogPanel extends JPanel {
     private JPanel getSelectPane(){
         if(selectPane != null) return selectPane;
 
+        JPanel selectPaneLower = new JPanel();
+        selectPaneLower.setLayout(new BoxLayout(selectPaneLower, BoxLayout.X_AXIS));
+        selectPaneLower.add(getFilterPane());
+        selectPaneLower.add(Box.createHorizontalGlue());
+        selectPaneLower.add(getStatusPane());
+
         selectPane = new JPanel();
-        selectPane.setLayout(new BoxLayout(selectPane, BoxLayout.X_AXIS));
-        selectPane.add(getFilterPane());
-        selectPane.add(Box.createHorizontalGlue());
-        selectPane.add(getStatusPane());
+        selectPane.setLayout(new BorderLayout());
+        selectPane.add(getFilterLabel(), BorderLayout.NORTH);
+        selectPane.add(selectPaneLower, BorderLayout.CENTER);
 
         return selectPane;
     }
@@ -590,6 +670,19 @@ public class LogPanel extends JPanel {
         filterPane.add(Box.createHorizontalGlue());
 
         return filterPane;
+    }
+
+    private JLabel getFilterLabel() {
+        if(filterLabel != null) return filterLabel;
+
+        filterLabel = new JLabel("Caution! Constraint may exclude some events.");
+        filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        filterLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+        filterLabel.setVisible(false);
+        filterLabel.setBackground(new Color(0xFF, 0xFF, 0xe1));
+        filterLabel.setOpaque(true);
+
+        return filterLabel;
     }
 
     /**
@@ -766,8 +859,6 @@ public class LogPanel extends JPanel {
 
     /**
      * Get the small control panel used for log viewing
-     *
-     * @return
      */
     private JPanel getMicroControlPane() {
         JPanel microControlPane = new JPanel();
@@ -823,16 +914,10 @@ public class LogPanel extends JPanel {
     private JComponent getMsgTablePane(){
         if(msgTablePane != null) return msgTablePane;
 
-        msgTablePane = new JPanel();
-        msgTablePane.setLayout(new BorderLayout());
-        if(isAuditType) msgTablePane.add(getControlPane(), BorderLayout.NORTH);
-
-        JScrollPane tablePane = new JScrollPane();
-        tablePane.setViewportView(getMsgTable());
-        tablePane.getViewport().setBackground(getMsgTable().getBackground());
-        tablePane.setMinimumSize(new Dimension(1000, 200));
-        tablePane.setPreferredSize(new Dimension(1000, 300));
-        msgTablePane.add(tablePane, BorderLayout.CENTER);
+        msgTablePane = new JScrollPane();
+        msgTablePane.setViewportView(getMsgTable());
+        msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
+        msgTablePane.setMinimumSize(new Dimension(600, 40));
 
         return msgTablePane;
     }
@@ -845,9 +930,6 @@ public class LogPanel extends JPanel {
         if(msgDetailsPane != null)  return msgDetailsPane;
 
         msgDetailsPane = new JTabbedPane();
-        msgDetailsPane.setMaximumSize(new java.awt.Dimension(1000, 150));
-        msgDetailsPane.setMinimumSize(new java.awt.Dimension(1000, 100));
-        msgDetailsPane.setPreferredSize(new java.awt.Dimension(1000, 150));
 
         JScrollPane msgDetailsScrollPane = getDetailsScrollPane();
         msgDetailsPane.addTab("Details", msgDetailsScrollPane);
@@ -1187,6 +1269,18 @@ public class LogPanel extends JPanel {
     }
 
     private void updateMsgFilter() {
+        // update filter warning
+        JLabel filterWarn = getFilterLabel();
+        if(msgFilterNode.trim().length() > 0 ||
+                msgFilterService.trim().length() > 0 ||
+                msgFilterThreadId.trim().length() > 0 ||
+                msgFilterMessage.trim().length() > 0) {
+            filterWarn.setVisible(true);
+        }
+        else {
+            filterWarn.setVisible(false);
+        }
+
         // get the selected row index
         int selectedRowIndexOld = getMsgTable().getSelectedRow();
         String msgNumSelected = null;
@@ -1288,36 +1382,37 @@ public class LogPanel extends JPanel {
         getLogsRefreshTimer().setDelay(logsRefreshInterval);
     }
 
-    private TransferHandler getFileDropTransferHandler() {
-        return new FileDropTransferHandler(new FileDropTransferHandler.FileDropListener(){
-            public boolean acceptFiles(File[] files) {
-                boolean accepted = false;
-
-                if(files.length==1) {
-                    try {
-                        importView(files[0]);
-                        accepted = true;
-                    }
-                    catch(Exception e) {
-                        logger.log(Level.WARNING, "Unable to import data", e);
-                    }
-                }
-                else {
-                    logger.info("Multiples file not supported.");
-                }
-
-                return accepted;
+    private TransferHandler getCopyPasteDisablingTransferHandler() {
+        return new TransferHandler(){
+            public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+                return false;
             }
 
-            public boolean isDropEnabled() {
-                return !connected;
+            protected Transferable createTransferable(JComponent c) {
+                return null;
             }
-        }, new FilenameFilter(){
-            public boolean accept(File dir, String name) {
-                return name!=null &&
-                        ((isAuditType && name.endsWith(".ssga")) || (!isAuditType && name.endsWith(".ssgl")));
+
+            public void exportAsDrag(JComponent comp, InputEvent e, int action) {
             }
-        });
+
+            protected void exportDone(JComponent source, Transferable data, int action) {
+            }
+
+            public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {
+            }
+
+            public int getSourceActions(JComponent c) {
+                return TransferHandler.NONE;
+            }
+
+            public Icon getVisualRepresentation(Transferable t) {
+                return super.getVisualRepresentation(t);
+            }
+
+            public boolean importData(JComponent comp, Transferable t) {
+                return false;
+            }
+        };
     }
 
     /**
@@ -1363,7 +1458,8 @@ public class LogPanel extends JPanel {
         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
         Calendar cal = Calendar.getInstance();
         cal.setTime(time);
-        getLastUpdateTimeLabel().setText("Last Updated: " + sdf.format(cal.getTime()) + "   ");
+        getLastUpdateTimeLabel().setText("Last Updated: " + sdf.format(cal.getTime()) +
+                (isAutoRefresh() ? " [Auto-Refresh]" : "   "));
     }
 
     // This customized renderer can render objects of the type TextandIcon
@@ -1435,8 +1531,6 @@ public class LogPanel extends JPanel {
 
     /**
      * Export the currently displayed log/audit data.
-     *
-     * @param out the stream to output to.
      */
     public void exportView(File file) throws IOException {
         // process

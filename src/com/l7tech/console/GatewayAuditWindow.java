@@ -176,9 +176,11 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
             // change the onLogon/onLogoff functions that use menu item
             // indexes to enable and disable items.
             //
-            fileMenu.add(new JMenuItem(new DownloadAuditEventsAction()));
-            fileMenu.add(new JMenuItem(deleteAuditEventsAction));
-            fileMenu.addSeparator();
+            if(startConnected) {
+                fileMenu.add(new JMenuItem(new DownloadAuditEventsAction()));
+                fileMenu.add(new JMenuItem(deleteAuditEventsAction));
+                fileMenu.addSeparator();
+            }
             fileMenu.add(getSaveMenuItem());
             fileMenu.addSeparator();
             fileMenu.add(getExitMenuItem());
