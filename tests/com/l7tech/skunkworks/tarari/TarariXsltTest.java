@@ -35,6 +35,13 @@ public class TarariXsltTest {
     private static BenchmarkRunner br2;
 
     public static void main(String[] args) throws Exception {
+        if (args.length < 2) usage();
+        int num = Integer.parseInt(args[0]);
+        if (num < 1) throw new IllegalArgumentException("Num must be positive");
+        int threads = Integer.parseInt(args[1]);
+        if (threads > 5000) System.err.println("Warning: Using very large number of threads (" + threads + ")");
+        if (threads < 1) throw new IllegalArgumentException("Threads must be positive");
+
         final String reqStr = TestDocuments.getTestDocumentAsXml(TestDocuments.DIR + "xslt/DocSearchResponse.xml");
         final String xsltStr = TestDocuments.getTestDocumentAsXml(TestDocuments.DIR + "xslt/GetDocInfoFull.xsl");
 
@@ -90,13 +97,18 @@ public class TarariXsltTest {
             }
         };
 
-        br1 = new BenchmarkRunner(xsltTestSsg, 10000, "xsltTestSsg");
-        br1.setThreadCount(10);
+        br1 = new BenchmarkRunner(xsltTestSsg, num, "xsltTestSsg");
+        br1.setThreadCount(threads);
         br1.run();
 
-        br2 = new BenchmarkRunner(xsltTestFast, 10000, "xsltTestFast");
-        br2.setThreadCount(10);
+        br2 = new BenchmarkRunner(xsltTestFast, num, "xsltTestFast");
+        br2.setThreadCount(threads);
         br2.run();
+    }
+
+    private static void usage() {
+        System.err.println("Usage: TarariXsltTest <num> <threads>");
+        System.exit(1);
     }
 
     private static void stopAll() {
