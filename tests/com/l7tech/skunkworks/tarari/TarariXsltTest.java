@@ -82,11 +82,11 @@ public class TarariXsltTest {
             }
         };
 
-        if (!noSsg) testSsgSim(requestBytes, master, num, threads);
-
         br2 = new BenchmarkRunner(xsltTestFast, num, "xsltTestFast");
         br2.setThreadCount(threads);
         br2.run();
+
+        if (!noSsg) testSsgSim(requestBytes, master, num, threads);
     }
 
     private static void testSsgSim(final byte[] requestBytes, final Stylesheet master, int num, int threads) throws InterruptedException {
