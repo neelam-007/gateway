@@ -7,6 +7,8 @@ import java.text.MessageFormat;
 import java.util.ListResourceBundle;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -68,6 +70,8 @@ public class ErrorServlet extends HttpServlet {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger(ErrorServlet.class.getName());
+
     /**
      *
      */
@@ -102,21 +106,26 @@ public class ErrorServlet extends HttpServlet {
      *
      */
     private void doError(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        Integer statusCode = (Integer) request.getAttribute(REQUEST_ATTR_STATUS_CODE);
-        String message = (String) request.getAttribute(REQUEST_ATTR_MESSAGE);
         Throwable thrown = (Throwable) request.getAttribute(REQUEST_ATTR_EXCEPTION);
+        if(!response.isCommitted()) {
+            Integer statusCode = (Integer) request.getAttribute(REQUEST_ATTR_STATUS_CODE);
+            String message = (String) request.getAttribute(REQUEST_ATTR_MESSAGE);
 
-        if(statusCode==null && thrown==null) { // page invoked directly (no error)
-            response.sendError(404);
-            statusCode = new Integer(404);
+            if(statusCode==null && thrown==null) { // page invoked directly (no error)
+                response.sendError(404);
+                statusCode = new Integer(404);
+            }
+
+            response.setContentType("text/html");
+            response.setCharacterEncoding("utf-8");
+            PrintWriter pw = response.getWriter();
+            pw.write(MessageFormat.format(ERROR_MARKUP, getFormatArgs(getTitle(statusCode), getMessage(statusCode,thrown))));
+            pw.flush();
+            pw.close();
         }
-
-        response.setContentType("text/html");
-        response.setCharacterEncoding("utf-8");
-        PrintWriter pw = response.getWriter();
-        pw.write(MessageFormat.format(ERROR_MARKUP, getFormatArgs(getTitle(statusCode), getMessage(statusCode,thrown))));
-        pw.flush();
-        pw.close();
+        else {
+            logger.log(Level.WARNING, "Servlet error occured after response was committed.", thrown);
+        }
     }
 
     /**
