@@ -163,7 +163,7 @@ public class RmiServiceExporterStubFactoryBean
     private RmiProxyStub exportService() throws RemoteException {
         Object service = getService();
         Remote exportedObject = null;
-        if(exportedObject instanceof Remote) {
+        if(service instanceof Remote) {
             exportedObject = (Remote) service;
         }
         else {
