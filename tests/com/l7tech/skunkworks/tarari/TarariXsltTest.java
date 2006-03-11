@@ -58,18 +58,22 @@ public class TarariXsltTest {
             public void run() {
                 try {
                     TarariMessageContextImpl ctx = (TarariMessageContextImpl)cfac.makeMessageContext(new ByteArrayInputStream(requestBytes));
-                    RaxDocument doc = ctx.getRaxDocument();
-                    //final XPathProcessor xpathProcessor = new XPathProcessor(doc);
-                    //XPathResult xpathResult = xpathProcessor.processXPaths();
-                    XmlSource source = (XmlSource)xmlSource.get();
-                    source.setData(doc);
-                    Stylesheet transformer = new Stylesheet(master);
-                    transformer.setValidate(false);
-                    ByteArrayOutputStream output = new ByteArrayOutputStream();
-                    XmlResult result = new XmlResult(output);
-                    transformer.transform(source, result);
-                    byte[] transformedmessage = output.toByteArray();
-                    HexUtils.copyStream(new ByteArrayInputStream(transformedmessage), new NullOutputStream());
+                    try {
+                        RaxDocument doc = ctx.getRaxDocument();
+                        //final XPathProcessor xpathProcessor = new XPathProcessor(doc);
+                        //XPathResult xpathResult = xpathProcessor.processXPaths();
+                        XmlSource source = (XmlSource)xmlSource.get();
+                        source.setData(doc);
+                        Stylesheet transformer = new Stylesheet(master);
+                        transformer.setValidate(false);
+                        ByteArrayOutputStream output = new ByteArrayOutputStream();
+                        XmlResult result = new XmlResult(output);
+                        transformer.transform(source, result);
+                        byte[] transformedmessage = output.toByteArray();
+                        HexUtils.copyStream(new ByteArrayInputStream(transformedmessage), new NullOutputStream());
+                    } finally {
+                        ctx.close();
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                     stopAll();
