@@ -119,11 +119,11 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
         if (globalContext == null)
             throw new SoftwareFallbackException("No GlobalTarariContext");
 
-        // Lock in earliest compiler generation that might have been in effect when we evaluate the XPaths
-        final long generation = globalContext.getCompilerGeneration();
 
         try {
             globalContext.fastxpathLock.readLock().acquire();
+            // Lock in earliest compiler generation that might have been in effect when we evaluate the XPaths
+            final long generation = globalContext.getCompilerGeneration();
             XmlSource xmlSource = new XmlSource(inputStream);
             RaxDocument doc = RaxDocument.createDocument(xmlSource);
             final XPathProcessor xpathProcessor = new XPathProcessor(doc);

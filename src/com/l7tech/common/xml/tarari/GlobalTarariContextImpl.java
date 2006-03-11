@@ -40,8 +40,9 @@ import java.util.logging.Logger;
  * <p/>
  * Locks used in this class:
  * <ul>
- * <li>fastxpathLock - used to protect currentXpaths, XPathCompiler's static data structure, compilerGeneration, and xpathChangedSinceLastCompilation
- * <li>schemaLock - rwlock used to protect schemas in the card when they are being resynched with the database
+ * <li>fastxpathLock - used to protect currentXpaths, XPathCompiler's static data structure, compilerGeneration,
+ *                     xpathChangedSinceLastCompilation,
+ *                     and schemas in the card when they are being resynched with the database
  * </ul>
  *
  */
@@ -52,7 +53,6 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     boolean xpathChangedSinceLastCompilation = true;
     private String[] tnss;
     private boolean communitySchemaResolverSet = false;
-    private ReadWriteLock schemaLock = new WriterPreferenceReadWriteLock();
     ReadWriteLock fastxpathLock = new WriterPreferenceReadWriteLock();
 
     /**
@@ -134,19 +134,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
     /**
      * Get the compiler generation count of the most recently installed set of xpaths.  This is used to check whether
      * a particular xpath was present in the hardware when a particular TarariMessageContext was created.
+     * Caller must hold the fastxpath read lock.
      *
      * @return the compiler generation count of the most recently installed set of xpaths.
      */
-    public long getCompilerGeneration() {
-        try {
-            fastxpathLock.readLock().acquire();
-            return compilerGeneration;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while waiting for Tarari fastxpath read lock");
-        } finally {
-            fastxpathLock.readLock().release();
-        }
+    long getCompilerGeneration() {
+        return compilerGeneration;
     }
 
     public CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException {
@@ -206,7 +199,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
      */
     public void updateSchemasToCard(BeanFactory managerResolver) throws FindException, IOException, XmlException {
         try {
-            schemaLock.writeLock().acquire();
+            fastxpathLock.writeLock().acquire();
 
             // List schemas on card
             ArrayList schemasOnCard = new ArrayList();
@@ -302,13 +295,13 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
             logger.warning("Interrupted while waiting for Tarari schema write lock"); // probably being shut down
             Thread.currentThread().interrupt();
         } finally {
-            schemaLock.writeLock().release();
+            fastxpathLock.writeLock().release();
         }
     }
 
     public Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri) {
         try {
-            schemaLock.readLock().acquire();
+            fastxpathLock.readLock().acquire();
             if (tnss == null) {
                 // shouldn't be possible -- supposed to call updateSchemasToCard after saving new policy but before making it active
                 logger.severe("tnss not loaded");
@@ -329,7 +322,7 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while waiting for Tarari schema read lock", e);
         } finally {
-            schemaLock.readLock().release();
+            fastxpathLock.readLock().release();
         }
     }
 
