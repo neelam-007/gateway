@@ -7,6 +7,7 @@ package com.l7tech.common.util;
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
@@ -295,27 +296,43 @@ public class XmlUtil {
     }
 
     public static String nodeToString(Node node) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-        nodeToOutputStream(node, out);
-        return out.toString();
+        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        try {
+            nodeToOutputStream(node, out);
+            return out.toString();
+        } finally {
+            out.close();
+        }
     }
-    
+
     public static byte[] toByteArray(Node node) throws IOException {
-         final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-         nodeToOutputStream(node, out);
-         return out.toByteArray();
-     }
+        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        try {
+            nodeToOutputStream(node, out);
+            return out.toByteArray();
+        } finally {
+            out.close();
+        }
+    }
 
     public static byte[] toByteArray(Node node, String encoding) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-        nodeToOutputStream(node, out, encoding);
-        return out.toByteArray();
+        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        try {
+            nodeToOutputStream(node, out, encoding);
+            return out.toByteArray();
+        } finally {
+            out.close();
+        }
     }
 
     public static String nodeToFormattedString(Node node) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-        nodeToFormattedOutputStream(node, out);
-        return out.toString();
+        final BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(1024);
+        try {
+            nodeToFormattedOutputStream(node, out);
+            return out.toString();
+        } finally {
+            out.close();
+        }
     }
 
     /**

@@ -6,10 +6,10 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.util.HexUtils;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -24,9 +24,13 @@ public class ByteArrayStashManager implements StashManager {
     }
 
     public void stash(int ordinal, InputStream in) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
-        HexUtils.copyStream(in, baos);
-        stash(ordinal, baos.toByteArray());
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+        try {
+            HexUtils.copyStream(in, baos);
+            stash(ordinal, baos.toByteArray());
+        } finally {
+            baos.close();
+        }
     }
 
     /**
@@ -62,11 +66,7 @@ public class ByteArrayStashManager implements StashManager {
     }
 
     public boolean isByteArrayAvailable(int ordinal) {
-        try {
-            return peek(ordinal);
-        } catch (IOException e) {
-            throw new RuntimeException(e); // can't happen, it's a byte array
-        }
+        return peek(ordinal);
     }
 
     public byte[] recallBytes(int ordinal) throws NoSuchPartException {
@@ -79,13 +79,15 @@ public class ByteArrayStashManager implements StashManager {
         return buf;
     }
 
-    public boolean peek(int ordinal) throws IOException {
+    public boolean peek(int ordinal) {
         if (stashed.size() <= ordinal)
             return false;
         byte[] buf = (byte[])stashed.get(ordinal);
-        if (buf == null)
-            return false;
-        return true;
+        return buf != null;
+    }
+
+    public int getMaxOrdinal() {
+        return stashed.size();
     }
 
     public void close() {

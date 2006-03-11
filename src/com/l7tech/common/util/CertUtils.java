@@ -4,13 +4,13 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.security.CertificateExpiry;
 import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x509.X509Name;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -91,11 +91,15 @@ public class CertUtils {
      * @return  the PEM encoded certificate as a byte array
      */
     public static byte[] encodeAsPEM(byte[] cert) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        bos.write("-----BEGIN CERTIFICATE-----\n".getBytes());
-        bos.write(HexUtils.encodeBase64(cert).getBytes("UTF-8"));
-        bos.write("\n-----END CERTIFICATE-----\n".getBytes());
-        return bos.toByteArray();
+        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+        try {
+            bos.write("-----BEGIN CERTIFICATE-----\n".getBytes());
+            bos.write(HexUtils.encodeBase64(cert).getBytes("UTF-8"));
+            bos.write("\n-----END CERTIFICATE-----\n".getBytes());
+            return bos.toByteArray();
+        } finally {
+            bos.close();
+        }
     }
 
 

@@ -8,6 +8,7 @@ import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
@@ -1585,7 +1586,7 @@ public class LogPanel extends JPanel {
             in = new BufferedInputStream(new FileInputStream(file));
             byte[] header = HexUtils.slurpStream(in, FILE_TYPE.length);
             if(header.length < FILE_TYPE.length ||
-               !HexUtils.compareArrays(FILE_TYPE, 0, header, 0, FILE_TYPE.length)) {
+               !ArrayUtils.compareArrays(FILE_TYPE, 0, header, 0, FILE_TYPE.length)) {
                 importError("Cannot import file, incorrect type.");
                 return false;
             }

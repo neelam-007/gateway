@@ -4,6 +4,7 @@ import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.http.HttpHeaders;
 import com.l7tech.common.message.HttpHeadersKnob;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
@@ -286,8 +287,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param t The error that occurred during the request.
      */
     public void onMessageError(final Throwable t) {
+        final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
         try {
-            final ByteArrayOutputStream b = new ByteArrayOutputStream(2048);
             PrintStream p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
@@ -295,6 +296,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
             appendMessage(new SavedTextMessage("Client Error", t.getMessage()));
+        } finally {
+            b.close();
         }
     }
 
@@ -303,8 +306,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param t The error that occurred during the request.
      */
     public void onReplyError(final Throwable t) {
+        final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
         try {
-            final ByteArrayOutputStream b = new ByteArrayOutputStream(2048);
             PrintStream p = new PrintStream(b, true, "UTF-8");
             t.printStackTrace(p);
             p.flush();
@@ -312,6 +315,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         } catch (UnsupportedEncodingException e) {
             log.log(Level.SEVERE, e.getMessage(), e);
             appendMessage(new SavedTextMessage("Server Error", t.getMessage()));
+        } finally {
+            b.close();
         }
     }
 

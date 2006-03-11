@@ -102,9 +102,17 @@ public interface StashManager {
      *
      * @param ordinal the ordinal that may have been used in a previous call to stash()
      * @return true if recall(ordinal) would produce a non-null InputStream; otherwise, false
-     * @throws IOException if there was a problem reading the stash, or if this information is unavailable
      */
-    boolean peek(int ordinal) throws IOException;
+    boolean peek(int ordinal);
+
+    /**
+     * Return a number such that no ordinal with a higher number has been stashed into this StashManager instance.
+     * This does not imply that this ordinal (or any ordinal) would currently exist if you called peek, nor that
+     * this ordinal has ever even been stashed into this instance: just that nothing higher has ever been stashed.
+     *
+     * @return a number such that nothing higher has been stashed into this StashManager instance.
+     */
+    int getMaxOrdinal();
 
     /**
      * Notify that all previously-stashed InputStream data can now be released.  After this, the behaviour of

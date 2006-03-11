@@ -84,8 +84,9 @@ public class ServerRegex implements ServerAssertion {
             }
 
             InputStream is = messagePart.getInputStream(false);
-            byte[] messageBytes = HexUtils.slurpStream(is, Regex.MAX_LENGTH);
-            if (messageBytes.length == Regex.MAX_LENGTH) {
+            byte[] messageBytes = HexUtils.getLocalBuffer();
+            int messageBytesLen = HexUtils.slurpStream(is, messageBytes);
+            if (messageBytesLen >= HexUtils.LOCAL_BUFFER_SIZE) {
                 auditor.logAndAudit(AssertionMessages.REGEX_TOO_BIG);
                 return AssertionStatus.FAILED;
             }
@@ -102,7 +103,7 @@ public class ServerRegex implements ServerAssertion {
                 encoding = ENCODING;
             }
 
-            Matcher matcher = regexPattern.matcher(new String(messageBytes, encoding));
+            Matcher matcher = regexPattern.matcher(new String(messageBytes, 0, messageBytesLen, encoding));
             AssertionStatus assertionStatus = AssertionStatus.FAILED;
             if (isReplacement) {
                 logger.log(Level.FINE, "Replace requested: Match pattern '{0}', replace pattern '{1}'", new Object[]{regexAssertion.getRegex(), replacement});

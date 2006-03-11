@@ -6,6 +6,8 @@
 
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.JmsKnob;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.XmlKnob;
@@ -14,7 +16,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -25,7 +26,6 @@ import org.xml.sax.SAXException;
 
 import javax.jms.*;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
@@ -142,9 +142,14 @@ class JmsRequestHandler {
                     }
                 }
 
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                HexUtils.copyStream(responseStream, baos);
-                byte[] responseBytes = baos.toByteArray();
+                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                final byte[] responseBytes;
+                try {
+                    HexUtils.copyStream(responseStream, baos);
+                    responseBytes = baos.toByteArray();
+                } finally {
+                    baos.close();
+                }
                 JmsKnob requestJmsKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
                 if (requestJmsKnob == null)
                     throw new JmsRuntimeException("Request wasn't a JMS message");

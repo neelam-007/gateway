@@ -5,13 +5,13 @@ import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
-import com.l7tech.common.security.kerberos.KerberosException;
-import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.*;
@@ -27,7 +27,6 @@ import org.xml.sax.SAXException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -1346,13 +1345,15 @@ public class WssProcessorImpl implements WssProcessor {
                             final Node result = (Node)cntx.securityTokenReferenceElementToTargetElement.get(source);
                             if (result == null) throw new TransformException("Unable to check signature of element signed indirectly through SecurityTokenReference transform: the referenced SecurityTokenReference has not yet been seen");
                             ExclusiveC11r canon = new ExclusiveC11r();
-                            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                            BufferPoolByteArrayOutputStream bo = new BufferPoolByteArrayOutputStream(4096);
                             try {
                                 canon.canonicalize(result, bo);
+                                c.setContent(bo.toByteArray(), "UTF-8");
                             } catch (IOException e) {
                                 throw (TransformException)new TransformException().initCause(e);
+                            } finally {
+                                bo.close();
                             }
-                            c.setContent(bo.toByteArray(), "UTF-8");
                         }
                     };
                 } else

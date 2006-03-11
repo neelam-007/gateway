@@ -1,9 +1,9 @@
 package com.l7tech.identity;
 
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -66,12 +66,16 @@ public class IdentityProviderConfig extends NamedEntityImp {
             if (props.size() < 1) {
                 propsXml = "";
             } else {
-                ByteArrayOutputStream output = new ByteArrayOutputStream();
-                java.beans.XMLEncoder encoder = new java.beans.XMLEncoder(output);
-                encoder.writeObject(props);
-                encoder.close();
-                output.close();
-                propsXml = output.toString();
+                BufferPoolByteArrayOutputStream output = new BufferPoolByteArrayOutputStream();
+                try {
+                    java.beans.XMLEncoder encoder = new java.beans.XMLEncoder(output);
+                    encoder.writeObject(props);
+                    encoder.close();
+                    output.close();
+                    propsXml = output.toString();
+                } finally {
+                    output.close();
+                }
             }
         }
 

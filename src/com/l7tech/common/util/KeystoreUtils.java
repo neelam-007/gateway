@@ -45,7 +45,7 @@ public class KeystoreUtils {
         byte[] cert;
         try {
             certStream = new FileInputStream(sslCertPath);
-            cert = HexUtils.slurpStream(certStream, 16384);
+            cert = HexUtils.slurpStreamLocalBuffer(certStream);
         } finally {
             ResourceUtils.closeQuietly(certStream);
         }
@@ -58,7 +58,7 @@ public class KeystoreUtils {
         byte[] cert;
         try {
             certStream = new FileInputStream(sslCertPath);
-            cert = HexUtils.slurpStream(certStream, 16384);
+            cert = HexUtils.slurpStreamLocalBuffer(certStream);
         } finally {
             ResourceUtils.closeQuietly(certStream);
         }

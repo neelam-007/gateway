@@ -6,7 +6,7 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ArrayUtils;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -153,7 +153,7 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
             int boundRemainder = crlfBoundary.length - boundMatchBytes;
             if (boundRemainder <= got) {
                 // check for exact match of rest of boundary
-                if (HexUtils.compareArrays(b, off, crlfBoundary, boundMatchBytes, boundRemainder)) {
+                if (ArrayUtils.compareArrays(b, off, crlfBoundary, boundMatchBytes, boundRemainder)) {
                     // Found the rest of the boundary.  Unread everything after it, adjust input stream, then return EOF.
 
                     in.unread(b, off + boundRemainder, got - boundRemainder);
@@ -171,7 +171,7 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
             }
 
             // check for prefix match of rest of boundary
-            if (HexUtils.compareArrays(b, off, crlfBoundary, boundMatchBytes, got)) {
+            if (ArrayUtils.compareArrays(b, off, crlfBoundary, boundMatchBytes, got)) {
                 // Buffer matched up, so continue searching
                 boundMatchBytes += got;
                 return this.read(b, off, len); // recurse to check the next block
@@ -192,7 +192,7 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
         if (got < 1)
             throw new IOException("Multipart stream ended before a terminating boundary was encountered");
 
-        int match = HexUtils.matchSubarrayOrPrefix(b, off, got, crlfBoundary, 0);
+        int match = ArrayUtils.matchSubarrayOrPrefix(b, off, got, crlfBoundary, 0);
         if (match < 0) {
             // No boundary or start of boundary found -- entire block is data.
             return got;
@@ -260,15 +260,15 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
 
     public long skip(long n) throws IOException {
         if (n < 1) return 0;
-        int toskip = (int)(n > 8192 ? 8192 : n);
+        int toskip = (int)(n > 512 ? 512 : n);
         byte[] junk = new byte[toskip];
         return this.read(junk, 0, toskip);
     }
 
     public void close() throws IOException {
         // Read ourself up to EOF
-        byte[] junk = new byte[8192];
-        while (this.read(junk, 0, 8192) > 0) {
+        byte[] junk = new byte[512];
+        while (this.read(junk, 0, 512) > 0) {
             // do nothing
         }
         atEof = true;

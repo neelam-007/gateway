@@ -7,6 +7,7 @@ package com.l7tech.proxy.processor;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.TeeInputStream;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
@@ -600,11 +601,15 @@ public class MessageProcessor {
                              XmlUtil.nodeToFormattedString(decoratedDocument));
                 } else {
                     if (LogFlags.logAttachments && request.getMimeKnob().isMultipart()) {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        InputStream bodyStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
-                        HexUtils.copyStream(bodyStream, baos);
-                        log.info("Posting to Gateway (unformatted, including attachments):\n" +
-                                 baos.toString(request.getMimeKnob().getOuterContentType().getEncoding()));
+                        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                        try {
+                            InputStream bodyStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                            HexUtils.copyStream(bodyStream, baos);
+                            log.info("Posting to Gateway (unformatted, including attachments):\n" +
+                                     baos.toString(request.getMimeKnob().getOuterContentType().getEncoding()));
+                        } finally {
+                            baos.close();
+                        }
                     } else {
                         log.info("Posting to Gateway (unformatted):\n" + postBody);
                     }
@@ -771,11 +776,15 @@ public class MessageProcessor {
                     log.info("Got response from Gateway (reformatted):\n" + logStr);
                 } else {
                     if (LogFlags.logAttachments && respMime.isMultipart()) {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
-                        HexUtils.copyStream(bodyStream, baos);
-                        log.info("Got response from Gateway (unformatted, including attachments):\n" +
-                                 baos.toString(respMime.getOuterContentType().getEncoding()));
+                        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                        try {
+                            InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
+                            HexUtils.copyStream(bodyStream, baos);
+                            log.info("Got response from Gateway (unformatted, including attachments):\n" +
+                                     baos.toString(respMime.getOuterContentType().getEncoding()));
+                        } finally {
+                            baos.close();
+                        }
                     } else {
                         String logStr = respMime.getOuterContentType().toString() + "\r\n" +
                                 XmlUtil.nodeToString(responseDocument);

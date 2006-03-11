@@ -13,6 +13,7 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
@@ -541,19 +542,21 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
                     private RerunnableHttpRequest.InputStreamFactory getInputStreamFactory() throws GenericHttpException {
                         if(isf==null) {
-                            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                             try {
                                 HexUtils.copyStream(is, baos);
+                                final byte[] data = baos.toByteArray();
+                                isf = new RerunnableHttpRequest.InputStreamFactory() {
+                                    public InputStream getInputStream() {
+                                        return new ByteArrayInputStream(data);
+                                    }
+                                };
                             }
                             catch(IOException ioe) {
                                 throw new GenericHttpException("Cannot read request data.", ioe);
+                            } finally {
+                                baos.close();
                             }
-                            final byte[] data = baos.toByteArray();
-                            isf = new RerunnableHttpRequest.InputStreamFactory() {
-                                public InputStream getInputStream() {
-                                    return new ByteArrayInputStream(data);
-                                }
-                            };
                         }
                         return isf;
                     }

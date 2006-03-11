@@ -201,7 +201,8 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
             loginResponse = loginRequest.getResponse();
             HttpHeaders loginResponseHeaders = loginResponse.getHeaders();
             int loginResponseStatus = loginResponse.getStatus();
-            logger.finest("The response returned code " + String.valueOf(loginResponseStatus) + "\n" + "-- response content --\n" + new String(HexUtils.slurpStream(loginResponse.getInputStream(), 65536)));
+            // TODO do we really want to log this much stuff unconditionally? -lyonsm
+            //logger.finest("The response returned code " + String.valueOf(loginResponseStatus) + "\n" + "-- response content --\n" + new String(HexUtils.slurpStreamLocalBuffer(loginResponse.getInputStream())));
             if (loginResponseStatus == HttpConstants.STATUS_FOUND
               ||loginResponseStatus == HttpConstants.STATUS_SEE_OTHER) {
                 String location = loginResponseHeaders.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
@@ -222,7 +223,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
 
                 final String[] artifacts = (String[]) queryParams.get(assertion.getArtifactQueryParameter());
                 if (artifacts == null || artifacts.length == 0) {
-                    byte[] responseBytes = HexUtils.slurpStream(loginResponse.getInputStream(), 65536);
+                    byte[] responseBytes = HexUtils.slurpStreamLocalBuffer(loginResponse.getInputStream());
                     logger.info(loginResponseHeaders.toString());
                     logger.info(new String(responseBytes, HttpConstants.ENCODING_UTF8));
                     throw new AssertionException(AssertionStatus.FAILED, AssertionMessages.SAMLBROWSERARTIFACT_REDIRECT_NO_ARTIFACT);

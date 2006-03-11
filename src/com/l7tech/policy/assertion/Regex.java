@@ -12,8 +12,6 @@ import com.l7tech.policy.variable.ExpandVariables;
  * @version Mar 21, 2005
  */
 public class Regex extends Assertion implements UsesVariables {
-    public static final int MAX_LENGTH = 1024 * 512;
-
     private String regex;
     private String replacement;
     private boolean caseInsensitive;

@@ -155,7 +155,7 @@ public class UptimeMonitor {
         try {
             up = Runtime.getRuntime().exec(uptimePath);
             got = new BufferedInputStream(up.getInputStream());
-            byte[] buff = HexUtils.slurpStream(got, 512);
+            byte[] buff = HexUtils.slurpStreamLocalBuffer(got);
             String uptimeOutput = new String(buff);
             UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput, ServerConfig.getInstance().getServerBootTime() );
             up.waitFor();

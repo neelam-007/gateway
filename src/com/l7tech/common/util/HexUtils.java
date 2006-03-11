@@ -7,23 +7,29 @@
 package com.l7tech.common.util;
 
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utility for hex encoding.
- * User: mike
- * Date: Jul 15, 2003
- * Time: 2:31:32 PM
+ * Utility methods for hex encoding and dealing with streams and byte buffers.
  */
 public class HexUtils {
+    private static final int DEFAULT_LOCAL_BUFFER_SIZE = 256 * 1024;
+    private static final int MIN_LOCAL_BUFFER_SIZE = 32 * 1024; // contract guarantees at least 32k
+    private static final int CFG_LOCAL_BUFFER_SIZE = Integer.getInteger("com.l7tech.common.util.localBufferSize",
+                                                                        DEFAULT_LOCAL_BUFFER_SIZE).intValue();
+
+    /** The size of the thread-local buffer returned by getBuffer() and used by slurpStreamLimited. */
+    public static final int LOCAL_BUFFER_SIZE = CFG_LOCAL_BUFFER_SIZE >= MIN_LOCAL_BUFFER_SIZE
+                                                      ? CFG_LOCAL_BUFFER_SIZE : MIN_LOCAL_BUFFER_SIZE;
 
     public static byte[] getMd5Digest(byte[] stuffToDigest) {
         return getMd5().digest(stuffToDigest);
@@ -55,6 +61,25 @@ public class HexUtils {
     private static ThreadLocal localEncoder = new ThreadLocal() {
         protected Object initialValue() {
             return new BASE64Encoder();
+        }
+    };
+
+    /**
+     * Get a thread-local buffer for i.e. reading stuff that is at least 32 kilobytes and has not been zeroed
+     * since the last person used it.  You may use this method ONLY if you can prove that
+     * no method that you call while still using your thread's buffer might also try to use it -- be especially
+     * careful when using InputStreams and OutputStreams which may actually be wrappers for other Layer 7 code.
+     *
+     * @return a thread-local byte buffer that is at least 32k in size and has NOT been zeroed:
+     *         it may contain random leftover garbage.  Never null.
+     */
+    public static byte[] getLocalBuffer() {
+        return ((ByteBuffer)localBuffer.get()).array();
+    }
+
+    private static ThreadLocal localBuffer = new ThreadLocal() {
+        protected Object initialValue() {
+            return ByteBuffer.allocate(LOCAL_BUFFER_SIZE);
         }
     };
 
@@ -151,15 +176,24 @@ public class HexUtils {
     }
 
     /**
-     * Slurp a stream into a byte array and return an array of the appropriate size.  This requires
-     * reading into a buffer array, and then copying to a new array.. if you don't need the array to be
-     * exact size required, you can avoid a copy by supplying your own array to the alternate
-     * slurpStream() call.
+     * Slurp at most maxLength bytes from stream into a byte array and return an array of the appropriate size.
+     * This requires reading into a new byte array of size maxLength, and then copying to a new array with the
+     * exact resulting size.
+     * If you don't need the the returned array to be the same size as the total amount of data read,
+     * you can avoid a copy by supplying your own array to the alternate call
+     * {@link #slurpStream(java.io.InputStream, byte[])}.
+     * <p/>
+     * If the stream contains more than maxLength bytes of data, additional unread information may be left in
+     * the stream, and
+     * the amount returned will be silently truncated to maxLength.  To detect if this might
+     * have been the case, check if the returned amount exactly equals maxLength.  (Unfortunately
+     * there is no way to tell this situation apart from the non-lossy outcome of the stream containing exactly
+     * maxLength bytes.)
      *
-     * @param stream  the stream to read
+     * @param stream  the stream to read.  Must not be null.
      * @param maxLength  the maximum number of bytes you are willing to recieve
-     * @return the newly read array
-     * @throws IOException if there was a problem reading the stream
+     * @return the newly read array, sized to the amount read or maxLength if the data may have been truncated.
+     *         never null.
      */
     public static byte[] slurpStream(InputStream stream, int maxLength) throws IOException {
         byte[] buffer = new byte[maxLength];
@@ -170,14 +204,43 @@ public class HexUtils {
     }
 
     /**
+     * Slurp at most {@link #LOCAL_BUFFER_SIZE} bytes of a stream into a byte array and return
+     * a new array of the appropriate size.
+     * This requires reading into a thread-local buffer array, and then copying to a new array.
+     * If you don't need the the returned array to be the same size as the total amount of data read,
+     * you can avoid a copy by supplying your own array to the alternate call
+     * {@link #slurpStream(java.io.InputStream, byte[])}.
+     * <p/>
+     * If the stream contains more than {@link #LOCAL_BUFFER_SIZE} bytes of data, additional unread information
+     * might be left in the stream, and
+     * the amount returned will be silently truncated to {@link #LOCAL_BUFFER_SIZE}.  To detect if this might
+     * have been the case, check if the returned amount exactly equals {@link #LOCAL_BUFFER_SIZE}.  (Unfortunately
+     * there is no way to tell this situation apart from the non-lossy outcome of the stream containing exactly
+     * {@link #LOCAL_BUFFER_SIZE} bytes.)
+     *
+     * @param stream  the stream to read.  Must not be null.
+     * @return the newly read array, sized to the amount read or {@link #LOCAL_BUFFER_SIZE} if the data may have been truncated.
+     *         never null.
+     * @throws IOException if there was a problem reading the stream
+     */
+    public static byte[] slurpStreamLocalBuffer(InputStream stream) throws IOException {
+        byte[] buffer = getLocalBuffer();
+        int got = slurpStream(stream, buffer);
+        byte[] ret = new byte[got];
+        System.arraycopy(buffer, 0, ret, 0, got);
+        return ret;
+    }
+
+    /**
      * Slurp a stream into a byte array without doing any copying, and return the number of bytes that
-     * were in the stream.  The stream will be read until EOF or until the maximum specified number of bytes have
+     * were read from stream.  The stream will be read until EOF or until the maximum specified number of bytes have
      * been read.  If you would like the array created for you with the exact size required, and don't mind
      * an extra array copy being involved, use the other form of slurpStream().
      *
      * @param stream the stream to read
      * @param bb the array of bytes in which to read it
-     * @return the number of bytes read from the stream.
+     * @return the number of bytes read from the stream, up to bb.length.  If this returns bb.length, the InputStream
+     *         may contain additional unread data.
      */
     public static int slurpStream(InputStream stream, byte[] bb) throws IOException {
         int remaining = bb.length;
@@ -197,7 +260,7 @@ public class HexUtils {
     /**
      * This ballistic podiatry version of slurpStream will slurp until memory is full.
      * If you wish to limit the size of the returned
-     * byte array, use slurpStream(InputStream, int).  If you wish to provide your own buffer to prevent
+     * byte array, use slurpStream64k(InputStream).  If you wish to provide your own buffer to prevent
      * copying, use slurpStream(InputStream, byte[]).
      *
      * @param stream  the stream to slurp
@@ -206,9 +269,13 @@ public class HexUtils {
      * @throws OutOfMemoryError if the stream is too big to fit into memory
      */
     public static byte[] slurpStream(InputStream stream) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
-        copyStream(stream, out);
-        return out.toByteArray();
+        BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream(4096);
+        try {
+            copyStream(stream, out);
+            return out.toByteArray();
+        } finally {
+            out.close();
+        }
     }
 
     /**
@@ -273,23 +340,8 @@ public class HexUtils {
      * @throws IOException if in could not be read, or out could not be written
      */
     public static long copyStream(InputStream in, OutputStream out) throws IOException {
-        return copyStream(in, out, 4096);
-    }
-
-    /**
-     * Copy all of the in, right up to EOF, into out, using the specified blocksize.  Does not flush
-     * or close either stream.
-     *
-     * @param in  the InputStream to read.  Must not be null.
-     * @param out the OutputStream to write.  Must not be null.
-     * @param blocksize the block size to use.  Must be positive.
-     * @return the number bytes copied
-     * @throws IOException if in could not be read, or out could not be written
-     */
-    public static long copyStream(InputStream in, OutputStream out, int blocksize) throws IOException {
-        if (blocksize < 1) throw new IllegalArgumentException("blocksize must be positive");
         if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
-        byte[] buf = new byte[blocksize];
+        byte[] buf = getLocalBuffer();
         int got;
         long total = 0;
         while ((got = in.read(buf)) > 0) {
@@ -297,90 +349,6 @@ public class HexUtils {
             total += got;
         }
         return total;
-    }
-
-    /**
-     * Search the specified search array positions from start to (start + searchlen - 1), inclusive, for the
-     * specified subarray (or subarray
-     * prefix, if it occurrs at the end of the search range).  If the subarray occurs more than once in this range,
-     * this will only find the leftmost occurrance.
-     * <p>
-     * This method returns -1 if the subarray was not matched at all in the search array.  If it returns a value
-     * between start and (start + searchlen - 1 - subarray.length), inclusive, then the entire subarray was matched at
-     * the returned index of the search array.  If it returns a value greater than (start + searchlen - 1 - subarray.length),
-     * then the last (start + searchlen - 1 - retval) bytes of the search range matched the first (start + searchlen - 1 - retval)
-     * prefix bytes of the subarray.
-     * <p>
-     * If search.length is greather than subarray.length then this will only find prefix matches.
-     * <p>
-     * If searchlen is zero, this method will always return -1.
-     *
-     * @param search     the array to search.  Must not be null
-     * @param start      the start position in the search array.  must be nonnegative.
-     *                   (start + searchlen - 1) must be less than search.length.
-     * @param searchlen  the number of bytes to search in the search array.  must be nonnegative.
-     *                   (start + searchlen - 1) must be less than search.length.
-     * @param subarray   the subarray to search for.  Must be non-null and non-empty.  Note that the subarray length is allowed
-     *                   to exceed the search array length -- in such cases this method will only look for the prefix match.
-     * @param substart   the starting position in subarray of the subarray being searched for.  Must be nonnegative
-     *                   and must be less than subarray.length.
-     * @return -1 if the subarray was not matched at all; or,
-     *         a number between zero and (start + searchlen - 1 - subarray.length), inclusive, if the entire
-     *         subarray was matched at the returned index in the search array; or,
-     *         a number greater than this if the (start + searchlen - 1 - retval) bytes at the end of the search
-     *         array matched the corresponding bytes at the start of the subarray.
-     * @throws IllegalArgumentException if start or searchlen is less than zero
-     * @throws IllegalArgumentException if substart is less than one
-     */
-    public static int matchSubarrayOrPrefix(byte[] search, int start, int searchlen, byte[] subarray, int substart) {
-        if (search == null || subarray == null)
-            throw new IllegalArgumentException("search array and subarray must be specified");
-        if (start < 0 || searchlen < 0 || substart < 0)
-            throw new IllegalArgumentException("search positions and lengths must be nonnegative");
-        final int end = (start + searchlen - 1);
-        if (substart >= subarray.length || end >= search.length)
-            throw new IllegalArgumentException("Search positions would go out of bounds");
-
-        int foundpos = -1;
-        int searchpos = start;
-        int subarraypos = substart;
-        while (searchpos <= end && subarraypos < subarray.length) {
-            if (search[searchpos] == subarray[subarraypos]) {
-                if (foundpos == -1)
-                    foundpos = searchpos;
-                subarraypos++;
-                searchpos++;
-            } else {
-                if (foundpos >= 0) {
-                    foundpos = -1;
-                    subarraypos = substart;
-                } else
-                    searchpos++;
-            }
-        }
-        return foundpos;
-    }
-
-    /**
-     * Compare two byte arrays for an exact match.
-     *
-     * @param left      one of the arrays to compare
-     * @param leftoff   the offset in left at which to start the comparison
-     * @param right     the other array to compare
-     * @param rightoff  the offset in right at which to start the comparison
-     * @param len       the number of bytes to compare (for both arrays)
-     * @return          true if the corresponding sections of both arrays are byte-for-byte identical; otherwise false
-     */
-    public static boolean compareArrays(byte[] left, int leftoff, byte[] right, int rightoff, int len) {
-        if (leftoff < 0 || rightoff < 0 || len < 1)
-            throw new IllegalArgumentException("Array offsets must be nonnegative and length must be positive");
-        if (leftoff + len > left.length || rightoff + len > right.length)
-            throw new IllegalArgumentException("offsets + length must remain within both arrays");
-        for (int i = 0; i < len; ++i) {
-            if (left[leftoff + i] != right[rightoff + i])
-                return false;
-        }
-        return true;
     }
 
     /**
@@ -419,7 +387,7 @@ public class HexUtils {
                 break;
             } else if (gotleft == -1)
                 break;
-            else if (!compareArrays(lb, 0, rb, 0, gotleft)) {
+            else if (!ArrayUtils.compareArrays(lb, 0, rb, 0, gotleft)) {
                 match = false;
                 break;
             }
@@ -429,34 +397,6 @@ public class HexUtils {
         if (closeRight) right.close();
 
         return match;
-    }
-
-    /** Insert carriage returns into the given string before every columns characters, preferring to insert them before new words begin. */
-    public static String wrapString(String in, int maxcol, int maxlines, String wrapSequence) {
-        if (in == null) return "null";
-        StringBuffer out = new StringBuffer();
-        StringTokenizer tok = new StringTokenizer(in);
-        int col = 0;
-        int line = 0;
-        while (tok.hasMoreTokens()) {
-            String next = tok.nextToken();
-            int len = next.length();
-            if (col + len >= (maxcol - 1)) {
-                out.append(wrapSequence);
-                col = 0;
-                line++;
-                if (line > maxlines)
-                    return out.toString();
-
-            }
-            out.append(next);
-            col += len;
-            if (tok.hasMoreTokens()) {
-                out.append(" ");
-                col++;
-            }
-        }
-        return out.toString();
     }
 
     private static ThreadLocal md5s = new ThreadLocal();

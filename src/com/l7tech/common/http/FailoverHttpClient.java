@@ -7,6 +7,7 @@
 package com.l7tech.common.http;
 
 import com.l7tech.common.io.EmptyInputStream;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.util.HexUtils;
 
@@ -144,7 +145,7 @@ public class FailoverHttpClient implements GenericHttpClient {
                                 // inputStreamFactory == null, inputStream != null
 
                                 // Need to buffer the input stream ourselves before using it up
-                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
                                 logger.finer("Buffering request body");
                                 try {
                                     HexUtils.copyStream(inputStream, baos);
@@ -153,6 +154,8 @@ public class FailoverHttpClient implements GenericHttpClient {
                                     logger.log(Level.WARNING, msg, e);
                                     lastFailure = new GenericHttpException(msg);
                                     break;
+                                } finally {
+                                    baos.close();
                                 }
                                 bodyBytes = baos.toByteArray();
                                 bis = new ByteArrayInputStream(bodyBytes);

@@ -179,7 +179,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
     private byte[] readCSRFromRequest(HttpServletRequest request) throws IOException {
         // csr request might be based64 or not, we need to see what format we are getting
-        byte[] contents = HexUtils.slurpStream(request.getInputStream(), 16384);
+        byte[] contents = HexUtils.slurpStreamLocalBuffer(request.getInputStream());
         String tmpStr = new String(contents);
         String beginKey = "-----BEGIN NEW CERTIFICATE REQUEST-----";
         int beggining = tmpStr.indexOf(beginKey);

@@ -7,8 +7,8 @@ import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ValidationUtils;
+import com.l7tech.common.util.TextUtils;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
@@ -194,7 +194,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         log.log(Level.INFO, "Unable to obtain token from " + type + " server", e);
                         JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                       "A security token could not be obtained using these " + type + " settings.\n\n" +
-                                                      "The error was: \n    " + HexUtils.wrapString(ExceptionUtils.getMessage(e), 80, 25, "\n    "),
+                                                      "The error was: \n    " + TextUtils.wrapString(ExceptionUtils.getMessage(e), 80, 25, "\n    "),
                                                       "Unable to Obtain Token",
                                                       JOptionPane.ERROR_MESSAGE);
                     }

@@ -5,6 +5,7 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.xml.xpath.FastXpath;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 
 import java.io.*;
 import java.text.ParseException;
@@ -116,7 +117,7 @@ public class TarariXpathConverter {
         XprLexer xprLexer = new XprLexer(new StringReader(in.toString()));
 
         // Build output stream
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        BufferPoolByteArrayOutputStream out = new BufferPoolByteArrayOutputStream();
 
         // Convert the xpath
         try {
@@ -135,6 +136,8 @@ public class TarariXpathConverter {
             throw makeParseException(e);
         } catch (UnsupportedEncodingException e) {
             throw (ParseException)new ParseException("Unsupported encoding: " + e.getMessage(), 0).initCause(e); // can't happen
+        } finally {
+            out.close();
         }
     }
 

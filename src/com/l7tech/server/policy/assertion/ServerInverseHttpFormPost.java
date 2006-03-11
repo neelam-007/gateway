@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -9,17 +10,16 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.policy.assertion.InverseHttpFormPost;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.HttpFormPost;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 import java.net.URLEncoder;
 import java.util.logging.Logger;
 
@@ -44,16 +44,17 @@ public class ServerInverseHttpFormPost implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         Message request = context.getRequest();
         MimeKnob reqMime = request.getMimeKnob();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(512);
         for (int i = 0; i < assertion.getFieldNames().length; i++) {
             String fieldName = assertion.getFieldNames()[i];
             try {
                 PartInfo partInfo = reqMime.getPart(i);
                 ContentTypeHeader ctype = partInfo.getContentType();
                 InputStream partStream = partInfo.getInputStream(true);
-                byte[] partBytes = HexUtils.slurpStream(partStream, 512 * 1024);
-                if (partBytes.length >= 512 * 1024) {
+                byte[] partBytes = HexUtils.slurpStreamLocalBuffer(partStream);
+                if (partBytes.length >= HexUtils.LOCAL_BUFFER_SIZE) {
                     auditor.logAndAudit(AssertionMessages.INVERSE_HTTPFORM_TOO_BIG, new String[] { Integer.toString(i) });
+                    baos.close();
                     return AssertionStatus.FAILED;
                 }
 
@@ -63,9 +64,11 @@ public class ServerInverseHttpFormPost implements ServerAssertion {
                 if (assertion.getFieldNames().length < i) baos.write("&".getBytes());
             } catch (NoSuchPartException e) {
                 auditor.logAndAudit(AssertionMessages.INVERSE_HTTPFORM_NO_SUCH_PART, new String[] { Integer.toString(i) });
+                baos.close();
                 return AssertionStatus.FAILED;
             }
         }
+        baos.close();
 
         try {
             request.initialize(StashManagerFactory.createStashManager(),

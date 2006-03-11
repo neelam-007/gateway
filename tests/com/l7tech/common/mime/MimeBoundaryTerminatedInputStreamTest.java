@@ -8,6 +8,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ArrayUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -62,7 +63,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         stfu.getRandom().nextBytes(crap);
 
         // Make sure we didn't include the boundary in our generated test garbage by accident (unlikely)
-        assertEquals(-1, HexUtils.matchSubarrayOrPrefix(crap, 0, crap.length, boundary, 0));
+        assertEquals(-1, ArrayUtils.matchSubarrayOrPrefix(crap, 0, crap.length, boundary, 0));
 
         // Now try to test it
         int pushSize = 4096 - 11;
@@ -183,16 +184,16 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         }
 
         // Find opening boundary of first part
-        int first = HexUtils.matchSubarrayOrPrefix(testMsg, 0, testMsg.length, crlfBoundary, 0);
+        int first = ArrayUtils.matchSubarrayOrPrefix(testMsg, 0, testMsg.length, crlfBoundary, 0);
         assertTrue(first > 0);
-        assertTrue(HexUtils.compareArrays(testMsg, first, crlfBoundary, 0, crlfBoundary.length));
+        assertTrue(ArrayUtils.compareArrays(testMsg, first, crlfBoundary, 0, crlfBoundary.length));
 
         // Find closing boundary of first part
-        int second = HexUtils.matchSubarrayOrPrefix(testMsg, first + crlfBoundary.length + 2,
+        int second = ArrayUtils.matchSubarrayOrPrefix(testMsg, first + crlfBoundary.length + 2,
                                                     testMsg.length - (first + crlfBoundary.length + 2),
                                                     crlfBoundary, 0);
         assertTrue(second > first);
-        assertTrue(HexUtils.compareArrays(testMsg, second, crlfBoundary, 0, crlfBoundary.length));
+        assertTrue(ArrayUtils.compareArrays(testMsg, second, crlfBoundary, 0, crlfBoundary.length));
 
         class Term {
             String test;
@@ -259,9 +260,9 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         byte[] rawBoundary = stfu.getBoundary();
         byte[] boundary = ("\r\n--" + new String(rawBoundary) + "--\r\n").getBytes();
 
-        int match = HexUtils.matchSubarrayOrPrefix(testMsg, testMsg.length - boundary.length - 6, boundary.length + 6, boundary, 0);
+        int match = ArrayUtils.matchSubarrayOrPrefix(testMsg, testMsg.length - boundary.length - 6, boundary.length + 6, boundary, 0);
         assertTrue(match > 0);
-        assertTrue(HexUtils.compareArrays(testMsg, match, boundary, 0, boundary.length));
+        assertTrue(ArrayUtils.compareArrays(testMsg, match, boundary, 0, boundary.length));
 
         // Verify that acceptable terminator variants work as expected
 
@@ -356,9 +357,9 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
 
                 // Ensure that no portions of the buffer outside the area we asked to write into were overwritten
                 if (start > 0)
-                    assertTrue(HexUtils.compareArrays(buf, 0, bufBak, 0, start));
+                    assertTrue(ArrayUtils.compareArrays(buf, 0, bufBak, 0, start));
                 if (start < extra)
-                    assertTrue(HexUtils.compareArrays(buf, start + blocksize, bufBak, start + blocksize, extra - start));
+                    assertTrue(ArrayUtils.compareArrays(buf, start + blocksize, bufBak, start + blocksize, extra - start));
             }
             if (got <= 0)
                 break;

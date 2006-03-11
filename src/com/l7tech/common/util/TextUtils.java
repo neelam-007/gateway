@@ -5,6 +5,8 @@
 
 package com.l7tech.common.util;
 
+import java.util.StringTokenizer;
+
 /**
  * Utilities for text mode programs.
  */
@@ -39,4 +41,31 @@ public class TextUtils {
         return count + " " + noun + (count == 1 ? "" : "s");
     }
 
+    /** Insert carriage returns into the given string before every columns characters, preferring to insert them before new words begin. */
+    public static String wrapString(String in, int maxcol, int maxlines, String wrapSequence) {
+        if (in == null) return "null";
+        StringBuffer out = new StringBuffer();
+        StringTokenizer tok = new StringTokenizer(in);
+        int col = 0;
+        int line = 0;
+        while (tok.hasMoreTokens()) {
+            String next = tok.nextToken();
+            int len = next.length();
+            if (col + len >= (maxcol - 1)) {
+                out.append(wrapSequence);
+                col = 0;
+                line++;
+                if (line > maxlines)
+                    return out.toString();
+
+            }
+            out.append(next);
+            col += len;
+            if (tok.hasMoreTokens()) {
+                out.append(" ");
+                col++;
+            }
+        }
+        return out.toString();
+    }
 }

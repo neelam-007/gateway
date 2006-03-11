@@ -9,6 +9,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.*;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -976,9 +977,13 @@ public class SoapUtil {
     }
 
     public static byte[] soapMessageToByteArray(SOAPMessage msg) throws IOException, SOAPException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
-        msg.writeTo(baos);
-        return baos.toByteArray();
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+        try {
+            msg.writeTo(baos);
+            return baos.toByteArray();
+        } finally {
+            baos.close();
+        }
     }
 
     /** @return a new unique URI in the form http://www.layer7tech.com/uuid/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, where the

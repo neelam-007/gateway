@@ -1,6 +1,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import org.apache.axis.encoding.Base64;
 import org.w3c.dom.Element;
@@ -85,14 +86,16 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
      * convert a serializable object to a base64 String
      */
     private String objectToBase64(Serializable obj) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(obj);
-        byte[] bytes = bos.toByteArray();
-        String encodedString = Base64.encode(bytes);
-        oos.close();
-        bos.close();
-        return encodedString;
+        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(obj);
+            String encodedString = Base64.encode(bos.getPooledByteArray(), 0, bos.size());
+            oos.close();
+            return encodedString;
+        } finally {
+            bos.close();
+        }
     }
 
     /**

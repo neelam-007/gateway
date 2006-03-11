@@ -309,6 +309,8 @@
             <test name="com.l7tech.common.xml.tarari.util.TarariXpathConverterTest" haltonfailure="no"/>
             <test name="com.l7tech.internal.license.LicenseGeneratorTest" haltonfailure="no" />
             <test name="com.l7tech.internal.license.LicenseRoundTripTest" haltonfailure="no" />
+            <test name="com.l7tech.common.io.BufferPoolByteArrayOutputStreamTest" haltonfailure="no" />
+            <test name="com.l7tech.common.util.BufferPoolTest" haltonfailure="no" />
 
 <!--
 ** add possibly-slow intensive nightly tests here **

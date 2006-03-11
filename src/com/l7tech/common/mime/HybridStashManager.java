@@ -6,6 +6,9 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+
 import java.io.*;
 
 /**
@@ -51,8 +54,10 @@ public class HybridStashManager implements StashManager {
             initialBuffer = limit / 4;
     }
 
-    /** Get or create a file stash. */
-    private FileStashManager getFilestash() throws IOException {
+    /**
+     * Get or create a file stash.  Used internally, but also exposed as package-private for testing purposes.
+     */
+    FileStashManager getFilestash() throws IOException {
         if (filestash == null) {
             filestash = new FileStashManager(dir, unique);
         }
@@ -60,7 +65,7 @@ public class HybridStashManager implements StashManager {
     }
 
     public void stash(int ordinal, InputStream in) throws IOException {
-        ramstash.unstash(ordinal);
+        unstash(ordinal);
 
         if (size > limit) {
             // already at limit, go right to file stash
@@ -72,25 +77,32 @@ public class HybridStashManager implements StashManager {
             return;
         }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(initialBuffer);
-        byte[] buff = new byte[4096];
-        int got;
-        while ((got = in.read(buff)) > 0) {
-            baos.write(buff, 0, got);
-            size += got;
-            if (size > limit) {
-                // reached limit.  move it to the filestash
-                getFilestash().stash(ordinal, new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), in));
-                return;
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(initialBuffer);
+        try {
+            byte[] buff = HexUtils.getLocalBuffer();
+            int got;
+            long newSize = size;
+            while ((got = in.read(buff)) > 0) {
+                baos.write(buff, 0, got);
+                newSize += got;
+                if (newSize > limit) {
+                    // reached limit.  move it to the filestash
+                    getFilestash().stash(ordinal, new SequenceInputStream(new ByteArrayInputStream(baos.toByteArray()), in));
+                    size += getFilestash().getSize(ordinal);
+                    return;
+                }
             }
-        }
 
-        // didn't hit limit yet.  Move it to the ram stash
-        ramstash.stash(ordinal, baos.toByteArray());
+            // didn't hit limit yet.  Move it to the ram stash
+            size = newSize;
+            ramstash.stash(ordinal, baos.toByteArray());
+        } finally {
+            baos.close();
+        }
     }
 
     public void stash(int ordinal, byte[] in) throws IOException {
-        ramstash.unstash(ordinal);
+        unstash(ordinal);
         size += in.length;
 
         if (size  > limit) {
@@ -106,6 +118,13 @@ public class HybridStashManager implements StashManager {
      * This does not affect the size limit -- once the limit is reached, file mode won't be turned off. 
      */
     public void unstash(int ordinal) {
+        if (ramstash.peek(ordinal)) {
+            long oldSize = ramstash.getSize(ordinal);
+            if (oldSize > 0) size -= oldSize;
+        } else if (filestash != null && filestash.peek(ordinal)) {
+            long oldSize = filestash.getSize(ordinal);
+            if (oldSize > 0) size -= oldSize;
+        }
         ramstash.unstash(ordinal);
         if (filestash != null) filestash.unstash(ordinal);
     }
@@ -115,6 +134,24 @@ public class HybridStashManager implements StashManager {
         if (s != -1) return s;
         if (filestash != null) return filestash.getSize(ordinal);
         return -1;
+    }
+
+    /**
+     * Package-private test method that returns our current accounting size limit
+     *
+     * @return current total number of bytes we believe we are holding
+     */
+    long getCurrentTotalSize() {
+        return size;
+    }
+
+    /**
+     * Package-private test method that grants access to our byte array stash manager
+     *
+     * @return the ramstash.  Never null.
+     */
+    ByteArrayStashManager getRamStash() {
+        return ramstash;
     }
 
     public InputStream recall(int ordinal) throws IOException, NoSuchPartException {
@@ -134,11 +171,16 @@ public class HybridStashManager implements StashManager {
         return ramstash.recallBytes(ordinal);
     }
 
-    public boolean peek(int ordinal) throws IOException {
+    public boolean peek(int ordinal) {
         boolean r = ramstash.peek(ordinal);
         if (r) return r;
         if (filestash != null) return filestash.peek(ordinal);
         return false;
+    }
+
+    public int getMaxOrdinal() {
+        if (filestash == null) return ramstash.getMaxOrdinal();
+        return Math.max(ramstash.getMaxOrdinal(), filestash.getMaxOrdinal());
     }
 
     public void close() {

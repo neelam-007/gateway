@@ -22,6 +22,7 @@ public class FileStashManager implements StashManager {
     private final String uniqueFilenamePrefix;
 
     private HashMap stashed = new HashMap();
+    private int highestOrdinal = 0;
 
     /**
      * Create a new FileStashManager that will stash files into the specified parent directory, creating
@@ -47,7 +48,8 @@ public class FileStashManager implements StashManager {
         this.uniqueFilenamePrefix = uniqueFilenamePrefix;
     }
 
-    public synchronized void stash(int ordinal, InputStream in) throws IOException {
+    public void stash(int ordinal, InputStream in) throws IOException {
+        if (ordinal > highestOrdinal) highestOrdinal = ordinal;
         unstash(ordinal);
         FileInfo fi = new FileInfo(makeFile(ordinal));
         final OutputStream outputStream = fi.getOutputStream();
@@ -59,6 +61,7 @@ public class FileStashManager implements StashManager {
     }
 
     public void stash(int ordinal, byte[] in) throws IOException {
+        if (ordinal > highestOrdinal) highestOrdinal = ordinal;
         stash(ordinal, new ByteArrayInputStream(in)); // byte array doesn't help us in this case
     }
 
@@ -72,7 +75,7 @@ public class FileStashManager implements StashManager {
      *
      * @param ordinal the ordinal that will be unstashed.
      */
-    public synchronized void unstash(int ordinal) {
+    public void unstash(int ordinal) {
         FileInfo fi = getFileInfo(ordinal);
         if (fi == null) {
             makeFile(ordinal).delete(); // make sure no old file is in the way
@@ -92,14 +95,14 @@ public class FileStashManager implements StashManager {
         stashed.put(new Integer(ordinal), fi);
     }
 
-    public synchronized long getSize(int ordinal) {
+    public long getSize(int ordinal) {
         FileInfo fi = getFileInfo(ordinal);
         if (fi == null) return -1;
         Long size = fi.getSize();
         return size == null ? -1 : size.longValue();
     }
 
-    public synchronized InputStream recall(int ordinal) throws IOException, NoSuchPartException {
+    public InputStream recall(int ordinal) throws IOException, NoSuchPartException {
         FileInfo fi = getFileInfo(ordinal);
         if (fi == null)
             throw new NoSuchPartException("No part stashed with ordinal " + ordinal);
@@ -114,11 +117,15 @@ public class FileStashManager implements StashManager {
         throw new NoSuchPartException("Parts cached in files do not keep the byte array in memory");
     }
 
-    public synchronized boolean peek(int ordinal) throws IOException {
+    public boolean peek(int ordinal) {
         return getFileInfo(ordinal) != null;
     }
 
-    public synchronized void close() {
+    public int getMaxOrdinal() {
+        return highestOrdinal;
+    }
+
+    public void close() {
         close0();
     }
 
@@ -202,7 +209,7 @@ public class FileStashManager implements StashManager {
         /**
          * Close all streams referring to the this file, and then close the file and delete it.
          */
-        private synchronized void close() {
+        private void close() {
             close0();
         }
 

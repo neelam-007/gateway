@@ -6,12 +6,12 @@
 
 package com.l7tech.identity;
 
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
@@ -49,13 +49,15 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         if ( xmlProperties == null ) {
             Map properties = bean.getProperties();
             if ( properties == null ) return null;
+            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
             try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 XMLEncoder xe = new XMLEncoder(baos);
                 xe.writeObject(properties);
                 xmlProperties = baos.toString(PROPERTIES_ENCODING);
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e); // Can't happen
+            } finally {
+                baos.close();
             }
         }
         return xmlProperties;

@@ -1,21 +1,19 @@
 package com.l7tech.skunkworks.gclient;
 
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.http.*;
+import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.common.xml.Wsdl;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.wsdl.BindingOperation;
@@ -24,25 +22,16 @@ import javax.wsdl.Service;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.soap.SOAPException;
-
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpRequest;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.SoapMessageGenerator;
-import com.l7tech.common.xml.Wsdl;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.io.*;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Generic Client for SOAP.
@@ -53,12 +42,14 @@ import com.l7tech.common.xml.Wsdl;
  * @version $Revision$
  */
 public class GClient {
+    private Color defaultTextAreaBg;
 
     //- PUBLIC
 
     public GClient() {
         JFrame frame = new JFrame("GClient v0.1");
         frame.setContentPane(mainPanel);
+        defaultTextAreaBg = responseTextArea.getBackground();
 
         // listeners
         buildListeners();
@@ -88,6 +79,9 @@ public class GClient {
     private JComboBox operationComboBox;
     private JTextArea requestTextArea;
     private JTextArea responseTextArea;
+    private JLabel statusLabel;
+    private JLabel lengthLabel;
+    private JLabel ctypeLabel;
 
     private Wsdl wsdl;
     private Service service;
@@ -352,24 +346,36 @@ public class GClient {
             Document requestDocument = XmlUtil.stringToDocument(message);
             byte[] requestBytes = XmlUtil.nodeToFormattedString(requestDocument).getBytes("UTF-8");
 
-            client = new UrlConnectionHttpClient();
+            client = new CommonsHttpClient(new MultiThreadedHttpConnectionManager());
             GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(targetUrl));
             params.setContentLength(new Long(requestBytes.length));
             params.setContentType(ContentTypeHeader.XML_DEFAULT);
+            //params.setContentType("application/soap+xml");
             params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction)});
             request = client.createRequest(GenericHttpClient.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBytes));
             response = request.getResponse();
+            statusLabel.setText(Integer.toString(response.getStatus()));
+            lengthLabel.setText(response.getContentLength().toString());
             ContentTypeHeader type = response.getContentType();
-            if(type.isText() || type.isXml() || type.isHtml()) {
-                responseIn = response.getInputStream();
-                String responseText = new String(HexUtils.slurpStream(responseIn), type.getEncoding());
-                responseTextArea.setText(responseText);
+            ctypeLabel.setText(String.valueOf(type == null ? null : type.getFullValue()));
+            if (type == null) type = ContentTypeHeader.TEXT_DEFAULT;
+            responseIn = response.getInputStream();
+            String responseText = new String(HexUtils.slurpStream(responseIn), type.getEncoding());
+            responseTextArea.setText(responseText);
+            try {
                 responseTextArea.setText(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseText)));
+            } catch (SAXException e) {
+                // Oh well, leave as just text
             }
+            responseTextArea.setBackground(defaultTextAreaBg);
         }
         catch(Exception e) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            e.printStackTrace(new PrintStream(baos));
             e.printStackTrace();
+            responseTextArea.setText(baos.toString());
+            responseTextArea.setBackground(new Color(255, 192, 192));
         }
         finally {
             ResourceUtils.closeQuietly(responseIn);

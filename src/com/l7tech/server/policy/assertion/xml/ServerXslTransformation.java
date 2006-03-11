@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
@@ -31,7 +32,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -151,9 +151,13 @@ public class ServerXslTransformation implements ServerAssertion {
                 if (whichMimePart == 0) {
                     msgtotransform.getXmlKnob().setDocument(output);
                 } else {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    XmlUtil.nodeToOutputStream(output, baos);
-                    mimePart.setBodyBytes(baos.toByteArray());
+                    BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
+                    try {
+                        XmlUtil.nodeToOutputStream(output, baos);
+                        mimePart.setBodyBytes(baos.toByteArray());
+                    } finally {
+                        baos.close();
+                    }
                 }
                 logger.finest("software xsl transformation completed");
                 return AssertionStatus.NONE;
@@ -181,15 +185,20 @@ public class ServerXslTransformation implements ServerAssertion {
                 Stylesheet transformer = new Stylesheet(master);
 
                 transformer.setValidate(false);
-                ByteArrayOutputStream output = new ByteArrayOutputStream();
-                XmlResult result = new XmlResult(output);
                 if (source == null) {
                     // have to make a new one
                     source = new XmlSource(msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false));
                 }
 
-                transformer.transform(source, result);
-                byte[] transformedmessage = output.toByteArray();
+                BufferPoolByteArrayOutputStream output = new BufferPoolByteArrayOutputStream(4096);
+                final byte[] transformedmessage;
+                try {
+                    XmlResult result = new XmlResult(output);
+                    transformer.transform(source, result);
+                    transformedmessage = output.toByteArray();
+                } finally {
+                    output.close();
+                }
                 msgtotransform.getMimeKnob().getPart(whichMimePart).setBodyBytes(transformedmessage);
                 logger.finest("tarari xsl transformation completed. result: " + new String(transformedmessage));
                 return AssertionStatus.NONE;

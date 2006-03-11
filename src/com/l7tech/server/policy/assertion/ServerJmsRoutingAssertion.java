@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.JmsKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -31,7 +32,6 @@ import org.springframework.context.ApplicationContext;
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
 import java.util.logging.Logger;
@@ -287,13 +287,16 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         JmsEndpoint endpoint = getRoutedRequestEndpoint();
 
         javax.jms.Message outboundRequestMsg = null;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        final byte[] outboundRequestBytes;
         try {
             HexUtils.copyStream(context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream(), baos);
+            outboundRequestBytes = baos.toByteArray();
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Couldn't read from JMS request"); // can't happen
+        } finally {
+            baos.close();
         }
-        byte[] outboundRequestBytes = baos.toByteArray();
 
         if (context.getRequest().getKnob(JmsKnob.class) != null) {
             // Outgoing request should be the same type (i.e. TextMessage or BytesMessage) as the original request

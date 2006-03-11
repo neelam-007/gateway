@@ -12,7 +12,6 @@ import junit.framework.TestSuite;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -138,47 +137,47 @@ public class HexUtilsTest extends TestCase {
         byte[] boundary = HexUtils.unHexDump(COMPLEX_SUBSTRING);
 
         // Test red herring followed immediately by real substring
-        assertEquals(3, HexUtils.matchSubarrayOrPrefix(titimefor, 0, titimefor.length, timefor, 0));
+        assertEquals(3, ArrayUtils.matchSubarrayOrPrefix(titimefor, 0, titimefor.length, timefor, 0));
 
         // Test huge match
-        assertEquals(221, HexUtils.matchSubarrayOrPrefix(huge, 0, huge.length, boundary, 0));
+        assertEquals(221, ArrayUtils.matchSubarrayOrPrefix(huge, 0, huge.length, boundary, 0));
 
         // Test simple failed match
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, ettal, 0), -1);
-        assertFalse(HexUtils.compareArrays(nowisthetime, 11, ettal, 0, ettal.length));
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, ettal, 0), -1);
+        assertFalse(ArrayUtils.compareArrays(nowisthetime, 11, ettal, 0, ettal.length));
 
         // Test simple matched substsring
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, timefor, 0), 11);
-        assertTrue(HexUtils.compareArrays(nowisthetime, 11, timefor, 0, timefor.length));
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, timefor, 0), 11);
+        assertTrue(ArrayUtils.compareArrays(nowisthetime, 11, timefor, 0, timefor.length));
 
         // Test missed by one byte at the end
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, timefoe, 0), -1);
-        assertFalse(HexUtils.compareArrays(nowisthetime, 11, timefoe, 0, timefoe.length));
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, timefoe, 0), -1);
+        assertFalse(ArrayUtils.compareArrays(nowisthetime, 11, timefoe, 0, timefoe.length));
 
         // Test red herring search
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, timeflies, 0), -1);
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, timeflies, 0), -1);
 
         // Test leftmost match
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, me, 0), 13);
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, me, 0), 13);
 
         // Test simple prefix match at end
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, starbucksisgod, 0), 51);
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 0, nowisthetime.length, starbucksisgod, 0), 51);
 
         // Test exact match of entire array
-        assertEquals(HexUtils.matchSubarrayOrPrefix(timefor, 0, timefor.length, timefor, 0), 0);
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(timefor, 0, timefor.length, timefor, 0), 0);
 
         // Test exact match of array slice
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 11, timefor.length, timefor, 0), 11);
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 11, timefor.length, timefor, 0), 11);
 
         // Test exact match of slice using slice
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 11, timefor.length, thetimefor, 4), 11);
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 11, timefor.length, thetimefor, 4), 11);
 
         // Test suffix match of slice using slice
-        assertEquals(HexUtils.matchSubarrayOrPrefix(nowisthetime, 7, 8, poomeemee, 3), 13);
+        assertEquals(ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 7, 8, poomeemee, 3), 13);
 
         // Test empty search array
         try {
-            HexUtils.matchSubarrayOrPrefix(nowisthetime, 7, 12, empty, 0);
+            ArrayUtils.matchSubarrayOrPrefix(nowisthetime, 7, 12, empty, 0);
             fail("Exception not thrown");
         } catch (IllegalArgumentException e) {
             // Ok
@@ -189,7 +188,7 @@ public class HexUtilsTest extends TestCase {
         log.info("Stuff at 219: " + HexUtils.hexDump(huge, 219, boundary.length));
 
         // Test huge substringy match
-        assertEquals(221, HexUtils.matchSubarrayOrPrefix(huge, 0, 230, boundary, 0));
+        assertEquals(221, ArrayUtils.matchSubarrayOrPrefix(huge, 0, 230, boundary, 0));
     }
 
     public static final String COMPLEX_SUBSTRING = "0d0a2d2d2d2d3d5f7e344b2d596358445e75";

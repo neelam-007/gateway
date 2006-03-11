@@ -379,7 +379,7 @@ public class ClusterInfoManager extends HibernateDaoSupport {
             try {
                 up = Runtime.getRuntime().exec("/sbin/ifconfig eth0");
                 got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = HexUtils.slurpStream(got, 4096);
+                byte[] buff = HexUtils.slurpStreamLocalBuffer(got);
                 ifconfigOutput = new String(buff);
                 up.waitFor();
             } finally {
@@ -429,7 +429,7 @@ public class ClusterInfoManager extends HibernateDaoSupport {
             try {
                 up = Runtime.getRuntime().exec("/sbin/ifconfig eth0");
                 got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = HexUtils.slurpStream(got, 4096);
+                byte[] buff = HexUtils.slurpStreamLocalBuffer(got);
                 ifconfigOutput = new String(buff);
                 up.waitFor();
             } finally {
@@ -479,7 +479,7 @@ public class ClusterInfoManager extends HibernateDaoSupport {
             try {
                 up = Runtime.getRuntime().exec("ipconfig /all");
                 got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = HexUtils.slurpStream(got, 4096);
+                byte[] buff = HexUtils.slurpStreamLocalBuffer(got);
                 ipconfigOutput = new String(buff);
                 up.waitFor();
             } finally {

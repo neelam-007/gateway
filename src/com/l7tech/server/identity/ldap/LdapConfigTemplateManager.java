@@ -103,7 +103,7 @@ public class LdapConfigTemplateManager {
             if (fis != null) {
                 String properties = null;
                 try {
-                    byte[] data = HexUtils.slurpStream(fis, 32768);
+                    byte[] data = HexUtils.slurpStreamLocalBuffer(fis);
                     properties = new String(data);
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "cannot slurp file " + fulltemplatefilename, e);

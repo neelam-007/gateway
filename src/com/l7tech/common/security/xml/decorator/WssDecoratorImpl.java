@@ -7,13 +7,17 @@ package com.l7tech.common.security.xml.decorator;
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.DesKey;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameToken;
-import com.l7tech.common.security.xml.*;
+import com.l7tech.common.security.xml.DsigUtil;
+import com.l7tech.common.security.xml.KeyInfoDetails;
+import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
+import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
@@ -25,7 +29,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
@@ -761,13 +764,15 @@ public class WssDecoratorImpl implements WssDecorator {
                             final Node result = (Node)strTransformsNodeToNode.get(source);
                             if (result == null) throw new TransformException("Destination node is null");
                             ExclusiveC11r canon = new ExclusiveC11r();
-                            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                            BufferPoolByteArrayOutputStream bo = new BufferPoolByteArrayOutputStream(4096);
                             try {
                                 canon.canonicalize(result, bo);
+                                c.setContent(bo.toByteArray(), "UTF-8");
                             } catch (IOException e) {
                                 throw (TransformException)new TransformException().initCause(e);
+                            } finally {
+                                bo.close();
                             }
-                            c.setContent(bo.toByteArray(), "UTF-8");
                         }
                     };
                 return super.getTransform(s);
