@@ -93,30 +93,6 @@ public class TarariXsltTest {
         // Make a test that simulates what the SSG has to do
         final TarariMessageContextFactory cfac = TarariLoader.getMessageContextFactory();
 
-        // Try once to make sure it works
-        try {
-            TarariMessageContextImpl ctx = (TarariMessageContextImpl)cfac.makeMessageContext(new ByteArrayInputStream(requestBytes));
-            try {
-                RaxDocument doc = ctx.getRaxDocument();
-                XmlSource source = (XmlSource)xmlSource.get();
-                source.setData(doc);
-                Stylesheet transformer = new Stylesheet(master);
-                transformer.setValidate(false);
-                ByteArrayOutputStream output = new ByteArrayOutputStream();
-                XmlResult result = new XmlResult(output);
-                transformer.transform(source, result);
-                byte[] transformedmessage = output.toByteArray();
-                System.out.println("Full SSG output:");
-                HexUtils.copyStream(new ByteArrayInputStream(transformedmessage), System.out);
-                System.out.println("\n");
-            } finally {
-                ctx.close();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-
         Runnable xsltTestSsg = new Runnable() {
             public void run() {
                 try {
