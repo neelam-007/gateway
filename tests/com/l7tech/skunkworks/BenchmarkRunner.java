@@ -288,6 +288,14 @@ public class BenchmarkRunner {
         }
     }
 
+    public synchronized void stopAll() {
+        Thread[] t = threadPool.getAllThreads();
+        for (int i = 0; i < t.length; i++) {
+            Thread thread = t[i];
+            if (thread != null) thread.interrupt();
+        }
+    }
+
     private String name;
 }
 
