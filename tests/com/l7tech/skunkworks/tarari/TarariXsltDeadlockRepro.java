@@ -11,14 +11,17 @@ import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.xslt11.Stylesheet;
 
 import java.io.*;
+import java.util.Date;
 
 /**
  * Stand-alone reproduction for deadlock in Tarari XSLT.  Uses only JRE and raxj classes.
  */
 public class TarariXsltDeadlockRepro {
     private static final ByteArrayInputStream EMPTY_INPUT_STREAM = new ByteArrayInputStream(new byte[0]);
-    private static final int NUM_THREADS = 2; // 2 is enough to find the deadlock on our quad Opteron
-    private static final int NUM_ITERATIONS = 5000; // this is enough to deadlock every time I've tried it
+    private static final int NUM_THREADS = 5; // this is enough to find the deadlock on our quad Opteron
+    private static final int NUM_ITERATIONS = 1000; // this is enough to see the deadlock
+
+    private static OutputStream results;
 
     public static void main(String[] args) throws Exception {
         InputStream req = new FileInputStream("DocSearchResponse.xml");
@@ -38,20 +41,21 @@ public class TarariXsltDeadlockRepro {
         // Create the work unit
         final Runnable transformOnce = new Runnable() {
             public void run() {
-                RaxDocument fastDoc = null;
+                RaxDocument raxDocument = null;
                 try {
-                    fastDoc = RaxDocument.createDocument(new XmlSource(new ByteArrayInputStream(reqBytes)));
+                    raxDocument = RaxDocument.createDocument(new XmlSource(new ByteArrayInputStream(reqBytes)));
                     final XmlSource xmlSource = new XmlSource(EMPTY_INPUT_STREAM);
-                    xmlSource.setData(fastDoc);
+                    xmlSource.setData(raxDocument);
                     Stylesheet stylesheet = new Stylesheet(master);
                     stylesheet.setValidate(false);
-                    XmlResult xmlResult = new XmlResult(new NullOutputStream());
+                    XmlResult xmlResult = new XmlResult(results);
                     stylesheet.transform(xmlSource, xmlResult);
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
                 } finally {
-                    if (fastDoc != null) fastDoc.release();
+                    if (raxDocument != null)
+                        raxDocument.release();
                 }
             }
         };
@@ -59,28 +63,44 @@ public class TarariXsltDeadlockRepro {
         // Create the runnable
         final Runnable transformLots = new Runnable() {
             public void run() {
+                System.out.println("\nThread starting: " + Thread.currentThread().getName());
                 for (int i = 0; i < NUM_ITERATIONS; ++i)
                     transformOnce.run();
             }
         };
 
+        // Run once to stdout to make sure it work properly
+        results = System.out;
+        transformOnce.run();
+        System.out.println();
+
+        // Turn off results printing for the benchmark
+        results = new NullOutputStream();
+
         // Create two threads
         Thread[] threads = new Thread[NUM_THREADS];
         for (int i = 0; i < threads.length; i++)
-            threads[i] = new Thread(transformLots);
+            threads[i] = new Thread(transformLots, "XsltThread" + i);
 
         // Start them working
         long start = System.currentTimeMillis();
-        System.out.println("Starting " + threads.length + " work threads...");
         for (int i = 0; i < threads.length; i++)
             threads[i].start();
+        System.out.println(new Date() + ": starting " + threads.length +
+                " work threads doing " + NUM_ITERATIONS + " XSLT transformations each");
 
         // Wait for them to finish
         System.out.println("Waiting for them to finish...");
         for (int i = 0; i < threads.length; i++) {
-            System.out.print(".");
-            System.out.flush();
-            threads[i].join(5000);
+            for (;;) {
+                threads[i].join(2000);
+                if (!threads[i].isAlive()) {
+                    System.out.println("\nThread finished: " + threads[i].getName());
+                    break;
+                }
+                System.out.print(".");
+                System.out.flush();
+            }
         }
         System.out.println();
 
