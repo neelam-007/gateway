@@ -243,10 +243,10 @@
         <pathconvert property="x" targetos="unix" pathsep="${line.separator}">
             <map from="${build.classes}/" to=""/>
             <path>
-                <fileset dir="${build.classes}" includes="**/*Test.class"/>
+                <fileset dir="${build.classes}" includes="**/*Test.class **/*Tests.class"/>
             </path>
         </pathconvert>
-        <echo>x is ${x}</echo>
+        <echo>${x}</echo>
         <echo level="info">NOTE: ** you will need to convert to a class name **</echo>
     </target>
 
