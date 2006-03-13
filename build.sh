@@ -29,7 +29,6 @@ esac
 if $cygwin; then
   CLASSPATH=`cygpath --path --unix "$CLASSPATH"`
   SRC_ROOT=`cygpath --path --unix "$SRC_ROOT"`
-  TOMCAT_HOME=`cygpath --path --unix "$TOMCAT_HOME"`
   JAVA_HOME=`cygpath --path --unix "$JAVA_HOME"`
 fi
 
@@ -62,16 +61,31 @@ if [ ! -e $SRC_ROOT/build.sh ]; then
     exit 1
 fi
 
+OPTIONS_PROPS=""
+OPTIONS_ARGS=""
+for arg in "$@" ; do
+  if [ "${arg}" == "${arg#-D}" ] ; then
+    OPTIONS_ARGS="${OPTIONS_ARGS} ${arg}"
+  else
+    OPTIONS_PROPS="${OPTIONS_PROPS} ${arg}"
+  fi
+done
+
 ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/optional.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/junit.jar:$SRC_ROOT/lib/ant-contrib.jar"
 CLASSPATH="${JDK_CLASSES}:${ANT_JARS}"
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
   SRC_ROOT=`cygpath --path --windows "$SRC_ROOT"`
-  TOMCAT_HOME=`cygpath --path --windows "$TOMCAT_HOME"`
 fi
 export CLASSPATH
-$JAVA_HOME/bin/java $JAVA_OPTS org.apache.tools.ant.Main -listener net.sf.antcontrib.perf.AntPerformanceListener "-Dtomcat.home=$TOMCAT_HOME" "-Dsrc.root=$SRC_ROOT" $@
+
+OPTIONS_PERF=""
+if [ -z "${ANT_PERFORMANCE}" ] || [ "yes" = "${ANT_PERFORMANCE}" ] || [ "true" = "${ANT_PERFORMANCE}" ] ; then
+  OPTIONS_PERF="-listener net.sf.antcontrib.perf.AntPerformanceListener"
+fi
+
+"${JAVA_HOME}/bin/java" ${JAVA_OPTS} ${OPTIONS_PROPS} org.apache.tools.ant.Main ${OPTIONS_PERF} ${OPTIONS_ARGS}
 RESULT=${?}
 if [ "${1}" == "package" ] || [ "${1}" == "compile" ] ; then
   if [ ${RESULT} -eq 0 ] ; then

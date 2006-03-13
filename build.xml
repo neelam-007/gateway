@@ -10,7 +10,7 @@
     <property name="build.compiler.emacs" value="true"/> -->
 
     <!-- Set src.root to ${basedir} if not already set -->
-    <property name="src.root" value="${basedir}"/>
+    <property name="src.root" location="${basedir}"/>
 
     <!-- get the version -->
     <property file="${src.root}/build.version"/>
@@ -103,7 +103,7 @@
         </classpath>
     </taskdef>
 
-<!--
+    <!--
       ** init dev target The "dev" target depends on this target.
       -->
     <target name="init-dev">
@@ -151,7 +151,7 @@
 <!--
       ** configure and invoke developer's build
       -->
-    <target name="dev" depends="init-dev">
+    <target name="dev" description="Developer build (does not package)" depends="init-dev">
         <property name="dev.build" value="true"/>
         <property file="build.number"/>
 
@@ -164,7 +164,7 @@
         </antcall>
     </target>
 
-<!--
+    <!--
       ** configure and invoke developer's build for source files
       ** that match the pattern passed as -Dcompile.pattern
       -->
@@ -183,7 +183,7 @@
         <delete file="${war}"/>
     </target>
 
-<!--
+    <!--
       ** developer's 'deploy' target.
       ** compile and package the application.
       ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
@@ -195,7 +195,7 @@
         <antcall target="package"/>
         <antcall target="ssm-webstart"/>
 
-<!--
+        <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
         -->
@@ -215,7 +215,7 @@
             </fileset>
         </copy>
 
-<!--
+        <!--
           this server.xml is ready to be modified by sslGen.sh who will later
           make the ssl cert and record it's keystore password in it
         -->
@@ -228,10 +228,32 @@
 
     </target>
 
-<!--
-      ** configure and invoke unit tests
-      -->
-    <target name="test" depends="dev">
+    <!--
+      Display information on a Jar file
+    -->
+    <target name="jarinfo" if="file">
+        <echo level="info">Listing Jar file: ${file}</echo>
+        <jarlib-display file="${file}"/>
+        <echo level="info">Listing complete (if theres no output you can try unzip -p ${file} META-INF/MANIFEST.MF)</echo>
+    </target>
+
+    <!-- Print a list of available unit tests (or things that may be tests) -->
+    <target name="summary" unless="test">
+        <echo level="info">Possible test classes are: </echo>
+        <pathconvert property="x" targetos="unix" pathsep="${line.separator}">
+            <map from="${build.classes}/" to=""/>
+            <path>
+                <fileset dir="${build.classes}" includes="**/*Test.class"/>
+            </path>
+        </pathconvert>
+        <echo>x is ${x}</echo>
+        <echo level="info">NOTE: ** you will need to convert to a class name **</echo>
+    </target>
+
+    <!--
+      Run a single JUnit test
+    -->
+    <target name="test-one" description="Run an individual unit test. (e.g. ./build.sh testcase -Dtest=com.l7tech.MyTest.class)" depends="clean.test, dev, summary" if="test">
         <junit printsummary="yes" haltonfailure="yes" fork="off">
             <classpath>
                 <pathelement path="${test.class.path}"/>
@@ -240,6 +262,27 @@
 
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
+
+            <test name="${test}" haltonfailure="no" fork="yes"/>
+        </junit>
+    </target>
+
+    <!--
+      ** configure and invoke unit tests
+      -->
+    <target name="test" depends="clean.test, dev" description="Run JUnit 'quick' tests">
+        <junit printsummary="yes" haltonfailure="yes" fork="off">
+            <classpath>
+                <pathelement path="${test.class.path}"/>
+                <pathelement path="${build.dir}/classes"/>
+            </classpath>
+
+            <formatter type="plain"/>
+            <sysproperty key="src.root" value="${src.root}"/>
+
+            <!--
+              Tests
+            -->
             <test name="com.l7tech.common.audit.MessagesTest" haltonfailure="no" />
             <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no" />
             <test name="com.l7tech.proxy.policy.ClientXpathAssertionsTest" haltonfailure="no"/>
@@ -273,7 +316,7 @@
         </junit>
     </target>
 
-    <target name="test.intensive" depends="test">
+    <target name="test.intensive" description="Run intensive JUnit tests." depends="clean.test, test">
         <junit printsummary="yes" haltonfailure="yes" fork="off">
             <classpath>
                 <pathelement path="${test.class.path}"/>
@@ -318,11 +361,47 @@
         </junit>
     </target>
 
-<!--
+    <!--
+      Clean data from running tests.
+    -->
+    <target name="clean.test" depends="init-dev">
+        <delete>
+            <fileset dir="${src.root}/">
+                <include name="TEST*"/>
+            </fileset>
+        </delete>
+        <delete includeEmptyDirs="true">
+            <fileset dir="${src.root}">
+                <include name="WspWriter*"/>
+                <include name="stubdata*"/>
+            </fileset>
+        </delete>
+        <!-- Not really feasible to delete all the test classes (leaving other classes)
+        <delete>
+            <fileset dir="${src.root}">
+                <include name="build/classes/**/*Test.class"/>
+            </fileset>
+        </delete>
+        -->
+    </target>
+
+    <!--
+      Check for any test files in the build output. If clean set "clean" property.
+    -->
+    <target name="clean.check" depends="init-dev">
+        <condition property="clean">
+            <not>
+                <!-- Check for random test file -->
+                <available file="${build.classes}/com/l7tech/policy/AllAssertions.class"/>
+            </not>
+        </condition>
+    </target>
+
+    <!--
       ** Clean the directory structure.
       ** This is used only by developer's build.
       -->
-    <target name="clean" depends="init-dev,clean.ca" description="Delete all build output.">
+    <target name="clean" depends="init-dev,clean.ca,clean.test" description="Delete all build output.">
         <delete dir="${build.classes}"/>
         <delete dir="${doc.root}"/>
         <delete dir="${build.lib}"/>
@@ -331,11 +410,6 @@
             <fileset dir="${src.root}/installer">
                 <include name="Manager-*"/>
                 <include name="Bridge-*"/>
-            </fileset>
-        </delete>
-        <delete includeEmptyDirs="true">
-            <fileset dir="${src.root}/">
-                <include name="TEST*"/>
             </fileset>
         </delete>
         <delete includeEmptyDirs="true">
@@ -349,7 +423,6 @@
         <delete dir="${javadoc.home}"/>
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}">
-                <include name="WspWriter*"/>
                 <include name="stubdata*"/>
             </fileset>
         </delete>
@@ -918,11 +991,18 @@
     </target>
 
 
-<!--
+    <!--
+      Warn if not clean when running test package
+    -->
+    <target name="testpackage.unclean" unless="clean">
+        <fail>Test classes found. You need to run "clean" or use -Dclean=true to force testpackage to run.</fail>
+    </target>
+
+    <!--
       ** Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
       ** contains only the jars and their declared dependency jars.
       -->
-    <target name="testpackage" depends="package">
+    <target name="testpackage" depends="clean.check, testpackage.unclean, package" if="clean">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" depend="on" verbose="no"/>
         <exec executable="perl" failonerror="true">
