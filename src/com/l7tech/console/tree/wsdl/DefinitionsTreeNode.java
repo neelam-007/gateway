@@ -4,6 +4,7 @@ package com.l7tech.console.tree.wsdl;
 import com.l7tech.common.xml.Wsdl;
 
 import javax.wsdl.*;
+import javax.wsdl.Service;
 import java.util.*;
 
 /**
