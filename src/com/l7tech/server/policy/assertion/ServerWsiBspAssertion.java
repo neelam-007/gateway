@@ -92,6 +92,27 @@ public class ServerWsiBspAssertion implements ServerAssertion {
         return status;
     }
 
+    //- PACKAGE
+
+    /**
+     * Used by test code only (tests rule loading).
+     */
+    ServerWsiBspAssertion() {
+        this.wsiBspAssertion = null;
+        this.auditor = null;
+        nsPreToUriMap = Collections.EMPTY_MAP;
+        nsUriToPreMap = Collections.EMPTY_MAP;
+        rulesMap = Collections.EMPTY_MAP;
+        initRules();
+    }
+
+    /**
+     * Used by test code only. 
+     */
+    Map getRules() {
+        return rulesMap;
+    }
+
     //- PRIVATE
 
     //
