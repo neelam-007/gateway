@@ -571,6 +571,10 @@ CREATE TABLE service_metrics (
   front_min INTEGER NOT NULL,
   front_max INTEGER NOT NULL,
   front_sum INTEGER NOT NULL,
+  INDEX i_sm_nodeid (nodeid),
+  INDEX i_sm_serviceoid (published_service_oid),
+  INDEX i_sm_resolution (resolution),
+  INDEX i_sm_pstart (period_start),
   PRIMARY KEY (nodeid, published_service_oid, resolution, period_start)
 ) TYPE=InnoDB;
 
