@@ -13,7 +13,7 @@ import java.util.Date;
  */
 public class TarariXsltDeadlockRepro {
     private static final int NUM_THREADS = 20; // this is enough to find the deadlock on our quad Opteron
-    private static final int NUM_ITERATIONS = 100; // this is almost always enough to see the deadlock
+    private static final int NUM_ITERATIONS = 100; // per-thread.  this is almost always enough to see the deadlock
 
     // OutputStream for where XSLT results are sent.  Is first System.out, then NullOutputStream for the parallel run.
     private static OutputStream results;
@@ -76,7 +76,7 @@ public class TarariXsltDeadlockRepro {
             }
         };
 
-        // Run once to stdout to make sure it work properly
+        // Run once to stdout to make sure it's working properly
         results = System.out;
         transformOnce.run();
         System.out.println();
@@ -84,7 +84,7 @@ public class TarariXsltDeadlockRepro {
         // Turn off results printing for the benchmark
         results = new NullOutputStream();
 
-        // Create two threads
+        // Create the worker threads
         Thread[] threads = new Thread[NUM_THREADS];
         for (int i = 0; i < threads.length; i++)
             threads[i] = new Thread(transformLots, "XsltThread" + i);
@@ -94,7 +94,7 @@ public class TarariXsltDeadlockRepro {
         for (int i = 0; i < threads.length; i++)
             threads[i].start();
         System.out.println(new Date() + ": starting " + threads.length +
-                " work threads doing " + NUM_ITERATIONS + " XSLT transformations each");
+                " work threads to do " + NUM_ITERATIONS + " XSLT transformations each");
 
         // Wait for them to finish
         System.out.println("Waiting for them to finish...");
