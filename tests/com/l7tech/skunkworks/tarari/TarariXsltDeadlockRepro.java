@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2005 Layer 7 Technologies Inc.
- *
- */
-
 package com.l7tech.skunkworks.tarari;
 
 import com.tarari.xml.XmlResult;
@@ -14,14 +9,20 @@ import java.io.*;
 import java.util.Date;
 
 /**
- * Stand-alone reproduction for deadlock in Tarari XSLT.  Uses only JRE and raxj classes.
+ * Stand-alone reproduction for apparent deadlock in Tarari XSLT which depends only JRE and raxj classes.
  */
 public class TarariXsltDeadlockRepro {
-    private static final ByteArrayInputStream EMPTY_INPUT_STREAM = new ByteArrayInputStream(new byte[0]);
-    private static final int NUM_THREADS = 5; // this is enough to find the deadlock on our quad Opteron
-    private static final int NUM_ITERATIONS = 1000; // this is enough to see the deadlock
+    private static final int NUM_THREADS = 20; // this is enough to find the deadlock on our quad Opteron
+    private static final int NUM_ITERATIONS = 100; // this is almost always enough to see the deadlock
 
+    // OutputStream for where XSLT results are sent.  Is first System.out, then NullOutputStream for the parallel run.
     private static OutputStream results;
+
+    private static ThreadLocal tlSource = new ThreadLocal() {
+        protected Object initialValue() {
+            return new XmlSource(new byte[0]);
+        }
+    };
 
     public static void main(String[] args) throws Exception {
         InputStream req = new FileInputStream("DocSearchResponse.xml");
@@ -43,11 +44,17 @@ public class TarariXsltDeadlockRepro {
             public void run() {
                 RaxDocument raxDocument = null;
                 try {
+                    // SSG creates initial RaxDocument from the servlet InputStream:
                     raxDocument = RaxDocument.createDocument(new XmlSource(new ByteArrayInputStream(reqBytes)));
-                    final XmlSource xmlSource = new XmlSource(EMPTY_INPUT_STREAM);
+                    // (Not shown here: SSG then calls XPathProcessor.processXPaths())
+
+                    // XSLT assertion reuses the already-created RaxDocument
+                    XmlSource xmlSource = (XmlSource)tlSource.get();
                     xmlSource.setData(raxDocument);
                     Stylesheet stylesheet = new Stylesheet(master);
                     stylesheet.setValidate(false);
+
+                    // In the SSG, output is to (essentially) a ByteArrayOutputStream
                     XmlResult xmlResult = new XmlResult(results);
                     stylesheet.transform(xmlSource, xmlResult);
                 } catch (Exception e) {
@@ -82,7 +89,7 @@ public class TarariXsltDeadlockRepro {
         for (int i = 0; i < threads.length; i++)
             threads[i] = new Thread(transformLots, "XsltThread" + i);
 
-        // Start them working
+        // Start them working.  (Our actual benchmark uses a barrier here so they all start at once.)
         long start = System.currentTimeMillis();
         for (int i = 0; i < threads.length; i++)
             threads[i].start();
@@ -98,7 +105,7 @@ public class TarariXsltDeadlockRepro {
                     System.out.println("\nThread finished: " + threads[i].getName());
                     break;
                 }
-                System.out.print(".");
+                System.out.print("."); // perk some dots.  When these stop appearing, it's locked up.
                 System.out.flush();
             }
         }
@@ -109,13 +116,12 @@ public class TarariXsltDeadlockRepro {
     }
 
     /** An OutputStream that throws away all output. */
-    public static class NullOutputStream extends OutputStream {
-        public NullOutputStream() {}
+    private static class NullOutputStream extends OutputStream {
+        private NullOutputStream() {}
         public void close() throws IOException {}
         public void flush() throws IOException {}
         public void write(int b) throws IOException {}
         public void write(byte b[]) throws IOException {}
         public void write(byte b[], int off, int len) throws IOException {}
     }
-
 }
