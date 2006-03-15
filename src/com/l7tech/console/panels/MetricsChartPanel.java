@@ -300,7 +300,7 @@ public class MetricsChartPanel extends ChartPanel {
         mYAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         mYAxis.setAutoRange(true);
         mYAxis.setRangeType(RangeType.POSITIVE);
-        mYAxis.setAutoRangeMinimumSize(100.);
+        mYAxis.setAutoRangeMinimumSize(10.);
         final StackedXYBarRenderer mRenderer = new StackedXYBarRenderer() {
             public void drawItem(Graphics2D g2,
                                  XYItemRendererState state,
