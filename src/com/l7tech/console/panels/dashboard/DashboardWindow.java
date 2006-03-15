@@ -7,6 +7,7 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
@@ -109,6 +110,9 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
     public DashboardWindow() throws HeadlessException {
         super(resources.getString("window.title"));
+
+        ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+        setIconImage(imageIcon.getImage());
 
         this.clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
         this.serviceAdmin = Registry.getDefault().getServiceManager();
