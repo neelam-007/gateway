@@ -18,6 +18,7 @@ import org.jfree.data.time.SimpleTimePeriod;
 import org.jfree.data.time.TimePeriod;
 import org.jfree.data.time.TimeTableXYDataset;
 import org.jfree.data.xy.XYDataset;
+import org.jfree.data.RangeType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -241,6 +242,8 @@ public class MetricsChartPanel extends ChartPanel {
 
         final NumberAxis rYAxis = new NumberAxis("Response Time (ms)");
         rYAxis.setAutoRange(true);
+        rYAxis.setRangeType(RangeType.POSITIVE);
+        rYAxis.setAutoRangeMinimumSize(10.);
         final TimePeriodValueWithHighLowRenderer rRenderer = new TimePeriodValueWithHighLowRenderer();
         rRenderer.setDrawBarOutline(false);
         rRenderer.setSeriesStroke(0, RESPONSE_AVG_STROKE);
@@ -296,6 +299,8 @@ public class MetricsChartPanel extends ChartPanel {
         final NumberAxis mYAxis = new NumberAxis("Message Rate (per sec)");
         mYAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         mYAxis.setAutoRange(true);
+        mYAxis.setRangeType(RangeType.POSITIVE);
+        mYAxis.setAutoRangeMinimumSize(100.);
         final StackedXYBarRenderer mRenderer = new StackedXYBarRenderer() {
             public void drawItem(Graphics2D g2,
                                  XYItemRendererState state,
@@ -473,22 +478,38 @@ public class MetricsChartPanel extends ChartPanel {
         }
     }
 
-    /** Creates a fake metrics bin. For testing only. */
-    private static MetricsBin fakeMetricsBin(long startTime, long endTime, int binInterval) {
-        final MetricsBin bin = new MetricsBin(startTime, binInterval, MetricsBin.RES_FINE, "SSG1", 123456);
-        final double cosine = Math.cos(2. * Math.PI * startTime / (100. * 5 * 1000));
-        final int numSuccess = (int) (1000. + 100. * cosine);
-        final int numViolation = (int) (100. + 100. * cosine);
-        final int numFailure = (int) (50. + 50. * cosine);
+    /**
+     * For testing only.
+     *
+     * Creates a metrics bin with given fake parameters.
+     */
+    private static MetricsBin fakeMetricsBin(
+            long startTime,
+            long endTime,
+            int binInterval,
+            int numSuccess,
+            int numViolation,
+            int numFailure,
+            int frontendResponseTimeAvg,
+            int frontendResponseTimeMin,
+            int frontendResponseTimeMax,
+            int backendResponseTimeAvg,
+            int backendResponseTimeMin,
+            int backendResponseTimeMax) {
+        System.out.println("fakeMetricsBin(numSuccess=" + numSuccess +
+                ", numViolation=" + numViolation +
+                ", numFailure=" + numFailure +
+                ", frontendResponseTimeAvg=" + frontendResponseTimeAvg +
+                ", frontendResponseTimeMin=" + frontendResponseTimeMin +
+                ", frontendResponseTimeMax=" + frontendResponseTimeMax +
+                ", backendResponseTimeAvg=" + backendResponseTimeAvg +
+                ", backendResponseTimeMin=" + backendResponseTimeMin +
+                ", backendResponseTimeMax=" + backendResponseTimeMax +
+                ")");
         final int numAttempted = numSuccess + numViolation + numFailure;
         final int numAuthorized = numSuccess + numFailure;
         final int numCompleted = numSuccess;
-        final int frontendResponseTimeAvg = (int) (800. + 100. * cosine);
-        final int frontendResponseTimeMin = (int) (700. + 100. * cosine);
-        final int frontendResponseTimeMax = (int) (900. + 100. * cosine);
-        final int backendResponseTimeAvg = (int) (600. - 100. * cosine);
-        final int backendResponseTimeMin = (int) (500. - 100. * cosine);
-        final int backendResponseTimeMax = (int) (700. - 100. * cosine);
+        final MetricsBin bin = new MetricsBin(startTime, binInterval, MetricsBin.RES_FINE, "SSG1", 123456);
         for (int i = 0; i < numAttempted; ++ i) {
             int responseTime = frontendResponseTimeAvg;
             if (numAttempted == 2) {
@@ -518,8 +539,43 @@ public class MetricsChartPanel extends ChartPanel {
         return bin;
     }
 
-    /** Tests the MetricsChartPanel using fake data. */
-    public static void main(String[] args) {
+    /**
+     * For testing only.
+     *
+     * Creates a metrics bin with fake sinusoidal data.
+     */
+    private static MetricsBin fakeMetricsBin(long startTime, long endTime, int binInterval) {
+        final double cosine = Math.cos(2. * Math.PI * startTime / (100. * 5 * 1000));
+        final int numSuccess = (int) (1000. + 100. * cosine);
+        final int numViolation = (int) (100. + 100. * cosine);
+        final int numFailure = (int) (50. + 50. * cosine);
+        final int frontendResponseTimeAvg = (int) (800. + 100. * cosine);
+        final int frontendResponseTimeMin = (int) (700. + 100. * cosine);
+        final int frontendResponseTimeMax = (int) (900. + 100. * cosine);
+        final int backendResponseTimeAvg = (int) (600. - 100. * cosine);
+        final int backendResponseTimeMin = (int) (500. - 100. * cosine);
+        final int backendResponseTimeMax = (int) (700. - 100. * cosine);
+        return fakeMetricsBin(
+                startTime,
+                endTime,
+                binInterval,
+                numSuccess,
+                numViolation,
+                numFailure,
+                frontendResponseTimeAvg,
+                frontendResponseTimeMin,
+                frontendResponseTimeMax,
+                backendResponseTimeAvg,
+                backendResponseTimeMin,
+                backendResponseTimeMax);
+    }
+
+    /**
+     * For testing only.
+     *
+     * Tests the MetricsChartPanel using fake data.
+     */
+    public static void main(String[] args) throws InterruptedException {
         final int FINE_INTERVAL = 5 * 1000;
         final long MAX_TIME_RANGE = 15 * 60 * 1000;
 
@@ -532,35 +588,62 @@ public class MetricsChartPanel extends ChartPanel {
         mainFrame.setVisible(true);
 
         // Waits 3 seconds to simulate network delay to fetch data from SSG.
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-        }
+        Thread.sleep(5000);
 
-        // Fakes a bunch of historical fine bins.
-        final long dataStart = ((System.currentTimeMillis() - MAX_TIME_RANGE) / FINE_INTERVAL) * FINE_INTERVAL;
-        final long dataEnd = dataStart + MAX_TIME_RANGE;
+        long endTime;
+        long startTime;
+        MetricsBin bin;
+
+        // Adds a metric bin with zero message.
+        endTime = System.currentTimeMillis();
+        startTime = endTime - FINE_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
+
+        Thread.sleep(5000);
+
+        // Adds a metric bin with values within the minimum y-axis ranges.
+        startTime += FINE_INTERVAL;
+        endTime = startTime + FINE_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
+        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
+
+        Thread.sleep(5000);
+
+        // Adds a metric bin with values beyond the minimum y-axis ranges.
+        // To test auto-expansion of the y-axis ranges.
+        startTime += FINE_INTERVAL;
+        endTime = startTime + FINE_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 1000, 10, 1, 400, 350, 450, 200, 150, 250);
+        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
+
+        Thread.sleep(5000);
+
+        // Fill the chart time range with a single metric bin with values within the minimum y-axis ranges.
+        // To test auto-contraction of the y-axis back to minimum ranges.
+        startTime += MAX_TIME_RANGE;
+        endTime = startTime + FINE_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
+        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
+
+        Thread.sleep(5000);
+
+        // Fakes a large number of contiguous fine bins.
         final List metricsBins = new ArrayList();
-        for (long binStart = dataStart, binEnd = dataStart + FINE_INTERVAL;
-             binStart < dataEnd;
-             binStart += FINE_INTERVAL, binEnd += FINE_INTERVAL) {
-            metricsBins.add(fakeMetricsBin(binStart, binEnd, FINE_INTERVAL));
+        for (int i = 0; i < MAX_TIME_RANGE / FINE_INTERVAL; ++ i) {
+            startTime += FINE_INTERVAL;
+            endTime = startTime + FINE_INTERVAL;
+            metricsBins.add(fakeMetricsBin(startTime, endTime, FINE_INTERVAL));
         }
-
         chartPanel.addData(metricsBins);
 
         // Simulates new fine bins being added regularly.
         while (true) {
-            try {
-                Thread.sleep(FINE_INTERVAL);
-            } catch (InterruptedException e) {
-            }
-            final long endTime = System.currentTimeMillis();
-            final long startTime = endTime - FINE_INTERVAL;
-            final MetricsBin bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL);
-            final List bins = new ArrayList();
-            bins.add(bin);
-            chartPanel.addData(bins);
+            Thread.sleep(FINE_INTERVAL);
+            startTime += FINE_INTERVAL;
+            endTime = startTime + FINE_INTERVAL;
+            bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL);
+            chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
         }
     }
 }
