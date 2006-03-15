@@ -17,6 +17,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
@@ -36,6 +38,8 @@ import org.springframework.remoting.support.RemoteInvocationFactory;
  */
 public class RmiServiceExporterStubFactoryBean
     extends RemoteInvocationBasedExporter implements FactoryBean, InitializingBean, DisposableBean {
+
+    private static final Logger logger = Logger.getLogger(RmiServiceExporterStubFactoryBean.class.getName());
 
     private String serviceName;
 
@@ -230,7 +234,7 @@ public class RmiServiceExporterStubFactoryBean
             unexportObjects();
             return;
         }
-        if (logger.isInfoEnabled()) {
+        if (logger.isLoggable(Level.INFO)) {
             logger.info("Unbinding RMI service '" + getDisplayServiceName() +
               "' from registry, export count is: " + (rmiExportCount-1));
         }
@@ -273,7 +277,7 @@ public class RmiServiceExporterStubFactoryBean
                     exported = (Remote) refOrObject;
                 }
                 if(exported!=null) {
-                    if (logger.isInfoEnabled()) {
+                    if (logger.isLoggable(Level.INFO)) {
                         logger.info("Unbinding RMI object '" + getDisplayServiceName() +
                           "' from registry, export count is: " + (rmiExportCount-1));
                     }
@@ -281,7 +285,7 @@ public class RmiServiceExporterStubFactoryBean
                         UnicastRemoteObject.unexportObject(exported, true);
                     }
                     catch(NoSuchObjectException nsoe) {
-                        logger.warn("Error when unexporting object", nsoe);
+                        logger.log(Level.WARNING, "Error when unexporting object", nsoe);
                     }
                 }
                 rmiExportCount--;

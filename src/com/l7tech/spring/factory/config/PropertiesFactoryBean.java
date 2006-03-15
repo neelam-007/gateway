@@ -23,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.springframework.core.io.Resource;
 import org.springframework.util.DefaultPropertiesPersister;
@@ -42,6 +44,8 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
  * @author Emil Marceta
  */
 public class PropertiesFactoryBean extends AbstractFactoryBean {
+
+    private static final Logger logger = Logger.getLogger(PropertiesFactoryBean.class.getName());
 
     private Properties properties;
 
@@ -154,13 +158,13 @@ public class PropertiesFactoryBean extends AbstractFactoryBean {
         for (int i = 0; i < this.locations.length; i++) {
             Resource location = this.locations[i];
             if (!location.exists() && allowNonExistentResources) {
-                if (logger.isInfoEnabled()) {
+                if (logger.isLoggable(Level.INFO)) {
                     logger.info("properties " + location+ " does not exist, skipping");
                 }
                 continue;
             }
             atLeastOneExists = true;
-            if (logger.isInfoEnabled()) {
+            if (logger.isLoggable(Level.INFO)) {
                 logger.info("Loading properties file from " + location);
             }
             InputStream is = location.getInputStream();

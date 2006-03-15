@@ -21,6 +21,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * The {@link RemoteInvocationBasedAccessor} subclass that specifies the RMI
@@ -31,6 +33,8 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
   implements MethodInterceptor, InitializingBean, FactoryBean {
+
+    private static final Logger logger = Logger.getLogger(ResettableRmiProxyFactoryBean.class.getName());
 
     private Object serviceProxy;
 
@@ -116,7 +120,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
                 throw new IllegalArgumentException("serviceUrl is required with 'lookupStubOnStartup' = true");
             }
             Remote remoteObj = lookupStub();
-            if (logger.isInfoEnabled()) {
+            if (logger.isLoggable(Level.INFO)) {
                 if (remoteObj instanceof RmiInvocationHandler) {
                     logger.info("RMI stub [" + getServiceUrl() + "] is an RMI invoker");
                 } else if (getServiceInterface() != null) {
@@ -160,7 +164,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
             NamingURL url = NamingURL.parse(serviceUrl);
             stub = LocateRegistry.getRegistry(url.getHost(), url.getPort(), registryClientSocketFactory).lookup(url.getName());
         }
-        if (logger.isInfoEnabled()) {
+        if (logger.isLoggable(Level.INFO)) {
             logger.info("Located object with RMI URL [" + serviceUrl + "]: value=[" + stub + "]");
         }
         return stub;
@@ -236,10 +240,10 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
      */
     private Object handleRemoteConnectFailure(MethodInvocation invocation, Exception ex) throws Throwable {
         if (this.refreshStubOnConnectFailure) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Could not connect to RMI service [" + getServiceUrl() + "] - retrying", ex);
-            } else if (logger.isWarnEnabled()) {
-                logger.warn("Could not connect to RMI service [" + getServiceUrl() + "] - retrying");
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Could not connect to RMI service [" + getServiceUrl() + "] - retrying", ex);
+            } else if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Could not connect to RMI service [" + getServiceUrl() + "] - retrying");
             }
             return refreshAndRetry(invocation);
         } else {

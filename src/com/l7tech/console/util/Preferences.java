@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * The Preferencs class is a console property manager, that is
@@ -31,6 +32,8 @@ import java.util.List;
  * @see java.beans.PropertyChangeSupport
  */
 public class Preferences extends ApplicationObjectSupport {
+    private static final Logger logger = Logger.getLogger(Preferences.class.getName());
+
     private static boolean debug = false;
     public static final String SERVICE_URL = "service.url";
     private static Preferences prefs = null;
@@ -161,7 +164,7 @@ public class Preferences extends ApplicationObjectSupport {
             } finally {
                 fo.close();
             }
-            logger.trace("Emtpy Internal Admin trustStore created - " + TRUST_STORE_FILE);
+            logger.fine("Emtpy Internal Admin trustStore created - " + TRUST_STORE_FILE);
             return ts;
         }
         final FileInputStream fis = new FileInputStream(storeFile);
@@ -170,7 +173,7 @@ public class Preferences extends ApplicationObjectSupport {
         } finally {
             fis.close();
         }
-        logger.trace("Internal admin trustStore opened - " + TRUST_STORE_FILE);
+        logger.fine("Internal admin trustStore opened - " + TRUST_STORE_FILE);
         return ts;
     }
 
