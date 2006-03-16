@@ -35,13 +35,28 @@ class PeriodData {
         if (newBin.getPeriodStart() != periodStart) throw new IllegalArgumentException();
         if (newBin.getResolution() != resolution) throw new IllegalArgumentException();
 
-        bigBin.setMinBackendResponseTime(Math.min(bigBin.getMinBackendResponseTime(), newBin.getMinBackendResponseTime()));
-        bigBin.setMaxBackendResponseTime(Math.max(bigBin.getMaxBackendResponseTime(), newBin.getMaxBackendResponseTime()));
-        bigBin.setMinFrontendResponseTime(Math.min(bigBin.getMinFrontendResponseTime(), newBin.getMinFrontendResponseTime()));
-        bigBin.setMaxFrontendResponseTime(Math.max(bigBin.getMaxFrontendResponseTime(), newBin.getMaxFrontendResponseTime()));
-
         bigBin.setStartTime(Math.min(bigBin.getStartTime(), newBin.getStartTime()));
         bigBin.setEndTime(Math.max(bigBin.getEndTime(), newBin.getEndTime()));
+
+        if (bigBin.getNumAttemptedRequest() == 0) {
+            bigBin.setMinFrontendResponseTime(newBin.getMinFrontendResponseTime());
+            bigBin.setMaxFrontendResponseTime(newBin.getMaxFrontendResponseTime());
+        } else {
+            if (newBin.getNumAttemptedRequest() != 0) {
+                bigBin.setMinFrontendResponseTime(Math.min(bigBin.getMinFrontendResponseTime(), newBin.getMinFrontendResponseTime()));
+                bigBin.setMaxFrontendResponseTime(Math.max(bigBin.getMaxFrontendResponseTime(), newBin.getMaxFrontendResponseTime()));
+            }
+        }
+
+        if (bigBin.getNumCompletedRequest() == 0) {
+            bigBin.setMinBackendResponseTime(newBin.getMinBackendResponseTime());
+            bigBin.setMaxBackendResponseTime(newBin.getMaxBackendResponseTime());
+        } else {
+            if (newBin.getNumCompletedRequest() != 0) {
+                bigBin.setMinBackendResponseTime(Math.min(bigBin.getMinBackendResponseTime(), newBin.getMinBackendResponseTime()));
+                bigBin.setMaxBackendResponseTime(Math.max(bigBin.getMaxBackendResponseTime(), newBin.getMaxBackendResponseTime()));
+            }
+        }
 
         bigBin.setNumAttemptedRequest(bigBin.getNumAttemptedRequest() + newBin.getNumAttemptedRequest());
         bigBin.setNumAuthorizedRequest(bigBin.getNumAuthorizedRequest() + newBin.getNumAuthorizedRequest());
@@ -103,16 +118,35 @@ class PeriodData {
             MetricsBin bin = (MetricsBin)bins.next();
             if (nodeId == null || bin.getClusterNodeId().equals(nodeId) ||
                 serviceOid == null || bin.getServiceOid() == serviceOid.longValue()) {
+
+                if (numAttempted == 0) {
+                    frontMin = bin.getMinFrontendResponseTime();
+                    frontMax = bin.getMaxFrontendResponseTime();
+                }
+                else {
+                    if (bin.getNumAttemptedRequest() != 0) {
+                        frontMin = Math.min(frontMin, bin.getMinFrontendResponseTime());
+                        frontMax = Math.max(frontMax, bin.getMaxFrontendResponseTime());
+                    }
+                }
+
+                if (numCompleted == 0) {
+                    backMin = bin.getMinBackendResponseTime();
+                    backMax = bin.getMaxBackendResponseTime();
+                }
+                else {
+                    if (bin.getNumCompletedRequest() != 0) {
+                        backMin = Math.min(backMin, bin.getMinBackendResponseTime());
+                        backMax = Math.max(backMax, bin.getMaxBackendResponseTime());
+                    }
+                }
+
                 numAttempted += bin.getNumAttemptedRequest();
                 numAuthorized += bin.getNumAuthorizedRequest();
                 numCompleted += bin.getNumCompletedRequest();
                 backTime += bin.getSumBackendResponseTime();
                 frontTime += bin.getSumFrontendResponseTime();
 
-                backMin = backMin == 0 ? bin.getMinBackendResponseTime() : Math.min(backMin, bin.getMinBackendResponseTime());
-                backMax = backMax == 0 ? bin.getMaxBackendResponseTime() : Math.max(backMax, bin.getMaxBackendResponseTime());
-                frontMin = frontMin == 0 ? bin.getMinFrontendResponseTime() : Math.min(frontMin, bin.getMinFrontendResponseTime());
-                frontMax = frontMax == 0 ? bin.getMaxFrontendResponseTime() : Math.max(frontMax, bin.getMaxFrontendResponseTime());
                 start = start == 0 ? bin.getStartTime() : Math.min(start, bin.getStartTime());
                 end = end == 0 ? bin.getEndTime() : Math.max(end, bin.getEndTime());
             }
