@@ -352,6 +352,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             if (status == AssertionStatus.NONE) {
                 // Policy execution concluded successfully
                 if (metrics != null) metrics.addAuthorizedRequest();
+                stats.authorizedRequest();
                 if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
                     /* We include NONE because it's valid (albeit silly)
                     for a policy to contain no RoutingAssertion */
