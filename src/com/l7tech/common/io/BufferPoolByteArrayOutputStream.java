@@ -57,8 +57,9 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      *
      * @param   b   the byte to be written.
      */
-    public void write(int b) {
+    public void write(int b) throws IOException {
         int newcount = count + 1;
+        if (buf == null) throw new IOException("BufferPool OutputStream is closed");
         if (newcount > buf.length) {
             byte newbuf[] = BufferPool.getBuffer(Math.max(buf.length << 1, newcount));
             System.arraycopy(buf, 0, newbuf, 0, count);
@@ -78,7 +79,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * @param   off   the start offset in the data.
      * @param   len   the number of bytes to write.
      */
-    public void write(byte b[], int off, int len) {
+    public void write(byte b[], int off, int len) throws IOException {
         if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
@@ -86,6 +87,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
             return;
         }
         int newcount = count + len;
+        if (buf == null) throw new IOException("BufferPool OutputStream is closed");
         if (newcount > buf.length) {
             byte newbuf[] = BufferPool.getBuffer(Math.max(buf.length << 1, newcount));
             System.arraycopy(buf, 0, newbuf, 0, count);
@@ -106,6 +108,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * @exception  java.io.IOException  if an I/O error occurs.
      */
     public void writeTo(OutputStream out) throws IOException {
+        if (buf == null) throw new IOException("BufferPool OutputStream is closed");
         out.write(buf, 0, count);
     }
 
@@ -130,6 +133,7 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * @see     java.io.ByteArrayOutputStream#size()
      */
     public byte[] toByteArray() {
+        if (buf == null) return new byte[0];
         byte newbuf[] = new byte[count];
         System.arraycopy(buf, 0, newbuf, 0, count);
         return newbuf;
