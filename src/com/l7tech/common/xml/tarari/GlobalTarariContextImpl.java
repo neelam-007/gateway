@@ -20,6 +20,7 @@ import com.tarari.xml.XmlConfigException;
 import com.tarari.xml.rax.fastxpath.XPathCompiler;
 import com.tarari.xml.rax.fastxpath.XPathCompilerException;
 import com.tarari.xml.rax.schema.SchemaLoader;
+import com.tarari.xml.rax.schema.SchemaResolver;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.springframework.beans.factory.BeanFactory;
@@ -146,6 +147,10 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         return new TarariCompiledXpath(compilableXpath, this);
     }
 
+    public TarariCompiledStylesheet compileStylesheet(byte[] xslBytes) throws ParseException {
+        return new TarariCompiledStylesheetImpl(xslBytes);
+    }
+
     public FastXpath toTarariNormalForm(String xpathToSimplify, Map namespaceMap) {
         try {
             return TarariXpathConverter.convertToFastXpath(namespaceMap, xpathToSimplify);
@@ -249,7 +254,12 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
                 // everytime we load schemas, we check that the resolver is set.
                 if (!communitySchemaResolverSet) {
                     logger.finest("setting the community schema resolver");
-                    SchemaLoader.setSchemaResolver(manager.communitySchemaResolver());
+                    final TarariSchemaResolver trs = manager.communitySchemaResolver();
+                    SchemaLoader.setSchemaResolver(new SchemaResolver() {
+                        public byte[] resolveSchema(String tns, String location, String baseURI) {
+                            return trs.resolveSchema(tns, location, baseURI);
+                        }
+                    });
                     communitySchemaResolverSet = true;
                 }
 

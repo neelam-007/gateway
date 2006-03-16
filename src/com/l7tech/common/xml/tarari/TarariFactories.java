@@ -132,9 +132,9 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
             return new TarariMessageContextImpl(doc,
                                                 xpathResult,
                                                 generation);
-        } catch (XmlParseException e) {
+        } catch (XmlParseException e) { // more-specific
             TarariUtil.translateException(e);
-        } catch (XmlConfigException e) {
+        } catch (XmlConfigException e) { // less-specific
             TarariUtil.translateException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

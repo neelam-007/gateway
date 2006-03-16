@@ -309,6 +309,10 @@ class TarariCompiledXpath extends CompiledXpath {
                 return TYPE_NODESET;
             }
 
+            public boolean matches() {
+                return ns.size() > 0;
+            }
+
             public XpathResultNodeSet getNodeSet() {
                 return new XpathResultNodeSet() {
                     public boolean isEmpty() {

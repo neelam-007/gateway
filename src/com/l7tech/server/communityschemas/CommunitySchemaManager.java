@@ -9,13 +9,13 @@ package com.l7tech.server.communityschemas;
 import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.tarari.TarariSchemaResolver;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ServerConfig;
-import com.tarari.xml.rax.schema.SchemaResolver;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -224,9 +224,9 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
      * Equivalent to communityEntityResolver but for tarari based hardware schema validation.
      * This is expected to be used by the GlobalTarariContextImpl
      */
-    public SchemaResolver communitySchemaResolver() {
+    public TarariSchemaResolver communitySchemaResolver() {
         final CommunitySchemaManager manager = this;
-        return new SchemaResolver() {
+        return new TarariSchemaResolver() {
             public byte[] resolveSchema(String tns, String location, String baseURI) {
                 // todo, get schema based on information provided (from table).
                 logger.info("tarari asking for resource. tns: " + tns +

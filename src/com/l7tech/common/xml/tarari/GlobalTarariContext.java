@@ -5,15 +5,16 @@
  */
 package com.l7tech.common.xml.tarari;
 
+import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.xpath.CompilableXpath;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.FastXpath;
-import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Map;
 
 /**
@@ -37,6 +38,14 @@ public interface GlobalTarariContext {
      * @throws InvalidXpathException if the XPath could not be parsed, even with Tarari direct XPath 1.0.
      */
     CompiledXpath compileXpath(CompilableXpath compilableXpath) throws InvalidXpathException;
+
+    /**
+     * Prepare a {@link TarariCompiledStylesheet} instance that can transform messages using Tarari.
+     *
+     * @return a TarariCompiledStylesheet instance.  Never null.
+     * @throws ParseException if the stylesheet could not be compiled.
+     */
+    TarariCompiledStylesheet compileStylesheet(byte[] xslBytes) throws ParseException;
 
     /**
      * Attempts to convert the specified XPath expression into Tarari Normal Form.  Expressions in normal form
