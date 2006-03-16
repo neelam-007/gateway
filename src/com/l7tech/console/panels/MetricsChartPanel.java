@@ -14,19 +14,20 @@ import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.*;
 import org.jfree.chart.renderer.xy.StackedXYBarRenderer;
 import org.jfree.chart.renderer.xy.XYItemRendererState;
+import org.jfree.data.RangeType;
+import org.jfree.data.Range;
 import org.jfree.data.time.SimpleTimePeriod;
 import org.jfree.data.time.TimePeriod;
 import org.jfree.data.time.TimeTableXYDataset;
 import org.jfree.data.xy.XYDataset;
-import org.jfree.data.RangeType;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
-import java.text.SimpleDateFormat;
-import java.text.MessageFormat;
 import java.text.FieldPosition;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 
@@ -186,10 +187,6 @@ public class MetricsChartPanel extends ChartPanel {
                         fmt.format(endTime)
                     }, tooltip, new FieldPosition(0));
             return tooltip.toString();
-/*
-            return seriesLabel + ": avg=" + avg + " min=" + min + " max=" + max +
-                    " (from " + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
-*/
         }
     }
 
@@ -219,6 +216,17 @@ public class MetricsChartPanel extends ChartPanel {
             final String seriesLabel = dataset.getSeriesKey(series).toString();
             return seriesLabel + ": " + numMsg + " msg (in " + numSec + " sec from "
                    + fmt.format(startTime) + " to " + fmt.format(endTime) + ")";
+        }
+    }
+
+    /**
+     * Sets x-axis range explicitly if there is no data in the plots; otherwise
+     * JFreeChart will use some random range. (Bugzilla # 2277)
+     */
+    private void setXAxisRangeIfNoData() {
+        if (_messageCounts.getItemCount() == 0) {
+            final long now = System.currentTimeMillis();
+            _chart.getXYPlot().getDomainAxis().setRange(new Range(now - _maxTimeRange, now), false, true);
         }
     }
 
@@ -357,6 +365,8 @@ public class MetricsChartPanel extends ChartPanel {
         setInitialDelay(100);           // Makes tool tip respond fast.
         setDismissDelay(Integer.MAX_VALUE); // Makes tool tip display indefinitely.
         setReshowDelay(100);
+
+        setXAxisRangeIfNoData();
     }
 
     /**
@@ -365,8 +375,8 @@ public class MetricsChartPanel extends ChartPanel {
      * @param metricsBins new data to be added
      */
     public void addData(List metricsBins) {
-        // Temporarily disable notification so plots won't be redrawn when
-        // datasets are changing. Note that this does not entirely prevent
+        // Temporarily disable notification so plots won't be redrawn needlessly
+        // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.
         _chart.setNotify(false);
 
@@ -443,12 +453,14 @@ public class MetricsChartPanel extends ChartPanel {
         } catch (InvalidObjectException e) {
             // Should not get here.
         }
+
+        setXAxisRangeIfNoData();
     }
 
     /** Clears all data and updates the plots. */
     public void clearData() {
-        // Temporarily disable notification so plots won't be redrawn when
-        // datasets are changing. Note that this does not entirely prevent
+        // Temporarily disable notification so plots won't be redrawn needlessly
+        // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.
         _chart.setNotify(false);
 
@@ -468,7 +480,7 @@ public class MetricsChartPanel extends ChartPanel {
         // Re-enable notification now that all dataset change is done.
         _chart.setNotify(true);
 
-        // Now sends notifications to cause plots to update.
+        // Now let the data structures send notifications to cause plots to update.
         try {
             _responseTimes.validateObject();
             _messageRates.validateObject();
@@ -476,6 +488,8 @@ public class MetricsChartPanel extends ChartPanel {
         } catch (InvalidObjectException e) {
             // Should not get here.
         }
+
+        setXAxisRangeIfNoData();
     }
 
     /**
@@ -576,7 +590,7 @@ public class MetricsChartPanel extends ChartPanel {
      * Tests the MetricsChartPanel using fake data.
      */
     public static void main(String[] args) throws InterruptedException {
-        final int FINE_INTERVAL = 5 * 1000;
+        final int BIN_INTERVAL = 5 * 1000;
         final long MAX_TIME_RANGE = 15 * 60 * 1000;
 
         final MetricsChartPanel chartPanel = new MetricsChartPanel(MAX_TIME_RANGE);
@@ -587,7 +601,7 @@ public class MetricsChartPanel extends ChartPanel {
         mainFrame.pack();
         mainFrame.setVisible(true);
 
-        // Waits 3 seconds to simulate network delay to fetch data from SSG.
+        // Waits a few seconds to simulate network delay to fetch data from SSG.
         Thread.sleep(5000);
 
         long endTime;
@@ -596,53 +610,60 @@ public class MetricsChartPanel extends ChartPanel {
 
         // Adds a metric bin with zero message.
         endTime = System.currentTimeMillis();
-        startTime = endTime - FINE_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        startTime = endTime - BIN_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
 
         Thread.sleep(5000);
 
         // Adds a metric bin with values within the minimum y-axis ranges.
-        startTime += FINE_INTERVAL;
-        endTime = startTime + FINE_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
+        startTime += BIN_INTERVAL;
+        endTime = startTime + BIN_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
         chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
 
         Thread.sleep(5000);
 
         // Adds a metric bin with values beyond the minimum y-axis ranges.
         // To test auto-expansion of the y-axis ranges.
-        startTime += FINE_INTERVAL;
-        endTime = startTime + FINE_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 1000, 10, 1, 400, 350, 450, 200, 150, 250);
+        startTime += BIN_INTERVAL;
+        endTime = startTime + BIN_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 1000, 10, 1, 400, 350, 450, 200, 150, 250);
         chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
 
         Thread.sleep(5000);
 
-        // Fill the chart time range with a single metric bin with values within the minimum y-axis ranges.
+        // Fills chart time span with a single metric bin with values within the minimum y-axis ranges.
         // To test auto-contraction of the y-axis back to minimum ranges.
         startTime += MAX_TIME_RANGE;
-        endTime = startTime + FINE_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
+        endTime = startTime + BIN_INTERVAL;
+        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
         chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
+
+        Thread.sleep(5000);
+
+        // Clears all data.
+        // To test x-axis when there is no data.
+        System.out.println("clearData()");
+        chartPanel.clearData();
 
         Thread.sleep(5000);
 
         // Fakes a large number of contiguous fine bins.
         final List metricsBins = new ArrayList();
-        for (int i = 0; i < MAX_TIME_RANGE / FINE_INTERVAL; ++ i) {
-            startTime += FINE_INTERVAL;
-            endTime = startTime + FINE_INTERVAL;
-            metricsBins.add(fakeMetricsBin(startTime, endTime, FINE_INTERVAL));
+        for (int i = 0; i < MAX_TIME_RANGE / BIN_INTERVAL; ++ i) {
+            startTime += BIN_INTERVAL;
+            endTime = startTime + BIN_INTERVAL;
+            metricsBins.add(fakeMetricsBin(startTime, endTime, BIN_INTERVAL));
         }
         chartPanel.addData(metricsBins);
 
         // Simulates new fine bins being added regularly.
         while (true) {
-            Thread.sleep(FINE_INTERVAL);
-            startTime += FINE_INTERVAL;
-            endTime = startTime + FINE_INTERVAL;
-            bin = fakeMetricsBin(startTime, endTime, FINE_INTERVAL);
+            Thread.sleep(BIN_INTERVAL);
+            startTime += BIN_INTERVAL;
+            endTime = startTime + BIN_INTERVAL;
+            bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL);
             chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
         }
     }
