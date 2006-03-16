@@ -45,6 +45,9 @@ public class BufferPool {
             p1024k,
     };
 
+    private BufferPool() {        
+    }
+
     private static ThreadLocal localPool = new ThreadLocal() {
         protected Object initialValue() {
             return new BufferPool();
