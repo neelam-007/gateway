@@ -1666,6 +1666,22 @@ public class MainWindow extends JFrame {
     }
 
     /**
+     * Save the window position preference.  Called when the app is closed.
+     */
+    private void saveWindowPosition() {
+        Point curWindowLocation = getLocation();
+        Dimension curWindowSize = getSize();
+        try {
+            Preferences prefs = Preferences.getPreferences();
+            prefs.setLastWindowLocation(curWindowLocation);
+            prefs.setLastWindowSize(curWindowSize);
+            prefs.store();
+        } catch (IOException e) {
+            log.log(Level.WARNING, "unable to save window position prefs: ", e);
+        }
+    }
+
+    /**
      * Initializes listeners for the form
      */
     private void initListeners() {
@@ -1809,6 +1825,11 @@ public class MainWindow extends JFrame {
             }
             javaHelpBroker.setDisplayed(true);
 
+            // Have to set the icon after setDisplayed (else window is null)
+            Window window = ((DefaultHelpBroker)javaHelpBroker).getWindowPresentation().getHelpWindow();
+            if(window instanceof JFrame) {
+                ((JFrame)window).setIconImage(getIconImage());
+            }
         } catch (MissingResourceException ex) {
             //Make sure the URL exists.
             if (url == null) {

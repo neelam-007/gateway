@@ -14,6 +14,7 @@ import org.springframework.context.support.ApplicationObjectSupport;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * Class ServiceAdminStub.
@@ -21,6 +22,7 @@ import java.util.Collection;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class ServiceAdminStub extends ApplicationObjectSupport implements ServiceAdmin, InitializingBean {
+    private static final Logger logger = Logger.getLogger(ServiceAdminStub.class.getName());
     private PolicyValidator policyValidator;
     private ServiceManager serviceManager;
 
@@ -153,7 +155,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws RemoteException, FindException {
-        return new EntityHeader[0];  
+        return new EntityHeader[0];
     }
 
     public long saveSampleMessage(SampleMessage sm) throws SaveException {
@@ -161,7 +163,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     }
 
     public void deleteSampleMessage(SampleMessage message) throws DeleteException {
-        
+
     }
 
     private EntityHeader fromService(PublishedService s) {

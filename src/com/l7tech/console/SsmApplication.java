@@ -56,32 +56,14 @@ public class SsmApplication
         }
         mainWindow = new MainWindow(this);
         // Window listener
-        mainWindow.addWindowListener(new WindowAdapter() {
-            /**
-             * Invoked when a window has been opened.
-             */
-            public void windowOpened(WindowEvent e) {
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        try {
-                            Thread.sleep(100);
-                            mainWindow.activateLogonDialog();
-                        }
-                        catch(InterruptedException ie) {
-                            // die
-                        }
-                    }
-                });
-            }
-
-            public void windowClosed(WindowEvent e) {
-                saveWindowPosition(mainWindow);
-                System.exit(0);
-            }
-        });
         mainWindow.setVisible(true);
         mainWindow.toFront();
         running = true;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                mainWindow.activateLogonDialog();
+            }
+        });
     }
 
     public String getResourcePath() {
@@ -90,22 +72,6 @@ public class SsmApplication
 
     public void setResourcePath(String resourcePath) {
         this.resourcePath = resourcePath;
-    }
-
-    /**
-     * Save the window position preference.  Called when the app is closed.
-     */
-    private void saveWindowPosition(Window w) {
-        Point curWindowLocation = w.getLocation();
-        Dimension curWindowSize = w.getSize();
-        try {
-            Preferences prefs = Preferences.getPreferences();
-            prefs.setLastWindowLocation(curWindowLocation);
-            prefs.setLastWindowSize(curWindowSize);
-            prefs.store();
-        } catch (IOException e) {
-            log.log(Level.WARNING, "unable to save window position prefs: ", e);
-        }
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
