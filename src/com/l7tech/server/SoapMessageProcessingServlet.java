@@ -218,7 +218,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             try {
                 auditContext.flush();
-            } finally {
+            }
+            catch(Exception e) {
+                logger.log(Level.WARNING, "Unexpected exception when flushing audit data.", e);
+            }
+            finally {
                 context.close();
             }
         }
