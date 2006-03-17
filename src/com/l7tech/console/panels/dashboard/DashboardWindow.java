@@ -117,6 +117,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
         this.clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
         this.serviceAdmin = Registry.getDefault().getServiceManager();
 
+        chartPanel.setLayout(new BorderLayout());
+
         timeRangeCombo.setModel(new DefaultComboBoxModel(ALL_RANGES));
         timeRangeCombo.setSelectedItem(FINE);
         timeRangeCombo.addActionListener(new ActionListener() {
@@ -215,7 +217,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
         currentRange.clear();
 
         chartPanel.removeAll();
-        chartPanel.add(currentRange.getMetricsChartPanel());
+        chartPanel.add(currentRange.getMetricsChartPanel(), BorderLayout.CENTER);
         currentRange.getMetricsChartPanel().restoreAutoDomainBounds();
         chartPanel.revalidate();
     }
