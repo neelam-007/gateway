@@ -152,7 +152,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                     });
                 } catch (InterruptedException e) {
                     logger.info("Database flusher exiting");
-                } catch (RuntimeException e) {
+                } catch (Exception e) {
                     logger.log(Level.SEVERE, "Couldn't save MetricsBin", e);
                 }
             }
