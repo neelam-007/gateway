@@ -216,6 +216,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
         chartPanel.removeAll();
         chartPanel.add(currentRange.getMetricsChartPanel());
+        currentRange.getMetricsChartPanel().restoreAutoDomainBounds();
         chartPanel.revalidate();
     }
 
