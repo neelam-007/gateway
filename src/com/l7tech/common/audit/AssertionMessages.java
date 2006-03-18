@@ -205,12 +205,18 @@ public class AssertionMessages extends Messages {
     public static final M UNKNOWN_ASSERTION                                 = m(5800, Level.WARNING, "The unknown assertion invoked. Detail message is: {0}");
 
     // ServerXslTransformation
-    public static final M XSLT_REQ_NOT_XML  = m(5900, Level.INFO, "Message not XML; cannot perform XSL transformation");
-    public static final M XSLT_REQUEST      = m(5901, Level.FINEST, "Transforming request");
-    public static final M XSLT_RESP_NOT_XML = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
-    public static final M XSLT_RESPONSE     = m(5903, Level.FINEST, "Transforming response");
-    public static final M XSLT_CONFIG_ISSUE = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
-    public static final M XSLT_NO_SUCH_PART = m(5905, Level.WARNING, "Assertion specifies MIME part {0}, but it does not exist");
+    public static final M XSLT_REQ_NOT_XML   = m(5900, Level.INFO, "Message not XML; cannot perform XSL transformation");
+    public static final M XSLT_REQUEST       = m(5901, Level.FINEST, "Transforming request");
+    public static final M XSLT_RESP_NOT_XML  = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
+    public static final M XSLT_RESPONSE      = m(5903, Level.FINEST, "Transforming response");
+    public static final M XSLT_CONFIG_ISSUE  = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
+    public static final M XSLT_NO_SUCH_PART  = m(5905, Level.WARNING, "Assertion specifies MIME part {0}, but it does not exist");
+    public static final M XSLT_MULTIPLE_PIS  = m(5906, Level.WARNING, "Document contained multiple <?xml-stylesheet?> processing instructions; not currently supported");
+    public static final M XSLT_CANT_READ_XSL = m(5907, Level.WARNING, "Couldn''t retrieve linked XSL stylesheet at {0}: {1}");
+    public static final M XSLT_BAD_EXT_XSL   = m(5908, Level.WARNING, "Unable to parse external XSL at {0}: {1}");
+    public static final M XSLT_BAD_XSL       = m(5909, Level.WARNING, "Unable to parse XSL: {0}");
+    public static final M XSLT_NO_PI         = m(5910, Level.WARNING, "No <?xml-stylesheet?> processing instruction was found in the message");
+    public static final M XSLT_BAD_URL       = m(5911, Level.WARNING, "Stylesheet URL {0} did not match any configured regular expression");
 
     // ServerJmsRoutingAssertion
     public static final M JMS_ROUTING_CONNECT_FAILED                  = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
@@ -230,7 +236,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_ENDPOINTS_ON_SAME_CONNECTION    = m(6014, Level.WARNING, "Request and reply endpoints must belong to the same connection");
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE  = m(6015, Level.FINER, "Creating request as TextMessage");
     public static final M JMS_ROUTING_CREATE_REQUEST_AS_BYTES_MESSAGE = m(6016, Level.FINER, "Creating request as BytesMessage");
-    public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "Routed request endpoint specified NO_REPLY, won't set JMSReplyTo and JMSCorrelationID");
+    public static final M JMS_ROUTING_ROUTE_REQUEST_WITH_NO_REPLY     = m(6017, Level.FINE, "Routed request endpoint specified NO_REPLY, won''t set JMSReplyTo and JMSCorrelationID");
     public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID       = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
     public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
 

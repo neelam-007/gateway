@@ -10,6 +10,7 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
@@ -65,9 +66,6 @@ import java.util.logging.Logger;
 public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
-    public static final String PROP_SSL_SESSION_TIMEOUT =
-            HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
-    public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
     private SignerInfo senderVouchesSignerInfo;
     private final Auditor auditor;
     private final FailoverStrategy failoverStrategy;
@@ -91,7 +89,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
             final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
             sslContext.init(ku.getSSLKeyManagerFactory().getKeyManagers(), new TrustManager[]{trustManager}, null);
-            final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             senderVouchesSignerInfo = ku.getSslSignerInfo();
         } catch (Exception e) {

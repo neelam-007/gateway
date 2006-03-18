@@ -19,6 +19,9 @@ public class HttpRoutingAssertion
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 100; // Flagrantly in contravention of RFC2616!
     public static final String ROUTING_LATENCY = "httpRouting.latency";
+    public static final String PROP_SSL_SESSION_TIMEOUT =
+            HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
+    public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);

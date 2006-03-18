@@ -18,11 +18,13 @@ public final class HttpConstants {
     public static final String HEADER_HOST = "Host";
     public static final String HEADER_LOCATION = "Location";
     public static final String HEADER_USER_AGENT = "User-Agent";
+    public static final String HEADER_IF_MODIFIED_SINCE = "If-Modified-Since";
 
     // status codes
     public static final int STATUS_OK = 200;
     public static final int STATUS_FOUND = 302;
     public static final int STATUS_SEE_OTHER = 303;
+    public static final int STATUS_NOT_MODIFIED = 304;
     public static final int STATUS_UNAUTHORIZED = 401;
     public static final int STATUS_SERVER_ERROR = 500;
 
@@ -31,5 +33,4 @@ public final class HttpConstants {
 
     // encodings
     public static final String ENCODING_UTF8 = "UTF-8";
-
 }

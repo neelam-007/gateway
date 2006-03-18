@@ -68,6 +68,7 @@ public class XpathResultNode {
      * <ul>
      * <li>For elements or attributes, this is the qualified name.  Never null or empty.
      * <li>For a comment or text node, this will return null.
+     * <li>For processing instructions, this is the name of the PI, e.g. <code>xml-stylesheet</code>
      * <li>For any other type of node, the behavior of this method isn't further defined.
      * </ul>
      *
@@ -85,6 +86,7 @@ public class XpathResultNode {
      * <li>For attributes, this is the value.  May be empty, but never null.
      * <li>For a comment or text node, this is the content of the node (possibly coalesced with subsequent nodes
      *       in the case of a text node).  May be empty, but never null.
+     * <li>For processing instructions, this is the entire string of attributes, e.g. <code>name="foo" type="bar"</code>
      * <li>For any other type of node, the behavior of this method isn't further defined.
      * </ul>
      *

@@ -28,11 +28,11 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -80,8 +80,8 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("httpRoutingAssertionTrustManager");
-            final int timeout = Integer.getInteger(ServerHttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                   ServerHttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
+                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslContext.init(null, new TrustManager[]{trustManager}, null);
 

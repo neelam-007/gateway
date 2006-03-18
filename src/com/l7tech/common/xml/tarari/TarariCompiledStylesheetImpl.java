@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.ParseException;
+import java.util.Map;
+import java.util.Iterator;
 
 /**
  * Implementation of {@link TarariCompiledStylesheet}.  Unlike its parent interface, this class will only be loaded
@@ -53,20 +55,24 @@ public class TarariCompiledStylesheetImpl implements TarariCompiledStylesheet {
         }
     }
 
-    public void transform(TarariMessageContext input, OutputStream output) throws IOException, SAXException {
+    public void transform(TarariMessageContext input, OutputStream output, Map vars) throws IOException, SAXException {
         XmlSource source = (XmlSource)xmlSource.get();
         RaxDocument raxDocument = ((TarariMessageContextImpl)input).getRaxDocument();
         source.setData(raxDocument);
-        transform(source, output);
+        transform(source, output, vars);
     }
 
-    public void transform(InputStream input, OutputStream output) throws SAXException, IOException {
-        transform(new XmlSource(input), output);
+    public void transform(InputStream input, OutputStream output, Map vars) throws SAXException, IOException {
+        transform(new XmlSource(input), output, vars);
     }
 
-    private void transform(XmlSource source, OutputStream output) throws IOException, SAXException {
+    private void transform(XmlSource source, OutputStream output, Map vars) throws IOException, SAXException {
         Stylesheet transformer = new Stylesheet(master);
         transformer.setValidate(false);
+        for (Iterator i = vars.entrySet().iterator(); i.hasNext();) {
+            Map.Entry entry = (Map.Entry)i.next();
+            transformer.setParameter(entry.getKey().toString(), entry.getValue());
+        }
         XmlResult result = new XmlResult(output);
         try {
             transformer.transform(source, result);

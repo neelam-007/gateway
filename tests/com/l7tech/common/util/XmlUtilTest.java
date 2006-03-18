@@ -1,7 +1,12 @@
 package com.l7tech.common.util;
 
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.xml.*;
+import com.l7tech.common.xml.xpath.DomCompiledXpath;
+import com.l7tech.common.xml.xpath.XpathResult;
+import com.l7tech.common.xml.xpath.XpathResultNodeSet;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -9,10 +14,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.soap.SOAPConstants;
+import java.io.ByteArrayInputStream;
+import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * @author alex
@@ -20,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class XmlUtilTest extends TestCase {
     private static final Logger logger = Logger.getLogger(XmlUtilTest.class.getName());
+    private static final String PI_XML = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<?xml-stylesheet href=\"foo\" type=\"text/xsl\"?>\n<foo/>";
 
     /**
      * test <code>XmlUtilTest</code> constructor
@@ -236,6 +245,42 @@ public class XmlUtilTest extends TestCase {
         String wantstripped = XmlUtil.nodeToString(XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS_STRIPPED));
         assertEquals(wantstripped, stripped);
     }
+
+    public void testProcessingInstructionDom() throws Exception {
+        Document doc = XmlUtil.parse(new StringReader(PI_XML), false);
+        DomElementCursor cursor = new DomElementCursor(doc);
+        cursor.moveToRoot();
+        XpathResult res = cursor.getXpathResult(new DomCompiledXpath("processing-instruction('xml-stylesheet')", null) { });
+        XpathResultNodeSet nodes = res.getNodeSet();
+        assertTrue(nodes.size() > 0);
+        assertEquals(nodes.getNodeName(0), "xml-stylesheet");
+        String nv = nodes.getNodeValue(0);
+        assertEquals(nv, "href=\"foo\" type=\"text/xsl\"");
+        Pattern spaceSplitter = Pattern.compile("\\s+");
+        long before = System.currentTimeMillis();
+        int n = 0;
+        for (int i = 0; i < 1000000; i++) {
+            n += spaceSplitter.split(nv).length;
+        }
+        long now = System.currentTimeMillis();
+        System.err.println("Found " + n + " strings in " + (now - before) + "ms");
+    }
+
+    public void testProcessingInstructionMaybeTarari() throws Exception {
+        TarariLoader.compile();
+        Message msg = new Message(new ByteArrayStashManager(),
+            ContentTypeHeader.XML_DEFAULT,
+            new ByteArrayInputStream(PI_XML.getBytes("UTF-8"))
+        );
+        ElementCursor cursor = msg.getXmlKnob().getElementCursor();
+        cursor.moveToRoot();
+        XpathResult res = cursor.getXpathResult(new XpathExpression("processing-instruction('xml-stylesheet')", null).compile());
+        XpathResultNodeSet nodes = res.getNodeSet();
+        assertTrue(nodes.size() > 0);
+        assertEquals(nodes.getNodeName(0), "xml-stylesheet");
+        assertEquals(nodes.getNodeValue(0), "href=\"foo\" type=\"text/xsl\"");
+    }
+
 
     public static final String DOC_WITH_SEC_HEADERS = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                                                   "    <s:Header>\n" +

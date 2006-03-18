@@ -6,6 +6,8 @@
 
 package com.l7tech.common.util;
 
+import java.net.UnknownHostException;
+
 /**
  * Exception utilities.
  * <p/>
@@ -101,6 +103,11 @@ public class ExceptionUtils {
             // Special case for array IndexOutOfBounds, which often uses just the bad index as its message
             if (current instanceof IndexOutOfBoundsException && isLong(msg))
                 msg = "Index out of bounds: " + msg;
+
+            if (t instanceof UnknownHostException) {
+                UnknownHostException o = (UnknownHostException)t;
+                msg = "Unknown host: " + o.getMessage();
+            }
 
             if (msg != null && (n < 1 || msg.length() >= n))
                 return msg;

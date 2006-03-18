@@ -1,13 +1,11 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XslTransformationTreeNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,25 +42,22 @@ public class XslTransformationPropertiesAction extends SecureAction {
     protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, false, node.getAssertion());
-        dlg.addPolicyListener(listener);
         dlg.pack();
         dlg.setSize(600, 800);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
-    }
+        Assertion ass = dlg.getAssertion();
+        if (ass == null) return;
 
-    private final PolicyListener listener = new PolicyListenerAdapter() {
-        public void assertionsChanged(PolicyEvent e) {
-            JTree tree = TopComponents.getInstance().getPolicyTree();
-            if (tree != null) {
-                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                model.assertionTreeNodeChanged(node);
-                log.finest("model invalidated");
-            } else {
-                log.log(Level.WARNING, "Unable to reach the palette tree.");
-            }
+        JTree tree = TopComponents.getInstance().getPolicyTree();
+        if (tree != null) {
+            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+            model.assertionTreeNodeChanged(node);
+            log.finest("model invalidated");
+        } else {
+            log.log(Level.WARNING, "Unable to reach the palette tree.");
         }
-    };
+    }
 
     private final Logger log = Logger.getLogger(getClass().getName());
     private XslTransformationTreeNode node;

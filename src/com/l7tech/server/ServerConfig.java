@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+ * Copyright (C) 2003-2006 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server;
@@ -62,6 +60,9 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_IO_FRONT_SLOW_READ_RATE = "ioInSlowReadRate";
     public static final String PARAM_IO_BACK_CONNECTION_TIMEOUT = "ioOutConnectionTimeout";
     public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
+
+    public static final String PARAM_XSLT_MAX_CACHE_ENTRIES = "xsltMaxCacheEntries";
+    public static final String PARAM_XSLT_MAX_CACHE_AGE = "xsltMaxCacheAge";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 

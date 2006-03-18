@@ -75,6 +75,11 @@ public class SquigglyTextField extends JTextField {
         repaint();
     }
 
+    public synchronized void setDotted() {
+        _style = DOTTED;
+        repaint();
+    }
+
     public synchronized void setStraight() {
         _style = STRAIGHT;
         repaint();
@@ -136,6 +141,19 @@ public class SquigglyTextField extends JTextField {
     private static final UnderlineStyle STRAIGHT = new UnderlineStyle() {
         public void draw(Graphics g, int x1, int x2, int y) {
             g.drawLine( x1, y, x2, y );
+        }
+    };
+
+    private static final UnderlineStyle DOTTED = new UnderlineStyle() {
+        public void draw(Graphics g, int x1, int x2, int y) {
+            boolean on = true;
+            for (int i = x1; i < x2; i += 3) {
+                if (on) {
+                    g.drawLine(i, y, i+2, y);
+                    g.drawLine(i, y+1, i+2, y+1);
+                }
+                on = !on;
+            }
         }
     };
 

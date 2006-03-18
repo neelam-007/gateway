@@ -34,6 +34,17 @@ import java.util.logging.Logger;
 public class XslTransformation extends Assertion implements UsesVariables {
     private static final Logger logger = Logger.getLogger(XslTransformation.class.getName());
 
+    public static final int APPLY_TO_REQUEST = 1;
+    public static final int APPLY_TO_RESPONSE = 2;
+
+    private int direction;
+    private String xslSrc;
+    private String transformName;
+    private boolean fetchXsltFromMessageUrls;
+    private String[] fetchUrlRegexes = new String[0];
+    private int whichMimePart = 0;
+    private boolean fetchAllowWithoutStylesheet;
+
     /**
      * the actual transformation xsl
      */
@@ -88,13 +99,29 @@ public class XslTransformation extends Assertion implements UsesVariables {
         this.whichMimePart = whichMimePart;
     }
 
-    private int direction;
-    private String xslSrc;
-    private String transformName;
-    private int whichMimePart = 0;
+    public boolean isFetchXsltFromMessageUrls() {
+        return fetchXsltFromMessageUrls;
+    }
 
-    public static final int APPLY_TO_REQUEST = 1;
-    public static final int APPLY_TO_RESPONSE = 2;
+    public void setFetchXsltFromMessageUrls(boolean fetchXsltFromMessageUrls) {
+        this.fetchXsltFromMessageUrls = fetchXsltFromMessageUrls;
+    }
+
+    public String[] getFetchUrlRegexes() {
+        return fetchUrlRegexes;
+    }
+
+    public void setFetchUrlRegexes(String[] fetchUrlRegexes) {
+        this.fetchUrlRegexes = fetchUrlRegexes;
+    }
+
+    public boolean isFetchAllowWithoutStylesheet() {
+        return fetchAllowWithoutStylesheet;
+    }
+
+    public void setFetchAllowWithoutStylesheet(boolean stylesheetUrlRequired) {
+        this.fetchAllowWithoutStylesheet = stylesheetUrlRequired;
+    }
 
     public String[] getVariablesUsed() {
         if (varsUsed != null) return varsUsed;

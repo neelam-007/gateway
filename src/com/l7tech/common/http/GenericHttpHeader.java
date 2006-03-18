@@ -6,12 +6,21 @@
 
 package com.l7tech.common.http;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 /**
  * Generic implementation of an immutable HTTP header.
  */
 public final class GenericHttpHeader implements HttpHeader {
     private final String name;
     private final String value;
+    private static final DateFormat httpHeaderDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z");
+    static {
+        httpHeaderDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
 
     /**
      * Create a GenericHttpHeader with the specified name and value.
@@ -32,5 +41,9 @@ public final class GenericHttpHeader implements HttpHeader {
 
     public String getFullValue() {
         return value;
+    }
+
+    public static HttpHeader makeDateHeader(String name, Date date) {
+        return new GenericHttpHeader(name, httpHeaderDateFormat.format(date));
     }
 }

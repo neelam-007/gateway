@@ -10,13 +10,13 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpState;
@@ -69,8 +69,8 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
         try {
            sslContext = SSLContext.getInstance("SSL");
            final SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("httpRoutingAssertionTrustManager");
-           final int timeout = Integer.getInteger(ServerHttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                  ServerHttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+           final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
+                                                  HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
            sslContext.getClientSessionContext().setSessionTimeout(timeout);
            sslContext.init(null, new TrustManager[]{trustManager}, null);
        } catch (Exception e) {

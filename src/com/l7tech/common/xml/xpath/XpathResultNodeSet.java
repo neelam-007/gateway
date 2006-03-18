@@ -80,6 +80,7 @@ public interface XpathResultNodeSet {
      * <ul>
      * <li>For elements or attributes, this is the qualified name.  Never null or empty.
      * <li>For a comment or text node, this will return null.
+     * <li>For processing instructions, this is the name of the PI, e.g. <code>xml-stylesheet</code>
      * <li>For any other type of node, the behavior of this method isn't further defined.
      * </ul>
      * If you need to call more than one accessor, consider using {@link #getIterator()} instead -- it will be
@@ -96,6 +97,7 @@ public interface XpathResultNodeSet {
      * <ul>
      * <li>For an element, this returns all its child TEXT nodes glued together and trimmed.  May be empty but never null.
      * <li>For attributes, this is the value.  May be empty, but never null.
+     * <li>For processing instructions, this is the entire string of attributes, e.g. <code>name="foo" type="bar"</code>
      * <li>For any other type of node, the behavior of this method isn't further defined.
      * </ul>
      * If you need to call more than one accessor, consider using {@link #getIterator()} instead -- it will be

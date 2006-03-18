@@ -9,6 +9,7 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
