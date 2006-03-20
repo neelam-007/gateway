@@ -1446,6 +1446,7 @@ public class MainWindow extends JFrame {
         toolBarPane.setFloatable(false);
         toolBarPane.setFocusable(false);
         toolBarPane.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
+        toolBarPane.setFloatable(false);
 
         JButton b = toolBarPane.add(getConnectAction());
         b.setFont(new Font("Dialog", 1, 10));
@@ -1497,6 +1498,7 @@ public class MainWindow extends JFrame {
     public PolicyToolBar getPolicyToolBar() {
         if (policyToolBar != null) return policyToolBar;
         policyToolBar = new PolicyToolBar();
+        policyToolBar.setFloatable(false);
         policyToolBar.registerPaletteTree(getAssertionPaletteTree());
         addLogonListener(policyToolBar);
         return policyToolBar;
