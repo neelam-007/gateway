@@ -7,6 +7,7 @@ package com.l7tech.server;
 import com.l7tech.common.Feature;
 import com.l7tech.common.LicenseException;
 import com.l7tech.common.LicenseManager;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
@@ -128,6 +129,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         AssertionStatus status = AssertionStatus.UNDEFINED;
         ServiceMetrics metrics = null;
         ServiceStatistics stats = null;
+        boolean attemptedRequest = false;
 
         // WSS-Processing Step
         try {
@@ -193,7 +195,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (service.isDisabled()) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
-                if (metrics != null) metrics.addAttemptedRequest((int)(System.currentTimeMillis() - context.getStartTime()));
                 return AssertionStatus.SERVICE_NOT_FOUND;
             }
 
@@ -270,6 +271,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 auditor.logAndAudit(MessageProcessingMessages.CANNOT_GET_STATS_OBJECT, null, e);
             }
             if (stats != null) stats.attemptedRequest();
+            attemptedRequest = true;    // Postpones metric counting until we can
+                                        // compute response time in the finally block.
             status = serverPolicy.checkRequest(context);
 
             // Execute deferred actions for request, then response
@@ -338,7 +341,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             RoutingStatus rstat = context.getRoutingStatus();
             final int frontTime = (int)(System.currentTimeMillis() - context.getStartTime());
             final int backTime = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
-            if (metrics != null) metrics.addAttemptedRequest(frontTime);
+            if (metrics != null && attemptedRequest) metrics.addAttemptedRequest(frontTime);
 
             // Check auditing hints, position here since our "success" may be a back end service fault
             if(isAuditHintingEnabled()) {
@@ -351,8 +354,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (status == AssertionStatus.NONE) {
                 // Policy execution concluded successfully
+                if (stats != null) stats.authorizedRequest();
                 if (metrics != null) metrics.addAuthorizedRequest();
-                stats.authorizedRequest();
                 if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
                     /* We include NONE because it's valid (albeit silly)
                     for a policy to contain no RoutingAssertion */
@@ -383,6 +386,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                     // Most likely the failure was in some other assertion
                     auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
+                }
+
+                if (response.getHttpResponseKnob().getStatus() >= HttpConstants.STATUS_ERROR_RANGE_START &&
+                    response.getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_END)
+                {
+                    // Most likely the failure was in the routing assertion.
+                    // Still counted as attempted and authorized; but not routed.
+                    if (stats != null) stats.authorizedRequest();
+                    if (metrics != null) metrics.addAuthorizedRequest();
                 }
             }
 
