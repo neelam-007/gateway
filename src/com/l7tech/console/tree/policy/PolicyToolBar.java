@@ -1,13 +1,12 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.action.AddAssertionAction;
 import com.l7tech.console.action.AssertionMoveDownAction;
 import com.l7tech.console.action.AssertionMoveUpAction;
 import com.l7tech.console.action.DeleteAssertionAction;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.common.audit.LogonEvent;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -140,6 +139,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         b.setFocusable(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator(d);
+        setFloatable(false);
     }
 
     private Action getAssertionMoveUpAction() {

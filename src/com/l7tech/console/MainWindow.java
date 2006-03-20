@@ -1443,6 +1443,7 @@ public class MainWindow extends JFrame {
         if (toolBarPane != null) return toolBarPane;
 
         toolBarPane = new JToolBar();
+        toolBarPane.setFloatable(false);
         toolBarPane.setFocusable(false);
         toolBarPane.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
 
