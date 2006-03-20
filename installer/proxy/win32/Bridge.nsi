@@ -85,7 +85,7 @@ Section "SecureSpan Bridge" SecCopyUI
   cleaninstall:
 
   ; Before copying anything, let's stop the Windows service (if any)
-  ExecWait 'sc stop SSB' $0
+  ExecWait 'sc stop "SecureSpan Bridge"' $0
   DetailPrint "stopped windows service SSB. return code $0"
   Sleep 1000
 
@@ -140,13 +140,13 @@ Section "SecureSpan Bridge" SecCopyUI
     StrCpy $2 "$0$1"
     DetailPrint "SecureSpan Bridge service will run using home directory $2"
     ; create service, this is actually using a renamed version of JavaService.exe
-    ExecWait '"$INSTDIR\SSBService.exe" -install SSB "$INSTDIR\jre1.5.0_02\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log"' $0
+    ExecWait '"$INSTDIR\SSBService.exe" -install "SecureSpan Bridge" "$INSTDIR\jre1.5.0_02\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log" -description "Layer 7 Technologies SecureSpan Bridge"' $0
     DetailPrint "creation of service returned with code $0"
     MessageBox MB_YESNO "Would you like to configure the SecureSpan Bridge now?" IDNO endofserviceinstall
         ExecWait '"$INSTDIR\${J2RE}\bin\javaw.exe" -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Bridge.jar" -config -hideMenus -quitLabel Continue' $0
         DetailPrint "bridge configuration returned with code $0"
     MessageBox MB_YESNO "Would you like to start the SecureSpan Bridge service now?" IDNO endofserviceinstall
-        ExecWait 'sc start SSB' $0
+        ExecWait 'sc start "SecureSpan Bridge"' $0
         DetailPrint "bridge service startup returned with code $0"
     goto endofserviceinstall
 
@@ -157,8 +157,8 @@ Section "SecureSpan Bridge" SecCopyUI
     goto endofinstall
 
   endofserviceinstall:
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "sc" 'start SSB' "$INSTDIR\${MUI_PRODUCT}.exe"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Stop ${MUI_PRODUCT}.lnk" "sc" 'stop SSB' "$INSTDIR\${MUI_PRODUCT}.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "sc" 'start "SecureSpan Bridge"' "$INSTDIR\${MUI_PRODUCT}.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Stop ${MUI_PRODUCT}.lnk" "sc" 'stop "SecureSpan Bridge"' "$INSTDIR\${MUI_PRODUCT}.exe"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} Config.lnk" "$INSTDIR\${J2RE}\bin\javaw.exe" '-Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Bridge.jar" -config' "$INSTDIR\${MUI_PRODUCT}.exe"
 
   endofinstall:
@@ -182,10 +182,10 @@ SectionEnd
 Section "Uninstall"
 
   ; Make sure service is stopped and removed first
-  ExecWait 'sc stop SSB' $0
+  ExecWait 'sc stop "SecureSpan Bridge"' $0
   DetailPrint "Stopping service returned with code $0"
   Sleep  1000
-  ExecWait '"$INSTDIR\SSBService.exe" -uninstall SSB' $0
+  ExecWait '"$INSTDIR\SSBService.exe" -uninstall "SecureSpan Bridge"' $0
   DetailPrint "Removal of service returned with code $0"
   Sleep  1000
 
