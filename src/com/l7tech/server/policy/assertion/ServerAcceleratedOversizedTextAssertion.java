@@ -66,9 +66,46 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
     private static final int OTHR = 3;
 
     private static class ChunkState {
-        int[] longest = new int[] {0, 0, 0, 0};
-        int cur = -1;
-        int curType = -1;
+        private int[] longest = new int[] {0, 0, 0, 0};
+        private int cur = -1;
+        private int curType = -1;
+
+        /**
+         * Record the specified token, which must be of the specified chunk type.  This may cause the current
+         * chunk to be ended and a new chunk to be started.
+         */
+        private void handleToken(int chunkType, XmlTokenList.Iterator it) {
+            if (cur >= 0) {
+                if (curType != chunkType) {
+                    if (cur > longest[curType])
+                        longest[curType] = cur;
+                    /* FALLTHROUGH and record start of new chunk of chunkType stuff */
+                } else {
+                    // Continue recording the current chunk of chunkType stuff
+                    cur += it.getTokenLength();
+                    return;
+                }
+            }
+
+            // Start recording a new chunk of chunkType stuff
+            cur = it.getTokenLength();
+            curType = chunkType;
+        }
+
+        /** End any chunk that is being recorded. */
+        private void endChunk() {
+            if (cur >= 0) {
+                if (cur > longest[curType])
+                    longest[curType] = cur;
+            }
+            cur = -1;
+            curType = -1;
+        }
+
+        private int getLongestText() { return longest[TEXT]; }
+        private int getLongestAttr() { return longest[ATTR]; }
+        private int getLongestElem() { return longest[ELEM]; }
+        private int getLongestOther(){ return longest[OTHR]; }
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -92,7 +129,7 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
                 if (xr != null && xr.matches()) {
                     // It matched, so nesting depth is too long -- fail
                     auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
-                    return AssertionStatus.FALSIFIED;
+                    return AssertionStatus.BAD_REQUEST;
                 }
             }
 
@@ -111,9 +148,9 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
 
             ChunkState chunkState = findLongestChunks(tmContext.getRaxDocument());
 
-            int longestText = chunkState.longest[TEXT];
-            int longestAttrValue = chunkState.longest[ATTR];
-            int longestOther = chunkState.longest[OTHR];
+            int longestText = chunkState.getLongestText();
+            int longestAttrValue = chunkState.getLongestAttr();
+            int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
 
             if (longestAttrValue > ota.getMaxAttrChars() || longestText > ota.getMaxTextChars() ||
                     (longestOther > ota.getMaxAttrChars()*2 && longestOther > ota.getMaxTextChars()*2))
@@ -126,10 +163,10 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
 
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
-            return AssertionStatus.FAILED;
+            return AssertionStatus.BAD_REQUEST;
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The required attachment " + e.getWhatWasMissing() + "was not found in the request"}, e);
-            return AssertionStatus.FAILED;
+            return AssertionStatus.BAD_REQUEST;
         }
     }
 
@@ -147,7 +184,7 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
                 case XmlToken.CHARACTER_DATA_WSCR:
                 case XmlToken.COMMENT:
                 case XmlToken.ENTITY_REFERENCE:
-                    handleToken(s, TEXT, tokenIterator);
+                    s.handleToken(TEXT, tokenIterator);
                     break;
 
                 case XmlToken.START_TAG_ATTR_VALUE:
@@ -156,7 +193,7 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
                 case XmlToken.START_TAG_NS_DECL_VALUE:
                 case XmlToken.START_TAG_NS_DECL_VALUE_CR:
                 case XmlToken.START_TAG_NS_DECL_VALUE_END:
-                    handleToken(s, ATTR, tokenIterator);
+                    s.handleToken(ATTR, tokenIterator);
                     break;
 
                 case XmlToken.START_TAG_ELEMENT_PREFIX:
@@ -166,49 +203,21 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
                 case XmlToken.START_TAG_ATTR_LOCAL_PART:
                 case XmlToken.END_TAG:
                 case XmlToken.EMPTY_ELEMENT_TAG_END:
-                    handleToken(s, ELEM, tokenIterator);
+                    s.handleToken(ELEM, tokenIterator);
                     break;
 
                 case XmlToken.START_TAG_END:
-                    handleToken(s, ELEM, tokenIterator);
-                    endChunk(s);
+                    s.handleToken(ELEM, tokenIterator);
+                    s.endChunk();
                     break;
 
                 default:
-                    handleToken(s, OTHR, tokenIterator);
+                    s.handleToken(OTHR, tokenIterator);
                     break;
             }
         }
-        endChunk(s);
+        s.endChunk();
         return s;
-    }
-
-    private void handleToken(ChunkState s, int chunkType, XmlTokenList.Iterator it) {
-        if (s.cur >= 0) {
-            if (s.curType != chunkType) {
-                if (s.cur > s.longest[s.curType])
-                    s.longest[s.curType] = s.cur;
-                /* FALLTHROUGH and record start of new chunk of chunkType stuff */
-            } else {
-                // Continue recording the current chunk of chunkType stuff
-                s.cur += it.getTokenLength();
-                return;
-            }
-        }
-
-        // Start recording a new chunk of chunkType stuff
-        s.cur = it.getTokenLength();
-        s.curType = chunkType;
-    }
-
-    /** End any chunk that is being recorded. */
-    private void endChunk(ChunkState s) {
-        if (s.cur >= 0) {
-            if (s.cur > s.longest[s.curType])
-                s.longest[s.curType] = s.cur;
-        }
-        s.cur = -1;
-        s.curType = -1;
     }
 
     private AssertionStatus fallbackToSoftwareOnly(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
