@@ -19,6 +19,8 @@ import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
+import javax.swing.event.MenuListener;
+import javax.swing.event.MenuEvent;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -40,15 +42,19 @@ import java.text.SimpleDateFormat;
 public class GatewayAuditWindow extends JFrame implements LogonListener {
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
-    private javax.swing.JLabel gatewayLogTitle = null;
-    private javax.swing.JPanel gatewayLogPane = null;
-    private javax.swing.JPanel mainPane = null;
-    private javax.swing.JMenuBar clusterWindowMenuBar = null;
-    private javax.swing.JMenu fileMenu = null;
-    private javax.swing.JMenu helpMenu = null;
-    private javax.swing.JMenuItem saveMenuItem = null;
-    private javax.swing.JMenuItem exitMenuItem = null;
-    private javax.swing.JMenuItem helpTopicsMenuItem = null;
+    private JLabel gatewayLogTitle = null;
+    private JPanel gatewayLogPane = null;
+    private JPanel mainPane = null;
+    private JMenuBar clusterWindowMenuBar = null;
+    private JMenu fileMenu = null;
+    private JMenu viewMenu = null;
+    private JMenu helpMenu = null;
+    private JMenuItem saveMenuItem = null;
+    private JMenuItem exitMenuItem = null;
+    private JCheckBoxMenuItem viewControlsMenuItem = null;
+    private JCheckBoxMenuItem viewDetailsMenuItem = null;
+    private JMenuItem viewRefreshMenuItem = null;
+    private JMenuItem helpTopicsMenuItem = null;
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
     private boolean startConnected;
@@ -93,6 +99,42 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent e) {
                   exitMenuEventHandler();
+              }
+          });
+
+        // view menu
+        getViewMenu().
+           addMenuListener(new MenuListener(){
+              public void menuCanceled(MenuEvent e) {}
+              public void menuDeselected(MenuEvent e) {}
+
+              public void menuSelected(MenuEvent e) {
+                  getViewControlsMenuItem().setSelected(getLogPane().getControlsExpanded());
+                  getViewDetailsMenuItem().setSelected(getLogPane().getDetailsExpanded());
+              }
+          });
+
+        // view controls
+        getViewControlsMenuItem().
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  viewControlsMenuEventHandler(getViewControlsMenuItem().isSelected());
+              }
+          });
+
+        // view details
+        getViewDetailsMenuItem().
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  viewDetailsMenuEventHandler(getViewDetailsMenuItem().isSelected());
+              }
+          });
+
+        // view refresh
+        getViewRefreshMenuItem().
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  viewRefreshMenuEventHandler();
               }
           });
 
@@ -150,6 +192,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         if (clusterWindowMenuBar == null) {
             clusterWindowMenuBar = new JMenuBar();
             clusterWindowMenuBar.add(getFileMenu());
+            clusterWindowMenuBar.add(getViewMenu());
             clusterWindowMenuBar.add(getHelpMenu());
         }
         return clusterWindowMenuBar;
@@ -189,6 +232,67 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         }
         return fileMenu;
     }
+
+    /**
+     * Return viewMenu property value
+     *
+     * @return JMenu
+     */
+    private JMenu getViewMenu() {
+        if (viewMenu != null) return viewMenu;
+
+        viewMenu = new JMenu();
+        viewMenu.setText(resapplication.getString("View"));
+        viewMenu.add(getViewControlsMenuItem());
+        viewMenu.add(getViewDetailsMenuItem());
+
+        // Note that if you alter the menu item order you may need to
+        // change the onLogon/onLogoff functions that use menu item
+        // indexes to enable and disable items.
+        //
+        if(startConnected) {
+            viewMenu.addSeparator();
+            viewMenu.add(getViewRefreshMenuItem());
+        }
+        int mnemonic = viewMenu.getText().toCharArray()[0];
+        viewMenu.setMnemonic(mnemonic);
+
+        return viewMenu;
+    }
+
+    private JCheckBoxMenuItem getViewControlsMenuItem() {
+        if (viewControlsMenuItem == null) {
+            viewControlsMenuItem = new JCheckBoxMenuItem();
+            viewControlsMenuItem.setText(resapplication.getString("View_ControlsMenuItem_text_name"));
+            int mnemonic = viewControlsMenuItem.getText().toCharArray()[0];
+            viewControlsMenuItem.setMnemonic(mnemonic);
+            viewControlsMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return viewControlsMenuItem;
+    }
+
+    private JCheckBoxMenuItem getViewDetailsMenuItem() {
+        if (viewDetailsMenuItem == null) {
+            viewDetailsMenuItem = new JCheckBoxMenuItem();
+            viewDetailsMenuItem.setText(resapplication.getString("View_DetailsMenuItem_text_name"));
+            int mnemonic = viewDetailsMenuItem.getText().toCharArray()[0];
+            viewDetailsMenuItem.setMnemonic(mnemonic);
+            viewDetailsMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return viewDetailsMenuItem;
+    }
+
+    private JMenuItem getViewRefreshMenuItem() {
+        if (viewRefreshMenuItem == null) {
+            viewRefreshMenuItem = new JMenuItem();
+            viewRefreshMenuItem.setText(resapplication.getString("Refresh_MenuItem_text"));
+            Icon icon = new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/Refresh16.gif"));
+            viewRefreshMenuItem.setIcon(icon);
+            viewRefreshMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
+        }
+        return viewRefreshMenuItem;
+    }
+
 
     /**
      * Return helpMenu property value
@@ -315,6 +419,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
     public void onLogon(LogonEvent e) {
         getFileMenu().getItem(0).setEnabled(true);
         getFileMenu().getItem(1).setEnabled(true);
+        getViewMenu().getItem(3).setEnabled(true);
         getLogPane().onConnect();
     }
 
@@ -324,12 +429,25 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
     public void onLogoff(LogonEvent e) {
         getFileMenu().getItem(0).setEnabled(false);
         getFileMenu().getItem(1).setEnabled(false);
+        getViewMenu().getItem(3).setEnabled(false);
         getLogPane().onDisconnect();
     }
 
     public void dispose() {
         getLogPane().getLogsRefreshTimer().stop();
         super.dispose();
+    }
+
+    private void viewControlsMenuEventHandler(boolean visible) {
+        getLogPane().setControlsExpanded(visible);
+    }
+
+    private void viewDetailsMenuEventHandler(boolean visible) {
+        getLogPane().setDetailsExpanded(visible);
+    }
+
+    private void viewRefreshMenuEventHandler() {
+        getLogPane().refreshView();
     }
 
     /**

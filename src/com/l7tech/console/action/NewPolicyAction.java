@@ -67,7 +67,6 @@ public class NewPolicyAction extends SecureAction {
             topComponents.unregisterComponent(PolicyTree.NAME);
             PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
 
-            policyTree.addFocusListener(topComponents.getMainWindow().getActionsFocusListener());
             root = new AllAssertion();
             root.addChild(new CommentAssertion("Todo, add your policy here."));
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {

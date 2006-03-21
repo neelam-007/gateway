@@ -413,7 +413,7 @@ public class MainWindow extends JFrame {
             importPolicyAction = new ImportPolicyFromFileAction();
             importPolicyAction.setEnabled(false);
         }
-        return exportPolicyAction;
+        return importPolicyAction;
     }
 
     private JMenuItem getNewPolicyMenuItem() {
@@ -489,11 +489,6 @@ public class MainWindow extends JFrame {
 
             int mnemonic = editMenu.getText().toCharArray()[0];
             editMenu.setMnemonic(mnemonic);
-
-            editMenu.addSeparator();
-            editMenu.add(getStatMenuItem());
-            editMenu.add(getAuditMenuItem());
-            editMenu.add(getFromFileMenuItem());
         }
         return editMenu;
     }
@@ -539,6 +534,12 @@ public class MainWindow extends JFrame {
         JMenuItem item = new JMenuItem(getRefreshAction());
         item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         viewMenu.add(item);
+
+        viewMenu.addSeparator();
+
+        viewMenu.add(getStatMenuItem());
+        viewMenu.add(getAuditMenuItem());
+        viewMenu.add(getFromFileMenuItem());
 
         int mnemonic = viewMenu.getText().toCharArray()[0];
         viewMenu.setMnemonic(mnemonic);
@@ -730,35 +731,19 @@ public class MainWindow extends JFrame {
 
         refreshAction =
           new AbstractAction(atext, icon) {
-              LogonListener listener = new LogonListener() {
+              // need to hold a reference to the listener here to prevent GC
+              private LogonListener ll = new LogonListener() {
                   public void onLogon(LogonEvent e) {
-                      setEnabled(false);
+                      refreshAction.setEnabled(true);
                   }
-
-                  /**
-                   * Invoked on logoff
-                   *
-                   * @param e describing the logoff event
-                   */
                   public void onLogoff(LogonEvent e) {
-                      setEnabled(false);
+                      refreshAction.setEnabled(false);
                   }
-
               };
-
               {
-                  MainWindow.this.addLogonListener(listener);
-                  FocusListener fl = getActionsFocusListener();
-                  getIdentitiesTree().addFocusListener(fl);
-                  getServicesTree().addFocusListener(fl);
+                addLogonListener(ll);
               }
 
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
               public void actionPerformed(ActionEvent event) {
                   Collection alreadyRefreshed = new ArrayList();
                   // no matter what, if id provider tree exists, always refresh it
@@ -811,44 +796,6 @@ public class MainWindow extends JFrame {
         refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return refreshAction;
     }
-
-    /**
-     * The focus listener that manages the enable/disable state of the
-     * actions based on the currently focused component.
-     *
-     * @return the focuslistener
-     */
-    public FocusListener getActionsFocusListener() {
-        if (actionsFocusListener != null) {
-            return actionsFocusListener;
-        }
-
-        actionsFocusListener = new FocusAdapter() {
-            public void focusGained(FocusEvent e) {
-                Object c = e.getSource();
-
-                boolean enable = c instanceof Refreshable && ((Refreshable)c).canRefresh();
-                refreshAction.setEnabled(enable);
-                log.finest("focusGained " + c.getClass() + " setting refreshAction to " + enable);
-            }
-
-            public void focusLost(FocusEvent e) {
-                Component c = e.getOppositeComponent();
-                if (c == null) {
-                    log.finest("focusLost, no component in focus setting refreshAction to " + false);
-                    refreshAction.setEnabled(false);
-                    return;
-                }
-
-                boolean enable = c instanceof Refreshable && ((Refreshable)c).canRefresh();
-                log.finest("focusLost " + c.getClass() + " setting refreshAction to " + enable);
-                refreshAction.setEnabled(enable);
-            }
-        };
-
-        return actionsFocusListener;
-    }
-
 
     /**
      * create the Action (the component that is used by several controls)

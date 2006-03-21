@@ -180,14 +180,22 @@ public class LogPanel extends JPanel {
 
             selectionSplitPane.setBottomComponent(bottomSplitPanel);
             selectionSplitPane.setOneTouchExpandable(true);
+            selectionSplitPane.setDividerLocation((int)getControlPane().getPreferredSize().getHeight()); // init last pos
             selectionSplitPane.setDividerLocation(0);
             selectionSplitPane.setResizeWeight(0);
 
             // this listener ensures that the control pane cannot be maximized
+            // and hides itself when the divider is moved up
+            getControlPane().setMinimumSize(new Dimension(0,0));
+            getControlPane().setMaximumSize(getControlPane().getPreferredSize());
             getControlPane().addComponentListener(new ComponentAdapter(){
                 public void componentResized(ComponentEvent e) {
-                    if(getControlPane().getSize().getHeight() > getControlPane().getPreferredSize().getHeight()) {
-                        selectionSplitPane.resetToPreferredSizes();
+                    if(getControlPane().getSize().getHeight() != 20 &&
+                       getControlPane().getSize().getHeight() < (getControlPane().getPreferredSize().getHeight()-10)) {
+                        setControlsExpanded(false);
+                    }
+                    else {
+                        setControlsExpanded(true);
                     }
                 }
 
@@ -196,14 +204,14 @@ public class LogPanel extends JPanel {
                 }
             });
 
-            // this listener ensures that the control pane cannot be resized (the divider is fixed)
-            selectionSplitPane.addComponentListener(new ComponentAdapter(){
+            // this listener ensures that the display pane hides itself when the moved below a
+            // certain size.
+            getMsgDetailsPane().setMinimumSize(new Dimension(0,0));
+            getMsgDetailsPane().addComponentListener(new ComponentAdapter(){
                 public void componentResized(ComponentEvent e) {
-                    Component comp = selectionSplitPane.getBottomComponent();
-                    int size = (int) (selectionSplitPane.getSize().getHeight() -
-                                      getControlPane().getPreferredSize().getHeight());
-                    if(size > 0) {
-                        comp.setMinimumSize(new Dimension(100, size));
+                    if(getMsgDetailsPane().getSize().getHeight() < 40) {
+                        logSplitPane.setDividerLocation(0.69); // See note for selectionSplitPane above
+                        logSplitPane.setDividerLocation(1.0);
                     }
                 }
 
@@ -227,7 +235,7 @@ public class LogPanel extends JPanel {
                     }
                 });
 
-        // create import transfer handler
+        // disable copy/paste
         getMsgTable().setTransferHandler(getCopyPasteDisablingTransferHandler());
     }
 
@@ -238,6 +246,8 @@ public class LogPanel extends JPanel {
 
         viewCurrentRadioButton.addChangeListener(new ChangeListener(){
             public void stateChanged(ChangeEvent e) {
+                FilteredLogTableSorter flts = (FilteredLogTableSorter) getMsgTable().getModel();
+                flts.clearLogCache();
                 updateControlState();
             }
         });
@@ -309,6 +319,56 @@ public class LogPanel extends JPanel {
             String newLabel = hintIndex > 0 ? currentLabel.substring(0, hintIndex-1) : currentLabel;
             newLabel = newLabel.trim() + " [" + hintText + "]   ";
             hintLabel.setText(newLabel);
+        }
+    }
+
+    public boolean getControlsExpanded() {
+        boolean expanded = false;
+
+        if(selectionSplitPane!=null) {
+            expanded = selectionSplitPane.getDividerLocation()>=5;
+        }
+
+        return expanded;
+    }
+
+    public void setControlsExpanded(boolean expanded) {
+        if(selectionSplitPane!=null) {
+            if(expanded) {
+                getControlPane().setMinimumSize(new Dimension(0,20));
+                //bottomSplitPanel.setMaximumSize(new Dimension(10000, selectionSplitPane.getHeight()-30));
+                selectionSplitPane.setResizeWeight(1.0);
+                selectionSplitPane.setDividerLocation((int)getControlPane().getPreferredSize().getHeight());
+            }
+            else {
+                getControlPane().setMinimumSize(new Dimension(0,0));
+                selectionSplitPane.setResizeWeight(0);
+                // We set to preferred size first to ensure this is the "last position"
+                // if this is not done the "expand" button doesn't work
+                selectionSplitPane.setDividerLocation((int)getControlPane().getPreferredSize().getHeight());
+                selectionSplitPane.setDividerLocation(0);
+            }
+        }
+    }
+
+    public boolean getDetailsExpanded() {
+        boolean expanded = false;
+
+        if(logSplitPane!=null) {
+            expanded = logSplitPane.getDividerLocation()<=(logSplitPane.getSize().getHeight()-25);
+        }
+
+        return expanded;
+    }
+
+    public void setDetailsExpanded(boolean expanded) {
+        if(logSplitPane!=null) {
+            if(expanded) {
+                logSplitPane.setDividerLocation(0.69);
+            }
+            else {
+                logSplitPane.setDividerLocation(1.0);
+            }
         }
     }
 
@@ -1208,6 +1268,17 @@ public class LogPanel extends JPanel {
         return msgNumSelected;
     }
 
+    public void refreshView() {
+        if(connected) {
+            if(viewCurrentRadioButton.isSelected()) {
+                refreshLogs();
+            }
+            else {
+                updateViewSelection();
+            }
+        }
+    }
+
     /**
      * Performs the log retrieval. This function is called when the refresh timer is expired.
      */
@@ -1221,15 +1292,18 @@ public class LogPanel extends JPanel {
     }
 
     /**
-     * Performs the log retrieval. This function is called when the refresh timer is expired.
+     * Performs the log retrieval.
      */
     public void refreshLogs(Date first, Date last) {
         getLogsRefreshTimer().stop();
 
         // retrieve the new logs
         Window window = SwingUtilities.getWindowAncestor(this);
-        if(window!=null && window.isVisible())
-            ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, first, last, nodeId);
+        if(window!=null && window.isVisible()) {
+            FilteredLogTableSorter flts = (FilteredLogTableSorter) getMsgTable().getModel();
+            flts.clearLogCache();
+            flts.refreshLogs(this, first, last, nodeId);
+        }
     }
 
     /**

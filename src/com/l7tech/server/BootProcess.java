@@ -11,6 +11,8 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.util.Service;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -38,23 +40,19 @@ import java.util.logging.Logger;
  */
 public class BootProcess extends ApplicationObjectSupport
   implements ServerComponentLifecycle, DisposableBean, InitializingBean {
-    public static final String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getProperty("configDirectory") + File.separator + "ssglog.properties";
 
     static {
+        String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getProperty("configDirectory") + File.separator + "ssglog.properties";
         JdkLoggerConfigurator.configure("com.l7tech.logging",
           new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
             DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
     }
 
-    private List _components = new ArrayList();
-    private ServerConfig serverConfig;
-    private Auditor auditor;
-    private Logger logger;
-
     /**
      * Constructor for bean usage via subclassing.
      */
     public BootProcess() {
+        _components = new ArrayList();
     }
 
     private void deleteOldAttachments(File attachmentDir) {
@@ -88,7 +86,6 @@ public class BootProcess extends ApplicationObjectSupport
             component.start();
         }
 
-        logger.info(BuildInfo.getLongBuildString());
         getApplicationContext().publishEvent(new Started(this, Component.GW_SERVER, ipAddress));
         logger.info("Boot process complete.");
     }
@@ -161,6 +158,11 @@ public class BootProcess extends ApplicationObjectSupport
         logger = Logger.getLogger(BootProcess.class.getName());
 
         auditor = new Auditor(this, applicationContext, logger);
+
+        logger.info(BuildInfo.getLongBuildString());
+        logConfiguredFactories();
+
+
 
         ClusterPropertyManager clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         if (clusterPropertyManager == null) throw new LifecycleException("ClusterPropertyManager not available yet");
@@ -289,7 +291,89 @@ public class BootProcess extends ApplicationObjectSupport
         }
     }
 
-    private String ipAddress;
+    /**
+     * Log the configured factories for XML parsing and XSLT transforms.
+     *
+     * <p>This steps through the various configuration options in reverse
+     * order.</p>
+     *
+     * <p>We are currently ignoring the XPathFactory</p>
+     *
+     * @see javax.xml.parsers.DocumentBuilderFactory#newInstance()
+     * @see javax.xml.parsers.SAXParserFactory#newInstance()
+     * @see javax.xml.transform.TransformerFactory#newInstance()
+     */
+    private void logConfiguredFactories() {
+        // providers we are interested in
+        Class[] factoryKeys = {
+                javax.xml.parsers.DocumentBuilderFactory.class,
+                javax.xml.parsers.SAXParserFactory.class,
+                javax.xml.transform.TransformerFactory.class,
+                };
+
+        // load JAXP properties if any
+        Properties jaxpProps = new Properties();
+        File file = new File(System.getProperty("java.home"));
+        file = new File(file, "lib");
+        file = new File(file, "jaxp.properties");
+        InputStream in = null;
+        try {
+            in = new FileInputStream(file);
+            jaxpProps.load(in);
+        }
+        catch (IOException e) {
+        }
+        finally {
+            ResourceUtils.closeQuietly(in);
+        }
+
+        // initialize to default
+        Map providers = new HashMap();
+        for (int i = 0; i < factoryKeys.length; i++) {
+            String factoryKey = factoryKeys[i].getName();
+            providers.put(factoryKey, "DEFAULT");
+        }
+
+        // next check for Services API
+        for (int i = 0; i < factoryKeys.length; i++) {
+            Class factoryClass = factoryKeys[i];
+            String factoryKey = factoryClass.getName();
+            Iterator names = Service.providerClassNames(factoryClass);
+            if (names.hasNext()) {
+                providers.put(factoryKey, ((String) names.next()) + " - [Services API]");
+            }
+        }
+
+        // then for jaxp.properties
+        for (int i = 0; i < factoryKeys.length; i++) {
+            String factoryKey = factoryKeys[i].getName();
+            String value = jaxpProps.getProperty(factoryKey);
+            if(value!=null) {
+                providers.put(factoryKey, value + " - [jaxp.properties]");
+            }
+        }
+
+        // finally check system properties
+        for (int i = 0; i < factoryKeys.length; i++) {
+            String factoryKey = factoryKeys[i].getName();
+            String value = System.getProperty(factoryKey);
+            if(value!=null) {
+                providers.put(factoryKey, value + " - [System property]");
+            }
+        }
+
+        // loggit
+        for (int i = 0; i < factoryKeys.length; i++) {
+            String factoryKey = factoryKeys[i].getName();
+            logger.config("Provider for '"+factoryKey+"' is '"+providers.get(factoryKey)+"'.");
+        }
+    }
+
     public static final String LOCALHOST_IP = "127.0.0.1";
 
+    private List _components;
+    private ServerConfig serverConfig;
+    private Auditor auditor;
+    private Logger logger;
+    private String ipAddress;
 }

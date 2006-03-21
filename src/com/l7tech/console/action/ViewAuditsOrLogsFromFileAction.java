@@ -33,7 +33,7 @@ public class ViewAuditsOrLogsFromFileAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Analyze Saved Events ...";
+        return "Saved Events ...";
     }
 
     /**

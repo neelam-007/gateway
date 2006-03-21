@@ -27,7 +27,7 @@ public class ViewClusterStatusAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "View Cluster Status";
+        return "Cluster Status";
     }
 
     /**

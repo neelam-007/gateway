@@ -32,7 +32,7 @@ public class ViewGatewayAuditsAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "Analyze Gateway Audit Events";
+        return "Gateway Audit Events";
     }
 
     /**

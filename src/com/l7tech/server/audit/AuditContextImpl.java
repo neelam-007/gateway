@@ -211,7 +211,7 @@ public class AuditContextImpl implements AuditContext {
             String configStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD);
             Boolean configValue = null;
             if (configStr != null) {
-                configValue = Boolean.valueOf(configStr);
+                configValue = Boolean.valueOf(configStr.trim());
             }
             if (configValue == null) {
                 configValue = DEFAULT_USE_ASSOCIATED_LOGS_THRESHOLD;

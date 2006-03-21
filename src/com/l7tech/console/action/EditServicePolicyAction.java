@@ -93,7 +93,6 @@ public class EditServicePolicyAction extends NodeAction {
             topComponents.unregisterComponent(PolicyTree.NAME);
             PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
 
-            policyTree.addFocusListener(topComponents.getMainWindow().getActionsFocusListener());
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
                 public ServiceNode getServiceNode() {return serviceNode;}
                 public Assertion getRootAssertion() {

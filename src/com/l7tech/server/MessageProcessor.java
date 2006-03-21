@@ -445,7 +445,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         String propHintingStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_HINTING_ENABLED);
         boolean hintingEnabled = false;
         if(propHintingStr!=null) {
-            hintingEnabled = Boolean.valueOf(propHintingStr).booleanValue();
+            hintingEnabled = Boolean.valueOf(propHintingStr.trim()).booleanValue();
         }
         return hintingEnabled;
     }
@@ -454,7 +454,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         String propStatusStr = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_ASSERTION_STATUS_ENABLED);
         boolean statusEnabled = false;
         if(propStatusStr!=null) {
-            statusEnabled = Boolean.valueOf(propStatusStr).booleanValue();
+            statusEnabled = Boolean.valueOf(propStatusStr.trim()).booleanValue();
         }
         return statusEnabled;
     }
