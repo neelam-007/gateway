@@ -559,7 +559,7 @@ class PathValidator {
     }
 
     private boolean normallyBeforeRouting(Assertion a) {
-        if (a instanceof SslAssertion)
+        if (a instanceof SslAssertion && !a.isCredentialSource())
             return true;
         return false;
     }
