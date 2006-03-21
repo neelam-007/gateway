@@ -178,7 +178,7 @@
         </javac>
     </target>
 
-    <target name="undeploy" depends="init-dev">
+    <target name="undeploy" depends="init-dev, properties.check" if="tomcat.home">
         <delete dir="${tomcat.home}/webapps/ROOT"/>
         <delete file="${war}"/>
     </target>
@@ -188,7 +188,7 @@
       ** compile and package the application.
       ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
       -->
-    <target name="deploy" depends="init-dev">
+    <target name="deploy" depends="init-dev, properties.check" if="tomcat.home">
         <property name="dev.build" value="true"/>
         <property name="ssg.only" value="true"/>
 
@@ -1048,6 +1048,13 @@
         </exec>
     </target>
 
+    <target name="properties.check" depends="properties.check.tomcathome">
+    </target>
+    
+    <target name="properties.check.tomcathome" unless="tomcat.home">
+        <echo level="warning">Property is not defined: 'tomcat.home'</echo>
+    </target>
+
 <!--
       ** The SSM Webstart target. Signs the SSM components, and adds the bundle into the applicaiton (war)
       ** The target is conditional, set the ssm.webstart property to enable it.
@@ -1408,8 +1415,10 @@
                  token="DB_PASSWORD" value="${database.password}"/>
         <replace file="${build.classes}/hibernate.properties"
                  token="DB_PINGSTMT" value="${database.pingstmt}"/>
+        <!--
         <replace file="${build.etc}/web.xml"
                  token="TOMCAT_HOME" value="${tomcat.home}"/>
+        --> 
     </target>
 
 <!--
@@ -1447,7 +1456,7 @@
         </parallel>
     </target>
 
-    <target name="start-tomcat">
+    <target name="start-tomcat" if="tomcat.home" depends="properties.check">
         <!-- depends="deploy" -->
         <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
             <arg line="-Djava.security.policy=${tomcat.home}/conf/catalina.policy"/>
@@ -1457,7 +1466,7 @@
         </exec>
     </target>
 
-    <target name="stop-tomcat">
+    <target name="stop-tomcat" if="tomcat.home" depends="properties.check">
         <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
             <arg line="-Djava.security.policy=${tomcat.home}/conf/catalina.policy"/>
             <arg line="-Dcatalina.home=${tomcat.home}"/>
