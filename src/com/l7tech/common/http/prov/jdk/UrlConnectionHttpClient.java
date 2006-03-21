@@ -19,6 +19,7 @@ import java.net.PasswordAuthentication;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
 
 /**
  * An implementation of GenericHttpClient that uses the JDK's {@link java.net.URL#openConnection()} as the
@@ -56,9 +57,9 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
             conn.setDefaultUseCaches(false);
 
             // Set headers
-            HttpHeader[] extraHeaders = params.getExtraHeaders();
-            for (int i = 0; i < extraHeaders.length; i++) {
-                HttpHeader extraHeader = extraHeaders[i];
+            List extraHeaders = params.getExtraHeaders();
+            for (Iterator i = extraHeaders.iterator(); i.hasNext();) {
+                HttpHeader extraHeader = (HttpHeader)i.next();
                 conn.setRequestProperty(extraHeader.getName(), extraHeader.getFullValue());
             }
 
@@ -109,7 +110,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                                 new GenericHttpHeaders((HttpHeader[])headers.toArray(HTTPHEADER_EMPTY_ARRAY));
 
                         completedRequest = true;
-                        
+
                         return new GenericHttpResponse() {
                             public InputStream getInputStream() throws GenericHttpException {
                                 InputStream inputStream;

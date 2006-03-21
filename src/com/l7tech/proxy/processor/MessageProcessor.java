@@ -6,8 +6,8 @@
 package com.l7tech.proxy.processor;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
@@ -50,7 +50,6 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -567,30 +566,28 @@ public class MessageProcessor {
         URL url = getUrl(context);
         final Ssg ssg = context.getSsg();
 
-        List headers = new ArrayList();
-
+        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
         String cookieHeader = getSessionCookiesHeaderValue(context);
-        headers.add(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, cookieHeader));
-        headers.add(new GenericHttpHeader(HttpConstants.HEADER_USER_AGENT, SecureSpanConstants.USER_AGENT));
+        params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, cookieHeader));
+        params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_USER_AGENT, SecureSpanConstants.USER_AGENT));
 
         final Message request = context.getRequest();
         final Message response = context.getResponse();
 
         GenericHttpClient httpClient = context.getHttpClient();
-        GenericHttpRequestParams params = new GenericHttpRequestParams(url);
 
         GenericHttpRequest httpRequest = null;
         GenericHttpResponse httpResponse = null;
 
         try {
             setAuthenticationAndBufferingState(context, params);
-            headers.add(new GenericHttpHeader(SoapUtil.SOAPACTION, context.getPolicyAttachmentKey().getSoapAction()));
-            headers.add(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString()));
+            params.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, context.getPolicyAttachmentKey().getSoapAction()));
+            params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString()));
 
             // Let the Gateway know what policy version we used for the request.
             Policy policy = context.getActivePolicy();
             if (policy != null && policy.getVersion() != null)
-                headers.add(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion()));
+                params.addExtraHeader(new GenericHttpHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion()));
 
             final Document decoratedDocument = request.getXmlKnob().getDocumentReadOnly();
             String postBody = XmlUtil.nodeToString(decoratedDocument);
@@ -616,10 +613,9 @@ public class MessageProcessor {
                 }
             }
 
-            headers.add(new GenericHttpHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue()));
+            params.addExtraHeader(new GenericHttpHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue()));
 
             final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
-            params.setExtraHeaders((HttpHeader[])headers.toArray(new HttpHeader[0]));
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
             httpRequest.setInputStream(bodyInputStream);
 

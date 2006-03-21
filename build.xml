@@ -355,6 +355,7 @@
             <test name="com.l7tech.common.io.BufferPoolByteArrayOutputStreamTest" haltonfailure="no" />
             <test name="com.l7tech.common.util.BufferPoolTest" haltonfailure="no" />
             <test name="com.l7tech.server.policy.assertion.ServerWsiBspAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.http.cache.HttpObjectCacheTest" haltonfailure="no" />
 
 <!--
 ** add possibly-slow intensive nightly tests here **

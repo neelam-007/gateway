@@ -1,9 +1,9 @@
 package com.l7tech.common.http;
 
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-
 import com.l7tech.common.mime.ContentTypeHeader;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * Mock implementation of the GenericHttpClient. Used for testing.
@@ -15,6 +15,12 @@ import com.l7tech.common.mime.ContentTypeHeader;
  * @version $Revision$
  */
 public class MockGenericHttpClient implements GenericHttpClient {
+
+    /**
+     *
+     */
+    public MockGenericHttpClient() {
+    }
 
     /**
      *
@@ -45,8 +51,65 @@ public class MockGenericHttpClient implements GenericHttpClient {
         return new MockGenericHttpRequest();
     }
 
+    public void setResponseBody(byte[] responseBody) {
+        this.responseBody = responseBody;
+    }
+
+    public void setResponseStatus(int responseStatus) {
+        this.responseStatus = responseStatus;
+    }
+
+    public void setHeaders(HttpHeaders headers) {
+        this.headers = headers;
+    }
+
+    public void setContentTypeHeader(ContentTypeHeader contentTypeHeader) {
+        this.contentTypeHeader = contentTypeHeader;
+    }
+
+    public void setContentLength(Long contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public synchronized int getResponseCount() {
+        return responseCount;
+    }
+
+    public synchronized void clearResponseCount() {
+        responseCount = 0;
+    }
+
+    /**
+     * Causes threads calling getResponse() to block indefinitely, until holdRespones is turned off again,
+     * at which point they will resume normally.
+     *
+     * @param holdResponses true to hold respones; threads calling getResponse() will block until this method is
+     *                              called again with holdResponses equal to false.
+     *                      false to release response; any threads blocking in getResponse() will wake and continue
+     *                              normally.
+     */
+    public void setHoldResponses(boolean holdResponses) {
+        if (holdResponses) {
+            synchronized (MockGenericHttpClient.this) {
+                this.holdResponses = true;
+            }
+        } else {
+            synchronized (MockGenericHttpClient.this) {
+                this.holdResponses = false;
+                MockGenericHttpClient.this.notifyAll();
+            }
+        }
+    }
+
+    public boolean isHoldResponses() {
+        synchronized (MockGenericHttpClient.this) {
+            return holdResponses;
+        }
+    }
+
     //- PRIVATE
 
+    private boolean holdResponses = false;
     private byte[] responseBody;
     private int responseStatus;
     private HttpHeaders headers;
@@ -54,10 +117,23 @@ public class MockGenericHttpClient implements GenericHttpClient {
     private Long contentLength;
     private GenericHttpMethod method;
     private GenericHttpRequestParams params;
+    private int responseCount = 0;
 
     private class MockGenericHttpRequest implements GenericHttpRequest
     {
         public GenericHttpResponse getResponse() throws GenericHttpException {
+            // If configured to wait, hold responses until we are released
+            synchronized (MockGenericHttpClient.this) {
+                while (holdResponses) {
+                    try {
+                        MockGenericHttpClient.this.wait();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    }
+                }
+                responseCount++;
+            }
             return new MockGenericHttpResponse();
         }
 

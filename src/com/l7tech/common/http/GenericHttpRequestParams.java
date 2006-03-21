@@ -11,7 +11,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import javax.net.ssl.SSLSocketFactory;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * Bean that provides information about a pending HTTP request. 
@@ -23,7 +23,7 @@ public class GenericHttpRequestParams {
     protected SSLSocketFactory sslSocketFactory = null;
     protected ContentTypeHeader contentType = null;
     protected Long contentLength = null;
-    private HttpHeader[] extraHeaders = new HttpHeader[0];
+    private ArrayList extraHeaders = null;
     protected boolean preemptiveAuthentication = true;
     protected boolean followRedirects = false;
 
@@ -61,7 +61,7 @@ public class GenericHttpRequestParams {
         sslSocketFactory = template.sslSocketFactory;
         contentType = template.contentType;
         contentLength = template.contentLength;
-        extraHeaders = (HttpHeader[]) Arrays.asList(template.extraHeaders).toArray(new HttpHeader[template.extraHeaders.length]);
+        extraHeaders = template.extraHeaders == null ? null : new ArrayList(template.extraHeaders);
         preemptiveAuthentication = template.preemptiveAuthentication;
         followRedirects = template.followRedirects;
     }
@@ -206,10 +206,10 @@ public class GenericHttpRequestParams {
      * extraHeaders that disagrees with the setting of {@link #getContentType}),
      * it is not defined which value takes precedence unless a particular HTTP client implementation promises differently.
      *
-     * @return the array of extra HTTP headers to include with the request.  May be empty but never null.
+     * @return the list of extra HttpHeader to include with the request.  May be empty but never null.
      */
-    public HttpHeader[] getExtraHeaders() {
-        return extraHeaders;
+    public List getExtraHeaders() {
+        return extraHeaders == null ? Collections.EMPTY_LIST : extraHeaders;
     }
 
     /**
@@ -228,12 +228,46 @@ public class GenericHttpRequestParams {
     }
 
     /**
-     * Set the extra HTTP headers to send with this request.
+     * Set the extra HTTP headers to send with this request, setting them as an array.
      *
      * @param extraHeaders the array of extra HTTP headers to include with this request, or null to set an empty array.
      * @see #getExtraHeaders
      */
     public void setExtraHeaders(HttpHeader[] extraHeaders) {
-        this.extraHeaders = extraHeaders != null ? extraHeaders : new HttpHeader[0];
+        this.extraHeaders = extraHeaders != null ? new ArrayList(Arrays.asList(extraHeaders)) : null;
+    }
+
+    /**
+     * Add an extra HTTP header to send.  It will be added to the end of the extraHeaders.
+     * Be warned that this may not be very fast.
+     */
+    public void addExtraHeader(HttpHeader extraHeader) {
+        if (extraHeaders == null) extraHeaders = new ArrayList();
+        extraHeaders.add(extraHeader);
+    }
+
+    /**
+     * Remove any existing instances of the specified header and add it to the end of the list.
+     * Be warned that this may not be very fast.
+     *
+     * @param extraHeader the header to add.  Must not be null.
+     */
+    public void replaceExtraHeader(HttpHeader extraHeader) {
+        if (extraHeaders == null || extraHeaders.size() < 1) {
+            addExtraHeader(extraHeader);
+            return;
+        }
+
+        // First remove any existing ones
+        final String name = extraHeader.getName();
+        ArrayList keepers = new ArrayList();
+        for (Iterator i = extraHeaders.iterator(); i.hasNext();) {
+            HttpHeader header = (HttpHeader)i.next();
+            if (!header.getName().equalsIgnoreCase(name))
+                keepers.add(header);
+        }
+
+        keepers.add(extraHeader);
+        extraHeaders = keepers;
     }
 }

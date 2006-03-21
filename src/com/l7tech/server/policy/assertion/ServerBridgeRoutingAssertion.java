@@ -585,10 +585,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[]{params.getTargetUrl().getPath(), Integer.toString(status)});
 
                                     //TODO if we refactor the BRA we should clean this up (params changed by this SimpleHttpClient impl [HACK])
-                                    HttpHeader[] headers = params.getExtraHeaders();
-                                    HttpHeader newCookieHeader = new GenericHttpHeader(HttpConstants.HEADER_COOKIE, getSessionCookiesHeaderValue(context));
-                                    HttpHeader[] newHeaders = combineHeaders(headers, newCookieHeader);
-                                    params.setExtraHeaders(newHeaders);
+                                    params.replaceExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, getSessionCookiesHeaderValue(context)));
 
                                     return doGetResponse(false);
                                 }
@@ -607,20 +604,6 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                 };
             }
         };
-    }
-
-    private HttpHeader[] combineHeaders(HttpHeader[] headers, HttpHeader header) {
-        List newHeaders = new ArrayList();
-
-        for(int h=0; h<headers.length; h++) {
-            if(!headers[h].getName().equalsIgnoreCase(header.getName())) {
-                newHeaders.add(headers[h]);
-            }
-        }
-
-        newHeaders.add(header);
-
-        return (HttpHeader[]) newHeaders.toArray(new HttpHeader[newHeaders.size()]);
     }
 
     /**

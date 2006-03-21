@@ -19,6 +19,7 @@ public final class HttpConstants {
     public static final String HEADER_LOCATION = "Location";
     public static final String HEADER_USER_AGENT = "User-Agent";
     public static final String HEADER_IF_MODIFIED_SINCE = "If-Modified-Since";
+    public static final String HEADER_LAST_MODIFIED = "Last-Modified";
 
     // status codes
     public static final int STATUS_OK = 200;

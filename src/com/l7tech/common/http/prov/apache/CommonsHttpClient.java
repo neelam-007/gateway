@@ -103,9 +103,9 @@ public class CommonsHttpClient implements GenericHttpClient {
                 ((PostMethod)httpMethod).setRequestContentLength((int)clen);
         }
 
-        HttpHeader[] headers = params.getExtraHeaders();
-        for (int i = 0; i < headers.length; i++) {
-            HttpHeader header = headers[i];
+        List headers = params.getExtraHeaders();
+        for (Iterator i = headers.iterator(); i.hasNext();) {
+            HttpHeader header = (HttpHeader)i.next();
             httpMethod.addRequestHeader(header.getName(), header.getFullValue());
         }
 
@@ -225,9 +225,9 @@ public class CommonsHttpClient implements GenericHttpClient {
         return httpState;
     }
 
-    private void createCookiesFromHeaders(HttpHeader[] headers, HttpState state, URL targetUrl) {
-        for (int i = 0; i < headers.length; ++i) {
-            HttpHeader theHeader = headers[i];
+    private void createCookiesFromHeaders(List headers, HttpState state, URL targetUrl) {
+        for (Iterator i = headers.iterator(); i.hasNext();) {
+            HttpHeader theHeader = (HttpHeader)i.next();
             if (HttpConstants.HEADER_COOKIE.equalsIgnoreCase(theHeader.getName())) {
                 String headerVal = theHeader.getFullValue();
                 int indexOfEquals = headerVal.indexOf('=');
