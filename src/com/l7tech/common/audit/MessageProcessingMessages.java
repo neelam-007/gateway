@@ -8,7 +8,6 @@ import java.util.logging.Level;
  *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
- * $Id$
  */
 public class MessageProcessingMessages extends Messages {
     public static final M REQUEST_INVALID_XML_FORMAT  = m(3000, Level.WARNING, "Request XML is not well-formed");
@@ -33,4 +32,5 @@ public class MessageProcessingMessages extends Messages {
     public static final M WSS_PROCESSING_COMPLETE     = m(3019, Level.FINEST, "WSS processing of request complete.");
     public static final M LICENSE_NOT_ENABLED         = m(3020, Level.WARNING, "Message processor not enabled by license: {0}");
     public static final M METHOD_NOT_ALLOWED          = m(3021, Level.WARNING, "HTTP method {0} not allowed for service {1}.");
+    public static final M REQUEST_INVALID_XML_FORMAT_WITH_DETAIL  = m(3022, Level.WARNING, "Request XML is not well-formed [{0}]");
 }
