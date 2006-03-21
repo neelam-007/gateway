@@ -10,6 +10,8 @@ import org.apache.commons.collections.LRUMap;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A browser cache that ensures that only 1 thread at a time will attempt to download (and cache) a URL; other
@@ -17,6 +19,8 @@ import java.util.Date;
  * if any.
  */
 public class HttpObjectCache {
+    private static final Logger logger = Logger.getLogger(HttpObjectCache.class.getName());
+
     private final LRUMap cache;
     private final long maxCacheAge;
 
@@ -175,9 +179,9 @@ public class HttpObjectCache {
      * @return a {@link FetchResult}.  Never null.
      */
     public FetchResult fetchCached(GenericHttpClient httpClient,
-                                          GenericHttpRequestParams requestParams,
-                                          boolean waitForNewestResult,
-                                          UserObjectFactory userObjectFactory)
+                                   GenericHttpRequestParams requestParams,
+                                   boolean waitForNewestResult,
+                                   UserObjectFactory userObjectFactory)
     {
         final String urlStr = requestParams.getTargetUrl().toExternalForm();
 
@@ -199,8 +203,10 @@ public class HttpObjectCache {
         assert entry != null;
 
         // See if we are creating the initial entry
-        if (shouldDownload)
-            return doPoll(entry, httpClient, requestParams, userObjectFactory);
+        if (shouldDownload) {
+            if (logger.isLoggable(Level.FINE)) logger.fine("URL '" + urlStr + "' is not in the cache; contacting server");
+            return doPoll(entry, httpClient, requestParams, urlStr, userObjectFactory);
+        }
 
         synchronized (entry) {
             if (entry.downloading) {
@@ -209,10 +215,11 @@ public class HttpObjectCache {
                     // Wait for downloading to finish
                     while (entry.downloading) {
                         try {
+                            if (logger.isLoggable(Level.FINER)) logger.finer("Waiting for other thread to contact server for URL '" + urlStr + "'");
                             entry.wait();
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
-                            throw new RuntimeException("Interrupted while waiting for other thread to finish HTTP GET", e);
+                            throw new RuntimeException("Interrupted while waiting for other thread to finish HTTP GET for URL '" + urlStr + "'", e);
                         }
                     }
                     // Return the updated info
@@ -220,12 +227,14 @@ public class HttpObjectCache {
                                            entry);
                 } else {
                     // Return whatever we've got
+                    if (logger.isLoggable(Level.FINER)) logger.finer("Returning cached entry for URL '" + urlStr + "' without waiting for other thread");
                     return new FetchResult(RESULT_DOWNLOADING_NOW, entry);
                 }
             } else {
                 // Nobody else is currently downloading a fresh copy.  See if we need to do so ourselves.
                 if (!needToPoll(entry)) {
                     // Cached info is fine for now -- just return it
+                    if (logger.isLoggable(Level.FINE)) logger.fine("Returning cached entry for URL '" + urlStr + "'");
                     return new FetchResult(RESULT_USED_CACHED, entry);
                 }
                 entry.downloading = true;
@@ -238,7 +247,8 @@ public class HttpObjectCache {
         //noinspection ConstantConditions
         assert shouldDownload;
 
-        return doPoll(entry, httpClient, requestParams, userObjectFactory);
+        if (logger.isLoggable(Level.FINE)) logger.fine("Cache entry for URL '" + urlStr + "' is too old; contacting server");
+        return doPoll(entry, httpClient, requestParams, urlStr, userObjectFactory);
     }
 
 
@@ -275,12 +285,14 @@ public class HttpObjectCache {
      * @param entry      cache entry tracking this download, which caller must have just taken write ownership of.
      * @param httpClient HTTP client to use for the request.  Must not be null.
      * @param params     HTTP request parameters, suitable for a GET request.  Must not be null.
+     * @param urlStr
      * @param userObjectFactory  factory for producing the user object from the HTTP response.
      * @return the fetch result from doing the poll.  Never null.
      */
     private FetchResult doPoll(CacheEntry entry,
                                GenericHttpClient httpClient,
                                GenericHttpRequestParams params,
+                               String urlStr,
                                UserObjectFactory userObjectFactory)
     {
         // We are the only thread permitted to write to the cache entry, but we'll still need to synchronize writes
@@ -307,6 +319,7 @@ public class HttpObjectCache {
 
             if (resp.getStatus() == HttpConstants.STATUS_NOT_MODIFIED) {
                 // Don't even bother doing another round-trip through the UserObjectFactory
+                if (logger.isLoggable(Level.FINER)) logger.finer("Server reports no change for URL '" + urlStr + "'");
                 return doSuccessfulDownload(entry, requestStart, entry.lastModified, entry.userObject);
             }
 
@@ -314,8 +327,10 @@ public class HttpObjectCache {
             HttpHeaders headers = resp.getHeaders();
             String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
             Object userObject = userObjectFactory.createUserObject(resp);
-            if (userObject != null)
+            if (userObject != null) {
+                if (logger.isLoggable(Level.FINER)) logger.finer("Downloaded new object from URL '" + urlStr + "'");
                 return doSuccessfulDownload(entry, requestStart, modified, userObject);
+            }
 
             exception = new IOException("Response not accepted for caching");
             /* FALLTHROUGH and handle the error */
