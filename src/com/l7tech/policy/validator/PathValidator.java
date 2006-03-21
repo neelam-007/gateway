@@ -95,6 +95,11 @@ class PathValidator {
             }
         }
 
+        if (normallyBeforeRouting(a) && seenRouting) {
+            result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion is typically positioned before routing", null));
+        }
+
         if (a instanceof AuditAssertion) {
             AuditAssertion auditAssertion = (AuditAssertion) a;
             if (auditAssertion.isSaveRequest() || auditAssertion.isSaveResponse()) {
@@ -551,6 +556,12 @@ class PathValidator {
 
     private boolean isComposite(Assertion a) {
         return a instanceof CompositeAssertion;
+    }
+
+    private boolean normallyBeforeRouting(Assertion a) {
+        if (a instanceof SslAssertion)
+            return true;
+        return false;
     }
 
     private boolean involvesSignature(Assertion a) {
