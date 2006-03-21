@@ -144,18 +144,18 @@ public class ServerXslTransformation implements ServerAssertion {
         if (assertion.isFetchXsltFromMessageUrls()) {
             softwareStylesheet = null;
             tarariStylesheet = null;
-            List pants = new ArrayList();
+            List patterns = new ArrayList();
             for (int i = 0; i < assertion.getFetchUrlRegexes().length; i++) {
                 String regex = assertion.getFetchUrlRegexes()[i];
                 Pattern p;
                 try {
                     p = Pattern.compile(regex);
-                    pants.add(p);
+                    patterns.add(p);
                 } catch (PatternSyntaxException e) {
                     throw new ServerPolicyException(assertion, "Couldn't compile regular expression '" + regex + "'", e);
                 }
             }
-            this.fetchUrlPatterns = (Pattern[])pants.toArray(new Pattern[0]);
+            this.fetchUrlPatterns = (Pattern[])patterns.toArray(new Pattern[0]);
         } else {
             final byte[] xsltBytes = assertion.getXslSrc().getBytes();
             Templates softwareStylesheet = null;
