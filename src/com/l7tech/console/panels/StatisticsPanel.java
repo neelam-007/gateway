@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2006 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.panels;
 
 import com.l7tech.cluster.GatewayStatus;
@@ -26,10 +29,6 @@ import java.util.logging.Logger;
 
 /*
  * This class creates a statistics panel.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 public class StatisticsPanel extends JPanel {
@@ -52,10 +51,10 @@ public class StatisticsPanel extends JPanel {
     private DefaultTableColumnModel columnModel = null;
     private DefaultTableColumnModel totalColumnModel = null;
     private DefaultTableModel statTotalTableModel = null;
-    private long attemptedCountTotal = 0;
-    private long authorizedCountTotal = 0;
-    private long completedCountTotal = 0;
-    private long lastMinuteCompletedCountTotal = 0;
+    private long totalNumRoutingFailure = 0;
+    private long totalNumPolicyViolation = 0;
+    private long totalNumSuccess = 0;
+    private long totalNumSuccessLastMinute = 0;
     private HashMap lastMinuteCompletedCountsCache;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
@@ -101,10 +100,10 @@ public class StatisticsPanel extends JPanel {
 
         ColumnHeaderTooltips htt = new ColumnHeaderTooltips();
         htt.setToolTip(getStatColumnModel().getColumn(0), "Service name. Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(1), "Total requests attempted since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(2), "Total requests authorized since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(3), "Total requests routed since the cluster is up. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
-        htt.setToolTip(getStatColumnModel().getColumn(4), "Total requests routed in the past 60 seconds. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(1), "Number of routing failures since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(2), "Number of policy violations since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(3), "Number of success since the cluster is up. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(4), "Number of success in the past 60 seconds. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
 
         getStatTable().getTableHeader().addMouseMotionListener(htt);
 
@@ -192,7 +191,7 @@ public class StatisticsPanel extends JPanel {
             return statTableSorter;
         }
 
-        String[] cols = {"Service Name", "Requests Attempted", "Authorized", "Routed", "Routed (last min.)"};
+        String[] cols = {"Service Name", "Routing Failure", "Policy Violation", "Success", "Success (last min.)"};
         String[][] rows = new String[][]{};
 
         DefaultTableModel tableModel = new DefaultTableModel(rows, cols) {
@@ -221,7 +220,7 @@ public class StatisticsPanel extends JPanel {
             return statTotalTableModel;
         }
 
-        String[] cols = {"Total", "Attempted Total", "Authorized", "Routed", "Routed (last min.)", "dummy"};
+        String[] cols = {"Total", "Routing Failure", "Policy Violation", "Success", "Success (last min.)", "dummy"};
         String[][] rows = new String[][]{
             {"TOTAL", null, null, null},
         };
@@ -248,10 +247,10 @@ public class StatisticsPanel extends JPanel {
     public void updateStatisticsTable(Vector rawStatsList) {
 
         statsList = new Vector();
-        attemptedCountTotal = 0;
-        authorizedCountTotal = 0;
-        completedCountTotal = 0;
-        lastMinuteCompletedCountTotal = 0;
+        totalNumRoutingFailure = 0;
+        totalNumPolicyViolation = 0;
+        totalNumSuccess = 0;
+        totalNumSuccessLastMinute = 0;
 
         for (int i = 0; i < rawStatsList.size(); i++) {
 
@@ -268,26 +267,26 @@ public class StatisticsPanel extends JPanel {
                     lastMinuteCompletedCount);
 
             statsList.add(statsRec);
-            attemptedCountTotal += stats.getRequests();
-            authorizedCountTotal += stats.getAuthorized();
-            completedCountTotal += stats.getCompleted();
-            lastMinuteCompletedCountTotal += lastMinuteCompletedCount;
+            totalNumRoutingFailure += statsRec.getNumRoutingFailure();
+            totalNumPolicyViolation += statsRec.getNumPolicyViolation();
+            totalNumSuccess += statsRec.getNumSuccess();
+            totalNumSuccessLastMinute += lastMinuteCompletedCount;
         }
 
         getStatTableModel().setData(statsList);
         getStatTableModel().getRealModel().setRowCount(statsList.size());
         getStatTableModel().fireTableDataChanged();
 
-        updateReqeustsTotal();
+        updateRequestsTotal();
 
     }
 
-    private void updateReqeustsTotal() {
+    private void updateRequestsTotal() {
 
-       getStatTotalTable().setValueAt(new Long(attemptedCountTotal), 0, 1);
-       getStatTotalTable().setValueAt(new Long(authorizedCountTotal), 0, 2);
-       getStatTotalTable().setValueAt(new Long(completedCountTotal), 0, 3);
-       getStatTotalTable().setValueAt(new Long(lastMinuteCompletedCountTotal), 0, 4);
+       getStatTotalTable().setValueAt(new Long(totalNumRoutingFailure), 0, 1);
+       getStatTotalTable().setValueAt(new Long(totalNumPolicyViolation), 0, 2);
+       getStatTotalTable().setValueAt(new Long(totalNumSuccess), 0, 3);
+       getStatTotalTable().setValueAt(new Long(totalNumSuccessLastMinute), 0, 4);
        getStatTotalTableModel().fireTableDataChanged();
     }
 

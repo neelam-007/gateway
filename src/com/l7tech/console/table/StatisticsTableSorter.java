@@ -1,18 +1,19 @@
+/*
+ * Copyright (C) 2006 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.table;
 
-/*
+/**
  * This class encapsulates the data model for statistics with sorting capability
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 import com.l7tech.logging.StatisticsRecord;
 
-import java.util.*;
+import javax.swing.table.DefaultTableModel;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Vector;
 import java.util.logging.Logger;
-import javax.swing.table.*;
 
 public class StatisticsTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
@@ -69,13 +70,13 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
             case 0:
                 return ((StatisticsRecord) sortedData[row]).getServiceName();
             case 1:
-                return new Long(((StatisticsRecord) sortedData[row]).getAttemptedCount());
+                return new Long(((StatisticsRecord) sortedData[row]).getNumRoutingFailure());
             case 2:
-                return new Long(((StatisticsRecord) sortedData[row]).getAuthorizedCount());
+                return new Long(((StatisticsRecord) sortedData[row]).getNumPolicyViolation());
             case 3:
-                return new Long(((StatisticsRecord) sortedData[row]).getCompletedCount());
+                return new Long(((StatisticsRecord) sortedData[row]).getNumSuccess());
             case 4:
-                return new Long(((StatisticsRecord) sortedData[row]).getCompletedCountLastMinute());
+                return new Long(((StatisticsRecord) sortedData[row]).getNumSuccessLastMinute());
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -101,20 +102,20 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                     elementB = ((StatisticsRecord) b).getServiceName();
                     break;
                 case 1:
-                    elementA = new Long(((StatisticsRecord) a).getAttemptedCount());
-                    elementB = new Long(((StatisticsRecord) b).getAttemptedCount());
+                    elementA = new Long(((StatisticsRecord) a).getNumRoutingFailure());
+                    elementB = new Long(((StatisticsRecord) b).getNumRoutingFailure());
                     break;
                 case 2:
-                    elementA = new Long(((StatisticsRecord) a).getAuthorizedCount());
-                    elementB = new Long(((StatisticsRecord) b).getAuthorizedCount());
+                    elementA = new Long(((StatisticsRecord) a).getNumPolicyViolation());
+                    elementB = new Long(((StatisticsRecord) b).getNumPolicyViolation());
                     break;
                 case 3:
-                    elementA = new Long(((StatisticsRecord) a).getCompletedCount());
-                    elementB = new Long(((StatisticsRecord) b).getCompletedCount());
+                    elementA = new Long(((StatisticsRecord) a).getNumSuccess());
+                    elementB = new Long(((StatisticsRecord) b).getNumSuccess());
                     break;
                 case 4:
-                    elementA = new Long(((StatisticsRecord) a).getCompletedCountLastMinute());
-                    elementB = new Long(((StatisticsRecord) b).getCompletedCountLastMinute());
+                    elementA = new Long(((StatisticsRecord) a).getNumSuccessLastMinute());
+                    elementB = new Long(((StatisticsRecord) b).getNumSuccessLastMinute());
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);

@@ -1,11 +1,10 @@
+/*
+ * Copyright (C) 2006 Layer 7 Technologies Inc.
+ */
 package com.l7tech.logging;
 
-/*
- * This class encapsulates the statistics record.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
+/**
+ * Message statistics for a single published service.
  */
 
 public class StatisticsRecord {
@@ -47,6 +46,22 @@ public class StatisticsRecord {
     }*/
 
      public long getCompletedCountLastMinute(){
+        return completedCountLastMinute;
+    }
+
+    public long getNumRoutingFailure() {
+        return authorizedCount - completedCount;
+    }
+
+    public long getNumPolicyViolation() {
+        return attemptedCount - authorizedCount;
+    }
+
+    public long getNumSuccess() {
+        return completedCount;
+    }
+
+    public long getNumSuccessLastMinute() {
         return completedCountLastMinute;
     }
 }
