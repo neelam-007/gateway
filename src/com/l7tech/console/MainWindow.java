@@ -335,23 +335,25 @@ public class MainWindow extends JFrame {
      */
     private JMenu getFileMenu() {
         if (fileMenu == null) {
-            fileMenu = new JMenu();
+            JMenu menu = new JMenu();
             //fileMenu.setFocusable(false);
-            fileMenu.setText(resapplication.getString("File"));
-            fileMenu.add(getNewPolicyMenuItem());
-            fileMenu.add(getSaveMenuItem());
-            fileMenu.add(getExportMenuItem());
-            fileMenu.add(getImportMenuItem());
-            fileMenu.add(getValidateMenuItem());
+            menu.setText(resapplication.getString("File"));
+            menu.add(getNewPolicyMenuItem());
+            menu.add(getSaveMenuItem());
+            menu.add(getExportMenuItem());
+            menu.add(getImportMenuItem());
+            menu.add(getValidateMenuItem());
 
-            fileMenu.addSeparator();
+            menu.addSeparator();
 
-            fileMenu.add(getConnectMenuItem());
-            fileMenu.add(getDisconnectMenuItem());
-            fileMenu.add(getMenuItemPreferences());
-            fileMenu.add(getExitMenuItem());
-            int mnemonic = fileMenu.getText().toCharArray()[0];
-            fileMenu.setMnemonic(mnemonic);
+            menu.add(getConnectMenuItem());
+            menu.add(getDisconnectMenuItem());
+            menu.add(getMenuItemPreferences());
+            menu.add(getExitMenuItem());
+            int mnemonic = menu.getText().toCharArray()[0];
+            menu.setMnemonic(mnemonic);
+
+            fileMenu = menu;
         }
         return fileMenu;
     }
@@ -463,32 +465,33 @@ public class MainWindow extends JFrame {
      */
     private JMenu getEditMenu() {
         if (editMenu == null) {
-            editMenu = new JMenu();
+            JMenu menu = new JMenu();
             //editMenu.setFocusable(false);
-            editMenu.setText(resapplication.getString("Edit"));
+            menu.setText(resapplication.getString("Edit"));
 
-            editMenu.add(getNewProviderSubMenu());
-            editMenu.add(getNewInternalUserAction());
-            editMenu.add(getNewInternalGroupAction());
-            editMenu.add(getFindAction());
+            menu.add(getNewProviderSubMenu());
+            menu.add(getNewInternalUserAction());
+            menu.add(getNewInternalGroupAction());
+            menu.add(getFindAction());
 
-            editMenu.addSeparator();
+            menu.addSeparator();
 
-            editMenu.add(getPublishServiceAction());
-            editMenu.add(getCreateServiceAction());
-            editMenu.add(getPublishNonSoapServiceAction());
-            editMenu.addSeparator();
+            menu.add(getPublishServiceAction());
+            menu.add(getCreateServiceAction());
+            menu.add(getPublishNonSoapServiceAction());
+            menu.addSeparator();
 
-            editMenu.add(getManageCertificatesMenuItem());
-            editMenu.add(getManageGlobalSchemasMenuItem());
+            menu.add(getManageCertificatesMenuItem());
+            menu.add(getManageGlobalSchemasMenuItem());
             // Disabled for 3.4 -- there are currently no cluster properties to manage with this GUI
             // ("license" is managed with a seperate GUI of its own, and is hidden in the cluster property list.)
-            editMenu.add(getManageClusterPropertiesActionMenuItem());
-            editMenu.add(getDashboardMenuItem());
-            editMenu.add(getManageJmsEndpointsMenuItem());
+            menu.add(getManageClusterPropertiesActionMenuItem());
+            menu.add(getManageJmsEndpointsMenuItem());
 
-            int mnemonic = editMenu.getText().toCharArray()[0];
-            editMenu.setMnemonic(mnemonic);
+            int mnemonic = menu.getText().toCharArray()[0];
+            menu.setMnemonic(mnemonic);
+
+            editMenu = menu;
         }
         return editMenu;
     }
@@ -515,35 +518,37 @@ public class MainWindow extends JFrame {
     private JMenu getViewMenu() {
         if (viewMenu != null) return viewMenu;
 
-        viewMenu = new JMenu();
+        JMenu menu = new JMenu();
         //viewMenu.setFocusable(false);
-        viewMenu.setText(resapplication.getString("View"));
+        menu.setText(resapplication.getString("View"));
         JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getPolicyMessageAreaToggle());
         final Preferences preferences = Preferences.getPreferences();
 
         boolean policyMessageAreaVisible = preferences.isPolicyMessageAreaVisible();
         jcm.setSelected(policyMessageAreaVisible);
-        viewMenu.add(jcm);
+        menu.add(jcm);
 
         jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
         jcm.setSelected(preferences.isStatusBarBarVisible());
-        viewMenu.add(jcm);
+        menu.add(jcm);
 
-        viewMenu.addSeparator();
+        menu.addSeparator();
 
         JMenuItem item = new JMenuItem(getRefreshAction());
         item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
-        viewMenu.add(item);
+        menu.add(item);
 
-        viewMenu.addSeparator();
+        menu.addSeparator();
 
-        viewMenu.add(getStatMenuItem());
-        viewMenu.add(getAuditMenuItem());
-        viewMenu.add(getFromFileMenuItem());
+        menu.add(getDashboardMenuItem());
+        menu.add(getStatMenuItem());
+        menu.add(getAuditMenuItem());
+        menu.add(getFromFileMenuItem());
 
-        int mnemonic = viewMenu.getText().toCharArray()[0];
-        viewMenu.setMnemonic(mnemonic);
+        int mnemonic = menu.getText().toCharArray()[0];
+        menu.setMnemonic(mnemonic);
 
+        viewMenu = menu;
 
         return viewMenu;
     }
