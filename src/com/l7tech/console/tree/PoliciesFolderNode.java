@@ -1,17 +1,15 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.policy.exporter.PolicyExporter;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import javax.swing.tree.MutableTreeNode;
 import java.io.*;
 import java.util.Comparator;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 
 /**
@@ -21,9 +19,7 @@ import org.xml.sax.SAXException;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class PoliciesFolderNode extends AbstractTreeNode {
-    private static final Logger logger = Logger.getLogger(PoliciesFolderNode.class.getName());
-
+public class PoliciesFolderNode extends AbstractPaletteFolderNode {
     public static final String NAME = "Policy Templates";
     public static final String TEMPLATES_DIR = "policy.templates";
 
@@ -45,26 +41,11 @@ public class PoliciesFolderNode extends AbstractTreeNode {
      * a given home path
      */
     public PoliciesFolderNode(String path) {
-        super(path+File.separator+TEMPLATES_DIR, FILENAME_COMPARATOR);
+        super(NAME, path+File.separator+TEMPLATES_DIR, FILENAME_COMPARATOR);
         if (path == null)
             throw new IllegalArgumentException();
     }
 
-    /**
-     * Returns true if the receiver is a leaf.
-     *
-     * @return true if leaf, false otherwise
-     */
-    public boolean isLeaf() {
-        return false;
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return true;
-    }
 
     /**
      * subclasses override this method
@@ -82,27 +63,6 @@ public class PoliciesFolderNode extends AbstractTreeNode {
             ErrorManager.getDefault().notify(Level.WARNING, e, "There was an error loading policy templates.");
 
         }
-    }
-
-    /**
-     * Returns the node name.
-     *
-     * @return the name as a String
-     */
-    public String getName() {
-        return NAME;
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
-        return "com/l7tech/console/resources/folder.gif";
     }
 
     private String getTemplatesPath() {

@@ -11,11 +11,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class RequestWssSamlNode extends AbstractLeafTreeNode {
-
-    /**
-     *
-     */
+public class RequestWssSamlNode extends AbstractLeafPaletteNode {
     public RequestWssSamlNode(){
         super("SAML Assertion", "com/l7tech/console/resources/xmlWithCert16.gif");
     }

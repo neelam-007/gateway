@@ -29,7 +29,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     /**
      * construct the <CODE>CustomAccessControlNode</CODE> instance for a given
      * <CODE>CustomAssertionHolder</CODE>
-     * 
+     *
      * @param ca the e represented by this <CODE>EntityHeaderNode</CODE>
      */
     public CustomAccessControlNode(CustomAssertionHolder ca) {
@@ -49,7 +49,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      * Get the set of actions associated with this node.
      * This returns actions that are used buy entity nodes
      * such .
-     * 
+     *
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
@@ -59,7 +59,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     /**
      * Test if the node can be deleted. Default for entites
      * is <code>true</code>
-     * 
+     *
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
@@ -146,5 +146,9 @@ public class CustomAccessControlNode extends AbstractTreeNode {
         sb.append(getClass().getName() + "\n").
           append(super.toString());
         return sb.toString();
+    }
+
+    public String getDescriptionText() {
+        return ((CustomAssertionHolder)asAssertion()).getDescriptionText();
     }
 }

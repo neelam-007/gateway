@@ -31,7 +31,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
             TestAssertionProperties.class,
             ClientTrueAssertion.class,
             null,
-            TestServiceInvocation.class, Category.ACCESS_CONTROL, null);
+            TestServiceInvocation.class, Category.ACCESS_CONTROL, "", null);
         CustomAssertions.register(eh);
     }
 

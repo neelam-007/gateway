@@ -24,7 +24,7 @@ import java.util.ArrayList;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
-public class IdentityNode extends AbstractLeafTreeNode {
+public class IdentityNode extends AbstractLeafPaletteNode {
 
     public IdentityNode() {
         super("Grant Access to Users/Groups", "com/l7tech/console/resources/user16.png");

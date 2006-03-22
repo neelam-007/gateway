@@ -7,7 +7,7 @@ import java.util.logging.Logger;
  * The class represents a node element in the palette assertion tree.
  * It represents the folder with composite and logical policy assertions.
  */
-public class PolicyLogicFolderNode extends AbstractTreeNode {
+public class PolicyLogicFolderNode extends AbstractPaletteFolderNode {
     static final Logger log = Logger.getLogger(PolicyLogicFolderNode.class.getName());
 
     /**
@@ -15,23 +15,7 @@ public class PolicyLogicFolderNode extends AbstractTreeNode {
      * a given entry.
      */
     public PolicyLogicFolderNode() {
-        super(null);
-    }
-
-    /**
-     * Returns true if the receiver is a leaf.
-     *
-     * @return true if leaf, false otherwise
-     */
-    public boolean isLeaf() {
-        return false;
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return true;
+        super("Policy Logic");
     }
 
     /**
@@ -49,26 +33,4 @@ public class PolicyLogicFolderNode extends AbstractTreeNode {
         insert(new HardcodedResponsePaletteNode(), index++);
         insert(new EchoRoutingAssertionPaletteNode(), index++);
     }
-
-    /**
-     * Returns the node name.
-     *
-     * @return the name as a String
-     */
-    public String getName() {
-        return "Policy Logic";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
-        return "com/l7tech/console/resources/folder.gif";
-    }
-
 }

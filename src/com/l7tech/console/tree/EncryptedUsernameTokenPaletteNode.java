@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertio
 /**
  * Represents the palette node for the EncryptedUsernameToken assertion.
  */
-public class EncryptedUsernameTokenPaletteNode extends AbstractLeafTreeNode {
+public class EncryptedUsernameTokenPaletteNode extends AbstractLeafPaletteNode {
     public EncryptedUsernameTokenPaletteNode() {
         super("Encrypted UsernameToken", "com/l7tech/console/resources/authentication.gif");
     }

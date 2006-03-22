@@ -12,11 +12,7 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
  * Date: Aug 4, 2004<br/>
  * $Id$<br/>
  */
-public class SecureConversationNode extends AbstractLeafTreeNode {
-
-    /**
-     *
-     */
+public class SecureConversationNode extends AbstractLeafPaletteNode {
     public SecureConversationNode() {
         super("WS Secure Conversation", "com/l7tech/console/resources/xmlencryption.gif");
     }
@@ -24,5 +20,4 @@ public class SecureConversationNode extends AbstractLeafTreeNode {
     public Assertion asAssertion() {
         return new SecureConversation();
     }
-    
 }

@@ -23,6 +23,7 @@ public class CustomAssertionDescriptor {
     private final Class serverAssertion;
     private final Class clientAssertion;
     private final String name;
+    private final String description;
     private final Category category;
     private final SecurityManager securityManager;
     private final Class uiClass;
@@ -36,10 +37,12 @@ public class CustomAssertionDescriptor {
      * @param clientAssertionClass the client (Bridge for example) assertion class
      * @param uiClass              the UI class, must be implementation of <code>CustomAssertionUI</code>
      * @param serverAssertionClass the server side assertion class
+     * @param optionalDescription
      */
     public CustomAssertionDescriptor(String name, Class assertionClass, Class clientAssertionClass,
-                                     Class uiClass, Class serverAssertionClass, Category cat, SecurityManager securityManager) {
+                                     Class uiClass, Class serverAssertionClass, Category cat, String optionalDescription, SecurityManager securityManager) {
         this.name = name;
+        this.description = optionalDescription;
         this.assertion = assertionClass;
         this.category = cat;
         this.securityManager = securityManager;
@@ -68,6 +71,10 @@ public class CustomAssertionDescriptor {
      */
     public String getName() {
         return name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     /**

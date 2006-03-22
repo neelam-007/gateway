@@ -6,7 +6,6 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 
@@ -26,6 +25,7 @@ public class CustomAssertionHolder extends Assertion {
      * with a previous versions of the  class.
      */
     private static final long serialVersionUID = 7410439507802944818L;
+
 
 
     public CustomAssertionHolder() {
@@ -71,8 +71,17 @@ public class CustomAssertionHolder extends Assertion {
         return "[ CustomAssertion = " + customAssertion.toString() + ", Category = " + category + " ]";
     }
 
+    public String getDescriptionText() {
+        return descriptionText;
+    }
+
+    public void setDescriptionText(String descriptionText) {
+        this.descriptionText = descriptionText;
+    }
+
     private CustomAssertion customAssertion;
     private Category category;
+    private String descriptionText;
 
 }
 

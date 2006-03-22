@@ -3,24 +3,12 @@ package com.l7tech.console.tree;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AuditAssertion;
 
-import javax.swing.*;
-
 /**
  * The tree node in the assertion palette corresponding to the AuditAssertion.
  */
-public class AuditAssertionPaletteNode extends AbstractTreeNode {
+public class AuditAssertionPaletteNode extends AbstractLeafPaletteNode {
     public AuditAssertionPaletteNode() {
-        super(null);
-    }
-
-    /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     *
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        return new Action[]{};
+        super("Audit Assertion", "com/l7tech/console/resources/Edit16.gif");
     }
 
     /**
@@ -31,36 +19,5 @@ public class AuditAssertionPaletteNode extends AbstractTreeNode {
      */
     public Assertion asAssertion() {
         return new AuditAssertion();
-    }
-
-    /**
-     * Returns true if the receiver is a leaf.
-     *
-     * @return true if leaf, false otherwise
-     */
-    public boolean isLeaf() {
-        return true;
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return false;
-    }
-
-    protected void loadChildren() {}
-
-    public String getName() {
-        return "Audit Assertion";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/Edit16.gif";
     }
 }

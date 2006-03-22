@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
-    private static final Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
+    protected static final Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
 
     /**
      * default comparator for the child objects
@@ -100,6 +100,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         }
 
         private Object cookieValue;
+
     }
 
     /**
@@ -310,14 +311,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
 
-    /**
-     * Gets the default action for this node.
-     *
-     * @return <code>null</code> indicating there should be none default action
-     */
-    public Action getPreferredAction() {
-        return null;
-    };
+    ;
 
 
     /**
@@ -436,4 +430,14 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     protected Comparator getChildrenComparator() {
         return childrenComparator;
     }
+
+    /**
+     * Gets the default action for this node.
+     *
+     * @return <code>null</code> indicating there should be none default action
+     */
+    public Action getPreferredAction() {
+        return null;
+    }
+
 }

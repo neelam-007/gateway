@@ -6,14 +6,14 @@ package com.l7tech.console.tree;
  * @author $Author$
  * @version $Revision$
  */
-public abstract class AbstractLeafTreeNode extends AbstractTreeNode {
+public abstract class AbstractLeafPaletteNode extends AbstractAssertionPaletteNode {
 
     //- PUBLIC
 
     /**
      *
      */
-    public AbstractLeafTreeNode(String name, String iconResource) {
+    public AbstractLeafPaletteNode(String name, String iconResource) {
         super(null);
         this.name = name;
         this.iconResource = iconResource;

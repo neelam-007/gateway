@@ -8,7 +8,6 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * The class represents an gui node element in the TreeModel that
@@ -17,25 +16,13 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class XmlFolderNode extends AbstractTreeNode {
-    private static final Logger logger = Logger.getLogger(XmlFolderNode.class.getName());
-
+public class XmlFolderNode extends AbstractPaletteFolderNode {
     /**
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public XmlFolderNode() {
-        super(null);
+        super("Message Validation/Transformation");
     }
-
-    /**
-     * Returns true if the receiver is a leaf.
-     *
-     * @return true if leaf, false otherwise
-     */
-    public boolean isLeaf() {
-        return false;
-    }
-
 
     /**
      * subclasses override this method
@@ -63,29 +50,4 @@ public class XmlFolderNode extends AbstractTreeNode {
             logger.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
         }
     }
-
-    /**
-     * Returns the node name.
-     * Gui nodes have name to facilitate handling in
-     * hierarchical gui components such as JTree.
-     *
-     * @return the FQ name as a String
-     */
-    public String getName() {
-        return "Message Validation/Transformation";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
-        return "com/l7tech/console/resources/folder.gif";
-
-    }
-
 }

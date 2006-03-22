@@ -98,6 +98,7 @@ public class CustomAssertionsRegistrarImpl
                 final CustomAssertion cas = (CustomAssertion)ca.newInstance();
                 ch.setCustomAssertion(cas);
                 ch.setCategory(cd.getCategory());
+                ch.setDescriptionText(cd.getDescription());
                 result.add(ch);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
@@ -162,6 +163,7 @@ public class CustomAssertionsRegistrarImpl
         String assertionClass = null;
         String editorClass = null;
         String securityManagerClass = null;
+        String optionalDescription = null;
         Category category = Category.UNFILLED;
 
         assertionClass = (String)properties.get(baseKey + ".class");
@@ -182,6 +184,8 @@ public class CustomAssertionsRegistrarImpl
                     if (c != null) {
                         category = c;
                     }
+                } else if (key.endsWith(".description")) {
+                    optionalDescription = (String) properties.get(key);
                 }
             }
         }
@@ -210,7 +214,7 @@ public class CustomAssertionsRegistrarImpl
             if (securityManagerClass != null) {
                 sm = (SecurityManager)Class.forName(securityManagerClass).newInstance();
             }
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, eClass, sa, category, sm);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, eClass, sa, category, optionalDescription, sm);
             CustomAssertions.register(eh);
             logger.info("Registered custom assertion " + eh);
         } catch (ClassNotFoundException e) {

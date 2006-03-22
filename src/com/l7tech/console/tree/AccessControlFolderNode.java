@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class AccessControlFolderNode extends AbstractTreeNode {
+public class AccessControlFolderNode extends AbstractPaletteFolderNode {
     static final Logger log = Logger.getLogger(AccessControlFolderNode.class.getName());
 
     /**
@@ -27,23 +27,7 @@ public class AccessControlFolderNode extends AbstractTreeNode {
      * a given entry.
      */
     public AccessControlFolderNode() {
-        super(null);
-    }
-
-    /**
-     * Returns true if the receiver is a leaf.
-     *
-     * @return true if leaf, false otherwise
-     */
-    public boolean isLeaf() {
-        return false;
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return true;
+        super("Access Control");
     }
 
     /**
@@ -82,24 +66,11 @@ public class AccessControlFolderNode extends AbstractTreeNode {
 
     }
 
-    /**
-     * Returns the node name.
-     *
-     * @return the name as a String
-     */
-    public String getName() {
-        return "Access Control";
+    protected String getOpenIconResource() {
+        return "com/l7tech/console/resources/folderOpen.gif";
     }
 
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
+    protected String getClosedIconResource() {
         return "com/l7tech/console/resources/folder.gif";
     }
 

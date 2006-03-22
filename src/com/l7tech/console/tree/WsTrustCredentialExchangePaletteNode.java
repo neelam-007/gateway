@@ -11,11 +11,7 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class WsTrustCredentialExchangePaletteNode extends AbstractLeafTreeNode {
-
-    /**
-     * 
-     */
+public class WsTrustCredentialExchangePaletteNode extends AbstractLeafPaletteNode {
     public WsTrustCredentialExchangePaletteNode(){
         super("WS-Trust Credential Exchange", "com/l7tech/console/resources/xmlWithCert16.gif");
     }

@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class HttpDigestAuthNode extends AbstractLeafTreeNode {
+public class HttpDigestAuthNode extends AbstractLeafPaletteNode {
     /**
      * construct the <CODE>HttpDigestAuthNode</CODE> instance.
      */

@@ -1,7 +1,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.Registry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,39 +12,21 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class AssertionsPaletteRootNode extends AbstractTreeNode {
+public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
     /**
      * construct the <CODE>AssertionsPaletteRootNode</CODE> instance
      */
     public AssertionsPaletteRootNode(String title)
       throws IllegalArgumentException {
-        super(null);
+        super(title);
         if (title == null)
             throw new IllegalArgumentException();
-        label = title;
-    }
-
-    /**
-     * Returns true if the receiver is a leaf.
-     * 
-     * @return true if leaf, false otherwise
-     */
-    public boolean isLeaf() {
-        return false;
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return true;
     }
 
     /**
      * subclasses override this method
      */
     protected void loadChildren() {
-        Registry r = Registry.getDefault();
         String homePath = null;
         homePath = Preferences.getPreferences().getHomePath();
         List nodeList = new ArrayList();
@@ -68,21 +49,11 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
         }
     }
 
-    /**
-     * @return the root name
-     */
-    public String getName() {
-        return label;
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     * 
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
+    protected String getOpenIconResource() {
         return "com/l7tech/console/resources/policy16.gif";
     }
 
-    private String label;
+    protected String getClosedIconResource() {
+        return "com/l7tech/console/resources/policy16.gif";
+    }
 }

@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class WsTokenBasicAuthNode extends AbstractLeafTreeNode {
+public class WsTokenBasicAuthNode extends AbstractLeafPaletteNode {
     /**
      * construct the <CODE>HttpBasicAuthNode</CODE> instance.
      */

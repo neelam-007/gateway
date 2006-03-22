@@ -23,9 +23,12 @@ public class Category implements Serializable {
     public static final Category ACCESS_CONTROL = new Category(index++, "AccessControl");
     public static final Category MESSAGE = new Category(index++, "Message");
     public static final Category UNFILLED = new Category(index++, "Unfilled");
+    public static final Category THREAT_PROT = new Category(index++, "ThreatProtection");
 
     private final int myKey;
     private final String myName;
+
+    static final long serialVersionUID = 6534895019625872949L;
 
     private Category(int key, String name) {
         myKey = key;
@@ -71,5 +74,5 @@ public class Category implements Serializable {
         return VALUES[myKey];
     }
 
-    private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED};
+    private static final Category[] VALUES = {ACCESS_CONTROL, MESSAGE, UNFILLED, THREAT_PROT};
 }

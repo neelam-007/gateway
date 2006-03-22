@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.credential.XpathCredentialSource;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class XpathCredentialSourcePaletteNode extends AbstractLeafTreeNode {
+public class XpathCredentialSourcePaletteNode extends AbstractLeafPaletteNode {
     public XpathCredentialSourcePaletteNode(){
         super("XPath Credentials", "com/l7tech/console/resources/xmlWithCert16.gif");
     }

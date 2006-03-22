@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
  * @author $Author$
  * @version $Revision$
  */
-public class WsFederationPassiveTokenRequestPaletteNode extends AbstractLeafTreeNode {
+public class WsFederationPassiveTokenRequestPaletteNode extends AbstractLeafPaletteNode {
 
     /**
      *

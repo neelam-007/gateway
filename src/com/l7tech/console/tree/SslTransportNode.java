@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.SslAssertion;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class SslTransportNode extends AbstractLeafTreeNode {
+public class SslTransportNode extends AbstractLeafPaletteNode {
     private boolean requireClientAuthentication;
 
     /**
@@ -22,7 +22,8 @@ public class SslTransportNode extends AbstractLeafTreeNode {
      *                                    false otherwise
      */
     public SslTransportNode(boolean requireClientAuthentication){
-        super("", "com/l7tech/console/resources/ssl.gif");
+        super(requireClientAuthentication ? "SSL with Client Certificate Authentication" : "SSL or TLS Transport",
+                "com/l7tech/console/resources/ssl.gif");
         this.requireClientAuthentication = requireClientAuthentication;
     }
 
@@ -36,16 +37,4 @@ public class SslTransportNode extends AbstractLeafTreeNode {
         return new SslAssertion(requireClientAuthentication);
 
     }
-
-    /**
-     * @return the node name that is displayed
-     */
-    public String getName() {
-        if (requireClientAuthentication)  {
-            return "SSL with Client Certificate Authentication";
-        }
-        return "SSL or TLS Transport";
-
-    }
-
 }

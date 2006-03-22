@@ -9,23 +9,13 @@ package com.l7tech.console.tree;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class RoutingFolderNode extends AbstractTreeNode {
+public class RoutingFolderNode extends AbstractPaletteFolderNode {
     /**
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
     public RoutingFolderNode() {
-        super(null);
+        super("Message Routing");
     }
-
-    /**
-     * Returns true if the receiver is a leaf.
-     *
-     * @return true if leaf, false otherwise
-     */
-    public boolean isLeaf() {
-        return false;
-    }
-
 
     /**
      * subclasses override this method
@@ -38,29 +28,4 @@ public class RoutingFolderNode extends AbstractTreeNode {
         insert(new JmsRoutingNode(), index++);
         // insert(new SmtpRoutingNode(), index++);
     }
-
-    /**
-     * Returns the node name.
-     * Gui nodes have name to facilitate handling in
-     * hierarchical gui components such as JTree.
-     *
-     * @return the FQ name as a String
-     */
-    public String getName() {
-        return "Message Routing";
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     *
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
-        return "com/l7tech/console/resources/folder.gif";
-
-    }
-
 }

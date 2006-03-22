@@ -1,7 +1,5 @@
 package com.l7tech.console.tree;
 
-import javax.swing.*;
-
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.WsiBspAssertion;
 
@@ -11,7 +9,7 @@ import com.l7tech.policy.assertion.WsiBspAssertion;
  * @author $Author$
  * @version $Revision$
  */
-public class WsiBspPaletteNode extends AbstractLeafTreeNode  {
+public class WsiBspPaletteNode extends AbstractLeafPaletteNode {
 
     public WsiBspPaletteNode() {
         super("WSI-BSP Compliancy", "com/l7tech/console/resources/policy16.gif");

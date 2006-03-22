@@ -1,11 +1,14 @@
 package com.l7tech.console;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.audit.LogonEvent;
+import com.l7tech.common.License;
+import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.panels.LicenseDialog;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
@@ -36,9 +39,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.IOException;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
@@ -163,6 +166,8 @@ public class MainWindow extends JFrame {
     private SecurityProvider securityProvider;
     private IdentitiesRootNode identitiesRootNode;
     private ServicesFolderNode servicesRootNode;
+    private JTextPane descriptionText;
+    private LogonListener licenseCheckingLogonListener;
 
     /**
      * MainWindow constructor comment.
@@ -217,6 +222,7 @@ public class MainWindow extends JFrame {
             ((LogonListener)listeners[i]).onLogoff(event);
         }
         disconnected = true;
+        descriptionText.setText("");
     }
 
     public boolean isDisconnected() {
@@ -1050,6 +1056,29 @@ public class MainWindow extends JFrame {
         tree = new AssertionsTree();
         tree.setShowsRootHandles(true);
         tree.setBorder(null);
+        final JTree finalTree = tree;
+        tree.addTreeSelectionListener(new TreeSelectionListener() {
+            public void valueChanged(TreeSelectionEvent e) {
+                DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) finalTree.getLastSelectedPathComponent();
+                if (selectedNode == null) return;
+                if (!(selectedNode instanceof AbstractAssertionPaletteNode) && !(selectedNode instanceof CustomAccessControlNode) ) return;
+
+                String description = null;
+                if (selectedNode instanceof AbstractAssertionPaletteNode) {
+                    AbstractAssertionPaletteNode apn = (AbstractAssertionPaletteNode) selectedNode;
+                    description = apn.getDescriptionText();
+                }
+
+                if (selectedNode instanceof CustomAccessControlNode) {
+                    CustomAccessControlNode can = (CustomAccessControlNode) selectedNode;
+                    description = can.getDescriptionText();
+                }
+
+                if (description != null) {
+                    descriptionText.setText(description);
+                }
+            }
+        });
         TopComponents.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
@@ -1466,6 +1495,7 @@ public class MainWindow extends JFrame {
         if (mainLeftPanel != null)
             return mainLeftPanel;
 
+        //setup the tabs for the palette tree and identity pane
         JTabbedPane treePanel = new JTabbedPane();
         treePanel.setBorder(null);
         //treePanel.setLayout(new BorderLayout());
@@ -1474,6 +1504,8 @@ public class MainWindow extends JFrame {
 
         JScrollPane js = new JScrollPane(treePanel);
         js.setBorder(null);
+        js.setMinimumSize(new Dimension(50, 200));
+
         int mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
@@ -1482,7 +1514,16 @@ public class MainWindow extends JFrame {
         int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
 
-        final JSplitPane sections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        Component descriptionPane = getAssertionDescriptionPane();
+        JScrollPane descriptionScrollPane = new JScrollPane(descriptionPane);
+        descriptionScrollPane.setBorder(null);
+
+        final JSplitPane paletteSections = new JSplitPane(JSplitPane.VERTICAL_SPLIT, js, descriptionScrollPane);
+        paletteSections.setOneTouchExpandable(true);
+        paletteSections.setResizeWeight(0.7);
+
+        final JSplitPane leftPanelSections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+
         addWindowListener(new WindowAdapter() {
             /**
              * Invoked when a window has been opened.
@@ -1493,9 +1534,9 @@ public class MainWindow extends JFrame {
                     String s = prefs.getString("tree.split.divider.location");
                     if (s != null) {
                         int l = Integer.parseInt(s);
-                        sections.setDividerLocation(l);
+                        leftPanelSections.setDividerLocation(l);
                     } else {
-                        sections.setDividerLocation(sections.getSize().height/2);
+                        leftPanelSections.setDividerLocation(leftPanelSections.getSize().height/2);
                     }
                 } catch (NumberFormatException e1) {
                 }
@@ -1507,18 +1548,16 @@ public class MainWindow extends JFrame {
             public void windowClosed(WindowEvent e) {
                 try {
                     Preferences prefs = Preferences.getPreferences();
-                    int l = sections.getDividerLocation();
+                    int l = leftPanelSections.getDividerLocation();
                     prefs.putProperty("tree.split.divider.location", Integer.toString(l));
                 } catch (NullPointerException e1) {
                 }
             }
         });
 
-
-        sections.setTopComponent(js);
-        sections.setBorder(null);
+        leftPanelSections.setTopComponent(paletteSections);
+        leftPanelSections.setBorder(null);
         treePanel = new JTabbedPane();
-        // treePanel.setLayout(new BorderLayout());
         treePanel.addTab("Services", getServicesTree());
         treePanel.setTabPlacement(JTabbedPane.TOP);
         treePanel.setBorder(null);
@@ -1533,17 +1572,28 @@ public class MainWindow extends JFrame {
         js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
         hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
-        sections.setBottomComponent(js);
-        sections.setDividerSize(10);
+        leftPanelSections.setBottomComponent(js);
+        leftPanelSections.setDividerSize(10);
+
 
 
         mainLeftPanel = new JPanel(new BorderLayout());
-        mainLeftPanel.add(sections, BorderLayout.CENTER);
+        mainLeftPanel.add(leftPanelSections, BorderLayout.CENTER);
         mainLeftPanel.add(getPolicyToolBar(), BorderLayout.EAST);
         mainLeftPanel.setBorder(null);
         return mainLeftPanel;
     }
 
+    private Component getAssertionDescriptionPane() {
+        if (descriptionText == null) {
+            descriptionText= new JTextPane();
+            descriptionText.setContentType("text/html");
+            descriptionText.setEditable(false);
+            descriptionText.setMaximumSize(new Dimension(descriptionText.getMaximumSize().width, 100));
+            descriptionText.setBorder(null);
+        }
+        return descriptionText;
+    }
 
     // --- Event listeners ---------------------------------------
 
@@ -1694,6 +1744,7 @@ public class MainWindow extends JFrame {
         });
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
+        this.addLogonListener(getLicenseChecker());
         setTitle(resapplication.getString("SSG"));
         Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
         ImageIcon imageIcon = new ImageIcon(icon);
@@ -1713,6 +1764,33 @@ public class MainWindow extends JFrame {
         validate();
         /* restore window position */
         initializeWindowPosition();
+
+    }
+
+    private LogonListener getLicenseChecker() {
+        if (licenseCheckingLogonListener == null) {
+            licenseCheckingLogonListener = new LogonListener() {
+                public void onLogon(LogonEvent e) {
+                    License lic = null;
+                    try {
+                        Registry reg = Registry.getDefault();
+                        ClusterStatusAdmin admin = reg.getClusterStatusAdmin();
+                        lic = admin.getCurrentLicense();
+
+                        if (lic == null) {
+                            showLicenseWarning(false);
+                        }
+                    } catch (RemoteException e1) {
+                    } catch (InvalidLicenseException e1) {
+                        showLicenseWarning(true);
+                    }
+                }
+
+                public void onLogoff(LogonEvent e) {
+                }
+            };
+        }
+        return licenseCheckingLogonListener;
     }
 
     /**
@@ -2089,4 +2167,29 @@ public class MainWindow extends JFrame {
         getExportMenuItem().setAction(policyPanel.getExportAction());
         getImportMenuItem().setAction(policyPanel.getImportAction());
     }
+
+    public void showLicenseWarning(boolean invalidLicense) {
+        final StringBuffer message;
+        if (invalidLicense) {
+            message = new StringBuffer("The currently installed license for this gateway is invalid.");
+        } else {
+            message = new StringBuffer("There is no license currently installed for this gateway.");
+        }
+        message.append("\n Would you like to view the license manager now?");
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                int retval = JOptionPane.showConfirmDialog(MainWindow.this, message.toString(), "Gateway Not Licensed", JOptionPane.YES_NO_OPTION);
+
+                if (retval == JOptionPane.YES_OPTION) {
+                    LicenseDialog dlg = new LicenseDialog(MainWindow.this, Preferences.getPreferences().getString(Preferences.SERVICE_URL));
+                    dlg.pack();
+                    Utilities.centerOnScreen(dlg);
+                    dlg.setModal(true);
+                    dlg.setVisible(true);
+                }
+            }
+        });
+    }
+
 }

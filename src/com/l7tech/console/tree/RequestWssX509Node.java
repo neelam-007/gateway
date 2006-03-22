@@ -12,8 +12,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
  * Date: Jul 14, 2004<br/>
  * $Id$<br/>
  */
-public class RequestWssX509Node extends AbstractLeafTreeNode {
-
+public class RequestWssX509Node extends AbstractLeafPaletteNode {
     public RequestWssX509Node() {
         super("WSS Signature", "com/l7tech/console/resources/xmlencryption.gif");
     }

@@ -62,6 +62,22 @@ public abstract class AssertionDescription {
      */
     protected abstract Object[] parameters();
 
+    public String getDescriptionText() {
+        Class assertionClass = assertion.getClass();
+        String key = assertionClass.getName() + ".description";
+        String desc = null;
+        try {
+            desc = getMessageBundle().getString(key);
+        } catch (MissingResourceException mrex) {
+            try {
+                desc = getLongDescription();
+            } catch(MissingResourceException mrexagain) {
+                desc = null;
+            }
+        }
+        return MessageFormat.format(desc, parameters());
+    }
+
 
     /** singleton holder for ResurceBundle instance class. */
     private static class DescriptionsBundle {
@@ -94,7 +110,6 @@ public abstract class AssertionDescription {
 
     protected Assertion assertion;
 }
-
 
 
 

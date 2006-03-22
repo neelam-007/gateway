@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
  * @author $Author$
  * @version $Revision$
  */
-public class KerberosPaletteNode  extends AbstractLeafTreeNode {
+public class KerberosPaletteNode  extends AbstractLeafPaletteNode {
 
     /**
      * construct the <CODE>HttpDigestAuthNode</CODE> instance.

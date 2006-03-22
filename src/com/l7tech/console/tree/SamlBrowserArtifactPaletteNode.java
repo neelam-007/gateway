@@ -11,11 +11,7 @@ import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class SamlBrowserArtifactPaletteNode extends AbstractLeafTreeNode {
-
-    /**
-     *
-     */
+public class SamlBrowserArtifactPaletteNode extends AbstractLeafPaletteNode {
     public SamlBrowserArtifactPaletteNode(){
         super("SAML Browser Artifact", "com/l7tech/console/resources/xmlWithCert16.gif");
     }

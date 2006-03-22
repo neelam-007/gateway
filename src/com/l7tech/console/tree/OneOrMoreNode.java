@@ -10,7 +10,7 @@ import javax.swing.*;
  * The class represents a node element in the TreeModel.
  * It represents the OneOrMoreAssertion node.
  */
-public class OneOrMoreNode extends AbstractTreeNode {
+public class OneOrMoreNode extends AbstractAssertionPaletteNode {
     /**
      * construct the <CODE>ResponseRegexNode</CODE> instance.
      */
