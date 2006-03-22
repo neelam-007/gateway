@@ -138,11 +138,14 @@ public class HttpObjectCacheTest extends TestCase {
         private GenericHttpRequestParams params = null;
         private boolean waitForNewestResult = false;
         private HttpObjectCache.UserObjectFactory factory = null;
-        private boolean running = false;
+        private volatile boolean started = false;
+        private volatile boolean running = false;
+        private volatile boolean finished = false;
         private int numRequestsStarted = 0;
         private int[] numRequestsFinished = new int[] { 0, 0, 0, 0 }; // failed, downloading_now, success, cached
         private HttpObjectCache.FetchResult lastFetchResult = null;
         private Throwable lastException = null;
+        private Thread thread = null;
 
         public TestThread(HttpObjectCache cache, GenericHttpClient client, GenericHttpRequestParams params, boolean waitForNewestResult, HttpObjectCache.UserObjectFactory factory) {
             this.httpObjectCache = cache;
@@ -157,10 +160,11 @@ public class HttpObjectCacheTest extends TestCase {
          * Does not return until test thread has started running.
          */
         public synchronized void startRequest() throws InterruptedException {
-            Thread t = new Thread(this, "TestThread" + num + " (req #" + nextReq++ + ")");
-            t.start();
-            while (!running) wait();
-            log.info("Thread " + t.getName() + " has started");
+            started = running = finished = false;
+            thread = new Thread(this, "TestThread" + num + " (req #" + nextReq++ + ")");
+            thread.start();
+            while (!started) wait();
+            log.info("Thread " + thread.getName() + " has started");
         }
 
         /** Called in test thread. */
@@ -168,6 +172,7 @@ public class HttpObjectCacheTest extends TestCase {
             try {
                 synchronized (this) {
                     numRequestsStarted++;
+                    started = true;
                     running = true;
                     notifyAll();
                 }
@@ -189,9 +194,28 @@ public class HttpObjectCacheTest extends TestCase {
                 synchronized (this) {
                     lastFetchResult = null;
                     lastException = t;
+                    finished = true;
                     running = false;
                 }
             }
+        }
+
+        public void joinThread() throws InterruptedException {
+            final Thread t;
+            synchronized (this) {
+                t = thread;
+            }
+            if (t != null)
+                t.join();
+        }
+
+        public void close() {
+            final Thread t;
+            synchronized (this) {
+                t = thread;
+            }
+            if (t != null)
+                t.interrupt();
         }
 
         public synchronized int getNumRequestsStarted() { return numRequestsStarted; }
@@ -268,7 +292,17 @@ public class HttpObjectCacheTest extends TestCase {
         // Make two test threads
         TestThread t1 = new TestThread(httpObjectCache, hc, params, false, factory);
         TestThread t2 = new TestThread(httpObjectCache, hc, params, false, factory);
+        try {
+            doTestMultiThreaded(t1, t2, hc, userObj);
+        } finally {
+            t1.close();
+            t2.close();
+        }
+    }
 
+    private void doTestMultiThreaded(TestThread t1, TestThread t2, MockGenericHttpClient hc, Object userObj)
+            throws Exception
+    {
         // Block HTTP requests until released
         hc.clearResponseCount();
         hc.setHoldResponses(true);
@@ -284,7 +318,7 @@ public class HttpObjectCacheTest extends TestCase {
         // Thread 2 should immediately return DOWNLOADING_NOW, but without any cached info
         t2.setWaitForNewestResult(false);
         t2.startRequest();
-        Thread.sleep(SHORT_DELAY);
+        t2.joinThread();
         assertNull(t2.getLastException());
         assertTrue(t2.getNumRequestsStarted() == 1);
         assertFalse(t2.isWaiting());
@@ -307,7 +341,8 @@ public class HttpObjectCacheTest extends TestCase {
 
         // Unblock the download, and ensure both threads finish with the same up-to-date info
         hc.setHoldResponses(false);
-        Thread.sleep(SHORT_DELAY);
+        t1.joinThread();
+        t2.joinThread();
         assertNull(t1.getLastException());
         assertNull(t2.getLastException());
         assertFalse(t1.isWaiting());

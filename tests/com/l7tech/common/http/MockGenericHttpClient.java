@@ -109,7 +109,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
     //- PRIVATE
 
-    private boolean holdResponses = false;
+    private volatile boolean holdResponses = false;
     private byte[] responseBody;
     private int responseStatus;
     private HttpHeaders headers;
