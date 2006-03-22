@@ -587,18 +587,20 @@ public class Wsdl {
         // output
         use = USE_LITERAL;
         BindingOutput bindingOutput = bindingOperation.getBindingOutput();
-        extensibilityElements = bindingOutput.getExtensibilityElements();
-        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
-            if (o instanceof SOAPBody) {
-                SOAPBody soapBody = (SOAPBody)o;
-                if (soapBody.getUse() != null) {
-                    use = soapBody.getUse();
-                    break;
+        if (bindingOutput != null) { // with some wsdls, this could be null (see bugzilla #2309)
+            extensibilityElements = bindingOutput.getExtensibilityElements();
+            for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
+                Object o = (Object)iterator.next();
+                if (o instanceof SOAPBody) {
+                    SOAPBody soapBody = (SOAPBody)o;
+                    if (soapBody.getUse() != null) {
+                        use = soapBody.getUse();
+                        break;
+                    }
                 }
             }
+            useSet.add(use);
         }
-        useSet.add(use);
         if (useSet.size() > 1) {
             throw new WSDLException(WSDLException.INVALID_WSDL, "Mixed/unsupported uses for '" + bindingOperation.getName() + "' found in this WSDL.");
         }
