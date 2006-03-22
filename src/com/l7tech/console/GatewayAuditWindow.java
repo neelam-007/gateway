@@ -211,7 +211,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
 
             deleteAuditEventsAction.setChainAction(new AbstractAction() {
                 public void actionPerformed(ActionEvent e) {
-                    flushCachedLogs();
+                    getLogPane().refreshView();
                 }
             });
 
@@ -398,10 +398,6 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
 
         logPane = new LogPanel();
         return logPane;
-    }
-
-    public void flushCachedLogs() {
-        getLogPane().clearMsgTable();
     }
 
     public void setVisible(boolean visible) {

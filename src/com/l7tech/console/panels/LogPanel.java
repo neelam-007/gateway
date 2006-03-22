@@ -155,11 +155,12 @@ public class LogPanel extends JPanel {
      */
     public LogPanel(boolean includeDetailPane, final boolean isAuditType, String nodeId) {
         setLayout(new BorderLayout());
-        init();
 
         this.logsRefreshInterval = LOG_REFRESH_TIMER;
         this.nodeId = nodeId;
         this.isAuditType = isAuditType;
+
+        init();
 
         if(includeDetailPane) {
             logSplitPane = new JSplitPane();

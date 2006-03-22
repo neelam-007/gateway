@@ -133,6 +133,8 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             deleteStmt.setString(1, Level.SEVERE.getName());
             deleteStmt.setLong(2, maxTime);
             int numDeleted = deleteStmt.executeUpdate();
+            if(logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "Deleted {0} audit events.", Integer.valueOf(numDeleted));
             applicationContext.publishEvent(new AuditPurgeEvent(this, numDeleted));
         } catch (Exception e) {
             throw new DeleteException("Couldn't delete audit records", e);
