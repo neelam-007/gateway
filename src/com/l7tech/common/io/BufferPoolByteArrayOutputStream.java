@@ -130,10 +130,11 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * have been copied into it.
      *
      * @return  the current contents of this output stream, as a byte array.
+     * @throws  IllegalStateException if the output stream has been closed.
      * @see     java.io.ByteArrayOutputStream#size()
      */
     public byte[] toByteArray() {
-        if (buf == null) return new byte[0];
+        if (buf == null) throw new IllegalStateException("BufferPool OutputStream is closed");
         byte newbuf[] = new byte[count];
         System.arraycopy(buf, 0, newbuf, 0, count);
         return newbuf;
@@ -169,9 +170,11 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      * characters according to the platform's default character encoding.
      *
      * @return String translated from the buffer's contents.
-     * @since   JDK1.1
+     * @throws IllegalStateException if the output stream has been closed.
+     * @since  JDK1.1
      */
     public String toString() {
+        if (buf == null) throw new IllegalStateException("BufferPool OutputStream is closed");
         return new String(buf, 0, count);
     }
 
@@ -181,10 +184,12 @@ public class BufferPoolByteArrayOutputStream extends OutputStream {
      *
      * @param   enc  a character-encoding name.
      * @return String translated from the buffer's contents.
+     * @throws IllegalStateException if the output stream has been closed.
      * @throws java.io.UnsupportedEncodingException
      *         If the named encoding is not supported.
      */
     public String toString(String enc) throws UnsupportedEncodingException {
+        if (buf == null) throw new IllegalStateException("BufferPool OutputStream is closed");
         return new String(buf, 0, count, enc);
     }
 

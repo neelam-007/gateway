@@ -1,6 +1,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.ByteArrayInputStream;
@@ -66,15 +68,19 @@ public class IdentityProviderConfig extends NamedEntityImp {
             if (props.size() < 1) {
                 propsXml = "";
             } else {
-                BufferPoolByteArrayOutputStream output = new BufferPoolByteArrayOutputStream();
+                BufferPoolByteArrayOutputStream output = null;
+                java.beans.XMLEncoder encoder = null;
                 try {
-                    java.beans.XMLEncoder encoder = new java.beans.XMLEncoder(output);
+                    output = new BufferPoolByteArrayOutputStream();
+                    encoder = new java.beans.XMLEncoder(new NonCloseableOutputStream(output));
                     encoder.writeObject(props);
-                    encoder.close();
-                    output.close();
+                    encoder.close(); // writes closing XML tag
+                    encoder = null;
                     propsXml = output.toString();
-                } finally {
-                    output.close();
+                }
+                finally {
+                    if(encoder!=null) encoder.close();
+                    ResourceUtils.closeQuietly(output);
                 }
             }
         }
