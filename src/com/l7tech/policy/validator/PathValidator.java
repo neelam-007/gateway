@@ -401,6 +401,8 @@ class PathValidator {
             }
         } else if (a instanceof JmsRoutingAssertion) {
             processJmsRouting((JmsRoutingAssertion)a);
+        } else if (a instanceof EchoRoutingAssertion) {
+            // Nothing to see here, folks. Move along...
         } else {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
               "This message routing protocol is not supported.",
