@@ -60,8 +60,6 @@
         </fileset>
     </path>
 
-    <property name="test.class.path" refid="project.classpath"/>
-
     <!--
       Classpath for Idea form compiler
     -->
@@ -109,6 +107,7 @@
     <target name="init-dev">
         <property name="build.dir" value="${dev.build.home}"/>
         <property name="build.classes" value="${build.dir}/classes"/>
+        <property name="build.test.classes" value="${build.dir}/test-classes"/>
         <property name="doc.root" value="${build.dir}/htdocs"/>
         <property name="build.lib" value="${build.dir}/lib"/>
         <property name="build.etc" value="${build.dir}/etc"/>
@@ -143,26 +142,27 @@
         <condition property="db.oracle10">
             <equals arg1="${database.type}" arg2="oracle10"/>
         </condition>
+
+        <!-- paths with dynamic components -->
+        <path id="project.test.classpath">
+            <path refid="project.classpath"/>
+            <pathelement location="${build.classes}"/>
+        </path>
+
     </target>
 
     <target name="cleandev" depends="clean, dev"/>
     <target name="redeploy" depends="undeploy, deploy"/>
 
-<!--
-      ** configure and invoke developer's build
-      -->
-    <target name="dev" description="Developer build (does not package)" depends="init-dev">
+    <target name="dev.properties">
         <property name="dev.build" value="true"/>
         <property file="build.number"/>
-
-        <antcall target="compile13">
-        </antcall>
-        <antcall target="compile-tests">
-        </antcall>
-
-        <antcall target="compile-one">
-        </antcall>
     </target>
+
+    <!--
+      ** configure and invoke developer's build
+      -->
+    <target name="dev" description="Developer build (does not package)" depends="init-dev, dev.properties, compile-tests"/>
 
     <!--
       ** configure and invoke developer's build for source files
@@ -183,18 +183,17 @@
         <delete file="${war}"/>
     </target>
 
+    <target name="deploy.properties">
+        <property name="dev.build" value="true"/>
+        <property name="ssg.only" value="true"/>
+    </target>
+
     <!--
       ** developer's 'deploy' target.
       ** compile and package the application.
       ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
       -->
-    <target name="deploy" depends="init-dev, properties.check" if="tomcat.home">
-        <property name="dev.build" value="true"/>
-        <property name="ssg.only" value="true"/>
-
-        <antcall target="package"/>
-        <antcall target="ssm-webstart"/>
-
+    <target name="deploy" depends="init-dev, properties.check, deploy.properties, package" if="tomcat.home">
         <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
@@ -241,9 +240,9 @@
     <target name="summary" unless="test">
         <echo level="info">Possible test classes are: </echo>
         <pathconvert property="x" targetos="unix" pathsep="${line.separator}">
-            <map from="${build.classes}/" to=""/>
+            <map from="${build.test.classes}/" to=""/>
             <path>
-                <fileset dir="${build.classes}" includes="**/*Test.class **/*Tests.class"/>
+                <fileset dir="${build.test.classes}" includes="**/*Test.class **/*Tests.class"/>
             </path>
         </pathconvert>
         <echo>${x}</echo>
@@ -256,8 +255,8 @@
     <target name="test-one" description="Run an individual unit test. (e.g. ./build.sh testcase -Dtest=com.l7tech.MyTest.class)" depends="clean.test, dev, summary" if="test">
         <junit printsummary="yes" haltonfailure="yes" fork="off">
             <classpath>
-                <pathelement path="${test.class.path}"/>
-                <pathelement path="${build.dir}/classes"/>
+                <path refid="project.test.classpath"/>
+                <pathelement location="${build.test.classes}"/>
             </classpath>
 
             <formatter type="plain"/>
@@ -273,8 +272,8 @@
     <target name="test" depends="clean.test, dev" description="Run JUnit 'quick' tests">
         <junit printsummary="yes" haltonfailure="yes" fork="off">
             <classpath>
-                <pathelement path="${test.class.path}"/>
-                <pathelement path="${build.dir}/classes"/>
+                <path refid="project.test.classpath"/>
+                <pathelement location="${build.test.classes}"/>
             </classpath>
 
             <formatter type="plain"/>
@@ -319,8 +318,8 @@
     <target name="test.intensive" description="Run intensive JUnit tests." depends="clean.test, test">
         <junit printsummary="yes" haltonfailure="yes" fork="off">
             <classpath>
-                <pathelement path="${test.class.path}"/>
-                <pathelement path="${build.dir}/classes"/>
+                <path refid="project.test.classpath"/>
+                <pathelement location="${build.test.classes}"/>
             </classpath>
 
             <formatter type="plain"/>
@@ -388,23 +387,12 @@
     </target>
 
     <!--
-      Check for any test files in the build output. If clean set "clean" property.
-    -->
-    <target name="clean.check" depends="init-dev">
-        <condition property="clean">
-            <not>
-                <!-- Check for random test file -->
-                <available file="${build.classes}/com/l7tech/policy/AllAssertions.class"/>
-            </not>
-        </condition>
-    </target>
-
-    <!--
       ** Clean the directory structure.
       ** This is used only by developer's build.
       -->
     <target name="clean" depends="init-dev,clean.ca,clean.test" description="Delete all build output.">
         <delete dir="${build.classes}"/>
+        <delete dir="${build.test.classes}"/>
         <delete dir="${doc.root}"/>
         <delete dir="${build.lib}"/>
         <delete dir="${build.dir}"/>
@@ -476,13 +464,7 @@
         </javadoc>
     </target>
 
-<!--
-      ** main compile target
-      -->
-    <target name="compile"
-            description="Compile the Java code and UI forms."
-            depends="init-dev, prepare, configure_properties.dev, compile13"
-            unless="compile.pattern">
+    <target name="compile.main" depends="init-dev, prepare, configure_properties.dev, compile13">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
                deprecation="on" verbose="no" target="1.4" source="1.4">
             <compilerarg value="-Xlint" compiler="modern"/>
@@ -495,10 +477,18 @@
                 <include name="serverconfig.properties"/>
             </fileset>
         </copy>
-        <antcall target="compile.forms"/>
     </target>
 
-<!--
+    <!--
+      ** main compile target
+      -->
+    <target name="compile"
+            description="Compile the Java code and UI forms."
+            depends="compile.forms"
+            unless="compile.pattern">
+    </target>
+
+    <!--
       ** 'package' target.
       ** package the application ( both client and server) in their
       ** respective archives (war, jar).
@@ -898,7 +888,8 @@
                 <include name="com/l7tech/common/util/FileUtils.class"/>
                 <include name="com/l7tech/common/util/ResourceUtils.class"/>
                 <include name="com/l7tech/common/util/XmlUtil*.class"/>
-                <include name="com/l7tech/common/util/HexUtils*.class"/>
+                <include name="com/l7tech/common/util/HexUtils*.class"/>                
+                <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
 
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
                 <include name="com/l7tech/common/util/ExceptionUtils.class"/>
@@ -915,6 +906,10 @@
 
                 <include name="com/l7tech/objectmodel/DeleteException.class"/>
                 <include name="com/l7tech/objectmodel/ObjectModelException.class"/>
+                <include name="com/l7tech/objectmodel/Entity.class"/>
+                <include name="com/l7tech/objectmodel/NamedEntity.class"/>
+                <include name="com/l7tech/objectmodel/imp/EntityImp.class"/>
+                <include name="com/l7tech/objectmodel/imp/NamedEntityImp.class"/>
 
                 <include name="com/l7tech/server/config/**/*"/>
                 <include name="com/l7tech/server/util/MakeLunaCerts*.class"/>
@@ -923,13 +918,11 @@
                 <include name="com/l7tech/common/security/*.class"/>
                 <include name="com/l7tech/common/security/prov/luna/*.class"/>
                 <include name="com/l7tech/common/security/prov/bc/*.class"/>
-<!--
-                <exclude name="com/l7tech/common/security/TrustedCert.class"/>
-                <exclude name="com/l7tech/common/security/X509Entity.class"/>
--->
+
                 <exclude name="com/l7tech/common/xml/SoapMessageGenerator.class"/>
                 <exclude name="com/l7tech/common/xml/Wsdl.class"/>
                 <exclude name="com/l7tech/common/xml/XpathEvaluator.class"/>
+                <exclude name="com/l7tech/common/xml/XpathExpression.class"/>
             </fileset>
         </jar>
     </target>
@@ -994,19 +987,11 @@
         </javadoc>
     </target>
 
-
-    <!--
-      Warn if not clean when running test package
-    -->
-    <target name="testpackage.unclean" unless="clean">
-        <fail>Test classes found. You need to run "clean" or use -Dclean=true to force testpackage to run.</fail>
-    </target>
-
     <!--
       ** Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
       ** contains only the jars and their declared dependency jars.
       -->
-    <target name="testpackage" depends="clean.check, testpackage.unclean, package" if="clean">
+    <target name="testpackage" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" depend="on" verbose="no"/>
         <exec executable="perl" failonerror="true">
@@ -1021,11 +1006,6 @@
             <arg line="build/Bridge.jar"/>
             <arg line="etc/Bridge.mf"/>
         </exec>
-        <!--
-          Commented out until:
-               DBActionsTest.java
-               ConfigurationWizardTest.java
-           are moved to "tests"
         <exec executable="perl" failonerror="true">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
@@ -1033,7 +1013,6 @@
             <arg line="${src.root}/etc/ConfigWizard.mf"/>
             <arg line="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine"/>
         </exec>
-        -->
     </target>
 
     <!-- Test LicenseGenerator package.  Always invoked by hand. -->
@@ -1050,7 +1029,7 @@
 
     <target name="properties.check" depends="properties.check.tomcathome">
     </target>
-    
+
     <target name="properties.check.tomcathome" unless="tomcat.home">
         <echo level="warning">Property is not defined: 'tomcat.home'</echo>
     </target>
@@ -1085,18 +1064,15 @@
     </target>
 
 
-    <target name="prepare.jms" if="dev.build">
-        <antcall target="prepare.jms.openjms"/>
-        <antcall target="prepare.jms.mqseries"/>
-    </target>
+    <target name="prepare.jms" if="dev.build" depends="prepare.jms.openjms, prepare.jms.mqseries"/>
 
-    <target name="prepare.db">
-        <antcall target="prepare.db.oracle8"/>
-        <antcall target="prepare.db.oracle9"/>
-        <antcall target="prepare.db.oracle10"/>
-        <antcall target="prepare.db.mysql"/>
-        <antcall target="prepare.db.postgres"/>
-    </target>
+    <target name="prepare.db" depends="
+        prepare.db.oracle8,
+        prepare.db.oracle9,
+        prepare.db.oracle10,
+        prepare.db.mysql,
+        prepare.db.postgres
+    "/>
 
     <target name="prepare.jms.openjms" if="include.jms.openjms">
         <echo>Copying OpenJMS jars from ${src.root}/lib/gateway/jms/openjms to ${build.lib}...</echo>
@@ -1174,19 +1150,18 @@
         </copy>
     </target>
 
-<!--
-      ** Create the directory structure, copy the resources, libs and
-      ** update version tokens
-      -->
-    <target name="prepare">
+    <target name="prepare.base">
         <!-- time stamp -->
         <tstamp/>
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${build.lib}"/>
         <mkdir dir="${build.classes}"/>
+        <mkdir dir="${build.test.classes}"/>
         <mkdir dir="${build.etc}"/>
         <mkdir dir="${build.etc}/deploy"/>
         <mkdir dir="${doc.root}"/>
+        <mkdir dir="${javadoc.home}"/>
+
         <!-- lib -->
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib">
@@ -1277,28 +1252,23 @@
                 <include name="com/l7tech/proxy/resources/**"/>
             </fileset>
         </copy>
+    </target>
 
-        <antcall target="prepare.jms"/>
-        <antcall target="prepare.db"/>
-        <antcall target="prepare.systinet"/>
+    <!--
+      ** Create the directory structure, copy the resources, libs and
+      ** update version tokens
+      -->
+    <target name="prepare"
+            depends="prepare.base, prepare.jms, prepare.db, prepare.systinet, keystore.properties, INTERNAL-buildinfo">
 
         <!-- set up build number if it isn't already set -->
         <property file="build.number"/>
-
-        <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
-        <antcall target="keystore.properties"/>
 
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
             <fileset dir="${src.root}/web" includes="**/*"
                      excludes="**/CVS/*"/>
         </copy>
-
-        <mkdir dir="${javadoc.home}"/>
-
-        <!-- make sure BuildInfo.java is up to date -->
-        <antcall target="INTERNAL-buildinfo"/>
-
     </target>
 
     <target name="keystore.properties" if="dev.build">
@@ -1341,7 +1311,7 @@
         </javac>
     </target>
 
-    <target name="compile.forms">
+    <target name="compile.forms" depends="compile.main">
         <javac2 srcdir="src" destdir="${build.classes}" debug="on" target="1.4" optimize="on" source="1.4"
                 classpathref="project.classpath"/>
     </target>
@@ -1418,7 +1388,7 @@
         <!--
         <replace file="${build.etc}/web.xml"
                  token="TOMCAT_HOME" value="${tomcat.home}"/>
-        --> 
+        -->
     </target>
 
 <!--
@@ -1430,11 +1400,11 @@
 
     <!-- ** tests compilation target -->
     <target name="compile-tests" depends="compile">
-        <javac srcdir="tests" destdir="${build.classes}" debug="on" optimize="off"
+        <javac srcdir="tests" destdir="${build.test.classes}" debug="on" optimize="off"
                deprecation="on" depend="on" verbose="no">
-            <classpath refid="project.classpath"/>
+            <classpath refid="project.test.classpath"/>
         </javac>
-        <copy todir="${build.classes}">
+        <copy todir="${build.test.classes}">
             <fileset dir="tests">
                 <include name="**/resources/*"/>
             </fileset>
@@ -1485,9 +1455,7 @@
         </antcall>
     </target>
 
-    <target name="ssg-install-upgrade">
-        <antcall target="INTERNAL-ssg-install"/>
-    </target>
+    <target name="ssg-install-upgrade" depends="INTERNAL-ssg-install"/>
 
     <target name="INTERNAL-ssg-install-optional-1" depends="INTERNAL-ssg-install-properties-full"/>
     <target name="INTERNAL-ssg-install-optional-2"
@@ -1773,8 +1741,7 @@
         <echo>BUILD COMPLETE - Produced ${tarball}!</echo>
     </target>
 
-
-    <target name="OFFICIAL-build" depends="init-dev">
+    <target name="OFFICIAL-build.init" depends="init-dev">
         <condition property="rightdir">
             <equals arg1="${user.dir}" arg2="${src.root}"/>
         </condition>
@@ -1795,17 +1762,14 @@
 
         <input message="Enter a version number" addproperty="build.version"/>
 
-        <echo>Running cvs update ${buildnumber.file}</echo>
+        <echo>Running cvs update -A -C build.number</echo>
         <cvs command="update -A -C build.number"/>
 
         <buildnumber/>
+    </target>
 
-        <antcall target="clean"/>
-        <antcall target="package"/>
-        <antcall target="ssm-webstart"/>
-        <antcall target="testpackage"/>
-
-        <echo message="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
+    <target name="OFFICIAL-build" depends="OFFICIAL-build.init, clean, testpackage">
+        <echo>commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number</echo>
         <cvs command="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
     </target>
 
