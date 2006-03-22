@@ -39,7 +39,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
 
-    private static final int fineChartRange = 5 * 60 * 1000; // 5 minutes
+    private static final int fineChartRange = 10 * 60 * 1000; // 10 minutes
     private static final int hourlyChartRange = 60 * 60 * 60 * 1000; // 60 hours
     private static final long dailyChartRange = 60 * 24 * 60 * 60 * 1000L; // 60 days
 
@@ -69,6 +69,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private JTextField numTotalField;
     private JTabbedPane rightTabbedPane;
     private JPanel rightPanel;
+    private JPanel rightUpperPanel;
+    private JPanel rightLowerPanel;
     private JLabel frontMinImageLabel;
     private JLabel frontAvgImageLabel;
     private JLabel frontMaxImageLabel;
@@ -184,6 +186,24 @@ public class DashboardWindow extends JFrame implements LogonListener {
         numPolicyFailImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("numPolicyFailImageLabel.icon"))));
         numRoutingFailImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("numRoutingFailImageLabel.icon"))));
         numSuccessImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("numSuccessImageLabel.icon"))));
+
+        backMinField.setBackground(Color.WHITE);
+        backAvgField.setBackground(Color.WHITE);
+        backMaxField.setBackground(Color.WHITE);
+        frontMinField.setBackground(Color.WHITE);
+        frontAvgField.setBackground(Color.WHITE);
+        frontMaxField.setBackground(Color.WHITE);
+
+        numRoutingFailField.setBackground(Color.WHITE);
+        numPolicyFailField.setBackground(Color.WHITE);
+        numSuccessField.setBackground(Color.WHITE);
+        numTotalField.setBackground(Color.WHITE);
+
+        rightUpperPanel.setBorder(null);    // ? Can't disable border in GUI Designer.
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setHGap(6);
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setVGap(3);
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setHGap(6);
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setVGap(3);
 
         resetData();
 
