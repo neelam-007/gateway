@@ -568,12 +568,12 @@ public class Wsdl {
         String use = USE_LITERAL;
 
         if (bindingInput == null) {
-            use = USE_LITERAL;
+            return USE_LITERAL;
         }
 
         List extensibilityElements = bindingInput.getExtensibilityElements();
         for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
+            Object o = iterator.next();
             if (o instanceof SOAPBody) {
                 SOAPBody soapBody = (SOAPBody)o;
                 if (soapBody.getUse() != null) {
@@ -590,7 +590,7 @@ public class Wsdl {
         if (bindingOutput != null) { // with some wsdls, this could be null (see bugzilla #2309)
             extensibilityElements = bindingOutput.getExtensibilityElements();
             for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
-                Object o = (Object)iterator.next();
+                Object o = iterator.next();
                 if (o instanceof SOAPBody) {
                     SOAPBody soapBody = (SOAPBody)o;
                     if (soapBody.getUse() != null) {
