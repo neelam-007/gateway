@@ -138,9 +138,9 @@ public class HttpObjectCacheTest extends TestCase {
         private GenericHttpRequestParams params = null;
         private boolean waitForNewestResult = false;
         private HttpObjectCache.UserObjectFactory factory = null;
+        /** @noinspection FieldCanBeLocal*/
         private volatile boolean started = false;
         private volatile boolean running = false;
-        private volatile boolean finished = false;
         private int numRequestsStarted = 0;
         private int[] numRequestsFinished = new int[] { 0, 0, 0, 0 }; // failed, downloading_now, success, cached
         private HttpObjectCache.FetchResult lastFetchResult = null;
@@ -160,7 +160,7 @@ public class HttpObjectCacheTest extends TestCase {
          * Does not return until test thread has started running.
          */
         public synchronized void startRequest() throws InterruptedException {
-            started = running = finished = false;
+            started = running = false;
             thread = new Thread(this, "TestThread" + num + " (req #" + nextReq++ + ")");
             thread.start();
             while (!started) wait();
@@ -194,7 +194,6 @@ public class HttpObjectCacheTest extends TestCase {
                 synchronized (this) {
                     lastFetchResult = null;
                     lastException = t;
-                    finished = true;
                     running = false;
                 }
             }
