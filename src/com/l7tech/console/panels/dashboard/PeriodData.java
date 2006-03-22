@@ -87,15 +87,17 @@ class PeriodData {
     }
 
     synchronized MetricsBin get(String nodeId, Long serviceOid) {
-        Set binsToAdd;
+        Set binsToAdd = null;
         if (nodeId == null && serviceOid == null) {
             return bigBin;
         } else if (nodeId != null && serviceOid != null) {
             Set sbins = (Set)binsByServiceOid.get(serviceOid);
-            Set nbins = (Set)binsByNodeId.get(nodeId);
-            sbins.retainAll(nbins);
-            if (sbins.size() != 1) logger.warning(sbins.size() + " bins for period " + periodStart);
-            binsToAdd = sbins;
+            if (sbins != null) {
+                Set nbins = (Set)binsByNodeId.get(nodeId);
+                sbins.retainAll(nbins);
+                if (sbins.size() != 1) logger.warning(sbins.size() + " bins for period " + periodStart);
+                binsToAdd = sbins;
+            }
         } else if (nodeId != null) {
             binsToAdd = (Set)binsByNodeId.get(nodeId);
         } else {
