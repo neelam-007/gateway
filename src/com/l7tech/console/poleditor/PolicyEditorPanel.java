@@ -1,5 +1,6 @@
 package com.l7tech.console.poleditor;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.event.VetoableContainerListener;
@@ -10,15 +11,14 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -28,10 +28,7 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.plaf.SplitPaneUI;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
 import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -42,8 +39,8 @@ import java.net.URI;
 import java.rmi.RemoteException;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,7 +101,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         boolean hasWriteAccess();
     }
 
-    public PolicyEditorPanel(PolicyEditorSubject subject, PolicyTree pt, boolean validateOnOpen) throws FindException, RemoteException {
+    public PolicyEditorPanel(PolicyEditorSubject subject, PolicyTree pt, boolean validateOnOpen) {
         if (subject == null || pt == null) {
             throw new IllegalArgumentException();
         }
@@ -265,7 +262,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /** updates the service name, tab name etc */
-    private void updateHeadings() throws RemoteException, FindException {
+    private void updateHeadings() {
         setName(subjectName);
         getSplitPane().setName(subjectName);
     }
@@ -274,10 +271,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * Render the service policy into the editor
      * 
      * @param identityView
-     * @throws FindException
      */
     private void renderPolicy(boolean identityView)
-      throws FindException, RemoteException {
+      {
         updateHeadings();
 
         TreeModel policyTreeModel;
@@ -344,20 +340,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JComponent getMessagePane() {
         if (messagesTab != null) return messagesTab;
-        JLabel label = new JLabel();
         messagesTextPane = new JTextPane();
-        final HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
-        StyleSheet ss = htmlEditorKit.getStyleSheet();
-        Style style = ss.getStyle("body");
-        if (style != null) {
-            style.removeAttribute(StyleConstants.FontFamily);
-            final Font font = label.getFont();
-            style.addAttribute(StyleConstants.FontFamily, font.getFamily());
-            style.removeAttribute(StyleConstants.FontSize);
-            style.addAttribute(StyleConstants.FontSize, new Integer(font.getSize()).toString());
-
-        }
-        messagesTextPane.setEditorKit(htmlEditorKit);
+        //make sure it's using an HTMLEditorKit. NOTE, this will share the style with ALL HTMLEditorKits (by default) and there is one set in the MainWindow.
+        messagesTextPane.setEditorKit(new HTMLEditorKit());
         // messagesTextPane.setText("");
         messagesTextPane.addHyperlinkListener(hlinkListener);
         messagesTextPane.setEditable(false);
@@ -474,14 +459,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         private void renderPolicyView(boolean identityView) {
             policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
-            try {
-                renderPolicy(identityView);
-                validatePolicy();
-            } catch (FindException e1) {
-                log.log(Level.SEVERE, "Unable to retrieve the service " + subject.getName(), e1);
-            } catch (RemoteException e1) {
-                log.log(Level.SEVERE, "Remote error while retrieving the service " + subject.getName(), e1);
-            }
+            renderPolicy(identityView);
+            validatePolicy();
             policyTree.getModel().addTreeModelListener(policyTreeModellistener);
         }
     }
@@ -717,21 +696,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
            */
           public void propertyChange(PropertyChangeEvent evt) {
               log.info(evt.getPropertyName() + "changed");
-              try {
-                  if (SERVICENAME_PROPERTY.equals(evt.getPropertyName())) {
-                      updateHeadings();
-                      renderPolicy(false);
-                  } else if ("policy".equals(evt.getPropertyName())) {
-                      rootAssertion = null;
-                      renderPolicy(false);
-                      policyEditorToolbar.buttonSave.setEnabled(true);
-                      policyEditorToolbar.buttonSave.getAction().setEnabled(true);
-                      validatePolicy();
-                  }
-              } catch (FindException e) {
-                  log.log(Level.WARNING, "Error finding service " + subjectName);
-              } catch (RemoteException e) {
-                  log.log(Level.WARNING, "Remote error with service " + subjectName);
+              if (SERVICENAME_PROPERTY.equals(evt.getPropertyName())) {
+                  updateHeadings();
+                  renderPolicy(false);
+              } else if ("policy".equals(evt.getPropertyName())) {
+                  rootAssertion = null;
+                  renderPolicy(false);
+                  policyEditorToolbar.buttonSave.setEnabled(true);
+                  policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                  validatePolicy();
               }
           }
       };
@@ -867,13 +840,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         super.performAction();
                         if (lastSavedFile != null) {
                             subjectName = lastSavedFile.getName();
-                            try {
-                                updateHeadings();
-                            } catch (RemoteException e) {
-                                log.log(Level.WARNING, "problem updating header", e);
-                            } catch (FindException e) {
-                                log.log(Level.WARNING, "problem updating header", e);
-                            }
+                            updateHeadings();
                         }
                     }
                 };
@@ -917,21 +884,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     protected void performAction() {
                         pubService = getPublishedService();
 
-                        try {
-                            super.performAction();
-                            if (policyImportSuccess) {
-                                String newPolicy = getNewPolicyXml();
-                                pubService.setPolicyXml(newPolicy);
-                                rootAssertion = null;
-                                renderPolicy(false);
-                                policyEditorToolbar.buttonSave.setEnabled(true);
-                                policyEditorToolbar.buttonSave.getAction().setEnabled(true);
-                                validatePolicy();
-                            }
-                        } catch (FindException e) {
-                            log.log(Level.WARNING, "problem getting service", e);
-                        } catch (RemoteException e) {
-                            log.log(Level.WARNING, "problem getting service", e);
+                        super.performAction();
+                        if (policyImportSuccess) {
+                            String newPolicy = getNewPolicyXml();
+                            pubService.setPolicyXml(newPolicy);
+                            rootAssertion = null;
+                            renderPolicy(false);
+                            policyEditorToolbar.buttonSave.setEnabled(true);
+                            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                            validatePolicy();
                         }
                     }
                 };

@@ -1,11 +1,11 @@
 package com.l7tech.console;
 
 import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.InvalidLicenseException;
+import com.l7tech.common.License;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.License;
-import com.l7tech.common.InvalidLicenseException;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.LicenseDialog;
@@ -15,7 +15,6 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonListener;
-import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -32,6 +31,10 @@ import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -152,7 +155,7 @@ public class MainWindow extends JFrame {
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
     private String connectionContext = "";
-    private FocusAdapter actionsFocusListener;
+//    private FocusAdapter actionsFocusListener;
     private ServicesTree servicesTree;
     private IdentityProvidersTree identityProvidersTree;
     private JMenuItem validateMenuItem;
@@ -163,7 +166,6 @@ public class MainWindow extends JFrame {
     private boolean disconnected = false;
     private String ssgURL;
     private SsmApplication ssmApplication;
-    private SecurityProvider securityProvider;
     private IdentitiesRootNode identitiesRootNode;
     private ServicesFolderNode servicesRootNode;
     private JTextPane descriptionText;
@@ -175,7 +177,6 @@ public class MainWindow extends JFrame {
     public MainWindow(SsmApplication app) {
         super(TITLE);
         ssmApplication = app;
-        securityProvider = (SecurityProvider)app.getBean("securityProvider");
         initialize();
     }
 
@@ -1764,7 +1765,25 @@ public class MainWindow extends JFrame {
         validate();
         /* restore window position */
         initializeWindowPosition();
+        initializeHTMLRenderingKit();
 
+    }
+
+    private void initializeHTMLRenderingKit() {
+        //setup the default font for html rendering (unless overridden by the Document or component itself)
+        //we'll use the default font for a label since it seems nice
+        JLabel label = new JLabel();
+        final HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
+        StyleSheet ss = htmlEditorKit.getStyleSheet();
+        Style style = ss.getStyle("body");
+        if (style != null) {
+            style.removeAttribute(StyleConstants.FontFamily);
+            final Font font = label.getFont();
+            style.addAttribute(StyleConstants.FontFamily, font.getFamily());
+            style.removeAttribute(StyleConstants.FontSize);
+            style.addAttribute(StyleConstants.FontSize, new Integer(font.getSize()).toString());
+        }
+        label = null;
     }
 
     private LogonListener getLicenseChecker() {

@@ -5,19 +5,18 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectPermission;
 import com.l7tech.policy.assertion.Assertion;
 
-import javax.swing.*;
 import javax.security.auth.Subject;
-import java.util.logging.Level;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.security.AccessController;
+import java.util.logging.Level;
 
 /**
  * The <code>ServicePolicyPropertiesAction</code> invokes the service
@@ -133,10 +132,6 @@ public class EditServicePolicyAction extends NodeAction {
         } catch (ActionVetoException e) {
             // action vetoed
             log.log(Level.WARNING, "vetoed!", e);
-        } catch (FindException e) {
-            // refresh the service list
-            JOptionPane.showMessageDialog(null, "Unable to retrieve service. " +
-              "Try refreshing Services tree.");
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e, "Unable to retrieve service properties");
