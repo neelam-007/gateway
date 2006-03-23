@@ -19,7 +19,7 @@ import java.util.logging.Level;
 public class PersistenceErrorHandler implements ErrorHandler {
     private MainWindow mainFrame;
     private static final String ERROR_MESSAGE =
-      "<html><b>The Secure Span Gateway reported an " +
+      "<html><b>The Secure Span Gateway reported a " +
       "persistence error and was unable to complete the operation.</b><br></html>";
 
     /**
