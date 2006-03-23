@@ -411,7 +411,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
         // Add new stuff to model
         news.removeAll(olds2);
-        for (Iterator i = olds2.iterator(); i.hasNext();) {
+        for (Iterator i = news.iterator(); i.hasNext();) {
             Object o = i.next();
             logger.info(o + " is new");
             comboModel.addElement(o);
