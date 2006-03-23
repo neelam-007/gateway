@@ -19,6 +19,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -792,13 +793,47 @@ public class PolicyApplicationContext extends ProcessingContext {
     {
         final Ssg ssg = getSsg();
         final PolicyAttachmentKey pak = new PolicyAttachmentKey(getPolicyAttachmentKey());
-        Policy policy = new PolicyDownloader(this).downloadPolicy(pak, serviceid);
-        ssg.getRuntime().getPolicyManager().setPolicy(pak, policy);
-        if (requestInterceptor != null)
-            requestInterceptor.onPolicyUpdated(ssg, pak, policy);
-        policyUpdated = true;
-        ssg.getRuntime().clearSessionCookies();
-        logger.info("New policy saved successfully");
+        // TODO replace this mess of exceptions with an exception base interface that sports a handle() method
+        try {
+            final Policy policy = new PolicyDownloader(this).downloadPolicy(pak, serviceid);
+            ssg.getRuntime().getPolicyManager().setPolicy(pak, policy);
+            if (requestInterceptor != null) requestInterceptor.onPolicyUpdated(ssg, pak, policy);
+            policyUpdated = true;
+            ssg.getRuntime().clearSessionCookies();
+            logger.info("New policy saved successfully");
+        } catch (ConfigurationException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new ConfigurationException(e);
+        } catch (OperationCanceledException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new OperationCanceledException(e);
+        } catch (GeneralSecurityException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new GeneralSecurityException(e);
+        } catch (HttpChallengeRequiredException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new HttpChallengeRequiredException(e);
+        } catch (IOException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new CausedIOException(e);
+        } catch (ClientCertificateException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new ClientCertificateException(e);
+        } catch (KeyStoreCorruptException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new KeyStoreCorruptException(e);
+        } catch (PolicyRetryableException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new PolicyRetryableException(e);
+        }
     }
 
     /**

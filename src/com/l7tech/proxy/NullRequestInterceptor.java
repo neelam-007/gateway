@@ -53,4 +53,8 @@ public class NullRequestInterceptor implements RequestInterceptor {
      */
     public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
     }
+
+    public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
+
+    }
 }

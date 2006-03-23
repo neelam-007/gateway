@@ -60,16 +60,17 @@ public class PolicyDownloader {
                 log.info("Trying SSL-with-client-cert policy download from " + ssg);
             else
                 log.info("Trying anonymous policy download from " + ssg);
-            Policy policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg.getRuntime().getHttpClient(),
-                                                                                   ssg,
-                                                                                   serviceId,
-                                                                                   serverCert,
-                                                                                   useSsl);
-            return policy;
+            return PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg.getRuntime().getHttpClient(),
+                                                                          ssg,
+                                                                          serviceId,
+                                                                          serverCert,
+                                                                          useSsl);
         } catch (BadCredentialsException e) {
             // FALLTHROUGH and try again using credentials
             log.info("Policy service declined our anonymous download; will try again using credentials");
         } catch (InvalidDocumentFormatException e) {
+            throw new CausedIOException("Unable to download new policy", e);
+        } catch (IOException e) {
             throw new CausedIOException("Unable to download new policy", e);
         }
 
@@ -90,7 +91,7 @@ public class PolicyDownloader {
                                                                                  ssg,
                                                                                  serviceId,
                                                                                  serverCert,
-                                                                                 useSsl || key == null, 
+                                                                                 useSsl || key == null,
                                                                                  saml,
                                                                                  key);
                 } else if (ssg.getClientCertificate() != null) {
@@ -144,12 +145,14 @@ public class PolicyDownloader {
                 request.getNewCredentials();
                 log.info("Retrying policy download with new credentials");
                 // FALLTHROUGH and retry
-            } catch (InvalidDocumentFormatException e) {
-                throw new CausedIOException("Unable to download new policy", e);
             } catch (SSLHandshakeException e) {
                 if (e.getCause() instanceof ServerCertificateUntrustedException)
                     throw (ServerCertificateUntrustedException) e.getCause();
-                throw e;
+                throw new CausedIOException("Unable to download new policy", e);
+            } catch (IOException e) {
+                throw new CausedIOException("Unable to download new policy", e);
+            } catch (InvalidDocumentFormatException e) {
+                throw new CausedIOException("Unable to download new policy", e);
             }
         }
 

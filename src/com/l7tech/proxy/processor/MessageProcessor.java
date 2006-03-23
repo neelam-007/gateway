@@ -131,6 +131,7 @@ public class MessageProcessor {
 
             for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
                 CurrentSslPeer.set(null); // force all SSL connections to set peer SSG first
+                // TODO replace this mess of try try try catch catch catch with an exception base interface that sports a handle() method
                 try {
                     try {
                         try {

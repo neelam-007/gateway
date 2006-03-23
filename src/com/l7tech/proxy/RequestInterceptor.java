@@ -45,8 +45,18 @@ public interface RequestInterceptor {
     /**
      * Fired when a policy is updated.
      *
+     * @param ssg
      * @param binding
      * @param policy
      */
     void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy);
+
+    /**
+     * Fired when there is an error downloading a policy.
+     *
+     * @param ssg
+     * @param binding
+     * @param error
+     */
+    void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error);
 }

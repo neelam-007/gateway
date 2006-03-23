@@ -19,7 +19,6 @@ import org.w3c.dom.Document;
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -82,8 +81,8 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     }
 
     private static class SavedPolicyMessage extends SavedMessage {
-        private ClientAssertion policy;
-        private PolicyAttachmentKey key;
+        private final ClientAssertion policy;
+        private final PolicyAttachmentKey key;
 
         SavedPolicyMessage(final String title, PolicyAttachmentKey key, ClientAssertion policy) {
             super(title);
@@ -92,57 +91,86 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         }
 
         Component getComponent(boolean reformat) {
-            JPanel panel = new JPanel(new GridBagLayout());
-
-            final JLabel namespaceLabel = new JLabel("Body Namespace:  ");
-            panel.add(namespaceLabel,
-                      new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                                             GridBagConstraints.EAST,
-                                             GridBagConstraints.NONE,
-                                             new Insets(5, 5, 3, 0), 0, 0));
-            final JLabel namespace = new JLabel(key.getUri());
-            panel.add(namespace,
-                      new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-                                             GridBagConstraints.WEST,
-                                             GridBagConstraints.HORIZONTAL,
-                                             new Insets(5, 0, 3, 5), 0, 0));
-            final JLabel soapActionLabel = new JLabel("SOAPAction:  ");
-            panel.add(soapActionLabel,
-                      new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-                                             GridBagConstraints.EAST,
-                                             GridBagConstraints.NONE,
-                                             new Insets(0, 5, 5, 0), 0, 0));
-            final JLabel soapAction = new JLabel(key.getSoapAction());
-            panel.add(soapAction,
-                      new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-                                             GridBagConstraints.WEST,
-                                             GridBagConstraints.HORIZONTAL,
-                                             new Insets(0, 0, 5, 5), 0, 0));
-            final JLabel proxyUriLabel = new JLabel("Proxy URI:  ");
-            panel.add(proxyUriLabel,
-                      new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-                                             GridBagConstraints.EAST,
-                                             GridBagConstraints.NONE,
-                                             new Insets(0, 5, 5, 0), 0, 0));
-            final JLabel proxyUri = new JLabel(key.getProxyUri());
-            panel.add(proxyUri,
-                      new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-                                             GridBagConstraints.WEST,
-                                             GridBagConstraints.HORIZONTAL,
-                                             new Insets(0, 0, 5, 5), 0, 0));
+            JPanel panel = makePakPanel(key);
 
             JTree policyTree = new JTree((TreeModel)null);
             policyTree.setCellRenderer(new PolicyTreeCellRenderer());
             policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
             int erow = 0;
             while (erow < policyTree.getRowCount())
-                policyTree.expandRow(erow++);            
+                policyTree.expandRow(erow++);
             panel.add(policyTree,
                       new GridBagConstraints(0, 3, GridBagConstraints.REMAINDER, 1, 1.0, 1.0,
                                              GridBagConstraints.SOUTH,
                                              GridBagConstraints.BOTH,
                                              new Insets(0, 0, 0, 0), 0, 0));
 
+            return panel;
+        }
+    }
+
+    private static JPanel makePakPanel(PolicyAttachmentKey key) {
+        JPanel panel = new JPanel(new GridBagLayout());
+
+        final JLabel namespaceLabel = new JLabel("Body Namespace:  ");
+        panel.add(namespaceLabel,
+                  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(5, 5, 3, 0), 0, 0));
+        final JLabel namespace = new JLabel(key.getUri());
+        panel.add(namespace,
+                  new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+                                         GridBagConstraints.WEST,
+                                         GridBagConstraints.HORIZONTAL,
+                                         new Insets(5, 0, 3, 5), 0, 0));
+        final JLabel soapActionLabel = new JLabel("SOAPAction:  ");
+        panel.add(soapActionLabel,
+                  new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(0, 5, 5, 0), 0, 0));
+        final JLabel soapAction = new JLabel(key.getSoapAction());
+        panel.add(soapAction,
+                  new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+                                         GridBagConstraints.WEST,
+                                         GridBagConstraints.HORIZONTAL,
+                                         new Insets(0, 0, 5, 5), 0, 0));
+        final JLabel proxyUriLabel = new JLabel("Proxy URI:  ");
+        panel.add(proxyUriLabel,
+                  new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.EAST,
+                                         GridBagConstraints.NONE,
+                                         new Insets(0, 5, 5, 0), 0, 0));
+        final JLabel proxyUri = new JLabel(key.getProxyUri());
+        panel.add(proxyUri,
+                  new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+                                         GridBagConstraints.WEST,
+                                         GridBagConstraints.HORIZONTAL,
+                                         new Insets(0, 0, 5, 5), 0, 0));
+        return panel;
+    }
+
+    private static class PolicyErrorMessage extends SavedMessage {
+        private final PolicyAttachmentKey key;
+        private final String err;
+
+        PolicyErrorMessage(String title, PolicyAttachmentKey key, String err) {
+            super(title);
+            this.key = key;
+            this.err = err != null ? err : "No extra information available";
+        }
+
+        Component getComponent(boolean reformat) {
+            JPanel panel = makePakPanel(key);
+
+            JTextArea ta = new ContextMenuTextArea(err);
+            ta.setEditable(false);
+            panel.add(ta,
+                      new GridBagConstraints(0, 3, GridBagConstraints.REMAINDER, 1, 1.0, 1.0,
+                                             GridBagConstraints.SOUTH,
+                                             GridBagConstraints.BOTH,
+                                             new Insets(0, 0, 0, 0), 0, 0));
             return panel;
         }
     }
@@ -217,7 +245,6 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     /**
      * Get the content of message #idx as an XML string.
      * @param idx
-     * @return
      */
     public Component getComponentAt(final int idx, boolean reformat) {
         return ((SavedMessage)messages.get(idx)).getComponent(reformat);
@@ -269,17 +296,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param context
      */
     public void onReceiveReply(PolicyApplicationContext context) {
-        Document responseDoc = null;
         try {
-            responseDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
+            final Document responseDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
+            HttpHeadersKnob hhk = (HttpHeadersKnob)context.getResponse().getKnobAlways(HttpHeadersKnob.class);
+            appendMessage(new SavedXmlMessage("From Server", responseDoc, hhk.getHeaders()));
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);
             appendMessage(new SavedTextMessage("From Server", msg));
             return;
         }
-        HttpHeadersKnob hhk = (HttpHeadersKnob)context.getResponse().getKnobAlways(HttpHeadersKnob.class);
-        appendMessage(new SavedXmlMessage("From Server", responseDoc, hhk.getHeaders()));
     }
 
     /**
@@ -333,6 +359,22 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
             // Fallthrough and use null
         }
         appendMessage(new SavedPolicyMessage("Policy updated", binding, clientAssertion));
+    }
+
+    public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
+        final BufferPoolByteArrayOutputStream b = new BufferPoolByteArrayOutputStream(2048);
+        try {
+            PrintStream p = new PrintStream(b, true, "UTF-8");
+            error.printStackTrace(p);
+            p.flush();
+            String mess = b.toString("UTF-8");
+            appendMessage(new PolicyErrorMessage("Policy download error", binding, mess));
+        } catch (UnsupportedEncodingException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            appendMessage(new SavedTextMessage("Policy download error", error == null ? "null" : error.getMessage()));
+        } finally {
+            b.close();
+        }
     }
 
     /** Remove all saved messages from the list. */

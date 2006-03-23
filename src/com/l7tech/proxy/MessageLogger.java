@@ -7,6 +7,7 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -51,7 +52,7 @@ public class MessageLogger implements RequestInterceptor {
      * @param t The error that occurred during the request.
      */
     public void onMessageError(Throwable t) {
-        log.info("Error while processing request from client: " + t);
+        log.warning("Error while processing request from client: " + t);
     }
 
     /**
@@ -69,5 +70,9 @@ public class MessageLogger implements RequestInterceptor {
      */
     public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
         log.info("Policy updated for Gateway: " + ssg);
+    }
+
+    public void onPolicyError(Ssg ssg, PolicyAttachmentKey binding, Throwable error) {
+        log.warning("Policy download failed for Gateway: " + ssg + ": " + ExceptionUtils.getMessage(error));
     }
 }
