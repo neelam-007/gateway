@@ -57,7 +57,7 @@ public class ServerWsiBspAssertionTest extends TestCase {
         }
     }
 
-    public void testFailures() throws Exception {
+    public void testNonSuccesses() throws Exception {
         System.out.println("Running testSuccesses()");
         Map ruleMap = swba.getRules();
         for(Iterator iterator = ruleMap.entrySet().iterator(); iterator.hasNext(); ) {
