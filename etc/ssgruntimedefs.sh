@@ -27,7 +27,7 @@ multiplier="2/3"
 let java_ram="$system_ram*$multiplier" 
 let newsize="$java_ram*7/10"
 
-default_java_opts="-Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30 -Xms${java_ram}k -Xmx${java_ram}k -Xmn${newsize} -Xss128k -server -Djava.awt.headless=true -XX:CompileThreshold=1500 "
+default_java_opts="-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30 -Xms${java_ram}k -Xmx${java_ram}k -Xmn${newsize} -Xss128k -server -Djava.awt.headless=true -XX:CompileThreshold=1500 "
 default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
 
 

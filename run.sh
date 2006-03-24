@@ -75,6 +75,8 @@ echo $CLASSPATH
 foo=$1
 shift
 
+export JAVA_OPTS="-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl $JAVA_OPTS"
+
 case "$foo" in 
 	-?)
 		echo "Usage: run.sh (ssg|console|proxy|textproxy|<Main class>)"

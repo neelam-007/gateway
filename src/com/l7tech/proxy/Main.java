@@ -55,6 +55,9 @@ public class Main {
         // apache logging layer to use the jdk logger
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
 
+        // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
+        System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
+
         // Prepare .l7tech directory before initializing logging (Bug #1288)
         new File(Ssg.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
 

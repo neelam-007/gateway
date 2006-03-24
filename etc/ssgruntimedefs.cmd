@@ -38,6 +38,7 @@ set /a maxnewsize=%java_ram%/2
 
 
 set JAVA_OPTS=^
+-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl ^
 -Dcom.l7tech.server.home="%SSG_HOME%" ^
 -Dfile.encoding=UTF-8 ^
 -Djava.awt.headless=true ^

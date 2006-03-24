@@ -52,6 +52,10 @@ public final class Main extends com.l7tech.proxy.Main {
     private static void startGuiConfigurator(boolean hideMenus, String quitLabel) {
         // apache logging layer to use the jdk logger
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+
+        // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
+        System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
+        
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/cliLogging.properties");
         JceProvider.init();
         log.info("Starting SecureSpan Bridge GUI Configuration Editor; " + BuildInfo.getLongBuildString());
