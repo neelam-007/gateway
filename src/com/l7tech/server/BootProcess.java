@@ -38,14 +38,18 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class BootProcess extends ApplicationObjectSupport
-  implements ServerComponentLifecycle, DisposableBean, InitializingBean {
+public class BootProcess
+    extends ApplicationObjectSupport
+    implements ServerComponentLifecycle, DisposableBean, InitializingBean
+{
+    private static final Logger logger;
 
     static {
         String DEFAULT_LOGPROPERTIES_PATH = ServerConfig.getInstance().getProperty("configDirectory") + File.separator + "ssglog.properties";
         JdkLoggerConfigurator.configure("com.l7tech.logging",
           new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
             DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
+        logger = Logger.getLogger(BootProcess.class.getName());
     }
 
     /**
@@ -73,6 +77,11 @@ public class BootProcess extends ApplicationObjectSupport
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
         serverConfig = config;
+        try {
+            setSystemProperties(config);
+        } catch (IOException e) {
+            throw new LifecycleException("Couldn't set system properties", e);
+        }
     }
 
     public void start() throws LifecycleException {
@@ -155,7 +164,6 @@ public class BootProcess extends ApplicationObjectSupport
      */
     public void afterPropertiesSet() throws Exception {
         ApplicationContext applicationContext = getApplicationContext();
-        logger = Logger.getLogger(BootProcess.class.getName());
 
         auditor = new Auditor(this, applicationContext, logger);
 
@@ -184,81 +192,76 @@ public class BootProcess extends ApplicationObjectSupport
         }
 
         deleteOldAttachments(serverConfig.getAttachmentDirectory());
-        try {
-            // This needs to happen here, early enough that it will notice early events but after the database init
+        // This needs to happen here, early enough that it will notice early events but after the database init
 
-            applicationContext.publishEvent(new Initializing(this, Component.GW_SERVER, ipAddress));
-            logger.info("Initializing server");
+        applicationContext.publishEvent(new Initializing(this, Component.GW_SERVER, ipAddress));
+        logger.info("Initializing server");
 
-            setSystemProperties(serverConfig);
 
-            auditor.logAndAudit(BootMessages.CRYPTO_INIT);
-            JceProvider.init();
-            auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, new String[]{JceProvider.getAsymmetricJceProvider().getName()});
-            auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, new String[]{JceProvider.getSymmetricJceProvider().getName()});
+        auditor.logAndAudit(BootMessages.CRYPTO_INIT);
+        JceProvider.init();
+        auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, new String[]{JceProvider.getAsymmetricJceProvider().getName()});
+        auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, new String[]{JceProvider.getSymmetricJceProvider().getName()});
 
-            String classnameString = serverConfig.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
-            String[] componentClassnames = classnameString.split("\\s.*?");
+        String classnameString = serverConfig.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
+        String[] componentClassnames = classnameString.split("\\s.*?");
 
-            ServerComponentLifecycle component = null;
-            for (int i = 0; i < componentClassnames.length; i++) {
-                String classname = componentClassnames[i];
-                logger.info("Initializing server component '" + classname + "'");
-                try {
-                    Class clazz = Class.forName(classname);
-                    component = (ServerComponentLifecycle)clazz.newInstance();
-                } catch (ClassNotFoundException cnfe) {
-                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, cnfe);
-                } catch (InstantiationException e) {
-                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
-                } catch (IllegalAccessException e) {
-                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
-                }
-
-                if (component != null) {
-                    try {
-                        if(component instanceof ApplicationContextAware) {
-                            ((ApplicationContextAware)component).setApplicationContext(applicationContext);
-                        }
-                        component.setServerConfig(serverConfig);
-                        _components.add(component);
-                    } catch (LifecycleException e) {
-                        auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{component.getClass().getName()}, e);
-                    }
-                }
-            }
-
-            applicationContext.publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
-
-            // initialize service cache after all this
-            ServiceManagerImp serviceManager = (ServiceManagerImp)applicationContext.getBean("serviceManagerTarget");
-            logger.info("initializing the service cache");
-            serviceManager.initiateServiceCache();
-
-            // Make sure certs without thumbprints get them
+        ServerComponentLifecycle component = null;
+        for (int i = 0; i < componentClassnames.length; i++) {
+            String classname = componentClassnames[i];
+            logger.info("Initializing server component '" + classname + "'");
             try {
-                TrustedCertManager tcm = (TrustedCertManager)applicationContext.getBean("trustedCertManager");
-                tcm.findByThumbprint(null);
-                tcm.findByThumbprint("");
-                tcm.findBySki(null);
-                tcm.findBySki("");
-
-                ClientCertManager ccm = (ClientCertManager)applicationContext.getBean("clientCertManager");
-                ccm.findByThumbprint(null);
-                ccm.findByThumbprint("");
-                ccm.findBySki(null);
-                ccm.findBySki("");
-            } catch (DataAccessException e) {
-                // see bugzilla 2162, if a bad cert somehow makes it in the db, we should not prevent the gateway to boot
-                logger.log(Level.WARNING, "Could not thumbprint certs. Something " +
-                                          "corrupted in trusted_cert or client_cert table.",
-                                          e);
+                Class clazz = Class.forName(classname);
+                component = (ServerComponentLifecycle)clazz.newInstance();
+            } catch (ClassNotFoundException cnfe) {
+                auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, cnfe);
+            } catch (InstantiationException e) {
+                auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
+            } catch (IllegalAccessException e) {
+                auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
             }
 
-            logger.info("Initialized server");
-        } catch (IOException e) {
-            throw new LifecycleException(e.toString(), e);
+            if (component != null) {
+                try {
+                    if (component instanceof ApplicationContextAware) {
+                        ((ApplicationContextAware)component).setApplicationContext(applicationContext);
+                    }
+                    component.setServerConfig(serverConfig);
+                    _components.add(component);
+                } catch (LifecycleException e) {
+                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{component.getClass().getName()}, e);
+                }
+            }
         }
+
+        applicationContext.publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
+
+        // initialize service cache after all this
+        ServiceManagerImp serviceManager = (ServiceManagerImp)applicationContext.getBean("serviceManagerTarget");
+        logger.info("initializing the service cache");
+        serviceManager.initiateServiceCache();
+
+        // Make sure certs without thumbprints get them
+        try {
+            TrustedCertManager tcm = (TrustedCertManager)applicationContext.getBean("trustedCertManager");
+            tcm.findByThumbprint(null);
+            tcm.findByThumbprint("");
+            tcm.findBySki(null);
+            tcm.findBySki("");
+
+            ClientCertManager ccm = (ClientCertManager)applicationContext.getBean("clientCertManager");
+            ccm.findByThumbprint(null);
+            ccm.findByThumbprint("");
+            ccm.findBySki(null);
+            ccm.findBySki("");
+        } catch (DataAccessException e) {
+            // see bugzilla 2162, if a bad cert somehow makes it in the db, we should not prevent the gateway to boot
+            logger.log(Level.WARNING, "Could not thumbprint certs. Something " +
+                "corrupted in trusted_cert or client_cert table.",
+                e);
+        }
+
+        logger.info("Initialized server");
     }
 
     private void setSystemProperties(ServerConfig config) throws IOException {
@@ -374,6 +377,5 @@ public class BootProcess extends ApplicationObjectSupport
     private List _components;
     private ServerConfig serverConfig;
     private Auditor auditor;
-    private Logger logger;
     private String ipAddress;
 }
