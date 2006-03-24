@@ -305,10 +305,9 @@ public class MetricsChartPanel extends ChartPanel {
         //
 
         final NumberAxis mYAxis = new NumberAxis("Message Rate (per sec)");
-        mYAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
         mYAxis.setAutoRange(true);
         mYAxis.setRangeType(RangeType.POSITIVE);
-        mYAxis.setAutoRangeMinimumSize(10.);
+        mYAxis.setAutoRangeMinimumSize(0.0001);     // Still allows 1 msg per day to be visible.
         final StackedXYBarRenderer mRenderer = new StackedXYBarRenderer() {
             public void drawItem(Graphics2D g2,
                                  XYItemRendererState state,
@@ -591,7 +590,7 @@ public class MetricsChartPanel extends ChartPanel {
      */
     public static void main(String[] args) throws InterruptedException {
         final int BIN_INTERVAL = 5 * 1000;
-        final long MAX_TIME_RANGE = 15 * 60 * 1000;
+        final long MAX_TIME_RANGE = 24 * 60 * 60 * 1000;
 
         final MetricsChartPanel chartPanel = new MetricsChartPanel(MAX_TIME_RANGE);
 
