@@ -645,7 +645,10 @@
         </property>
     </bean>
 
-    <bean id="serviceMetricsManagerTarget" class="com.l7tech.server.service.ServiceMetricsManager" singleton="true">
+    <bean id="serviceMetricsManagerTarget"
+          class="com.l7tech.server.service.ServiceMetricsManager"
+          singleton="true"
+          depends-on="ssgBoot"> <!-- To ensure system.properties file is processed first -->
         <constructor-arg>
             <ref bean="clusterNodeId"/>
         </constructor-arg>
