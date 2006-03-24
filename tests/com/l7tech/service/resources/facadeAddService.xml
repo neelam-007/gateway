@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<!-- SOAPAction: "http://systinet.com/j2ee/ejb/ServiceFacade#addService?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvU2VydmljZTspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9TZXJ2aWNlOw==" -->
+	<soap:Body>
+		<p0 xmlns="http://systinet.com/xsd/SchemaTypes/">
+			<accountId xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<clientId xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<clientReferenceTxt xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<courtFileNo xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<entDtm xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<entUserId xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<feePaidYn xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<parameters xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<serviceId xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<serviceReceivedDtm xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<serviceReceivedDtmText xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<serviceSessionId xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<serviceSubtypeCd xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<serviceTypeCd xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<serviceTypeDesc xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<styleOfCause xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<transactions xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<updDtm xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<updUserId xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+			<userSessionId xsi:nil="true" xmlns="http://systinet.com/j2ee/ejb/" />
+		</p0>
+	</soap:Body>
+</soap:Envelope>

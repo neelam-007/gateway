@@ -24,7 +24,6 @@ import javax.xml.namespace.QName;
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
@@ -1099,7 +1098,7 @@ public class SoapUtil {
         return (s1 == null && s2 == null) || (s1 != null && s1.equals(s2));
     }
 
-    public static Operation getOperation(Wsdl wsdl, Message request)
+    /*public static Operation getOperation(Wsdl wsdl, Message request)
             throws IOException, SAXException, InvalidDocumentFormatException,
                    MessageNotSoapException
     {
@@ -1249,11 +1248,227 @@ public class SoapUtil {
         }
 
         return operation;
+    }*/
+
+    /**
+     * Narrows a list of candidate wsdl operations by matching them against a soapaction
+     *
+     * @param soapaction the soapaction to match against
+     * @param candidates a list of candidate javax.wsdl.BindingOperation
+     * @return a list of matching javax.wsdl.BindingOperation
+     */
+    private static List matchOperationsWithSoapaction(String soapaction, Collection candidates) {
+        ArrayList output = new ArrayList();
+        if (soapaction == null) soapaction = "";
+        for (Iterator i = candidates.iterator(); i.hasNext();) {
+            BindingOperation bindingOperation = (BindingOperation)i.next();
+            String candidateSoapAction = stripQuotes(findSoapAction(bindingOperation));
+            if (candidateSoapAction == null) candidateSoapAction = "";
+            if (candidateSoapAction.equals(soapaction)) {
+                output.add(bindingOperation);
+            }
+        }
+        return output;
     }
 
-    private static void warnMultipleOperations(Element payload, Wsdl wsdl) {
-        log.warning("Found multiple candidate operations for message " +
-                    payload.getLocalName() + "{" + payload.getNamespaceURI() + "} " +
-                    "in WSDL " + wsdl.getDefinition().getDocumentBaseURI());
+    private static List matchOperationsWithSoapBody(Element payload, Collection candidates, Wsdl wsdl) {
+        ArrayList output = new ArrayList();
+        mainloop: for (Iterator i = candidates.iterator(); i.hasNext();) {
+            // Look for RPC (element name = operation name)
+            BindingOperation bindingOperation = (BindingOperation)i.next();
+
+            if ("rpc".equals(wsdl.getBindingStyle(bindingOperation))) {
+                BindingInput binput = bindingOperation.getBindingInput();
+                String ns = null;
+                List bindingInputEels = binput.getExtensibilityElements();
+                if (bindingInputEels != null) {
+                    for (Iterator j = bindingInputEels.iterator(); j.hasNext();) {
+                        ExtensibilityElement eel = (ExtensibilityElement)j.next();
+                        if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                            javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)eel;
+                            ns = body.getNamespaceURI();
+                        } else if (eel instanceof MIMEMultipartRelated) {
+                            MIMEMultipartRelated mime = (MIMEMultipartRelated)eel;
+                            List parts = mime.getMIMEParts();
+                            if (parts.size() >= 1) {
+                                MIMEPart firstPart = (MIMEPart)parts.get(0);
+                                List mimeEels = firstPart.getExtensibilityElements();
+                                for (Iterator k = mimeEels.iterator(); k.hasNext();) {
+                                    ExtensibilityElement mimeEel = (ExtensibilityElement)k.next();
+                                    if (mimeEel instanceof javax.wsdl.extensions.soap.SOAPBody ) {
+                                        javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)mimeEel;
+                                        ns = body.getNamespaceURI();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (ns == null) ns = wsdl.getDefinition().getTargetNamespace();
+                if (payload.getLocalName().equals(bindingOperation.getName()) && bothNullOrEqual(payload.getNamespaceURI(), ns)) {
+                    if (!output.contains(bindingOperation)) output.add(bindingOperation);
+                    continue;
+                }
+            }
+
+            // Try to match the abstract Operation's input message
+            Input input = bindingOperation.getOperation().getInput();
+            javax.wsdl.Message inputMessage = null;
+            if (input != null) {
+                inputMessage = input.getMessage();
+                QName expectedElementQname = inputMessage.getQName();
+                if (payload != null && expectedElementQname != null) {
+                    if (bothNullOrEqual(payload.getNamespaceURI(), expectedElementQname.getNamespaceURI())) {
+                        if (bothNullOrEqual(payload.getLocalName(), expectedElementQname.getLocalPart())) {
+                            if (!output.contains(bindingOperation)) output.add(bindingOperation);
+                            continue;
+                        }
+                    }
+                }
+
+                // Try to match message parts
+                Map parts = inputMessage.getParts();
+                for (Iterator j = parts.keySet().iterator(); j.hasNext();) {
+                    String partName = (String)j.next();
+                    Part part = (Part)inputMessage.getParts().get(partName);
+                    QName elementName = part.getElementName();
+                    if (elementName != null && payload != null &&
+                            bothNullOrEqual(elementName.getLocalPart(), payload.getLocalName()) &&
+                            bothNullOrEqual(elementName.getNamespaceURI(), payload.getNamespaceURI()) )
+                    {
+                        if (!output.contains(bindingOperation)) output.add(bindingOperation);
+                        continue mainloop;
+                    }
+                }
+            }
+        }
+        return output;
+    }
+
+    private static Operation getOperationFromBinding(Binding soapbinding, OperationSearchContext context)
+            throws IOException, SAXException, InvalidDocumentFormatException,
+                   MessageNotSoapException {
+        List bindingOperations = soapbinding.getBindingOperations();
+
+        // only try to match soapaction for http requests (not for jms)
+        if (context.hasHttpRequestKnob()) {
+            String requestSoapAction = context.getSoapaction();
+            List beforenarrowed = bindingOperations;
+            bindingOperations = matchOperationsWithSoapaction(requestSoapAction, bindingOperations);
+            if (bindingOperations == null || bindingOperations.size() < 1) {
+                log.info("request's soapaction " + requestSoapAction + " did not match any operation in the wsdl." +
+                         " will try to match using the document instead");
+                bindingOperations = beforenarrowed;
+            } else if (bindingOperations.size() == 1) {
+                log.fine("operation identified using soapaction. bypassing further analysis");
+                BindingOperation operation = (BindingOperation)bindingOperations.get(0);
+                return operation.getOperation();
+            }
+        }
+
+        bindingOperations = matchOperationsWithSoapBody(context.getPayload(), bindingOperations, context.getWsdl());
+        if (bindingOperations == null || bindingOperations.size() < 1) {
+            log.info("request payload did not match any operation in the wsdl." +
+                     " perhaps the request is not valid for this wsdl");
+            return null;
+        } else if (bindingOperations.size() == 1) {
+            log.fine("operation identified using payload");
+            BindingOperation operation = (BindingOperation)bindingOperations.get(0);
+            return operation.getOperation();
+        } else {
+            StringBuffer tmp = new StringBuffer();
+            for (Iterator iterator = bindingOperations.iterator(); iterator.hasNext();) {
+                BindingOperation bindingOperation = (BindingOperation) iterator.next();
+                tmp.append(bindingOperation.getOperation().getName() + ", ");
+            }
+            log.info("this request payload yields more than one match during operation search: " + tmp.toString());
+            return null;
+        }
+    }
+
+    private interface OperationSearchContext {
+        Element getPayload() throws InvalidDocumentFormatException, IOException, SAXException;
+        String getSoapaction();
+        boolean hasHttpRequestKnob() throws IOException;
+        Wsdl getWsdl();
+    }
+
+    public static Operation getOperation(final Wsdl wsdl, final Message request)
+            throws IOException, SAXException, InvalidDocumentFormatException,
+                   MessageNotSoapException
+    {
+        final XmlKnob requestXml = (XmlKnob)request.getKnob(XmlKnob.class);
+        if (requestXml == null) {
+            log.info("Can't get operation for non-XML message");
+            return null;
+        }
+        OperationSearchContext context = new OperationSearchContext() {
+            public Wsdl getWsdl() {
+                return wsdl;
+            }
+
+            public Element getPayload() throws InvalidDocumentFormatException, IOException, SAXException {
+                if (payload == null) {
+                    Document requestDoc = requestXml.getDocumentReadOnly();
+                    payload = getPayloadElement(requestDoc);
+                }
+                return payload;
+            }
+
+            public boolean hasHttpRequestKnob() throws IOException {
+                if (hasHttpRequestKnob == null) {
+                    HttpRequestKnob requestHttp = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+                    if (requestHttp == null) {
+                        hasHttpRequestKnob = new Boolean(false);
+                    } else {
+                        hasHttpRequestKnob = new Boolean(true);
+                        saction = stripQuotes(requestHttp.getHeaderSingleValue(SOAPACTION));
+                    }
+                }
+                return hasHttpRequestKnob.booleanValue();
+            }
+
+            public String getSoapaction() {
+                return saction;
+            }
+
+            private Element payload = null;
+            Boolean hasHttpRequestKnob = null;
+            String saction = null;
+        };
+
+
+        Map bindings = wsdl.getDefinition().getBindings();
+        if (bindings.isEmpty()) {
+            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
+            return null;
+        }
+
+        boolean foundSoapBinding = false;
+        for (Iterator h = bindings.keySet().iterator(); h.hasNext();) {
+            QName bindingName = (QName)h.next();
+            Binding binding = (Binding)bindings.get(bindingName);
+            SOAPBinding soapBinding = null;
+            List bindingEels = binding.getExtensibilityElements();
+            for (Iterator bindit = bindingEels.iterator(); bindit.hasNext();) {
+                ExtensibilityElement element = (ExtensibilityElement)bindit.next();
+                if (element instanceof SOAPBinding) {
+                    foundSoapBinding = true;
+                    soapBinding = (SOAPBinding)element;
+                }
+            }
+
+            if (soapBinding == null)
+                continue; // This isn't a SOAP binding; we don't care
+            Operation res = getOperationFromBinding(binding, context);
+            if (res != null) return res;
+        }
+        if (!foundSoapBinding) {
+            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
+        } else {
+            log.info("none of the binding could match exactly one operation from this request");
+        }
+        return null;
     }
 }

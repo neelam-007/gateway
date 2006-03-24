@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions targetNamespace="http://warehouse.acme.com/ws" xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="http://warehouse.acme.com/ws" xmlns:intf="http://warehouse.acme.com/ws" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<!--WSDL created by Apache Axis version: 1.2RC3
+Built on Feb 28, 2005 (10:15:14 EST)-->
+ <wsdl:types>
+  <schema targetNamespace="http://warehouse.acme.com/ws" xmlns="http://www.w3.org/2001/XMLSchema">
+   <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+   <complexType name="Header">
+    <sequence>
+     <element name="productId" type="xsd:long"/>
+     <element name="productName" nillable="true" type="soapenc:string"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfHeaders">
+    <complexContent>
+     <restriction base="soapenc:Array">
+      <attribute ref="soapenc:arrayType" wsdl:arrayType="impl:Header[]"/>
+     </restriction>
+    </complexContent>
+   </complexType>
+   <complexType name="ProductDetails">
+    <complexContent>
+     <extension base="impl:Header">
+      <sequence>
+       <element name="description" nillable="true" type="soapenc:string"/>
+       <element name="inStock" type="xsd:boolean"/>
+       <element name="price" type="xsd:float"/>
+      </sequence>
+     </extension>
+    </complexContent>
+   </complexType>
+   <complexType name="Order">
+    <sequence>
+     <element name="accountId" type="xsd:long"/>
+     <element name="amount" type="xsd:long"/>
+     <element name="confirmationId" type="xsd:long"/>
+     <element name="date" nillable="true" type="xsd:dateTime"/>
+     <element name="price" type="xsd:float"/>
+     <element name="productId" type="xsd:long"/>
+    </sequence>
+   </complexType>
+   <complexType name="ArrayOfOrders">
+    <complexContent>
+     <restriction base="soapenc:Array">
+      <attribute ref="soapenc:arrayType" wsdl:arrayType="impl:Order[]"/>
+     </restriction>
+    </complexContent>
+   </complexType>
+  </schema>
+ </wsdl:types>
+
+   <wsdl:message name="listProductsResponse">
+
+      <wsdl:part name="listProductsReturn" type="impl:ArrayOfHeaders"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="currentOrdersRequest">
+
+      <wsdl:part name="accountid" type="xsd:long"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="getProductDetailsRequest">
+
+      <wsdl:part name="productid" type="xsd:long"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="getProductDetailsResponse">
+
+      <wsdl:part name="getProductDetailsReturn" type="impl:ProductDetails"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="currentOrdersResponse">
+
+      <wsdl:part name="currentOrdersReturn" type="impl:ArrayOfOrders"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="listProductsRequest">
+
+   </wsdl:message>
+
+   <wsdl:message name="placeOrderResponse">
+
+      <wsdl:part name="placeOrderReturn" type="xsd:long"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="placeOrderRequest">
+
+      <wsdl:part name="productid" type="xsd:long"/>
+
+      <wsdl:part name="amount" type="xsd:long"/>
+
+      <wsdl:part name="price" type="xsd:float"/>
+
+      <wsdl:part name="accountid" type="xsd:long"/>
+
+   </wsdl:message>
+
+   <wsdl:portType name="awsporttype">
+
+      <wsdl:operation name="listProducts">
+
+         <wsdl:input message="impl:listProductsRequest" name="listProductsRequest"/>
+
+         <wsdl:output message="impl:listProductsResponse" name="listProductsResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="getProductDetails" parameterOrder="productid">
+
+         <wsdl:input message="impl:getProductDetailsRequest" name="getProductDetailsRequest"/>
+
+         <wsdl:output message="impl:getProductDetailsResponse" name="getProductDetailsResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="placeOrder" parameterOrder="productid amount price accountid">
+
+         <wsdl:input message="impl:placeOrderRequest" name="placeOrderRequest"/>
+
+         <wsdl:output message="impl:placeOrderResponse" name="placeOrderResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="currentOrders" parameterOrder="accountid">
+
+         <wsdl:input message="impl:currentOrdersRequest" name="currentOrdersRequest"/>
+
+         <wsdl:output message="impl:currentOrdersResponse" name="currentOrdersResponse"/>
+
+      </wsdl:operation>
+
+   </wsdl:portType>
+
+   <wsdl:binding name="awsportSoapBinding" type="impl:awsporttype">
+
+      <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+      <wsdl:operation name="listProducts">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="listProductsRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="listProductsResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="getProductDetails">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="getProductDetailsRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="getProductDetailsResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="placeOrder">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="placeOrderRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="placeOrderResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="currentOrders">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="currentOrdersRequest">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="currentOrdersResponse">
+
+            <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://warehouse.acme.com/ws" use="encoded"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+   </wsdl:binding>
+
+   <wsdl:service name="awsvc">
+
+      <wsdl:port binding="impl:awsportSoapBinding" name="awsport">
+
+         <wsdlsoap:address location="http://soong:8080/ACMEWarehouse/services/ACMEWarehouse"/>
+
+      </wsdl:port>
+
+   </wsdl:service>
+
+</wsdl:definitions>

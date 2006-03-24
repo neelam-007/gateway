@@ -1,0 +1,1345 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<definitions name='ca.bc.gov.ag.csows.services.ServiceFacade' targetNamespace='http://systinet.com/j2ee/ejb/' 
+    xmlns:tns='http://systinet.com/j2ee/ejb/' 
+    xmlns:ns0='http://systinet.com/xsd/SchemaTypes/' 
+    xmlns:ns1='http://idoox.com/interface' 
+    xmlns:ns2='http://systinet.com/soap-jta/' 
+    xmlns:soap='http://schemas.xmlsoap.org/wsdl/soap/' 
+    xmlns='http://schemas.xmlsoap.org/wsdl/'>
+    <types>
+        <xsd:schema elementFormDefault="qualified"
+            targetNamespace="http://systinet.com/soap-jta/"
+            xmlns:map="http://systinet.com/mapping/"
+            xmlns:tns="http://systinet.com/soap-jta/"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:element name="TxId">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" nillable="true"
+                            type="xsd:string"/>
+                        <xsd:element name="NoTxResume" nillable="true"
+                            type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+
+        <schema elementFormDefault="qualified"
+            targetNamespace="http://idoox.com/interface"
+            xmlns="http://www.w3.org/2001/XMLSchema"
+            xmlns:tns="http://idoox.com/interface">
+            <complexType name="serviceReference">
+                <sequence>
+                    <element name="service" type="QName"/>
+                    <element name="wsdl" type="anyURI"/>
+                    <element minOccurs="0" name="instanceID" type="string"/>
+                    <element minOccurs="0" name="portTypeMappings"
+                        type="tns:ArrayOfInterfaceMapping"/>
+                </sequence>
+            </complexType>
+            <complexType name="ArrayOfInterfaceMapping">
+                <sequence>
+                    <element maxOccurs="unbounded" minOccurs="0" name="item"
+                        type="tns:interfaceMapping"/>
+                </sequence>
+            </complexType>
+            <complexType name="interfaceMapping">
+                <sequence>
+                    <element name="portType" type="QName"/>
+                    <element name="className" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="instance">
+                <annotation>
+
+                    <documentation>
+      this is the SOAP header schema
+      this SOAP header SHOULD have soap-env:mustUnderstand set to &quot;1&quot;
+      this header MUST be present at most once in any message
+    </documentation>
+                </annotation>
+                <complexType>
+                    <choice>
+                        <element name="id" type="string"/>
+                        <element name="setId" type="string"/>
+                        <element name="notFound" type="string"/>
+                    </choice>
+                </complexType>
+            </element>
+        </schema>
+
+        <xsd:schema elementFormDefault="qualified"
+            targetNamespace="http://systinet.com/wsdl/ca/bc/gov/ag/csows/accounts/"
+            xmlns:tns="http://systinet.com/wsdl/ca/bc/gov/ag/csows/accounts/"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:complexType name="ClientProfile">
+                <xsd:sequence>
+                    <xsd:element name="account" nillable="true"
+                        type="tns:Account"/>
+                    <xsd:element name="accountId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="client" nillable="true"
+                        type="tns:Client"/>
+                    <xsd:element name="clientId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="clientRoleCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="feeExemptYn" type="xsd:boolean"/>
+                    <xsd:element name="feeExemptYnText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="profileStatusCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="profileStatusCdDisplayName"
+                        nillable="true" type="xsd:string"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="useAccountCreditCardYn"
+                        type="xsd:boolean"/>
+                    <xsd:element name="useAccountCreditCardYnText"
+                        nillable="true" type="xsd:string"/>
+                    <xsd:element name="userProfileAcctMgntPriviledges"
+                        nillable="true" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="Account">
+                <xsd:sequence>
+                    <xsd:element name="accountId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="accountNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="accountPrefixTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="accountStatusCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="addressLine1Txt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="addressLine2Txt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="addressLine3Txt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="authenticatedAccountGuid" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="cityTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="ctryDesc" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="ctryId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="emailTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entDtmText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="feeExemptYn" type="xsd:boolean"/>
+                    <xsd:element name="feeExemptYnText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="industryCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="internalAccountNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="otherProvinceTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="phoneNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="postalCodeTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="provSeqNo" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="provShortDesc" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="registeredCreditCardYn"
+                        type="xsd:boolean"/>
+                    <xsd:element name="registeredCreditCardYnText"
+                        nillable="true" type="xsd:string"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updDtmText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="Client">
+                <xsd:sequence>
+                    <xsd:element name="authenticatedClientGuid" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="clientId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="clientPrefixTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="clientStatusCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="emailTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entDtmText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="givenNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="internalClientNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="lastLoginDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="lastLoginDtmText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="middleNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="registeredCreditCardYn"
+                        type="xsd:boolean"/>
+                    <xsd:element name="registeredCreditCardYnText"
+                        nillable="true" type="xsd:string"/>
+                    <xsd:element name="serviceConditionsAcceptDtm"
+                        nillable="true" type="xsd:dateTime"/>
+                    <xsd:element name="surnameNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updDtmText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfClientProfile">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="ClientProfile" nillable="true"
+                        type="tns:ClientProfile"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+
+        <xsd:schema elementFormDefault="qualified"
+            targetNamespace="http://systinet.com/xsd/SchemaTypes/"
+            xmlns:tns="http://systinet.com/xsd/SchemaTypes/"
+            xmlns:xns4="http://systinet.com/j2ee/ejb/"
+            xmlns:xns5="http://systinet.com/wsdl/ca/bc/gov/ag/csows/services/statement/"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:import
+            namespace="http://systinet.com/wsdl/ca/bc/gov/ag/csows/services/statement/"/>
+            <xsd:import namespace="http://systinet.com/j2ee/ejb/"/>
+            <xsd:element name="p0" nillable="true" type="xns4:Service"/>
+            <xsd:element name="Service_Response" nillable="true"
+                type="xns4:Service"/>
+            <xsd:element name="idoox-java-mapping.java.rmi.RemoteException"
+                nillable="true" type="xsd:anyType"/>
+            <xsd:element name="p0_1" nillable="true" type="xns4:UserSession"/>
+            <xsd:element name="p1" nillable="true" type="xsd:string"/>
+            <xsd:element name="ServiceSession_Response" nillable="true"
+                type="xns4:ServiceSession"/>
+            <xsd:element name="p0_2" nillable="true" type="xsd:string"/>
+            <xsd:element name="UserSession_Response" nillable="true"
+                type="xns4:UserSession"/>
+            <xsd:element name="p0_3" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p0_4" nillable="true" type="xsd:string"/>
+            <xsd:element name="FinancialTransaction_Response" nillable="true"
+                type="xns4:FinancialTransaction"/>
+            <xsd:element name="p0_5" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p1_6" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p2" nillable="true" type="xsd:string"/>
+            <xsd:element name="p3" nillable="true" type="xsd:string"/>
+            <xsd:element name="ArrayOfFinancialTransaction_Response"
+                nillable="true" type="xns4:ArrayOfFinancialTransaction"/>
+            <xsd:element name="p0_7" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="ServiceSessions_Response" nillable="true"
+                type="xns4:ServiceSessions"/>
+            <xsd:element name="p0_8" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p0_9" nillable="true" type="xsd:string"/>
+            <xsd:element name="ArrayOfClientTransaction_Response"
+                nillable="true" type="xns4:ArrayOfClientTransaction"/>
+            <xsd:element name="p0_10" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p1_11" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p2_12" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p3_13" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p4" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p5" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p0_14" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p0_15" nillable="true" type="xsd:string"/>
+            <xsd:element name="string_Response" nillable="true"
+                type="xsd:string"/>
+            <xsd:element name="p0_16" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p1_17" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="UsageStatsHolder_Response" nillable="true"
+                type="xns4:UsageStatsHolder"/>
+            <xsd:element name="p0_18" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="boolean_Response" type="xsd:boolean"/>
+            <xsd:element name="p0_19" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p0_20" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p0_21" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p1_22" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p2_23" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p3_24" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="MonthlyStatementReport_Response" nillable="true"
+                type="xns5:MonthlyStatementReport"/>
+            <xsd:element name="p0_25" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="AccountProfileReport_Response" nillable="true"
+                type="xns5:AccountProfileReport"/>
+            <xsd:element name="p0_26" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p1_27" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="p2_28" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p3_29" nillable="true" type="xsd:dateTime"/>
+            <xsd:element name="p4_30" nillable="true" type="xsd:decimal"/>
+            <xsd:element name="ArrayOfTransactionalGroup_Response"
+                nillable="true" type="xns4:ArrayOfTransactionalGroup"/>
+            <xsd:element name="p0_31" nillable="true"
+                type="xns4:FinancialTransaction"/>
+            <xsd:element name="p0_32" nillable="true"
+                type="xns4:ServiceSession"/>
+            <xsd:element name="p0_33" nillable="true" type="xns4:UserSession"/>
+        </xsd:schema>
+
+        <xsd:schema elementFormDefault="qualified"
+            targetNamespace="http://systinet.com/wsdl/ca/bc/gov/ag/csows/services/statement/"
+            xmlns:tns="http://systinet.com/wsdl/ca/bc/gov/ag/csows/services/statement/"
+            xmlns:xns4="http://systinet.com/wsdl/ca/bc/gov/ag/csows/accounts/"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:import
+            namespace="http://systinet.com/wsdl/ca/bc/gov/ag/csows/accounts/"/>
+            <xsd:complexType name="MonthlyStatementReport">
+                <xsd:sequence>
+                    <xsd:element name="clientGroups" nillable="true"
+                        type="tns:ArrayOfClientGroup"/>
+                    <xsd:element name="header" nillable="true"
+                        type="tns:StatementHeader"/>
+                    <xsd:element name="total" nillable="true"
+                        type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ClientGroup">
+                <xsd:sequence>
+                    <xsd:element name="clientId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="givenName" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="subTotal" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="surname" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="transactionGroups" nillable="true"
+                        type="tns:ArrayOfTransactionGroup"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="TransactionGroup">
+                <xsd:sequence>
+                    <xsd:element name="XReference" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="clientId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="subTotal" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="transactions" nillable="true"
+                        type="tns:ArrayOfStatementDetail"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="StatementDetail">
+                <xsd:sequence>
+                    <xsd:element name="clientId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="clientReferenceTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="fileNumber" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="givenNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="invoiceNumber" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceDescParam" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="serviceReceivedDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="serviceReceivedDtmText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceTypeCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceTypeDsc" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="style" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="surnameNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="transactionAmt" nillable="true"
+                        type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfStatementDetail">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="StatementDetail" nillable="true"
+                        type="tns:StatementDetail"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfTransactionGroup">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="TransactionGroup" nillable="true"
+                        type="tns:TransactionGroup"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfClientGroup">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="ClientGroup" nillable="true"
+                        type="tns:ClientGroup"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="StatementHeader">
+                <xsd:sequence>
+                    <xsd:element name="accountId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="accountNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="addressLine1Txt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="addressLine2Txt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="addressLine3Txt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="cityTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="ctryLongNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="fromDate" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="fromDateText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="phoneNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="postalCodeTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="province" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="toDate" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="toDateText" nillable="true"
+                        type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="AccountProfileReport">
+                <xsd:sequence>
+                    <xsd:element name="detail" nillable="true"
+                        type="xns4:ArrayOfClientProfile"/>
+                    <xsd:element name="header" nillable="true"
+                        type="tns:StatementHeader"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+
+        <xsd:schema elementFormDefault="qualified"
+            targetNamespace="http://systinet.com/j2ee/ejb/"
+            xmlns:tns="http://systinet.com/j2ee/ejb/"
+            xmlns:xns4="http://systinet.com/wsdl/ca/bc/gov/ag/csows/accounts/"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:import
+            namespace="http://systinet.com/wsdl/ca/bc/gov/ag/csows/accounts/"/>
+            <xsd:complexType name="Service">
+                <xsd:sequence>
+                    <xsd:element name="accountId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="clientId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="clientReferenceTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="courtFileNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="feePaidYn" nillable="true"
+                        type="xsd:boolean"/>
+                    <xsd:element name="parameters" nillable="true"
+                        type="tns:ArrayOfParameterInstance"/>
+                    <xsd:element name="serviceId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="serviceReceivedDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="serviceReceivedDtmText" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceSessionId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="serviceSubtypeCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceTypeCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceTypeDesc" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="styleOfCause" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="transactions" nillable="true"
+                        type="tns:ArrayOfFinancialTransaction"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="userSessionId" nillable="true"
+                        type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ParameterInstance">
+                <xsd:sequence>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="parameterValueTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="serviceParameterNm" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfParameterInstance">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="ParameterInstance" nillable="true"
+                        type="tns:ParameterInstance"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="FinancialTransaction">
+                <xsd:sequence>
+                    <xsd:element name="approvalCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="creditCardTypeCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="internalClientNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="invoiceNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="processDt" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="referenceMessageTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="responseCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="serviceId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="sessionKeyNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="terminalIdentifierNo" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="transactionAmt" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="transactionStateCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="transactionTypeCd" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="transactonDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfFinancialTransaction">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="FinancialTransaction" nillable="true"
+                        type="tns:FinancialTransaction"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="UserSession">
+                <xsd:sequence>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="startDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="userSessionId" nillable="true"
+                        type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ServiceSession">
+                <xsd:sequence>
+                    <xsd:element name="entDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="entUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="nextPageUrlTxt" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="prepaidFileViewQty" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="serviceSessionClosedYn" nillable="true"
+                        type="xsd:boolean"/>
+                    <xsd:element name="serviceSessionId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="services" nillable="true"
+                        type="tns:ArrayOfService"/>
+                    <xsd:element name="updDtm" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="updUserId" nillable="true"
+                        type="xsd:string"/>
+                    <xsd:element name="userSessionId" nillable="true"
+                        type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfService">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="Service" nillable="true" type="tns:Service"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ServiceSessions">
+                <xsd:sequence>
+                    <xsd:element name="sessions" nillable="true"
+                        type="tns:ArrayOfServiceSession"/>
+                    <xsd:element name="size" type="xsd:int"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfServiceSession">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="ServiceSession" nillable="true"
+                        type="tns:ServiceSession"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ClientTransaction">
+                <xsd:sequence>
+                    <xsd:element name="payments" nillable="true"
+                        type="tns:ArrayOfFinancialTransaction"/>
+                    <xsd:element name="profile" nillable="true"
+                        type="xns4:ClientProfile"/>
+                    <xsd:element name="service" nillable="true"
+                        type="tns:Service"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfClientTransaction">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="ClientTransaction" nillable="true"
+                        type="tns:ClientTransaction"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="UsageStatsHolder">
+                <xsd:sequence>
+                    <xsd:element name="totalSessions" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="usageStats" nillable="true"
+                        type="tns:ArrayOfUsageStats"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="UsageStats">
+                <xsd:sequence>
+                    <xsd:element name="dateUsage" nillable="true"
+                        type="xsd:dateTime"/>
+                    <xsd:element name="feeExemptYn" nillable="true"
+                        type="xsd:boolean"/>
+                    <xsd:element name="initialSearch" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="mnthStmt" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="numSessions" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="printFile" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="refineSearch" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="viewFile" nillable="true"
+                        type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfUsageStats">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="UsageStats" nillable="true"
+                        type="tns:UsageStats"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="TransactionalGroup">
+                <xsd:sequence>
+                    <xsd:element name="clientId" nillable="true"
+                        type="xsd:decimal"/>
+                    <xsd:element name="clientTransactions" nillable="true"
+                        type="tns:ArrayOfClientTransaction"/>
+                    <xsd:element name="subtotal" nillable="true"
+                        type="xsd:decimal"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="ArrayOfTransactionalGroup">
+                <xsd:sequence>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0"
+                        name="TransactionalGroup" nillable="true"
+                        type="tns:TransactionalGroup"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+
+    </types>
+    <message name='RemoteException'>
+        <part name='idoox-java-mapping.java.rmi.RemoteException' element='ns0:idoox-java-mapping.java.rmi.RemoteException'/>
+    </message>
+    <message name='ServiceFacade_addService_Request_Soap'>
+        <part name='p0' element='ns0:p0'/>
+    </message>
+    <message name='ServiceFacade_addService_Response_Soap'>
+        <part name='response' element='ns0:Service_Response'/>
+    </message>
+    <message name='ServiceFacade_createServiceSession_Request_Soap'>
+        <part name='p0' element='ns0:p0_1'/>
+        <part name='p1' element='ns0:p1'/>
+    </message>
+    <message name='ServiceFacade_createServiceSession_Response_Soap'>
+        <part name='response' element='ns0:ServiceSession_Response'/>
+    </message>
+    <message name='ServiceFacade_createUserSession_Request_Soap'>
+        <part name='p0' element='ns0:p0_2'/>
+    </message>
+    <message name='ServiceFacade_createUserSession_Response_Soap'>
+        <part name='response' element='ns0:UserSession_Response'/>
+    </message>
+    <message name='ServiceFacade_endServiceSession_Request_Soap'>
+        <part name='p0' element='ns0:p0_3'/>
+    </message>
+    <message name='ServiceFacade_endServiceSession_Response_Soap'>
+        <part name='response' element='ns0:ServiceSession_Response'/>
+    </message>
+    <message name='ServiceFacade_findFinancialTransactionByInvoice_Request_Soap'>
+        <part name='p0' element='ns0:p0_4'/>
+    </message>
+    <message name='ServiceFacade_findFinancialTransactionByInvoice_Response_Soap'>
+        <part name='response' element='ns0:FinancialTransaction_Response'/>
+    </message>
+    <message name='ServiceFacade_findFinancialTransactionsByCriteria_Request_Soap'>
+        <part name='p0' element='ns0:p0_5'/>
+        <part name='p1' element='ns0:p1_6'/>
+        <part name='p2' element='ns0:p2'/>
+        <part name='p3' element='ns0:p3'/>
+    </message>
+    <message name='ServiceFacade_findFinancialTransactionsByCriteria_Response_Soap'>
+        <part name='response' element='ns0:ArrayOfFinancialTransaction_Response'/>
+    </message>
+    <message name='ServiceFacade_findServiceSessionsTxns_Request_Soap'>
+        <part name='p0' element='ns0:p0_8'/>
+    </message>
+    <message name='ServiceFacade_findServiceSessionsTxns_Response_Soap'>
+        <part name='response' element='ns0:ServiceSessions_Response'/>
+    </message>
+    <message name='ServiceFacade_findServiceSessions_Request_Soap'>
+        <part name='p0' element='ns0:p0_7'/>
+    </message>
+    <message name='ServiceFacade_findServiceSessions_Response_Soap'>
+        <part name='response' element='ns0:ServiceSessions_Response'/>
+    </message>
+    <message name='ServiceFacade_findServicesByInvoiceNo_Request_Soap'>
+        <part name='p0' element='ns0:p0_9'/>
+    </message>
+    <message name='ServiceFacade_findServicesByInvoiceNo_Response_Soap'>
+        <part name='response' element='ns0:ArrayOfClientTransaction_Response'/>
+    </message>
+    <message name='ServiceFacade_findServicesByProfile_Request_Soap'>
+        <part name='p0' element='ns0:p0_10'/>
+        <part name='p1' element='ns0:p1_11'/>
+        <part name='p2' element='ns0:p2_12'/>
+        <part name='p3' element='ns0:p3_13'/>
+        <part name='p4' element='ns0:p4'/>
+        <part name='p5' element='ns0:p5'/>
+    </message>
+    <message name='ServiceFacade_findServicesByProfile_Response_Soap'>
+        <part name='response' element='ns0:ArrayOfClientTransaction_Response'/>
+    </message>
+    <message name='ServiceFacade_findServicesByTransactionId_Request_Soap'>
+        <part name='p0' element='ns0:p0_14'/>
+    </message>
+    <message name='ServiceFacade_findServicesByTransactionId_Response_Soap'>
+        <part name='response' element='ns0:ArrayOfClientTransaction_Response'/>
+    </message>
+    <message name='ServiceFacade_getNextInvoiceNumber_Request_Soap'>
+        <part name='p0' element='ns0:p0_15'/>
+    </message>
+    <message name='ServiceFacade_getNextInvoiceNumber_Response_Soap'>
+        <part name='response' element='ns0:string_Response'/>
+    </message>
+    <message name='ServiceFacade_getUsageStats_Request_Soap'>
+        <part name='p0' element='ns0:p0_16'/>
+        <part name='p1' element='ns0:p1_17'/>
+    </message>
+    <message name='ServiceFacade_getUsageStats_Response_Soap'>
+        <part name='response' element='ns0:UsageStatsHolder_Response'/>
+    </message>
+    <message name='ServiceFacade_hasOpenServiceSession_Request_Soap'>
+        <part name='p0' element='ns0:p0_18'/>
+    </message>
+    <message name='ServiceFacade_hasOpenServiceSession_Response_Soap'>
+        <part name='response' element='ns0:boolean_Response'/>
+    </message>
+    <message name='ServiceFacade_isServicePaid_Request_Soap'>
+        <part name='p0' element='ns0:p0_19'/>
+        <part name='p1' element='ns0:p1'/>
+        <part name='p2' element='ns0:p2'/>
+    </message>
+    <message name='ServiceFacade_isServicePaid_Response_Soap'>
+        <part name='response' element='ns0:boolean_Response'/>
+    </message>
+    <message name='ServiceFacade_latestServiceSession_Request_Soap'>
+        <part name='p0' element='ns0:p0_20'/>
+    </message>
+    <message name='ServiceFacade_latestServiceSession_Response_Soap'>
+        <part name='response' element='ns0:ServiceSession_Response'/>
+    </message>
+    <message name='ServiceFacade_monthlyStatement_Request_Soap'>
+        <part name='p0' element='ns0:p0_21'/>
+        <part name='p1' element='ns0:p1_22'/>
+        <part name='p2' element='ns0:p2_23'/>
+        <part name='p3' element='ns0:p3_24'/>
+    </message>
+    <message name='ServiceFacade_monthlyStatement_Response_Soap'>
+        <part name='response' element='ns0:MonthlyStatementReport_Response'/>
+    </message>
+    <message name='ServiceFacade_profileReport_Request_Soap'>
+        <part name='p0' element='ns0:p0_25'/>
+    </message>
+    <message name='ServiceFacade_profileReport_Response_Soap'>
+        <part name='response' element='ns0:AccountProfileReport_Response'/>
+    </message>
+    <message name='ServiceFacade_transactionReport_Request_Soap'>
+        <part name='p0' element='ns0:p0_26'/>
+        <part name='p1' element='ns0:p1_27'/>
+        <part name='p2' element='ns0:p2_28'/>
+        <part name='p3' element='ns0:p3_29'/>
+        <part name='p4' element='ns0:p4_30'/>
+    </message>
+    <message name='ServiceFacade_transactionReport_Response_Soap'>
+        <part name='response' element='ns0:ArrayOfTransactionalGroup_Response'/>
+    </message>
+    <message name='ServiceFacade_updateFinancialTransaction_Request_Soap'>
+        <part name='p0' element='ns0:p0_31'/>
+    </message>
+    <message name='ServiceFacade_updateFinancialTransaction_Response_Soap'/>
+    <message name='ServiceFacade_updateServiceSession_Request_Soap'>
+        <part name='p0' element='ns0:p0_32'/>
+    </message>
+    <message name='ServiceFacade_updateServiceSession_Response_Soap'/>
+    <message name='ServiceFacade_updateService_Request_Soap'>
+        <part name='p0' element='ns0:p0'/>
+    </message>
+    <message name='ServiceFacade_updateService_Response_Soap'/>
+    <message name='ServiceFacade_updateUserSession_Request_Soap'>
+        <part name='p0' element='ns0:p0_33'/>
+    </message>
+    <message name='ServiceFacade_updateUserSession_Response_Soap'/>
+    <message name='runtimeHeaders_0'>
+        <part name='header_0' element='ns1:instance'/>
+        <part name='header_1' element='ns2:TxId'/>
+    </message>
+    <portType name='ServiceFacade'>
+        <operation name='addService' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_addService_Request_Soap'/>
+            <output message='tns:ServiceFacade_addService_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='createServiceSession' parameterOrder='p0 p1'>
+            <input message='tns:ServiceFacade_createServiceSession_Request_Soap'/>
+            <output message='tns:ServiceFacade_createServiceSession_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='createUserSession' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_createUserSession_Request_Soap'/>
+            <output message='tns:ServiceFacade_createUserSession_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='endServiceSession' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_endServiceSession_Request_Soap'/>
+            <output message='tns:ServiceFacade_endServiceSession_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='findFinancialTransactionByInvoice' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_findFinancialTransactionByInvoice_Request_Soap'/>
+            <output message='tns:ServiceFacade_findFinancialTransactionByInvoice_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='findFinancialTransactionsByCriteria' parameterOrder='p0 p1 p2 p3'>
+            <input message='tns:ServiceFacade_findFinancialTransactionsByCriteria_Request_Soap'/>
+            <output message='tns:ServiceFacade_findFinancialTransactionsByCriteria_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='findServiceSessions' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_findServiceSessions_Request_Soap'/>
+            <output message='tns:ServiceFacade_findServiceSessions_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='findServiceSessionsTxns' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_findServiceSessionsTxns_Request_Soap'/>
+            <output message='tns:ServiceFacade_findServiceSessionsTxns_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='findServicesByInvoiceNo' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_findServicesByInvoiceNo_Request_Soap'/>
+            <output message='tns:ServiceFacade_findServicesByInvoiceNo_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='findServicesByProfile' parameterOrder='p0 p1 p2 p3 p4 p5'>
+            <input message='tns:ServiceFacade_findServicesByProfile_Request_Soap'/>
+            <output message='tns:ServiceFacade_findServicesByProfile_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='findServicesByTransactionId' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_findServicesByTransactionId_Request_Soap'/>
+            <output message='tns:ServiceFacade_findServicesByTransactionId_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='getNextInvoiceNumber' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_getNextInvoiceNumber_Request_Soap'/>
+            <output message='tns:ServiceFacade_getNextInvoiceNumber_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='getUsageStats' parameterOrder='p0 p1'>
+            <input message='tns:ServiceFacade_getUsageStats_Request_Soap'/>
+            <output message='tns:ServiceFacade_getUsageStats_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='hasOpenServiceSession' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_hasOpenServiceSession_Request_Soap'/>
+            <output message='tns:ServiceFacade_hasOpenServiceSession_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='isServicePaid' parameterOrder='p0 p1 p2'>
+            <input message='tns:ServiceFacade_isServicePaid_Request_Soap'/>
+            <output message='tns:ServiceFacade_isServicePaid_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='latestServiceSession' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_latestServiceSession_Request_Soap'/>
+            <output message='tns:ServiceFacade_latestServiceSession_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='monthlyStatement' parameterOrder='p0 p1 p2 p3'>
+            <input message='tns:ServiceFacade_monthlyStatement_Request_Soap'/>
+            <output message='tns:ServiceFacade_monthlyStatement_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='profileReport' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_profileReport_Request_Soap'/>
+            <output message='tns:ServiceFacade_profileReport_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='transactionReport' parameterOrder='p0 p1 p2 p3 p4'>
+            <input message='tns:ServiceFacade_transactionReport_Request_Soap'/>
+            <output message='tns:ServiceFacade_transactionReport_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='updateFinancialTransaction' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_updateFinancialTransaction_Request_Soap'/>
+            <output message='tns:ServiceFacade_updateFinancialTransaction_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='updateService' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_updateService_Request_Soap'/>
+            <output message='tns:ServiceFacade_updateService_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='updateServiceSession' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_updateServiceSession_Request_Soap'/>
+            <output message='tns:ServiceFacade_updateServiceSession_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+        <operation name='updateUserSession' parameterOrder='p0'>
+            <input message='tns:ServiceFacade_updateUserSession_Request_Soap'/>
+            <output message='tns:ServiceFacade_updateUserSession_Response_Soap'/>
+            <fault name='RemoteException' message='tns:RemoteException'/>
+        </operation>
+    </portType>
+    <binding name='ServiceFacade' type='tns:ServiceFacade'>
+        <soap:binding transport='http://schemas.xmlsoap.org/soap/http' style='document'/>
+        <operation name='addService'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#addService?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvU2VydmljZTspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9TZXJ2aWNlOw==' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='createServiceSession'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#createServiceSession?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvVXNlclNlc3Npb247TGphdmEvbGFuZy9TdHJpbmc7KUxjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvU2VydmljZVNlc3Npb247' style='document'/>
+            <input>
+                <soap:body parts='p0 p1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='createUserSession'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#createUserSession?KExqYXZhL2xhbmcvU3RyaW5nOylMY2EvYmMvZ292L2FnL2Nzb3dzL3NlcnZpY2VzL1VzZXJTZXNzaW9uOw==' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='endServiceSession'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#endServiceSession?KExqYXZhL21hdGgvQmlnRGVjaW1hbDspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9TZXJ2aWNlU2Vzc2lvbjs=' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='findFinancialTransactionByInvoice'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#findFinancialTransactionByInvoice?KExqYXZhL2xhbmcvU3RyaW5nOylMY2EvYmMvZ292L2FnL2Nzb3dzL3NlcnZpY2VzL0ZpbmFuY2lhbFRyYW5zYWN0aW9uOw==' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='findFinancialTransactionsByCriteria'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#findFinancialTransactionsByCriteria?KExqYXZhL3V0aWwvRGF0ZTtMamF2YS91dGlsL0RhdGU7TGphdmEvbGFuZy9TdHJpbmc7TGphdmEvbGFuZy9TdHJpbmc7KVtMY2EvYmMvZ292L2FnL2Nzb3dzL3NlcnZpY2VzL0ZpbmFuY2lhbFRyYW5zYWN0aW9uOw==' style='document'/>
+            <input>
+                <soap:body parts='p0 p1 p2 p3' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='findServiceSessions'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#findServiceSessions?KExqYXZhL21hdGgvQmlnRGVjaW1hbDspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9TZXJ2aWNlU2Vzc2lvbnM7' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='findServiceSessionsTxns'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#findServiceSessionsTxns?KExqYXZhL21hdGgvQmlnRGVjaW1hbDspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9TZXJ2aWNlU2Vzc2lvbnM7' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='findServicesByInvoiceNo'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#findServicesByInvoiceNo?KExqYXZhL2xhbmcvU3RyaW5nOylbTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9DbGllbnRUcmFuc2FjdGlvbjs=' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='findServicesByProfile'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#findServicesByProfile?KExqYXZhL21hdGgvQmlnRGVjaW1hbDtMamF2YS9tYXRoL0JpZ0RlY2ltYWw7TGphdmEvbWF0aC9CaWdEZWNpbWFsO0xqYXZhL21hdGgvQmlnRGVjaW1hbDtMamF2YS91dGlsL0RhdGU7TGphdmEvdXRpbC9EYXRlOylbTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9DbGllbnRUcmFuc2FjdGlvbjs=' style='document'/>
+            <input>
+                <soap:body parts='p0 p1 p2 p3 p4 p5' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='findServicesByTransactionId'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#findServicesByTransactionId?KExqYXZhL21hdGgvQmlnRGVjaW1hbDspW0xjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvQ2xpZW50VHJhbnNhY3Rpb247' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='getNextInvoiceNumber'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#getNextInvoiceNumber?KExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1N0cmluZzs=' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='getUsageStats'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#getUsageStats?KExqYXZhL3V0aWwvRGF0ZTtMamF2YS91dGlsL0RhdGU7KUxjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvVXNhZ2VTdGF0c0hvbGRlcjs=' style='document'/>
+            <input>
+                <soap:body parts='p0 p1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='hasOpenServiceSession'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#hasOpenServiceSession?KExqYXZhL21hdGgvQmlnRGVjaW1hbDspWg==' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='isServicePaid'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#isServicePaid?KExqYXZhL21hdGgvQmlnRGVjaW1hbDtMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZzspWg==' style='document'/>
+            <input>
+                <soap:body parts='p0 p1 p2' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='latestServiceSession'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#latestServiceSession?KExqYXZhL21hdGgvQmlnRGVjaW1hbDspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9TZXJ2aWNlU2Vzc2lvbjs=' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='monthlyStatement'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#monthlyStatement?KExqYXZhL21hdGgvQmlnRGVjaW1hbDtMamF2YS9tYXRoL0JpZ0RlY2ltYWw7TGphdmEvdXRpbC9EYXRlO0xqYXZhL3V0aWwvRGF0ZTspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9zdGF0ZW1lbnQvTW9udGhseVN0YXRlbWVudFJlcG9ydDs=' style='document'/>
+            <input>
+                <soap:body parts='p0 p1 p2 p3' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='profileReport'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#profileReport?KExqYXZhL21hdGgvQmlnRGVjaW1hbDspTGNhL2JjL2dvdi9hZy9jc293cy9zZXJ2aWNlcy9zdGF0ZW1lbnQvQWNjb3VudFByb2ZpbGVSZXBvcnQ7' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='transactionReport'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#transactionReport?KExqYXZhL21hdGgvQmlnRGVjaW1hbDtMamF2YS9tYXRoL0JpZ0RlY2ltYWw7TGphdmEvdXRpbC9EYXRlO0xqYXZhL3V0aWwvRGF0ZTtMamF2YS9tYXRoL0JpZ0RlY2ltYWw7KVtMY2EvYmMvZ292L2FnL2Nzb3dzL3NlcnZpY2VzL1RyYW5zYWN0aW9uYWxHcm91cDs=' style='document'/>
+            <input>
+                <soap:body parts='p0 p1 p2 p3 p4' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body parts='response' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='updateFinancialTransaction'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#updateFinancialTransaction?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvRmluYW5jaWFsVHJhbnNhY3Rpb247KVY=' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='updateService'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#updateService?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvU2VydmljZTspVg==' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='updateServiceSession'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#updateServiceSession?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvU2VydmljZVNlc3Npb247KVY=' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+        <operation name='updateUserSession'>
+            <soap:operation soapAction='http://systinet.com/j2ee/ejb/ServiceFacade#updateUserSession?KExjYS9iYy9nb3YvYWcvY3Nvd3Mvc2VydmljZXMvVXNlclNlc3Npb247KVY=' style='document'/>
+            <input>
+                <soap:body parts='p0' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </input>
+            <output>
+                <soap:body use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_1' use='literal'/>
+                <soap:header message='tns:runtimeHeaders_0' part='header_0' use='literal'/>
+            </output>
+            <fault name='RemoteException'>
+                <soap:fault name='RemoteException' use='literal'/>
+            </fault>
+        </operation>
+    </binding>
+    <service name='jndi-ejb/services.ServiceFacade'>
+        <port name='ServiceFacade' binding='tns:ServiceFacade'>
+            <soap:address location='http://easter.ag.gov.bc.ca:7779/systinet_uat/server/csows/ServiceFacade/'/>
+        </port>
+    </service>
+</definitions>
