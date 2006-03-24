@@ -39,8 +39,10 @@ public class XslTransformationFetchPanel extends JPanel {
         this.xslDialog = parent;
 
         String[] regexes = assertion.getFetchUrlRegexes();
-        for (int i = 0; i < regexes.length; i++) {
-            regexListModel.addElement(regexes[i]);
+        if (regexes != null) {
+            for (int i = 0; i < regexes.length; i++) {
+                regexListModel.addElement(regexes[i]);
+            }
         }
         regexList.setModel(regexListModel);
         regexList.addListSelectionListener(new ListSelectionListener() {

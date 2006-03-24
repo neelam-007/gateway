@@ -241,7 +241,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
     void updateModel(XslTransformation assertion) {
         // Null all fetch-mode fields
         assertion.setFetchXsltFromMessageUrls(false);
-        assertion.setFetchUrlRegexes(null);
+        assertion.setFetchUrlRegexes(new String[0]);
         assertion.setFetchAllowWithoutStylesheet(false);
 
         // Set specify-mode fields
