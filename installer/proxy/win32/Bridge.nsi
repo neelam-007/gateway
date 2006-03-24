@@ -101,6 +101,7 @@ Section "SecureSpan Bridge" SecCopyUI
   File "${BUILD_DIR}\Bridge.jar"
   File /r "${J2RE_PATH}"
   File "${BUILD_DIR}\..\installer\proxy\win32\SSBService.exe"
+  File "${BUILD_DIR}\..\src\com\l7tech\proxy\resources\logging.properties"
 
   SetOutPath "$INSTDIR/lib"
   ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
