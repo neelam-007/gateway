@@ -65,8 +65,6 @@ public class XslTransformationPropertiesDialog extends JDialog {
         specifyPanel = new XslTransformationSpecifyPanel(this, assertion);
         fetchPanel = new XslTransformationFetchPanel(this, assertion);
 
-        whichMimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
-
         mainPanel.add(innerPanel, new GridConstraints(7, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
         innerPanel.setLayout(new GridBagLayout());
         innerPanel.add(specifyPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
@@ -101,6 +99,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
         } else {
             directionCombo.setSelectedItem(DIRECTION_RESPONSE);
         }
+
+        whichMimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
+        whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
 
         if (assertion.isFetchXsltFromMessageUrls()) {
             fetchRadio.setSelected(true);
