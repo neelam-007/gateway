@@ -91,6 +91,7 @@ Section "Policy Editor" SecCopyUI
   File "${MUI_PRODUCT}.bat"
   File "${BUILD_DIR}\Manager.jar"
   File /r "${J2RE_PATH}"
+  File "${BUILD_DIR}\..\src\com\l7tech\console\resources\logging.properties"
 
   SetOutPath "$INSTDIR/lib"
   ; DO NOT DELETE OR EDIT THIS LINE - %%%JARFILE_FILE_LINES%%%
