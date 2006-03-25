@@ -402,7 +402,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         if (serviceManager == null) throw new IllegalStateException("ServiceManager must be set");
         if (_clusterNodeId == null) throw new IllegalStateException("clusterNodeId must be set");
 
-        _enabled = Boolean.valueOf(System.getProperty("com.l7tech.service.statistics.enabled", "true")).booleanValue();
+        _enabled = Boolean.valueOf(System.getProperty("com.l7tech.service.metrics.enabled", "true")).booleanValue();
         if (! _enabled) {
             return;
         }
