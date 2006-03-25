@@ -14,8 +14,8 @@ import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.*;
 import org.jfree.chart.renderer.xy.StackedXYBarRenderer;
 import org.jfree.chart.renderer.xy.XYItemRendererState;
-import org.jfree.data.RangeType;
 import org.jfree.data.Range;
+import org.jfree.data.RangeType;
 import org.jfree.data.time.SimpleTimePeriod;
 import org.jfree.data.time.TimePeriod;
 import org.jfree.data.time.TimeTableXYDataset;
@@ -116,6 +116,9 @@ public class MetricsChartPanel extends ChartPanel {
     private static final String SERIES_BACKEND_RESPONSE = resources.getString("seriesBackend");
 
     private static final MessageFormat tooltipFormat = new MessageFormat(resources.getString("tooltipFormat"));
+
+    /** Nominal bin interval (in milliseconds). */
+    private long _binInterval;
 
     /** Maximum time range of data to keep around (in milliseconds). */
     private long _maxTimeRange;
@@ -230,9 +233,13 @@ public class MetricsChartPanel extends ChartPanel {
         }
     }
 
-    /** @param maxTimeRange maximum time range of data to keep around */
-    public MetricsChartPanel(long maxTimeRange) {
+    /**
+     * @param maxTimeRange maximum time range of data to keep around
+     * @param binInterval nominal bin interval (in milliseconds)
+     */
+    public MetricsChartPanel(long maxTimeRange, long binInterval) {
         super(null);
+        _binInterval = binInterval;
         _maxTimeRange = maxTimeRange;
 
         // Creates the empty data structures.
@@ -341,7 +348,13 @@ public class MetricsChartPanel extends ChartPanel {
         // Now combine all plots to share the same time (x-)axis.
         //
 
-        final DateAxis xAxis = new DateAxis(null);
+        final DateAxis xAxis = new DateAxis(null) {
+            public void setRange(Range range, boolean turnOffAutoRange, boolean notify) {
+                // Do not zoom in any small than the nominal bin interval.
+                if ((range.getUpperBound() - range.getLowerBound()) >= _binInterval)
+                    super.setRange(range, turnOffAutoRange, notify);
+            }
+        };
         xAxis.setAutoRange(true);
         xAxis.setFixedAutoRange(_maxTimeRange);
         final CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(xAxis);
@@ -590,9 +603,9 @@ public class MetricsChartPanel extends ChartPanel {
      */
     public static void main(String[] args) throws InterruptedException {
         final int BIN_INTERVAL = 5 * 1000;
-        final long MAX_TIME_RANGE = 24 * 60 * 60 * 1000;
+        final long MAX_TIME_RANGE = 15 * 60 * 1000;
 
-        final MetricsChartPanel chartPanel = new MetricsChartPanel(MAX_TIME_RANGE);
+        final MetricsChartPanel chartPanel = new MetricsChartPanel(MAX_TIME_RANGE, BIN_INTERVAL);
 
         final JFrame mainFrame = new JFrame("MetricsChartPanel Test");
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
