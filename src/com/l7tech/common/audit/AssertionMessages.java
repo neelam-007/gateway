@@ -101,7 +101,7 @@ public class AssertionMessages extends Messages {
     // ServerRequestXpathAssertion & ServerResponseXpathAssertion messages
     public static final M XPATH_REQUEST_NOT_XML                   = m(4700, Level.WARNING, true, false, "Request not XML; cannot evaluate XPath expression");
     public static final M XPATH_RESPONSE_NOT_XML                  = m(4701, Level.WARNING, false, true, "Response not XML; cannot evaluate XPath expression");
-    public static final M XPATH_PATTERN_INVALID                   = m(4702, Level.WARNING, "XPath pattern is null or empty; assertion therefore fails.");
+    public static final M XPATH_PATTERN_INVALID                   = m(4702, Level.WARNING, "Cannot evaluate XPath expression: XPath pattern is invalid");
     public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST       = m(4703, Level.INFO, "XPath pattern didn't match request; assertion therefore fails." );
     public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "XPath pattern didn't match response; assertion therefore fails." );
     public static final M XPATH_RESULT_TRUE                       = m(4705, Level.FINE, "XPath pattern returned true");
@@ -341,9 +341,11 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_FIRST_PART_TOO_LARGE      = m(7221, Level.WARNING,  "Request first part size exceeds configured limit");
 
     // OversizedTextAssertion
-    public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against oversized text nodes or attribute values -- the request has already been routed"); 
-    public static final M OVERSIZEDTEXT_REQUEST_REJECTED    = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
+    public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against document structure threats -- the request has already been routed");
+    public static final M OVERSIZEDTEXT_OVERSIZED_TEXT      = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
     public static final M XML_NESTING_DEPTH_EXCEEDED        = m(7232, Level.WARNING, "Request XML nesting depth exceeds the policy limit");
+    public static final M OVERSIZEDTEXT_EXTRA_PAYLOAD       = m(7233, Level.WARNING, "Request message SOAP Body has too many children");
+    public static final M REQUEST_NOT_SOAP                  = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope"); 
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");

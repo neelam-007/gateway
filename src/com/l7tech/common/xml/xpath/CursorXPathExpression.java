@@ -1,24 +1,17 @@
 package com.l7tech.common.xml.xpath;
 
-import java.util.Map;
-import java.util.Collections;
-import java.util.StringTokenizer;
-import java.util.HashMap;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathVariableResolver;
-import javax.xml.xpath.XPathFunctionResolver;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.namespace.QName;
-import javax.xml.namespace.NamespaceContext;
-
-import org.xml.sax.InputSource;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-
-import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.InvalidXpathException;
+import com.l7tech.common.xml.XpathExpression;
+import org.xml.sax.InputSource;
+
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.namespace.QName;
+import javax.xml.xpath.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * CursorXPathExpression implementation of XPathExpression.

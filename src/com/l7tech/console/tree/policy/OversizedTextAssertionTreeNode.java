@@ -28,7 +28,7 @@ public class OversizedTextAssertionTreeNode extends LeafAssertionTreeNode{
     }
 
     public String getName() {
-        return "Oversized Element Protection";
+        return "Document Structure Threats";
     }
 
     protected String iconResource(boolean open) {

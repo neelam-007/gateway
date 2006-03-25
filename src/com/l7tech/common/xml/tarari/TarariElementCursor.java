@@ -17,6 +17,7 @@ import com.tarari.xml.output.OutputFormat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -219,7 +220,7 @@ class TarariElementCursor extends ElementCursor {
         return (Element)output.getResultRoot();
     }
 
-    public XpathResult getXpathResult(CompiledXpath compiledXpath) {
+    public XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException {
         if (compiledXpath == CompiledXpath.ALWAYS_TRUE)
             return XpathResult.RESULT_TRUE;
         if (compiledXpath == CompiledXpath.ALWAYS_FALSE)
@@ -232,6 +233,6 @@ class TarariElementCursor extends ElementCursor {
 
         // Someone passed a non-Tarari CompiledXpath to a Tarari cursor.  It shouldn't be possible to even
         // construct a non-Tarari CompiledXpath if you are able to construct Tarari cursors.
-        throw new IllegalArgumentException("Non-Tarari CompiledXpath passed to TarariElementCursor");
+        throw new XPathExpressionException("Non-Tarari CompiledXpath passed to TarariElementCursor");
     }
 }

@@ -30,16 +30,19 @@ public class OversizedTextDialog extends JDialog {
     private JTextField textLengthField;
     private JTextField attrLengthField;
     private JTextField nestingDepthField;
+    private JTextField payloadCountField;
     private JCheckBox textLengthCheckBox;
     private JCheckBox attrLengthCheckBox;
     private JCheckBox nestingDepthCheckBox;
+    private JCheckBox payloadCheckBox;
+    private JCheckBox soapEnvCheckBox;
 
     public boolean wasConfirmed() {
         return confirmed;
     }
 
     public OversizedTextDialog(Frame owner, OversizedTextAssertion assertion, boolean modal) throws HeadlessException {
-        super(owner, "Configure Oversized Element Protection", modal);
+        super(owner, "Configure Document Structure Threat Protection", modal);
         this.assertion = assertion;
         doInit();
     }
@@ -69,6 +72,8 @@ public class OversizedTextDialog extends JDialog {
         textLengthCheckBox.addChangeListener(changeListener);
         attrLengthCheckBox.addChangeListener(changeListener);
         nestingDepthCheckBox.addChangeListener(changeListener);
+        soapEnvCheckBox.addChangeListener(changeListener);
+        payloadCheckBox.addChangeListener(changeListener);
 
         Actions.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(okButton);
@@ -76,8 +81,10 @@ public class OversizedTextDialog extends JDialog {
         Utilities.enableGrayOnDisabled(textLengthField);
         Utilities.enableGrayOnDisabled(attrLengthField);
         Utilities.enableGrayOnDisabled(nestingDepthField);
+        Utilities.enableGrayOnDisabled(payloadCountField);
         Utilities.constrainTextFieldToLongRange(textLengthField, 0, Long.MAX_VALUE);
         Utilities.constrainTextFieldToLongRange(attrLengthField, 0, Long.MAX_VALUE);
+        Utilities.constrainTextFieldToIntegerRange(payloadCountField, 0, Integer.MAX_VALUE);
         Utilities.constrainTextFieldToIntegerRange(nestingDepthField,
                                                    OversizedTextAssertion.MIN_NESTING_LIMIT,
                                                    OversizedTextAssertion.MAX_NESTING_LIMIT);
@@ -92,12 +99,17 @@ public class OversizedTextDialog extends JDialog {
         attrLengthCheckBox.setSelected(assertion.isLimitAttrChars());
         nestingDepthField.setText(Integer.toString(assertion.getMaxNestingDepth()));
         nestingDepthCheckBox.setSelected(assertion.isLimitNestingDepth());
+        soapEnvCheckBox.setSelected(assertion.isRequireValidSoapEnvelope());
+        final int mp = assertion.getMaxPayloadElements();
+        payloadCheckBox.setSelected(mp > 0);
+        payloadCountField.setText(mp > 0 ? String.valueOf(mp) : "");
     }
 
     private void updateEnableState() {
         textLengthField.setEnabled(textLengthCheckBox.isSelected());
         attrLengthField.setEnabled(attrLengthCheckBox.isSelected());
         nestingDepthField.setEnabled(nestingDepthCheckBox.isSelected());
+        payloadCountField.setEnabled(payloadCheckBox.isSelected());
     }
 
     private void doCancel() {
@@ -136,9 +148,20 @@ public class OversizedTextDialog extends JDialog {
                 err = "Maximum nesting depth must be a number.";
         }
 
-        if (limitAttrLen && attrLen < 0) err = "Limits must be nonnegative.";
-        if (limitTextLen && textLen < 0) err = "Limits must be nonnegative.";
-        if (limitNestDepth && nestDepth < 0) err = "Limits must be nonnegative.";
+        int payloadCount = assertion.getMaxPayloadElements();
+        final boolean limitPayload = payloadCheckBox.isSelected();
+        try {
+            payloadCount = limitPayload ? Integer.parseInt(payloadCountField.getText()) : 0;
+        } catch (NumberFormatException nfe) {
+            if (limitPayload)
+                err = "Maximum payload count must be a number.";
+        }
+
+        if ((limitAttrLen && attrLen < 0) ||
+                (limitTextLen && textLen < 0) ||
+                (limitNestDepth && nestDepth < 0) ||
+                (limitPayload && payloadCount < 0))
+            err = "Limits must be nonnegative.";
 
         if (err != null) {
             JOptionPane.showMessageDialog(this, err, "Error", JOptionPane.ERROR_MESSAGE);
@@ -148,9 +171,11 @@ public class OversizedTextDialog extends JDialog {
         assertion.setMaxAttrChars(attrLen);
         assertion.setMaxTextChars(textLen);
         assertion.setMaxNestingDepth(nestDepth);
+        assertion.setMaxPayloadElements(payloadCount);
         assertion.setLimitTextChars(limitTextLen);
         assertion.setLimitAttrChars(limitAttrLen);
         assertion.setLimitNestingDepth(limitNestDepth);
+        assertion.setRequireValidSoapEnvelope(soapEnvCheckBox.isSelected());
         confirmed = true;
         modified = true;
         setVisible(false);

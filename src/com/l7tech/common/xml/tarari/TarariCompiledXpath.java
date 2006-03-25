@@ -23,6 +23,7 @@ import com.tarari.xml.xpath10.parser.XPathParseContext;
 import com.tarari.xml.xpath10.parser.XPathParseException;
 import org.w3c.dom.Node;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -111,7 +112,7 @@ class TarariCompiledXpath extends CompiledXpath {
         return fastXpath;
     }
 
-    public XpathResult getXpathResult(TarariElementCursor cursor) {
+    public XpathResult getXpathResult(TarariElementCursor cursor) throws XPathExpressionException {
         final TarariMessageContextImpl tmContext = cursor.getTarariMessageContext();
         if (fastXpath == null || fastXpath.getExpression() == null)
             return fallbackToDirectXPath(tmContext); // expression was too complex to simplify into TNF
@@ -244,8 +245,7 @@ class TarariCompiledXpath extends CompiledXpath {
         }
     }
 
-    private XpathResult fallbackToDirectXPath(TarariMessageContextImpl tctx)
-    {
+    private XpathResult fallbackToDirectXPath(TarariMessageContextImpl tctx) throws XPathExpressionException {
         // We're now committed to using Direct XPath results for this
 
         RaxCursor cursor = raxCursorFactory.createCursor("", tctx.getRaxDocument());
@@ -294,8 +294,7 @@ class TarariCompiledXpath extends CompiledXpath {
 
             default:
                 // Unsupported result
-                logger.warning("Tarari direct XPath produced unsupported result type " + resultType);
-                return null;
+                throw new XPathExpressionException("Tarari direct XPath produced unsupported result type " + resultType);
         }
 
         // It's a nodeset.

@@ -25,7 +25,7 @@ class TarariUtil {
 
         // This is our stuff (don't forget that Tarari uses 1-based arrays though)
         /* [6] payload element */
-        "/*[local-name()=\"Envelope\"]/*[local-name()=\"Body\"]/*[1]",
+        "/*[local-name()=\"Envelope\"]/*[local-name()=\"Body\"]/*",
         /* [7] Security header          */
         "/*[local-name()=\"Envelope\"]/*[1][local-name()=\"Header\"]/*[local-name()=\"Security\"]"
     };

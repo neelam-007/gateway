@@ -13,6 +13,7 @@ import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -102,25 +103,26 @@ public class DomCompiledXpath extends CompiledXpath {
      * Run a software-only XPath.
      *
      * @param cursor   the DOM cursor on which to run the xpath.  Must not be null.
-     * @return a new XpathResult instance, or null if no result could be generated.
-     * @throws InvalidXpathException if lazy compilation of the XPath reveals it to be invalid.
+     * @return a new XpathResult instance.  Never null.
+     * @throws XPathExpressionException if lazy compilation of the XPath reveals it to be invalid.
      */
-    public XpathResult getXpathResult(DomElementCursor cursor) throws InvalidXpathException {
-        DOMXPath xp = getDomXpath();
+    public XpathResult getXpathResult(DomElementCursor cursor) throws XPathExpressionException {
+        final DOMXPath xp;
 
         final List result;
         try {
+            xp = getDomXpath();
             result = xp.selectNodes(cursor.asDomNode());
         } catch (JaxenException e) {
-            throw new InvalidXpathException(e);
+            throw new XPathExpressionException(e);
         } catch (RuntimeException rte) {
             // How does this happen?
-            throw new InvalidXpathException(rte);
+            throw new XPathExpressionException(rte);
+        } catch (InvalidXpathException e) {
+            throw new RuntimeException(e); // can't happen
         }
 
-        if (result == null)
-            return null;
-        if (result.size() < 1)
+        if (result == null || result.size() < 1)
             return XpathResult.RESULT_EMPTY;
 
         Object o = result.get(0);

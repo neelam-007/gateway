@@ -12,6 +12,7 @@ import com.l7tech.common.xml.xpath.XpathResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -310,8 +311,27 @@ public abstract class ElementCursor {
      * a new XpathResult instance.
      *
      * @param compiledXpath the compiled XPath to run against this cursor.  Must not be null.
-     * @return the results of running this XPath against this cursor at its current position, or null if
-     *         the only appropriate result is no result at all.
+     * @return the results of running this XPath against this cursor at its current position.  Never null.
+     * @throws XPathExpressionException if the match failed and no result could be produced.
      */
-    public abstract XpathResult getXpathResult(CompiledXpath compiledXpath);
+    public abstract XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException;
+
+    /**
+     * Convenience method that runs the specified already-compiled XPath expression against this cursor
+     * at its current position and return true if the result was a match.
+     * A result is considered a match if it's a non-empty nodeset, a true
+     * boolean, or a string or number value.
+     * <p/>
+     * With this method, there is no way to get any more detailed information about the result
+     * than whether or not it matched.  If more details are required use {@link #getXpathResult} instead.
+     *
+     * @param compiledXpath the xpath to try to match.  Must not be null.
+     * @return true if this xpath matches this cursor at its current position.
+     * @throws XPathExpressionException if the match failed and no result could be produced.
+     */
+    public boolean matches(CompiledXpath compiledXpath) throws XPathExpressionException {
+        if (compiledXpath == null) throw new IllegalArgumentException("compiledXpath must be provided");
+        XpathResult result = getXpathResult(compiledXpath);
+        return result != null && result.matches();
+    }
 }

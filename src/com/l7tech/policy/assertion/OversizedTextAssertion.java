@@ -12,16 +12,20 @@ public class OversizedTextAssertion extends Assertion {
     public static final long DEFAULT_ATTR_LIMIT = 2048;
     public static final long DEFAULT_TEXT_LIMIT = 16384;
     public static final int DEFAULT_NESTING_LIMIT = 32;
+    public static final int DEFAULT_PAYLOAD_LIMIT = 0;     // Unlimited by default
     public static final int MIN_NESTING_LIMIT = 2;         // Constrain to prevent useless check
     public static final int MAX_NESTING_LIMIT = 10000;     // Constrain to prevent enormous value
 
-    private static final String XPATH_TEXT_START = "count((//*/text())[string-length() > ";
-    private static final String XPATH_TEXT_END = "]) < 1";
+    private static final String XPATH_TEXT_START = "(//*/text())[string-length() > ";
+    private static final String XPATH_TEXT_END = "][1]";
 
-    private static final String XPATH_ATTR_START = "count(//*/@*[string-length() > ";
-    private static final String XPATH_ATTR_END = "]) < 1";
+    private static final String XPATH_ATTR_START = "//*/@*[string-length() > ";
+    private static final String XPATH_ATTR_END = "][1]";
 
     private static final String XPATH_NESTING_STEP = "/*";
+
+    private static final String XPATH_PAYLOAD_START = " /*[local-name() = 'Envelope']/*[local-name() = \"Body\"]/*[";
+    private static final String XPATH_PAYLOAD_END = "]";
 
     private boolean limitTextChars = true;
     private long maxTextChars = DEFAULT_TEXT_LIMIT;
@@ -29,6 +33,8 @@ public class OversizedTextAssertion extends Assertion {
     private long maxAttrChars = DEFAULT_ATTR_LIMIT;
     private boolean limitNestingDepth = true;
     private int maxNestingDepth = DEFAULT_NESTING_LIMIT;
+    private int maxPayloadElements = DEFAULT_PAYLOAD_LIMIT;
+    private boolean requireValidSoapEnvelope = false;
 
     public boolean isLimitTextChars() {
         return limitTextChars;
@@ -80,17 +86,34 @@ public class OversizedTextAssertion extends Assertion {
         this.maxNestingDepth = maxNestingDepth;
     }
 
+    public void setRequireValidSoapEnvelope(boolean req) {
+        this.requireValidSoapEnvelope = req;
+    }
+
+    public boolean isRequireValidSoapEnvelope() {
+        return requireValidSoapEnvelope;
+    }
+
+    public void setMaxPayloadElements(int max) {
+        if (max < 0) max = 0;
+        this.maxPayloadElements = max;
+    }
+
+    public int getMaxPayloadElements() {
+        return maxPayloadElements;
+    }
+
     /**
-     * @return an XPath 1.0 expression that evaluates to true if no text node exceeds the configured limit, or null if
-     *         limitTextChars is false.
+     * @return an XPath 1.0 expression that matches the first text node that exceeds the size limit, or null
+     *         if limitTextChars is false;
      */
     public String makeTextXpath() {
         return isLimitTextChars() ? XPATH_TEXT_START + maxTextChars + XPATH_TEXT_END : null;
     }
 
     /**
-     * @return an XPath 1.0 expression that evaluates to true if no attribute value exceeds the configured limit, or null
-     *         if limitAttrChars is false.
+     * @return an XPath 1.0 expression that matches the first attribute node that exceeds the size limit,
+     *         or null if limitAttrChars is false.
      */
     public String makeAttrXpath() {
         return isLimitAttrChars() ? XPATH_ATTR_START + maxAttrChars + XPATH_ATTR_END : null;
@@ -117,5 +140,16 @@ public class OversizedTextAssertion extends Assertion {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * @return a parallelizable Tarari normal form XPath that matches the first payload element beyond the
+     *         configured maximum, or null if maxPayloadElements is zero.
+     */
+    public String makePayloadLimitXpath() {
+        final int maxPayloads = getMaxPayloadElements();
+        if (maxPayloads < 1) return null;
+
+        return XPATH_PAYLOAD_START + (maxPayloads + 1) + XPATH_PAYLOAD_END;
     }
 }

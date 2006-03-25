@@ -10,13 +10,8 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.xml.ElementCursor;
-import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
-import com.l7tech.common.xml.xpath.CompiledXpath;
-import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -28,6 +23,7 @@ import com.tarari.xml.rax.token.XmlTokenList;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -40,24 +36,15 @@ import java.util.logging.Logger;
 public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerAcceleratedOversizedTextAssertion.class.getName());
     private final Auditor auditor;
-    private final ServerAssertion softwareFallback;
+    private final ServerOversizedTextAssertion delegate;  // Non-Tarari-specific impl to handle the stuff that can just use XPath
     private final OversizedTextAssertion ota;
-    private final CompiledXpath nestingLimitChecker;
 
     public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
         auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
-        softwareFallback = new ServerOversizedTextAssertion(data, springContext);
+        // The delegate will do all the checking except for oversized text and attr nodes, which we can do
+        // specially by just scanning the token buffer in one pass.
+        delegate = new ServerOversizedTextAssertion(data, springContext);
         this.ota = data;
-        CompiledXpath nestingLimitChecker = null;
-        if (ota.isLimitNestingDepth()) {
-            try {
-                nestingLimitChecker = new XpathExpression(ota.makeNestingXpath()).compile();
-            } catch (InvalidXpathException e) {
-                // Can't happen, but just in case, make one that always succeeds so checkRequest() always fails
-                nestingLimitChecker = CompiledXpath.ALWAYS_TRUE;
-            }
-        }
-        this.nestingLimitChecker = nestingLimitChecker;
     }
 
     private static final int TEXT = 0;
@@ -116,50 +103,41 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
             return AssertionStatus.FAILED;
         }
 
-
         Message mess = context.getRequest();
         try {
             // Force Tarari evaluation to have occurred
             mess.isSoap();
 
-            // Are we to check nesting depth?  If so, do that first
-            if (nestingLimitChecker != null) {
-                ElementCursor cursor = mess.getXmlKnob().getElementCursor();
-                XpathResult xr = cursor.getXpathResult(nestingLimitChecker);
-                if (xr != null && xr.matches()) {
-                    // It matched, so nesting depth is too long -- fail
-                    auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
+            if (ota.isLimitAttrChars() || ota.isLimitTextChars()) {
+                TarariKnob tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
+                if (tknob == null) {
+                    auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+                    return fallbackToDelegate(context);
+                }
+
+                TarariMessageContext tmc = tknob.getContext();
+                TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
+                if (tmContext == null) {
+                    auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+                    return fallbackToDelegate(context);
+                }
+
+                ChunkState chunkState = findLongestChunks(tmContext.getRaxDocument());
+
+                int longestText = chunkState.getLongestText();
+                int longestAttrValue = chunkState.getLongestAttr();
+                int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
+
+                if ((ota.isLimitAttrChars() && longestAttrValue > ota.getMaxAttrChars()) ||
+                    (ota.isLimitTextChars() && longestText > ota.getMaxTextChars()) ||
+                    (longestOther > ota.getMaxAttrChars()*2 && longestOther > ota.getMaxTextChars()*2))
+                {
+                    auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
                     return AssertionStatus.BAD_REQUEST;
                 }
             }
 
-            TarariKnob tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
-            if (tknob == null) {
-                auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
-                return fallbackToSoftwareOnly(context);
-            }
-
-            TarariMessageContext tmc = tknob.getContext();
-            TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
-            if (tmContext == null) {
-                auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
-                return fallbackToSoftwareOnly(context);
-            }
-
-            ChunkState chunkState = findLongestChunks(tmContext.getRaxDocument());
-
-            int longestText = chunkState.getLongestText();
-            int longestAttrValue = chunkState.getLongestAttr();
-            int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
-
-            if (longestAttrValue > ota.getMaxAttrChars() || longestText > ota.getMaxTextChars() ||
-                    (longestOther > ota.getMaxAttrChars()*2 && longestOther > ota.getMaxTextChars()*2))
-            {
-                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_REQUEST_REJECTED);
-                return AssertionStatus.BAD_REQUEST;
-            }
-
-            return AssertionStatus.NONE;
+            return delegate.checkAllButBigTextAndBigAttr(mess, mess.getXmlKnob().getElementCursor(), auditor);
 
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
@@ -167,6 +145,9 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The required attachment " + e.getWhatWasMissing() + "was not found in the request"}, e);
             return AssertionStatus.BAD_REQUEST;
+        } catch (XPathExpressionException e) {
+            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
+            return AssertionStatus.FAILED;
         }
     }
 
@@ -220,7 +201,8 @@ public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion 
         return s;
     }
 
-    private AssertionStatus fallbackToSoftwareOnly(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        return softwareFallback.checkRequest(context);
+    /** Give up on Tarari-specific processing and fall back to using general processing (CompiledXpath) which may still be accelerated somewhat. */
+    private AssertionStatus fallbackToDelegate(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+        return delegate.checkRequest(context);
     }
 }

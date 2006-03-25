@@ -5,19 +5,17 @@
 
 package com.l7tech.common.xml;
 
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ArrayUtils;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.xml.xpath.XpathResult;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.DomCompiledXpath;
+import com.l7tech.common.xml.xpath.XpathResult;
 import org.w3c.dom.*;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * An implementation of {@link ElementCursor} that uses a DOM tree as its underlying model.
@@ -25,7 +23,6 @@ import java.util.logging.Logger;
  * DomElementCursor is still using it.
  */
 public class DomElementCursor extends ElementCursor {
-    private static final Logger logger = Logger.getLogger(DomElementCursor.class.getName());
     private final Document doc;
     private Node cur;
     private LinkedList stack = null;
@@ -203,7 +200,7 @@ public class DomElementCursor extends ElementCursor {
         return cur;
     }
 
-    public XpathResult getXpathResult(CompiledXpath compiledXpath) {
+    public XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException {
         if (compiledXpath == CompiledXpath.ALWAYS_TRUE)
             return XpathResult.RESULT_TRUE;
         if (compiledXpath == CompiledXpath.ALWAYS_FALSE)
@@ -211,13 +208,7 @@ public class DomElementCursor extends ElementCursor {
 
         if (compiledXpath instanceof DomCompiledXpath) {
             DomCompiledXpath domCompiledXpath = (DomCompiledXpath)compiledXpath;
-            try {
-                return domCompiledXpath.getXpathResult(this);
-            } catch (InvalidXpathException e) {
-                // Shouldn't be possible
-                logger.log(Level.WARNING, "Invalid xpath expression (compiled lazily): " + ExceptionUtils.getMessage(e), e);
-                return null;
-            }
+            return domCompiledXpath.getXpathResult(this);
         }
 
         // This can't happen -- currently there are only two impls, TarariCompiledXpath and DomCompiledXpath,

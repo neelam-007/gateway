@@ -246,9 +246,9 @@ public final class TestDocuments {
         return ettkClientCertificate = (X509Certificate)keyStore.getCertificate(clientAlias);
     }
 
-    private static PrivateKey dotNetServerPrivateKey = null;
-    public static synchronized PrivateKey getDotNetServerPrivateKey() throws Exception {
-        if (dotNetServerPrivateKey != null) return dotNetServerPrivateKey;
+    private static PrivateKey expiredDotNetServerPrivateKey = null;
+    public static synchronized PrivateKey getExpiredServerPrivateKey() throws Exception {
+        if (expiredDotNetServerPrivateKey != null) return expiredDotNetServerPrivateKey;
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         InputStream fis = getInputStream(SSL_KS);
         //fis = FileUtils.loadFileSafely(sslkeystorepath);
@@ -259,12 +259,12 @@ public final class TestDocuments {
         final String RIKER_PRIVATE_KEY_ALIAS = "tomcat";
         PrivateKey output = (PrivateKey)keyStore.getKey(RIKER_PRIVATE_KEY_ALIAS,
                                                         RIKER_PRIVATE_KEY_PASSWORD.toCharArray());
-        return dotNetServerPrivateKey = output;
+        return expiredDotNetServerPrivateKey = output;
     }
 
-    private static X509Certificate dotNetServerCertificate = null;
-    public static synchronized X509Certificate getDotNetServerCertificate() throws Exception {
-        if (dotNetServerCertificate != null) return dotNetServerCertificate;
+    private static X509Certificate expiredDotNetServerCertificate = null;
+    public static synchronized X509Certificate getExpiredServerCertificate() throws Exception {
+        if (expiredDotNetServerCertificate != null) return expiredDotNetServerCertificate;
         InputStream fis = getInputStream(SSL_CER);
         byte[] certbytes;
         try {
@@ -273,7 +273,12 @@ public final class TestDocuments {
             fis.close();
         }
         // construct the x509 based on the bytes
-        return dotNetServerCertificate = CertUtils.decodeCert(certbytes);
+        return expiredDotNetServerCertificate = CertUtils.decodeCert(certbytes);
+    }
+
+    // Old one expired -- use Franco one instead now
+    public static X509Certificate getDotNetServerCertificate() throws Exception {
+        return getFrancoCertificate();
     }
 
     private static X509Certificate francoCertificate = null;
@@ -290,10 +295,15 @@ public final class TestDocuments {
         return francoCertificate = CertUtils.decodeCert(certbytes);
     }
 
+    // Old one expired -- use Franco one instead now
+    public static PrivateKey getDotNetServerPrivateKey() throws Exception {
+        return getFrancoPrivateKey();
+    }
+
     private static PrivateKey francoPrivateKey = null;
     public static synchronized PrivateKey getFrancoPrivateKey() throws Exception {
         if (francoPrivateKey != null) return francoPrivateKey;
-        KeyStore keyStore = KeyStore.getInstance("BCPKCS12");
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
         InputStream fis = getInputStream(DIR + "franco.ks");
         final String passwd = "blahblah";
         keyStore.load(fis, passwd.toCharArray());

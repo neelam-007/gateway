@@ -54,6 +54,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -323,7 +324,13 @@ public class ServerXslTransformation implements ServerAssertion {
      */
     private String findXslHref(ElementCursor ec) throws SAXException, InvalidDocumentFormatException {
         ec.moveToRoot();
-        XpathResult pxr = ec.getXpathResult(findStylesheetPIs);
+        XpathResult pxr = null;
+        try {
+            pxr = ec.getXpathResult(findStylesheetPIs);
+        } catch (XPathExpressionException e) {
+            // Log it, but leave it as null
+            if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "XPath failed: " + ExceptionUtils.getMessage(e), e);
+        }
         if (pxr != null) {
             XpathResultNodeSet pis = pxr.getNodeSet();
             if (pis != null && pis.size() > 0) {

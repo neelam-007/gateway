@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.OversizedTextAssertion;
  */
 public class OversizedTextAssertionPaletteNode extends AbstractLeafPaletteNode {
     public OversizedTextAssertionPaletteNode() {
-        super("Oversized Element Protection", "com/l7tech/console/resources/OversizedElement16.gif");
+        super("Document Structure Threats", "com/l7tech/console/resources/OversizedElement16.gif");
     }
 
     public Assertion asAssertion() {

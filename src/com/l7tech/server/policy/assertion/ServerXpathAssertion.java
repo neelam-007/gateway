@@ -16,17 +16,22 @@ import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
 import com.l7tech.common.xml.xpath.CompiledXpath;
+import com.l7tech.common.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 import org.w3c.dom.Node;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Abstract superclass for server assertions whose operation centers around running a single xpath against
  * either the request or the response message.
  */
 public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
+    private static final Logger logger = Logger.getLogger(ServerXpathAssertion.class.getName());
     private final boolean req; // true = operate on request; false = operate on response
     private final String foundVariable;
     private final String countVariable;
@@ -66,7 +71,13 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
 
         cursor.moveToRoot();
 
-        XpathResult xpathResult = cursor.getXpathResult(compiledXpath);
+        XpathResult xpathResult = null;
+        try {
+            xpathResult = cursor.getXpathResult(compiledXpath);
+        } catch (XPathExpressionException e) {
+            // Log it, but treat it as null
+            if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "XPath failed: " + ExceptionUtils.getMessage(e), e);
+        }
         if (xpathResult == null) {
             auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST
                                     : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE);
