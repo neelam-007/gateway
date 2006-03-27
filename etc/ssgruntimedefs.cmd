@@ -36,7 +36,9 @@ set system_ram=%tmpstr2:,=%
 set /a java_ram=%system_ram%*2/3
 set /a maxnewsize=%java_ram%/2
 
-
+:: REMINDER: Changes to %JAVA_OPTS% will not propagate automatically to
+::           %JVMOPTIONS% in service.cmd. You must edit the same changes there
+::           manually.
 set JAVA_OPTS=^
 -Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl ^
 -Dcom.l7tech.server.home="%SSG_HOME%" ^
