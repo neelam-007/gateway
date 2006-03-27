@@ -3,6 +3,8 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.util.ExceptionUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -17,6 +19,10 @@ import java.util.logging.Logger;
 public class UrlPanel extends TextEntryPanel {
     private static final Logger logger = Logger.getLogger(UrlPanel.class.getName());
 
+    public UrlPanel() {
+        this("Prompt:", null);
+    }
+
     public UrlPanel(String label, String initialValue) {
         super(label, "url", initialValue);
     }
@@ -29,7 +35,7 @@ public class UrlPanel extends TextEntryPanel {
             readme = conn.getInputStream();
             return null;
         } catch (Exception e) {
-            return e.toString();
+            return ExceptionUtils.getMessage(e);
         } finally {
             try {
                 if (readme != null) readme.close();
@@ -43,12 +49,12 @@ public class UrlPanel extends TextEntryPanel {
         try {
             URL url = new URL(textField.getText());
             if (url.getHost() == null || url.getHost().length() == 0) {
-                return "No host";
+                return "no host";
             } else {
                 return null;
             }
         } catch (MalformedURLException e) {
-            return e.getMessage();
+            return ExceptionUtils.getMessage(e);
         }
     }
 

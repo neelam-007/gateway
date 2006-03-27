@@ -12,21 +12,38 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * @author alex
  */
 public abstract class TextEntryPanel extends JPanel {
-    protected volatile boolean syntaxOk;
+    private static final Pattern SPACER = Pattern.compile("\\s+");
+
     protected SquigglyTextField textField;
     protected JLabel statusLabel;
     protected JLabel promptLabel;
     protected JPanel mainPanel;
-    private final String propertyName;
+    private JScrollPane statusScrollPane;
+
+    protected volatile boolean syntaxOk;
+    private String propertyName;
+
+    protected TextEntryPanel() {
+        this("Prompt:", null, null);
+    }
 
     public TextEntryPanel(String label, String propertyName, String initialValue) {
-        super();
+        promptLabel.setText(label);
         this.propertyName = propertyName;
+        textField.setText(initialValue);
+        init();
+    }
+
+    private void init() {
+        statusScrollPane.setBorder(null);
+
         TextComponentPauseListenerManager.registerPauseListener(textField, new PauseListener() {
             public void textEntryPaused(JTextComponent component, long msecs) {
                 checkSemantic();
@@ -37,8 +54,6 @@ public abstract class TextEntryPanel extends JPanel {
                 statusLabel.setText(null);
             }
         }, 1500);
-
-        textField.setText(initialValue);
 
         textField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
@@ -55,10 +70,16 @@ public abstract class TextEntryPanel extends JPanel {
         });
 
         statusLabel.setText(null);
-        promptLabel.setText(label);
+        Font font = statusLabel.getFont();
+        float size = Math.round(font.getSize() * 1.5) / 2f;
+        statusLabel.setFont(font.deriveFont(size));
+        FontMetrics fm = statusLabel.getFontMetrics(font);
+        statusScrollPane.setMinimumSize(new Dimension(-1, fm.getHeight()));
 
         checkSyntax();
-        add(mainPanel);
+        setLayout(new BorderLayout());
+
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     private void checkSemantic() {
@@ -70,12 +91,37 @@ public abstract class TextEntryPanel extends JPanel {
         } else {
             Font font = statusLabel.getFont();
             statusLabel.setFont(font.deriveFont(Font.PLAIN));
-            statusLabel.setText(err);
+            statusLabel.setText("<html>" + nospace(err));
         }
+    }
+
+    private String nospace(String s) {
+        Matcher m = SPACER.matcher(s);
+        return m.replaceAll("&nbsp;");
     }
 
     public String getPropertyName() {
         return propertyName;
+    }
+
+    public void setPropertyName(String propertyName) {
+        this.propertyName = propertyName;
+    }
+
+    public String getPrompt() {
+        return promptLabel.getText();
+    }
+
+    public void setPrompt(String label) {
+        promptLabel.setText(label);
+    }
+
+    public String getText() {
+        return textField.getText();
+    }
+
+    public void setText(String s) {
+        textField.setText(s);
     }
 
     public void focusText() {
@@ -114,7 +160,6 @@ public abstract class TextEntryPanel extends JPanel {
         return text;
     }
 
-
     public boolean isSyntaxOk() {
         return syntaxOk;
     }
@@ -130,11 +175,11 @@ public abstract class TextEntryPanel extends JPanel {
             badSyntax(null);
             return;
         }
-        String err = getSyntaxError(text);
-        if (err == null) {
+        String statusString = getSyntaxError(text);
+        if (statusString == null) {
             goodSyntax();
         } else {
-            badSyntax(err);
+            badSyntax(statusString);
         }
     }
 
@@ -148,7 +193,7 @@ public abstract class TextEntryPanel extends JPanel {
     private void badSyntax(String message) {
         syntaxOk = false;
         if (message != null) {
-            statusLabel.setText(message);
+            statusLabel.setText("<html>" + nospace(message));
             Font font = statusLabel.getFont();
             statusLabel.setFont(font.deriveFont(Font.BOLD));
             textField.setColor(Color.RED);

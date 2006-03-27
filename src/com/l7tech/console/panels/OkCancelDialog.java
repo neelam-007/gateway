@@ -69,7 +69,8 @@ public class OkCancelDialog extends JDialog {
         okButton.setDefaultCapable(true);
         getRootPane().setDefaultButton(okButton);
         okButton.setEnabled(textEntryPanel.isSyntaxOk());
-        innerPanel.add(textEntryPanel);
+        innerPanel.setLayout(new BorderLayout());
+        innerPanel.add(textEntryPanel, BorderLayout.CENTER);
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -78,7 +79,7 @@ public class OkCancelDialog extends JDialog {
         });
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-        getContentPane().add(mainPanel);
+        setContentPane(mainPanel);
     }
 
     private void cancel() {
