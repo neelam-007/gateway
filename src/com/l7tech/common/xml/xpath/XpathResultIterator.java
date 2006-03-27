@@ -16,8 +16,9 @@ public interface XpathResultIterator {
 
     /**
      * Get the next node, filling the info into an XpathResultNode instance.
-     * Important note: information filled into the template may not remain valid if next() is called
-     * on this iterator again.  So, if you want to save any information, copy it somewhere else before moving to the
+     * <b>Important note</b>: information filled into the template may not remain valid if next() is called
+     * on this iterator again, <b><i>even if you pass it a different template instance</i></b>.
+     * So, if you want to save any information, copy it somewhere else before moving to the
      * next node. 
      *
      * @param template an XPath result node which will be filled in with details.  Must not be null.
