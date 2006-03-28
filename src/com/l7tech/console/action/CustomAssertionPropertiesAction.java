@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.beaneditor.BeanEditor;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -64,21 +65,32 @@ public class CustomAssertionPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        AssertionEditor editor = getCustomEditor();
-        if (editor != null) {
-            editor.addEditListener(new EditListener() {
-                public void onEditAccepted(Object source, Object bean) {
-                    assertionChanged();
-                }
+        try {
+            AssertionEditor editor = getCustomEditor();
+            if (editor != null) {
+                editor.addEditListener(new EditListener() {
+                    public void onEditAccepted(Object source, Object bean) {
+                        assertionChanged();
+                    }
 
-                public void onEditCancelled(Object source, Object bean) {}
-            });
-            if (editor instanceof Window) {
-                Utilities.centerOnScreen((Window)editor);
+                    public void onEditCancelled(Object source, Object bean) {}
+                });
+                if (editor instanceof Window) {
+                    Utilities.centerOnScreen((Window)editor);
+                }
+                    editor.edit();
+            } else {
+                performGenericEditorAction();
             }
-                editor.edit();
-        } else {
-            performGenericEditorAction();
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Error getting custom assertion editor.", e);
+            JFrame frame = TopComponents.getInstance().getMainWindow();
+            // use warning level since the user does not need to restart the Manager
+            ExceptionDialog ed = ExceptionDialog.createExceptionDialog(frame, "Error editing assertion, please check SecureSpan Gateway configuration.", null, Level.WARNING);
+            ed.pack();
+            Utilities.centerOnScreen(ed);
+            ed.setVisible(true);
         }
     }
 

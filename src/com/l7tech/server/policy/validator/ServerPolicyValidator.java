@@ -18,6 +18,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
@@ -40,6 +41,7 @@ import org.xml.sax.SAXException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Performs server side policy validation.
@@ -243,6 +245,18 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 msg.append(".");
                 r.addError(new PolicyValidatorResult.Error(a, ap, msg.toString(), null));
             }
+        }
+        else if (a instanceof UnknownAssertion) {
+            UnknownAssertion ua = (UnknownAssertion) a;
+
+            String message = "Unknown assertion{0}, this assertion will always fail.";
+            String detail = "";
+            Throwable cause = ua.getCause();
+            if(cause instanceof ClassNotFoundException) {
+                String className = ((ClassNotFoundException)cause).getMessage();
+                detail = " [" + (className.substring(className.lastIndexOf('.')+1)) + "]";
+            }
+            r.addError(new PolicyValidatorResult.Error(a, ap, MessageFormat.format(message, new Object[]{detail}), null));
         }
 
         // not else-if since this is also a credential source

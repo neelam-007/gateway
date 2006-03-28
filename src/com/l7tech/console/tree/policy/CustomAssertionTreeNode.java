@@ -115,7 +115,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the <code>ImageIcon</code> or null if not found
      */
     public Image getIcon() {
-        return getCutomAssertionIcon();
+        return getCustomAssertionIcon();
     }
     /**
       * loads the icon specified by subclass iconResource()
@@ -124,29 +124,29 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
       * @return the <code>ImageIcon</code> or null if not found
       */
      public Image getOpenedIcon() {
-         return getCutomAssertionIcon();
+         return getCustomAssertionIcon();
      }
 
 
-    private Image getCutomAssertionIcon() {
+    private Image getCustomAssertionIcon() {
         if (defaultImageIcon != null) {
             return defaultImageIcon;
         }
+
         CustomAssertion customAssertion = ((CustomAssertionHolder)asAssertion()).getCustomAssertion();
-        CustomAssertionUI ui = registrar.getUI(customAssertion.getClass());
-        if (ui == null) {
-            defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
-        } else {
-            try {
+        try {
+            CustomAssertionUI ui = registrar.getUI(customAssertion.getClass());
+            if(ui!=null) {
                 ImageIcon icon = ui.getSmallIcon();
                 if (icon != null) {
                     defaultImageIcon = icon.getImage();
-                    return defaultImageIcon;
                 }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to get the custom assertion icon", e);
             }
-            defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to get the custom assertion icon", e);
+        } finally {
+            if(defaultImageIcon==null)
+                defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
         }
 
         return defaultImageIcon;

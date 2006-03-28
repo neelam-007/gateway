@@ -14,19 +14,26 @@ package com.l7tech.policy.assertion;
  * @version 1.0
  */
 public class UnknownAssertion extends Assertion {
-    private String detailMessage;
-    private String originalXml = null;
+    private final String detailMessage;
+    private final String originalXml;
+    private final Throwable cause;
 
     public UnknownAssertion() {
+        this(null, null, null);
     }
 
     public UnknownAssertion(String detailMessage) {
-        this.detailMessage = detailMessage;
+        this(detailMessage, null);
     }
 
     public UnknownAssertion(String detailMessage, String originalXml) {
+        this(detailMessage, originalXml, null);
+    }
+
+    public UnknownAssertion(String detailMessage, String originalXml, Exception cause) {
         this.detailMessage = detailMessage == null ? "Unknown assertion" : detailMessage;
         this.originalXml = originalXml;
+        this.cause = cause;
     }
 
     public static UnknownAssertion create(String unknownAssertionName, String originalXml) {
@@ -34,7 +41,7 @@ public class UnknownAssertion extends Assertion {
     }
 
     public static UnknownAssertion create(String unknownAssertionName, String originalXml, ClassNotFoundException e) {
-        return new UnknownAssertion("Code not available for assertion: " + unknownAssertionName, originalXml);
+        return new UnknownAssertion("Code not available for assertion: " + unknownAssertionName, originalXml, e);
     }
 
     /**
@@ -47,19 +54,12 @@ public class UnknownAssertion extends Assertion {
         return detailMessage;
     }
 
-    /**
-     * @param detailMessage the unknown assertion detail message
-     */
-    public void setDetailMessage(String detailMessage) {
-        this.detailMessage = detailMessage;
-    }
-
     public String getOriginalXml() {
         return originalXml;
     }
 
-    public void setOriginalXml(String originalXml) {
-        this.originalXml = originalXml;
+    public Throwable getCause() {
+        return cause;
     }
 
     public String toString() {
