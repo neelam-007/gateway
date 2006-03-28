@@ -28,7 +28,7 @@ import java.util.logging.Level;
 
 /**
  * Abstract superclass for server assertions whose operation centers around running a single xpath against
- * either the request or the response message.
+ * either the request or the response message, possibly with variable capture.
  */
 public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
     private static final Logger logger = Logger.getLogger(ServerXpathAssertion.class.getName());
