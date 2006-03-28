@@ -32,12 +32,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author emil
  * @version Dec 2, 2004
  */
 public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLogin, InitializingBean {
+    private static final Logger logger = Logger.getLogger(AdminLoginImpl.class.getName());
+
     private AdminSessionManager sessionManager;
 
     //todo: consider moving to Spring bean configuration
@@ -73,18 +77,18 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
 
             return new AdminLoginResult(adminContext, cookie);
         } catch (AuthenticationException e) {
-            logger.trace("Authentication failed", e);
+            logger.log(Level.FINE, "Authentication failed", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (FindException e) {
-            logger.warn("Authentication provider error", e);
+            logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (IOException e) {
-            logger.warn("Authentication provider error", e);
+            logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (ServerNotActiveException e) {
             throw new RemoteException("Illegal state/server not exported", e);
         } catch (InvalidIdProviderCfgException e) {
-            logger.warn("Authentication provider error", e);
+            logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
         }
     }
@@ -118,17 +122,17 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
 
             return getDigest(user.getPassword(), serverCertificate);
         } catch (FindException e) {
-            logger.warn("Authentication provider error", e);
+            logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (InvalidIdProviderCfgException e) {
-            logger.warn("Authentication provider error", e);
+            logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
         } catch (NoSuchAlgorithmException e) {
-            logger.warn("Server error", e);
+            logger.log(Level.WARNING, "Server error", e);
             throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
         } catch (CertificateEncodingException e) {
-            logger.warn("Server error", e);
-               throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
+            logger.log(Level.WARNING, "Server error", e);
+            throw (AccessControlException)new AccessControlException("Server Error").initCause(e);
         }
     }
 
