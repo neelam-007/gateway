@@ -1,12 +1,12 @@
 #!/bin/sh
-# FILE /etc/profile.d/ssgruntimedefs.sh
+# /etc/profile.d/ssgruntimedefs.sh
 # LAYER 7 TECHNOLOGIES
 # Defines JAVA_HOME, TOMCAT_HOME, etc
-# Edit at deployment time to ensure values are accurate
-#
-# This is an attempt at self tuning
-# 
+# and tunes the JVM for whatever is installed
+
 release=`cat /etc/redhat-release`
+# historical compatibility
+# stuff 
 
 if [ "$release" = "Red Hat Linux release 8.0 (Psyche)" ]; then
 	old_rel=1;
@@ -16,52 +16,92 @@ if [ "$release" = "Red Hat Linux release 9 (Shrike)" ]; then
 	old_rel=1;
 fi
 
+unset release
+
+if [ "$old_rel" = 1 ]; then
+	export LD_ASSUME_KERNEL="2.2.5"
+fi
+unset old_rel
+
+# The meat
 cpucount=`grep "cpu MHz" /proc/cpuinfo  |wc -l| tr -d \ `
 
 let cpucount="$cpucount*1"; # sanitize
 
+# non-portable to non-english meminfo of which I don't know of any
+# at the moment
 system_ram=`grep MemTotal /proc/meminfo |cut -c 15-23`
 
 multiplier="2/3"
 
 let java_ram="$system_ram*$multiplier" 
-let newsize="$java_ram*7/10"
+if [ `expr $java_ram \> 2274412` == 1 ]; then
+	# we have more ram than java can use
+	# FIXME: when we start running 64 bit JVM
+	java_ram=2274412;
+fi
+let maxnewsize="$java_ram*7/10"
 
-default_java_opts="-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30 -Xms${java_ram}k -Xmx${java_ram}k -Xmn${newsize} -Xss128k -server -Djava.awt.headless=true -XX:CompileThreshold=1500 "
-default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
+default_java_opts="-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl"
+default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30"
+default_java_opts="$default_java_opts -server -Djava.awt.headless=true -XX:CompileThreshold=1500"
+default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger"
+default_java_opts="$default_java_opts -Xmx${java_ram}k -Xms${java_ram}k -Xmn=${maxnewsize}k -Xss192k "
+
+unset system_ram
+unset multiplier
+unset java_ram
+unset maxnewsize
 
 
 if [ -e /ssg/etc/conf/JVM ]; then
+	# this means that if /ssg/etc/conf/JVM exists
 	JAVA_HOME=`cat /ssg/etc/conf/JVM`
+	# we use its contents to override the supplied JDK
 else
 	JAVA_HOME="/ssg/jdk"
 fi
 
-if [ $cpucount = 1 ]; then
-	# single cpu
-	default_java_opts="$default_java_opts -XX:+DisableExplicitGC "
-else
-	let gcthreads="$cpucount-1"
+let gcthreads="$cpucount-1"
 
+if [ `expr "$cpucount" \> "1"` == 1  ]; then
 	if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
-		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$gcthreads "
+		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
 		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
 		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
-	elif [ `expr $JAVA_HOME : ".*1\.5\.0_06.*"` != 0 ]; then
-		# searches for the string 1.5.0_06... the version these options supposedly appear
-		# I need to verify this actually helps as much as the 
-		# SpecJBB site suggests it does
-		default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15 -XX:+AggressiveOpts -XX:+UseBiasedLocking "
-	else 	
-		# 1.5 build 01 through 05 * Current default
-		default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15"
+	elif [ `expr $JAVA_HOME : ".*1\.5\.0_06*"` != 0 ]; then
+		# fujitsu did a benchmark using this tuning: 
+		# -Xbatch -Xss256K -Xms360G -Xmx360G -Xmn300G -XX:+UseISM -XX:+AggressiveHeap -XX:+UseParallelOldGC 
+		# This will likely have big latency times but the best performance
+		default_java_opts="$default_java_opts -Xbatch -XX:+AggressiveHeap XX:+UseParallelOldGC"
+		
+		# Only if 1.5.0_06 
+		# use the jvm file above to set this
+		# Sun tried this:
+		# -Xbatch -XX:+AggressiveHeap -Xss256k -Xmx176g -Xms176g -Xmn133g -XX:+UseBiasedLocking -classpath
+	else 
+		# Next two lines are consistent low latency at the expense of 40% performance
+		# default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC"
+		# default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15"
+		# default options include batch: This may be commented out: it pauses all threads during GC
+		default_java_opts="$default_java_opts -Xbatch" 
+		# uncomment ONE of these gc options
+		# or comment them all out to let the JVM decide 
+		# throughput collector with an added "maximum pause time
+		default_java_opts="$default_java_opts -XX:+UseParallelGC -XX:MaxGCPauseMillis=1000" 
+		# throughput collector "new"
+		#default_java_opts="$default_java_opts -XX+UseParNewGC" 
+		# concurrent low pause collector: Showed low performance
+		#default_java_opts="$default_java_opts -XX+UseConcMarkSweepGC"
 	fi
 fi
+unset gcthreads
+unset cpucount
 
 ulimit -s 2048
 
 SSG_HOME=/ssg
-TOMCAT_HOME=/ssg/tomcat/
+TOMCAT_HOME=/ssg/tomcat
 CATALINA_PID=/ssg/etc/conf/ssg.pid
 
 # Under cygwin?.
@@ -80,16 +120,23 @@ else
         default_java_opts="$default_java_opts -Djava.rmi.server.hostname=`hostname -f`"
 fi
 
+# May have to restore something like this for OS other than linux
+# if $cygwin; then
+#    mac=''
+#else
+#    mac=`/sbin/ifconfig eth0 |awk '/HWaddr/ {print $5}'`
+#fi
+#
+#if [ ! -z $mac ]; then
+#        default_java_opts="$default_java_opts -Dcom.l7tech.cluster.macAddress=$mac"
+#fi
+
 # aliases to start and stop ssg
 alias startssg='/etc/rc.d/init.d/ssg start'
 alias stopssg='/etc/rc.d/init.d/ssg stop'
 
-
-#if [ -z "$JAVA_OPTS" ]; then
-    # IF java opts are empty, use these we just built
-    #, otherwise don't replace
-    JAVA_OPTS=$default_java_opts;
-#fi
+JAVA_OPTS=$default_java_opts;
+unset default_java_opts
 
 export SSG_HOME
 export JAVA_HOME
@@ -108,6 +155,7 @@ else
     #add to the ld path (shared native libraries)
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/lib
 fi
+unset cygwin;
 
 if [ -e "/opt/oracle" ] ; then
 	export ORACLE_HOME=/opt/oracle/product/9.2
@@ -115,11 +163,4 @@ if [ -e "/opt/oracle" ] ; then
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib
 	export NLS_LANG=AMERICAN_AMERICA.US7ASCII
 fi
-
-if [ "$old_rel" = 1 ]; then
-	export LD_ASSUME_KERNEL="2.2.5"
-fi
-
-
-unset -v old_rel default_java_opts gcthreads new_size release cpucount system_ram multiplier java_ram maxnewsize newsize
 
