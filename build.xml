@@ -269,8 +269,9 @@
     <!--
       ** configure and invoke unit tests
       -->
-    <target name="test" depends="clean.test, dev" description="Run JUnit 'quick' tests">
-        <junit printsummary="yes" haltonfailure="yes" fork="off">
+    <target name="test" description="Run JUnit 'quick' tests" depends="test.work, test.checksuccess"/>
+    <target name="test.work" depends="clean.test, dev">
+        <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
                 <path refid="project.test.classpath"/>
                 <pathelement location="${build.test.classes}"/>
@@ -315,8 +316,11 @@
         </junit>
     </target>
 
-    <target name="test.intensive" description="Run intensive JUnit tests." depends="clean.test, test">
-        <junit printsummary="yes" haltonfailure="yes" fork="off">
+    <target name="test.intensive" 
+            description="Run intensive JUnit tests." 
+            depends="clean.test, test.work, test.intensive.work, test.checksuccess"/>
+    <target name="test.intensive.work" depends="clean.test, dev">
+        <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
                 <path refid="project.test.classpath"/>
                 <pathelement location="${build.test.classes}"/>
@@ -361,6 +365,11 @@
 -->
         </junit>
     </target>
+
+    <target name="test.checksuccess">
+        <fail if="test.error">One or more JUnit tests exited due to error.</fail>
+        <fail if="test.failure">One or more JUnit tests failed.</fail>
+    </target>    
 
     <!--
       Clean data from running tests.

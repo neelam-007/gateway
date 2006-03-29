@@ -14,12 +14,11 @@ package com.l7tech.policy.assertion;
  * @version 1.0
  */
 public class UnknownAssertion extends Assertion {
-    private final String detailMessage;
-    private final String originalXml;
-    private final Throwable cause;
+    private String detailMessage;
+    private String originalXml = null;
+    private Throwable cause = null;
 
     public UnknownAssertion() {
-        this(null, null, null);
     }
 
     public UnknownAssertion(String detailMessage) {
@@ -54,12 +53,27 @@ public class UnknownAssertion extends Assertion {
         return detailMessage;
     }
 
+    /**
+     * @param detailMessage the unknown assertion detail message
+     */
+    public void setDetailMessage(String detailMessage) {
+        this.detailMessage = detailMessage;
+    }
+
     public String getOriginalXml() {
         return originalXml;
     }
 
+    public void setOriginalXml(String originalXml) {
+        this.originalXml = originalXml;
+    }
+
     public Throwable getCause() {
         return cause;
+    }
+
+    public void setCause(Throwable cause) {
+        this.cause = cause;
     }
 
     public String toString() {
