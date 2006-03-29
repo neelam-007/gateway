@@ -195,7 +195,7 @@ public class ServiceMetrics {
      *
      * @param limit maximum number of bins to keep
      */
-    public void archiveFineBin(final int limit) {
+    public void archiveFineBin(final long limit) {
         // Use locking to stop further modification to the current bin before it is archived.
         try {
             fineLock.writeLock().acquire();
@@ -222,7 +222,7 @@ public class ServiceMetrics {
      *
      * @param limit maximum number of bins to keep
      */
-    public void archiveHourlyBin(final int limit) {
+    public void archiveHourlyBin(final long limit) {
         // Use locking to stop further modification to the current bin before it is archived.
         synchronized (hourlyLock) {
             final long now = System.currentTimeMillis();
@@ -242,7 +242,7 @@ public class ServiceMetrics {
      *
      * @param limit maximum number of bins to keep
      */
-    public void archiveDailyBin(final int limit) {
+    public void archiveDailyBin(final long limit) {
         // Use locking to stop further modification to the current bin before it is archived.
         synchronized (dailyLock) {
             final long now = System.currentTimeMillis();

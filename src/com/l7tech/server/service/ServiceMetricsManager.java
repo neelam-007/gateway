@@ -2,16 +2,14 @@ package com.l7tech.server.service;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
 import com.l7tech.common.util.ISO8601Date;
+import com.l7tech.common.util.Background;
+import com.l7tech.service.MetricsBin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.MetricsBin;
-import org.hibernate.Criteria;
-import org.hibernate.FlushMode;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.criterion.ProjectionList;
+import org.hibernate.*;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.ProjectionList;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -19,6 +17,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionCallback;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -48,6 +47,12 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private static final BoundedPriorityQueue queue = new BoundedPriorityQueue(500);
     private ServiceManager serviceManager;
 
+    private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
+    private static final int MINUTE = 60 * 1000;
+    private static final int HOUR = 60 * MINUTE;
+    private static final long DAY = 24 * HOUR;
+    private static final long YEAR = 365 * DAY;
+
     public ServiceMetricsManager(String clusterNodeId) {
         this._clusterNodeId = clusterNodeId;
     }
@@ -70,6 +75,9 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         fineTimer.cancel();
         hourlyTimer.cancel();
         dailyTimer.cancel();
+        fineDeleter.cancel();
+        hourlyDeleter.cancel();
+        dailyDeleter.cancel();
         flusher.quit();
     }
 
@@ -79,11 +87,12 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     private class FineTask extends TimerTask {
         public void run() {
-            logger.fine("FineTask running at " + ISO8601Date.format(new Date()));
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("FineTask running at " + ISO8601Date.format(new Date()));
             Iterator itor = _serviceMetricsMap.values().iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
-                serviceMetrics.archiveFineBin(_numFineBins);
+                serviceMetrics.archiveFineBin(fineTtl);
             }
         }
     }
@@ -98,10 +107,11 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             Iterator itor = _serviceMetricsMap.values().iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
-                serviceMetrics.archiveHourlyBin(_numHourlyBins);
+                serviceMetrics.archiveHourlyBin(hourlyTtl);
                 num++;
             }
-            logger.fine("Hourly archiving task completed; archived " + num + " hourly bins");
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("Hourly archiving task completed; archived " + num + " hourly bins");
         }
     }
 
@@ -115,10 +125,11 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             Iterator itor = _serviceMetricsMap.values().iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
-                serviceMetrics.archiveDailyBin(_numDailyBins);
+                serviceMetrics.archiveDailyBin(dailyTtl);
                 num++;
             }
-            logger.fine("Daily archiving task completed; archived " + num + " daily bins");
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("Daily archiving task completed; archived " + num + " daily bins");
         }
     }
 
@@ -126,6 +137,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         private volatile boolean quit;
 
         public Flusher() {
+            super(Flusher.class.getName());
             setDaemon(true);
         }
 
@@ -140,7 +152,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 try {
                     final MetricsBin head = (MetricsBin)queue.take();
 
-                    logger.finer("Saving " + head.toString());
+                    if (logger.isLoggable(Level.FINER))
+                        logger.finer("Saving " + head.toString());
                     new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                         protected void doInTransactionWithoutResult(TransactionStatus status) {
                             try {
@@ -160,6 +173,42 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
     }
 
+    private class DeleteTask extends TimerTask {
+        private final long ttl;
+        private final int resolution;
+
+        private DeleteTask(long ttl, int resolution) {
+            this.ttl = ttl;
+            this.resolution = resolution;
+        }
+
+        public void run() {
+            final long oldestSurvivor = System.currentTimeMillis() - ttl;
+            try {
+                Integer num = (Integer)new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
+                    public Object doInTransaction(TransactionStatus status) {
+                        Query query = getSession().createQuery(HQL_DELETE);
+                        query.setLong(0, oldestSurvivor);
+                        query.setInteger(1, resolution);
+                        return new Integer(query.executeUpdate());
+                    }
+                });
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.log(Level.INFO, "Deleted {0} {1} bins older than {2}",
+                            new Object[] {
+                                num,
+                                MetricsBin.describeResolution(resolution),
+                                new Date(oldestSurvivor)
+                            });
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't delete MetricsBins", e);
+            }
+        }
+
+
+    }
+
     /**
      * Minimum allowed fine resolution bin interval (in milliseconds).
      */
@@ -168,7 +217,7 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     /**
      * Maximum allowed fine resolution bin interval (in milliseconds).
      */
-    private static final int MAX_FINE_BIN_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    private static final int MAX_FINE_BIN_INTERVAL = 5 * MINUTE; // 5 minutes
 
     /**
      * Default fine resolution bin interval (in milliseconds).
@@ -179,17 +228,17 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * Limit and default values for number of fine resolution bins are
      * designed to fill 1 hour.
      */
-    private static final int MIN_NUM_FINE_BINS = 60 * 60 * 1000 / MAX_FINE_BIN_INTERVAL;
-    private static final int MAX_NUM_FINE_BINS = 60 * 60 * 1000 / MIN_FINE_BIN_INTERVAL;
-    private static final int DEF_NUM_FINE_BINS = 60 * 60 * 1000 / DEF_FINE_BIN_INTERVAL;
+    private static final int MIN_FINE_AGE = HOUR;
+    private static final int MAX_FINE_AGE = HOUR;
+    private static final int DEF_FINE_AGE = HOUR;
 
-    private static final int MIN_NUM_HOURLY_BINS = 24;          // a day
-    private static final int MAX_NUM_HOURLY_BINS = 24 * 31;     // a month
-    private static final int DEF_NUM_HOURLY_BINS = 24 * 7;      // a week
+    private static final long MIN_HOURLY_AGE = DAY;          // a day
+    private static final long MAX_HOURLY_AGE = 31 * DAY;     // a month
+    private static final long DEF_HOURLY_AGE = 7 * DAY;      // a week
 
-    private static final int MIN_NUM_DAILY_BINS = 31;           // a month
-    private static final int MAX_NUM_DAILY_BINS = 365 * 10;     // 10 years
-    private static final int DEF_NUM_DAILY_BINS = 365;          // 1 year
+    private static final long MIN_DAILY_AGE = 31 * DAY;           // a month
+    private static final long MAX_DAILY_AGE = 10 * YEAR;     // 10 years
+    private static final long DEF_DAILY_AGE = YEAR;          // 1 year
 
     private static final Logger logger = Logger.getLogger(ServiceMetricsManager.class.getName());
 
@@ -206,17 +255,21 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     /**
      * Maximum number of fine resolution bins to archive.
      */
-    private int _numFineBins;
+    private long fineTtl;
 
     /**
      * Maximum number of hourly resolution bins to archive.
      */
-    private int _numHourlyBins;
+    private long hourlyTtl;
 
     /**
      * Maximum number of daily resolution bins to archive.
      */
-    private int _numDailyBins;
+    private long dailyTtl;
+
+    private DeleteTask fineDeleter;
+    private DeleteTask hourlyDeleter;
+    private DeleteTask dailyDeleter;
 
     private final Map _serviceMetricsMap = new HashMap/* <Long, ServiceMetrics> */();
     private final Object _serviceMetricsMapLock = new Object();
@@ -227,24 +280,24 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      * property does not exist, or is not parsable as an integer, then the given
      * default value is returned instead.
      */
-    private static int getIntProperty(final String name, final int lower, final int upper, final int defaultInt) {
+    private static long getLongProperty(final String name, final long lower, final long upper, final long defaultValue) {
         final String value = System.getProperty(name);
         if (value == null) {
-            return defaultInt;
+            return defaultValue;
         } else {
             try {
-                final int intValue = Integer.parseInt(value);
-                if (intValue < lower) {
-                    logger.warning("Imposing lower constraint (" + lower + ") on system property value (" + intValue + "): " + name);
+                final long longValue = Long.parseLong(value);
+                if (longValue < lower) {
+                    logger.warning("Imposing lower constraint (" + lower + ") on system property value (" + longValue + "): " + name);
                     return lower;
-                } else if (intValue > upper) {
-                    logger.warning("Imposing upper constraint (" + upper + ") on system property value (" + intValue + "): " + name);
+                } else if (longValue > upper) {
+                    logger.warning("Imposing upper constraint (" + upper + ") on system property value (" + longValue + "): " + name);
                     return upper;
                 }
-                return intValue;
+                return longValue;
             } catch (NumberFormatException e) {
-                logger.info("Using default value (" + defaultInt + ") for missing system property: " + name);
-                return defaultInt;
+                logger.info("Using default value (" + defaultValue + ") for missing system property: " + name);
+                return defaultValue;
             }
         }
     }
@@ -407,22 +460,37 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             return;
         }
 
-        _fineBinInterval = getIntProperty("com.l7tech.service.metrics.fineBinInterval",
+        _fineBinInterval = (int)getLongProperty("com.l7tech.service.metrics.fineBinInterval",
                                           MIN_FINE_BIN_INTERVAL,
                                           MAX_FINE_BIN_INTERVAL,
                                           DEF_FINE_BIN_INTERVAL);
-        _numFineBins = getIntProperty("com.l7tech.service.metrics.numFineBins",
-                                      MIN_NUM_FINE_BINS,
-                                      MAX_NUM_FINE_BINS,
-                                      DEF_NUM_FINE_BINS);
-        _numHourlyBins = getIntProperty("com.l7tech.service.metrics.numHourlyBins",
-                                        MIN_NUM_HOURLY_BINS,
-                                        MAX_NUM_HOURLY_BINS,
-                                        DEF_NUM_HOURLY_BINS);
-        _numDailyBins = getIntProperty("com.l7tech.service.metrics.numDailyBins",
-                                       MIN_NUM_DAILY_BINS,
-                                       MAX_NUM_DAILY_BINS,
-                                       DEF_NUM_DAILY_BINS);
+
+        fineTtl = getLongProperty("com.l7tech.service.metrics.maxFineAge",
+                                      MIN_FINE_AGE,
+                                      MAX_FINE_AGE,
+                                      DEF_FINE_AGE);
+
+        hourlyTtl = getLongProperty("com.l7tech.service.metrics.maxHourlyAge",
+                                        MIN_HOURLY_AGE,
+                                        MAX_HOURLY_AGE,
+                                        DEF_HOURLY_AGE);
+
+        dailyTtl = getLongProperty("com.l7tech.service.metrics.maxDailyAge",
+                                       MIN_DAILY_AGE,
+                                       MAX_DAILY_AGE,
+                                       DEF_DAILY_AGE);
+
+        fineDeleter = new DeleteTask(fineTtl, MetricsBin.RES_FINE);
+        Background.schedule(fineDeleter, MINUTE, 5 * MINUTE);
+        logger.config("Scheduled first fine deletion task for " + new Date(System.currentTimeMillis() + MINUTE));
+
+        hourlyDeleter = new DeleteTask(hourlyTtl, MetricsBin.RES_HOURLY);
+        Background.schedule(hourlyDeleter, 15 * MINUTE, 12 * HOUR);
+        logger.config("Scheduled first hourly deletion task for " + new Date(System.currentTimeMillis() + 15 * MINUTE));
+
+        dailyDeleter = new DeleteTask(dailyTtl, MetricsBin.RES_DAILY);
+        Background.schedule(dailyDeleter, HOUR, 24 * HOUR);
+        logger.config("Scheduled first daily deletion task for " + new Date(System.currentTimeMillis() + HOUR));
 
         // Populate initial bins
         Collection serviceHeaders = serviceManager.findAllHeaders();

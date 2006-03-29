@@ -143,7 +143,11 @@ public class MetricsBin implements Serializable, Comparable {
     }
 
     public String getResolutionName() {
-        switch (_resolution) {
+        return describeResolution(_resolution);
+    }
+
+    public static String describeResolution(int resolution) {
+        switch (resolution) {
             case RES_FINE:
                 return "fine";
             case RES_HOURLY:
@@ -151,7 +155,7 @@ public class MetricsBin implements Serializable, Comparable {
             case RES_DAILY:
                 return "daily";
             default:
-                return "Unknown: " + _resolution;
+                return "Unknown: " + resolution;
         }
     }
 
