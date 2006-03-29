@@ -251,7 +251,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
 
             String message = "Unknown assertion{0}, this assertion will always fail.";
             String detail = "";
-            Throwable cause = ua.getCause();
+            Throwable cause = ua.cause();
             if(cause instanceof ClassNotFoundException) {
                 String className = ((ClassNotFoundException)cause).getMessage();
                 detail = " [" + (className.substring(className.lastIndexOf('.')+1)) + "]";
