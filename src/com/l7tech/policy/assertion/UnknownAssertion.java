@@ -68,12 +68,8 @@ public class UnknownAssertion extends Assertion {
         this.originalXml = originalXml;
     }
 
-    public Throwable getCause() {
+    public Throwable cause() {
         return cause;
-    }
-
-    public void setCause(Throwable cause) {
-        this.cause = cause;
     }
 
     public String toString() {
