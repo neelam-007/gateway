@@ -2,7 +2,10 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
-import com.l7tech.console.xmlviewer.Viewer;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.action.ActionModel;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -25,8 +28,7 @@ import java.io.IOException;
  * $Id$<br/>
  */
 public class SelectWsdlSchemaDialog extends JDialog {
-    private Viewer messageViewer;
- 
+    private XMLContainer xmlContainer;
     public SelectWsdlSchemaDialog(JDialog parent, Document wsdl)
       throws DocumentException, IOException, SAXParseException {
         super(parent, true);
@@ -35,14 +37,44 @@ public class SelectWsdlSchemaDialog extends JDialog {
         initialize();
     }
 
+    private void initializeXmlContainer() {
+        assert(xmlContainer == null);
+        xmlContainer = new XMLContainer(true);
+        final UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
+        uiAccessibility.setTreeAvailable(false);
+        uiAccessibility.setTreeToolBarAvailable(false);
+        xmlContainer.setEditable(false);
+        uiAccessibility.setToolBarAvailable(false);
+        xmlContainer.setStatusBarAvailable(false);
+        PopupModel popupModel = xmlContainer.getPopupModel();
+        // remove the unwanted actions
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.FORMAT_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.COMMENT_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_SELECTNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_COMMENTNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_COPYNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_CUTNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_EDITNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_CLEANHISTORY_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+    }
+
     private void initialize() throws DocumentException, IOException, SAXParseException {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
         setTitle("Extract Schema from WSDL");
         // create the xml control for the recipient panel
-        messageViewer = Viewer.createMessageViewer(null);
-        xmlpanel.add(messageViewer);
+        initializeXmlContainer();
+        xmlpanel.add(xmlContainer.getView());
         ButtonGroup bg = new ButtonGroup();
         bg.add(allradio);
         bg.add(requestradio);
@@ -97,15 +129,11 @@ public class SelectWsdlSchemaDialog extends JDialog {
         Node node = getCurrentSchemaNode();
         try {
             if (node != null) {
-                messageViewer.setContent(XmlUtil.nodeToFormattedString(node));
+                xmlContainer.getAccessibility().setText(XmlUtil.nodeToFormattedString(node));
             } else {
-                messageViewer.setContent(XmlUtil.XML_VERSION);
+                xmlContainer.getAccessibility().setText(XmlUtil.XML_VERSION);
             }
-        } catch (DocumentException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (SAXParseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -153,6 +181,11 @@ public class SelectWsdlSchemaDialog extends JDialog {
             }
         }
         SelectWsdlSchemaDialog.this.dispose();
+    }
+
+    public void dispose() {
+        xmlContainer.dispose();
+        super.dispose();
     }
 
     public String getOkedSchema() {

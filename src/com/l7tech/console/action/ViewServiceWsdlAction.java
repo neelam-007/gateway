@@ -164,13 +164,17 @@ public class ViewServiceWsdlAction extends NodeAction {
             addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
                     dispose();
-                    xmlContainer.dispose();
                 }
             });
             pack();
             final int labelWidth = (int)(l.getSize().getWidth() + 20);
             setSize(Math.max(600, labelWidth), 800);
             Utilities.centerOnScreen(this);
+        }
+
+        public void dispose() {
+            xmlContainer.dispose();
+            super.dispose();
         }
     }
 

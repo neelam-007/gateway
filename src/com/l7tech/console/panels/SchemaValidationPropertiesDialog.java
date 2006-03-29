@@ -55,11 +55,9 @@ import java.rmi.RemoteException;
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SchemaValidationPropertiesDialog.class.getName());
-    /**
-     * modless construction
-     */
+
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service) {
-        super(owner, false);
+        super(owner, true);
         if (node == null || node.getAssertion() == null) {
             throw new IllegalArgumentException("Schema Validation Node == null");
         }
@@ -68,9 +66,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         initialize();
     }
 
-    /**
-     * modal construction
-     */
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service) {
         super(owner, true);
         if (assertion == null) {
@@ -379,6 +374,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private void cancel() {
         SchemaValidationPropertiesDialog.this.dispose();
+    }
+    public void dispose() {
+        xmlContainer.dispose();
+        super.dispose();
     }
 
     private void readFromWsdl() {
