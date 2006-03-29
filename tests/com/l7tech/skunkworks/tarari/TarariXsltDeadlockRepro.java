@@ -12,8 +12,8 @@ import java.util.Date;
  * Stand-alone reproduction for apparent deadlock in Tarari XSLT which depends only JRE and raxj classes.
  */
 public class TarariXsltDeadlockRepro {
-    private static final int NUM_THREADS = 20; // this is enough to find the deadlock on our quad Opteron
-    private static final int NUM_ITERATIONS = 100; // per-thread.  this is almost always enough to see the deadlock
+    private static int numThreads = 20; // 20 is enough to find the deadlock on our quad Opteron
+    private static int iterationsPerThread = 100; // per-thread.  100 is almost always enough to see the deadlock
 
     // OutputStream for where XSLT results are sent.  Is first System.out, then NullOutputStream for the parallel run.
     private static OutputStream results;
@@ -25,6 +25,19 @@ public class TarariXsltDeadlockRepro {
     };
 
     public static void main(String[] args) throws Exception {
+        if (args.length < 2) usage();
+        int jj;
+        try {
+            jj = Integer.parseInt(args[0]);
+            if (jj < 1 || jj > 10000) usage();
+            numThreads = jj;
+            jj = Integer.parseInt(args[1]);
+            if (jj < 1 || jj > 100000000) usage();
+            iterationsPerThread = jj;
+        } catch (NumberFormatException nfe) {
+            usage();
+        }
+
         InputStream req = new FileInputStream("DocSearchResponse.xml");
         InputStream xslt = new FileInputStream("GetDocInfoFull.xsl");
 
@@ -71,7 +84,7 @@ public class TarariXsltDeadlockRepro {
         final Runnable transformLots = new Runnable() {
             public void run() {
                 System.out.println("\nThread starting: " + Thread.currentThread().getName());
-                for (int i = 0; i < NUM_ITERATIONS; ++i)
+                for (int i = 0; i < iterationsPerThread; ++i)
                     transformOnce.run();
             }
         };
@@ -85,7 +98,7 @@ public class TarariXsltDeadlockRepro {
         results = new NullOutputStream();
 
         // Create the worker threads
-        Thread[] threads = new Thread[NUM_THREADS];
+        Thread[] threads = new Thread[numThreads];
         for (int i = 0; i < threads.length; i++)
             threads[i] = new Thread(transformLots, "XsltThread" + i);
 
@@ -94,7 +107,7 @@ public class TarariXsltDeadlockRepro {
         for (int i = 0; i < threads.length; i++)
             threads[i].start();
         System.out.println(new Date() + ": starting " + threads.length +
-                " work threads to do " + NUM_ITERATIONS + " XSLT transformations each");
+                " work threads to do " + iterationsPerThread + " XSLT transformations each");
 
         // Wait for them to finish
         System.out.println("Waiting for them to finish...");
@@ -113,6 +126,11 @@ public class TarariXsltDeadlockRepro {
 
         long end = System.currentTimeMillis();
         System.out.println("Total time = " + (end - start) + " ms");
+    }
+
+    private static void usage() {
+        System.err.println("Usage: TarariXsltDeadlockRepro <numthreads> <iterations per thread>");
+        System.exit(1);
     }
 
     /** An OutputStream that throws away all output. */
