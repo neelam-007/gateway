@@ -4,6 +4,8 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.RunOnChangeListener;
+import com.l7tech.common.gui.util.JTableColumnResizeMouseListener;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ResourceUtils;
@@ -33,20 +35,45 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.ComponentAdapter;
-import java.io.*;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.TextListener;
+import java.awt.event.TextEvent;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.List;
+import java.util.ResourceBundle;
+import java.util.Date;
+import java.util.Calendar;
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Properties;
+import java.util.Collections;
+import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.io.File;
+import java.io.OutputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.BufferedOutputStream;
+import java.io.ObjectInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.FileInputStream;
+import java.io.BufferedInputStream;
 
 /*
  * This class creates a log panel.
@@ -91,6 +118,7 @@ public class LogPanel extends JPanel {
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
+    private int[] tableColumnWidths = new int[20];
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private String msgFilterNode = "";
     private String msgFilterService = "";
@@ -127,8 +155,8 @@ public class LogPanel extends JPanel {
     private JScrollPane responseXmlScrollPane;
     private JCheckBox responseReformatCheckbox;
     private JTextArea responseXmlTextArea;
-    private String unformattedRequestXml;
-    private String unformattedResponseXml;
+    private final StringBuffer unformattedRequestXml;
+    private final StringBuffer unformattedResponseXml;
     private DateField startDateField;
     private JRadioButton viewCurrentRadioButton;
     private JRadioButton viewHistoricRadioButton;
@@ -159,6 +187,9 @@ public class LogPanel extends JPanel {
         this.logsRefreshInterval = LOG_REFRESH_TIMER;
         this.nodeId = nodeId;
         this.isAuditType = isAuditType;
+
+        this.unformattedRequestXml = new StringBuffer();
+        this.unformattedResponseXml = new StringBuffer();
 
         init();
 
@@ -245,10 +276,8 @@ public class LogPanel extends JPanel {
         viewButtonGroup.add(viewCurrentRadioButton);
         viewButtonGroup.add(viewHistoricRadioButton);
 
-        viewCurrentRadioButton.addChangeListener(new ChangeListener(){
-            public void stateChanged(ChangeEvent e) {
-                FilteredLogTableSorter flts = (FilteredLogTableSorter) getMsgTable().getModel();
-                flts.clearLogCache();
+        viewCurrentRadioButton.addItemListener(new ItemListener(){
+            public void itemStateChanged(ItemEvent e) {
                 updateControlState();
             }
         });
@@ -283,26 +312,28 @@ public class LogPanel extends JPanel {
     }
 
     private void updateControlState() {
+        clearLogCache();
         if(connected) {
             if(viewCurrentRadioButton.isSelected()) {
                 Utilities.setEnabled(viewCurrentPane, true);
                 Utilities.setEnabled(autoRefresh, true); // for logs this is not in the panel
                 Utilities.setEnabled(viewHistoricPane, false);
+                refreshLogs();
             }
             else {
                 Utilities.setEnabled(viewCurrentPane, false);
                 Utilities.setEnabled(autoRefresh, false);
                 Utilities.setEnabled(viewHistoricPane, true);
-            }
-            updateLogAutoRefresh();
-            if(viewCurrentRadioButton.isSelected()) {
-                refreshLogs();
+                updateLogAutoRefresh();
             }
 
             setHint(isAutoRefresh() ? "Auto-Refresh" : null);
         }
     }
 
+    private void clearLogCache() {
+        getFilteredLogTableSorter().clearLogCache();
+    }
 
     /**
      * Set the status hint, e.g. Disconnected, Auto-Refresh, etc
@@ -468,7 +499,7 @@ public class LogPanel extends JPanel {
                     msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
                     msg += "Resp Status: " + sum.getResponseHttpStatus() + "\n";
                     msg += "Resp Time  : " + sum.getRoutingLatency() + "ms\n";
-                    msg += "User ID    : " + sum.getUserId() + "\n";
+                    msg += "User ID    : " + (sum.getUserId()!=null ? sum.getUserId() : "<No ID>") + "\n";
                     msg += "User Name  : " + sum.getUserName() + "\n";
                     msg += "Entity name: " + arec.getName() + "\n";
 
@@ -503,13 +534,15 @@ public class LogPanel extends JPanel {
                     msg += "IP Address : " + arec.getIpAddress() + "\n";
                 }
 
-                unformattedRequestXml = reqXmlDisplayed;
+                unformattedRequestXml.setLength(0);
+                unformattedRequestXml.append(reqXmlDisplayed);
                 if (reqXmlVisible && reqXmlDisplayed != null && reqXmlDisplayed.length() > 0 &&
                             getRequestReformatCheckbox().isSelected()) {
                     reqXmlDisplayed = reformat(reqXmlDisplayed);
                 }
 
-                unformattedResponseXml = respXmlDisplayed;
+                unformattedResponseXml.setLength(0);
+                unformattedResponseXml.append(respXmlDisplayed);
                 if (respXmlVisible && respXmlDisplayed != null && respXmlDisplayed.length() > 0 &&
                             getResponseReformatCheckbox().isSelected()) {
                     respXmlDisplayed = reformat(respXmlDisplayed);
@@ -537,7 +570,7 @@ public class LogPanel extends JPanel {
                 // populate the associated logs
                 Iterator associatedLogsItr = arec.getDetails().iterator();
 
-                Vector associatedLogs = new Vector();
+                List associatedLogs = new ArrayList();
                 while(associatedLogsItr.hasNext()) {
                     AuditDetail ad = (AuditDetail) associatedLogsItr.next();
 
@@ -666,7 +699,6 @@ public class LogPanel extends JPanel {
         getFilteredLogTableSorter().onConnect();
         updateLogsRefreshTimerDelay();
         clearMsgTable();
-        getLogsRefreshTimer().start();
 
         Utilities.setEnabled(viewCurrentRadioButton, true);
         Utilities.setEnabled(viewHistoricRadioButton, true);
@@ -679,7 +711,7 @@ public class LogPanel extends JPanel {
     public void onDisconnect(){
         connected = false;
 
-        logTableSorter.clearLogCache();
+        clearLogCache();
         getLogsRefreshTimer().stop();
         getFilteredLogTableSorter().onDisconnect();
 
@@ -693,18 +725,18 @@ public class LogPanel extends JPanel {
      * @return JPanel
      */
     private JPanel getSelectPane(){
-        if(selectPane != null) return selectPane;
+        if(selectPane == null) {
+            JPanel selectPaneLower = new JPanel();
+            selectPaneLower.setLayout(new BoxLayout(selectPaneLower, BoxLayout.X_AXIS));
+            selectPaneLower.add(getFilterPane());
+            selectPaneLower.add(Box.createHorizontalGlue());
+            selectPaneLower.add(getStatusPane());
 
-        JPanel selectPaneLower = new JPanel();
-        selectPaneLower.setLayout(new BoxLayout(selectPaneLower, BoxLayout.X_AXIS));
-        selectPaneLower.add(getFilterPane());
-        selectPaneLower.add(Box.createHorizontalGlue());
-        selectPaneLower.add(getStatusPane());
-
-        selectPane = new JPanel();
-        selectPane.setLayout(new BorderLayout());
-        selectPane.add(getFilterLabel(), BorderLayout.NORTH);
-        selectPane.add(selectPaneLower, BorderLayout.CENTER);
+            selectPane = new JPanel();
+            selectPane.setLayout(new BorderLayout());
+            selectPane.add(getFilterLabel(), BorderLayout.NORTH);
+            selectPane.add(selectPaneLower, BorderLayout.CENTER);
+        }
 
         return selectPane;
     }
@@ -714,35 +746,41 @@ public class LogPanel extends JPanel {
      * @return JPanel
      */
     private JPanel getFilterPane(){
-        if(filterPane != null) return filterPane;
+        if(filterPane == null) {
+            filterPane = new JPanel();
+            filterPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+            filterPane.setLayout(new BoxLayout(filterPane, BoxLayout.X_AXIS));
+            filterPane.add(getFilterSlider());
 
-        filterPane = new JPanel();
-        filterPane.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-        filterPane.setLayout(new BoxLayout(filterPane, BoxLayout.X_AXIS));
-        filterPane.add(getFilterSlider());
-        if(isAuditType) {
-            filterPane.add(getFilterNodePane());
-            filterPane.add(getFilterServicePane());
+            JPanel expandingFilterPane = new JPanel();
+            expandingFilterPane.setLayout(new BoxLayout(expandingFilterPane, BoxLayout.X_AXIS));
+            if(isAuditType) {
+                expandingFilterPane.add(getFilterNodePane());
+                expandingFilterPane.add(getFilterServicePane());
+            }
+            else {
+                expandingFilterPane.add(getFilterThreadPane());
+            }
+            expandingFilterPane.add(getFilterMessagePane());
+            expandingFilterPane.setMaximumSize(new Dimension(800,100));
+            filterPane.add(expandingFilterPane);
+
+            if(!isAuditType) filterPane.add(getMicroControlPane());
+            filterPane.add(Box.createHorizontalGlue());
         }
-        else {
-            filterPane.add(getFilterThreadPane());
-        }
-        filterPane.add(getFilterMessagePane());
-        if(!isAuditType) filterPane.add(getMicroControlPane());
-        filterPane.add(Box.createHorizontalGlue());
 
         return filterPane;
     }
 
     private JLabel getFilterLabel() {
-        if(filterLabel != null) return filterLabel;
-
-        filterLabel = new JLabel("Caution! Constraint may exclude some events.");
-        filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        filterLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-        filterLabel.setVisible(false);
-        filterLabel.setBackground(new Color(0xFF, 0xFF, 0xe1));
-        filterLabel.setOpaque(true);
+        if(filterLabel == null) {
+            filterLabel = new JLabel("Caution! Constraint may exclude some events.");
+            filterLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            filterLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+            filterLabel.setVisible(false);
+            filterLabel.setBackground(new Color(0xFF, 0xFF, 0xe1));
+            filterLabel.setOpaque(true);
+        }
 
         return filterLabel;
     }
@@ -752,172 +790,128 @@ public class LogPanel extends JPanel {
      * @return JSlider
      */
     private JSlider getFilterSlider(){
-        if(slider != null)  return slider;
+        if(slider == null) {
+            slider = new JSlider(0, 120);
+            slider.setMajorTickSpacing(40);
 
-        slider = new JSlider(0, 120);
-        slider.setMajorTickSpacing(40);
+            Dictionary table = new Properties();
+            JLabel aLabel = new JLabel("All");
 
-        Dictionary table = new Hashtable();
-        JLabel aLabel = new JLabel("All");
+            aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+            table.put(new Integer(0), aLabel);
 
-        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-        table.put(new Integer(0), aLabel);
+            aLabel = new JLabel("Info");
+            aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+            table.put(new Integer(40), aLabel);
 
-        aLabel = new JLabel("Info");
-        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-        table.put(new Integer(40), aLabel);
+            aLabel = new JLabel("Warning");
+            aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+            table.put(new Integer(80), aLabel);
 
-        aLabel = new JLabel("Warning");
-        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-        table.put(new Integer(80), aLabel);
+            aLabel = new JLabel("Severe");
+            aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+            table.put(new Integer(120), aLabel);
 
-        aLabel = new JLabel("Severe");
-        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-        table.put(new Integer(120), aLabel);
-
-        slider.setPaintLabels(true);
-        slider.setLabelTable(table);
-        slider.setSnapToTicks(true);
-        slider.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                JSlider source = (JSlider) e.getSource();
-                if (!source.getValueIsAdjusting()) {
-                    int value = source.getValue();
-                    switch (value) {
-                        case 0:
-                            updateMsgFilterLevel(MSG_FILTER_LEVEL_ALL);
-                            break;
-                        case 40:
-                            updateMsgFilterLevel(MSG_FILTER_LEVEL_INFO);
-                            break;
-                        case 80:
-                            updateMsgFilterLevel(MSG_FILTER_LEVEL_WARNING);
-                            break;
-                        case 120:
-                            updateMsgFilterLevel(MSG_FILTER_LEVEL_SEVERE);
-                            break;
-                        default:
-                            System.err.println("Unhandled value " + value);
+            slider.setPaintLabels(true);
+            slider.setLabelTable(table);
+            slider.setSnapToTicks(true);
+            slider.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    JSlider source = (JSlider) e.getSource();
+                    if (!source.getValueIsAdjusting()) {
+                        int value = source.getValue();
+                        switch (value) {
+                            case 0:
+                                updateMsgFilterLevel(MSG_FILTER_LEVEL_ALL);
+                                break;
+                            case 40:
+                                updateMsgFilterLevel(MSG_FILTER_LEVEL_INFO);
+                                break;
+                            case 80:
+                                updateMsgFilterLevel(MSG_FILTER_LEVEL_WARNING);
+                                break;
+                            case 120:
+                                updateMsgFilterLevel(MSG_FILTER_LEVEL_SEVERE);
+                                break;
+                            default:
+                                System.err.println("Unhandled value " + value);
+                        }
                     }
                 }
-            }
-        });
+            });
+
+            slider.setMinimumSize(slider.getPreferredSize());
+            slider.setMaximumSize(slider.getPreferredSize());
+        }
 
         return slider;
     }
 
     private JPanel getFilterNodePane() {
-        JPanel filterNodePane = new JPanel();
-
-        JTextField nodeTextField = new JTextField(5);
-        nodeTextField.setFont(new java.awt.Font("Dialog", 0, 11));
-        nodeTextField.getDocument().addDocumentListener(new DocumentListener(){
-            public void insertUpdate(DocumentEvent e) {
-                updateMsgFilterNode(e.getDocument());
-            }
-            public void removeUpdate(DocumentEvent e) {
-                updateMsgFilterNode(e.getDocument());
-            }
-            public void changedUpdate(DocumentEvent e) {
-                updateMsgFilterNode(e.getDocument());
-            }
-        });
-
-        JLabel label = new JLabel("Node:");
-        label.setFont(new java.awt.Font("Dialog", 0, 11));
-
-        filterNodePane.setLayout(new BorderLayout());
-        filterNodePane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
-        filterNodePane.add(label, BorderLayout.NORTH);
-        filterNodePane.add(nodeTextField, BorderLayout.CENTER);
+        JPanel filterNodePane = buildFilterPane("Node:",
+                new TextListener(){
+                    public void textValueChanged(TextEvent e) {
+                        updateMsgFilterNode(((JTextField)e.getSource()).getText());
+                    }
+                });
 
         return filterNodePane;
     }
 
     private JPanel getFilterServicePane() {
-        JPanel filterServicePane = new JPanel();
-
-        JTextField serviceTextField = new JTextField(8);
-        serviceTextField.setFont(new java.awt.Font("Dialog", 0, 11));
-        serviceTextField.getDocument().addDocumentListener(new DocumentListener(){
-            public void insertUpdate(DocumentEvent e) {
-                updateMsgFilterService(e.getDocument());
-            }
-            public void removeUpdate(DocumentEvent e) {
-                updateMsgFilterService(e.getDocument());
-            }
-            public void changedUpdate(DocumentEvent e) {
-                updateMsgFilterService(e.getDocument());
-            }
-        });
-
-        JLabel label = new JLabel("Service:");
-        label.setFont(new java.awt.Font("Dialog", 0, 11));
-
-        filterServicePane.setLayout(new BorderLayout());
-        filterServicePane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
-        filterServicePane.add(label, BorderLayout.NORTH);
-        filterServicePane.add(serviceTextField, BorderLayout.CENTER);
+        JPanel filterServicePane = buildFilterPane("Service:",
+                new TextListener(){
+                    public void textValueChanged(TextEvent e) {
+                        updateMsgFilterService(((JTextField)e.getSource()).getText());
+                    }
+                });
 
         return filterServicePane;
     }
 
     private JPanel getFilterThreadPane() {
-        JPanel filterThreadPane = new JPanel();
-
-        JTextField threadTextField = new JTextField(8);
-        threadTextField.setFont(new java.awt.Font("Dialog", 0, 11));
-        threadTextField.getDocument().addDocumentListener(new DocumentListener(){
-            public void insertUpdate(DocumentEvent e) {
-                updateMsgFilterThreadId(e.getDocument());
-            }
-            public void removeUpdate(DocumentEvent e) {
-                updateMsgFilterThreadId(e.getDocument());
-            }
-            public void changedUpdate(DocumentEvent e) {
-                updateMsgFilterThreadId(e.getDocument());
-            }
-        });
-
-        JLabel label = new JLabel("Thread Id:");
-        label.setFont(new java.awt.Font("Dialog", 0, 11));
-
-        filterThreadPane.setLayout(new BorderLayout());
-        filterThreadPane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
-        filterThreadPane.add(label, BorderLayout.NORTH);
-        filterThreadPane.add(threadTextField, BorderLayout.CENTER);
+        JPanel filterThreadPane = buildFilterPane("Thread Id:",
+                new TextListener(){
+                    public void textValueChanged(TextEvent e) {
+                        updateMsgFilterThreadId(((JTextField)e.getSource()).getText());
+                    }
+                });
 
         return filterThreadPane;
     }
 
     private JPanel getFilterMessagePane() {
-        JPanel filterMessagePane = new JPanel();
-
-        JTextField messageTextField = new JTextField(8);
-        messageTextField.setFont(new java.awt.Font("Dialog", 0, 11));
-        messageTextField.getDocument().addDocumentListener(new DocumentListener(){
-            public void insertUpdate(DocumentEvent e) {
-                updateMsgFilterMessage(e.getDocument());
-            }
-            public void removeUpdate(DocumentEvent e) {
-                updateMsgFilterMessage(e.getDocument());
-            }
-            public void changedUpdate(DocumentEvent e) {
-                updateMsgFilterMessage(e.getDocument());
-            }
-        });
-
-        JLabel label = new JLabel("Message:");
-        label.setFont(new java.awt.Font("Dialog", 0, 11));
-
-        filterMessagePane.setLayout(new BorderLayout());
-        filterMessagePane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
-        filterMessagePane.add(label, BorderLayout.NORTH);
-        filterMessagePane.add(messageTextField, BorderLayout.CENTER);
+        JPanel filterMessagePane = buildFilterPane("Message:",
+                new TextListener(){
+                    public void textValueChanged(TextEvent e) {
+                        updateMsgFilterMessage(((JTextField)e.getSource()).getText());
+                    }
+                });
 
         return filterMessagePane;
     }
 
+    private JPanel buildFilterPane(String labelText, final TextListener listener) {
+        JPanel filterPane = new JPanel();
+
+        final JTextField textField = new JTextField(16);
+        textField.setFont(new java.awt.Font("Dialog", 0, 11));
+        textField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
+            public void run() {
+                listener.textValueChanged(new TextEvent(textField, TextEvent.TEXT_VALUE_CHANGED));
+            }
+        }));
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new java.awt.Font("Dialog", 0, 11));
+
+        filterPane.setLayout(new BorderLayout());
+        filterPane.setBorder(BorderFactory.createEmptyBorder(0,2,0,2));
+        filterPane.add(label, BorderLayout.NORTH);
+        filterPane.add(textField, BorderLayout.CENTER);
+
+        return filterPane;
+    }
 
     /**
      * Get the small control panel used for log viewing
@@ -944,10 +938,11 @@ public class LogPanel extends JPanel {
      * Return the total number of the messages being displayed.
      */
     private JLabel getMsgTotal(){
-        if(msgTotal != null) return msgTotal;
-        msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
-        msgTotal.setFont(new java.awt.Font("Dialog", 0, 12));
-        msgTotal.setAlignmentY(0);
+        if(msgTotal == null) {
+            msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
+            msgTotal.setFont(new java.awt.Font("Dialog", 0, 12));
+            msgTotal.setAlignmentY(0);
+        }
         return msgTotal;
     }
 
@@ -956,15 +951,15 @@ public class LogPanel extends JPanel {
      * @return JTable
      */
     private JTable getMsgTable(){
-        if(msgTable != null) return msgTable;
+        if(msgTable == null) {
+            msgTable = new JTable(getFilteredLogTableSorter(), getLogColumnModel());
+            msgTable.setShowHorizontalLines(false);
+            msgTable.setShowVerticalLines(false);
+            msgTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            msgTable.setRowSelectionAllowed(true);
 
-        msgTable = new JTable(getFilteredLogTableSorter(), getLogColumnModel());
-        msgTable.setShowHorizontalLines(false);
-        msgTable.setShowVerticalLines(false);
-        msgTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        msgTable.setRowSelectionAllowed(true);
-
-        addMouseListenerToHeaderInTable(msgTable);
+            addMouseListenerToHeaderInTable(msgTable);
+        }
 
         return msgTable;
     }
@@ -974,12 +969,13 @@ public class LogPanel extends JPanel {
      * @return JScrollPane
      */
     private JComponent getMsgTablePane(){
-        if(msgTablePane != null) return msgTablePane;
-
-        msgTablePane = new JScrollPane();
-        msgTablePane.setViewportView(getMsgTable());
-        msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
-        msgTablePane.setMinimumSize(new Dimension(600, 40));
+        if(msgTablePane == null) {
+            msgTablePane = new JScrollPane();
+            msgTablePane.setViewportView(getMsgTable());
+            msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
+            msgTablePane.setMinimumSize(new Dimension(600, 40));
+            msgTablePane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        }
 
         return msgTablePane;
     }
@@ -989,63 +985,59 @@ public class LogPanel extends JPanel {
      * @return JScrollPane
      */
     private JTabbedPane getMsgDetailsPane(){
-        if(msgDetailsPane != null)  return msgDetailsPane;
-
-        msgDetailsPane = new JTabbedPane();
-
-        JScrollPane msgDetailsScrollPane = getDetailsScrollPane();
-        msgDetailsPane.addTab("Details", msgDetailsScrollPane);
-
-        JScrollPane associatedLogsScrollPane = getAssociatedLogsScrollPane();
-        msgDetailsPane.addTab("Associated Logs", associatedLogsScrollPane);
-
-        msgDetailsPane.addTab("Request XML", getRequestXmlPanel());
-
-        msgDetailsPane.addTab("Response XML", getResponseXmlPanel());
+        if(msgDetailsPane == null) {
+            msgDetailsPane = new JTabbedPane();
+            msgDetailsPane.addTab("Details", getDetailsScrollPane());
+            msgDetailsPane.addTab("Associated Logs", getAssociatedLogsScrollPane());
+            msgDetailsPane.addTab("Request XML", getRequestXmlPanel());
+            msgDetailsPane.addTab("Response XML", getResponseXmlPanel());
+        }
 
         return msgDetailsPane;
     }
 
     private JScrollPane getAssociatedLogsScrollPane() {
-        if (associatedLogsScrollPane != null) return associatedLogsScrollPane;
-        associatedLogsScrollPane = new JScrollPane();
-        associatedLogsScrollPane.setViewportView(getAssociatedLogsTable());
-        associatedLogsScrollPane.getViewport().setBackground(getAssociatedLogsTable().getBackground());
+        if (associatedLogsScrollPane == null) {
+            associatedLogsScrollPane = new JScrollPane();
+            associatedLogsScrollPane.setViewportView(getAssociatedLogsTable());
+            associatedLogsScrollPane.getViewport().setBackground(getAssociatedLogsTable().getBackground());
+        }
 
         return associatedLogsScrollPane;
     }
 
     private AssociatedLogsTable getAssociatedLogsTable() {
-        if(associatedLogsTable != null) return associatedLogsTable;
-
-        associatedLogsTable = new AssociatedLogsTable();
-
-        associatedLogsTable.setShowHorizontalLines(false);
-        associatedLogsTable.setShowVerticalLines(false);
-        associatedLogsTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        associatedLogsTable.setRowSelectionAllowed(true);
+        if(associatedLogsTable == null) {
+            associatedLogsTable = new AssociatedLogsTable();
+            associatedLogsTable.setShowHorizontalLines(false);
+            associatedLogsTable.setShowVerticalLines(false);
+            associatedLogsTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            associatedLogsTable.setRowSelectionAllowed(true);
+        }
 
         return associatedLogsTable;
     }
 
     private JScrollPane getDetailsScrollPane() {
-        if (detailsScrollPane != null) return detailsScrollPane;
-        detailsScrollPane = new JScrollPane();
-        detailsScrollPane.setViewportView(getMsgDetails());
+        if (detailsScrollPane == null) {
+            detailsScrollPane = new JScrollPane(getMsgDetails());
+        }
         return detailsScrollPane;
     }
 
     private JScrollPane getRequestXmlScrollPane() {
-        if (requestXmlScrollPane != null) return requestXmlScrollPane;
-        requestXmlScrollPane = new JScrollPane();
-        requestXmlScrollPane.setViewportView(getRequestXmlTextArea());
+        if (requestXmlScrollPane == null) {
+            requestXmlScrollPane = new JScrollPane(getRequestXmlTextArea());
+        }
+
         return requestXmlScrollPane;
     }
 
     private JScrollPane getResponseXmlScrollPane() {
-        if (responseXmlScrollPane != null) return responseXmlScrollPane;
-        responseXmlScrollPane = new JScrollPane();
-        responseXmlScrollPane.setViewportView(getResponseXmlTextArea());
+        if (responseXmlScrollPane == null) {
+            responseXmlScrollPane = new JScrollPane(getResponseXmlTextArea());
+        }
+
         return responseXmlScrollPane;
     }
 
@@ -1053,89 +1045,87 @@ public class LogPanel extends JPanel {
      * Return MsgDetails property value
      * @return  JTextArea
      */
-    private JTextArea getMsgDetails()
-    {
-        if(msgDetails != null) return msgDetails;
-
-        msgDetails = new ContextMenuTextArea();
-        msgDetails.setEditable(false);
+    private JTextArea getMsgDetails() {
+        if(msgDetails == null) {
+            msgDetails = new ContextMenuTextArea();
+            msgDetails.setEditable(false);
+        }
 
         return msgDetails;
     }
 
     private JPanel getRequestXmlPanel() {
-        if (requestXmlPanel != null) return requestXmlPanel;
-        requestXmlPanel = new JPanel();
-        requestXmlPanel.setLayout(new BorderLayout());
-        requestXmlPanel.add(getRequestXmlScrollPane(), BorderLayout.CENTER);
-        requestXmlPanel.add(getRequestReformatCheckbox(), BorderLayout.SOUTH);
+        if (requestXmlPanel == null) {
+            requestXmlPanel = new JPanel();
+            requestXmlPanel.setLayout(new BorderLayout());
+            requestXmlPanel.add(getRequestXmlScrollPane(), BorderLayout.CENTER);
+            requestXmlPanel.add(getRequestReformatCheckbox(), BorderLayout.SOUTH);
+        }
         return requestXmlPanel;
     }
 
     private JCheckBox getRequestReformatCheckbox() {
-        if (requestReformatCheckbox != null) return requestReformatCheckbox;
-        requestReformatCheckbox = new JCheckBox("Reformat Request XML");
-        requestReformatCheckbox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                JTextArea requestTextArea = getRequestXmlTextArea();
-                String text = requestTextArea.getText();
-                if (requestTextArea.isEnabled() && requestTextArea.isShowing() &&
-                            text != null && text.length() > 0) {
-                    if (requestReformatCheckbox.isSelected()) {
-                        unformattedRequestXml = text;
-                        requestTextArea.setText(reformat(unformattedRequestXml));
-                    } else {
-                        requestTextArea.setText(unformattedRequestXml);
-                    }
-                    requestTextArea.getCaret().setDot(0);
+        if (requestReformatCheckbox == null) {
+            requestReformatCheckbox = new JCheckBox("Reformat Request XML");
+            requestReformatCheckbox.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    doReformat(getRequestXmlTextArea(), requestReformatCheckbox.isSelected(), unformattedRequestXml);
                 }
-            }
-        });
+            });
+        }
         return requestReformatCheckbox;
     }
 
     private JTextArea getRequestXmlTextArea() {
-        if (requestXmlTextArea != null) return requestXmlTextArea;
-        requestXmlTextArea = new ContextMenuTextArea();
-        requestXmlTextArea.setEditable(false);
+        if (requestXmlTextArea == null) {
+            requestXmlTextArea = new ContextMenuTextArea();
+            requestXmlTextArea.setEditable(false);
+        }
         return requestXmlTextArea;
     }
 
     private JPanel getResponseXmlPanel() {
-        if (responseXmlPanel != null) return responseXmlPanel;
-        responseXmlPanel = new JPanel();
-        responseXmlPanel.setLayout(new BorderLayout());
-        responseXmlPanel.add(getResponseXmlScrollPane(), BorderLayout.CENTER);
-        responseXmlPanel.add(getResponseReformatCheckbox(), BorderLayout.SOUTH);
+        if (responseXmlPanel == null) {
+            responseXmlPanel = new JPanel();
+            responseXmlPanel.setLayout(new BorderLayout());
+            responseXmlPanel.add(getResponseXmlScrollPane(), BorderLayout.CENTER);
+            responseXmlPanel.add(getResponseReformatCheckbox(), BorderLayout.SOUTH);
+        }
         return responseXmlPanel;
     }
 
     private JCheckBox getResponseReformatCheckbox() {
-        if (responseReformatCheckbox != null) return responseReformatCheckbox;
-        responseReformatCheckbox = new JCheckBox("Reformat Response XML");
-        responseReformatCheckbox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                JTextArea responseTextArea = getResponseXmlTextArea();
-                String text = responseTextArea.getText();
-                if (responseTextArea.isEnabled() && responseTextArea.isShowing() &&
-                            text != null && text.length() > 0) {
-                    if (responseReformatCheckbox.isSelected()) {
-                        unformattedResponseXml = text;
-                        responseTextArea.setText(reformat(unformattedResponseXml));
-                    } else {
-                        responseTextArea.setText(unformattedResponseXml);
-                    }
-                    responseTextArea.getCaret().setDot(0);
+        if (responseReformatCheckbox == null) {
+            responseReformatCheckbox = new JCheckBox("Reformat Response XML");
+            responseReformatCheckbox.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    doReformat(getResponseXmlTextArea(), responseReformatCheckbox.isSelected(), unformattedResponseXml);
                 }
-            }
-        });
+            });
+        }
         return responseReformatCheckbox;
     }
 
+    private void doReformat(JTextArea textArea, boolean format, StringBuffer textBuffer) {
+        String text = textArea.getText();
+        if (textArea.isEnabled() && textArea.isShowing() &&
+                    text != null && text.length() > 0) {
+            if (format) {
+                textBuffer.setLength(0);
+                textBuffer.append(text);
+                textArea.setText(reformat(textBuffer.toString()));
+            } else {
+                textArea.setText(textBuffer.toString());
+            }
+            textArea.getCaret().setDot(0);
+        }
+    }
+
     private JTextArea getResponseXmlTextArea() {
-        if (responseXmlTextArea != null) return responseXmlTextArea;
-        responseXmlTextArea = new ContextMenuTextArea();
-        responseXmlTextArea.setEditable(false);
+        if (responseXmlTextArea == null) {
+            responseXmlTextArea = new ContextMenuTextArea();
+            responseXmlTextArea.setEditable(false);
+        }
         return responseXmlTextArea;
     }
 
@@ -1144,14 +1134,14 @@ public class LogPanel extends JPanel {
      * @return  JPanel
      */
     private JPanel getStatusPane() {
-        if(statusPane != null)  return statusPane;
-
-        statusPane = new JPanel();
-        statusPane.setLayout(new BoxLayout(statusPane, BoxLayout.Y_AXIS));
-        statusPane.add(Box.createVerticalGlue());
-        statusPane.add(getMsgTotal());
-        statusPane.add(getLastUpdateTimeLabel());
-        statusPane.add(Box.createVerticalGlue());
+        if(statusPane == null) {
+            statusPane = new JPanel();
+            statusPane.setLayout(new BoxLayout(statusPane, BoxLayout.Y_AXIS));
+            statusPane.add(Box.createVerticalGlue());
+            statusPane.add(getMsgTotal());
+            statusPane.add(getLastUpdateTimeLabel());
+            statusPane.add(Box.createVerticalGlue());
+        }
 
         return statusPane;
     }
@@ -1161,13 +1151,12 @@ public class LogPanel extends JPanel {
      * @return  JLabel
      */
     private JLabel getLastUpdateTimeLabel() {
-
-        if(lastUpdateTimeLabel != null) return lastUpdateTimeLabel;
-
-        lastUpdateTimeLabel = new JLabel();
-        lastUpdateTimeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        lastUpdateTimeLabel.setText("");
-        lastUpdateTimeLabel.setAlignmentY(0);
+        if(lastUpdateTimeLabel == null) {
+            lastUpdateTimeLabel = new JLabel();
+            lastUpdateTimeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
+            lastUpdateTimeLabel.setText("");
+            lastUpdateTimeLabel.setAlignmentY(0);
+        }
 
         return lastUpdateTimeLabel;
     }
@@ -1179,25 +1168,34 @@ public class LogPanel extends JPanel {
     private DefaultTableColumnModel getLogColumnModel() {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
+        tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX] = 20;
+        tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX] = 30;
+        tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX] = 100;
+        tableColumnWidths[LOG_THREAD_COLUMN_INDEX] = 15;
+        tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX] = 20;
+        tableColumnWidths[LOG_SERVICE_COLUMN_INDEX] = 20;
+        tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX] = 400;
+
         // Add columns according to configuration
         String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
         if ((showMsgFlag != null) && showMsgFlag.equals("true")){
-            columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, 20));
+            columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, tableColumnWidths[LOG_MSG_NUMBER_COLUMN_INDEX]));
         }
-        columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, 30));
-        columnModel.addColumn(new TableColumn(LOG_TIMESTAMP_COLUMN_INDEX, 80));
+        columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, tableColumnWidths[LOG_NODE_NAME_COLUMN_INDEX]));
+        columnModel.addColumn(new TableColumn(LOG_TIMESTAMP_COLUMN_INDEX, tableColumnWidths[LOG_TIMESTAMP_COLUMN_INDEX]));
         if(!isAuditType) {
-            columnModel.addColumn(new TableColumn(LOG_THREAD_COLUMN_INDEX, 15));
+            columnModel.addColumn(new TableColumn(LOG_THREAD_COLUMN_INDEX, tableColumnWidths[LOG_THREAD_COLUMN_INDEX]));
         }
-        columnModel.addColumn(new TableColumn(LOG_SEVERITY_COLUMN_INDEX, 15));
+        columnModel.addColumn(new TableColumn(LOG_SEVERITY_COLUMN_INDEX, tableColumnWidths[LOG_SEVERITY_COLUMN_INDEX]));
         if(isAuditType) { // show the service name if we are displaying audit messages
-            columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, 20));
+            columnModel.addColumn(new TableColumn(LOG_SERVICE_COLUMN_INDEX, tableColumnWidths[LOG_SERVICE_COLUMN_INDEX]));
         }
-        columnModel.addColumn(new TableColumn(LOG_MSG_DETAILS_COLUMN_INDEX, 400));
+        columnModel.addColumn(new TableColumn(LOG_MSG_DETAILS_COLUMN_INDEX, tableColumnWidths[LOG_MSG_DETAILS_COLUMN_INDEX]));
 
         // Set headers
         for(int i = 0; i < columnModel.getColumnCount(); i++){
             TableColumn tc = columnModel.getColumn(i);
+            tc.setMinWidth(50);
             tc.setHeaderRenderer(iconHeaderRenderer);
             tc.setHeaderValue(getLogTableModel().getColumnName(tc.getModelIndex()));
         }
@@ -1210,10 +1208,10 @@ public class LogPanel extends JPanel {
      * @return FilteredLogTableModel
      */
     private FilteredLogTableSorter getFilteredLogTableSorter(){
-        if(logTableSorter != null) return logTableSorter;
-
-        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel(),
-                isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
+        if(logTableSorter == null) {
+            logTableSorter = new FilteredLogTableSorter(this, getLogTableModel(),
+                    isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
+        }
 
         return logTableSorter;
     }
@@ -1225,20 +1223,18 @@ public class LogPanel extends JPanel {
      *
      */
     private DefaultTableModel getLogTableModel() {
-        if (logTableModel != null) {
-            return logTableModel;
+        if (logTableModel == null) {
+            String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class",
+                    "Method", "Request Id", "Node Id", "Service", "Thread Id"};
+            String[][] rows = new String[][]{};
+
+            logTableModel = new DefaultTableModel(rows, cols) {
+                public boolean isCellEditable(int row, int col) {
+                    // the table cells are not editable
+                    return false;
+                }
+            };
         }
-
-        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class",
-                "Method", "Request Id", "Node Id", "Service", "Thread Id"};
-        String[][] rows = new String[][]{};
-
-        logTableModel = new DefaultTableModel(rows, cols) {
-            public boolean isCellEditable(int row, int col) {
-                // the table cells are not editable
-                return false;
-            }
-        };
 
         return logTableModel;
     }
@@ -1313,9 +1309,7 @@ public class LogPanel extends JPanel {
      * @param msgNumber  The message number of the log being selected.
      */
     public void setSelectedRow(String msgNumber) {
-
         if (msgNumber != null) {
-
             // keep the current row selection
             int rowCount = getMsgTable().getRowCount();
             boolean rowFound = false;
@@ -1387,19 +1381,11 @@ public class LogPanel extends JPanel {
         }
     }
 
-    private void updateMsgFilterNode(Document document) {
-        updateMsgFilterNode(toString(document));
-    }
-
     private void updateMsgFilterNode(String nodeMatch) {
         if (nodeMatch!=null && !nodeMatch.equals(msgFilterNode)) {
             msgFilterNode = nodeMatch;
             updateMsgFilter();
         }
-    }
-
-    private void updateMsgFilterService(Document document) {
-        updateMsgFilterService(toString(document));
     }
 
     private void updateMsgFilterService(String serviceMatch) {
@@ -1409,10 +1395,6 @@ public class LogPanel extends JPanel {
         }
     }
 
-    private void updateMsgFilterThreadId(Document document) {
-        updateMsgFilterThreadId(toString(document));
-    }
-
     private void updateMsgFilterThreadId(String threadIdMatch) {
         if (threadIdMatch!=null && !threadIdMatch.equals(msgFilterThreadId)) {
             msgFilterThreadId = threadIdMatch;
@@ -1420,30 +1402,11 @@ public class LogPanel extends JPanel {
         }
     }
 
-    private void updateMsgFilterMessage(Document document) {
-        updateMsgFilterMessage(toString(document));
-    }
-
     private void updateMsgFilterMessage(String messageMatch) {
         if (messageMatch!=null && !messageMatch.equals(msgFilterMessage)) {
             msgFilterMessage = messageMatch;
             updateMsgFilter();
         }
-    }
-
-    private String toString(Document document) {
-        String text = null;
-
-        if(document!=null) {
-            try {
-                text = document.getText(0, document.getLength()).trim();
-            }
-            catch(BadLocationException ble) {
-                text = "";
-            }
-        }
-
-        return text;
     }
 
     private void updateLogsRefreshTimerDelay() {
@@ -1468,15 +1431,6 @@ public class LogPanel extends JPanel {
                 return null;
             }
 
-            public void exportAsDrag(JComponent comp, InputEvent e, int action) {
-            }
-
-            protected void exportDone(JComponent source, Transferable data, int action) {
-            }
-
-            public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {
-            }
-
             public int getSourceActions(JComponent c) {
                 return TransferHandler.NONE;
             }
@@ -1488,6 +1442,11 @@ public class LogPanel extends JPanel {
             public boolean importData(JComponent comp, Transferable t) {
                 return false;
             }
+
+            // do nothing
+            public void exportAsDrag(JComponent comp, InputEvent e, int action) {}
+            protected void exportDone(JComponent source, Transferable data, int action) {}
+            public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {}
         };
     }
 
@@ -1495,10 +1454,10 @@ public class LogPanel extends JPanel {
      *  Clear the message table
      */
     public void clearMsgTable(){
-        getMsgDetails().setText("Loading data...");
+        getMsgDetails().setText("");
         getMsgTotal().setText(MSG_TOTAL_PREFIX + "0");
         displayedLogMessage = null;
-        getFilteredLogTableSorter().clearLogCache();
+        clearLogCache();
     }
 
     /**
@@ -1507,15 +1466,14 @@ public class LogPanel extends JPanel {
      * @return javax.swing.Timer
      */
     public javax.swing.Timer getLogsRefreshTimer() {
-
-        if (logsRefreshTimer != null) return logsRefreshTimer;
-
-        //Create a refresh logs timer.
-        logsRefreshTimer = new javax.swing.Timer(logsRefreshInterval, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                refreshLogs();
-            }
-        });
+        if (logsRefreshTimer == null) {
+            //Create a refresh logs timer.
+            logsRefreshTimer = new javax.swing.Timer(logsRefreshInterval, new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    refreshLogs();
+                }
+            });
+        }
 
         return logsRefreshTimer;
     }
@@ -1603,6 +1561,7 @@ public class LogPanel extends JPanel {
         };
         JTableHeader th = tableView.getTableHeader();
         th.addMouseListener(listMouseListener);
+        th.addMouseListener(new JTableColumnResizeMouseListener(tableView, tableColumnWidths));
     }
 
     /**
@@ -1613,6 +1572,7 @@ public class LogPanel extends JPanel {
         JTable table = getMsgTable();
         int rows = table.getRowCount();
         List data = new ArrayList(rows);
+        FilteredLogTableSorter logTableSorter = getFilteredLogTableSorter();
         for(int i=0; i<rows; i++) {
             LogMessage rowMessage = logTableSorter.getLogMessageAtRow(i);
             data.add(new WriteableLogMessage(rowMessage));
@@ -1694,14 +1654,14 @@ public class LogPanel extends JPanel {
                 if(data.isEmpty()) {
                     logger.info("No data in file! '"+file.getAbsolutePath()+"'.");
                 }
-                Hashtable loadedLogs = new Hashtable();
+                Map loadedLogs = new HashMap();
                 for (Iterator iterator = data.iterator(); iterator.hasNext();) {
                     Object o = iterator.next();
                     if(o instanceof WriteableLogMessage) {
                         WriteableLogMessage message = (WriteableLogMessage) o;
-                        Vector logsForNode = (Vector) loadedLogs.get(message.ssgLogRecord.getNodeId());
+                        Collection logsForNode = (Collection) loadedLogs.get(message.ssgLogRecord.getNodeId());
                         if(logsForNode==null) {
-                            logsForNode = new Vector();
+                            logsForNode = new LinkedHashSet();
                             loadedLogs.put(message.ssgLogRecord.getNodeId(), logsForNode);
                         }
                         LogMessage lm = new LogMessage(message.ssgLogRecord);
@@ -1709,7 +1669,7 @@ public class LogPanel extends JPanel {
                         logsForNode.add(lm);
                     }
                 }
-                logTableSorter.setLogs(this, loadedLogs);
+                getFilteredLogTableSorter().setLogs(this, loadedLogs);
             }
             else {
                 logger.warning("File '"+file.getAbsolutePath()+"' contains invalid data! '"+

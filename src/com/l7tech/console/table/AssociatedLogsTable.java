@@ -1,6 +1,7 @@
 package com.l7tech.console.table;
 
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.common.gui.util.JTableColumnResizeMouseListener;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -15,6 +16,8 @@ import java.awt.*;
  */
 public class AssociatedLogsTable extends JTable {
 
+    private static int[] DEFAULT_COLUMN_WIDTHS ={175, 100, 500};
+
     private AssociatedLogsTableSorter associatedLogsTableModel = null;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
@@ -24,6 +27,7 @@ public class AssociatedLogsTable extends JTable {
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setColumnModel(getLogColumnModel());
+        setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         addMouseListenerToHeaderInTable();
     }
 
@@ -44,9 +48,9 @@ public class AssociatedLogsTable extends JTable {
 
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
-        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX, 100));
-        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_SECURITY_COLUMN_INDEX, 50));
-        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX, 500));
+        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[0]));
+        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_SECURITY_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[1]));
+        columnModel.addColumn(new TableColumn(AssociatedLogsTableSorter.ASSOCIATED_LOG_MSG_COLUMN_INDEX, DEFAULT_COLUMN_WIDTHS[2]));
 
         for(int i = 0; i < columnModel.getColumnCount(); i++){
             columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
@@ -92,7 +96,7 @@ public class AssociatedLogsTable extends JTable {
         MouseAdapter listMouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 TableColumnModel columnModel = tableView.getColumnModel();
-                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
+                int viewColumn = tableView.columnAtPoint(e.getPoint());
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
@@ -104,6 +108,7 @@ public class AssociatedLogsTable extends JTable {
         };
         JTableHeader th = tableView.getTableHeader();
         th.addMouseListener(listMouseListener);
+        th.addMouseListener(new JTableColumnResizeMouseListener(tableView, DEFAULT_COLUMN_WIDTHS));
     }
 
     // This customized renderer can render objects of the type TextandIcon

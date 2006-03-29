@@ -12,8 +12,17 @@ import com.l7tech.logging.LogMessage;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.util.*;
 import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Map;
+import java.util.LinkedHashSet;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
@@ -81,10 +90,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param nodeList  A list of node objects accompanied with their new logs.
      */
-    private void appendLogs(Hashtable nodeList) {
+    private void appendLogs(Map nodeList) {
         for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
             String node = (String) i.next();
-            Vector logs = (Vector) nodeList.get(node);
+            Collection logs = (Collection) nodeList.get(node);
             addLogs(node, logs, false);
         }
     }
@@ -94,10 +103,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param nodeList  A list of node objects accompanied with their new logs.
      */
-    private void addLogs(Hashtable nodeList) {
+    private void addLogs(Map nodeList) {
         for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
             String node = (String) i.next();
-            Vector logs = (Vector) nodeList.get(node);
+            Collection logs = (Collection) nodeList.get(node);
             addLogs(node, logs, true);
         }
     }
@@ -108,37 +117,45 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param nodeId  The Id of the node which is the source of the new logs.
      * @param newLogs  The new logs.
      */
-    private void addLogs(String nodeId, Vector newLogs, boolean front) {
+    private void addLogs(String nodeId, Collection newLogs, boolean front) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
 
             Object node = null;
-            Vector gatewayLogs;
+            Collection gatewayLogs;
             if ((node = rawLogCache.get(nodeId)) != null) {
-                gatewayLogs = (Vector) node;
+                gatewayLogs = (Collection) node;
             } else {
                 // create a empty cache for the new node
-                gatewayLogs = new Vector();
+                gatewayLogs = new LinkedHashSet();
             }
 
-            while (gatewayLogs.size() + newLogs.size() > MAX_NUMBER_OF_LOG_MESSGAES) {
+            Iterator setIter = gatewayLogs.iterator();
+            for(int i=0; i<gatewayLogs.size(); i++) {
                 // remove the last element
-                gatewayLogs.remove(gatewayLogs.size() - 1);
+                setIter.next();
+                if(i+newLogs.size()>MAX_NUMBER_OF_LOG_MESSGAES) {
+                    setIter.remove();
+                }
             }
 
             if (front) {
                 // append the old logs to the cache
                 newLogs.addAll(gatewayLogs);
 
-                gatewayLogs = newLogs;
+                if(newLogs instanceof LinkedHashSet) {
+                    gatewayLogs = newLogs;
+                }
+                else {
+                    gatewayLogs = new LinkedHashSet(newLogs);
+                }
             } else {
                 gatewayLogs.addAll(newLogs);
             }
 
             // update the logsCache
             rawLogCache.put(nodeId, gatewayLogs);
-
         }
     }
 
@@ -361,7 +378,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     public void onConnect() {
         clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
         logAdmin = Registry.getDefault().getAuditAdmin();
-        currentNodeList = new Hashtable();
+        currentNodeList = new HashMap();
 
         clearLogCache();
         canceled = false;
@@ -399,9 +416,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Clear all caches.
      */
     public void clearLogCache() {
-        rawLogCache = new Hashtable();
-        filteredLogCache = new Vector();
-        currentNodeList = new Hashtable();
+        rawLogCache = new HashMap();
+        filteredLogCache = new ArrayList();
+        currentNodeList = new HashMap();
         sortedData = new Object[0];
         realModel.setRowCount(sortedData.length);
         realModel.fireTableDataChanged();
@@ -410,7 +427,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     /**
      *  Remove the logs of Non-exist nodes from the cache
      */
-    private void removeLogsOfNonExistNodes(Hashtable newNodeList) {
+    private void removeLogsOfNonExistNodes(Map newNodeList) {
         for (Iterator i = currentNodeList.keySet().iterator();  i.hasNext(); ) {
 
             Object nodeId = i.next();
@@ -470,13 +487,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     /**
      * Set the log/audit data to be displayed.
      *
-     * <p>The logs Hashtable is a map of nodeId (Strings) to Vector of log
+     * <p>The logs Map is a map of nodeId (Strings) to Collection of log
      * messages (LogMessage).</p>
      *
      * @param logPane   The object reference to the LogPanel.
      * @param logs the data hashtable.
      */
-    public void setLogs(final LogPanel logPane, final Hashtable logs) {
+    public void setLogs(final LogPanel logPane, final Map logs) {
         // validate input
         int count = 0;
         for(Iterator logEntryIter=logs.entrySet().iterator(); logEntryIter.hasNext();){
@@ -484,10 +501,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             Object key = me.getKey();
             Object value = me.getValue();
             if(!(key instanceof String) ||
-               !(value instanceof Vector)) {
+               !(value instanceof Collection)) {
                 return;
             }
-            Vector logMessages = (Vector) value;
+            Collection logMessages = (Collection) value;
             count += logMessages.size();
             for (Iterator iterator = logMessages.iterator(); iterator.hasNext();) {
                 Object o = iterator.next();
@@ -504,9 +521,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         for(Iterator logEntryIter=logs.entrySet().iterator(); logEntryIter.hasNext();){
             Map.Entry me = (Map.Entry) logEntryIter.next();
             String nodeId = (String) me.getKey();
-            Vector logVector = (Vector) me.getValue();
+            Collection logVector = (Collection) me.getValue();
             if(!logVector.isEmpty()) {
-                LogMessage logMessage = (LogMessage) logVector.firstElement();
+                LogMessage logMessage = (LogMessage) logVector.iterator().next();
                 ClusterNodeInfo cni = new ClusterNodeInfo();
                 cni.setName(logMessage.getNodeName());
                 cni.setMac(logMessage.getNodeId());
@@ -542,7 +559,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param nodeId the node to filter requests by (may be null)
      * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
-    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, Vector requests, final String nodeId, final boolean newRefresh) {
+    private void doRefreshLogs(final LogPanel logPane, final boolean restartTimer, final Date start, final Date end, List requests, final String nodeId, final boolean newRefresh) {
 
         if(displayingFromFile) {
             displayingFromFile = false;
@@ -552,13 +569,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         // New request or still working on an old request?
         if (newRefresh) {
             // create request for each node
-            requests = new Vector();
+            requests = new ArrayList();
             for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
                 GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
 
                 Object logCache = null;
                 if ((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
-                    Vector cachevector = (Vector)logCache;
+                    Collection cachevector = (Collection)logCache;
                     long highest = -1;
                     if (cachevector.size() > 0) {
                         // remove any cached logs that are outside of our current range.
@@ -624,7 +641,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
                             logPane.setSelectedRow(msgNumSelected);
 
-                            final Vector unfilledRequest = getUnfilledRequest();
+                            final List unfilledRequest = getUnfilledRequest();
 
                             // if there unfilled requests
                             if (unfilledRequest.size() > 0) {

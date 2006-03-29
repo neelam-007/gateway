@@ -12,9 +12,13 @@ import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
 
 import java.rmi.RemoteException;
-import java.util.Hashtable;
-import java.util.Vector;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,10 +37,10 @@ public class ClusterLogWorker extends SwingWorker {
     private GenericLogAdmin logService = null;
     private int logType;
     private String nodeId;
-    private Hashtable newNodeList;
-    private Hashtable currentNodeList;
-    private Vector requests;
-    private Hashtable retrievedLogs;
+    private Map newNodeList;
+    private Map currentNodeList;
+    private List requests;
+    private Map retrievedLogs;
     private boolean remoteExceptionCaught;
     private java.util.Date currentClusterSystemTime = null;
     private final Date startDate;
@@ -60,8 +64,8 @@ public class ClusterLogWorker extends SwingWorker {
                             String nodeId,
                             Date startDate,
                             Date endDate,
-                            Hashtable currentNodeList,
-                            Vector requests) {
+                            Map currentNodeList,
+                            List requests) {
         this.clusterStatusService = clusterStatusService;
         this.logService = logService;
         this.logType = logType;
@@ -77,7 +81,7 @@ public class ClusterLogWorker extends SwingWorker {
         this.requests = requests;
 
         remoteExceptionCaught = false;
-        retrievedLogs = new Hashtable();
+        retrievedLogs = new HashMap();
     }
 
     /**
@@ -85,7 +89,7 @@ public class ClusterLogWorker extends SwingWorker {
      *
      * @return  The list of nodes obtained from the lateset retrieval.
      */
-    public Hashtable getNewNodeList() {
+    public Map getNewNodeList() {
         return newNodeList;
     }
 
@@ -103,7 +107,7 @@ public class ClusterLogWorker extends SwingWorker {
      *
      * @return  new logs
      */
-    public Hashtable getNewLogs() {
+    public Map getNewLogs() {
         return retrievedLogs;
     }
 
@@ -112,7 +116,7 @@ public class ClusterLogWorker extends SwingWorker {
      *
      * @return  the list of unfilled requests.
      */
-    public Vector getUnfilledRequest() {
+    public List getUnfilledRequest() {
         return requests;
     }
 
@@ -133,7 +137,7 @@ public class ClusterLogWorker extends SwingWorker {
     public Object construct() {
 
         // create a new empty node list
-        newNodeList = new Hashtable();
+        newNodeList = new HashMap();
 
         // retrieve node status
         ClusterNodeInfo[] cluster = new ClusterNodeInfo[0];
@@ -168,14 +172,14 @@ public class ClusterLogWorker extends SwingWorker {
         }
 
         SSGLogRecord[] rawLogs = new SSGLogRecord[]{};
-        Vector requestCompleted = new Vector();
+        List requestCompleted = new ArrayList();
 
         if (requests.size() > 0) {
 
             for (int i = 0; i < requests.size(); i++) {
 
-                Vector newLogs = new Vector();
-                LogRequest logRequest = (LogRequest) requests.elementAt(i);
+                Collection newLogs = new LinkedHashSet();
+                LogRequest logRequest = (LogRequest) requests.get(i);
 
                 try {
 
@@ -233,10 +237,10 @@ public class ClusterLogWorker extends SwingWorker {
         }
 
         for (int i = 0; i < requestCompleted.size(); i++) {
-            LogRequest logRequest = (LogRequest) requestCompleted.elementAt(i);
+            LogRequest logRequest = (LogRequest) requestCompleted.get(i);
 
             // remove the request from the list
-            requests.removeElement(logRequest);
+            requests.remove(logRequest);
         }
 
         try {
@@ -249,7 +253,6 @@ public class ClusterLogWorker extends SwingWorker {
         if (currentClusterSystemTime == null) {
             return null;
         } else {
-            //System.out.println("Number of outstanding requests: " + requests.size());
             return newNodeList;
         }
 

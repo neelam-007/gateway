@@ -5,9 +5,12 @@ import com.l7tech.console.panels.LogPanel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 
-import java.util.Vector;
-import java.util.Hashtable;
+import java.util.Map;
 import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Collection;
 
 /*
  * This class encapsulates the table model for filtered logs.
@@ -22,14 +25,14 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     public static final int MAX_MESSAGE_BLOCK_SIZE = 600;
     public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
 
-    protected Hashtable rawLogCache = new Hashtable();
-    protected Vector filteredLogCache = new Vector();
+    protected Map rawLogCache = new HashMap();
+    protected List filteredLogCache = new ArrayList();
     private int filterLevel = LogPanel.MSG_FILTER_LEVEL_WARNING;
     private String filterNodeName = "";
     private String filterService = "";
     private String filterThreadId = "";
     private String filterMessage = "";
-    protected Hashtable currentNodeList;
+    protected Map currentNodeList;
 
     /**
      * Set the filter level.
@@ -156,7 +159,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         setMsgFilterMessage(msgFilterMessage);
 
         // initialize the cache
-        filteredLogCache = new Vector();
+        filteredLogCache = new ArrayList();
 
         for (Iterator i = rawLogCache.keySet().iterator(); i.hasNext(); ) {
             Object node = i.next();
@@ -178,7 +181,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     private void filterData(String nodeId) {
 
         Object node = null;
-        Vector logs;
+        Collection logs;
         Object nodeName = null;
 
         if((nodeName = currentNodeList.get(nodeId)) == null) {
@@ -186,13 +189,12 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         }
 
         if ((node = rawLogCache.get(nodeId)) != null) {
-            logs = (Vector) node;
+            logs = (Collection) node;
 
-            for (int i = 0; i < logs.size(); i++) {
+            for (Iterator iterator = logs.iterator(); iterator.hasNext();) {
+                LogMessage logMsg = (LogMessage) iterator.next();
 
-                LogMessage logMsg = (LogMessage) logs.elementAt(i);
-
-                if (isFilteredMsg(logMsg)) {
+                if (isFilteredMsg(logMsg) && !filteredLogCache.contains(logMsg)) {
                     logMsg.setNodeName(((GatewayStatus) nodeName).getName());
                     filteredLogCache.add(logMsg);
                 }

@@ -75,4 +75,20 @@ public class LogMessage {
     public SSGLogRecord getSSGLogRecord() {
         return log;
     }
+
+    public boolean equals(Object other) {
+        boolean equal = false;
+
+        if(this==other) {
+            equal = true;
+        }
+        else if(other instanceof LogMessage) {
+            LogMessage om = (LogMessage) other;
+            equal = log.getMillis()==om.log.getMillis() &&
+                    log.getLevel().equals(om.log.getLevel()) &&
+                    log.getMessage().equals(om.log.getMessage());
+        }
+
+        return equal;
+    }
 }

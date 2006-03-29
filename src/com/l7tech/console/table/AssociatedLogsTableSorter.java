@@ -4,10 +4,11 @@ import com.l7tech.common.audit.AssociatedLog;
 
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
-import java.util.Vector;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.List;
+import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 
 /**
@@ -24,7 +25,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(AssociatedLogsTableSorter.class.getName());
     private boolean ascending = false;
     private int columnToSort = 0;
-    private Vector rawdata = new Vector();
+    private List rawdata = new ArrayList();
     private Object[] sortedData = new Object[0];
 
     /**
@@ -40,12 +41,12 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
      * Return all data in the model
      * @return  The data in the model
      */
-    public Vector getAllData() {
+    public List getAllData() {
         return rawdata;
     }
 
     public void clear() {
-        rawdata = new Vector();
+        rawdata = new ArrayList();
         sortData(columnToSort, false);
     }
 
@@ -54,7 +55,7 @@ public class AssociatedLogsTableSorter  extends FilteredDefaultTableModel {
      *
      * @param data  The list of the node status of every gateways in the cluster (unsorted).
      */
-    public void setData(Vector data) {
+    public void setData(List data) {
         this.rawdata = data;
         sortData(columnToSort, false);
     }
