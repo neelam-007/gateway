@@ -1261,6 +1261,9 @@
                 <include name="com/l7tech/proxy/resources/**"/>
             </fileset>
         </copy>
+
+        <!-- set up build number -->
+        <property file="build.number"/>
     </target>
 
     <!--
@@ -1801,7 +1804,7 @@
         </antcall>
     </target>
 
-    <target name="INTERNAL-buildinfo" depends="INTERNAL-buildinfo-version">
+    <target name="INTERNAL-buildinfo" depends="INTERNAL-buildinfo-version, INTERNAL-buildinfo-uptodate">
         <property name="hostname" value="buildmachine.l7tech.com"/>
 
         <tstamp>
@@ -1843,7 +1846,13 @@
         </antcall>
     </target>
 
-    <target name="INTERNAL-buildinfo-replace">
+    <target name="INTERNAL-buildinfo-uptodate">
+        <uptodate property="buildinfo.uptodate" targetfile="${src.root}/src/com/l7tech/common/BuildInfo.java" >
+            <srcfiles dir="${src.root}" includes="src/**/*, build.version, build.number" excludes="src/com/l7tech/common/BuildInfo.java"/>
+        </uptodate>
+    </target>
+
+    <target name="INTERNAL-buildinfo-replace" unless="buildinfo.uptodate">
         <echo>Replacing ${param_name} with ${param_value}</echo>
         <replaceregexp match='${param_name} = ".*"' replace='${param_name} = "${param_value}"'>
             <fileset dir="${src.root}/src">
