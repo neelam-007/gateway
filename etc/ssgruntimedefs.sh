@@ -40,13 +40,13 @@ if [ `expr $java_ram \> 2274412` == 1 ]; then
 	# FIXME: when we start running 64 bit JVM
 	java_ram=2274412;
 fi
-let maxnewsize="$java_ram*7/10"
+let maxnewsize="$java_ram*75/100"
 
 default_java_opts="-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl"
 default_java_opts="$default_java_opts -Dfile.encoding=UTF-8 -Dsun.net.inetaddr.ttl=30 -Dnetworkaddress.cache.ttl=30"
 default_java_opts="$default_java_opts -server -Djava.awt.headless=true -XX:CompileThreshold=1500"
 default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger"
-default_java_opts="$default_java_opts -Xmx${java_ram}k -Xms${java_ram}k -Xmn=${maxnewsize}k -Xss192k "
+default_java_opts="$default_java_opts -Xmx${java_ram}k -Xms${java_ram}k -Xmn${maxnewsize}k -Xss192k "
 
 unset system_ram
 unset multiplier
@@ -64,36 +64,33 @@ fi
 
 let gcthreads="$cpucount-1"
 
-if [ `expr "$cpucount" \> "1"` == 1  ]; then
-	if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
-		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
-		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
-		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
-	elif [ `expr $JAVA_HOME : ".*1\.5\.0_06*"` != 0 ]; then
-		# fujitsu did a benchmark using this tuning: 
-		# -Xbatch -Xss256K -Xms360G -Xmx360G -Xmn300G -XX:+UseISM -XX:+AggressiveHeap -XX:+UseParallelOldGC 
-		# This will likely have big latency times but the best performance
-		default_java_opts="$default_java_opts -Xbatch -XX:+AggressiveHeap XX:+UseParallelOldGC"
-		
-		# Only if 1.5.0_06 
-		# use the jvm file above to set this
-		# Sun tried this:
-		# -Xbatch -XX:+AggressiveHeap -Xss256k -Xmx176g -Xms176g -Xmn133g -XX:+UseBiasedLocking -classpath
-	else 
-		# Next two lines are consistent low latency at the expense of 40% performance
-		# default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC"
-		# default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15"
-		# default options include batch: This may be commented out: it pauses all threads during GC
-		default_java_opts="$default_java_opts -Xbatch" 
-		# uncomment ONE of these gc options
-		# or comment them all out to let the JVM decide 
-		# throughput collector with an added "maximum pause time
-		default_java_opts="$default_java_opts -XX:+UseParallelGC -XX:MaxGCPauseMillis=1000" 
-		# throughput collector "new"
-		#default_java_opts="$default_java_opts -XX+UseParNewGC" 
-		# concurrent low pause collector: Showed low performance
-		#default_java_opts="$default_java_opts -XX+UseConcMarkSweepGC"
-	fi
+if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
+	# default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+	default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
+	default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
+elif [ `expr $JAVA_HOME : ".*1\.5\.0_06*"` != 0 ]; then
+	# fujitsu did a benchmark using this tuning: 
+	# -Xbatch -Xss256K -Xms360G -Xmx360G -Xmn300G -XX:+UseISM -XX:+AggressiveHeap -XX:+UseParallelOldGC 
+	# This will likely have big latency times but the best performance
+	default_java_opts="$default_java_opts -Xbatch -XX:+AggressiveHeap XX:+UseParallelOldGC"
+	# Only if 1.5.0_06 
+	# use the jvm file above to set this
+	# Sun tried this:
+	# -Xbatch -XX:+AggressiveHeap -Xss256k -Xmx176g -Xms176g -Xmn133g -XX:+UseBiasedLocking -classpath
+else 
+	# Next two lines are consistent low latency at the expense of 40% performance
+	# default_java_opts="$default_java_opts -XX:ParallelGCThreads=$gcthreads -XX:+UseConcMarkSweepGC"
+	# default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=90 -XX:MaxTenuringThreshold=15"
+	# default options include batch: This may be commented out: it pauses all threads during GC
+	default_java_opts="$default_java_opts -Xbatch" 
+	# uncomment ONE of these gc options
+	# or comment them all out to let the JVM decide 
+	# throughput collector with an added "maximum pause time
+	default_java_opts="$default_java_opts -XX:+UseParallelGC -XX:MaxGCPauseMillis=1000" 
+	# throughput collector "new"
+	#default_java_opts="$default_java_opts -XX+UseParNewGC" 
+	# concurrent low pause collector: Showed low performance
+	#default_java_opts="$default_java_opts -XX+UseConcMarkSweepGC"
 fi
 unset gcthreads
 unset cpucount
