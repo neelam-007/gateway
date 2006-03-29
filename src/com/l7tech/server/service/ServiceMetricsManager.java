@@ -193,8 +193,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                         return new Integer(query.executeUpdate());
                     }
                 });
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.log(Level.INFO, "Deleted {0} {1} bins older than {2}",
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Deleted {0} {1} bins older than {2}",
                             new Object[] {
                                 num,
                                 MetricsBin.describeResolution(resolution),
