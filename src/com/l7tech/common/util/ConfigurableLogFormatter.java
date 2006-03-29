@@ -205,6 +205,8 @@ public class ConfigurableLogFormatter extends Formatter {
         public void formatTo(java.util.Formatter formatter, int flags, int width, int precision) {
             String formatted = name;
 
+            if(formatted==null) formatted = ""; // anonymous logger
+
             // handle uppercase flag
             if((FormattableFlags.UPPERCASE & flags) > 0) {
                 formatted = formatted.toUpperCase();
