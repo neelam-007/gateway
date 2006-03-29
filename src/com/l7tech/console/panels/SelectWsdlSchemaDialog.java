@@ -74,7 +74,8 @@ public class SelectWsdlSchemaDialog extends JDialog {
         setTitle("Extract Schema from WSDL");
         // create the xml control for the recipient panel
         initializeXmlContainer();
-        xmlpanel.add(xmlContainer.getView());
+        xmlpanel.setLayout(new BorderLayout());
+        xmlpanel.add(xmlContainer.getView(), BorderLayout.CENTER);
         ButtonGroup bg = new ButtonGroup();
         bg.add(allradio);
         bg.add(requestradio);
