@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class ViewServiceWsdlAction extends NodeAction {
     static final Logger log = Logger.getLogger(ViewServiceWsdlAction.class.getName());
-    private ServiceNode serviceNode;
+
     private String description = "View the WSDL defined for the Web service";
     private PublishedService publishedService;
 
@@ -40,10 +40,9 @@ public class ViewServiceWsdlAction extends NodeAction {
         if (sn == null) {
             throw new IllegalArgumentException();
         }
-        serviceNode = sn;
         setEnabled(false);
         try {
-            publishedService = serviceNode.getPublishedService();
+            publishedService = sn.getPublishedService();
             String wsdlXml = publishedService.getWsdlXml();
             if (wsdlXml != null && !"".equals(wsdlXml)) {
                 setEnabled(true);
@@ -96,13 +95,12 @@ public class ViewServiceWsdlAction extends NodeAction {
         });
     }
 
-    private class WsdlViewDialog extends JFrame {
+    private class WsdlViewDialog extends JDialog {
         private XMLContainer xmlContainer;
-        private UIAccessibility uiAccessibility;
 
         private WsdlViewDialog(final PublishedService ps) {
+            super(TopComponents.getInstance().getMainWindow(), true);
             setTitle(ps.getName());
-            setIconImage(TopComponents.getInstance().getMainWindow().getIconImage());
             JPanel panel = new JPanel(new BorderLayout());
             JPanel wsdlPanel = new JPanel();
             wsdlPanel.setLayout(new BoxLayout(wsdlPanel, BoxLayout.X_AXIS));
@@ -124,7 +122,7 @@ public class ViewServiceWsdlAction extends NodeAction {
             wsdlPanel.setBorder(border);
             // configure xml editing widget
             xmlContainer = new XMLContainer(true);
-            uiAccessibility = xmlContainer.getUIAccessibility();
+            final UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     XMLEditor editor = uiAccessibility.getEditor();
@@ -166,6 +164,7 @@ public class ViewServiceWsdlAction extends NodeAction {
             addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
                     dispose();
+                    xmlContainer.dispose();
                 }
             });
             pack();
