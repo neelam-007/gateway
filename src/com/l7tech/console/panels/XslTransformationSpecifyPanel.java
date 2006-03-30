@@ -11,6 +11,7 @@ import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -54,8 +55,6 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
         XMLContainer xmlContainer = new XMLContainer(true);
         final JComponent xmlEditor = xmlContainer.getView();
-        xmlEditor.setPreferredSize(new Dimension(640, 480));
-        xmlEditor.setMinimumSize(new Dimension(400, 300));
         xsltLabel.setLabelFor(xmlEditor);
         uiAccessibility = xmlContainer.getUIAccessibility();
         uiAccessibility.setTreeAvailable(false);
@@ -112,7 +111,8 @@ public class XslTransformationSpecifyPanel extends JPanel {
             }
         });
 
-        xsltPanel.add(xmlEditor, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
+        xsltPanel.setLayout(new BorderLayout());
+        xsltPanel.add(xmlEditor, BorderLayout.CENTER);
 
         if (assertion != null && assertion.getTransformName() != null) {
             nameField.setText(assertion.getTransformName());
@@ -146,44 +146,46 @@ public class XslTransformationSpecifyPanel extends JPanel {
             return;
         }
 
-        FileInputStream fis;
+        FileInputStream fis = null;
         String filename = dlg.getSelectedFile().getAbsolutePath();
         try {
             fis = new FileInputStream(dlg.getSelectedFile());
+
+            // try to get document
+            Document doc;
+            try {
+                doc = XmlUtil.parse(fis);
+            } catch (SAXException e) {
+                xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+                log.log(Level.FINE, "cannot parse " + filename, e);
+                return;
+            } catch (IOException e) {
+                xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+                log.log(Level.FINE, "cannot parse " + filename, e);
+                return;
+            }
+            // check if it's a xslt
+            if (docIsXsl(doc)) {
+                // set the new xslt
+                String printedxml;
+                try {
+                    printedxml = XmlUtil.nodeToFormattedString(doc);
+                } catch (IOException e) {
+                    String msg = "error serializing document";
+                    xslDialog.displayError(msg, null);
+                    log.log(Level.FINE, msg, e);
+                    return;
+                }
+                uiAccessibility.getEditor().setText(printedxml);
+                //okButton.setEnabled(true);
+            } else {
+                xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + filename, null);
+            }
         } catch (FileNotFoundException e) {
             log.log(Level.FINE, "cannot open file" + filename, e);
             return;
-        }
-
-        // try to get document
-        Document doc;
-        try {
-            doc = XmlUtil.parse(fis);
-        } catch (SAXException e) {
-            xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
-            log.log(Level.FINE, "cannot parse " + filename, e);
-            return;
-        } catch (IOException e) {
-            xslDialog.displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
-            log.log(Level.FINE, "cannot parse " + filename, e);
-            return;
-        }
-        // check if it's a xslt
-        if (docIsXsl(doc)) {
-            // set the new xslt
-            String printedxml;
-            try {
-                printedxml = XmlUtil.nodeToFormattedString(doc);
-            } catch (IOException e) {
-                String msg = "error serializing document";
-                xslDialog.displayError(msg, null);
-                log.log(Level.FINE, msg, e);
-                return;
-            }
-            uiAccessibility.getEditor().setText(printedxml);
-            //okButton.setEnabled(true);
-        } else {
-            xslDialog.displayError(resources.getString("error.urlnoxslt") + " " + filename, null);
+        } finally {
+            ResourceUtils.closeQuietly(fis);
         }
     }
 

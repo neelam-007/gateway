@@ -34,13 +34,13 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JSpinner whichMimePartSpinner;
     private JLabel directionLabel;
     private JLabel whichMimePartLabel;
+    private JPanel innerPanel;
 
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
     private final XslTransformationFetchPanel fetchPanel;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XslTransformationPropertiesDialog");
-    private final JPanel innerPanel = new JPanel();
 
     ResourceBundle getResources() {
         return resources;
@@ -65,10 +65,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
         specifyPanel = new XslTransformationSpecifyPanel(this, assertion);
         fetchPanel = new XslTransformationFetchPanel(this, assertion);
 
-        mainPanel.add(innerPanel, new GridConstraints(7, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
-        innerPanel.setLayout(new GridBagLayout());
-        innerPanel.add(specifyPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
-        innerPanel.add(fetchPanel, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+        innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
+        innerPanel.add(specifyPanel);
+        innerPanel.add(fetchPanel);
 
         ButtonGroup radioGroup = new ButtonGroup();
         radioGroup.add(fetchRadio);

@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import java.util.logging.Logger;
+import javax.swing.*;
 
 /**
  * Invoked when a Xsl Transformation assertion is dropped in the policy tree.
@@ -32,7 +33,7 @@ public class AddXslTransformationAssertionAdvice implements Advice {
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(mw, true, assertion);
         // show the dialog
-        dlg.pack();
+        dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         dlg.setSize(600, 800);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
