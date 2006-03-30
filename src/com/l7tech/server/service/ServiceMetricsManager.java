@@ -1,23 +1,24 @@
 package com.l7tech.server.service;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
-import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.Background;
-import com.l7tech.service.MetricsBin;
+import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.MetricsBin;
 import org.hibernate.*;
+import org.hibernate.criterion.ProjectionList;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.criterion.ProjectionList;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallback;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -166,6 +167,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     if (quit) logger.info("Database flusher exiting");
+                } catch (DataIntegrityViolationException e) {
+                    logger.log(Level.INFO, "Failed to save a MetricsBin due to constraint violation; likely clock skew");
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Couldn't save MetricsBin", e);
                 }
@@ -358,7 +361,25 @@ public class ServiceMetricsManager extends HibernateDaoSupport
         }
     }
 
-    public MetricsBin getMetricsSummary(int resolution, long startTime, int duration, String nodeId, Long serviceOid) throws FindException {
+    /**
+     *
+     * @param resolution the resolution of the bins to be queried
+     * @param startTime the minimum periodStart value to search for
+     * @param duration the length of time within which periodStarts are to be found
+     * @param nodeId the MAC address of the cluster node to search for
+     * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService}
+     *                   to search for
+     * @return a new MetricsBin that created by aggregating the bins matching the 
+     *         query parameters
+     * @throws FindException
+     */
+    public MetricsBin getMetricsSummary(int resolution,
+                                        long startTime,
+                                        int duration,
+                                        String nodeId,
+                                        Long serviceOid)
+            throws FindException
+    {
         Criteria crit = getSession().createCriteria(MetricsBin.class);
         crit.add(Restrictions.eq("resolution", new Integer(resolution)));
 
