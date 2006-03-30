@@ -14,6 +14,8 @@ import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
+import com.l7tech.common.message.TarariMessageContextFactory;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.ExceptionUtils;
@@ -27,6 +29,7 @@ import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -57,7 +60,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -81,7 +83,6 @@ public class ServerXslTransformation implements ServerAssertion {
         piParser.setValidating(false);
     }
     private static volatile SSLContext sslContext;
-    private Pattern[] fetchUrlPatterns;
 
     private static final int maxCacheAge;
     static {
@@ -127,8 +128,8 @@ public class ServerXslTransformation implements ServerAssertion {
     private final Auditor auditor;
     private final XslTransformation assertion;
 
-    private final Templates softwareStylesheet;
-    private final TarariCompiledStylesheet tarariStylesheet;
+    private final Pattern[] fetchUrlPatterns;
+    private final CachedStylesheet preconfiguredStylesheet;
 
     private final String[] varsUsed;
 
@@ -143,8 +144,6 @@ public class ServerXslTransformation implements ServerAssertion {
         this.varsUsed = assertion.getVariablesUsed();
 
         if (assertion.isFetchXsltFromMessageUrls()) {
-            softwareStylesheet = null;
-            tarariStylesheet = null;
             List patterns = new ArrayList();
             for (int i = 0; i < assertion.getFetchUrlRegexes().length; i++) {
                 String regex = assertion.getFetchUrlRegexes()[i];
@@ -157,6 +156,7 @@ public class ServerXslTransformation implements ServerAssertion {
                 }
             }
             this.fetchUrlPatterns = (Pattern[])patterns.toArray(new Pattern[0]);
+            this.preconfiguredStylesheet = null;
         } else {
             final byte[] xsltBytes = assertion.getXslSrc().getBytes();
             Templates softwareStylesheet = null;
@@ -166,8 +166,9 @@ public class ServerXslTransformation implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.XSLT_BAD_XSL, new String[] { ExceptionUtils.getMessage(e) });
             }
 
-            this.softwareStylesheet = softwareStylesheet;
-            this.tarariStylesheet = compileTarari(xsltBytes);
+            this.preconfiguredStylesheet =
+                    new CachedStylesheet(softwareStylesheet, compileTarari(xsltBytes));
+            this.fetchUrlPatterns = null;
         }
     }
 
@@ -225,25 +226,48 @@ public class ServerXslTransformation implements ServerAssertion {
         return softwareStylesheet;
     }
 
+    private abstract class TransformOutput {
+        abstract void setDocument(Document doc);
+        abstract void setBytes(byte[] bytes) throws IOException;
+    }
+
+    private abstract class TransformInput {
+        private final Map vars;
+
+        protected TransformInput(Map vars) {
+            this.vars = vars;
+        }
+
+        abstract Document asDocument() throws SAXException, IOException;
+
+        abstract TarariMessageContext asTarari() throws IOException, SAXException;
+
+        abstract ElementCursor getElementCursor() throws SAXException, IOException;
+
+        Auditor getAuditor() { return auditor; }
+
+        Assertion getAssertion() { return assertion; }
+    }
+
     /**
      * preformes the transformation
      * @param context
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // 1. Get document to transform
-        final Message msgtotransform;
+        final Message message;
         final boolean isrequest;
 
         switch (assertion.getDirection()) {
             case XslTransformation.APPLY_TO_REQUEST:
                 auditor.logAndAudit(AssertionMessages.XSLT_REQUEST);
                 isrequest = true;
-                msgtotransform = context.getRequest();
+                message = context.getRequest();
                 break;
             case XslTransformation.APPLY_TO_RESPONSE:
                 auditor.logAndAudit(AssertionMessages.XSLT_RESPONSE);
                 isrequest = false;
-                msgtotransform = context.getResponse();
+                message = context.getResponse();
                 break;
             default:
                 // should not get here!
@@ -256,19 +280,50 @@ public class ServerXslTransformation implements ServerAssertion {
 
         Map vars = context.getVariableMap(varsUsed, auditor);
 
-        if (assertion.isFetchXsltFromMessageUrls()) {
-            return transformFetchingly(msgtotransform, whichMimePart, vars, isrequest);
+        final TransformInput transformInput;
+        final TransformOutput transformOutput;
+        if (whichMimePart == 0) {
+            // Special case for part zero
+            final XmlKnob xmlKnob;
+            try {
+                xmlKnob = message.getXmlKnob();
+            } catch (SAXException e) {
+                auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+                return AssertionStatus.BAD_REQUEST;
+            }
+            transformInput = new FirstPartTransformInput(message, xmlKnob, vars);
+            transformOutput = new FirstPartTransformOutput(message);
         } else {
-            // 2. Apply the transformation
-            return transform(msgtotransform, whichMimePart, vars, softwareStylesheet, tarariStylesheet);
+            // Make a new PartInfo based input and/or output
+            final PartInfo partInfo;
+            try {
+                partInfo = message.getMimeKnob().getPart(whichMimePart);
+            } catch (NoSuchPartException e) {
+                auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart) });
+                return AssertionStatus.BAD_REQUEST;
+            }
+
+            transformInput = new PartInfoTransformInput(partInfo, vars);
+            transformOutput = new PartInfoTransformOutput(partInfo);
+        }
+
+        try {
+            if (assertion.isFetchXsltFromMessageUrls())
+                return transformFetchingly(transformInput, transformOutput, isrequest);
+
+            return preconfiguredStylesheet.transform(transformInput, transformOutput);
+
+        } catch (SAXException e) {
+            auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+            return AssertionStatus.BAD_REQUEST;
         }
     }
 
-    private AssertionStatus transformFetchingly(Message msgtotransform, int whichMimePart, Map vars, boolean isrequest) throws IOException, PolicyAssertionException {
+    private AssertionStatus transformFetchingly(TransformInput input, TransformOutput output, boolean isReq)
+            throws IOException, SAXException, PolicyAssertionException {
+        final ElementCursor ec = input.getElementCursor();
         String href = null;
         try {
-            // TODO this is wrong -- this ignores whichMimePart
-            ElementCursor ec = msgtotransform.getXmlKnob().getElementCursor();
             href = findXslHref(ec);
             if (href != null) {
                 boolean anyMatch = false;
@@ -287,8 +342,9 @@ public class ServerXslTransformation implements ServerAssertion {
                     // getStylesheet() already logged the reason
                     return AssertionStatus.BAD_REQUEST;
                 }
-                transform(msgtotransform, whichMimePart, vars, entry.softwareStylesheet, entry.tarariStylesheet);
-                return AssertionStatus.NONE;
+
+                // Do the transformation
+                return entry.transform(input, output);
             }
 
             if (assertion.isFetchAllowWithoutStylesheet())
@@ -297,7 +353,7 @@ public class ServerXslTransformation implements ServerAssertion {
             auditor.logAndAudit(AssertionMessages.XSLT_NO_PI);
             return AssertionStatus.BAD_REQUEST;
         } catch (SAXException e) {
-            auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
+            auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } catch (ParseException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[] { href, ExceptionUtils.getMessage(e) });
@@ -386,7 +442,6 @@ public class ServerXslTransformation implements ServerAssertion {
             }
 
             return href;
-
         } catch (ParserConfigurationException e) {
             throw new RuntimeException(e); // can't happen, misconfigured VM
         } catch (IOException e) {
@@ -411,11 +466,9 @@ public class ServerXslTransformation implements ServerAssertion {
                     logger.fine("Downloaded new XSLT from " + url.toExternalForm());
                     final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
                     TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(bytes);
-                    return new CachedStylesheet(tarariStylesheet, compileSoftware(bytes));
+                    return new CachedStylesheet(compileSoftware(bytes), tarariStylesheet);
                 } catch (ParseException e) {
                     final String msg = ExceptionUtils.getMessage(e);
-                    // TODO uncomment this superfluous warning when debugging is complete
-                    logger.warning("Unable to parse XSLT downloaded from " + url.toExternalForm() + ": " + msg);
                     throw (IOException)new IOException(msg).initCause(e);
                 }
             }
@@ -450,125 +503,6 @@ public class ServerXslTransformation implements ServerAssertion {
         return sheet;
     }
 
-    private AssertionStatus transform(Message message, int whichPart, Map vars, Templates softwareStylesheet,
-                                      TarariCompiledStylesheet tarariStylesheet)
-            throws PolicyAssertionException, IOException
-    {
-        if (tarariStylesheet != null) {
-            return runWithTarari(message, whichPart, tarariStylesheet, vars);
-        } else {
-            return runInSoftware(message, whichPart, softwareStylesheet, vars);
-        }
-    }
-
-    private AssertionStatus runInSoftware(Message msgtotransform,
-                                          int whichMimePart,
-                                          Templates stylesheet,
-                                          Map vars)
-            throws IOException, PolicyAssertionException
-    {
-            if (stylesheet == null) {
-                String msg = "Invalid stylesheet - assertion fails";
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING, new String[] {msg});
-                throw new PolicyAssertionException(assertion, msg);
-            }
-
-            final Document doctotransform;
-
-            PartInfo mimePart = null;
-            try {
-                if (whichMimePart == 0) {
-                    if (!msgtotransform.isXml()) return notXml();
-                    doctotransform = msgtotransform.getXmlKnob().getDocumentWritable();
-                } else {
-                    try {
-                        mimePart = msgtotransform.getMimeKnob().getPart(whichMimePart);
-                        if (!mimePart.getContentType().isXml()) return notXml();
-
-                        InputStream is = mimePart.getInputStream(false);
-                        doctotransform = XmlUtil.parse(is, false);
-                    } catch (NoSuchPartException e) {
-                        auditor.logAndAudit(AssertionMessages.XSLT_NO_SUCH_PART, new String[] { Integer.toString(whichMimePart)});
-                        return AssertionStatus.BAD_REQUEST;
-                    }
-                }
-                Document output;
-                try {
-                    output = XmlUtil.softXSLTransform(doctotransform, stylesheet.newTransformer(), vars);
-                } catch (TransformerException e) {
-                    String msg = "error transforming document";
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-                    throw new PolicyAssertionException(assertion, msg, e);
-                }
-                if (whichMimePart == 0) {
-                    msgtotransform.getXmlKnob().setDocument(output);
-                } else {
-                    BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream(4096);
-                    try {
-                        XmlUtil.nodeToOutputStream(output, baos);
-                        mimePart.setBodyBytes(baos.toByteArray());
-                    } finally {
-                        baos.close();
-                    }
-                }
-                logger.finest("software xsl transformation completed");
-                return AssertionStatus.NONE;
-            } catch (SAXException e) {
-                String msg = "cannot get document to tranform";
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-            }
-            return AssertionStatus.FAILED;
-    }
-
-    private AssertionStatus runWithTarari(Message msgtotransform,
-                                          int whichMimePart,
-                                          TarariCompiledStylesheet stylesheet,
-                                          Map vars)
-    {
-            try {
-                BufferPoolByteArrayOutputStream output = new BufferPoolByteArrayOutputStream(4096);
-                byte[] transformedmessage = null;
-                try {
-                    // If we are transforming the first part, first try to reuse an existing RaxDocument
-                    if (whichMimePart == 0) {
-                        TarariKnob tk = (TarariKnob)msgtotransform.getKnob(TarariKnob.class);
-                        if (tk != null) {
-                            TarariMessageContext tc = tk.getContext();
-                            if (tc != null) {
-                                stylesheet.transform(tc, output, vars);
-                                transformedmessage = output.toByteArray();
-                            }
-                        }
-                    }
-
-                    if (transformedmessage == null) {
-                        InputStream input = msgtotransform.getMimeKnob().getPart(whichMimePart).getInputStream(false);
-                        stylesheet.transform(input, output, vars);
-                        transformedmessage = output.toByteArray();
-                    }
-                } finally {
-                    output.close();
-                }
-                msgtotransform.getMimeKnob().getPart(whichMimePart).setBodyBytes(transformedmessage);
-                logger.finest("tarari xsl transformation completed. result: " + new String(transformedmessage));
-                return AssertionStatus.NONE;
-            } catch (NoSuchPartException e) {
-                logger.log(Level.WARNING, "Cannot operate on mime part " + whichMimePart +
-                                          " while trying to xsl transform in tarari mode", e);
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "IOException when attempting xsl transformation", e);
-            } catch (SAXException e) {
-                String msg = "cannot get document to tranform";
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-            }
-            return AssertionStatus.FAILED;
-    }
-
-    private AssertionStatus notXml() {
-        auditor.logAndAudit(AssertionMessages.XSLT_REQ_NOT_XML);
-        return AssertionStatus.NOT_APPLICABLE;
-    }
-
     private static class CachedStylesheet {
         private TarariCompiledStylesheet tarariStylesheet;
         private Templates softwareStylesheet;
@@ -582,10 +516,172 @@ public class ServerXslTransformation implements ServerAssertion {
             httpClient = new CommonsHttpClient(connectionManager);
         }
 
-        public CachedStylesheet(TarariCompiledStylesheet tarariStylesheet, Templates softwareStylesheet) {
+        public CachedStylesheet(Templates softwareStylesheet, TarariCompiledStylesheet tarariStylesheet) {
             this.tarariStylesheet = tarariStylesheet;
             this.softwareStylesheet = softwareStylesheet;
         }
+
+        public AssertionStatus transform(TransformInput input, TransformOutput output)
+                throws SAXException, IOException, PolicyAssertionException
+        {
+            if (tarariStylesheet != null) {
+                TarariMessageContext tmc = input.asTarari();
+                if (tmc != null)
+                    return transformTarari(input, tmc, output);
+            }
+
+            return transformDom(input, output);
+        }
+
+        private AssertionStatus transformTarari(TransformInput t, TarariMessageContext tmc, TransformOutput output)
+                throws IOException, SAXException
+        {
+            assert tmc != null;
+            assert tarariStylesheet != null;
+
+            BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream();
+            try {
+                tarariStylesheet.transform(tmc, os, t.vars);
+                output.setBytes(os.toByteArray());
+                logger.finest("Tarari xsl transformation completed");
+                return AssertionStatus.NONE;
+            } finally {
+                os.close();
+            }
+        }
+
+        private AssertionStatus transformDom(TransformInput t, TransformOutput output)
+                throws PolicyAssertionException, SAXException, IOException {
+            final Document doctotransform = t.asDocument();
+            final Document outDoc;
+            try {
+                outDoc = XmlUtil.softXSLTransform(doctotransform, softwareStylesheet.newTransformer(), t.vars);
+            } catch (TransformerException e) {
+                String msg = "error transforming document";
+                t.getAuditor().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
+                throw new PolicyAssertionException(t.getAssertion(), msg, e);
+            }
+            output.setDocument(outDoc);
+            logger.finest("software xsl transformation completed");
+            return AssertionStatus.NONE;
+        }
     }
 
+    private class FirstPartTransformInput extends TransformInput {
+        private final XmlKnob xmlKnob;
+        private final Message message;
+
+        public FirstPartTransformInput(Message message, XmlKnob xmlKnob, Map vars) {
+            super(vars);
+            this.xmlKnob = xmlKnob;
+            this.message = message;
+        }
+
+        Document asDocument() throws SAXException, IOException {
+            return xmlKnob.getDocumentReadOnly();
+        }
+
+        TarariMessageContext asTarari()
+                throws IOException, SAXException
+        {
+            TarariKnob tk = (TarariKnob)message.getKnob(TarariKnob.class);
+            try {
+                return tk == null ? null : tk.getContext();
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
+            }
+        }
+
+        ElementCursor getElementCursor() throws SAXException, IOException {
+            return xmlKnob.getElementCursor();
+        }
+    }
+
+    private class FirstPartTransformOutput extends TransformOutput {
+        private final Message message;
+
+        public FirstPartTransformOutput(Message message) {
+            this.message = message;
+        }
+
+        void setDocument(Document doc) {
+            try {
+                message.getXmlKnob().setDocument(doc);
+            } catch (SAXException e) {
+                throw new RuntimeException(e); // can't happen -- we already checked that the input was XML
+            }
+        }
+
+        void setBytes(byte[] bytes) throws IOException {
+            message.getMimeKnob().getFirstPart().setBodyBytes(bytes);
+        }
+    }
+
+    private class PartInfoTransformInput extends TransformInput {
+        TarariMessageContext tmc;
+        Document doc;
+        private final PartInfo partInfo;
+
+        public PartInfoTransformInput(PartInfo partInfo, Map vars) {
+            super(vars);
+            this.partInfo = partInfo;
+            tmc = null;
+            doc = null;
+        }
+
+        Document asDocument() throws SAXException, IOException {
+            if (doc != null) return doc;
+            try {
+                return doc = XmlUtil.parse(partInfo.getInputStream(false));
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
+            }
+        }
+
+        TarariMessageContext asTarari() throws IOException, SAXException {
+            if (tmc != null) return tmc;
+            TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
+            if (mcf == null) return null;
+            try {
+                return tmc = mcf.makeMessageContext(partInfo.getInputStream(false));
+            } catch (SoftwareFallbackException e) {
+                if (logger.isLoggable(Level.INFO))
+                    logger.log(Level.INFO, "Falling back from Tarari to software processing for XSLT on MIME part #" +
+                            partInfo.getPosition(), e);
+                return null;
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // can't happen -- we never destructively read MIME parts currently
+            }
+        }
+
+        ElementCursor getElementCursor() throws SAXException, IOException {
+            TarariMessageContext tmc = asTarari();
+            if (tmc != null) return tmc.getElementCursor();
+            return new DomElementCursor(asDocument());
+        }
+    }
+
+    private class PartInfoTransformOutput extends TransformOutput {
+        private final PartInfo partInfo;
+
+        public PartInfoTransformOutput(PartInfo partInfo) {
+            this.partInfo = partInfo;
+        }
+
+        void setDocument(Document doc) {
+            BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream();
+            try {
+                XmlUtil.nodeToOutputStream(doc, os);
+                setBytes(os.toByteArray());
+            } catch (IOException e) {
+                throw new RuntimeException(e); // can't happen -- it's a byte array
+            } finally {
+                os.close();
+            }
+        }
+
+        void setBytes(byte[] bytes) throws IOException {
+            partInfo.setBodyBytes(bytes);
+        }
+    }
 }
