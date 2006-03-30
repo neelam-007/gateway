@@ -76,9 +76,7 @@ class SoapFacet extends MessageFacet {
 
                 return soapInfo;
             } catch (SoftwareFallbackException e) {
-                // todo fla -- raise this back to INFO or higher when Tarari fixes their xpath processing
-                // for more details, see bugzilla #1939
-                logger.log(Level.FINE, "Falling back from hardware to software processing", e);
+                logger.log(Level.INFO, "Falling back from hardware to software processing", e);
                 // fallthrough to software
             }
         }
@@ -91,7 +89,7 @@ class SoapFacet extends MessageFacet {
      */
     private static SoapInfo getSoapInfoDom(Document document) throws SAXException {
         boolean hasSecurityNode = false;
-        String[] payloadNs = null;
+        final String[] payloadNs;
         if (SoapUtil.isSoapMessage(document)) {
             try {
                 List els = SoapUtil.getSecurityElements(document);
