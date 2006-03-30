@@ -269,7 +269,7 @@
     <!--
       ** configure and invoke unit tests
       -->
-    <target name="test" description="Run JUnit 'quick' tests" depends="test.work, test.checksuccess"/>
+    <target name="test" description="Run JUnit 'quick' tests" depends="test.work, test.report, checkfail"/>
     <target name="test.work" depends="clean.test, dev">
         <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
@@ -318,7 +318,7 @@
 
     <target name="test.intensive" 
             description="Run intensive JUnit tests." 
-            depends="clean.test, test.work, test.intensive.work, test.checksuccess"/>
+            depends="clean.test, test.work, test.intensive.work, test.report, checkfail"/>
     <target name="test.intensive.work" depends="clean.test, dev">
         <junit printsummary="yes" haltonfailure="yes" fork="off" errorproperty="test.error" failureproperty="test.failure">
             <classpath>
@@ -358,6 +358,7 @@
             <test name="com.l7tech.common.io.BufferPoolByteArrayOutputStreamTest" haltonfailure="no" />
             <test name="com.l7tech.common.util.BufferPoolTest" haltonfailure="no" />
             <test name="com.l7tech.server.policy.assertion.ServerWsiBspAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.assertion.ServerWsiSamlAssertionTest" haltonfailure="no"/>
             <test name="com.l7tech.common.http.cache.HttpObjectCacheTest" haltonfailure="no" />
 
 <!--
@@ -366,10 +367,17 @@
         </junit>
     </target>
 
-    <target name="test.checksuccess">
-        <fail if="test.error">One or more JUnit tests exited due to error.</fail>
-        <fail if="test.failure">One or more JUnit tests failed.</fail>
-    </target>    
+    <target name="test.all" description="Run testpackage and test.intensive" depends="test.work, test.intensive.work, testpackage.work, test.report, testpackage.report, checkfail"/>
+
+    <target name="test.report" depends="test.report.error, test.report.failure"/>
+    <target name="test.report.error" if="test.error">
+        <echo level="warning">One or more JUnit tests exited due to error.</echo>
+        <property name="fail" value="true"/>
+    </target>
+    <target name="test.report.failure" if="test.failure">
+        <echo level="warning">One or more JUnit tests failed.</echo>
+        <property name="fail" value="true"/>
+    </target>
 
     <!--
       Clean data from running tests.
@@ -1000,28 +1008,57 @@
       ** Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
       ** contains only the jars and their declared dependency jars.
       -->
-    <target name="testpackage" depends="package">
+    <target name="testpackage" description="Test classpaths for packages." depends="testpackage.work, testpackage.report, checkfail"/>
+    <target name="testpackage.report" depends="testpackage.report.bridge, testpackage.report.manager, testpackage.report.configwizard"/>
+    <target name="testpackage.report.bridge" if="testpackage.bridge.fail">
+        <echo level="warning">Bridge package test failed.</echo>
+        <property name="fail" value="true"/>
+    </target>
+    <target name="testpackage.report.manager" if="testpackage.manager.fail">
+        <echo level="warning">Manager package test failed.</echo>
+        <property name="fail" value="true"/>
+    </target>
+    <target name="testpackage.report.configwizard" if="testpackage.configwizard.fail">
+        <echo level="warning">ConfigWizard package test failed.</echo>
+        <property name="fail" value="true"/>
+    </target>
+    <target name="testpackage.work" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
                deprecation="on" depend="on" verbose="no"/>
-        <exec executable="perl" failonerror="true">
+        <exec executable="perl" failonerror="false" resultproperty="testpackage.manager.result">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
             <arg line="build/Manager.jar"/>
             <arg line="etc/Manager.mf"/>
         </exec>
-        <exec executable="perl" failonerror="true">
+        <condition property="testpackage.manager.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.manager.result}"/>
+            </not>
+        </condition>
+        <exec executable="perl" failonerror="false" resultproperty="testpackage.bridge.result">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
             <arg line="build/Bridge.jar"/>
             <arg line="etc/Bridge.mf"/>
         </exec>
-        <exec executable="perl" failonerror="true">
+        <condition property="testpackage.bridge.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.bridge.result}"/>
+            </not>
+        </condition>
+        <exec executable="perl" failonerror="false" resultproperty="testpackage.configwizard.result">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
             <arg line="${build.dir}/configwizard/ConfigWizard.jar"/>
             <arg line="${src.root}/etc/ConfigWizard.mf"/>
             <arg line="com.l7tech.common.security.prov.luna.BouncyCastleToLunaProvider com.l7tech.common.security.prov.luna.LunaJceProviderEngine"/>
         </exec>
+        <condition property="testpackage.configwizard.fail">
+            <not>
+                <equals arg1="0" arg2="${testpackage.configwizard.result}"/>
+            </not>
+        </condition>
     </target>
 
     <!-- Test LicenseGenerator package.  Always invoked by hand. -->
@@ -1034,6 +1071,10 @@
             <arg line="build/LicenseGenerator.jar"/>
             <arg line="etc/LicenseGenerator.mf"/>
         </exec>
+    </target>
+
+    <target name="checkfail">
+        <fail if="fail">Exiting due to build failures.</fail>
     </target>
 
     <target name="properties.check" depends="properties.check.tomcathome">
