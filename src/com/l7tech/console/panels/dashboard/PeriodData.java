@@ -94,7 +94,11 @@ class PeriodData {
             Set sbins = (Set)binsByServiceOid.get(serviceOid);
             if (sbins != null) {
                 Set nbins = (Set)binsByNodeId.get(nodeId);
-                sbins.retainAll(nbins);
+                if (nbins == null) {
+                    sbins.clear();
+                } else {
+                    sbins.retainAll(nbins);
+                }
                 if (sbins.size() != 1) logger.warning(sbins.size() + " bins for period " + periodStart);
                 binsToAdd = sbins;
             }
