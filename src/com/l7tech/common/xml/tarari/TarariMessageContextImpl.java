@@ -5,11 +5,23 @@
 
 package com.l7tech.common.xml.tarari;
 
+import com.l7tech.common.message.SoapInfo;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.SoftwareFallbackException;
+import com.l7tech.common.xml.TarariLoader;
+import com.tarari.xml.XmlException;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.rax.cursor.RaxCursor;
 import com.tarari.xml.rax.cursor.RaxCursorFactory;
+import com.tarari.xml.rax.fastxpath.FNode;
+import com.tarari.xml.rax.fastxpath.FNodeSet;
+import com.tarari.xml.rax.fastxpath.XPathProcessor;
 import com.tarari.xml.rax.fastxpath.XPathResult;
-import com.l7tech.common.xml.ElementCursor;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Represents resources held by the Tarari driver in the form of a RaxDocument and simultaneous XPathResult.
@@ -18,18 +30,18 @@ import com.l7tech.common.xml.ElementCursor;
  * {@link TarariMessageContext} instead.
  */
 public class TarariMessageContextImpl implements TarariMessageContext {
+    private static final Logger logger = Logger.getLogger(TarariMessageContextImpl.class.getName());
     private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();
+    private static final String[] EMPTY_STRING = new String[0];
 
     private final RaxDocument raxDocument;
-    private final XPathResult xpathResult;
-    private final long compilerGeneration;
+    private XPathResult xpathResult = null;
+    private long compilerGeneration = 0;
     private RaxCursor raxCursor = null;
 
-    TarariMessageContextImpl(RaxDocument doc, XPathResult xpathResult, long compilerGeneration) {
-        if (doc == null || xpathResult == null) throw new IllegalArgumentException();
+    TarariMessageContextImpl(RaxDocument doc) {
+        if (doc == null) throw new IllegalArgumentException();
         this.raxDocument = doc;
-        this.xpathResult = xpathResult;
-        this.compilerGeneration = compilerGeneration;
     }
 
     /** Free resources used by this Tarari context.  After this is called, behavior of this instance is undefined. */
@@ -38,10 +50,16 @@ public class TarariMessageContextImpl implements TarariMessageContext {
     }
 
     /**
+     * Get the compiler generation count that was in effect when simultaneous xpath processing was
+     * performed on the RaxDocument.  This will trigger simultaneous xpath evalutation if it has not
+     * yet been performed on this document.
+     *
      * @return the {@link GlobalTarariContext} compiler generation count that was in effect when
      *         the Simultaneous XPaths were evaluated against this document.
+     * @throws SoftwareFallbackException if simultaneous xpath processing could not be performed.
      */
-    public long getCompilerGeneration() {
+    public long getCompilerGeneration() throws SoftwareFallbackException {
+        if (compilerGeneration < 1) getXpathResult(); // make sure it's initialized
         return compilerGeneration;
     }
 
@@ -50,6 +68,57 @@ public class TarariMessageContextImpl implements TarariMessageContext {
             raxCursor = raxCursorFactory.createCursor("", getRaxDocument());
         }
         return new TarariElementCursor(raxCursor, this);
+    }
+
+    public SoapInfo getSoapInfo() throws SoftwareFallbackException {
+        List payloadNamespaces = new ArrayList();
+        boolean hasSecurityHeaders = false;
+        XPathResult xpathResult = getXpathResult();
+        GlobalTarariContextImpl globalContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
+        if (xpathResult.isSoap(globalContext.getSoapNamespaceUriIndices())) {
+            int numUris = xpathResult.getCount(TarariUtil.XPATH_INDEX_PAYLOAD);
+            if (numUris <= 0) {
+                logger.info("Couldn't find a namespace URI for SOAP payload");
+            } else {
+                FNodeSet payloadNodes = xpathResult.getNodeSet(TarariUtil.XPATH_INDEX_PAYLOAD);
+                if (payloadNodes == null || payloadNodes.size() < 1) {
+                    throw new SoftwareFallbackException("SOAP payload NodeSet was null or empty but count was >= 1");
+                }
+
+                int numPayloads = payloadNodes.size();
+                for (int i = 0; i < numPayloads; ++i) {
+                    FNode first = payloadNodes.getNode(0);
+                    if (first.getType() == FNode.ELEMENT_NODE) {
+                        String ns = first.getNamespace(first.getPrefix());
+                        if (ns == null) ns = ""; // treat no namespace as same as namespace URI of empty string
+                        payloadNamespaces.add(ns);
+                    }
+                }
+            }
+
+            int numSec = xpathResult.getCount(TarariUtil.XPATH_INDEX_SECHEADER);
+            if (numSec <= 0) {
+                logger.fine("No Security header found");
+            } else {
+                FNodeSet secNodes = xpathResult.getNodeSet(TarariUtil.XPATH_INDEX_SECHEADER);
+                if (secNodes == null || secNodes.size() <= 0) {
+                    throw new SoftwareFallbackException("Security NodeSet empty or null, but count was >= 1");
+                }
+
+                int numNodes = secNodes.size();
+                for (int i = 0; i < numNodes; ++i) {
+                    FNode node = secNodes.getNode(i);
+                    String uri = node.getNamespace(node.getPrefix());
+                    if (SoapUtil.SECURITY_URIS.contains(uri)) {
+                        hasSecurityHeaders = true;
+                        break;
+                    }
+                }
+            }
+            return new SoapInfo(true, (String[])payloadNamespaces.toArray(EMPTY_STRING), hasSecurityHeaders);
+        } else {
+            return new SoapInfo(false, EMPTY_STRING, false);
+        }
     }
 
     protected void finalize() throws Throwable {
@@ -65,8 +134,32 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         return raxDocument;
     }
 
-    /** @return the Simultaneous XPath results for this document.  Never null. */
-    public XPathResult getXpathResult() {
+    /**
+     * Get the simultaneous xpath results for this document.  This will trigger simultaneous xpath processing for
+     * this document if it has not yet been performed on this document.
+     *
+     * @return the Simultaneous XPath results for this document.  Never null.
+     * @throws SoftwareFallbackException if simultaneous xpath processing could not be performed.
+     */
+    public XPathResult getXpathResult() throws SoftwareFallbackException {
+        if (xpathResult != null)
+            return xpathResult;
+        GlobalTarariContextImpl globalContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
+        try {
+            globalContext.fastxpathLock.readLock().acquire();
+            // Lock in earliest compiler generation that might have been in effect when we evaluate the XPaths
+            compilerGeneration = globalContext.getCompilerGeneration();
+            final XPathProcessor xpathProcessor = new XPathProcessor(raxDocument);
+            xpathResult = xpathProcessor.processXPaths();
+        } catch (XmlException e) {
+            // It's hard to see how failure here is possible unless there's a hardware problem.  Fallback to software.
+            throw new SoftwareFallbackException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Thread interrupted while waiting for Tarari fastxpath read lock");
+        } finally {
+            globalContext.fastxpathLock.readLock().release();
+        }
         return xpathResult;
     }
 }

@@ -1,6 +1,8 @@
 package com.l7tech.common.xml.tarari;
 
+import com.l7tech.common.message.SoapInfo;
 import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.SoftwareFallbackException;
 
 /**
  * Represents resources held in kernel-memory by the Tarari driver, namely
@@ -31,4 +33,12 @@ public interface TarariMessageContext {
      *         duplicate it and call moveToDocumentRoot() on the duplicate.
      */
     ElementCursor getElementCursor();
+
+    /**
+     * Get SoapInfo for this RaxDocument, creating it if necessary.
+     *
+     * @return a SoapInfo instance.  Never null.
+     * @throws SoftwareFallbackException if simultaneous xpath processing could not be performed.
+     */
+    SoapInfo getSoapInfo() throws SoftwareFallbackException;
 }

@@ -51,17 +51,10 @@ public class TarariKnob implements CloseableMessageKnob {
                 return null;
             }
 
-            SoapInfoFactory siFac = TarariLoader.getSoapInfoFactory();
-            if (siFac == null) {
-                logger.log(Level.WARNING, "TarariKnob is present, but no Tarari SoapInfoFactory"); // can't happen
-                giveup = true;
-                return null;
-            }
-
             try {
                 logger.log(Level.FINE, "Passing message into Tarari hardware again");
                 context = mcfac.makeMessageContext(message.getMimeKnob().getFirstPart().getInputStream(false));
-                soapInfo = siFac.getSoapInfo(context);
+                soapInfo = context.getSoapInfo();
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);

@@ -267,6 +267,7 @@ public class ServerXslTransformation implements ServerAssertion {
     private AssertionStatus transformFetchingly(Message msgtotransform, int whichMimePart, Map vars, boolean isrequest) throws IOException, PolicyAssertionException {
         String href = null;
         try {
+            // TODO this is wrong -- this ignores whichMimePart
             ElementCursor ec = msgtotransform.getXmlKnob().getElementCursor();
             href = findXslHref(ec);
             if (href != null) {

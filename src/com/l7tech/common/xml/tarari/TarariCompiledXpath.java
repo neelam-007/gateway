@@ -7,6 +7,7 @@ package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.xpath.*;
 import com.tarari.xml.cursor.XmlCursor;
 import com.tarari.xml.rax.cursor.RaxCursor;
@@ -118,13 +119,18 @@ class TarariCompiledXpath extends CompiledXpath {
             return fallbackToDirectXPath(tmContext); // expression was too complex to simplify into TNF
 
         final GlobalTarariContextImpl tarariContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
-        final int index = tarariContext.getXpathIndex(fastXpath.getExpression(), tmContext.getCompilerGeneration());
-        if (index < 1)
-            return fallbackToDirectXPath(tmContext); // expression wasn't loaded into the card yet
+        final int index;
+        final XPathResult xpathResult;
+        try {
+            index = tarariContext.getXpathIndex(fastXpath.getExpression(), tmContext.getCompilerGeneration());
+            if (index < 1)
+                return fallbackToDirectXPath(tmContext); // expression wasn't loaded into the card yet
+            xpathResult = tmContext.getXpathResult();
+        } catch (SoftwareFallbackException e) {
+            return fallbackToDirectXPath(tmContext); // simultaneous xpath evaluation failed
+        }
 
         // We're now committed to using Simultaneous XPath results for this
-
-        final XPathResult xpathResult = tmContext.getXpathResult();
         final int numMatches = xpathResult.getCount(index);
 
         // See if we are supposed to transform the result to a boolean

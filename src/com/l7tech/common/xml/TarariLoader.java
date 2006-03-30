@@ -6,11 +6,10 @@
 
 package com.l7tech.common.xml;
 
-import com.l7tech.common.message.SoapInfoFactory;
 import com.l7tech.common.message.TarariMessageContextFactory;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.beans.factory.BeanFactory;
@@ -35,7 +34,6 @@ public class TarariLoader {
     private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.common.xml.tarari.GlobalTarariContextImpl";
 
     private static Boolean tarariPresent = null;
-    private static SoapInfoFactory soapInfoFactory = null;
     private static GlobalTarariContext tarariContext = null;
     private static TarariMessageContextFactory messageContextFactory = null;
 
@@ -47,14 +45,6 @@ public class TarariLoader {
     public static GlobalTarariContext getGlobalContext() {
         if (tarariPresent == null) initialize();
         return tarariContext;
-    }
-
-    /**
-     * @return the accelerated SoapInfoFactory if XML acceleration is present, or null if not
-     */
-    public static SoapInfoFactory getSoapInfoFactory() {
-        if (tarariPresent == null) initialize();
-        return soapInfoFactory;
     }
 
     /**
@@ -79,8 +69,7 @@ public class TarariLoader {
 
                             Class tarariFactoryClass = Class.forName(FACTORIES_CLASSNAME);
                             Constructor c = tarariFactoryClass.getConstructor(new Class[0]);
-                            soapInfoFactory = (SoapInfoFactory)c.newInstance(new Object[0]);
-                            messageContextFactory = (TarariMessageContextFactory) soapInfoFactory;
+                            messageContextFactory = (TarariMessageContextFactory)c.newInstance(new Object[0]);
 
                             Class tarariContextClass = Class.forName(SERVERTARARICONTEXT_CLASSNAME);
                             c = tarariContextClass.getConstructor(new Class[0]);

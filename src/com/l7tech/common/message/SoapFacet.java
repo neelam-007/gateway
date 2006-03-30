@@ -60,12 +60,11 @@ class SoapFacet extends MessageFacet {
      */
     public static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
         TarariMessageContextFactory mcfac = TarariLoader.getMessageContextFactory();
-        SoapInfoFactory fac = TarariLoader.getSoapInfoFactory();
-        if (mcfac != null && fac != null) {
+        if (mcfac != null) {
             try {
                 InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
                 TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
-                SoapInfo soapInfo = fac.getSoapInfo(mc);
+                SoapInfo soapInfo = mc.getSoapInfo();
 
                 TarariKnob tarariKnob = (TarariKnob)message.getKnob(TarariKnob.class);
                 if (tarariKnob == null) {

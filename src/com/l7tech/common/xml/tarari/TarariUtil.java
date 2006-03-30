@@ -7,6 +7,7 @@ package com.l7tech.common.xml.tarari;
 
 import com.tarari.xml.XmlParseException;
 import com.tarari.xml.XmlConfigException;
+import com.tarari.xml.XmlException;
 import com.tarari.xml.rax.RaxErrorCode;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import org.xml.sax.SAXException;
@@ -57,6 +58,10 @@ class TarariUtil {
     }
 
     public static void translateException(XmlConfigException e) throws SoftwareFallbackException, SAXException {
+        translateTarariErrorCode(e, e.getErrorCode());
+    }
+
+    public static void translateException(XmlException e) throws SoftwareFallbackException, SAXException {
         translateTarariErrorCode(e, e.getErrorCode());
     }
 }
