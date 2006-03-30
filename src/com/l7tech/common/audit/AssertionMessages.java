@@ -392,4 +392,12 @@ public class AssertionMessages extends Messages {
     public static final M WSI_BSP_REQUEST_FAIL           = m(7604, Level.INFO, "Failing non WS-I BSP compliant request.");
     public static final M WSI_BSP_RESPONSE_FAIL          = m(7605, Level.INFO, "Failing non WS-I BSP compliant response.");
     public static final M WSI_BSP_XPATH_ERROR            = m(7606, Level.WARNING, "Server WS-I BSP rules are incorrect.");
+
+    public static final M WSI_SAML_REQUEST_NON_SOAP       = m(7700, Level.INFO, "Request not SOAP; unable to check for WS-I SAML Token Profile compliance");
+    public static final M WSI_SAML_RESPONSE_NON_SOAP      = m(7701, Level.INFO, false, true, "Response not SOAP; unable to check for WS-I  SAML Token Profile compliance");
+    public static final M WSI_SAML_REQUEST_NON_COMPLIANT  = m(7702, Level.WARNING, true, false, "WS-I SAML Token Profile rule broken in request ({0}): {1}");
+    public static final M WSI_SAML_RESPONSE_NON_COMPLIANT = m(7703, Level.WARNING, false, true, "WS-I SAML Token Profile rule broken in response ({0}): {1}");
+    public static final M WSI_SAML_REQUEST_FAIL           = m(7704, Level.INFO, "Failing non WS-I SAML Token Profile compliant request.");
+    public static final M WSI_SAML_RESPONSE_FAIL          = m(7705, Level.INFO, "Failing non WS-I SAML Token Profile compliant response.");
+    public static final M WSI_SAML_XPATH_ERROR            = m(7706, Level.WARNING, "Server WS-I SAML Token Profile rules are incorrect.");
 }

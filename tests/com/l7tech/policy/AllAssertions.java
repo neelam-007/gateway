@@ -119,6 +119,7 @@ public class AllAssertions {
         new RequestSizeLimit(),
         new RequestWssKerberos(),
         new WsiBspAssertion(),
+        new WsiSamlAssertion(),
         new EchoRoutingAssertion(),
     };
 
@@ -171,6 +172,7 @@ public class AllAssertions {
         new RequestWssKerberos(),
         new EncryptedUsernameTokenAssertion(),
         new WsiBspAssertion(),
+        new WsiSamlAssertion(),
         new EchoRoutingAssertion(),
     };
 

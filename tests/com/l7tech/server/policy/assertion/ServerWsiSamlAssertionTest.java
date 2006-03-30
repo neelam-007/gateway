@@ -2,37 +2,40 @@ package com.l7tech.server.policy.assertion;
 
 import java.util.Map;
 import java.util.Iterator;
-import java.util.MissingResourceException;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathConstants;
 
+import junit.framework.TestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
-import junit.framework.TestCase;
-
-import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.DomElementCursor;
-
 import org.w3c.dom.Document;
 
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ResourceUtils;
+import com.l7tech.common.xml.DomElementCursor;
+
 /**
- * Test the rules defined for WS-I BSP validation.
+ * Test the rules defined for WS-I SAML Token Profile validation.
  *
  * @author $Author$
  * @version $Revision$
  */
-public class ServerWsiBspAssertionTest extends TestCase {
+public class ServerWsiSamlAssertionTest extends TestCase {
 
     //- PUBLIC
 
+    public static Test suite() {
+        TestSuite suite = new TestSuite(ServerWsiSamlAssertionTest.class);
+        return suite;
+    }
+
     public void testSuccesses() throws Exception {
         System.out.println("Running testSuccesses()");
-        Map ruleMap = swba.getRules();
+        Map ruleMap = swsa.getRules();
         for(Iterator iterator = ruleMap.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry entry = (Map.Entry) iterator.next();
             XPathExpression xpe = (XPathExpression) entry.getKey();
@@ -53,7 +56,7 @@ public class ServerWsiBspAssertionTest extends TestCase {
 
     public void testNonSuccesses() throws Exception {
         System.out.println("Running testNonSuccesses()");
-        Map ruleMap = swba.getRules();
+        Map ruleMap = swsa.getRules();
         for(Iterator iterator = ruleMap.entrySet().iterator(); iterator.hasNext(); ) {
             Map.Entry entry = (Map.Entry) iterator.next();
             XPathExpression xpe = (XPathExpression) entry.getKey();
@@ -74,14 +77,14 @@ public class ServerWsiBspAssertionTest extends TestCase {
 
     //- PRIVATE
 
-    private ServerWsiBspAssertion swba = new ServerWsiBspAssertion();
+    private ServerWsiSamlAssertion swsa = new ServerWsiSamlAssertion();
 
     private String readMessage(String name) throws IOException {
         String result = null;
         InputStream in = null;
         try {
-            String resPath = "/com/l7tech/policy/resources/basicsecurityprofile/" + name;
-            in = ServerWsiBspAssertionTest.class.getResourceAsStream(resPath);
+            String resPath = "/com/l7tech/policy/resources/samltokenprofile/" + name;
+            in = ServerWsiSamlAssertionTest.class.getResourceAsStream(resPath);
             if(in==null) throw new IllegalStateException("Cannot find resource '" + resPath + "'.");
             result = new String(HexUtils.slurpStream(in));
         }

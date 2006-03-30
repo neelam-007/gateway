@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+    xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+    xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+    xmlns:saml="oasis:names:tc:SAML:1.0:assertion"
+    xmlns:samlp="oasis:names:tc:SAML:1.0:protocol"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soap:Header>
+        <wsse:Security>
+            <saml:Assertion MajorVersion='1' 
+                            MinorVersion='1' 
+                            AssertionID='uuid:006ab385-35e0-41b1-b0f5-ccef5090c1b0'
+                            Issuer='http://example.org/issuer'>
+                <saml:AuthenticationStatement AuthenticationMethod='urn:oasis:names:tc:SAML:1.0:am:password' 
+                                              AuthenticationInstant='2004-11-04T21:01:50Z' >
+                    <saml:Subject>
+                        <saml:SubjectConfirmation>
+                            <ds:KeyInfo xmlns:ds='http://www.w3.org/2000/09/xmldsig#' >
+                                <wsse:SecurityTokenReference>
+                                    <!-- Invalid reference to SAML Assertion from within a SAML Assertion -->
+                                    <wsse:Reference URI='uuid:a9afffbe-a0fb-4789-8b54-299782c3c0ac' 
+                                                    ValueType='http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID' />
+                                </wsse:SecurityTokenReference>
+                            </ds:KeyInfo>
+                        </saml:SubjectConfirmation>
+                    </saml:Subject>
+                </saml:AuthenticationStatement>
+            </saml:Assertion>
+        </wsse:Security>
+    </soap:Header>
+    <soap:Body>
+        <tns:listProducts xmlns:tns="http://warehouse.acme.com/ws"/>
+    </soap:Body>
+</soap:Envelope>

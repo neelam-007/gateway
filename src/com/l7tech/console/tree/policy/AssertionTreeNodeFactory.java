@@ -98,6 +98,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RequestWssKerberos.class, KerberosTreeNode.class);
         assertionMap.put(MappingAssertion.class, MappingAssertionPolicyNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
+        assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
     }
 
     /**

@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.WsiBspAssertion;
 public class WsiBspPaletteNode extends AbstractLeafPaletteNode {
 
     public WsiBspPaletteNode() {
-        super("WSI-BSP Compliancy", "com/l7tech/console/resources/policy16.gif");
+        super("WSI-BSP Compliance", "com/l7tech/console/resources/policy16.gif");
     }
 
     public Assertion asAssertion() {

@@ -94,7 +94,7 @@ public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
      * Used by test code only (tests rule loading).
      */
     ServerWsiBspAssertion() {
-        super(null);
+        super(logger);
         this.auditor = null;
         this.wsiBspAssertion = null;
     }
