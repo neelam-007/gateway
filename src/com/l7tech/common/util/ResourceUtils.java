@@ -1,11 +1,11 @@
 package com.l7tech.common.util;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.nio.channels.Channel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility class for working with resources.
@@ -19,8 +19,7 @@ import java.nio.channels.Channel;
  * <p>NOTE: Since we're aiming for 1.4.x compliance we can't use the Closeable
  * interface.</p>
  *
- * @author $Author$
- * @version $Revision$
+ * @author steve
  */
 public final class ResourceUtils {
 
@@ -33,7 +32,7 @@ public final class ResourceUtils {
      *
      * @param in the input stream to close (may be null)
      */
-    public static final void closeQuietly(final InputStream in) {
+    public static void closeQuietly(final InputStream in) {
         if(in!=null) {
             try {
                 in.close();
@@ -52,9 +51,9 @@ public final class ResourceUtils {
      *
      * <p>Note that the exception may still be logged.</p>
      *
-     * @param in the input stream to close (may be null)
+     * @param out the output stream to close (may be null)
      */
-    public static final void closeQuietly(final OutputStream out) {
+    public static void closeQuietly(final OutputStream out) {
         if(out!=null) {
             try {
                 out.close();
@@ -73,9 +72,9 @@ public final class ResourceUtils {
      *
      * <p>Note that the exception may still be logged.</p>
      *
-     * @param in the channel to close (may be null)
+     * @param out the channel to close (may be null)
      */
-    public static final void closeQuietly(final Channel out) {
+    public static void closeQuietly(final Channel out) {
         if(out!=null) {
             try {
                 out.close();
