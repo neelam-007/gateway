@@ -104,6 +104,7 @@ public class LogonDialog extends JDialog {
      */
     public LogonDialog(Frame parent) {
         super(parent, true);
+        this.setAlwaysOnTop(true);
         this.parentFrame = parent;
         setTitle("");
         initResources();

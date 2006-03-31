@@ -58,6 +58,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     /** Create a neverDisplay exception dialog that never displays anything. */
     private ExceptionDialog(Frame parent, boolean fake) {
         super(parent, false);
+        this.setAlwaysOnTop(true);
         this.neverDisplay = true;
     }
 
@@ -71,12 +72,14 @@ public class ExceptionDialog extends JDialog implements ActionListener {
      */
     private ExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
         super(parent, true);
+        this.setAlwaysOnTop(true);
         initialize(title, message, throwable, level);
     }
 
     /** Create a real exception dialog. */
     private ExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
         super(parent, true);
+        this.setAlwaysOnTop(true);
         if (labelMessage != null) {
             internalErrorLabelText = labelMessage;
             allowShutdown = false;
@@ -93,6 +96,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
      */
     private ExceptionDialog(Frame parent, String message, Throwable throwable, Level level) {
         super(parent, true);
+        this.setAlwaysOnTop(true);
         initialize(getDialogTitle(level), message, throwable, level);
     }
 

@@ -170,6 +170,10 @@ public class MainWindow extends JFrame {
     private ServicesFolderNode servicesRootNode;
     private JTextPane descriptionText;
     private LogonListener licenseCheckingLogonListener;
+    private JSplitPane verticalSplitPane;
+    private double preferredVerticalSplitLocation = 0.57;
+    private double preferredHorizontalSplitLocation = 0.27;
+    private boolean maximizeOnStart = false;
 
     /**
      * MainWindow constructor comment.
@@ -178,6 +182,17 @@ public class MainWindow extends JFrame {
         super(TITLE);
         ssmApplication = app;
         initialize();
+    }
+
+    public void setVisible(boolean visible) {
+        super.setVisible(visible);
+        if(visible) {
+            toFront();
+            if(maximizeOnStart) {
+                setExtendedState(MAXIMIZED_BOTH);
+                resetSplitLocations();
+            }
+        }
     }
 
     /**
@@ -1077,6 +1092,7 @@ public class MainWindow extends JFrame {
 
                 if (description != null) {
                     descriptionText.setText(description);
+                    descriptionText.getCaret().setDot(0);
                 }
             }
         });
@@ -1299,35 +1315,17 @@ public class MainWindow extends JFrame {
         mainSplitPane.add(getMainLeftPanel(), "left");
         mainSplitPane.setDividerSize(4);
         mainSplitPane.setBorder(null);
-        addWindowListener(new WindowAdapter() {
-            /**
-             * Invoked when a window has been opened.
-             */
-            public void windowOpened(WindowEvent e) {
-                try {
-                    Preferences prefs = Preferences.getPreferences();
-                    String s = prefs.getString("main.split.divider.location");
-                    if (s != null) {
-                        int l = Integer.parseInt(s);
-                        mainSplitPane.setDividerLocation(l);
-                    } else {
-                        mainSplitPane.setDividerLocation(getSize().width/3);
-
-                    }
-                } catch (NumberFormatException e1) {
-                }
+        getMainLeftPanel().addComponentListener(new ComponentAdapter(){
+            public void componentResized(ComponentEvent e) {
+                preferredHorizontalSplitLocation = mainSplitPane.getDividerLocation() / (double)(mainSplitPane.getWidth());
             }
-
-            /**
-             * Invoked when a window has been closed.
-             */
-            public void windowClosed(WindowEvent e) {
-                try {
-                    Preferences prefs = Preferences.getPreferences();
-                    int l = mainSplitPane.getDividerLocation();
-                    prefs.putProperty("main.split.divider.location", Integer.toString(l));
-                } catch (NullPointerException e1) {
-                }
+        });
+        addWindowListener(new WindowAdapter() {
+            public void windowOpened(WindowEvent e) {
+                preferredHorizontalSplitLocation =
+                        setSplitLocation("main.split.divider.location",
+                                preferredHorizontalSplitLocation,
+                                mainSplitPane);
             }
         });
 
@@ -1387,6 +1385,8 @@ public class MainWindow extends JFrame {
 
             // rightPanel.add(progressBar, BorderLayout.EAST);
             getStatusBarPane().add(rightPanel, BorderLayout.EAST);
+            Preferences p = Preferences.getPreferences();
+            statusBarPane.setVisible(p.isStatusBarBarVisible());
         }
         return statusBarPane;
     }
@@ -1486,6 +1486,53 @@ public class MainWindow extends JFrame {
         return policyToolBar;
     }
 
+    private void configureScrollPane(JScrollPane js) {
+        // Not sure what this increment stuff is for, so removing for now.
+
+        // default increment
+        //int mInc = js.getVerticalScrollBar().getUnitIncrement();
+
+        // some arbitrary text to set the unit increment to the
+        // height of one line instead of default value
+        //int vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
+        //js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
+
+        //int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
+        //js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
+
+        js.setBorder(null);
+    }
+
+    private void resetSplitLocations() {
+        preferredHorizontalSplitLocation =
+                        setSplitLocation("main.split.divider.location",
+                                preferredHorizontalSplitLocation,
+                                mainSplitPane);
+
+        preferredVerticalSplitLocation =
+                setSplitLocation("tree.split.divider.location",
+                        preferredVerticalSplitLocation,
+                        verticalSplitPane);
+    }
+
+    private double setSplitLocation(String propertyName, double splitLocation, JSplitPane splitPane) {
+        Preferences prefs = Preferences.getPreferences();
+        String s = prefs.getString(propertyName);
+
+        if (s != null) {
+            try {
+                double fromFile = Double.parseDouble(s);
+                if(fromFile>=0 && fromFile<=1.0)
+                    splitLocation = fromFile;
+                else
+                    log.log(Level.WARNING, "Invalid divider location '"+fromFile+"'.");
+            } catch (NumberFormatException nfe) {
+                log.log(Level.WARNING, "Unable to parse divider location '"+s+"'.");
+            }
+        }
+        splitPane.setDividerLocation(splitLocation);
+        return splitLocation;
+    }
 
     /**
      * Return the TreeJPanel property value.
@@ -1498,88 +1545,55 @@ public class MainWindow extends JFrame {
 
         //setup the tabs for the palette tree and identity pane
         JTabbedPane treePanel = new JTabbedPane();
-        treePanel.setBorder(null);
-        //treePanel.setLayout(new BorderLayout());
-        treePanel.addTab("Assertions", getAssertionPaletteTree());
-        treePanel.addTab("Identity Providers", getIdentitiesTree());
-
-        JScrollPane js = new JScrollPane(treePanel);
-        js.setBorder(null);
-        js.setMinimumSize(new Dimension(50, 200));
-
-        int mInc = js.getVerticalScrollBar().getUnitIncrement();
-        // some arbitrary text to set the unit increment to the
-        // height of one line instead of default value
-        int vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
-        js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
-        js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
+        treePanel.setPreferredSize(new Dimension(140, 280));
+        JScrollPane assertionScroller = new JScrollPane(getAssertionPaletteTree());
+        configureScrollPane(assertionScroller);
+        treePanel.addTab("Assertions", assertionScroller);
+        JScrollPane identityScroller = new JScrollPane(getIdentitiesTree());
+        configureScrollPane(identityScroller);
+        treePanel.addTab("Identity Providers", identityScroller);
 
         Component descriptionPane = getAssertionDescriptionPane();
         JScrollPane descriptionScrollPane = new JScrollPane(descriptionPane);
+        descriptionScrollPane.setPreferredSize(new Dimension(140, 100));
         descriptionScrollPane.setBorder(null);
 
-        final JSplitPane paletteSections = new JSplitPane(JSplitPane.VERTICAL_SPLIT, js, descriptionScrollPane);
+        final JSplitPane paletteSections = new JSplitPane(JSplitPane.VERTICAL_SPLIT, treePanel, descriptionScrollPane);
         paletteSections.setOneTouchExpandable(true);
-        paletteSections.setResizeWeight(0.7);
+        paletteSections.setDividerLocation(-1);
+        paletteSections.setResizeWeight(1);
 
-        final JSplitPane leftPanelSections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        verticalSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        verticalSplitPane.setBorder(null);
+        verticalSplitPane.setDividerSize(10);
+        verticalSplitPane.setResizeWeight(0.6);
 
-        addWindowListener(new WindowAdapter() {
-            /**
-             * Invoked when a window has been opened.
-             */
-            public void windowOpened(WindowEvent e) {
-                try {
-                    Preferences prefs = Preferences.getPreferences();
-                    String s = prefs.getString("tree.split.divider.location");
-                    if (s != null) {
-                        int l = Integer.parseInt(s);
-                        leftPanelSections.setDividerLocation(l);
-                    } else {
-                        leftPanelSections.setDividerLocation(leftPanelSections.getSize().height/2);
-                    }
-                } catch (NumberFormatException e1) {
-                }
+        paletteSections.addComponentListener(new ComponentAdapter(){
+            public void componentResized(ComponentEvent e) {
+                preferredVerticalSplitLocation = verticalSplitPane.getDividerLocation() / (double)(verticalSplitPane.getHeight());
             }
-
-            /**
-             * Invoked when a window has been closed.
-             */
-            public void windowClosed(WindowEvent e) {
-                try {
-                    Preferences prefs = Preferences.getPreferences();
-                    int l = leftPanelSections.getDividerLocation();
-                    prefs.putProperty("tree.split.divider.location", Integer.toString(l));
-                } catch (NullPointerException e1) {
-                }
+        });
+        addWindowListener(new WindowAdapter(){
+            public void windowOpened(WindowEvent e) {
+                preferredVerticalSplitLocation =
+                        setSplitLocation("tree.split.divider.location",
+                                preferredVerticalSplitLocation,
+                                verticalSplitPane);
             }
         });
 
-        leftPanelSections.setTopComponent(paletteSections);
-        leftPanelSections.setBorder(null);
         treePanel = new JTabbedPane();
         treePanel.addTab("Services", getServicesTree());
         treePanel.setTabPlacement(JTabbedPane.TOP);
         treePanel.setBorder(null);
+        JScrollPane serviceScroller = new JScrollPane(treePanel);
+        configureScrollPane(serviceScroller);
 
-
-        js = new JScrollPane(treePanel);
-        js.setBorder(null);
-        mInc = js.getVerticalScrollBar().getUnitIncrement();
-        // some arbitrary text to set the unit increment to the
-        // height of one line instead of default value
-        vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
-        js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
-        js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
-        leftPanelSections.setBottomComponent(js);
-        leftPanelSections.setDividerSize(10);
-
-
+        verticalSplitPane.setTopComponent(paletteSections);
+        verticalSplitPane.setBottomComponent(serviceScroller);
 
         mainLeftPanel = new JPanel(new BorderLayout());
-        mainLeftPanel.add(leftPanelSections, BorderLayout.CENTER);
+        mainLeftPanel.add(verticalSplitPane, BorderLayout.CENTER);
         mainLeftPanel.add(getPolicyToolBar(), BorderLayout.EAST);
         mainLeftPanel.setBorder(null);
         return mainLeftPanel;
@@ -1667,7 +1681,17 @@ public class MainWindow extends JFrame {
                 return;
             }
         }
+        String maximized = Boolean.toString(getExtendedState()==Frame.MAXIMIZED_BOTH);
         this.setVisible(false);
+        try {
+            Preferences prefs = Preferences.getPreferences();
+            prefs.putProperty("last.window.maximized", maximized);
+            prefs.putProperty("tree.split.divider.location", Double.toString(preferredVerticalSplitLocation));
+            prefs.putProperty("main.split.divider.location", Double.toString(preferredHorizontalSplitLocation));
+            prefs.store();
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Unable to save divider location.", e);
+        }
         System.exit(0);
     }
 
@@ -1821,6 +1845,10 @@ public class MainWindow extends JFrame {
         Dimension curScreenSize = Toolkit.getDefaultToolkit().getScreenSize();
         try {
             Preferences prefs = Preferences.getPreferences();
+            Boolean maximized = Boolean.valueOf(prefs.getString("last.window.maximized", "false"));
+            if(maximized.booleanValue()) {
+                maximizeOnStart = true;
+            }
             Dimension lastScreenSize = prefs.getLastScreenSize();
             Dimension lastWindowSize = prefs.getLastWindowSize();
             Point lastWindowLocation = prefs.getLastWindowLocation();
