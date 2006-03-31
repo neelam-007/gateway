@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.message.Message;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -45,7 +46,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     }
 
     public LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
-        String wwwAuthorize = request.getHttpRequestKnob().getHeaderSingleValue(AUTHORIZATION);
+        String wwwAuthorize = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
         return findCredentials( wwwAuthorize );
     }
 

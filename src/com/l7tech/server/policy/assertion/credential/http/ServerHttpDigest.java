@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -143,7 +144,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
     protected LoginCredentials findCredentials( Message request, Map authParams )
             throws IOException, CredentialFinderException
     {
-        String authorization = request.getHttpRequestKnob().getHeaderSingleValue(AUTHORIZATION);
+        String authorization = request.getHttpRequestKnob().getHeaderSingleValue(HttpConstants.HEADER_AUTHORIZATION);
 
         if ( authorization == null || authorization.length() == 0 ) {
             return null;

@@ -9,12 +9,11 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.MimeKnob;
@@ -39,10 +38,7 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -66,11 +62,17 @@ import java.util.logging.Logger;
 public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final String USER_AGENT = HttpConstants.HEADER_USER_AGENT;
     public static final String HOST = HttpConstants.HEADER_HOST;
-    private SignerInfo senderVouchesSignerInfo;
+    private final Logger logger = Logger.getLogger(getClass().getName());
+    private final SignerInfo senderVouchesSignerInfo;
+
     private final Auditor auditor;
     private final FailoverStrategy failoverStrategy;
     private final String[] varNames;
     private final int maxFailoverAttempts;
+    private final HttpRoutingAssertion httpRoutingAssertion;
+    private final CommonsHttpClient httpClient;
+    private final SSLContext sslContext;
+    private static final String IV_USER = "IV_USER";
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx);
@@ -78,10 +80,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         int max = httpRoutingAssertion.getMaxConnections();
 
-        connectionManager = new MultiThreadedHttpConnectionManager();
+        MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
         connectionManager.setMaxConnectionsPerHost(max);
         connectionManager.setMaxTotalConnections(max * 10);
         //connectionManager.setConnectionStaleCheckingEnabled( false );
+        httpClient = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout());
 
         auditor = new Auditor(this, applicationContext, logger);
         try {
@@ -98,7 +101,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         }
 
         final String[] addrs = httpRoutingAssertion.getCustomIpAddresses();
-        if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs, auditor)) {
+        if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs)) {
             final String stratName = assertion.getFailoverStrategyName();
             FailoverStrategy strat;
             try {
@@ -117,7 +120,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         varNames = assertion.getVariablesUsed();
     }
 
-    private boolean areValidUrlHostnames(String[] addrs, Auditor auditor) {
+    private boolean areValidUrlHostnames(String[] addrs) {
         for (int i = 0; i < addrs.length; i++) {
             String addr = addrs[i];
             try {
@@ -186,62 +189,21 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         }
     }
 
-    /**
-     * Lazy protocol init
-     */
-    private void initProtocol(URL url, int port) {
-        if(protocol == null) {
-            synchronized (this) {
-                if (protocol == null) {
-                    protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
-                        public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-                            return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
-                        }
-
-                        public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
-                            return sslContext.getSocketFactory().createSocket(host, port, clientAddress, clientPort);
-                        }
-
-                        public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-                            return sslContext.getSocketFactory().createSocket(host, port);
-                        }
-                    }, port);
-                }
-            }
-        }
-    }
-
-    /**
-     *
-     */
-    private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws PolicyAssertionException
-    {
+    private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws PolicyAssertionException {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
         Throwable thrown = null;
         try {
-            HttpClient client = new HttpClient(connectionManager);
-            client.setConnectionTimeout(getConnectionTimeout());
-            client.setTimeout(getTimeout());
-            HostConfiguration hconf = null;
-
-            if ("https".equals(url.getProtocol())) {
-                final int port = url.getPort() == -1 ? 443 : url.getPort();
-                hconf = new HostConfiguration();
-                initProtocol(url, port);
-                hconf.setHost(url.getHost(), port, protocol);
-            }
-
+            GenericHttpRequestParams routedRequestParams = new GenericHttpRequestParams(url);
+            routedRequestParams.setSslSocketFactory(sslContext.getSocketFactory());
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             handleProcessedSecurityHeader(context,
                                           httpRoutingAssertion.getCurrentSecurityHeaderHandling(),
                                           httpRoutingAssertion.getXmlSecurityActorToPromote());
 
-            List httpHeaders = new ArrayList();
-
             String userAgent = httpRoutingAssertion.getUserAgent();
             if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
-            httpHeaders.add(new GenericHttpHeader(USER_AGENT, userAgent));
+            routedRequestParams.addExtraHeader(new GenericHttpHeader(USER_AGENT, userAgent));
 
             StringBuffer hostValue = new StringBuffer(url.getHost());
             int port = url.getPort();
@@ -249,42 +211,59 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 hostValue.append(":");
                 hostValue.append(port);
             }
-            httpHeaders.add(new GenericHttpHeader(HOST, hostValue.toString()));
+            routedRequestParams.addExtraHeader(new GenericHttpHeader(HOST, hostValue.toString()));
 
             HttpRequestKnob httpRequestKnob = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
             String soapAction = httpRequestKnob == null ? null : httpRequestKnob.getHeaderSingleValue(SoapUtil.SOAPACTION);
             if (httpRequestKnob == null || soapAction == null) {
-                httpHeaders.add(new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\""));
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\""));
             } else {
-                httpHeaders.add(new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction));
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction));
             }
 
             if (httpRoutingAssertion.isTaiCredentialChaining()) {
-                doTaiCredentialChaining(context, client, httpHeaders, url);
+                doTaiCredentialChaining(context, routedRequestParams, url);
             }
 
             String login = httpRoutingAssertion.getLogin();
             String password = httpRoutingAssertion.getPassword();
+            String domain = httpRoutingAssertion.getRealm();
+            String host = httpRoutingAssertion.getNtlmHost();
 
-            boolean doAuth = false;
             if (login != null && login.length() > 0
               && password != null && password.length() > 0) {
                 Map vars = context.getVariableMap(varNames, auditor);
                 login = ExpandVariables.process(login, vars);
                 password = ExpandVariables.process(password, vars);
+                if (domain != null) domain = ExpandVariables.process(domain, vars);
+                if (host != null) host = ExpandVariables.process(host, vars);
 
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_LOGIN_INFO, new String[] {login});
-                HttpState state = client.getState();
-                doAuth = true;
-                state.setAuthenticationPreemptive(true);
-                state.setCredentials(null, null, new UsernamePasswordCredentials(login, password));
+                if (domain != null) {
+                    routedRequestParams.setNtlmAuthentication(new NtlmAuthentication(login, password.toCharArray(), domain, host));
+                } else {
+                    routedRequestParams.setPreemptiveAuthentication(true);
+                    routedRequestParams.setPasswordAuthentication(new PasswordAuthentication(login, password.toCharArray()));
+                }
             }
 
             if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                 doAttachSamlSenderVouches(context);
+            } else if (httpRoutingAssertion.isPassthroughHttpAuthentication()) {
+                String[] authHeaders = httpRequestKnob.getHeaderValues(HttpConstants.HEADER_AUTHORIZATION);
+                boolean passed = false;
+                for (int i = 0; i < authHeaders.length; i++) {
+                    passed = true;
+                    routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, authHeaders[i]));
+                }
+                if (passed) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST);
+                } else {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_REQUEST_NC);
+                }
             }
 
-            return reallyTryUrl(context, client, hconf, Collections.unmodifiableList(httpHeaders), doAuth, url, true);
+            return reallyTryUrl(context, routedRequestParams, url, true);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
@@ -314,7 +293,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     /**
      *
      */
-    private void doTaiCredentialChaining(PolicyEnforcementContext context, HttpClient client, List headers, URL url) {
+    private void doTaiCredentialChaining(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams, URL url) {
         String chainId = null;
         if (!context.isAuthenticated()) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NOT_AUTHENTICATED);
@@ -340,16 +319,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             }
 
             if (chainId != null && chainId.length() > 0) {
-                headers.add(new GenericHttpHeader("IV_USER", chainId));
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(IV_USER, chainId));
+                HttpCookie ivUserCookie = new HttpCookie(IV_USER, chainId, 0, url.getPath(), url.getHost());
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, ivUserCookie.toExternalForm()));
 
                 // there is no defined quoting or escape mechanism for HTTP cookies so we'll use URLEncoding
-                Cookie cookieOut = new Cookie();
-                cookieOut.setName("IV_USER");
-                cookieOut.setValue(chainId);
-                cookieOut.setDomain(url.getHost());
-                cookieOut.setPath(url.getPath());
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, new String[] {cookieOut.getName()});
-                client.getState().addCookie(cookieOut);
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADD_OUTGOING_COOKIE, new String[] {IV_USER});
             }
         }
     }
@@ -383,66 +358,59 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
     }
 
-    /**
-     *
-     */
-    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, HttpClient client, HostConfiguration hconf, List headers, boolean doAuth, URL url, boolean allowRetry) throws PolicyAssertionException
+    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context,
+                                         GenericHttpRequestParams routedRequestParams,
+                                         URL url, boolean allowRetry)
+            throws PolicyAssertionException
     {
-        PostMethod postMethod = null;
+        GenericHttpRequest routedRequest = null;
+        GenericHttpResponse routedResponse = null;
         try {
-            postMethod = new PostMethod(url.toString());
-
             // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
             // todo: check if we need to support HTTP 1.1.
-            postMethod.setHttp11(false);
-
-            for (Iterator iterator = headers.iterator(); iterator.hasNext();) {
-                HttpHeader httpHeader = (HttpHeader) iterator.next();
-                postMethod.setRequestHeader(httpHeader.getName(), httpHeader.getFullValue());
-            }
-
-            if(doAuth) postMethod.setDoAuthentication(true);
 
             // Serialize the request
             final MimeKnob reqMime = context.getRequest().getMimeKnob();
-            postMethod.setRequestHeader(HttpConstants.HEADER_CONTENT_TYPE, reqMime.getOuterContentType().getFullValue());
+            routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_CONTENT_TYPE, reqMime.getOuterContentType().getFullValue()));
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = reqMime.getContentLength();
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
-            postMethod.setRequestContentLength((int)contentLength);
 
-            Collection sentCookies = Collections.EMPTY_LIST;
-            if(httpRoutingAssertion.isCopyCookies())
-                sentCookies = attachCookies(client, context, auditor, url.getHost());
-
-            final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
-            postMethod.setRequestBody(bodyInputStream);
-
-            long latencyTimerStart = System.currentTimeMillis();
-            if (hconf == null) {
-                client.executeMethod(postMethod);
-            } else {
-                client.executeMethod(hconf, postMethod);
+            if (!httpRoutingAssertion.isPassthroughHttpAuthentication() &&
+                routedRequestParams.getNtlmAuthentication() == null &&
+                routedRequestParams.getPasswordAuthentication() == null) {
+                routedRequestParams.setContentLength(new Long(contentLength));
             }
 
-            int status = postMethod.getStatusCode();
+            Collection cookiesToSend = Collections.EMPTY_LIST;
+            if (httpRoutingAssertion.isCopyCookies())
+                cookiesToSend = copyCookiesOutbound(routedRequestParams, context, url.getHost());
 
-            boolean readOk = readResponse(context, postMethod, status);
+            routedRequest = httpClient.createRequest(GenericHttpClient.POST, routedRequestParams);
+            final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
+            routedRequest.setInputStream(bodyInputStream);
+
+            long latencyTimerStart = System.currentTimeMillis();
+            routedResponse = routedRequest.getResponse();
+
+            int status = routedResponse.getStatus();
+
+            boolean readOk = readResponse(context, routedResponse, status);
             long latencyTimerEnd = System.currentTimeMillis();
             if (readOk) {
                 long latency = latencyTimerEnd - latencyTimerStart;
-                context.setVariable(HttpRoutingAssertion.ROUTING_LATENCY, ""+latency);
+                context.setVariable(HttpRoutingAssertion.VAR_ROUTING_LATENCY, ""+latency);
             }
 
             RoutingResultListener rrl = context.getRoutingResultListener();
-            boolean retryRequested = allowRetry && rrl.reroute(url, status, toHeaders(postMethod.getResponseHeaders()), context); // only call listeners if retry is allowed
+            boolean retryRequested = allowRetry && rrl.reroute(url, status, routedResponse.getHeaders(), context); // only call listeners if retry is allowed
 
             if(status != HttpConstants.STATUS_OK && retryRequested) {
                 // retry after if requested by a routing result listener
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, new String[] {url.getPath(), String.valueOf(status)});
-                return reallyTryUrl(context, client, hconf, headers, doAuth, url, false);
+                return reallyTryUrl(context, routedRequestParams, url, false);
             }
 
             if (status == HttpConstants.STATUS_OK)
@@ -454,13 +422,30 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (httpResponseKnob != null)
                 httpResponseKnob.setStatus(status);
 
-            if(httpRoutingAssertion.isCopyCookies())
-                returnCookies(client, context, sentCookies);
+            if (httpRoutingAssertion.isCopyCookies())
+                copyCookiesInbound(routedRequestParams, routedResponse, context, cookiesToSend);
+
+            if (httpRoutingAssertion.isPassthroughHttpAuthentication()) {
+                boolean passed = false;
+                List wwwAuthValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_WWW_AUTHENTICATE);
+                if (wwwAuthValues != null) {
+                    for (Iterator i = wwwAuthValues.iterator(); i.hasNext();) {
+                        String value = (String)i.next();
+                        httpResponseKnob.addChallenge(value);
+                        passed = true;
+                    }
+                }
+                if (passed) {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE);
+                } else {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_PASSTHROUGH_RESPONSE_NC);
+                }
+            }
 
             context.setRoutingStatus(RoutingStatus.ROUTED);
 
             // notify listeners
-            rrl.routed(url, status, toHeaders(postMethod.getResponseHeaders()), context);
+            rrl.routed(url, status, routedResponse.getHeaders(), context);
 
             if(!readOk) return AssertionStatus.FALSIFIED;
 
@@ -479,27 +464,19 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
         } finally {
-            if (postMethod != null) {
-                MethodCloser mc = new MethodCloser(postMethod);
-                context.runOnClose(mc);
+            if (routedRequest != null || routedResponse != null) {
+                final GenericHttpRequest req = routedRequest;
+                final GenericHttpResponse resp = routedResponse;
+                context.runOnClose(new Runnable() {
+                    public void run() {
+                        if (resp != null) resp.close();
+                        if (req != null) req.close();
+                    }
+                });
             }
         }
 
         return AssertionStatus.FAILED;
-    }
-
-    private HttpHeaders toHeaders(final Header[] headers) {
-        HttpHeader[] sevenHeads;
-        if(headers==null) {
-            sevenHeads = new HttpHeader[0];
-        }
-        else {
-            sevenHeads = new HttpHeader[headers.length];
-            for (int i = 0; i < sevenHeads.length; i++) {
-                sevenHeads[i] = new GenericHttpHeader(headers[i].getName(), headers[i].getValue());
-            }
-        }
-        return new GenericHttpHeaders(sevenHeads);
     }
 
     /**
@@ -507,13 +484,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      *
      * @return false if falsified (if a non-xml response was wrapped)
      */
-    private boolean readResponse(PolicyEnforcementContext context, PostMethod postMethod, int status) {
+    private boolean readResponse(PolicyEnforcementContext context, GenericHttpResponse routedResponse, int status) {
         boolean responseOk = true;
         try {
-            InputStream responseStream = postMethod.getResponseBodyAsStream();
-            Header ctheader = postMethod.getResponseHeader(HttpConstants.HEADER_CONTENT_TYPE);
-            String ctype = ctheader!=null ? ctheader.getValue() : null;
-            ContentTypeHeader outerContentType = ctype!=null ? ContentTypeHeader.parseValue(ctype) : null;
+            InputStream responseStream = routedResponse.getInputStream();
+            String ctype = routedResponse.getHeaders().getOnlyOneValue(HttpConstants.HEADER_CONTENT_TYPE);
+            ContentTypeHeader outerContentType = ctype !=null ? ContentTypeHeader.parseValue(ctype) : null;
 
             // Handle missing content type error
             if(status == HttpConstants.STATUS_OK && outerContentType==null) {
@@ -530,13 +506,17 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 context.setFaultDetail(sfd);
                 responseOk = false;
-            }
-            // Special case for bugzilla #1406, we encapsulate downstream ugly html error pages in a neat soapfault
-            else if (status != HttpConstants.STATUS_OK
-             && outerContentType!=null
-             && (outerContentType.isText() || outerContentType.isHtml())
-             && !outerContentType.isXml()) {
-                    logger.warning("downstream service returned error (" +
+            } else if (httpRoutingAssertion.isPassthroughHttpAuthentication() &&
+                       status == HttpConstants.STATUS_UNAUTHORIZED) {
+                context.getResponse().initialize(StashManagerFactory.createStashManager(), outerContentType, responseStream);
+                responseOk = false;
+            } else if (status != HttpConstants.STATUS_OK &&
+                       outerContentType!=null &&
+                       (outerContentType.isText() || outerContentType.isHtml()) &&
+                       !outerContentType.isXml())
+            {
+                // Special case for bugzilla #1406, we encapsulate downstream ugly html error pages in a neat soapfault
+                        logger.warning("downstream service returned error (" +
                                    status + ") with non-xml payload; encapsulating error in soapfault");
 
                     Document faultDetails = XmlUtil.stringToDocument("<downstreamResponse><status>" + status +
@@ -585,40 +565,43 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     }
 
     /**
-     * Attach cookies received by the client to the protected service
+     * Copy cookies sent by the client to the protected service request
      *
-     * @param client  the http client sender
+     * @param routedRequestParams the request parameters
      * @param context the context for this request
-     * @param auditor used to record cookie actions
      * @return the collection of attached Cookies
      */
-    private Collection attachCookies(HttpClient client, PolicyEnforcementContext context, Auditor auditor, String targetDomain) {
+    private Collection copyCookiesOutbound(GenericHttpRequestParams routedRequestParams,
+                                           PolicyEnforcementContext context,
+                                           String targetDomain)
+    {
         List attached = new ArrayList();
-        HttpState state = client.getState();
         Set contextCookies = context.getCookies();
 
         for (Iterator iterator = contextCookies.iterator(); iterator.hasNext();) {
-            HttpCookie cookie = (HttpCookie) iterator.next();
+            HttpCookie ssgc = (HttpCookie) iterator.next();
 
-            if(CookieUtils.isPassThroughCookie(cookie)) {
-                if(cookie.isNew()) {
-                   auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[] {cookie.getCookieName()});
+            if (CookieUtils.isPassThroughCookie(ssgc)) {
+                if (ssgc.isNew()) {
+                   auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[] {ssgc.getCookieName()});
                 }
 
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[] {cookie.getCookieName(), String.valueOf(cookie.getVersion())});
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[] {ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
 
-                // create HTTP Client version of cookie
-                Cookie httpClientCookie = CookieUtils.toHttpClientCookie(cookie);
-
-                // modify for target
-                httpClientCookie.setPathAttributeSpecified(true);
-                httpClientCookie.setPath("/");
-                httpClientCookie.setDomainAttributeSpecified(true);
-                httpClientCookie.setDomain(targetDomain);
+                HttpCookie newCookie = new HttpCookie(
+                    ssgc.getCookieName(),
+                    ssgc.getCookieValue(),
+                    ssgc.getVersion(),
+                    "/",
+                    targetDomain,
+                    ssgc.getMaxAge(),
+                    ssgc.isSecure(),
+                    ssgc.getComment()
+                );
 
                 // attach and record
-                attached.add(httpClientCookie);
-                state.addCookie(httpClientCookie);
+                attached.add(newCookie);
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, newCookie.toExternalForm()));
             }
         }
 
@@ -626,49 +609,28 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     }
 
     /**
-     * Get new cookies from the http state, and add them to the response.
+     * Get new cookies from the routed response, and add them to the SSG response.
      *
-     * @param client the client whose cookies are to be returned
-     * @param context the context to which the cookies should be added
-     * @param originalCookies the cookies that are known (not newly set)
+     * @param routedResponse the response received from the protected service, where cookies will be copied from
+     * @param context the context for the SSG request, to which the cookies should be copied
+     * @param originalCookies the cookies that were already known at the time this request was sent (not newly set)
      */
-    private void returnCookies(HttpClient client, PolicyEnforcementContext context, Collection originalCookies) {
-        HttpState state = client.getState();
-        Cookie[] cookies = state.getCookies();
+    private void copyCookiesInbound(GenericHttpRequestParams routedRequestParams, GenericHttpResponse routedResponse, PolicyEnforcementContext context, Collection originalCookies) {
+        List setCookieValues = routedResponse.getHeaders().getValues(HttpConstants.HEADER_SET_COOKIE);
+        List newCookies = new ArrayList();
+        for (Iterator i = setCookieValues.iterator(); i.hasNext();) {
+            String setCookieValue = (String)i.next();
+            newCookies.add(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+        }
 
-        Set newCookies = new LinkedHashSet(Arrays.asList(cookies));
         newCookies.removeAll(originalCookies);
 
         for (Iterator iterator = newCookies.iterator(); iterator.hasNext();) {
-            Cookie cookie = (Cookie) iterator.next();
-
-            // modify for client
-            cookie.setDomain(null);
-            cookie.setDomainAttributeSpecified(false);
-            cookie.setPath(null);
-            cookie.setPathAttributeSpecified(false);
-
-            context.addCookie(CookieUtils.fromHttpClientCookie(cookie, true));
+            HttpCookie routedCookie = (HttpCookie) iterator.next();
+            HttpCookie ssgResponseCookie = new HttpCookie(routedCookie.getCookieName(), routedCookie.getCookieValue(), routedCookie.getVersion(), null, null);
+            context.addCookie(ssgResponseCookie);
         }
     }
 
-    private static class MethodCloser implements Runnable {
-        MethodCloser(HttpMethod method) {
-            this.method = method;
-        }
 
-        public void run() {
-            method.releaseConnection();
-        }
-
-        private HttpMethod method;
-    }
-
-
-    private final HttpRoutingAssertion httpRoutingAssertion;
-    private final MultiThreadedHttpConnectionManager connectionManager;
-    private final SSLContext sslContext;
-
-    final Logger logger = Logger.getLogger(getClass().getName());
-    private Protocol protocol;
 }

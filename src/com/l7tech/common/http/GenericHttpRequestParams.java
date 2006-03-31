@@ -17,15 +17,16 @@ import java.util.*;
  * Bean that provides information about a pending HTTP request. 
  */
 public class GenericHttpRequestParams {
-    protected URL targetUrl;
-    protected GenericHttpState state;
-    protected PasswordAuthentication passwordAuthentication = null;
-    protected SSLSocketFactory sslSocketFactory = null;
-    protected ContentTypeHeader contentType = null;
-    protected Long contentLength = null;
+    private URL targetUrl;
+    private GenericHttpState state;
+    private PasswordAuthentication passwordAuthentication = null;
+    private NtlmAuthentication ntlmAuthentication = null;
+    private SSLSocketFactory sslSocketFactory = null;
+    private ContentTypeHeader contentType = null;
+    private Long contentLength = null;
     private ArrayList extraHeaders = null;
-    protected boolean preemptiveAuthentication = true;
-    protected boolean followRedirects = false;
+    private boolean preemptiveAuthentication = true;
+    private boolean followRedirects = false;
 
     /**
      * Create a new request description that does not yet have a target URL set.
@@ -114,6 +115,15 @@ public class GenericHttpRequestParams {
      */
     public void setPasswordAuthentication(PasswordAuthentication passwordAuthentication) {
         this.passwordAuthentication = passwordAuthentication;
+    }
+
+
+    public NtlmAuthentication getNtlmAuthentication() {
+        return ntlmAuthentication;
+    }
+
+    public void setNtlmAuthentication(NtlmAuthentication ntlmAuthentication) {
+        this.ntlmAuthentication = ntlmAuthentication;
     }
 
     /**

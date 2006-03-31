@@ -21,7 +21,6 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     private boolean useThumbprintInSamlSubject;
     private int samlAssertionExpiry = 5;
     private boolean groupMembershipStatement;
-    private boolean taiCredentialChaining = false;
     private String xmlSecurityActorToPromote;
     private int currentSecurityHeaderHandling = REMOVE_CURRENT_SECURITY_HEADER;
 
@@ -104,21 +103,13 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.groupMembershipStatement = groupMembershipStatement;
     }
 
-    public boolean isTaiCredentialChaining() {
-        return taiCredentialChaining;
-    }
-
-    public void setTaiCredentialChaining(boolean taiCredentialChaining) {
-        this.taiCredentialChaining = taiCredentialChaining;
-    }
-
     /**
      * This setting controls what this routing assertion should do with the current security header
      * before routing the request. Possible values are:
      * {@link #REMOVE_CURRENT_SECURITY_HEADER},
      * {@link #LEAVE_CURRENT_SECURITY_HEADER_AS_IS},
      * {@link #PROMOTE_OTHER_SECURITY_HEADER}
-     */ 
+     */
     public int getCurrentSecurityHeaderHandling() {
         return currentSecurityHeaderHandling;
     }
@@ -143,7 +134,6 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.setCurrentSecurityHeaderHandling(source.getCurrentSecurityHeaderHandling());
         this.setGroupMembershipStatement(source.isGroupMembershipStatement());
         this.setSamlAssertionExpiry(source.getSamlAssertionExpiry());
-        this.setTaiCredentialChaining(source.isTaiCredentialChaining());
         this.setXmlSecurityActorToPromote(source.getXmlSecurityActorToPromote());
     }
 }

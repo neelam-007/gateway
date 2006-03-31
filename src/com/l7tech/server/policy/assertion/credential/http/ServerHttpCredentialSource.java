@@ -34,8 +34,6 @@ import java.util.logging.Logger;
 public abstract class ServerHttpCredentialSource extends ServerCredentialSourceAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerHttpCredentialSource.class.getName());
 
-    public static final String AUTHORIZATION = "Authorization";
-
     private final Auditor auditor;
 
     protected ServerHttpCredentialSource(HttpCredentialSourceAssertion data, ApplicationContext springContext) {

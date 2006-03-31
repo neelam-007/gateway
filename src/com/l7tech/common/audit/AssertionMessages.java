@@ -41,6 +41,10 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_FAILOVER_FROM_TO        = m(4027, Level.WARNING, "Routing failed to host = {0}, retrying to host = {1}");
     public static final M HTTP_UNKNOWN_HOST                 = m(4028, Level.WARNING, "Routing failed, unable to resolve IP for host = {0}");
     public static final M HTTP_SOCKET_EXCEPTION             = m(4029, Level.WARNING, "Routing failed, connection error; {0}");
+    public static final M HTTPROUTE_PASSTHROUGH_REQUEST     = m(4030, Level.INFO, "Passthrough selected; adding request credentials to routed request");
+    public static final M HTTPROUTE_PASSTHROUGH_REQUEST_NC  = m(4031, Level.FINE, "Passthrough selected but no credentials in SSG request to pass along");
+    public static final M HTTPROUTE_PASSTHROUGH_RESPONSE    = m(4032, Level.INFO, "Passthrough selected; adding challenge to SSG response");
+    public static final M HTTPROUTE_PASSTHROUGH_RESPONSE_NC = m(4033, Level.FINE, "Passthrough selected but no challenge in routed response");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");

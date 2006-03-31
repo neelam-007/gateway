@@ -85,7 +85,18 @@ public class CommonsHttpClient implements GenericHttpClient {
 
         httpMethod.setFollowRedirects(params.isFollowRedirects());
         PasswordAuthentication pw = params.getPasswordAuthentication();
-        if (pw != null) {
+        NtlmAuthentication ntlm = params.getNtlmAuthentication();
+        if (ntlm != null) {
+            httpMethod.setDoAuthentication(true);
+            state.setCredentials(null, null,
+                new NTCredentials(
+                    ntlm.getUsername(),
+                    new String(ntlm.getPassword()),
+                    ntlm.getHost(),
+                    ntlm.getDomain()
+                )
+            );
+        } else if (pw != null) {
             httpMethod.setDoAuthentication(true);
             String username = pw.getUserName();
             char[] password = pw.getPassword();

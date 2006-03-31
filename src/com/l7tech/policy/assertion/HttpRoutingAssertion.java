@@ -18,10 +18,23 @@ public class HttpRoutingAssertion
         implements UsesVariables, SetsVariables
 {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 100; // Flagrantly in contravention of RFC2616!
-    public static final String ROUTING_LATENCY = "httpRouting.latency";
+    public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
     public static final String PROP_SSL_SESSION_TIMEOUT =
             HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
+
+    protected String protectedServiceUrl;
+    protected String login;
+    protected String password;
+    protected String realm;
+    protected String ntlmHost;
+    protected String userAgent;
+    protected int maxConnections;
+    protected boolean copyCookies;
+    protected boolean passthroughHttpAuthentication;
+    protected String[] customIpAddresses = null;
+    protected String failoverStrategyName = "ordered";
+    private boolean taiCredentialChaining = false;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -58,75 +71,89 @@ public class HttpRoutingAssertion
      * @param copyCookies         true to copy cookies to the service request
      */
     public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections, boolean copyCookies) {
-        _protectedServiceUrl = protectedServiceUrl;
-        _login = login;
-        _password = password;
-        _realm = realm;
+        this.protectedServiceUrl = protectedServiceUrl;
+        this.login = login;
+        this.password = password;
+        this.realm = realm;
+        this.passthroughHttpAuthentication = false;
 
         if (maxConnections == -1) maxConnections = DEFAULT_MAX_CONNECTIONS_PER_HOST;
-        _maxConnections = maxConnections;
-        _copyCookies = copyCookies;
+        this.maxConnections = maxConnections;
+        this.copyCookies = copyCookies;
     }
 
     public Object clone() throws CloneNotSupportedException {
-        RoutingAssertion n = (RoutingAssertion)super.clone();
-        return n;
+        return (RoutingAssertion)super.clone();
     }
 
     public int getMaxConnections() {
-        return _maxConnections;
+        return maxConnections;
     }
 
     public void setMaxConnections(int maxConnections) {
-        _maxConnections = maxConnections;
+        this.maxConnections = maxConnections;
     }
 
     public boolean isCopyCookies() {
-        return _copyCookies;
+        return copyCookies;
     }
 
     public void setCopyCookies(boolean copyCookies) {
-        this._copyCookies = copyCookies;
+        this.copyCookies = copyCookies;
+    }
+
+    public boolean isPassthroughHttpAuthentication() {
+        return passthroughHttpAuthentication;
+    }
+
+    public void setPassthroughHttpAuthentication(boolean passthroughHttpAuthentication) {
+        this.passthroughHttpAuthentication = passthroughHttpAuthentication;
     }
 
     public String getLogin() {
-        return _login;
+        return login;
     }
 
     public void setLogin(String login) {
-        _login = login;
+        this.login = login;
     }
 
     public String getPassword() {
-        return _password;
+        return password;
     }
 
     public void setPassword(String password) {
-        _password = password;
+        this.password = password;
     }
 
+    /**
+     * This is really the NTLM domain--the client never actually sends the realm
+     */
     public String getRealm() {
-        return _realm;
+        return realm;
     }
 
+    /**
+     * This is really the NTLM domain--the client never actually sends the realm
+     */
     public void setRealm(String realm) {
-        _realm = realm;
+        this.realm = realm;
     }
 
     public String getProtectedServiceUrl() {
-        return _protectedServiceUrl;
+        return protectedServiceUrl;
     }
 
     public void setProtectedServiceUrl(String protectedServiceUrl) {
-        this._protectedServiceUrl = protectedServiceUrl;
+        this.protectedServiceUrl = protectedServiceUrl;
     }
 
     public String getUserAgent() {
-        return _userAgent;
+        return userAgent;
     }
 
     public void setUserAgent(String userAgent) {
-        _userAgent = userAgent;
+        this.userAgent = userAgent;
     }
 
     public String toString() {
@@ -135,12 +162,12 @@ public class HttpRoutingAssertion
 
     /** @return the custom IP addresses to use as an array of String, or null if no custom IP address list is configured. */
     public String[] getCustomIpAddresses() {
-        return _customIpAddresses;
+        return customIpAddresses;
     }
 
     /** @param customIpAddresses custom addresses to use, or null if no custom addresses should be used. */
     public void setCustomIpAddresses(String[] customIpAddresses) {
-        _customIpAddresses = customIpAddresses;
+        this.customIpAddresses = customIpAddresses;
     }
 
     /**
@@ -148,7 +175,7 @@ public class HttpRoutingAssertion
      * @see com.l7tech.common.io.failover.FailoverStrategyFactory
      */
     public String getFailoverStrategyName() {
-        return _failoverStrategyName;
+        return failoverStrategyName;
     }
 
     /**
@@ -156,40 +183,49 @@ public class HttpRoutingAssertion
      * @see com.l7tech.common.io.failover.FailoverStrategyFactory
      */
     public void setFailoverStrategyName(String failoverStrategyName) {
-        this._failoverStrategyName = failoverStrategyName;
+        this.failoverStrategyName = failoverStrategyName;
     }
 
     /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
     protected void copyFrom(HttpRoutingAssertion source) {
         super.copyFrom(source);
-        this.setCustomIpAddresses((String[])source.getCustomIpAddresses());
+        this.setCustomIpAddresses(source.getCustomIpAddresses());
         this.setFailoverStrategyName(source.getFailoverStrategyName());
         this.setLogin(source.getLogin());
         this.setMaxConnections(source.getMaxConnections());
         this.setCopyCookies(source.isCopyCookies());
         this.setPassword(source.getPassword());
         this.setProtectedServiceUrl(source.getProtectedServiceUrl());
+        this.setPassthroughHttpAuthentication(source.isPassthroughHttpAuthentication());
         this.setRealm(source.getRealm());
         this.setUserAgent(source.getUserAgent());
+        this.setTaiCredentialChaining(source.isTaiCredentialChaining());
+        this.setNtlmHost(source.getNtlmHost());
     }
 
-    protected String _protectedServiceUrl;
-    protected String _login;
-    protected String _password;
-    protected String _realm;
-    protected String _userAgent;
-    protected int _maxConnections;
-    protected boolean _copyCookies;
-    protected String[] _customIpAddresses = null;
-    protected String _failoverStrategyName = "ordered";
-
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(_login + _password + _protectedServiceUrl);
+        return ExpandVariables.getReferencedNames(login + password + protectedServiceUrl);
     }
 
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] {
-            new VariableMetadata(ROUTING_LATENCY, false, false, ROUTING_LATENCY, false)
+            new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false)
         };
+    }
+
+    public boolean isTaiCredentialChaining() {
+        return taiCredentialChaining;
+    }
+
+    public void setTaiCredentialChaining(boolean taiCredentialChaining) {
+        this.taiCredentialChaining = taiCredentialChaining;
+    }
+
+    public String getNtlmHost() {
+        return ntlmHost;
+    }
+
+    public void setNtlmHost(String ntlmHost) {
+        this.ntlmHost = ntlmHost;
     }
 }
