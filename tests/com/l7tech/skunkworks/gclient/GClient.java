@@ -29,6 +29,8 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.*;
 import java.net.URL;
+import java.net.InetAddress;
+import java.net.PasswordAuthentication;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -82,6 +84,10 @@ public class GClient {
     private JLabel statusLabel;
     private JLabel lengthLabel;
     private JLabel ctypeLabel;
+    private JTextField loginField;
+    private JPasswordField passwordField;
+    private JTextField ntlmDomainField;
+    private JTextField ntlmHostField;
 
     private Wsdl wsdl;
     private Service service;
@@ -348,12 +354,27 @@ public class GClient {
 
             client = new CommonsHttpClient(new MultiThreadedHttpConnectionManager());
             GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(targetUrl));
-            params.setContentLength(new Long(requestBytes.length));
+            String login = loginField.getText();
+            char[] password = passwordField.getPassword();
+            String ntlmDomain = ntlmDomainField.getText();
+            String ntlmHost = ntlmHostField.getText();
+            if (login != null && password != null) {
+                if (ntlmDomain != null) {
+                    String host = ntlmHost;
+                    if (host == null) host = InetAddress.getLocalHost().getHostName();
+                    params.setNtlmAuthentication(new NtlmAuthentication(login, password, ntlmDomain, host));
+                } else {
+                    params.setPasswordAuthentication(new PasswordAuthentication(login, password));
+                }
+            }
             params.setContentType(ContentTypeHeader.XML_DEFAULT);
             //params.setContentType("application/soap+xml");
             params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction)});
             request = client.createRequest(GenericHttpClient.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBytes));
+            if (params.getNtlmAuthentication() == null && params.getPasswordAuthentication() == null) {
+                params.setContentLength(new Long(requestBytes.length));
+            }
             response = request.getResponse();
             statusLabel.setText(Integer.toString(response.getStatus()));
             lengthLabel.setText(response.getContentLength().toString());
