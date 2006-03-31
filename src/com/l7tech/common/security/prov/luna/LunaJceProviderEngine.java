@@ -33,7 +33,7 @@ public class LunaJceProviderEngine implements JceProviderEngine {
         return new LunaRsaSignerEngine(privateKeyAlias);
     }
 
-    public KeyPair generateRsaKeyPair() {
+    public KeyPair generateRsaKeyPair(int len) {
         KeyPairGenerator kpg = null;
         try {
             kpg = KeyPairGenerator.getInstance("RSA", PROVNAME);
@@ -42,9 +42,12 @@ public class LunaJceProviderEngine implements JceProviderEngine {
         } catch (NoSuchProviderException e) {
             throw new RuntimeException("Luna JCE provider misconfigured: " + e.getMessage(), e);
         }
-        kpg.initialize(RSA_KEY_LENGTH);
-        KeyPair kp = kpg.generateKeyPair();
-        return kp;
+        kpg.initialize(len);
+        return kpg.generateKeyPair();
+    }
+
+    public KeyPair generateRsaKeyPair() {
+        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {

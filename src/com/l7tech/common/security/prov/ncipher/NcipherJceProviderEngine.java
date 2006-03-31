@@ -51,7 +51,6 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
      * @param storePass
      * @param privateKeyAlias
      * @param privateKeyPass
-     * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
         return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, PROVIDER.getName());
@@ -59,12 +58,27 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
 
     /**
      * Generate an RSA public key / private key pair using the current Crypto provider.
-     *
-     * @return
      */
-    public KeyPair generateRsaKeyPair() {
+    public KeyPair generateRsaKeyPair(int len) {
         KMRSAKeyPairGenerator kpg = new KMRSAKeyPairGenerator();
+        try {
+            // TODO can the Random be null or is there some other algorithm we should be using?
+            // TODO can the Random be null or is there some other algorithm we should be using?
+            // TODO can the Random be null or is there some other algorithm we should be using?
+            // TODO can the Random be null or is there some other algorithm we should be using?
+            kpg.initialize(len, SecureRandom.getInstance("SHA1PRNG", PROVIDER));
+            // TODO can the Random be null or is there some other algorithm we should be using?
+            // TODO can the Random be null or is there some other algorithm we should be using?
+            // TODO can the Random be null or is there some other algorithm we should be using?
+            // TODO can the Random be null or is there some other algorithm we should be using?
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // Can't happen
+        }
         return kpg.generateKeyPair();
+    }
+
+    public KeyPair generateRsaKeyPair() {
+        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     /**
@@ -72,7 +86,6 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
      *
      * @param username  the username, ie "lyonsm"
      * @param keyPair  the public and private keys
-     * @return
      */
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
         return BouncyCastleCertificateRequest.makeCsr(username, keyPair, PROVIDER.getName());

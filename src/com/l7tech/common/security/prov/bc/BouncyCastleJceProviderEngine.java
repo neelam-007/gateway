@@ -60,14 +60,17 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
         return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, "BC" );
     }
 
+    public KeyPair generateRsaKeyPair(int len) {
+        JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
+        kpg.initialize(len);
+        return kpg.generateKeyPair();
+    }
+
     /**
      * Generate an RSA public key / private key pair.
-     * @return
      */
     public KeyPair generateRsaKeyPair() {
-        JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
-        kpg.initialize(RSA_KEY_LENGTH);
-        return kpg.generateKeyPair();
+        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";

@@ -76,6 +76,10 @@ public abstract class JceProvider {
         return Holder.engine.generateRsaKeyPair();
     }
 
+    public static KeyPair generateRsaKeyPair(int keysize) {
+        return Holder.engine.generateRsaKeyPair(keysize);
+    }
+
     public static CertificateRequest makeCsr(String username, KeyPair keyPair)
                  throws SignatureException, InvalidKeyException, RuntimeException
     {

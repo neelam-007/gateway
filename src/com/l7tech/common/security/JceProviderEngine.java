@@ -37,23 +37,24 @@ public interface JceProviderEngine {
      * @param storePass
      * @param privateKeyAlias
      * @param privateKeyPass
-     * @return
      */
     RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType);
 
     /**
      * Generate an RSA public key / private key pair using the current Crypto provider.
-     *
-     * @return
      */
     KeyPair generateRsaKeyPair();
+
+    /**
+     * Generate an RSA public key / private key pair using the current Crypto provider with the specified key size.
+     */
+    KeyPair generateRsaKeyPair(int keysize);
 
     /**
      * Generate a CertificateRequest using the current Crypto provider.
      *
      * @param username  the username, ie "lyonsm"
      * @param keyPair  the public and private keys
-     * @return
      */
     CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException;
 

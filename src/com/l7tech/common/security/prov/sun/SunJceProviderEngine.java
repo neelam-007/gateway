@@ -50,7 +50,6 @@ public class SunJceProviderEngine implements JceProviderEngine {
      * @param storePass
      * @param privateKeyAlias
      * @param privateKeyPass
-     * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
         return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, PROVIDER.getName() );
@@ -58,12 +57,15 @@ public class SunJceProviderEngine implements JceProviderEngine {
 
     /**
      * Generate an RSA public key / private key pair.
-     * @return
      */
-    public KeyPair generateRsaKeyPair() {
+    public KeyPair generateRsaKeyPair(int len) {
         JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
-        kpg.initialize(RSA_KEY_LENGTH);
+        kpg.initialize(len);
         return kpg.generateKeyPair();
+    }
+
+    public KeyPair generateRsaKeyPair() {
+        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
@@ -81,7 +83,7 @@ public class SunJceProviderEngine implements JceProviderEngine {
         PrivateKey privateKey = keyPair.getPrivate();
 
         // Generate request
-        PKCS10CertificationRequest certReq = null;
+        PKCS10CertificationRequest certReq;
         try {
             certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, "BC");
         } catch (NoSuchAlgorithmException e) {

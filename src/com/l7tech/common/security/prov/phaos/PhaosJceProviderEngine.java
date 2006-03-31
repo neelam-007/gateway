@@ -158,7 +158,6 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
      * @param storePass
      * @param privateKeyAlias
      * @param privateKeyPass
-     * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
         return new PhaosRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
@@ -166,15 +165,17 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
 
     /**
      * Generate an RSA public key / private key pair using the current Crypto provider.
-     *
-     * @return
      */
-    public KeyPair generateRsaKeyPair() {
+    public KeyPair generateRsaKeyPair(int len) {
         KeyPairGenerator kpg = RSAKeyPairGenerator.getInstance(AlgID.rsaEncryption);
-        kpg.initialize(RSA_KEY_LENGTH, RandomBitsSource.getDefault());
+        kpg.initialize(len, RandomBitsSource.getDefault());
         com.phaos.crypto.KeyPair kp = kpg.generateKeyPair();
         return new KeyPair(new PhaosRsaPublicKey((com.phaos.crypto.RSAPublicKey)kp.getPublic()),
                            new PhaosRsaPrivateKey((com.phaos.crypto.RSAPrivateKey)kp.getPrivate()));
+    }
+
+    public KeyPair generateRsaKeyPair() {
+        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     /**
@@ -182,7 +183,6 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
      *
      * @param username  the username, ie "lyonsm"
      * @param keyPair  the public and private keys
-     * @return
      */
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
         X500Name subject = new X500Name();

@@ -165,7 +165,7 @@ public class RsaJceProviderEngine implements JceProviderEngine {
      *
      * @return
      */
-    public KeyPair generateRsaKeyPair() {
+    public KeyPair generateRsaKeyPair(int len) {
         KeyPairGenerator kpg;
         try {
             kpg = KeyPairGenerator.getInstance("RSA");
@@ -173,8 +173,12 @@ public class RsaJceProviderEngine implements JceProviderEngine {
             throw new RuntimeException(e); // can't happen
         }
 
-        kpg.initialize(RSA_KEY_LENGTH);
+        kpg.initialize(len);
         return kpg.genKeyPair();
+    }
+
+    public KeyPair generateRsaKeyPair() {
+        return generateRsaKeyPair(RSA_KEY_LENGTH);
     }
 
     /**
