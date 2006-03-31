@@ -27,6 +27,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.io.*;
 import java.net.URL;
 import java.net.InetAddress;
@@ -44,14 +46,16 @@ import java.util.Set;
  * @version $Revision$
  */
 public class GClient {
-    private Color defaultTextAreaBg;
 
     //- PUBLIC
 
     public GClient() {
-        JFrame frame = new JFrame("GClient v0.1");
+        final JFrame frame = new JFrame("GClient v0.2");
         frame.setContentPane(mainPanel);
         defaultTextAreaBg = responseTextArea.getBackground();
+
+        // controls
+        buildControls();
 
         // listeners
         buildListeners();
@@ -72,6 +76,11 @@ public class GClient {
 
     //- PRIVATE
 
+    //
+    private static final String[] CONTENT_TYPES = new String[]{"text/xml", "application/soap+xml", "text/plain", "application/octet-stream", "application/x-www-form-urlencoded"};
+    private static final Color ERROR_COLOR = new Color(255, 192, 192);
+
+    // form members
     private JPanel mainPanel;
     private JButton sendButton;
     private JTextField soapActionTextField;
@@ -88,12 +97,34 @@ public class GClient {
     private JPasswordField passwordField;
     private JTextField ntlmDomainField;
     private JTextField ntlmHostField;
+    private JCheckBox reformatRequestMessageCheckbox;
+    private JCheckBox reformatResponseMessageCheckBox;
+    private JCheckBox validateBeforeSendCheckBox;
+    private JComboBox contentTypeComboBox;
 
+
+    //
+    private final Color defaultTextAreaBg;
+    private final Color errorColor = ERROR_COLOR;
     private Wsdl wsdl;
     private Service service;
     private Port port;
     private BindingOperation operation;
     private SoapMessageGenerator.Message[] requestMessages;
+    private String rawResponse;
+    private String formattedResponse;
+
+    private boolean formatRequest() {
+        return reformatRequestMessageCheckbox.isSelected();
+    }
+
+    private boolean formatResponse() {
+        return reformatResponseMessageCheckBox.isSelected();
+    }
+
+    private boolean validateBeforeSend() {
+        return validateBeforeSendCheckBox.isSelected();
+    }
 
     private void buildListeners() {
         serviceComboBox.addItemListener(new ItemListener(){
@@ -116,6 +147,25 @@ public class GClient {
                 sendMessage();
             }
         });
+        requestTextArea.addFocusListener(new FocusAdapter() {
+            public void focusLost(FocusEvent e) {
+                updateRequest();
+            }
+        });
+        reformatRequestMessageCheckbox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                updateRequest();
+            }
+         });
+        reformatResponseMessageCheckBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                updateResponse();
+            }
+        });
+    }
+
+    private void buildControls() {
+        contentTypeComboBox.setModel(new DefaultComboBoxModel(CONTENT_TYPES));
     }
 
     private void buildMenus(final JFrame frame) {
@@ -283,6 +333,46 @@ public class GClient {
         }
     }
 
+    private void updateRequest() {
+        if(formatRequest()) {
+            try {
+                Document messageDoc = XmlUtil.stringToDocument(requestTextArea.getText());
+                requestTextArea.setText(XmlUtil.nodeToFormattedString(messageDoc));
+                clearThrowable();
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+                displayThrowable(e);
+            }
+        }
+    }
+
+    private void updateResponse() {
+        clearThrowable();
+        if(formatResponse()) {
+            responseTextArea.setText(formattedResponse);
+        }
+        else {
+            responseTextArea.setText(rawResponse);
+        }
+        responseTextArea.getCaret().setDot(0);
+    }
+
+    private void displayThrowable(Throwable throwable) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        throwable.printStackTrace(new PrintStream(baos));
+        responseTextArea.setText(baos.toString());
+        responseTextArea.setBackground(errorColor);
+        responseTextArea.getCaret().setDot(0);
+    }
+
+    private void clearThrowable() {
+        if(responseTextArea.getBackground().equals(errorColor)) {
+            responseTextArea.setText("");
+            responseTextArea.setBackground(defaultTextAreaBg);
+        }
+    }
+
     private void openLocation(Component parent) {
         GClientLocationDialog locationChooser = new GClientLocationDialog((Frame)SwingUtilities.windowForComponent(parent));
         locationChooser.pack();
@@ -349,8 +439,14 @@ public class GClient {
         GenericHttpResponse response = null;
         InputStream responseIn = null;
         try {
-            Document requestDocument = XmlUtil.stringToDocument(message);
-            byte[] requestBytes = XmlUtil.nodeToFormattedString(requestDocument).getBytes("UTF-8");
+            byte[] requestBytes = null;
+            if(validateBeforeSend()) {
+                Document requestDocument = XmlUtil.stringToDocument(message);
+                requestBytes = XmlUtil.nodeToFormattedString(requestDocument).getBytes("UTF-8");
+            }
+            else {
+                requestBytes = message.getBytes("UTF-8");
+            }
 
             client = new CommonsHttpClient(new MultiThreadedHttpConnectionManager());
             GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(targetUrl));
@@ -367,8 +463,13 @@ public class GClient {
                     params.setPasswordAuthentication(new PasswordAuthentication(login, password));
                 }
             }
-            params.setContentType(ContentTypeHeader.XML_DEFAULT);
-            //params.setContentType("application/soap+xml");
+            String contentType = (String) contentTypeComboBox.getSelectedItem();
+            if(contentType.length() > 0) {
+                if(contentType.indexOf("charset") < 0) {
+                    contentType += "; charset=\"UTF-8\"";
+                }
+                params.setContentType(ContentTypeHeader.parseValue(contentType));
+            }
             params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction)});
             request = client.createRequest(GenericHttpClient.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBytes));
@@ -383,20 +484,18 @@ public class GClient {
             if (type == null) type = ContentTypeHeader.TEXT_DEFAULT;
             responseIn = response.getInputStream();
             String responseText = new String(HexUtils.slurpStream(responseIn), type.getEncoding());
-            responseTextArea.setText(responseText);
+            rawResponse = responseText;
             try {
-                responseTextArea.setText(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseText)));
+                formattedResponse = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseText));
             } catch (SAXException e) {
-                // Oh well, leave as just text
+                // Oh well, set as just text
+                formattedResponse = rawResponse;
             }
-            responseTextArea.setBackground(defaultTextAreaBg);
+            updateResponse();
         }
         catch(Exception e) {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            e.printStackTrace(new PrintStream(baos));
             e.printStackTrace();
-            responseTextArea.setText(baos.toString());
-            responseTextArea.setBackground(new Color(255, 192, 192));
+            displayThrowable(e);
         }
         finally {
             ResourceUtils.closeQuietly(responseIn);
