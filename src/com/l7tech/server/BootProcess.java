@@ -206,8 +206,8 @@ public class BootProcess
         String classnameString = serverConfig.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
         String[] componentClassnames = classnameString.split("\\s.*?");
 
-        ServerComponentLifecycle component = null;
         for (int i = 0; i < componentClassnames.length; i++) {
+            ServerComponentLifecycle component = null;
             String classname = componentClassnames[i];
             logger.info("Initializing server component '" + classname + "'");
             try {
