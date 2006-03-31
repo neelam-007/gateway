@@ -4,8 +4,8 @@
     xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
     xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
     xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
-    xmlns:saml="oasis:names:tc:SAML:1.0:assertion"
-    xmlns:samlp="oasis:names:tc:SAML:1.0:protocol"
+    xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"
+    xmlns:samlp="urn:oasis:names:tc:SAML:1.0:protocol"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <soap:Header>
