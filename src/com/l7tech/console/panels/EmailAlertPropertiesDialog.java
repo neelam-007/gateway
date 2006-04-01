@@ -8,6 +8,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 
 import javax.swing.*;
@@ -22,6 +23,7 @@ import java.awt.event.ActionListener;
  */
 public class EmailAlertPropertiesDialog extends JDialog {
     public static final String TITLE = "Email Alert Properties";
+    private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
     private JTextField addressField;
     private JTextField fromAddressField;
@@ -52,7 +54,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
 
-        okButton.addActionListener(new ActionListener() {
+        validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 viewToModel();
                 confirmed = true;
@@ -70,7 +72,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         });
 
         portField.setDocument(new NumberField(6));
-        Utilities.constrainTextFieldToIntegerRange(portField, 1, 65535);
+        validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
 
         pack();
         Utilities.centerOnScreen(this);

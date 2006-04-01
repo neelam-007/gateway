@@ -3,12 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.RequestSizeLimit;
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.InputValidator;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
-import java.awt.event.KeyListener;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -20,6 +20,8 @@ import java.awt.event.ActionEvent;
  * To change this template use File | Settings | File Templates.
  */
 public class RequestSizeLimitDialog extends JDialog {
+    private static final String TITLE = "Request Size Limit";
+    private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
@@ -31,7 +33,7 @@ public class RequestSizeLimitDialog extends JDialog {
     private boolean confirmed = false;
 
     public RequestSizeLimitDialog(Frame owner, RequestSizeLimit assertion, boolean modal) throws HeadlessException {
-        super(owner, "Request Size Limit", modal);
+        super(owner, TITLE, modal);
         doInit(assertion);
     }
 
@@ -46,10 +48,10 @@ public class RequestSizeLimitDialog extends JDialog {
         };
 
 
-        Utilities.constrainTextFieldToLongRange(sizeLimit, 1, Long.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("size limit", sizeLimit, 1, Long.MAX_VALUE / 1024);
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
-        okButton.addActionListener(new ActionListener() {
+        validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doSave();
             }

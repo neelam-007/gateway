@@ -1,21 +1,21 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.RequestSizeLimit;
-import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.common.gui.NumberField;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Config dialog for HardcodedResponseAssertion.
  */
 public class HardcodedResponseDialog extends JDialog {
+    private static final String TITLE = "Hardcoded Response";
+    private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
@@ -28,7 +28,7 @@ public class HardcodedResponseDialog extends JDialog {
     private boolean confirmed = false;
 
     public HardcodedResponseDialog(Frame owner, HardcodedResponseAssertion assertion, boolean modal) throws HeadlessException {
-        super(owner, "Hardcoded Response", modal);
+        super(owner, TITLE, modal);
         doInit(assertion);
     }
 
@@ -36,16 +36,10 @@ public class HardcodedResponseDialog extends JDialog {
         this.assertion = assertion;
         httpStatus.setDocument(new NumberField(String.valueOf(Long.MAX_VALUE).length()));
 
-        final DocumentListener dl = new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) { updateView(); }
-            public void insertUpdate(DocumentEvent e) { updateView(); }
-            public void removeUpdate(DocumentEvent e) { updateView(); }
-        };
-
-        Utilities.constrainTextFieldToLongRange(httpStatus, 1, Long.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("HTTP status", httpStatus, 1, Integer.MAX_VALUE);
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
-        okButton.addActionListener(new ActionListener() {
+        validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doSave();
             }

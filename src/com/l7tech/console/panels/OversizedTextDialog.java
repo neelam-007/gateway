@@ -6,6 +6,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 
@@ -23,6 +24,7 @@ public class OversizedTextDialog extends JDialog {
     private JPanel mainPanel;
 
     private final OversizedTextAssertion assertion;
+    private final InputValidator validator;
     private JButton okButton;
     private JButton cancelButton;
     private boolean modified;
@@ -44,6 +46,7 @@ public class OversizedTextDialog extends JDialog {
     public OversizedTextDialog(Frame owner, OversizedTextAssertion assertion, boolean modal) throws HeadlessException {
         super(owner, "Configure Document Structure Threat Protection", modal);
         this.assertion = assertion;
+        this.validator = new InputValidator(this, "Document Structure Threats");
         doInit();
     }
 
@@ -52,7 +55,7 @@ public class OversizedTextDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
 
-        okButton.addActionListener(new ActionListener() {
+        validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 doSave();
             }
@@ -69,6 +72,7 @@ public class OversizedTextDialog extends JDialog {
                 updateEnableState();
             }
         };
+
         textLengthCheckBox.addChangeListener(changeListener);
         attrLengthCheckBox.addChangeListener(changeListener);
         nestingDepthCheckBox.addChangeListener(changeListener);
@@ -82,12 +86,14 @@ public class OversizedTextDialog extends JDialog {
         Utilities.enableGrayOnDisabled(attrLengthField);
         Utilities.enableGrayOnDisabled(nestingDepthField);
         Utilities.enableGrayOnDisabled(payloadCountField);
-        Utilities.constrainTextFieldToLongRange(textLengthField, 0, Long.MAX_VALUE);
-        Utilities.constrainTextFieldToLongRange(attrLengthField, 0, Long.MAX_VALUE);
-        Utilities.constrainTextFieldToIntegerRange(payloadCountField, 0, Integer.MAX_VALUE);
-        Utilities.constrainTextFieldToIntegerRange(nestingDepthField,
-                                                   OversizedTextAssertion.MIN_NESTING_LIMIT,
-                                                   OversizedTextAssertion.MAX_NESTING_LIMIT);
+
+        validator.constrainTextFieldToNumberRange("text length", textLengthField, 0, Long.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("attribute length", attrLengthField, 0, Long.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("maximum payload count", payloadCountField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("maximum nesting depth", nestingDepthField,
+                                                  OversizedTextAssertion.MIN_NESTING_LIMIT,
+                                                  OversizedTextAssertion.MAX_NESTING_LIMIT);
+
         modelToView();
         updateEnableState();
     }
@@ -120,6 +126,9 @@ public class OversizedTextDialog extends JDialog {
 
     private void doSave() {
         String err = null;
+
+        // Most of the validation in this method is redundant now -- the validator should ensure doSave()
+        // is never invoked while the fields it is watching are in invalid states.
 
         long textLen = assertion.getMaxTextChars();
         final boolean limitTextLen = textLengthCheckBox.isSelected();

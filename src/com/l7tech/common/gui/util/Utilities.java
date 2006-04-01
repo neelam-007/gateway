@@ -45,7 +45,7 @@ public class Utilities {
         }
         // Get the largest width and height
         Dimension maxSize = new Dimension(0, 0);
-        Rectangle2D textBounds = null;
+        Rectangle2D textBounds;
         FontMetrics metrics = labels[0].getFontMetrics(labels[0].getFont());
         Graphics g = labels[0].getGraphics();
 
@@ -85,7 +85,7 @@ public class Utilities {
         }
         // Get the largest width and height
         Dimension maxSize = new Dimension(0, 0);
-        Rectangle2D textBounds = null;
+        Rectangle2D textBounds;
         FontMetrics metrics =
           buttons[0].getFontMetrics(buttons[0].getFont());
         Graphics g = buttons[0].getGraphics();
@@ -124,7 +124,7 @@ public class Utilities {
     public static Dimension getButtonSize(javax.swing.AbstractButton button) {
         // Get the largest width and height
         Dimension buttonSize = new Dimension();
-        Rectangle2D textBounds = null;
+        Rectangle2D textBounds;
         FontMetrics metrics = button.getFontMetrics(button.getFont());
         Graphics g = button.getGraphics();
 
@@ -151,10 +151,10 @@ public class Utilities {
      */
     public static void equalizeComponentSizes(JComponent[] components) {
         // Get the largest width and height
-        int i = 0;
+        int i;
         Dimension maxPreferred = new Dimension(0, 0);
-        JComponent oneComponent = null;
-        Dimension thisPreferred = null;
+        JComponent oneComponent;
+        Dimension thisPreferred;
         for (i = 0; i < components.length; ++i) {
             oneComponent = components[i];
             thisPreferred = oneComponent.getPreferredSize();
@@ -180,10 +180,10 @@ public class Utilities {
      */
     public static void equalizeComponentWidth(JComponent[] components) {
         // Get the largest width and height
-        int i = 0;
+        int i;
         Dimension maxPreferred = new Dimension(0, 0);
-        JComponent oneComponent = null;
-        Dimension thisPreferred = null;
+        JComponent oneComponent;
+        Dimension thisPreferred;
         for (i = 0; i < components.length; ++i) {
             oneComponent = components[i];
             thisPreferred = oneComponent.getPreferredSize();
@@ -211,10 +211,10 @@ public class Utilities {
      */
     public static void equalizeComponentSizes(Component[] components) {
         // Get the largest width and height
-        int i = 0;
+        int i;
         Dimension maxPreferred = new Dimension(0, 0);
-        Component oneComponent = null;
-        Dimension thisPreferred = null;
+        Component oneComponent;
+        Dimension thisPreferred;
         for (i = 0; i < components.length; ++i) {
             oneComponent = components[i];
             thisPreferred = oneComponent.getPreferredSize();
@@ -254,7 +254,7 @@ public class Utilities {
      * @param resource resource path of the icon (no initial slash)
      * @return icon's Image, or null, if the icon cannot be loaded.
      */
-    public static final Image loadImage(String resource) {
+    public static Image loadImage(String resource) {
         return ImageCache.getInstance().getIcon(resource);
     }
 
@@ -291,31 +291,6 @@ public class Utilities {
             }
         }
         return fc;
-    }
-
-    public static void constrainTextFieldToLongRange(final JTextComponent comp, final long min, final long max) {
-        final String minStr = String.valueOf(min);
-        final String maxStr = String.valueOf(max);
-        comp.addFocusListener(new FocusListener() {
-            public void focusGained(FocusEvent e) {}
-
-            public void focusLost(FocusEvent e) {
-                String val = comp.getText();
-                if (val == null || val.length() < 1) {
-                    comp.setText(minStr);
-                    return;
-                }
-                try {
-                    long ival = Long.parseLong(val);
-                    if (ival < min)
-                        comp.setText(minStr);
-                    else if (ival > max)
-                        comp.setText(maxStr);
-                } catch (NumberFormatException nfe) {
-                    comp.setText(minStr);
-                }
-            }
-        });
     }
 
     /**
@@ -511,7 +486,6 @@ public class Utilities {
      * Set the font for a component and its children.
      *
      * @param component the component to be enabled/disabled
-     * @param enabled true to enable the component
      */
     public static void setFont(JComponent component, Font font) {
         if(component != null) {
@@ -578,41 +552,8 @@ public class Utilities {
             MenuElement subElement = subElements[i];
             removeToolTipsFromMenuItems(subElement);
         }
-        
+
         if (m instanceof JComponent)
             ((JComponent)m).setToolTipText(null);
-    }
-
-    /**
-     * Configure the specified text component (JTextField or JTextArea) to constrain itself to contain
-     * an integer within the specified range (from min to max inclusive).  The constraint will be imposed
-     * whenever the field loses focus.
-     * @param comp  The text component to constrain.
-     * @param min   The minimum integer value it may legally contain.
-     * @param max   The maximum integer value it may legally contain.
-     */
-    public static void constrainTextFieldToIntegerRange(final JTextComponent comp, final int min, final int max) {
-        final String minStr = String.valueOf(min);
-        final String maxStr = String.valueOf(max);
-        comp.addFocusListener(new FocusListener() {
-            public void focusGained(FocusEvent e) {}
-
-            public void focusLost(FocusEvent e) {
-                String val = comp.getText();
-                if (val == null || val.length() < 1) {
-                    comp.setText(minStr);
-                    return;
-                }
-                try {
-                    int ival = Integer.parseInt(val);
-                    if (ival < min)
-                        comp.setText(minStr);
-                    else if (ival > max)
-                        comp.setText(maxStr);
-                } catch (NumberFormatException nfe) {
-                    comp.setText(minStr);
-                }
-            }
-        });
     }
 }

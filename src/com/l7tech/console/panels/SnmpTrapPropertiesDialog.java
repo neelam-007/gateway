@@ -6,13 +6,11 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.NumberField;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,6 +21,7 @@ import java.awt.event.ActionListener;
 public class SnmpTrapPropertiesDialog extends JDialog {
     public static final String TITLE = "SNMP Properties";
 
+    private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel rootPanel;
     private JRadioButton rbDefaultPort;
     private JTextField portField;
@@ -65,7 +64,7 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         Utilities.enableGrayOnDisabled(portField);
         Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
 
-        okButton.addActionListener(new ActionListener() {
+        validator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (viewToModel()) {
                     confirmed = true;
@@ -74,6 +73,7 @@ public class SnmpTrapPropertiesDialog extends JDialog {
                 }
             }
         });
+        //validator.disableButtonWhenInvalid(okButton);
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -85,20 +85,16 @@ public class SnmpTrapPropertiesDialog extends JDialog {
 
         ActionListener checkAction = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                updateEnableDisableState();
+                portField.setEnabled(rbCustomPort.isSelected());
+                validator.validate();
             }
         };
         rbDefaultPort.addActionListener(checkAction);
         rbCustomPort.addActionListener(checkAction);
-        hostnameField.getDocument().addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) { updateEnableDisableState(); }
-            public void insertUpdate(DocumentEvent e) { updateEnableDisableState(); }
-            public void removeUpdate(DocumentEvent e) { updateEnableDisableState(); }
-        });        
+        validator.constrainTextFieldToBeNonEmpty("host name", hostnameField, null);
 
-        portField.setDocument(new NumberField(6));
-        Utilities.constrainTextFieldToIntegerRange(portField, 1, 65535);
-        oidField.setDocument(new NumberField(9));
+        validator.constrainTextFieldToNumberRange("port", portField, 1, 65535);
+        validator.constrainTextFieldToNumberRange("OID", oidField, 0, Integer.MAX_VALUE);
 
         pack();
         Utilities.centerOnScreen(this);
@@ -120,18 +116,6 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         assertion.setOid(oid);
         assertion.setErrorMessage(messageField.getText());
         return true;
-    }
-
-    private void updateEnableDisableState() {
-        portField.setEnabled(rbCustomPort.isSelected());
-
-        boolean ok = true;
-        if (hostnameField.getText().length() < 1) ok = false;
-        if (rbCustomPort.isSelected() && !isValidInt(portField.getText())) ok = false;
-        int port = safeParseInt(portField.getText(), SnmpTrapAssertion.DEFAULT_PORT);
-        if (port < 1 || port > 65535) ok = false;
-
-        okButton.setEnabled(ok);
     }
 
     private int safeParseInt(String str, int def) {
@@ -160,7 +144,8 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         messageField.setText(assertion.getErrorMessage());
         oidField.setText(Integer.toString(assertion.getOid()));
         communityField.setText(assertion.getCommunity());
-        updateEnableDisableState();
+        portField.setEnabled(rbCustomPort.isSelected());
+        validator.validate();
     }
 
     /** @return the edited assertion if Ok was pressed, or null if the dialog was canceled or closed. */

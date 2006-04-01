@@ -1,14 +1,15 @@
 package com.l7tech.proxy.gui.dialogs;
 
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.kerberos.KerberosUtils;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.common.util.TextUtils;
+import com.l7tech.common.util.ValidationUtils;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
@@ -23,8 +24,6 @@ import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLException;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -353,7 +352,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         // Save the host name we're about to use in the bean and in the GUI
         ssg.setSsgAddress(newHost);
         fieldServerAddress.setText(newHost);
-        checkOk();
+        validator.validate();
 
         if (ssg.getServerCertificate() == null) {
             ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, creds);
@@ -462,7 +461,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private SsgNetworkPanel getNetworkPane() {
         if (networkPane == null)
-            networkPane = new SsgNetworkPanel();
+            networkPane = new SsgNetworkPanel(validator);
         return networkPane;
     }
 
@@ -588,28 +587,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
           }
         }
 
-    /** Enable or disable the Ok button, depending on whether all input is acceptable. */
-    private void checkOk() {
-        boolean ok = false;
-
-        if (ValidationUtils.isValidDomain(fieldServerAddress.getText())
-        && ValidationUtils.isValidCharacters(fieldKerberosName.getText(), ValidationUtils.ALPHA_NUMERIC+"/."))
-          ok = true;
-
-        getOkButton().setEnabled(ok);
-    }
-
     /** Get the Server URL text field. */
     private JTextField getFieldServerAddress() {
         if (fieldServerAddress == null) {
             fieldServerAddress = new ContextMenuTextField();
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
             fieldServerAddress.setToolTipText("<HTML>Gateway host name or address, for example<br><address>gateway.example.com");
-            fieldServerAddress.getDocument().addDocumentListener(new DocumentListener() {
-                public void  insertUpdate(DocumentEvent e) { checkOk(); }
-                public void  removeUpdate(DocumentEvent e) { checkOk(); }
-                public void changedUpdate(DocumentEvent e) { checkOk(); }
-            });
+            validator.constrainTextFieldToBeNonEmpty("Gateway server address", fieldServerAddress,
+                                                     new InputValidator.ValidationRule() {
+                                                         public String getValidationError() {
+                                                             if (!ValidationUtils.isValidDomain(fieldServerAddress.getText()))
+                                                                 return "Gateway server address must be a valid host name or IP address.";
+                                                             return null;
+                                                         }
+                                                     });
         }
         return fieldServerAddress;
     }
@@ -620,10 +611,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldKerberosName = new ContextMenuTextField();
             fieldKerberosName.setPreferredSize(new Dimension(220, 20));
             fieldKerberosName.setToolTipText("<HTML>Optional Gateway service/host name, for example<br><address>http/gateway.example.com");
-            fieldKerberosName.getDocument().addDocumentListener(new DocumentListener() {
-                public void  insertUpdate(DocumentEvent e) { checkOk(); }
-                public void  removeUpdate(DocumentEvent e) { checkOk(); }
-                public void changedUpdate(DocumentEvent e) { checkOk(); }
+            validator.constrainTextField(fieldKerberosName, new InputValidator.ValidationRule() {
+                public String getValidationError() {
+                    if (!ValidationUtils.isValidCharacters(fieldKerberosName.getText(), ValidationUtils.ALPHA_NUMERIC+"/."))
+                        return "Optional gateway service field must contain only letters, numbers, slashes, and periods.";
+                    return null;
+                }
             });
         }
         return fieldKerberosName;
@@ -704,7 +697,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
         getPoliciesPane().setPolicyCache(ssg.getRuntime().getPolicyManager());
 
-        checkOk();
+        validator.validate();
     }
 
     /**

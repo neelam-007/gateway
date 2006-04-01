@@ -6,7 +6,7 @@
 package com.l7tech.proxy.gui.dialogs;
 
 import com.intellij.uiDesigner.core.GridConstraints;
-import com.l7tech.common.gui.NumberField;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.IpListPanel;
@@ -26,6 +26,7 @@ import java.awt.*;
 class SsgNetworkPanel extends JPanel {
     private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
 
+    private final InputValidator validator;
     private JPanel networkPane;
     private WrappingLabel fieldLocalEndpoint;
     private WrappingLabel fieldWsdlEndpoint;
@@ -44,7 +45,8 @@ class SsgNetworkPanel extends JPanel {
     private JPanel ipListPanel;
     private IpListPanel ipList;
 
-    public SsgNetworkPanel() {
+    public SsgNetworkPanel(InputValidator validator) {
+        this.validator = validator;
         initialize();
     }
 
@@ -104,15 +106,13 @@ class SsgNetworkPanel extends JPanel {
 
         fieldSsgPort = new ContextMenuTextField("");
         Utilities.enableGrayOnDisabled(fieldSsgPort);
-        Utilities.constrainTextFieldToIntegerRange(fieldSsgPort, 1, 65535);
-        fieldSsgPort.setDocument(new NumberField(6));
+        validator.constrainTextFieldToNumberRange("Gateway HTTP port", fieldSsgPort, 1, 65535);
         fieldSsgPort.setPreferredSize(new Dimension(50, 20));
         ssgPortFieldPanel.add(fieldSsgPort, gc);
 
         fieldSslPort = new ContextMenuTextField("");
         Utilities.enableGrayOnDisabled(fieldSslPort);
-        Utilities.constrainTextFieldToIntegerRange(fieldSslPort, 1, 65535);
-        fieldSslPort.setDocument(new NumberField(6));
+        validator.constrainTextFieldToNumberRange("Gateway HTTPS port", fieldSslPort, 1, 65535);
         fieldSslPort.setPreferredSize(new Dimension(50, 20));
         sslPortFieldPanel.add(fieldSslPort, gc);
 

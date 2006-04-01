@@ -1,6 +1,7 @@
 package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.InputValidator;
 import com.l7tech.proxy.gui.Gui;
 
 import javax.swing.*;
@@ -24,6 +25,7 @@ public abstract class PropertyDialog extends JDialog {
     protected JButton okButton;
     protected JButton cancelButton;
     protected boolean userClickedOk = false;
+    protected final InputValidator validator = new InputValidator(this, getTitle());
 
     /**
      * Creates a new PropertyDialog.
@@ -112,12 +114,12 @@ public abstract class PropertyDialog extends JDialog {
         return cancelButton;
     }
 
-    /** Get the OK button. */
-    protected JButton getOkButton() {
+    /** Get the OK button.  To update the Ok button's enable/disable state, call validator.validate(). */
+    private JButton getOkButton() {
         if (okButton == null) {
             okButton = new JButton("OK");
             Utilities.enableGrayOnDisabled(okButton);
-            okButton.addActionListener(new ActionListener() {
+            validator.attachToButton(okButton, new ActionListener() {
                 public void actionPerformed(final ActionEvent e) {
                     commitChanges();
                     userClickedOk = true;
@@ -125,6 +127,12 @@ public abstract class PropertyDialog extends JDialog {
                     PropertyDialog.this.dispose();
                 }
             });
+            // TODO we probably shouldn't disable Ok buttons ever.  But we can't remove this until we add code
+            // to switch to the tab that contains the problematic component whenever a validation rule fails
+            // and the error message is displayed.  Disabling the button on invalid keeps the error dialog
+            // from ever being displayed in the first place, albeit at the cost of concealing the reason why
+            // button is disabled. :/
+            validator.disableButtonWhenInvalid(okButton);
         }
         return okButton;
     }
