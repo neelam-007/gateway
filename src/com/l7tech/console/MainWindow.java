@@ -1530,7 +1530,12 @@ public class MainWindow extends JFrame {
                 log.log(Level.WARNING, "Unable to parse divider location '"+s+"'.");
             }
         }
-        splitPane.setDividerLocation(splitLocation);
+        if(splitLocation>=0 && splitLocation<=1.0) {
+            splitPane.setDividerLocation(splitLocation);
+        }
+        else {
+            log.warning("Ignoring invalid divider location '"+splitLocation+"'.");
+        }
         return splitLocation;
     }
 
