@@ -43,6 +43,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private boolean canceled;
     private LogPanel logPanel;
     private boolean displayingFromFile;
+    private long timeOffset = 1000L*60L*60L*3L;
 
 
     /**
@@ -56,6 +57,17 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         this.logType = logType;
         this.displayingFromFile = false;
         setModel(model);
+    }
+
+    /**
+     * Set the time offset.
+     *
+     * <p>This is used to filter data when a date is not explicitly passed.</p>
+     *
+     * @param offset the offet to use
+     */
+    public void setTimeOffset(long offset) {
+        timeOffset = offset;
     }
 
     /**
@@ -467,7 +479,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public void refreshLogs(final LogPanel logPane, final boolean restartTimer, final String nodeId) {
         // Load the last 3 hours initially
-        Date startDate =  new Date(System.currentTimeMillis()-(1000L*60L*60L*3L));
+        Date startDate =  new Date(System.currentTimeMillis()-timeOffset);
         doRefreshLogs(logPane, restartTimer, startDate, null, null, nodeId, true);
     }
 

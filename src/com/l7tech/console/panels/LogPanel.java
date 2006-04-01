@@ -1211,6 +1211,10 @@ public class LogPanel extends JPanel {
         if(logTableSorter == null) {
             logTableSorter = new FilteredLogTableSorter(this, getLogTableModel(),
                     isAuditType ? GenericLogAdmin.TYPE_AUDIT : GenericLogAdmin.TYPE_LOG);
+
+            if(!isAuditType) {
+                logTableSorter.setTimeOffset(System.currentTimeMillis()); // remove any time limits for logs
+            }
         }
 
         return logTableSorter;
