@@ -87,8 +87,8 @@ public class OversizedTextDialog extends JDialog {
         Utilities.enableGrayOnDisabled(nestingDepthField);
         Utilities.enableGrayOnDisabled(payloadCountField);
 
-        validator.constrainTextFieldToNumberRange("text length", textLengthField, 0, Long.MAX_VALUE);
-        validator.constrainTextFieldToNumberRange("attribute length", attrLengthField, 0, Long.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("text length", textLengthField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("attribute length", attrLengthField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("maximum payload count", payloadCountField, 0, Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("maximum nesting depth", nestingDepthField,
                                                   OversizedTextAssertion.MIN_NESTING_LIMIT,
