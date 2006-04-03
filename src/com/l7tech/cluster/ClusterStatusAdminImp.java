@@ -177,9 +177,9 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         return serviceMetricsManager.findBins(nodeId, minPeriodStart, maxPeriodStart, resolution, serviceOid);
     }
 
-    public MetricsBin getMetricsSummary(int resolution, long startTime, int duration, String nodeId, Long serviceOid) throws RemoteException, FindException {
+    public MetricsBin getLastestMetricsSummary(final String clusterNodeId, final Long serviceOid, final int resolution, final int duration) throws RemoteException {
         checkLicense();
-        return serviceMetricsManager.getMetricsSummary(resolution, startTime, duration, nodeId, serviceOid);
+        return serviceMetricsManager.getLatestMetricsSummary(clusterNodeId, serviceOid, resolution, duration);
     }
 
     public String getHardwareCapability(String capability) {

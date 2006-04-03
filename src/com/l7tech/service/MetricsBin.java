@@ -4,16 +4,18 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A statistical bin for collecting service metrics. Conceptually, a bin has
  * 2 distinct states: an open state to accumulate data (i.e., mutable state),
  * a closed state to read accumulated data (i.e., immutable state).
  * <p/>
- * A bin occupies a time interval. There is the <b>nominal</b> time _interval
- * when the bin was supposed to start and end, according to regular scheduling.
- * But since timers are not exact, the bin also has the <b>actual</b> time
- * _interval when the bin actually starts and ends.
+ * A bin occupies a time interval. There is the <b>nominal</b> period
+ * when a bin was supposed to start and end, according to regular scheduling.
+ * But since timers are not exact, a bin also has the <b>actual</b> time
+ * interval when the bin actually starts and ends.
  * <p/>
  * This class is not thread safe for performance reason. Since the typical usage
  * is such that mutable methods are called only during the open state and
@@ -49,14 +51,14 @@ public class MetricsBin implements Serializable, Comparable {
     /** Nominal time period interval (in milliseconds). */
     private int _interval;
 
-    /** Nominal period start time (as UTC milliseconds from the epoch). */
+    /** Nominal period start time (as UTC milliseconds from epoch). */
     private long _periodStart;
 
 
-    /** Acutal start time (as UTC milliseconds from the epoch). */
+    /** Acutal start time (as UTC milliseconds from epoch). */
     private long _startTime;
 
-    /** Actual end time (as UTC milliseconds from the epoch). */
+    /** Actual end time (as UTC milliseconds from epoch). */
     private long _endTime;
 
     private int _numAttemptedRequest;
@@ -88,40 +90,189 @@ public class MetricsBin implements Serializable, Comparable {
     }
 
     /**
+     * Returns the nominal period interval for a given bin resolution.
+     *
+     * @param resolution    bin resolution; one of {@link #RES_FINE},
+     *                      {@link #RES_HOURLY} or {@link #RES_DAILY}
+     * @return time interval (in milliseconds)
+     * @throws IllegalArgumentException if <code>resolution</code> is {@link #RES_FINE}
+     */
+    public static int intervalFor(final int resolution) {
+        int result = -1;
+        switch (resolution) {
+            case RES_FINE: {
+                throw new IllegalArgumentException("Fine interval is variable.");
+            }
+            case RES_HOURLY: {
+                result = 60 * 60 * 1000;
+                break;
+            }
+            case RES_DAILY: {
+                result = 24 * 60 * 60 * 1000;
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Calculates the start time of a nominal period that would bracket the
+     * given time instance.
+     *
+     * @param resolution    bin resolution; one of {@link #RES_FINE}, {@link #RES_HOURLY}
+     *                      or {@link #RES_DAILY}
+     * @param fineInterval  fine bin interval (in milliseconds); requried if
+     *                      <code>resolution</code> is {@link #RES_FINE}
+     * @param millis        time instance to be bracketed (as UTC milliseconds from epoch)
+     * @return start time of the nominal period (as UTC milliseconds from epoch)
+     * @throws IllegalArgumentException if <code>resolution</code> is {@link #RES_FINE}
+     *                                  but <code>fineInterval</code> <= 0
+     */
+    public static long periodStartFor(final int resolution,
+                                      final int fineInterval,
+                                      final long millis) {
+        long result = -1;
+        switch (resolution) {
+            case RES_FINE: {
+                if (fineInterval <= 0) {
+                    throw new IllegalArgumentException("Fine bin interval is required.");
+                }
+                result = (millis / fineInterval) * fineInterval;
+                break;
+            }
+            case RES_HOURLY: {
+                GregorianCalendar cal = new GregorianCalendar();
+                cal.setTimeInMillis(millis);
+                cal.set(GregorianCalendar.MINUTE, 0);
+                cal.set(GregorianCalendar.SECOND, 0);
+                cal.set(GregorianCalendar.MILLISECOND, 0);
+                result = cal.getTimeInMillis();
+                break;
+            }
+            case RES_DAILY: {
+                GregorianCalendar cal = new GregorianCalendar();
+                cal.setTimeInMillis(millis);
+                cal.set(GregorianCalendar.HOUR_OF_DAY, 0);
+                cal.set(GregorianCalendar.MINUTE, 0);
+                cal.set(GregorianCalendar.SECOND, 0);
+                cal.set(GregorianCalendar.MILLISECOND, 0);
+                result = cal.getTimeInMillis();
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Combines data from multiple bins into one.
+     *
+     * @param bins      list of {@link MetricsBin} to combine; must contain at least one
+     * @param result    bin to put result in (whose cluster node ID, service OID,
+     *                  and resolution are left unmodified
+     * @throws IllegalArgumentException if <code>bins</code> is empty
+     */
+    public static void combine(final List bins, final MetricsBin result) {
+        if (bins.size() == 0) {
+            throw new IllegalArgumentException("Must have at least one metrics bin.");
+        }
+
+        long periodStart = -1;
+        long periodEnd = -1;
+        long startTime = -1;
+        long endTime = -1;
+        int numAttemptedRequest = 0;
+        int numAuthorizedRequest = 0;
+        int numCompletedRequest = 0;
+        int minFrontendResponseTime = 0;
+        int maxFrontendResponseTime = 0;
+        long sumFrontendResponseTime = 0;
+        int minBackendResponseTime = 0;
+        int maxBackendResponseTime = 0;
+        long sumBackendResponseTime = 0;
+
+        boolean first = true;
+        for (Iterator itor = bins.iterator(); itor.hasNext();) {
+            final MetricsBin bin = (MetricsBin) itor.next();
+            if (first) {
+                periodStart = bin.getPeriodStart();
+                periodEnd = bin.getPeriodEnd();
+                startTime = bin.getStartTime();
+                endTime = bin.getEndTime();
+                minFrontendResponseTime = bin.getMinFrontendResponseTime();
+                maxFrontendResponseTime = bin.getMaxFrontendResponseTime();
+                sumFrontendResponseTime = bin.getSumFrontendResponseTime();
+                minBackendResponseTime = bin.getMinBackendResponseTime();
+                maxBackendResponseTime = bin.getMaxBackendResponseTime();
+                sumBackendResponseTime = bin.getSumBackendResponseTime();
+                numAttemptedRequest = bin.getNumAttemptedRequest();
+                numAuthorizedRequest = bin.getNumAuthorizedRequest();
+                numCompletedRequest = bin.getNumCompletedRequest();
+                first = false;
+            } else {
+                periodStart = Math.min(periodStart, bin.getPeriodStart());
+                periodEnd = Math.max(periodEnd, bin.getPeriodEnd());
+                startTime = Math.min(startTime, bin.getStartTime());
+                endTime = Math.max(endTime, bin.getEndTime());
+                if (numAttemptedRequest == 0) {
+                    minFrontendResponseTime = bin.getMinFrontendResponseTime();
+                    maxFrontendResponseTime = bin.getMaxFrontendResponseTime();
+                } else {
+                    if (bin.getNumAttemptedRequest() != 0) {
+                        minFrontendResponseTime = Math.min(minFrontendResponseTime, bin.getMinFrontendResponseTime());
+                        maxFrontendResponseTime = Math.max(maxFrontendResponseTime, bin.getMaxFrontendResponseTime());
+                    }
+                }
+                sumFrontendResponseTime += bin.getSumFrontendResponseTime();
+                if (numCompletedRequest == 0) {
+                    minBackendResponseTime = bin.getMinBackendResponseTime();
+                    maxBackendResponseTime = bin.getMaxBackendResponseTime();
+                } else {
+                    if (bin.getNumCompletedRequest() != 0) {
+                        minBackendResponseTime = Math.min(minBackendResponseTime, bin.getMinBackendResponseTime());
+                        maxBackendResponseTime = Math.max(maxBackendResponseTime, bin.getMaxBackendResponseTime());
+                    }
+                }
+                sumBackendResponseTime += bin.getSumBackendResponseTime();
+                numAttemptedRequest += bin.getNumAttemptedRequest();
+                numAuthorizedRequest += bin.getNumAuthorizedRequest();
+                numCompletedRequest += bin.getNumCompletedRequest();
+            }
+        }
+
+        result.setPeriodStart(periodStart);
+        result.setInterval((int)(periodEnd - periodStart));
+        result.setStartTime(startTime);
+        result.setEndTime(endTime);
+        result.setNumAttemptedRequest(numAttemptedRequest);
+        result.setNumAuthorizedRequest(numAuthorizedRequest);
+        result.setNumCompletedRequest(numCompletedRequest);
+        result.setMinFrontendResponseTime(minFrontendResponseTime);
+        result.setMaxFrontendResponseTime(maxFrontendResponseTime);
+        result.setSumFrontendResponseTime(sumFrontendResponseTime);
+        result.setMinBackendResponseTime(minBackendResponseTime);
+        result.setMaxBackendResponseTime(maxBackendResponseTime);
+        result.setSumBackendResponseTime(sumBackendResponseTime);
+    }
+
+    /**
      * Constructs a statistical bin that is open for accumulating data. Remember
      * to call {@link #setEndTime} when closing it off.
+     *
+     * @param fineInterval  fine bin interval (in milliseconds); requried if
+     *                      <code>resolution</code> is {@link #RES_FINE}
+     * @throws IllegalArgumentException if <code>resolution</code> is {@link #RES_FINE}
+     *                                  but <code>fineInterval</code> <= 0
      */
-    public MetricsBin(final long startTime, int interval, int resolution,
+    public MetricsBin(final long startTime, int fineInterval, int resolution,
                       String clusterNodeId, long serviceOid)
     {
         checkResolutionType(resolution);
 
-        long periodStart = -1; // Will never be visible; invariant checked already
-        if (resolution == RES_FINE) {
-            // Find the beginning of the current fine period
-            if (interval == 0) throw new IllegalArgumentException("Fine interval required");
-            periodStart = (startTime / interval) * interval;
-        } else if (resolution == RES_HOURLY) {
-            interval = 60 * 60 * 1000;
-            GregorianCalendar cal = new GregorianCalendar();
-            cal.setTimeInMillis(startTime);
-            cal.set(GregorianCalendar.MINUTE, 0);
-            cal.set(GregorianCalendar.SECOND, 0);
-            cal.set(GregorianCalendar.MILLISECOND, 0);
-            periodStart = cal.getTimeInMillis();
-        } else if (resolution == RES_DAILY) {
-            interval = 24 * 60 * 60 * 1000;
-            GregorianCalendar cal = new GregorianCalendar();
-            cal.setTimeInMillis(startTime);
-            cal.set(GregorianCalendar.HOUR_OF_DAY, 0);
-            periodStart = cal.getTimeInMillis();
-        }
-
         _clusterNodeId = clusterNodeId;
         _serviceOid = serviceOid;
         _resolution = resolution;
-        _interval = interval;
-        _periodStart = periodStart;
+        _interval = resolution == RES_FINE ? fineInterval : intervalFor(resolution);
+        _periodStart = periodStartFor(resolution, fineInterval, startTime);
         _startTime = startTime;
         _endTime = _startTime;  // Signifies end time has not been set.
     }
@@ -159,20 +310,25 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
-    /** Returns the nominal time period interval (in milliseconds). */
+    /** Returns the nominal period interval (in milliseconds). */
     public int getInterval() {
         return _interval;
     }
 
-    /** Returns the nominal period start time (as UTC milliseconds from the epoch). */
+    /** Returns the nominal period start time (as UTC milliseconds from epoch). */
     public long getPeriodStart() {
         return _periodStart;
+    }
+
+    /** Returns the nominal period end time (as UTC milliseconds from epoch). */
+    public long getPeriodEnd() {
+        return _periodStart + _interval;
     }
 
     /**
      * Returns the actual start time of the bin interval.
      *
-     * @return start time as UTC milliseconds from the epoch
+     * @return start time as UTC milliseconds from epoch
      */
     public long getStartTime() {
         return _startTime;
@@ -183,7 +339,7 @@ public class MetricsBin implements Serializable, Comparable {
      * time will be returned if the end time has not been set explicitly
      * (i.e., the bin is still open).
      *
-     * @return end time as UTC milliseconds from the epoch
+     * @return end time as UTC milliseconds from epoch
      */
     public long getEndTime() {
         return _endTime;
@@ -201,7 +357,7 @@ public class MetricsBin implements Serializable, Comparable {
         return _numCompletedRequest;
     }
 
-    /** Returns the rate of attempted requests (in messages per second) based on actual bin interval. */
+    /** Returns the rate of attempted requests (in messages per second) based on actual time interval. */
     public double getActualAttemptedRate() {
         if (_startTime == _endTime) {
             // End time has not been set. Returns zero instead of ArithmeticException.
@@ -211,7 +367,7 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
-    /** Returns the rate of authorized requests (in messages per second) based on actual bin interval. */
+    /** Returns the rate of authorized requests (in messages per second) based on actual time interval. */
     public double getActualAuthorizedRate() {
         if (_startTime == _endTime) {
             // End time has not been set. Returns zero instead of ArithmeticException.
@@ -221,7 +377,7 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
-    /** Returns the rate of completed requests (in messages per second) based on actual bin interval. */
+    /** Returns the rate of completed requests (in messages per second) based on actual time interval. */
     public double getActualCompletedRate() {
         if (_startTime == _endTime) {
             // End time has not been set. Returns zero instead of ArithmeticException.
@@ -231,17 +387,17 @@ public class MetricsBin implements Serializable, Comparable {
         }
     }
 
-    /** Returns the rate of attempted requests (in messages per second) based on nominal bin interval. */
+    /** Returns the rate of attempted requests (in messages per second) based on nominal period. */
     public double getNominalAttemptedRate() {
         return 1000.0 * _numAttemptedRequest / _interval;
     }
 
-    /** Returns the rate of authorized requests (in messages per second) based on nominal bin interval. */
+    /** Returns the rate of authorized requests (in messages per second) based on nominal period. */
     public double getNominalAuthorizedRate() {
         return 1000.0 * _numAuthorizedRequest / _interval;
     }
 
-    /** Returns the rate of completed requests (in messages per second) based on nominal bin interval. */
+    /** Returns the rate of completed requests (in messages per second) based on nominal period. */
     public double getNominalCompletedRate() {
         return 1000.0 * _numCompletedRequest / _interval;
     }

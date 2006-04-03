@@ -27,10 +27,9 @@ public class ServiceMetricsManagerTest extends TestCase {
         metricsManager = (ServiceMetricsManager)springContext.getBean("serviceMetricsManager");
     }
 
-    public void testGetMetricsSummary() throws Exception {
-        long hour = 60 * 60 * 1000;
-        long now = System.currentTimeMillis();
-        MetricsBin bin = metricsManager.getMetricsSummary(MetricsBin.RES_FINE, now - hour, (int)hour, null, null);
+    public void testGetLatestMetricsSummary() throws Exception {
+        int hour = 60 * 60 * 1000;
+        MetricsBin bin = metricsManager.getLatestMetricsSummary(null, null, MetricsBin.RES_FINE, hour);
         System.out.println(bin);
     }
 

@@ -141,18 +141,23 @@ public interface ClusterStatusAdmin {
                          Integer resolution, Long serviceOid) throws RemoteException, FindException;
 
     /**
-     * Finds or creates a {@link com.l7tech.service.MetricsBin} based on information available in
-     * the database using the specified query parameters.
+     * Summarizes the latest metrics bins in the database for the given criteria.
      *
-     * @param resolution the resolution of the MetricsBins to use in constructing the results. Required.
-     * @param startTime the beginning of the time window, inclusive.  Required.
-     * @param duration the length of the time window.  Required.
-     * @param nodeId the MAC address of the cluster node to query for; null = any
-     * @param serviceOid the OID of the {@link com.l7tech.service.PublishedService} to find metrics for; null = any.
-     * @return a {@link MetricsBin} aggregating all information available for the specified time period.
+     * @param clusterNodeId the MAC address of the cluster node to search for
+     * @param serviceOid    the OID of the {@link com.l7tech.service.PublishedService}
+     *                      to search for
+     * @param resolution    the bin resolution to search for
+     * @param duration      time duration (from latest nominal period boundary
+     *                      time on gateway) to search for bins whose nominal
+     *                      periods fall within
+     * @return a {@link MetricsBin} summarizing the bins that fit the given
+     *         criteria
      */
-    MetricsBin getMetricsSummary(int resolution, long startTime, int duration, String nodeId, Long serviceOid)
-            throws RemoteException, FindException;
+    MetricsBin getLastestMetricsSummary(final String clusterNodeId,
+                                        final Long serviceOid,
+                                        final int resolution,
+                                        final int duration)
+            throws RemoteException;
 
     /**
      * Check hardware capabilities of the node that receives this admin request.

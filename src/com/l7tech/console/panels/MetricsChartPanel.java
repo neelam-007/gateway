@@ -168,6 +168,7 @@ public class MetricsChartPanel extends ChartPanel {
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT_1 = new MessageFormat(_resources.getString("responseTimeTooltipFormat1"));
         private static final MessageFormat FMT_2 = new MessageFormat(_resources.getString("responseTimeTooltipFormat2"));
+        private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
 
         private final int _resolution;
 
@@ -187,9 +188,9 @@ public class MetricsChartPanel extends ChartPanel {
 
             final StringBuffer tooltip = new StringBuffer();
             if (_resolution == MetricsBin.RES_FINE || _resolution == MetricsBin.RES_HOURLY) {
-                FMT_1.format(new Object[] {seriesLabel, new Integer(avg), new Integer(min), new Integer(max), startTime, endTime}, tooltip, new FieldPosition(0));
+                FMT_1.format(new Object[] {seriesLabel, new Integer(avg), new Integer(min), new Integer(max), startTime, endTime}, tooltip, FIELD_POSITION_ZERO);
             } else {
-                FMT_2.format(new Object[] {seriesLabel, new Integer(avg), new Integer(min), new Integer(max), startTime}, tooltip, new FieldPosition(0));
+                FMT_2.format(new Object[] {seriesLabel, new Integer(avg), new Integer(min), new Integer(max), startTime}, tooltip, FIELD_POSITION_ZERO);
             }
             return tooltip.toString();
         }
@@ -207,6 +208,7 @@ public class MetricsChartPanel extends ChartPanel {
     private static class MessageRateToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT_1 = new MessageFormat(_resources.getString("messageRateTooltipFormat1"));
         private static final MessageFormat FMT_2 = new MessageFormat(_resources.getString("messageRateTooltipFormat2"));
+        private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
 
         private final int _resolution;
 
@@ -226,9 +228,9 @@ public class MetricsChartPanel extends ChartPanel {
 
             final StringBuffer tooltip = new StringBuffer();
             if (_resolution == MetricsBin.RES_FINE || _resolution == MetricsBin.RES_HOURLY) {
-                FMT_1.format(new Object[] {seriesLabel, new Integer(numMsg), startTime, endTime, new Double(msgRate)}, tooltip, new FieldPosition(0));
+                FMT_1.format(new Object[] {seriesLabel, new Integer(numMsg), startTime, endTime, new Double(msgRate)}, tooltip, FIELD_POSITION_ZERO);
             } else {
-                FMT_2.format(new Object[] {seriesLabel, new Integer(numMsg), startTime, new Double(msgRate)}, tooltip, new FieldPosition(0));
+                FMT_2.format(new Object[] {seriesLabel, new Integer(numMsg), startTime, new Double(msgRate)}, tooltip, FIELD_POSITION_ZERO);
             }
             return tooltip.toString();
         }
@@ -398,7 +400,7 @@ public class MetricsChartPanel extends ChartPanel {
      *
      * @param metricsBins new data to be added
      */
-    public void addData(List metricsBins) {
+    public synchronized void addData(List metricsBins) {
         // Temporarily disable notification so plots won't be redrawn needlessly
         // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.
@@ -474,7 +476,7 @@ public class MetricsChartPanel extends ChartPanel {
     }
 
     /** Clears all data and updates the plots. */
-    public void clearData() {
+    public synchronized void clearData() {
         // Temporarily disable notification so plots won't be redrawn needlessly
         // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.

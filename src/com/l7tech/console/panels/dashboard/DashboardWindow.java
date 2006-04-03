@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -34,10 +35,13 @@ import java.util.logging.Logger;
 public class DashboardWindow extends JFrame implements LogonListener {
     private static final Logger logger = Logger.getLogger(DashboardWindow.class.getName());
 
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
+
+    private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(resources.getString("rightPanel.timeFormat"));
+    private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
+
     private final ClusterStatusAdmin clusterStatusAdmin;
     private final ServiceAdmin serviceAdmin;
-
-    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
 
     private static final int fineChartRange = 10 * 60 * 1000; // 10 minutes
     private static final int hourlyChartRange = 60 * 60 * 60 * 1000; // 60 hours
@@ -68,9 +72,12 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private JTextField numSuccessField;
     private JTextField numTotalField;
     private JTabbedPane rightTabbedPane;
-    private JPanel rightPanel;
     private JPanel rightUpperPanel;
     private JPanel rightLowerPanel;
+    private JPanel separatorPanel1;
+    private JPanel separatorPanel2;
+    private JLabel fromTimeLabel;
+    private JLabel toTimeLabel;
     private JLabel frontMinImageLabel;
     private JLabel frontAvgImageLabel;
     private JLabel frontMaxImageLabel;
@@ -122,7 +129,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
         chartPanel.setLayout(new BorderLayout());
 
         timeRangeCombo.setModel(new DefaultComboBoxModel(ALL_RANGES));
-        timeRangeCombo.setSelectedItem(FINE);
+        timeRangeCombo.setSelectedItem(currentRange);
         timeRangeCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Range range = (Range)timeRangeCombo.getSelectedItem();
@@ -174,6 +181,19 @@ public class DashboardWindow extends JFrame implements LogonListener {
             }
         });
 
+        rightTabbedPane.setTitleAt(0, currentRange.getRightPanelTitle());
+
+        separatorPanel1.setLayout(new BoxLayout(separatorPanel1, BoxLayout.Y_AXIS));
+        separatorPanel1.add(new JSeparator(SwingConstants.HORIZONTAL));
+        separatorPanel2.setLayout(new BoxLayout(separatorPanel2, BoxLayout.Y_AXIS));
+        separatorPanel2.add(new JSeparator(SwingConstants.HORIZONTAL));
+
+        rightUpperPanel.setBorder(null);    // ? Can't disable border in GUI Designer.
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setHGap(6);
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setVGap(3);
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setHGap(6);
+        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setVGap(3);
+
         ImageCache cache = ImageCache.getInstance();
         backMinImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("backMinImageLabel.icon"))));
         backAvgImageLabel.setIcon(new ImageIcon(cache.getIcon(resources.getString("backAvgImageLabel.icon"))));
@@ -198,12 +218,6 @@ public class DashboardWindow extends JFrame implements LogonListener {
         numPolicyFailField.setBackground(Color.WHITE);
         numSuccessField.setBackground(Color.WHITE);
         numTotalField.setBackground(Color.WHITE);
-
-        rightUpperPanel.setBorder(null);    // ? Can't disable border in GUI Designer.
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setHGap(6);
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightUpperPanel.getLayout()).setVGap(3);
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setHGap(6);
-        ((com.intellij.uiDesigner.core.GridLayoutManager)rightLowerPanel.getLayout()).setVGap(3);
 
         resetData();
 
@@ -318,14 +332,20 @@ public class DashboardWindow extends JFrame implements LogonListener {
                 } else
                     throw new IllegalArgumentException("currentRange is neither FINE, HOURLY nor DAILY");
 
-                rightPanelBin = clusterStatusAdmin.getMetricsSummary(resolution, System.currentTimeMillis() - currentRange.getRightPanelRange(), (int)currentRange.getRightPanelRange(), whichNode, whichService);
+                rightPanelBin = clusterStatusAdmin.getLastestMetricsSummary(whichNode, whichService, resolution, (int)currentRange.getRightPanelRange());
             }
 
             int numPolicyFail = 0, numRoutingFail = 0, numSuccess = 0, numTotal = 0;
             int frontMin = 0, frontMax = 0, backMin = 0, backMax = 0;
             double frontAvg = 0.0, backAvg = 0.0;
 
-            if (rightPanelBin != null) {
+            if (rightPanelBin == null) {
+                fromTimeLabel.setText("");
+                toTimeLabel.setText("");
+            } else {
+                fromTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodStart()), new StringBuffer(), FIELD_POSITION_ZERO).toString());
+                toTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodEnd()), new StringBuffer(), FIELD_POSITION_ZERO).toString());
+
                 numPolicyFail = rightPanelBin.getNumAttemptedRequest() - rightPanelBin.getNumAuthorizedRequest();
                 numRoutingFail = rightPanelBin.getNumAuthorizedRequest() - rightPanelBin.getNumCompletedRequest();
                 numSuccess = rightPanelBin.getNumCompletedRequest();
@@ -346,16 +366,15 @@ public class DashboardWindow extends JFrame implements LogonListener {
             numTotalField.setText(Integer.toString(numTotal));
 
             frontMinField.setText(Integer.toString(frontMin));
-            frontAvgField.setText(Integer.toString((int)frontAvg));
+            frontAvgField.setText(Long.toString(Math.round(frontAvg)));
             frontMaxField.setText(Integer.toString(frontMax));
 
             backMinField.setText(Integer.toString(backMin));
-            backAvgField.setText(Integer.toString((int)backAvg));
+            backAvgField.setText(Long.toString(Math.round(backAvg)));
             backMaxField.setText(Integer.toString(backMax));
 
             StringBuffer sb = new StringBuffer();
-            final FieldPosition positionZero = new FieldPosition(0);
-            statusUpdatedFormat.format(new Object[] { new Date() }, sb, positionZero);
+            statusUpdatedFormat.format(new Object[] { new Date() }, sb, FIELD_POSITION_ZERO);
             statusLabel.setText(sb.toString());
 
         } catch (RemoteException e) {
