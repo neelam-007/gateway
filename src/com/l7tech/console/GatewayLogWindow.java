@@ -206,7 +206,10 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         if(r == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             if(file!=null) {
-                if((!file.exists() && file.getParentFile()!=null && file.getParentFile().canWrite()) ||
+                //
+                // Can't check parent is writable due to JDK bug (see bug 2349 for info)
+                //
+                if((!file.exists() && file.getParentFile()!=null /*&& file.getParentFile().canWrite()*/) ||
                    (file.isFile() && file.canWrite())) {
                     try {
                         logPane.exportView(file);
