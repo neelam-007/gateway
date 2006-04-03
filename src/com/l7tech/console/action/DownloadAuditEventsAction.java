@@ -64,6 +64,14 @@ public class DownloadAuditEventsAction extends SecureAction {
         if (outFile == null)
             return;
 
+        // add "zip" extension if ZIP filter is selected, the selected file 
+        // does not exist and the name does not end with ZIP (case insensitive)
+        if(fc.getFileFilter()==fileFilter &&
+           !outFile.exists() &&
+           !outFile.getName().toLowerCase().endsWith(".zip")) {
+            outFile = new File(outFile.getParentFile(), outFile.getName() + ".zip");
+        }
+
         if (outFile.exists()) {
             Object[] options = { "Overwrite", "Cancel" };
             int result = JOptionPane.showOptionDialog(mainWindow,
