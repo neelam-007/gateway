@@ -126,15 +126,6 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         }
     }
 
-    private boolean isValidInt(String text) {
-        try {
-            Integer.parseInt(text);
-            return true;
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-    }
-
     private void modelToView() {
         portField.setText(Integer.toString(assertion.getTargetPort()));
         final boolean dp = assertion.getTargetPort() == SnmpTrapAssertion.DEFAULT_PORT;

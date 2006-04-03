@@ -1,16 +1,14 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.RequestSizeLimit;
 import com.l7tech.common.gui.NumberField;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.InputValidator;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.policy.assertion.RequestSizeLimit;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,13 +38,6 @@ public class RequestSizeLimitDialog extends JDialog {
     private void doInit(RequestSizeLimit assertion) {
         this.sizeAssertion = assertion;
         sizeLimit.setDocument(new NumberField(String.valueOf(Long.MAX_VALUE).length()));
-
-        final DocumentListener dl = new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) { updateView(); }
-            public void insertUpdate(DocumentEvent e) { updateView(); }
-            public void removeUpdate(DocumentEvent e) { updateView(); }
-        };
-
 
         validator.constrainTextFieldToNumberRange("size limit", sizeLimit, 1, Long.MAX_VALUE / 1024);
         Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
