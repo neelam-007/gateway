@@ -5,7 +5,11 @@ import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.chart.plot.PlotRenderingInfo;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.plot.CrosshairState;
+import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.entity.EntityCollection;
+import org.jfree.chart.entity.XYItemEntity;
+import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.ui.RectangleEdge;
 
@@ -22,10 +26,6 @@ import java.awt.geom.Line2D;
  * @author rmak
  */
 public class TimePeriodValueWithHighLowRenderer extends XYBarRenderer {
-    public TimePeriodValueWithHighLowRenderer() {
-        setUseYInterval(true);  // so that the parent class will draw a bar using the high-low values
-    }
-
     /**
      * Sets the paint used for y value horizontal line.
      *
@@ -63,17 +63,90 @@ public class TimePeriodValueWithHighLowRenderer extends XYBarRenderer {
                          int item,
                          CrosshairState crosshairState,
                          int pass) {
-        try {
-            // First, draws the high-low bar.
-            super.drawItem(g2, state, dataArea, info, plot, domainAxis, rangeAxis, dataset, series, item, crosshairState, pass);
+        if (!(dataset instanceof TimePeriodValuesWithHighLowCollection)) {
+            throw new IllegalArgumentException(
+                    "dataset has wrong type (expected: " +
+                    TimePeriodValuesWithHighLowCollection.class.getName() +
+                    ", encountered: " + dataset.getClass().getName() + ")");
+        }
 
+        TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
+
+        try {
             if (!getItemVisible(series, item)) {
                 return;
             }
 
-            // Next, draws the y value horizontal line in front.
+            //
+            // First, draws the high-low bar.
+            //
 
-            TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
+            final double lowValue = dataset_.getStartYValue(series, item);
+            final double highValue = dataset_.getEndYValue(series, item);
+            if (Double.isNaN(lowValue) || Double.isNaN(highValue)) {
+                return;
+            }
+
+            final double translatedLowValue = rangeAxis.valueToJava2D(lowValue, dataArea, plot.getRangeAxisEdge());
+            final double translatedHighValue = rangeAxis.valueToJava2D(highValue, dataArea, plot.getRangeAxisEdge());
+
+            final Number startXNumber = dataset_.getStartX(series, item);
+            if (startXNumber == null) {
+                return;
+            }
+            final RectangleEdge location = plot.getDomainAxisEdge();
+            double translatedStartX = domainAxis.valueToJava2D(startXNumber.doubleValue(), dataArea, location);
+
+            final Number endXNumber = dataset_.getEndX(series, item);
+            if (endXNumber == null) {
+                return;
+            }
+            final double translatedEndX = domainAxis.valueToJava2D(endXNumber.doubleValue(), dataArea, location);
+
+            double translatedWidth = Math.max(1, Math.abs(translatedEndX - translatedStartX));
+            double translatedHeight = Math.abs(translatedHighValue - translatedLowValue);
+
+            if (getMargin() > 0.0) {
+                double cut = translatedWidth * getMargin();
+                translatedWidth = translatedWidth - cut;
+                translatedStartX = translatedStartX + cut / 2;
+            }
+
+            Rectangle2D bar = null;
+            final PlotOrientation orientation = plot.getOrientation();
+            if (orientation == PlotOrientation.HORIZONTAL) {
+                bar = new Rectangle2D.Double(
+                    Math.min(translatedLowValue, translatedHighValue),
+                    Math.min(translatedStartX, translatedEndX),
+                    translatedHeight, translatedWidth);
+            }
+            else if (orientation == PlotOrientation.VERTICAL) {
+                bar = new Rectangle2D.Double(
+                    Math.min(translatedStartX, translatedEndX),
+                    Math.min(translatedLowValue, translatedHighValue),
+                    translatedWidth, translatedHeight);
+            }
+
+            Paint itemPaint = getItemPaint(series, item);
+            if (getGradientPaintTransformer() != null && itemPaint instanceof GradientPaint) {
+                GradientPaint gp = (GradientPaint) itemPaint;
+                itemPaint = getGradientPaintTransformer().transform(gp, bar);
+            }
+            g2.setPaint(itemPaint);
+            g2.fill(bar);
+            if (isDrawBarOutline() && Math.abs(translatedEndX - translatedStartX) > 3) {
+                Stroke stroke = getItemOutlineStroke(series, item);
+                Paint paint = getItemOutlinePaint(series, item);
+                if (stroke != null && paint != null) {
+                    g2.setStroke(stroke);
+                    g2.setPaint(paint);
+                    g2.draw(bar);
+                }
+            }
+
+            //
+            // Next, draws the y value horizontal line in front.
+            //
 
             Number yNumber = dataset_.getY(series, item);
             if (yNumber == null) {
@@ -86,24 +159,56 @@ public class TimePeriodValueWithHighLowRenderer extends XYBarRenderer {
 
             double translatedY = rangeAxis.valueToJava2D(y, dataArea, plot.getRangeAxisEdge());
 
-            RectangleEdge location = plot.getDomainAxisEdge();
-            Number startXNumber = dataset_.getStartX(series, item);
-            if (startXNumber == null) {
-                return;
-            }
-            double translatedStartX = domainAxis.valueToJava2D(startXNumber.doubleValue(), dataArea, location);
-
-            Number endXNumber = dataset_.getEndX(series, item);
-            if (endXNumber == null) {
-                return;
-            }
-            double translatedEndX = domainAxis.valueToJava2D(endXNumber.doubleValue(), dataArea, location);
-
             Line2D line = state.workingLine;
-            line.setLine(translatedStartX, translatedY, translatedEndX, translatedY);
+            if (orientation == PlotOrientation.HORIZONTAL) {
+                line.setLine(translatedY, translatedStartX, translatedY, translatedEndX);
+            }
+            else if (orientation == PlotOrientation.VERTICAL) {
+                line.setLine(translatedStartX, translatedY, translatedEndX, translatedY);
+            }
             g2.setStroke(getSeriesStroke(series));
             g2.setPaint(getSeriesFillPaint(series));
             g2.draw(line);
+
+            // TODO: we need something better for the item labels
+            if (isItemLabelVisible(series, item)) {
+                drawItemLabel(g2, orientation, dataset, series, item,
+                              bar.getCenterX(), bar.getY(), highValue < 0.0);
+            }
+
+            // Adds tooltip trigger area covering the x-range of the data item
+            // and the y-range of the plot area.
+            if (info != null) {
+                Rectangle2D rect = null;
+                if (orientation == PlotOrientation.HORIZONTAL) {
+                    rect = new Rectangle2D.Double(
+                            dataArea.getMinX(),
+                            Math.min(translatedStartX, translatedEndX),
+                            dataArea.getWidth(),
+                            translatedWidth);
+                } else if (orientation == PlotOrientation.VERTICAL) {
+                    rect = new Rectangle2D.Double(
+                            Math.min(translatedStartX, translatedEndX),
+                            dataArea.getMinY(),
+                            translatedWidth,
+                            dataArea.getHeight());
+                }
+
+                EntityCollection entities = info.getOwner().getEntityCollection();
+                if (entities != null) {
+                    String tip = null;
+                    final XYToolTipGenerator generator = getToolTipGenerator(series, item);
+                    if (generator != null) {
+                        tip = generator.generateToolTip(dataset, series, item);
+                    }
+                    String url = null;
+                    if (getURLGenerator() != null) {
+                        url = getURLGenerator().generateURL(dataset, series, item);
+                    }
+                    XYItemEntity entity = new XYItemEntity(rect, dataset, series, item, tip, url);
+                    entities.add(entity);
+                }
+            }
         } catch (IndexOutOfBoundsException e) {
             // Probably the data item has just been deleted. Just skip rendering it.
         }

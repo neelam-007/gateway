@@ -30,7 +30,7 @@ class Range {
         this.chartRange = chartRange;
         this.rightPanelRange = rightPanelRange;
         this.name = name;
-        this.metricsChartPanel = new MetricsChartPanel(resolution, rightPanelRange, chartRange);
+        this.metricsChartPanel = new MetricsChartPanel(rightPanelRange, chartRange);
         this.lastPeriodDownloaded = System.currentTimeMillis() - chartRange;
         this.rightPanelTitle = rightPanelTitle;
         clear();

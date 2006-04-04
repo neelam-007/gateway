@@ -1,19 +1,17 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.jfree.ReplaceYShapeRenderer;
-import com.l7tech.console.util.jfree.TimePeriodValueWithHighLowRenderer;
-import com.l7tech.console.util.jfree.TimePeriodValuesWithHighLow;
-import com.l7tech.console.util.jfree.TimePeriodValuesWithHighLowCollection;
+import com.l7tech.console.util.jfree.*;
 import com.l7tech.service.MetricsBin;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.labels.XYToolTipGenerator;
-import org.jfree.chart.plot.*;
+import org.jfree.chart.plot.CombinedDomainXYPlot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.SeriesRenderingOrder;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StackedXYBarRenderer;
-import org.jfree.chart.renderer.xy.XYItemRendererState;
 import org.jfree.data.Range;
 import org.jfree.data.RangeType;
 import org.jfree.data.time.SimpleTimePeriod;
@@ -21,14 +19,15 @@ import org.jfree.data.time.TimePeriod;
 import org.jfree.data.time.TimeTableXYDataset;
 import org.jfree.data.xy.XYDataset;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -155,83 +154,102 @@ public class MetricsChartPanel extends ChartPanel {
     /** Chart containing all plots with shared time axis. */
     private JFreeChart _chart;
 
-    /**
-     * A tool tip generator for the response time plot.
-     * <p/>
-     * Example output:
-     * <blockquote>
-     * Frontend: avg=200 min=94 max=344 from 14:57:50 to 14:57:55
-     * Backend: avg=109 min=87 max=131 from 12:00:00 to 13:00:00
-     * Frontend: avg=107 min=86 max=128 on 2006-03-10
-     * </blockquote>
-     */
+    /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
-        private static final MessageFormat FMT_1 = new MessageFormat(_resources.getString("responseTimeTooltipFormat1"));
-        private static final MessageFormat FMT_2 = new MessageFormat(_resources.getString("responseTimeTooltipFormat2"));
+        private static final MessageFormat FMT = new MessageFormat(_resources.getString("responseTimeTooltipFormat"));
         private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
+        private final TimeTableXYDataset _messageRates;
 
-        private final int _resolution;
-
-        public ResponseTimeToolTipGenerator(int resolution) {
-            _resolution = resolution;
+        public ResponseTimeToolTipGenerator(TimeTableXYDataset messageRates) {
+            _messageRates = messageRates;
         }
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
-            final String seriesLabel = dataset.getSeriesKey(series).toString();
-            final TimePeriodValuesWithHighLowCollection dataset_ = (TimePeriodValuesWithHighLowCollection) dataset;
-            final TimePeriod period = dataset_.getSeries(series).getTimePeriod(item);
+            final double msgRateTotal = _messageRates.getY(0, item).doubleValue()
+                                      + _messageRates.getY(1, item).doubleValue()
+                                      + _messageRates.getY(2, item).doubleValue();
+            if (msgRateTotal == 0.) {
+                return null;    // No tooltip if no message.
+            }
+
+            final TimePeriodValuesWithHighLowCollection responseTimes = (TimePeriodValuesWithHighLowCollection) dataset;
+            final TimePeriod period = responseTimes.getSeries(series).getTimePeriod(item);
             final Date startTime = period.getStart();
             final Date endTime = period.getEnd();
-            final int avg = dataset_.getY(series, item).intValue();
-            final int min = dataset_.getStartY(series, item).intValue();
-            final int max = dataset_.getEndY(series, item).intValue();
+
+            final String frontLabel = responseTimes.getSeriesKey(0).toString();
+            final int frontMax = responseTimes.getEndY(0, item).intValue();
+            final int frontAvg = responseTimes.getY(0, item).intValue();
+            final int frontMin = responseTimes.getStartY(0, item).intValue();
+
+            final String backLabel = responseTimes.getSeriesKey(1).toString();
+            final int backMax = responseTimes.getEndY(1, item).intValue();
+            final int backAvg = responseTimes.getY(1, item).intValue();
+            final int backMin = responseTimes.getStartY(1, item).intValue();
 
             final StringBuffer tooltip = new StringBuffer();
-            if (_resolution == MetricsBin.RES_FINE || _resolution == MetricsBin.RES_HOURLY) {
-                FMT_1.format(new Object[] {seriesLabel, new Integer(avg), new Integer(min), new Integer(max), startTime, endTime}, tooltip, FIELD_POSITION_ZERO);
-            } else {
-                FMT_2.format(new Object[] {seriesLabel, new Integer(avg), new Integer(min), new Integer(max), startTime}, tooltip, FIELD_POSITION_ZERO);
-            }
+            FMT.format(new Object[] {startTime, endTime,
+                                     frontLabel,  new Integer(frontMax),new Integer(frontAvg), new Integer(frontMin),
+                                     backLabel, new Integer(backMax), new Integer(backAvg), new Integer(backMin)},
+                         tooltip, FIELD_POSITION_ZERO);
             return tooltip.toString();
         }
     }
 
-    /** A tool tip generator for the alert indicator plot and the message rate plot.
-     * <p/>
-     * Example output:
-     * <blockquote>
-     * Success: 1,119 msg from 15:01:25 to 15:01:30 (223.8 msg/sec)
-     * Success: 834,712 msg from 12:00:00 to 13:00:00 (231.864 msg/sec)
-     * Success: 18,627,254 msg on 2006-03-21 (215.593 msg/sec)
-     * </blockquote>
-     */
-    private static class MessageRateToolTipGenerator implements XYToolTipGenerator {
-        private static final MessageFormat FMT_1 = new MessageFormat(_resources.getString("messageRateTooltipFormat1"));
-        private static final MessageFormat FMT_2 = new MessageFormat(_resources.getString("messageRateTooltipFormat2"));
+    /** A tool tip generator for the alert indicator plot. */
+    private static class AlertIndicatorToolTipGenerator implements XYToolTipGenerator {
+        private static final MessageFormat FMT = new MessageFormat(_resources.getString("alertIndicatorTooltipFormat"));
         private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
 
-        private final int _resolution;
-
-        public MessageRateToolTipGenerator(int resolution) {
-            _resolution = resolution;
-        }
-
         public String generateToolTip(XYDataset dataset, int series, int item) {
-            final String seriesLabel = dataset.getSeriesKey(series).toString();
-            final TimePeriod period = ((TimeTableXYDataset) dataset).getTimePeriod(item);
+            final TimeTableXYDataset messageRates = (TimeTableXYDataset) dataset;
+            final TimePeriod period = messageRates.getTimePeriod(item);
             final Date startTime = period.getStart();
             final Date endTime = period.getEnd();
 
-            final TimeTableXYDataset dataset_ = (TimeTableXYDataset) dataset;
-            final double msgRate = dataset_.getY(series, item).doubleValue();
+            final String seriesLabel = dataset.getSeriesKey(series).toString();
+            final double msgRate = messageRates.getY(series, item).doubleValue();
             final int numMsg = (int)Math.round(msgRate * (endTime.getTime() - startTime.getTime()) / 1000.);
 
             final StringBuffer tooltip = new StringBuffer();
-            if (_resolution == MetricsBin.RES_FINE || _resolution == MetricsBin.RES_HOURLY) {
-                FMT_1.format(new Object[] {seriesLabel, new Integer(numMsg), startTime, endTime, new Double(msgRate)}, tooltip, FIELD_POSITION_ZERO);
-            } else {
-                FMT_2.format(new Object[] {seriesLabel, new Integer(numMsg), startTime, new Double(msgRate)}, tooltip, FIELD_POSITION_ZERO);
+            FMT.format(new Object[] {startTime, endTime, seriesLabel, new Integer(numMsg), new Double(msgRate)}, tooltip, FIELD_POSITION_ZERO);
+            return tooltip.toString();
+        }
+    }
+
+    /** A tool tip generator for the message rate plot. */
+    private static class MessageRateToolTipGenerator implements XYToolTipGenerator {
+        private static final MessageFormat FMT = new MessageFormat(_resources.getString("messageRateTooltipFormat"));
+        private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
+
+        public String generateToolTip(XYDataset dataset, int series, int item) {
+            final TimeTableXYDataset messageRates = (TimeTableXYDataset) dataset;
+            final TimePeriod period = messageRates.getTimePeriod(item);
+            final Date startTime = period.getStart();
+            final Date endTime = period.getEnd();
+
+            final String successLabel = dataset.getSeriesKey(0).toString();
+            final double successRate = messageRates.getY(0, item).doubleValue();
+            final int numSuccess = (int)Math.round(successRate * (endTime.getTime() - startTime.getTime()) / 1000.);
+
+            final String violationLabel = dataset.getSeriesKey(1).toString();
+            final double violationRate = messageRates.getY(1, item).doubleValue();
+            final int numViolation = (int)Math.round(violationRate * (endTime.getTime() - startTime.getTime()) / 1000.);
+
+            final String failureLabel = dataset.getSeriesKey(2).toString();
+            final double failureRate = messageRates.getY(2, item).doubleValue();
+            final int numFailure = (int)Math.round(failureRate * (endTime.getTime() - startTime.getTime()) / 1000.);
+
+            if ((failureRate + violationRate + successRate) == 0.) {
+                return null;    // No tooltip if no message.
             }
+
+            final StringBuffer tooltip = new StringBuffer();
+            FMT.format(new Object[] {startTime, endTime,
+                                     failureLabel, new Integer(numFailure), new Double(failureRate),
+                                     violationLabel, new Integer(numViolation), new Double(violationRate),
+                                     successLabel, new Integer(numSuccess), new Double(successRate)},
+                       tooltip, FIELD_POSITION_ZERO);
             return tooltip.toString();
         }
     }
@@ -248,11 +266,10 @@ public class MetricsChartPanel extends ChartPanel {
     }
 
     /**
-     * @param resolution    resolution of data ({@link MetricsBin.RES_FINE}, {@link MetricsBin.RES_HOURLY}, or {@link MetricsBin.RES_DAILY})
      * @param binInterval   nominal bin interval (in milliseconds)
      * @param maxTimeRange  maximum time range of data to keep around
      */
-    public MetricsChartPanel(int resolution, long binInterval, long maxTimeRange) {
+    public MetricsChartPanel(long binInterval, long maxTimeRange) {
         super(null);
         _binInterval = binInterval;
         _maxTimeRange = maxTimeRange;
@@ -281,7 +298,7 @@ public class MetricsChartPanel extends ChartPanel {
         rRenderer.setSeriesStroke(1, RESPONSE_AVG_STROKE);
         rRenderer.setSeriesPaint(1, BACKEND_RESPONSE_AVG_COLOR);
         rRenderer.setSeriesFillPaint(1, BACKEND_RESPONSE_MINMAX_COLOR);
-        rRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(resolution));
+        rRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_messageRates));
         final XYPlot rPlot = new XYPlot(_responseTimes, null, rYAxis, rRenderer);
         rPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
@@ -314,8 +331,8 @@ public class MetricsChartPanel extends ChartPanel {
         iRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR);
         iRenderer.setSeriesShape(1, INDICATOR_SHAPE);
         iRenderer.setSeriesShape(2, INDICATOR_SHAPE);
-        final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator(resolution);
-        iRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
+        final AlertIndicatorToolTipGenerator alertIndicatorToolTipGenerator = new AlertIndicatorToolTipGenerator();
+        iRenderer.setBaseToolTipGenerator(alertIndicatorToolTipGenerator);
         final XYPlot iPlot = new XYPlot(_messageRates, null, iYAxis, iRenderer);
         iPlot.setBackgroundPaint(INDICATOR_PLOT_BACKCOLOR);
         iPlot.setRangeGridlinesVisible(false);
@@ -329,32 +346,12 @@ public class MetricsChartPanel extends ChartPanel {
         mYAxis.setAutoRange(true);
         mYAxis.setRangeType(RangeType.POSITIVE);
         mYAxis.setAutoRangeMinimumSize(0.0001);     // Still allows 1 msg per day to be visible.
-        final StackedXYBarRenderer mRenderer = new StackedXYBarRenderer() {
-            public void drawItem(Graphics2D g2,
-                                 XYItemRendererState state,
-                                 Rectangle2D dataArea,
-                                 PlotRenderingInfo info,
-                                 XYPlot plot,
-                                 ValueAxis domainAxis,
-                                 ValueAxis rangeAxis,
-                                 XYDataset dataset,
-                                 int series,
-                                 int item,
-                                 CrosshairState crosshairState,
-                                 int pass) {
-                try {
-                    super.drawItem(g2, state, dataArea, info, plot, domainAxis,
-                                   rangeAxis, dataset, series, item, crosshairState, pass);
-                } catch (IndexOutOfBoundsException e) {
-                    // Probably the data item has just been deleted. Just skip rendering it.
-                }
-            }
-
-        };
+        final StackedXYBarRenderer mRenderer = new StackedXYBarRendererEx();
         mRenderer.setDrawBarOutline(false);
         mRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
         mRenderer.setSeriesPaint(1, POLICY_VIOLATION_COLOR);// policy violation message rate
         mRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
+        final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator();
         mRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
         final XYPlot mPlot = new XYPlot(_messageRates, null, mYAxis, mRenderer);
 
@@ -504,182 +501,5 @@ public class MetricsChartPanel extends ChartPanel {
         }
 
         setXAxisRangeIfNoData();
-    }
-
-    /**
-     * For testing only.
-     *
-     * Creates a metrics bin with given fake parameters.
-     */
-    private static MetricsBin fakeMetricsBin(
-            long startTime,
-            long endTime,
-            int binInterval,
-            int numSuccess,
-            int numViolation,
-            int numFailure,
-            int frontendResponseTimeAvg,
-            int frontendResponseTimeMin,
-            int frontendResponseTimeMax,
-            int backendResponseTimeAvg,
-            int backendResponseTimeMin,
-            int backendResponseTimeMax) {
-        System.out.println("fakeMetricsBin(numSuccess=" + numSuccess +
-                ", numViolation=" + numViolation +
-                ", numFailure=" + numFailure +
-                ", frontendResponseTimeAvg=" + frontendResponseTimeAvg +
-                ", frontendResponseTimeMin=" + frontendResponseTimeMin +
-                ", frontendResponseTimeMax=" + frontendResponseTimeMax +
-                ", backendResponseTimeAvg=" + backendResponseTimeAvg +
-                ", backendResponseTimeMin=" + backendResponseTimeMin +
-                ", backendResponseTimeMax=" + backendResponseTimeMax +
-                ")");
-        final int numAttempted = numSuccess + numViolation + numFailure;
-        final int numAuthorized = numSuccess + numFailure;
-        final int numCompleted = numSuccess;
-        final MetricsBin bin = new MetricsBin(startTime, binInterval, MetricsBin.RES_FINE, "SSG1", 123456);
-        for (int i = 0; i < numAttempted; ++ i) {
-            int responseTime = frontendResponseTimeAvg;
-            if (numAttempted == 2) {
-                if (i == 0) responseTime = frontendResponseTimeMin;
-                if (i == 1) responseTime = frontendResponseTimeMax;
-            } else { // numAttempted == 1 || numAttempted >= 3
-                if (i == 1) responseTime = frontendResponseTimeMin;
-                if (i == 2) responseTime = frontendResponseTimeMax;
-            }
-            bin.addAttemptedRequest(responseTime);
-        }
-        for (int i = 0; i < numAuthorized; ++ i) {
-            bin.addAuthorizedRequest();
-        }
-        for (int i = 0; i < numCompleted; ++ i) {
-            int responseTime = backendResponseTimeAvg;
-            if (numAttempted == 2) {
-                if (i == 0) responseTime = backendResponseTimeMin;
-                if (i == 1) responseTime = backendResponseTimeMax;
-            } else { // numAttempted == 1 || numAttempted >= 3
-                if (i == 1) responseTime = backendResponseTimeMin;
-                if (i == 2) responseTime = backendResponseTimeMax;
-            }
-            bin.addCompletedRequest(responseTime);
-        }
-        bin.setEndTime(endTime); // Closes the bin.
-        return bin;
-    }
-
-    /**
-     * For testing only.
-     *
-     * Creates a metrics bin with fake sinusoidal data.
-     */
-    private static MetricsBin fakeMetricsBin(long startTime, long endTime, int binInterval) {
-        final double cosine = Math.cos(2. * Math.PI * startTime / (100. * 5 * 1000));
-        final int numSuccess = (int) (1000. + 100. * cosine);
-        final int numViolation = (int) (100. + 100. * cosine);
-        final int numFailure = (int) (50. + 50. * cosine);
-        final int frontendResponseTimeAvg = (int) (800. + 100. * cosine);
-        final int frontendResponseTimeMin = (int) (700. + 100. * cosine);
-        final int frontendResponseTimeMax = (int) (900. + 100. * cosine);
-        final int backendResponseTimeAvg = (int) (600. - 100. * cosine);
-        final int backendResponseTimeMin = (int) (500. - 100. * cosine);
-        final int backendResponseTimeMax = (int) (700. - 100. * cosine);
-        return fakeMetricsBin(
-                startTime,
-                endTime,
-                binInterval,
-                numSuccess,
-                numViolation,
-                numFailure,
-                frontendResponseTimeAvg,
-                frontendResponseTimeMin,
-                frontendResponseTimeMax,
-                backendResponseTimeAvg,
-                backendResponseTimeMin,
-                backendResponseTimeMax);
-    }
-
-    /**
-     * For testing only.
-     *
-     * Tests the MetricsChartPanel using fake data.
-     */
-    public static void main(String[] args) throws InterruptedException {
-        final int RESOLUTION = MetricsBin.RES_FINE;
-        final int BIN_INTERVAL = 5 * 1000;
-        final long MAX_TIME_RANGE = 15 * 60 * 1000;
-
-        final MetricsChartPanel chartPanel = new MetricsChartPanel(RESOLUTION, MAX_TIME_RANGE, BIN_INTERVAL);
-
-        final JFrame mainFrame = new JFrame("MetricsChartPanel Test");
-        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainFrame.add(chartPanel);
-        mainFrame.pack();
-        mainFrame.setVisible(true);
-
-        // Waits a few seconds to simulate network delay to fetch data from SSG.
-        Thread.sleep(5000);
-
-        long endTime;
-        long startTime;
-        MetricsBin bin;
-
-        // Adds a metric bin with zero message.
-        endTime = System.currentTimeMillis();
-        startTime = endTime - BIN_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
-
-        Thread.sleep(5000);
-
-        // Adds a metric bin with values within the minimum y-axis ranges.
-        startTime += BIN_INTERVAL;
-        endTime = startTime + BIN_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
-        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
-
-        Thread.sleep(5000);
-
-        // Adds a metric bin with values beyond the minimum y-axis ranges.
-        // To test auto-expansion of the y-axis ranges.
-        startTime += BIN_INTERVAL;
-        endTime = startTime + BIN_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 1000, 10, 1, 400, 350, 450, 200, 150, 250);
-        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
-
-        Thread.sleep(5000);
-
-        // Fills chart time span with a single metric bin with values within the minimum y-axis ranges.
-        // To test auto-contraction of the y-axis back to minimum ranges.
-        startTime += MAX_TIME_RANGE;
-        endTime = startTime + BIN_INTERVAL;
-        bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL, 1, 1, 1, 8, 8, 8, 5, 5, 5);
-        chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
-
-        Thread.sleep(5000);
-
-        // Clears all data.
-        // To test x-axis when there is no data.
-        System.out.println("clearData()");
-        chartPanel.clearData();
-
-        Thread.sleep(5000);
-
-        // Fakes a large number of contiguous fine bins.
-        final List metricsBins = new ArrayList();
-        for (int i = 0; i < MAX_TIME_RANGE / BIN_INTERVAL; ++ i) {
-            startTime += BIN_INTERVAL;
-            endTime = startTime + BIN_INTERVAL;
-            metricsBins.add(fakeMetricsBin(startTime, endTime, BIN_INTERVAL));
-        }
-        chartPanel.addData(metricsBins);
-
-        // Simulates new fine bins being added regularly.
-        while (true) {
-            Thread.sleep(BIN_INTERVAL);
-            startTime += BIN_INTERVAL;
-            endTime = startTime + BIN_INTERVAL;
-            bin = fakeMetricsBin(startTime, endTime, BIN_INTERVAL);
-            chartPanel.addData(Arrays.asList(new MetricsBin[]{bin}));
-        }
     }
 }
