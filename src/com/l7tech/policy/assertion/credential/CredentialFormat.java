@@ -60,6 +60,10 @@ public class CredentialFormat {
         _clientCert = clientCert;
     }
 
+    public String getName() {
+        return _name;
+    }
+
     private String _name;
     private boolean _clientCert;
 }

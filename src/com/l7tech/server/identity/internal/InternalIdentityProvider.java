@@ -2,9 +2,9 @@ package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
-import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -17,7 +17,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -64,14 +63,18 @@ public class InternalIdentityProvider extends PersistentIdentityProvider impleme
     }
 
     public AuthenticationResult authenticate( LoginCredentials pc )
-            throws AuthenticationException, FindException, IOException
+            throws AuthenticationException
     {
         AuthenticationResult ar = null;
         try {
             String login = pc.getLogin();
 
             InternalUser dbUser;
-            dbUser = (InternalUser)userManager.findByLogin(login);
+            try {
+                dbUser = (InternalUser)userManager.findByLogin(login);
+            } catch (FindException e) {
+                throw new AuthenticationException("Couldn't authenticate credentials", e);
+            }
             if (dbUser == null) {
                 String err = "Couldn't find user with login " + login;
                 logger.info(err);

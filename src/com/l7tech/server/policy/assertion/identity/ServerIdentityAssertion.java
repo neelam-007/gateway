@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion.identity;
@@ -20,6 +18,7 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
@@ -79,12 +78,11 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        // A CredentialFinder has already run.
-        if (context.isAuthenticated() && context.getAuthenticatedUser() != null) {
-            User user = context.getAuthenticatedUser();
+        if (context.isAuthenticated()) {
+            AuthenticationResult authResult = context.getAuthenticationResult();
             // The user was authenticated by a previous IdentityAssertion.
             auditor.logAndAudit(AssertionMessages.ALREADY_AUTHENTICATED);
-            return checkUser(user, context);
+            return checkUser(authResult, context);
         }
 
         if (identityAssertion.getIdentityProviderOid() == Entity.DEFAULT_OID) {
@@ -92,9 +90,35 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
         }
 
+        String name;
         try {
             IdentityProvider provider = getIdentityProvider(context);
-            return validateCredentials(provider, pc, context);
+            AuthenticationResult authResult = AuthCache.getInstance().getCachedAuthResult(
+                pc,
+                provider,
+                context.getAuthSuccessCacheTime(),
+                context.getAuthFailureCacheTime()
+            );
+            if (authResult == null) return authFailed(context, pc, null);
+
+            if (authResult.isCertSignedByStaleCA()) {
+                HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE);
+            }
+
+            User user = authResult.getUser();
+
+            name = user.getLogin();
+            if (name == null) name = user.getName();
+            if (name == null) name = user.getSubjectDn();
+            if (name == null) name = user.getUniqueIdentifier();
+
+            // Authentication succeeded
+            context.setAuthenticationResult(authResult);
+            auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
+
+            // Make sure this guy matches our criteria
+            return checkUser(authResult, context);
         } catch (InvalidClientCertificateException icce) {
             auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
             // set some response header so that the CP is made aware of this situation
@@ -111,9 +135,6 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             // fla fix, allow the policy to continue in case the credentials be valid for
             // another id assertion down the road (fix for bug 374)
             // throw new IdentityAssertionException( err, fe );
-            return AssertionStatus.AUTH_FAILED;
-        } catch (IOException e) {
-            auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] {pc.getLogin()}, e);
             return AssertionStatus.AUTH_FAILED;
         }
     }
@@ -142,12 +163,11 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         if (name == null) name = user.getUniqueIdentifier();
 
         // Authentication succeeded
-        context.setAuthenticated(true);
-        context.setAuthenticatedUser(user);
+        context.setAuthenticationResult(authResult);
         auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
 
         // Make sure this guy matches our criteria
-        return checkUser(user, context);
+        return checkUser(authResult, context);
     }
 
     private AssertionStatus authFailed(PolicyEnforcementContext context, LoginCredentials pc, Exception e) {
@@ -202,7 +222,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     /**
      * Override to decide whether the authenticated user is acceptable.
      */
-    protected AssertionStatus checkUser(User u, PolicyEnforcementContext context) {
+    protected AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
         return AssertionStatus.NONE;
     }
 

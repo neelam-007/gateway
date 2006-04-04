@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.util;
@@ -44,7 +42,7 @@ public class UptimeMonitor {
         private static final UptimeMonitor INSTANCE = new UptimeMonitor();
     }
 
-    private static synchronized UptimeMonitor getInstance() {
+    private static UptimeMonitor getInstance() {
         return InstanceHolder.INSTANCE;
     }
 

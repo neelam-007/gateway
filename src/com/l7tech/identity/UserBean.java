@@ -13,6 +13,14 @@ import java.io.Serializable;
  * @author alex
  */
 public class UserBean implements User, Serializable {
+    public UserBean() {
+    }
+
+    public UserBean(String login) {
+        this._name = login;
+        this._login = login;
+    }
+
     public String getUniqueIdentifier() {
         return _uniqueId;
     }

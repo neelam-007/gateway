@@ -20,7 +20,6 @@ import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
@@ -32,8 +31,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author emil
@@ -80,9 +79,6 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             logger.log(Level.FINE, "Authentication failed", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
-        } catch (IOException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
         } catch (ServerNotActiveException e) {

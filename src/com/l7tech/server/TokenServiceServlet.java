@@ -209,9 +209,6 @@ public class TokenServiceServlet extends HttpServlet {
                         } catch (AuthenticationException e) {
                             logger.log(Level.INFO, "exception trying to authenticate credentials against " +
                                                    provider.getConfig().getName(), e);
-                        } catch (IOException e) {
-                            logger.log(Level.INFO, "excetion trying to authenticate credentials against " +
-                                                   provider.getConfig().getName(), e);
                         }
                     }
                 } catch (FindException e) {

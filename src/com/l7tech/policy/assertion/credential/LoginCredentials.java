@@ -8,12 +8,12 @@ package com.l7tech.policy.assertion.credential;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import org.w3c.dom.Element;
 
+import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 
 /**
  * Stores a reference to a User and its associated credentials (i.e. password).
@@ -29,26 +29,16 @@ import java.util.Map;
 public class LoginCredentials implements SecurityToken {
 
     public static LoginCredentials makeCertificateCredentials(X509Certificate cert, Class credentialSource) {
-        String login = getCn(cert);
+        String login = CertUtils.getCn(cert);
 
         return new LoginCredentials(login, null, CredentialFormat.CLIENTCERT, credentialSource, null, cert);
     }
 
-    private static String getCn(X509Certificate cert) {
-        Map dnMap = CertUtils.dnToAttributeMap(cert.getSubjectDN().getName());
-        List cnValues = (List)dnMap.get("CN");
-        String login = null;
-        if (cnValues != null && cnValues.size() >= 1) {
-            login = (String)cnValues.get(0);
-        }
-        return login;
-    }
-
     public static LoginCredentials makeSamlCredentials(SamlAssertion assertion, Class credentialSource) {
-        String login = null;
+        String login;
         X509Certificate cert = assertion.getSubjectCertificate();
         if (cert != null) {
-            login = getCn(cert);
+            login = CertUtils.getCn(cert);
         } else {
             login = assertion.getNameIdentifierValue();
         }
@@ -138,9 +128,26 @@ public class LoginCredentials implements SecurityToken {
     }
 
     public String toString() {
-        return getClass().getName() + "\n\t" +
-          "format: " + format.toString() + "\n\t" +
-          "login: " + login;
+        if (cachedToString == null) {
+            StringBuffer sb = new StringBuffer("<LoginCredentials format=\"");
+            sb.append(format.getName());
+            sb.append("\" ");
+
+            if (login != null) {
+                sb.append("login=\"");
+                sb.append(login);
+            } else if (payload instanceof X509Certificate) {
+                sb.append("subjectDn=\"");
+                sb.append(((X509Certificate)payload).getSubjectDN().getName());
+            } else if (payload instanceof SamlAssertion) {
+                SamlAssertion samlAssertion = (SamlAssertion)payload;
+                sb.append("nameIdentifier=\"");
+                sb.append(samlAssertion.getNameIdentifierValue());
+            }
+            sb.append("\"/>");
+            cachedToString = sb.toString();
+        }
+        return cachedToString;
     }
 
     public X509Certificate getClientCert() {
@@ -152,14 +159,6 @@ public class LoginCredentials implements SecurityToken {
         }
         return null;
     }
-
-    private final String login;
-    private final char[] credentials;
-    private final String realm;
-    private Class credentialSourceAssertion;
-    private CredentialFormat format;
-    private Object payload;
-    private long authInstant;
 
     public SecurityTokenType getType() {
         if (format == CredentialFormat.CLIENTCERT) {
@@ -176,4 +175,68 @@ public class LoginCredentials implements SecurityToken {
             return SecurityTokenType.UNKNOWN;
         }
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final LoginCredentials that = (LoginCredentials)o;
+
+        if (credentialSourceAssertion != null ? !credentialSourceAssertion.equals(that.credentialSourceAssertion) : that.credentialSourceAssertion != null)
+            return false;
+        if (!Arrays.equals(credentials, that.credentials)) return false;
+        if (format != null ? !format.equals(that.format) : that.format != null) return false;
+        if (login != null ? !login.equals(that.login) : that.login != null) return false;
+        if (payload != null ? !payload.equals(that.payload) : that.payload != null) return false;
+        if (realm != null ? !realm.equals(that.realm) : that.realm != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (login != null ? login.hashCode() : 0);
+        result = 31 * result + (credentials != null ? Arrays.hashCode(credentials) : 0);
+        result = 31 * result + (realm != null ? realm.hashCode() : 0);
+        result = 31 * result + (credentialSourceAssertion != null ? credentialSourceAssertion.hashCode() : 0);
+        result = 31 * result + (format != null ? format.hashCode() : 0);
+        result = 31 * result + (payload != null ? payload.hashCode() : 0);
+        return result;
+    }
+
+    public byte[] getDigest() {
+        if (cachedDigest == null) {
+            try {
+                MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+                sha1.update(format.toString().getBytes("UTF-8"));
+                sha1.update(login.getBytes("UTF-8"));
+                sha1.update(new String(credentials).getBytes("UTF-8"));
+                if (payload instanceof X509Certificate) {
+                    X509Certificate cert = (X509Certificate)payload;
+                    sha1.update(cert.getEncoded());
+                } else if (payload instanceof SamlAssertion) {
+                    SamlAssertion samlAssertion = (SamlAssertion)payload;
+                    String s = XmlUtil.nodeToString(samlAssertion.asElement());
+                    sha1.update(s.getBytes("UTF-8"));
+                }
+                cachedDigest = sha1.digest();
+            } catch (Exception e) {
+                throw new RuntimeException(e); // Can't happen
+            }
+        }
+        return cachedDigest;
+    }
+
+    private final String login;
+    private final String realm;
+    private final CredentialFormat format;
+    private final Object payload;
+
+    private long authInstant;
+
+    private transient final char[] credentials;
+    private transient Class credentialSourceAssertion;
+
+    private transient volatile byte[] cachedDigest;
+    private transient volatile String cachedToString;
 }

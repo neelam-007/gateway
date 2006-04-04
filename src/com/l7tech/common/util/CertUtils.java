@@ -131,6 +131,16 @@ public class CertUtils {
         return HexUtils.encodeBase64(skiBytes);
     }
 
+    public static String getCn(X509Certificate cert) {
+        Map dnMap = dnToAttributeMap(cert.getSubjectDN().getName());
+        List cnValues = (List)dnMap.get("CN");
+        String login = null;
+        if (cnValues != null && cnValues.size() >= 1) {
+            login = (String)cnValues.get(0);
+        }
+        return login;
+    }
+
     public static final class KeyUsage {
         public static final int digitalSignature = 0;
         public static final int nonRepudiation = 1;

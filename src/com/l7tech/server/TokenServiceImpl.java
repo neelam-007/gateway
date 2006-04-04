@@ -21,11 +21,12 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.UserBean;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -169,10 +170,6 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             User authenticatedUser = null;
             if(creds!=null) {
                 authenticatedUser = authenticator.authenticate(creds);
-                if (authenticatedUser != null) {
-                    context.setAuthenticated(true);
-                    context.setAuthenticatedUser(authenticatedUser);
-                }
             }
 
             if (authenticatedUser == null) {
@@ -182,6 +179,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 context.setFaultDetail(new SoapFaultDetailImpl("l7:noauthentication", msg, null));
                 return status;
             }
+
+            context.setAuthenticationResult(new AuthenticationResult(authenticatedUser, null, false));
 
             if (status != AssertionStatus.NONE) {
                 String msg = "The internal policy was not respected " + status;
@@ -413,7 +412,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
 
     private String produceBinarySecretXml(SecretKey sharedSecret, String trustns) {
         StringBuffer output = new StringBuffer();
-        output.append("<wst:BinarySecret Type=\"" + trustns + "/SymmetricKey" + "\">");
+        output.append("<wst:BinarySecret Type=\"").append(trustns).append("/SymmetricKey" + "\">");
         byte[] actualkey = sharedSecret.getEncoded();
         output.append(HexUtils.encodeBase64(actualkey, true));
         output.append("</wst:BinarySecret>");
@@ -486,13 +485,12 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         if (val == null || !"http://schemas.xmlsoap.org/ws/2005/02/sc/sct".equals(val)) {
             return false;
         }
-        if (val == null || !val.endsWith("/trust/Issue")) {
+        if (!val.endsWith("/trust/Issue")) {
             logger.warning("RequestType not supported." + val);
             return false;
         }
         // will be set to WSSC_NAMESPACE if caught by isRequestForSecureConversationContext
         rstTypes.put(SCNS, SoapUtil.WSSC_NAMESPACE2);
-        val = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
         return true;
     }
 
@@ -585,11 +583,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             return false;
         }
         String requestType = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
-        if (requestType == null || !requestType.endsWith("/trust/Issue")) {
-            return false;
-        }
-        return true;
-    }
+        return !(requestType == null || !requestType.endsWith("/trust/Issue"));
+     }
 
     private String getRemoteAddress(PolicyEnforcementContext pec) {
         String ip = null;

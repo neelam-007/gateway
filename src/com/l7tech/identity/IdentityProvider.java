@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
-import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 
@@ -27,7 +26,7 @@ public interface IdentityProvider {
      * @param pc an identity and a set of credentials.
      * @return an authenticated {@link User}. May be null if no user matching the specified credentials can be found for this provider.
      */
-    AuthenticationResult authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException;
+    AuthenticationResult authenticate( LoginCredentials pc ) throws AuthenticationException;
 
     /**
      * @return the {@link IdentityProviderConfig} for this IdentityProvider.

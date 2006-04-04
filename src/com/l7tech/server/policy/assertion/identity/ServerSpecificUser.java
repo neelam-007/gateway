@@ -1,24 +1,21 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion.identity;
 
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;
 
-import org.springframework.context.ApplicationContext;
-
 /**
  * @author alex
- * @version $Revision$
  */
 public class ServerSpecificUser extends ServerIdentityAssertion implements ServerAssertion {
     public ServerSpecificUser(SpecificUser data, ApplicationContext applicationContext) {
@@ -34,12 +31,11 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * Verifies that the authenticated <code>User</code> matches the <code>User</code>
      * corresponding to this Assertion's <code>userLogin</code> property.
      *
-     * @param requestingUser the <code>User</code> to check
+     * @param authResult the authentication result <code>User</code> to check
      * @param context
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
-    public AssertionStatus checkUser(User requestingUser, PolicyEnforcementContext context) {
-
+    public AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
         // The login and the uid can't both be null
         if (requiredLogin == null && requiredUid == null) {
             String msg = "This assertion is not configured properly. The login and uid can't both be null.";
@@ -47,6 +43,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
             return AssertionStatus.SERVER_ERROR;
         }
 
+        User requestingUser = authResult.getUser();
         long requestProvider = requestingUser.getProviderId();
         String requestUid = requestingUser.getUniqueIdentifier();
         String requestLogin = requestingUser.getLogin();

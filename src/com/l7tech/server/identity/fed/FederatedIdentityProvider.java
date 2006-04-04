@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.identity.fed;
@@ -36,7 +34,6 @@ import java.util.logging.Logger;
  *
  * @see FederatedIdentityProviderConfig
  * @author alex
- * @version $Revision$
  */
 public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
@@ -67,9 +64,14 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         return Collections.unmodifiableSet(validTrustedCertOids);
     }
 
-    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT ) {
-            User user = x509Handler.authorize(pc);
+            User user = null;
+            try {
+                user = x509Handler.authorize(pc);
+            } catch (Exception e) {
+                throw new AuthenticationException("Couldn't authorize X.509 credentials", e);
+            }
             return user == null ? null : new AuthenticationResult(user);
         }
         else if ( pc.getFormat() == CredentialFormat.SAML ) {

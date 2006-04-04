@@ -29,6 +29,8 @@ import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
+import com.l7tech.identity.AuthenticationResult;
+import com.l7tech.identity.UserBean;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -166,7 +168,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                 }
             });
             if (isAuthAssertion)
-                context.setAuthenticated(true);
+                context.setAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
             return AssertionStatus.NONE;
         } catch (PrivilegedActionException e) {
             if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
@@ -391,7 +393,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                     if (CustomServiceRequest.this.pec.isAuthenticated()) {
                         throw new GeneralSecurityException("already authenticated");
                     }
-                    CustomServiceRequest.this.pec.setAuthenticated(true);
+                    CustomServiceRequest.this.pec.setAuthenticationResult(AuthenticationResult.AUTHENTICATED_UNKNOWN_USER);
                 }
             };
         }

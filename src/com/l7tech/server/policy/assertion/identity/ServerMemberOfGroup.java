@@ -1,28 +1,24 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion.identity;
 
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.context.ApplicationContext;
-
 /**
  * @author alex
- * @version $Revision$
  */
 public class ServerMemberOfGroup extends ServerIdentityAssertion implements ServerAssertion {
     public ServerMemberOfGroup( MemberOfGroup data, ApplicationContext applicationContext ) {
@@ -54,11 +50,8 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
     /**
      * Returns <code>AssertionStatus.NONE</code> if the authenticated <code>User</code>
      * is a member of the <code>Group</code> with which this assertion was initialized.
-     * @param user
-     * @return
-     * @param context
      */
-    public AssertionStatus checkUser(User user, PolicyEnforcementContext context) {
+    public AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
         try {
             Group targetGroup = getGroup(context);
             if (targetGroup == null) {
@@ -66,14 +59,30 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
                                      "Policy might be corrupted");
                 return AssertionStatus.UNAUTHORIZED;
             }
+
             GroupManager gman = getIdentityProvider(context).getGroupManager();
-            if ( gman.isMember(user, targetGroup) ) {
-                logger.finest("membership established");
-                return AssertionStatus.NONE;
-            } else {
+            Boolean wasMember = authResult.getCachedGroupMembership(targetGroup);
+            if (wasMember == null) {
+                // Cache miss
+                if (gman.isMember(authResult.getUser(), targetGroup)) {
+                    authResult.setCachedGroupMembership(targetGroup, Boolean.TRUE);
+                    logger.finest("membership established");
+                    return AssertionStatus.NONE;
+                }
+
+                authResult.setCachedGroupMembership(targetGroup, Boolean.FALSE);
                 logger.info("user not member of group");
                 return AssertionStatus.UNAUTHORIZED;
             }
+
+            // Cache hit
+            if (wasMember.booleanValue()) {
+                logger.finest("Reusing cached group membership success");
+                return AssertionStatus.NONE;
+            }
+
+            logger.finest("Reusing cached group membership failure");
+            return AssertionStatus.UNAUTHORIZED;
         } catch (FindException fe) {
             logger.log(Level.SEVERE, "Error finding group that this assertion refers to." +
                                      "Policy might be corrupted", fe);

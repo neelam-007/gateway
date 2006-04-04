@@ -8,6 +8,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
@@ -76,8 +77,7 @@ public class ServerSecureConversation implements ServerAssertion {
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
-                context.setAuthenticated(true);
-                context.setAuthenticatedUser(authenticatedUser);
+                context.setAuthenticationResult(new AuthenticationResult(authenticatedUser, session.getCredentials().getClientCert(), false));
                 context.setCredentials(session.getCredentials());
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, new String[] {authenticatedUser.getLogin()});
@@ -90,7 +90,7 @@ public class ServerSecureConversation implements ServerAssertion {
         return AssertionStatus.AUTH_REQUIRED;
     }
 
-    private final ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
+    private ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
         return new ServerAssertion() {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;

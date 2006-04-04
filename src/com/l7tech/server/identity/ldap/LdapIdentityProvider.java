@@ -5,13 +5,13 @@ import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.*;
-import com.l7tech.identity.mapping.IdentityMapping;
-import com.l7tech.identity.mapping.LdapAttributeMapping;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.identity.ldap.UserMappingConfig;
+import com.l7tech.identity.mapping.IdentityMapping;
+import com.l7tech.identity.mapping.LdapAttributeMapping;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
@@ -26,7 +26,6 @@ import org.springframework.beans.factory.InitializingBean;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.util.*;
@@ -42,7 +41,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
- * $Id$<br/>
  */
 public class LdapIdentityProvider implements IdentityProvider, InitializingBean {
     /**
@@ -182,9 +180,13 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         }
     }
 
-    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         LdapUser realUser;
-        realUser = (LdapUser)userManager.findByLogin(pc.getLogin());
+        try {
+            realUser = (LdapUser)userManager.findByLogin(pc.getLogin());
+        } catch (FindException e) {
+            throw new AuthenticationException("Couldn't authenticate credentials", e);
+        }
         if (realUser == null) return null;
 
         final CredentialFormat format = pc.getFormat();
@@ -855,8 +857,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     }
 
     static boolean attrContainsCaseIndependent(Attribute attr, String valueToLookFor) {
-        if (attr.contains(valueToLookFor)) return true;
-        return attr.contains(valueToLookFor.toLowerCase());
+        return attr.contains(valueToLookFor) || attr.contains(valueToLookFor.toLowerCase());
     }
 
     static Object extractOneAttributeValue(Attributes attributes, String attrName) throws NamingException {

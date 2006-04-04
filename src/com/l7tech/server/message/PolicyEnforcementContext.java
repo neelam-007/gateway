@@ -18,17 +18,19 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.AssertionResult;
-import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.identity.AuthCache;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
@@ -50,8 +52,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private final Map deferredAssertions = new LinkedHashMap();
     private boolean replyExpected;
     private RoutingStatus routingStatus = RoutingStatus.NONE;
-    private User authenticatedUser;
-    private boolean authenticated;
+    private AuthenticationResult authenticationResult = null;
     private Level auditLevel;
     private boolean auditSaveRequest;
     private boolean auditSaveResponse;
@@ -67,6 +68,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private long routingStartTime;
     private long routingEndTime;
     private boolean isStealthResponseMode = false;
+    private int authSuccessCacheTime = AuthCache.SUCCESS_CACHE_TIME;
+    private int authFailureCacheTime = AuthCache.FAILURE_CACHE_TIME;
     private PolicyContextCache cache;
     private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
 
@@ -76,15 +79,19 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public boolean isAuthenticated() {
-        return authenticated;
+        return authenticationResult != null;
     }
 
-    public void setAuthenticated(boolean authenticated) {
-        this.authenticated = authenticated;
+    public void setAuthenticationResult(AuthenticationResult authResult) {
+        this.authenticationResult = authResult;
+    }
+
+    public AuthenticationResult getAuthenticationResult() {
+        return authenticationResult;
     }
 
     public User getAuthenticatedUser() {
-        return authenticatedUser;
+        return authenticationResult == null ? null : authenticationResult.getUser();
     }
 
     public AuditContext getAuditContext() {
@@ -93,10 +100,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setAuditContext(AuditContext auditContext) {
         this.auditContext = auditContext;
-    }
-
-    public void setAuthenticatedUser(User authenticatedUser) {
-        this.authenticatedUser = authenticatedUser;
     }
 
     public RoutingStatus getRoutingStatus() {
@@ -371,6 +374,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
      */
     public long getStartTime() {
         return startTime;
+    }
+
+    public int getAuthSuccessCacheTime() {
+        return authSuccessCacheTime;
+    }
+
+    public int getAuthFailureCacheTime() {
+        return authFailureCacheTime;
     }
 
     private boolean operationAttempted = false;

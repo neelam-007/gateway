@@ -11,7 +11,6 @@ import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
-import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -90,7 +89,7 @@ public class TestIdentityProvider implements IdentityProvider {
         usernameMap.put(username, new MyUser(user, username, password));
     }
 
-    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
+    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         MyUser mu = (MyUser)usernameMap.get(pc.getLogin());
         if (mu == null) return null;
         if (Arrays.equals(mu.password, pc.getCredentials())) {

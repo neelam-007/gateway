@@ -14,7 +14,7 @@ public class UrlPanelTest {
         UrlPanel p = new UrlPanel("URL:", "you suck");
         p.setBackground(Color.RED);
         OkCancelDialog dialog = new OkCancelDialog(new JFrame(), "Enter a damned URL", true, p);
-        dialog.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         dialog.pack();
         dialog.setVisible(true);
         System.out.println(dialog.getValue());
