@@ -40,7 +40,11 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimed
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 
+# Root war is redundant
 rm -f %{buildroot}/ssg/dist/*
+# we don't need two of these, but we need it for build
+rm -f %{buildroot}/ssg/tomcat/webapps/ROOT/WEB-INF/lib/xercesImpl.jar
+
 chmod 755 %{buildroot}/etc/init.d/*
 chmod 755 %{buildroot}/etc/profile.d/*.sh
 chmod 755 %{buildroot}/ssg/configwizard/*.sh
