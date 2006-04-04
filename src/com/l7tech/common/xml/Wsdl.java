@@ -10,6 +10,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
+import javax.wsdl.Service;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
