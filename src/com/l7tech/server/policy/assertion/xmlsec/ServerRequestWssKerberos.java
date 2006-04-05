@@ -2,18 +2,18 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.security.kerberos.KerberosClient;
-import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
 import com.l7tech.common.security.token.KerberosSecurityToken;
-import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.token.SecurityContextToken;
+import com.l7tech.common.security.token.XmlSecurityToken;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.SecurityContext;
-import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.identity.AuthenticationResult;
+import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -21,18 +21,16 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
-
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import com.l7tech.server.secureconversation.SecureConversationSession;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
-import javax.security.auth.login.LoginException;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side processing for Kerberos Binary Security Tokens.
@@ -104,7 +102,7 @@ public class ServerRequestWssKerberos implements ServerAssertion {
                 }
                 else {
                     context.setCredentials(creds);
-                    context.setAuthenticated(true);
+                    context.setAuthenticationResult(new AuthenticationResult(new UserBean(kerberosServiceTicket.getClientPrincipalName()), null, false));
 
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
@@ -125,7 +123,7 @@ public class ServerRequestWssKerberos implements ServerAssertion {
                                                         null,
                                                         kerberosServiceTicket);
             context.setCredentials(loginCreds);
-            context.setAuthenticated(true);
+            context.setAuthenticationResult(new AuthenticationResult(new UserBean(kerberosServiceTicket.getClientPrincipalName()), null, false));
 
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
