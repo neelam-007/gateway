@@ -7,27 +7,18 @@
 package com.l7tech.skunkworks.schemavalidation;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.LSInputImpl;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.validation.*;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.dom.DOMSource;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
-import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
 import org.xml.sax.*;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.w3c.dom.ls.LSInput;
-import org.w3c.dom.Document;
 
 /**
  * A simple class that validates a document against a schema.
@@ -42,17 +33,11 @@ public class Validator {
      * Expect a SAXParseException if the document is not valid, no exception means it is valid.
      */
     public void validate(InputStream schemaStream, InputStream documentStream) throws SAXParseException, SAXException, ParserConfigurationException, IOException {
-        validate(schemaStream, documentStream, XmlUtil.getSafeEntityResolver(), XmlUtil.getSafeLSResourceResolver());
+        validate(schemaStream, documentStream, XmlUtil.getSafeEntityResolver());
     }
 
-    public void validate(InputStream schemaInStream, InputStream documentStream, EntityResolver entityResolver, LSResourceResolver resourceResolver) throws SAXParseException, SAXException, ParserConfigurationException, IOException {
-        if (schemaInStream == null || documentStream == null || entityResolver == null) throw new NullPointerException();
-
-        byte[] schemaFull = new byte[100000];
-        int read = schemaInStream.read(schemaFull);
-        byte[] schemaBytes = new byte[read];
-        System.arraycopy(schemaFull, 0, schemaBytes, 0, read);
-
+    public void validate(InputStream schemaStream, InputStream documentStream, EntityResolver entityResolver) throws SAXParseException, SAXException, ParserConfigurationException, IOException {
+        if (schemaStream == null || documentStream == null || entityResolver == null) throw new NullPointerException();
         final ArrayList errors = new ArrayList();
         ErrorHandler errorHandler = new ErrorHandler() {
             public void warning(SAXParseException e) {
@@ -71,43 +56,22 @@ public class Validator {
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setAttribute(XmlUtil.XERCES_DISALLOW_DOCTYPE, Boolean.TRUE);
-        dbf.setNamespaceAware(true);
-        dbf.setValidating(true);
+	    dbf.setNamespaceAware(true);
+	    dbf.setValidating(true);
         dbf.setAttribute(XmlUtil.JAXP_SCHEMA_LANGUAGE, XmlUtil.W3C_XML_SCHEMA);
-        // Specify other factory configuration settings
-        InputSource is = new InputSource();
-        if(Boolean.getBoolean("setSystemId")) is.setSystemId("http://fake/fakeuout/faker/");
-        is.setByteStream(new ByteArrayInputStream(schemaBytes));
-        dbf.setAttribute(XmlUtil.JAXP_SCHEMA_SOURCE, is);
+	    // Specify other factory configuration settings
+	    dbf.setAttribute(XmlUtil.JAXP_SCHEMA_SOURCE, schemaStream);
         DocumentBuilder db = null;
         db = dbf.newDocumentBuilder();
         db.setEntityResolver(entityResolver);
         db.setErrorHandler(errorHandler);
 
         InputSource source = new InputSource(documentStream);
-        Document parsed = db.parse(source);
+        db.parse(source);
         if (!errors.isEmpty()) {
             SAXParseException firstError = (SAXParseException)errors.get(0);
             throw firstError;
         }
-
-
-        SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-        sf.setResourceResolver(resourceResolver);
-        StreamSource ss = new StreamSource(new ByteArrayInputStream(schemaBytes));
-        if(Boolean.getBoolean("setSystemId")) ss.setSystemId("http://fake/fakeuout/faker/");
-        Schema schema = sf.newSchema(ss);
-        javax.xml.validation.Validator v = schema.newValidator();
-        v.setErrorHandler(errorHandler);
-        v.setResourceResolver(new LSResourceResolver() {
-            public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
-                String msg = "Document referred to an external entity with system id '" + systemId + "' of type '" + type + "'";
-                logger.warning( msg );
-                return new LSInputImpl(); // resolve to nothing, causes error
-            }
-        });
-        v.validate(new DOMSource(parsed));
-
     }
 
     public static void main(String[] args) throws Exception {
