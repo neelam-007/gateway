@@ -18,6 +18,8 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.communityschemas.CommunitySchemaManager;
+
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.springframework.context.ApplicationContext;
@@ -64,6 +66,7 @@ public class ServerSchemaValidation implements ServerAssertion {
      */
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
         this.schemaValidationAssertion = data;
+        this.springContext = springContext;
         this.auditor = new Auditor(this, springContext, logger);
         GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
 
@@ -126,9 +129,9 @@ public class ServerSchemaValidation implements ServerAssertion {
 
         if(schema==null) {
             try {
-                //CommunitySchemaManager manager = (CommunitySchemaManager) springContext.getBean("communitySchemaManager");
+                CommunitySchemaManager manager = (CommunitySchemaManager) springContext.getBean("communitySchemaManager");
                 SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-                //sf.setResourceResolver(manager.communityLSResourceResolver());
+                sf.setResourceResolver(manager.communityLSResourceResolver());
                 schema = sf.newSchema(new StreamSource(new StringReader(schemaValidationAssertion.getSchema())));
             }
             catch(SAXException se) {
@@ -168,6 +171,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 
     private final Auditor auditor;
+    private final ApplicationContext springContext;
     private String tarariNamespaceUri;
     private Schema schema;
     private SchemaValidation schemaValidationAssertion;

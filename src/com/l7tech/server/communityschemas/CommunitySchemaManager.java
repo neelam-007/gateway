@@ -214,6 +214,9 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
                         lsInput.setCharacterStream(new StringReader(resolved.getSchema()));
                     }
                 }
+                else {
+                    logger.info("Not resolving resource of non-schema type '"+type+"', systemId is '"+systemId+"'.");
+                }
                 return lsInput; // if we return null the schema would be resolved over the network.
             }
         };
@@ -289,19 +292,19 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
             }
         }
 
-        logger.info("asking for schema with systemId " + schemaId);
+        logger.info("asking for schema with systemId '"+systemId+"', schemaId is '"+schemaId+"'.");
         Collection matchingSchemas = null;
         try {
             matchingSchemas = findByName(schemaId);
 
             if (matchingSchemas.isEmpty()) {
-                logger.warning("there were no community schema that would resolve with the systemid " + schemaId);
+                logger.warning("there were no community schema that would resolve with the systemid '"+systemId+"', schemaId '"+schemaId+"'.");
             }
             else {
                 resolved = (SchemaEntry) matchingSchemas.iterator().next();
             }
         } catch (FindException e) {
-            logger.log(Level.WARNING, "error getting community schema with systemid " + schemaId, e);
+            logger.log(Level.WARNING, "error getting community schema with systemid '"+systemId+"', schemaId '"+schemaId+"'.", e);
         }
 
         return resolved;
