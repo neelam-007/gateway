@@ -84,9 +84,11 @@ else
 	# default options include batch: This may be commented out: it pauses all threads during GC
 	default_java_opts="$default_java_opts -Xbatch" 
 	# uncomment ONE of these gc options
+	# Standard
+	default_java_opts="$default_java_opts -XX:+UseParallelGC " 
 	# or comment them all out to let the JVM decide 
 	# throughput collector with an added "maximum pause time
-	default_java_opts="$default_java_opts -XX:+UseParallelGC -XX:MaxGCPauseMillis=1000" 
+	#default_java_opts="$default_java_opts -XX:+UseParallelGC -XX:MaxGCPauseMillis=1000" 
 	# throughput collector "new"
 	#default_java_opts="$default_java_opts -XX+UseParNewGC" 
 	# concurrent low pause collector: Showed low performance
