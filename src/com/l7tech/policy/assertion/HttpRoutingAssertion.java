@@ -204,7 +204,7 @@ public class HttpRoutingAssertion
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(login + password + protectedServiceUrl);
+        return ExpandVariables.getReferencedNames(login + password + protectedServiceUrl + ntlmHost + realm);
     }
 
     public VariableMetadata[] getVariablesSet() {
