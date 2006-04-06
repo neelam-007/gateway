@@ -244,16 +244,16 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return ldapBindDNTextField;
     }
 
-    private JTextField getLdapBindPassTextField() {
-        if (ldapBindPassTextField != null) return ldapBindPassTextField;
+    private JPasswordField getLdapBindPasswordField() {
+        if (ldapBindPasswordField != null) return ldapBindPasswordField;
 
-        ldapBindPassTextField = new JTextField();
-        ldapBindPassTextField.setPreferredSize(new Dimension(217, 20));
-        ldapBindPassTextField.setMinimumSize(new Dimension(217, 20));
-        ldapBindPassTextField.setToolTipText(resources.getString("ldapBindPassTextField.tooltip"));
+        ldapBindPasswordField = new JPasswordField();
+        ldapBindPasswordField.setPreferredSize(new Dimension(217, 20));
+        ldapBindPasswordField.setMinimumSize(new Dimension(217, 20));
+        ldapBindPasswordField.setToolTipText(resources.getString("ldapBindPassTextField.tooltip"));
 
-        ldapBindPassTextField.setText("");
-        return ldapBindPassTextField;
+        ldapBindPasswordField.setText("");
+        return ldapBindPasswordField;
     }
 
     private IdentityAdmin getIdentityAdmin()
@@ -461,7 +461,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 7, 0, 0);
-        configPanel.add(getLdapBindPassTextField(), constraints);
+        configPanel.add(getLdapBindPasswordField(), constraints);
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
@@ -583,7 +583,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 if (iProviderConfig.getOid() != -1) {
 
                     getProviderNameTextField().setText(iProviderConfig.getName());
-                    getLdapBindPassTextField().setText(iProviderConfig.getBindPasswd());
+                    getLdapBindPasswordField().setText(iProviderConfig.getBindPasswd());
                     getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
                     getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
 
@@ -647,7 +647,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 ((LdapIdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
                 ((LdapIdentityProviderConfig) settings).setSearchBase(getLdapSearchBaseTextField().getText());
                 ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
-                ((LdapIdentityProviderConfig) settings).setBindPasswd(getLdapBindPassTextField().getText());
+                ((LdapIdentityProviderConfig) settings).setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
 
             }
         }
@@ -713,7 +713,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
     private ResourceBundle resources = null;
     private JTextField providerNameTextField = null;
-    private JTextField ldapBindPassTextField = null;
+    private JPasswordField ldapBindPasswordField = null;
     private JTextField ldapBindDNTextField = null;
     private JTextField ldapSearchBaseTextField = null;
     //private JTextField ldapHostTextField = null;
