@@ -15,9 +15,6 @@ import java.io.PrintStream;
  * To change this template use File | Settings | File Templates.
  */
 public class ListHandler extends Handler {
-//    private static ArrayList severeLogList = new ArrayList();
-//    private static ArrayList warningLogList = new ArrayList();
-//    private static ArrayList infoLogList = new ArrayList();
     private static ArrayList logList = new ArrayList();
 
     public synchronized void publish(LogRecord logRecord) {
@@ -44,28 +41,13 @@ public class ListHandler extends Handler {
     }
 
     public void flush() {
-//        severeLogList.clear();
-//        warningLogList.clear();
-//        infoLogList.clear();
         logList.clear();
     }
 
     public void close() throws SecurityException {
     }
 
-//    public static ArrayList getSevereLogList() {
-//        return severeLogList;
-//    }
-//
-//    public static ArrayList getWarningLogList() {
-//        return warningLogList;
-//    }
-//
-//    public static ArrayList getInfoLogList() {
-//        return infoLogList;
-//    }
-
-        public static ArrayList getLogList() {
-            return logList;
-        }
+    public static ArrayList getLogList() {
+        return logList;
+    }
 }

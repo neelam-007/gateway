@@ -5,6 +5,9 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
 
 import java.util.ArrayList;
+import java.util.TreeMap;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -31,13 +34,19 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     private final static String NOTHING_TO_DO_INFO = "Nothing to do";
     private final static String CLUSTER_HOSTFILE_UPDATE_INFO = "Update cluster hostname: ";
-    private final static String CLUSTER_HOSTFILE_DELETE_INFO = "Delete cluster hostname file";
+//    private final static String CLUSTER_HOSTFILE_DELETE_INFO = "Delete cluster hostname file";
 
     public static final int CLUSTER_NONE = 0;
     public static final int CLUSTER_NEW = 1;
     public static final int CLUSTER_JOIN = 2;
 
-
+    public static TreeMap clusterTypes;
+    static {
+        clusterTypes = new TreeMap();
+        clusterTypes.put("I don't want to set up a cluster (or this SSG already belongs to one", new Integer(CLUSTER_NONE));
+        clusterTypes.put("I want to create a new cluster", new Integer(CLUSTER_NEW));
+        clusterTypes.put("I would like this SSG to join an existing cluster", new Integer(CLUSTER_JOIN));
+    }
 
     public ClusteringConfigBean(OSSpecificFunctions osFunctions) {
         super(NAME, DESCRIPTION, osFunctions);
@@ -47,6 +56,13 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     private void init() {
         setClusterHostname(null);
+
+        try {
+            setLocalHostName(InetAddress.getLocalHost().getCanonicalHostName());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
         setNewHostName(false);
     }
 

@@ -36,6 +36,9 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
     }
 
     public String[] getActionSummary() {
+        if (configBean == null) {
+            return null;
+        }
         return configBean.getAffectedObjects();
     }
 

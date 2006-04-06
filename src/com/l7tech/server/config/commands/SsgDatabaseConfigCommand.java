@@ -1,7 +1,7 @@
 package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.beans.ConfigurationBean;
-import com.l7tech.server.config.beans.NewDatabaseConfigBean;
+import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -17,9 +17,9 @@ import org.apache.commons.lang.StringUtils;
  * Time: 4:44:50 PM
  * To change this template use File | Settings | File Templates.
  */
-public class NewDatabaseConfigCommand extends BaseConfigurationCommand {
+public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
 
-    private static final Logger logger = Logger.getLogger(NewDatabaseConfigCommand.class.getName());
+    private static final Logger logger = Logger.getLogger(SsgDatabaseConfigCommand.class.getName());
     private static final String BACKUP_FILE_NAME = "database_config_backups";
     private static final String HIBERNATE_URL_KEY = "hibernate.connection.url";
     private static final String HIBERNATE_USERNAME_KEY = "hibernate.connection.username";
@@ -28,23 +28,14 @@ public class NewDatabaseConfigCommand extends BaseConfigurationCommand {
     public static final String HIBERNATE_DEFAULT_CONNECTION_URL="jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8";
     public static final String HIBERNATE_URL_AUTORECONNECTPOOLS_PATTERN="autoReconnectForPools=true(&*)";
 
-//    private DBActions dbActions;
+    private Pattern urlPattern = Pattern.compile("(^.*//).*(/).*(\\?.*$)");
 
-
-     private Pattern urlPattern = Pattern.compile("(^.*//).*(/).*(\\?.*$)");
-
-    public NewDatabaseConfigCommand(ConfigurationBean bean) {
+    public SsgDatabaseConfigCommand(ConfigurationBean bean) {
         super(bean, bean.getOSFunctions());
         init();
     }
 
-    private void init() {
-//        try {
-//            dbActions = new DBActions();
-//        } catch (ClassNotFoundException e) {
-//            throw new RuntimeException("Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard");
-//        }
-    }
+    private void init() {}
 
     public boolean execute() {
         boolean success = false;
@@ -76,7 +67,7 @@ public class NewDatabaseConfigCommand extends BaseConfigurationCommand {
 
     private void updateDbConfigFile(File dbConfigFile) throws IOException {
 
-        NewDatabaseConfigBean dbConfigBean = (NewDatabaseConfigBean) configBean;
+        SsgDatabaseConfigBean dbConfigBean = (SsgDatabaseConfigBean) configBean;
         String dbUrl = dbConfigBean.getDbHostname();
         String dbName = dbConfigBean.getDbName();
         String dbUsername = dbConfigBean.getDbUsername();

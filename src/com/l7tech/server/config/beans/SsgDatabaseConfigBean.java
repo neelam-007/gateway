@@ -3,6 +3,7 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.OSSpecificFunctions;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,7 +12,7 @@ import java.util.ArrayList;
  * Time: 4:42:49 PM
  * To change this template use File | Settings | File Templates.
  */
-public class NewDatabaseConfigBean extends BaseConfigurationBean {
+public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     private final static String NAME = "Database Configuration";
     private final static String DESCRIPTION = "Configures the database properties for an SSG";
 
@@ -23,7 +24,12 @@ public class NewDatabaseConfigBean extends BaseConfigurationBean {
     private String dbPassword;
     private String dbName;
 
-    public NewDatabaseConfigBean(OSSpecificFunctions osFunctions) {
+    public final static String PROP_DB_USERNAME = "hibernate.connection.username";
+    public final static String PROP_DB_URL = "hibernate.connection.url";
+    public final static String PROP_DB_PASSWORD = "hibernate.connection.password" ;
+    public final static Pattern dbUrlPattern = Pattern.compile("^.*//(.*)/(.*)\\?.*$");
+
+    public SsgDatabaseConfigBean(OSSpecificFunctions osFunctions) {
         super(NAME, DESCRIPTION, osFunctions);
         ELEMENT_KEY = this.getClass().getName();
         init();

@@ -1,8 +1,13 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.config.beans.ConfigurationBean;
 
 import java.io.*;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -15,62 +20,97 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
     protected final PrintWriter out;
     protected final InputStream in;
 
-    ConfigWizardConsoleStep previousStep;
-    ConfigWizardConsoleStep nextStep;
+   protected ConfigurationCommand configCommand;
 
-    protected BaseConsoleStep(ConfigurationWizard parent_, InputStream is, PrintWriter pw) {
+    protected OSSpecificFunctions osFunctions = null;
+    protected ConfigurationBean configBean = null;
+    protected BufferedReader reader;
+    protected ConfigurationCommand command;
+
+    protected boolean readyToAdvance;
+
+    protected boolean showNavigation = true;
+
+    public BaseConsoleStep(ConfigurationWizard parent_, OSSpecificFunctions osFunctions) {
         this.parent = parent_;
-        this.in = is;
-        this.out = pw;
+        this.in = parent.getInputSteam();
+        this.out = parent.getWriter();
+        this.osFunctions = osFunctions;
+        reader = new BufferedReader(new InputStreamReader(in));
+        readyToAdvance = false;
+    }
+
+    public void showStep(boolean validated) throws WizardNavigationException {
+        doUserInterview(validated);
+        if (!validateStep()) showStep(false);
+    }
+
+    public void showTitle() {
+        String title = getTitle();
+        String banner = StringUtils.repeat("-", title.length());
+
+        out.println();
+        out.println(banner);
+        out.println(title);
+        out.println(banner);
+        out.flush();
     }
 
     public ConfigurationCommand getConfigurationCommand() {
-        return makeConfigCommand();
+        return command;
+    }
+
+    public boolean shouldApplyConfiguration() {
+        return false;
+    }
+
+    public void setReadyToAdvance(boolean readyToAdvance) {
+        this.readyToAdvance = readyToAdvance;
+    }
+
+    public boolean isShowNavigation() {
+        return showNavigation;
     }
 
     protected ConfigurationWizard getParent() {
         return parent;
     }
 
-    public void collectInput() {
-        showTitle();
-        doInputCollection();
+    protected void handleInput(String input) throws WizardNavigationException {
+        parent.handleInput(input);
     }
 
-    public void showTitle() {
-        out.println("----------------------------------------------");
-        out.println(getTitle());
-        out.println("----------------------------------------------");
+    protected void storeInput() {
+        if (command != null) {
+            getParent().storeCommand(command);
+        }
     }
 
-    protected abstract void doInputCollection();
-
-    public abstract String getTitle();
-
-    protected abstract ConfigurationCommand makeConfigCommand();
-
-
-    public ConfigWizardConsoleStep getPreviousStep() {
-        return previousStep;
+    protected String getData(String[] promptLines, String defaultValue) throws IOException, WizardNavigationException {
+        doPromptLines(promptLines);
+        String input = reader.readLine();
+        handleInput(input);
+        if (StringUtils.isEmpty(input)) {
+            input = defaultValue;
+        }
+        return input;
     }
 
-    public void setPreviousStep(ConfigWizardConsoleStep previousStep) {
-        this.previousStep = previousStep;
+
+    private void doPromptLines(String[] promptLines) {
+        if (promptLines != null) {
+            for (int i = 0; i < promptLines.length; i++) {
+                String promptLine = promptLines[i];
+                out.print(promptLine);
+            }
+            out.flush();
+        }
     }
 
-    public ConfigWizardConsoleStep getNextStep() {
-        return nextStep;
-    }
 
-    public void setNextStep(ConfigWizardConsoleStep nextStep) {
-        this.nextStep = nextStep;
-    }
+    abstract boolean validateStep();
 
-    public void goForward() {
-        getParent().next(this);
-    }
+    abstract void doUserInterview(boolean validated) throws WizardNavigationException;
 
-    public void goBack() {
-        getParent().previous(this);
-    }
+    abstract String getTitle();
 }

@@ -60,6 +60,7 @@ public class ConfigurationWizardLauncher {
     private static void launchWithGui(String[] args) {
         System.out.println("Starting Configuration Wizard in Graphical Mode");
         ConfigurationWizard.startWizard(args);
+
     }
 
     private static String usage() {

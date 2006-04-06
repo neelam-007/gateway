@@ -1,6 +1,7 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.*;
 
@@ -10,27 +11,29 @@ import java.io.*;
  * Time: 10:00:38 AM
  */
 public class ConfigWizardConsoleStartStep extends BaseConsoleStep {
-    public ConfigWizardConsoleStartStep(ConfigurationWizard parent_, InputStream is, PrintWriter pw) {
-        super(parent_, is, pw);
+
+    public ConfigWizardConsoleStartStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
+        super(parentWiz, osFunctions);
+        showNavigation = false;
     }
 
-    protected void doInputCollection() {
-        out.println("This wizard will configure a Secure Span Gateway (SSG).");
-        out.println("Press <Enter> to continue");
-        BufferedReader br = new BufferedReader(new InputStreamReader(in));
-        try {
-            br.readLine();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        goForward();
-    }
-
-    protected ConfigurationCommand makeConfigCommand() {
-        return null;
+    boolean validateStep() {
+        return true;
     }
 
     public String getTitle() {
         return "Welcome to the Secure Span Gateway Configuration Wizard";
+    }
+
+    void doUserInterview(boolean validated) throws WizardNavigationException {
+        out.println("This wizard will configure a newly installed Secure Span Gateway (SSG)");
+        out.println("Press <Enter> to continue");
+        out.flush();
+
+        try {
+            handleInput(reader.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

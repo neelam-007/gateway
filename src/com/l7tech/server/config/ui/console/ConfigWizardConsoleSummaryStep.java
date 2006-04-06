@@ -1,9 +1,9 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.*;
 
 /**
  * User: megery
@@ -11,18 +11,30 @@ import java.io.PrintWriter;
  * Time: 10:00:47 AM
  */
 public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
-    public ConfigWizardConsoleSummaryStep(ConfigurationWizard parent_, InputStream is, PrintWriter pw) {
-        super(parent_, is, pw);
+    public ConfigWizardConsoleSummaryStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
+        super(parentWiz, osFunctions);
     }
 
-    protected void doInputCollection() {
-    }
+    void doUserInterview(boolean validated) throws WizardNavigationException {
+        out.println("Press <Enter> to continue");
+        out.flush();
 
-    protected ConfigurationCommand makeConfigCommand() {
-        return null;
+        try {
+            handleInput(reader.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public String getTitle() {
         return "SSG Configuration Summary";
+    }
+
+    public boolean shouldApplyConfiguration() {
+        return true;
+    }
+
+    boolean validateStep() {
+        return true;
     }
 }

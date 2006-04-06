@@ -103,13 +103,13 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
         emptyHostnameLabel.setVisible(false);
         //get the local host name text for the label
-        try
-        {
-            InetAddress localMachine = InetAddress.getLocalHost();
-            clusteringConfigBean.setLocalHostName(localMachine.getCanonicalHostName());
-        } catch(java.net.UnknownHostException uhe) {
-            System.out.println(uhe.getMessage());
-        }
+//        try
+//        {
+//            InetAddress localMachine = InetAddress.getLocalHost();
+//            clusteringConfigBean.setLocalHostName(localMachine.getCanonicalHostName());
+//        } catch(java.net.UnknownHostException uhe) {
+//            System.out.println(uhe.getMessage());
+//        }
 
         //now get the cluster host name for the text box
         String clusterHostname = osFunctions.getClusterHostName();

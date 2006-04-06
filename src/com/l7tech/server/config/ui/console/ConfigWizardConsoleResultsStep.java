@@ -1,10 +1,12 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.ListHandler;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
+import java.util.List;
+import java.util.Iterator;
 
 /**
  * User: megery
@@ -12,21 +14,35 @@ import java.io.PrintWriter;
  * Time: 10:00:57 AM
  */
 public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
-    public ConfigWizardConsoleResultsStep(ConfigurationWizard parent_, InputStream is, PrintWriter pw) {
-        super(parent_, is, pw);
+    public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
+        super(parentWiz, osFunctions);
     }
 
-    protected void doInputCollection() {
-    }
+    void doUserInterview(boolean validated) throws WizardNavigationException {
+        out.println("Here are the results");
+        List logs = ListHandler.getLogList();
+        if (logs != null) {
+            for (Iterator iterator = logs.iterator(); iterator.hasNext();) {
+                String s = (String) iterator.next();
+                out.println(s);
+            }
+        }
 
-    public void collectInput(InputStream in, OutputStream out) {
-    }
+        out.println("Press <Enter> to finish the wizard");
+        out.flush();
 
-    protected ConfigurationCommand makeConfigCommand() {
-        return null;
+        try {
+            handleInput(reader.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public String getTitle() {
         return "SSG Configuration Results";
+    }
+
+    boolean validateStep() {
+        return true;
     }
 }

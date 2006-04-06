@@ -2,23 +2,23 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.db.DBActionsListener;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.beans.NewDatabaseConfigBean;
-import com.l7tech.server.config.commands.NewDatabaseConfigCommand;
+import com.l7tech.server.config.PropertyHelper;
+import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Properties;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  * Time: 4:37:57 PM
  * To change this template use File | Settings | File Templates.
  */
-public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
+public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBActionsListener {
     private static final Logger logger = Logger.getLogger(ConfigWizardNewDBPanel.class.getName());
 
     private final static String LOCALDB_HOSTNAME="localhost";
@@ -65,11 +65,6 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
     private static final String MISSING_FIELDS_MSG = "Some required fields are missing. \n\n" +
                         "Please fill in all the required fields (indicated in red above)";
 
-    private final static String PROP_DB_USERNAME = "hibernate.connection.username";
-    private final static String PROP_DB_URL = "hibernate.connection.url";
-    private static final String PROP_DB_PASSWORD = "hibernate.connection.password" ;
-
-    private Pattern urlPattern = Pattern.compile("^.*//(.*)/(.*)\\?.*$");
 
     private ActionListener dbActionListener = new ActionListener() {
 
@@ -106,8 +101,8 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
 
     private void init() {
         setShowDescriptionPanel(false);
-        configBean = new NewDatabaseConfigBean(osFunctions);
-        configCommand = new NewDatabaseConfigCommand(configBean);
+        configBean = new SsgDatabaseConfigBean(osFunctions);
+        configCommand = new SsgDatabaseConfigCommand(configBean);
         try {
             dbActions = new DBActions();
         } catch (ClassNotFoundException e) {
@@ -142,7 +137,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
     }
 
     protected void updateModel(HashMap settings) {
-        NewDatabaseConfigBean dbConfigBean = (NewDatabaseConfigBean)configBean;
+        SsgDatabaseConfigBean dbConfigBean = (SsgDatabaseConfigBean)configBean;
 
         boolean isNew = createNewDb.isSelected();
         dbConfigBean.setCreateDb(isNew);
@@ -157,7 +152,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
     }
 
     protected void updateView(HashMap settings) {
-        NewDatabaseConfigBean dbBean = null;
+        SsgDatabaseConfigBean dbBean = null;
         String existingDbUsername = null;
         String existingDBUrl = null;
         String existingDbHostname = null;
@@ -167,7 +162,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
         //first try and get the bean information if it exists and use that.
         boolean beanInitialized = false;
         if (configBean != null) {
-            dbBean = (NewDatabaseConfigBean) configBean;
+            dbBean = (SsgDatabaseConfigBean) configBean;
             existingDbUsername = dbBean.getDbUsername();
             existingDbName = dbBean.getDbName();
             existingDbHostname = dbBean.getDbHostname();
@@ -184,19 +179,17 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
 
 
         if (!beanInitialized) {
-
-            FileInputStream fis = null;
-            Properties props = new Properties();
             try {
-                fis = new FileInputStream(osFunctions.getDatabaseConfig());
-                props.load(fis);
-                fis.close();
-                fis = null;
-                existingDbUsername =props.getProperty(PROP_DB_USERNAME);
-                existingDbPassword = props.getProperty(PROP_DB_PASSWORD);
-                existingDBUrl = props.getProperty(PROP_DB_URL);
+                Map props = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
+                    SsgDatabaseConfigBean.PROP_DB_USERNAME,
+                    SsgDatabaseConfigBean.PROP_DB_PASSWORD,
+                    SsgDatabaseConfigBean.PROP_DB_URL
+                });
+                existingDbUsername =(String) props.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+                existingDbPassword = (String) props.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+                existingDBUrl = (String) props.get(SsgDatabaseConfigBean.PROP_DB_URL);
                 if (StringUtils.isNotEmpty(existingDBUrl)) {
-                    Matcher matcher = urlPattern.matcher(existingDBUrl);
+                    Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
                     if (matcher.matches()) {
                         existingDbHostname = matcher.group(1);
                         existingDbName = matcher.group(2);
@@ -208,12 +201,6 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
             } catch (IOException e) {
                 logger.warning(CONFIG_FILE_IO_ERROR_MSG);
                 logger.warning(e.getMessage());
-            } finally{
-                if (fis != null) {
-                    try {
-                        fis.close();
-                    } catch (IOException e) {}
-                }
             }
         }
 
@@ -240,14 +227,24 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
         //enforce that all the required fields are present.
         isOk = checkRequiredFields();
 
+        String rootUsername = privUsername.getText();
+        String rootPassword = String.valueOf(privPassword.getPassword());
+
+        String username = dbUsername.getText();
+        String password = dbPassword.getText();
+
+        String currentVersion = getParentWizard().getCurrentVersion();
+        String theDbName = dbName.getText();
+        String hostname = dbHostname.getText();
+
         if (!isOk) { // if we've passed the required fields checks
             showErrorMessage(MISSING_FIELDS_MSG);
         } else {
             if (createNewDb.isSelected()) {
-                isOk = doCreateDb(privUsername.getText(),new String(privPassword.getPassword()),dbHostname.getText(), dbName.getText(), dbUsername.getText(), dbPassword.getText(), false);
+                isOk = dbActions.doCreateDb(rootUsername, rootPassword, hostname, theDbName, username, password, false, this);
             }
             else {
-                isOk = doExistingDb(dbHostname.getText(), dbName.getText(), dbUsername.getText(), dbPassword.getText());
+                isOk = dbActions.doExistingDb(theDbName, hostname, username, password, rootUsername, rootPassword, currentVersion, this);
             }
         }
 
@@ -430,71 +427,6 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
         return pwdFld.getPassword();
     }
 
-    private boolean doCreateDb(String pUsername, String pPassword, String hostname, String name, String username, String password, boolean overwriteDb) {
-        String errorMsg;
-        boolean isOk = false;
-
-        DBActions.DBActionsResult result = new DBActions.DBActionsResult();
-        logger.info("Attempting to create a new database (" + hostname + "/" + name + ") using privileged user \"" + pUsername + "\"");
-        String dbCreateScriptFile = osFunctions.getPathToDBCreateFile();
-        boolean isWindows = osFunctions.isWindows();
-        try {
-            result = dbActions.createDb(pUsername, pPassword, hostname, name, username, password, dbCreateScriptFile, isWindows, overwriteDb);
-            int status = result.getStatus();
-            if ( status == DBActions.DB_SUCCESS) {
-                hideErrorMessage();
-                isOk = true;
-            } else {
-                switch (status) {
-                    case DBActions.DB_UNKNOWNHOST_FAILURE:
-                        errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
-                        logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                        logger.warning(errorMsg);
-                        showErrorMessage(errorMsg);
-                        isOk = false;
-                        break;
-                    case DBActions.DB_AUTHORIZATION_FAILURE:
-                        errorMsg = "There was an authentication error when attempting to create the new database using the username \"" +
-                                pUsername + "\". Perhaps the password is wrong. Please retry.";
-                        logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                        logger.warning(errorMsg);
-                        showErrorMessage(errorMsg);
-                        isOk = false;
-                        break;
-                    case DBActions.DB_ALREADY_EXISTS:
-                        logger.warning("The database named \"" + name + "\" already exists");
-                        errorMsg = "The database named \"" + name + "\" already exists. Would you like to overwrite it?";
-                        int response = JOptionPane.showConfirmDialog(this,errorMsg, "Database already exists", JOptionPane.YES_NO_OPTION);
-                        if (response == JOptionPane.OK_OPTION) {
-                            response = showReallyConfirmOverwriteMessage(name);
-                            if (response == CONFIRM_OVERWRITE_YES) {
-                                logger.info("creating new database (overwriting existing one)");
-                                logger.warning("The database will be overwritten");
-                                isOk = doCreateDb(pUsername, pPassword, hostname, name, username, password, true);
-                            }
-                        } else {
-                            isOk = false;
-                        }
-                        break;
-                    case DBActions.DB_UNKNOWN_FAILURE:
-                    default:
-                        errorMsg = GENERIC_DBCREATE_ERROR_MSG;
-                        logger.warning(errorMsg);
-                        showErrorMessage(errorMsg);
-                        isOk = false;
-                        break;
-                }
-            }
-        } catch (IOException e) {
-            errorMsg = "Could not create the database because there was an error while reading the file \"" + dbCreateScriptFile + "\"." +
-                    " The error was: " + e.getMessage();
-            logger.warning(errorMsg);
-            showErrorMessage(errorMsg);
-            isOk = false;
-        }
-        return isOk;
-    }
-
     private int showReallyConfirmOverwriteMessage(String dbName) {
         Object[] options = new Object[2];
         options[CONFIRM_OVERWRITE_YES] = "Yes";
@@ -509,12 +441,41 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel{
             options[1]);
     }
 
-    private void showErrorMessage(String errorMsg) {
+    public void showErrorMessage(String errorMsg) {
         errorMessagePane.setText(errorMsg);
         errorMessagePane.setVisible(true);
     }
 
-    private void hideErrorMessage() {
+    public boolean getOverwriteConfirmationFromUser(String dbName) {
+        String errorMsg = "The database named \"" + dbName + "\" already exists. Would you like to overwrite it?";
+        boolean isOkToOverwrite = false;
+        int response = JOptionPane.showConfirmDialog(this,errorMsg, "Database already exists", JOptionPane.YES_NO_OPTION);
+        if (response == JOptionPane.OK_OPTION) {
+            response = showReallyConfirmOverwriteMessage(dbName);
+            if (response == CONFIRM_OVERWRITE_YES) {
+                logger.info("creating new database (overwriting existing one)");
+                logger.warning("The database will be overwritten");
+                isOkToOverwrite = true;
+            }
+        }
+        return isOkToOverwrite;
+    }
+
+    public void confirmCreateSuccess() {
+    }
+
+    public void hideErrorMessage() {
         errorMessagePane.setVisible(false);
+    }
+
+    public char[] getPrivilegedPassword() {
+        return showGetPasswordDialog("Please enter the root database password:");
+    }
+
+    public boolean getGenericUserConfirmation(String msg) {
+        int result = JOptionPane.showConfirmDialog(this,msg,
+            "Confirmation", JOptionPane.YES_NO_OPTION);
+
+        return (result == JOptionPane.OK_OPTION);
     }
 }

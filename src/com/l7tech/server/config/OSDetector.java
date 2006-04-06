@@ -17,17 +17,22 @@ public class OSDetector {
 
     private static String OSName;
 
+    private static OSSpecificFunctions osf_;
+
     public static OSSpecificFunctions getOSSpecificActions() throws UnsupportedOsException {
-        OSName = System.getProperty("os.name");
-        if (isWindows()) {
-            return new WindowsSpecificFunctions(OSName);
+        if (osf_ == null) {
+            OSName = System.getProperty("os.name");
+            if (isWindows()) {
+                osf_ = new WindowsSpecificFunctions(OSName);
+            }
+            if (isLinux()) {
+                osf_ = new LinuxSpecificFunctions(OSName);
+            }
+            else {
+                throw new UnsupportedOsException(OSName + " is not a supported operating system.");
+            }
         }
-        if (isLinux()) {
-            return new LinuxSpecificFunctions(OSName);
-        }
-        else {
-            throw new UnsupportedOsException(OSName + " is not a supported operating system.");
-        }
+        return osf_;
     }
 
     private static boolean isWindows() {
