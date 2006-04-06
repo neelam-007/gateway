@@ -33,7 +33,7 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
         insert( new RequestWssReplayProtectionNode(), index++ );
         insert( new SchemaValidationPaletteNode() {
             public String getName() {
-                return "XML Parameter Tampering and XDoS protection";
+                return "XML Parameter Tampering and XDoS Protection";
             }
         }, index++ );
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
