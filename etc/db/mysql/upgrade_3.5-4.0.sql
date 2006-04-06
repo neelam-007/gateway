@@ -68,16 +68,3 @@ alter table internal_user_group add index (provider_oid);
 alter table internal_user_group add index (user_id);
 alter table internal_user_group add index (subgroup_id);
 
-------------------------
--- Cluster Properties --
-------------------------
-
-alter table cluster_properties drop primary key;
-
-alter table cluster_properties add objectid bigint(20) not null primary key auto_increment;
-alter table cluster_properties add version integer not null;
-
--- Removes auto_increment but still primary key
-alter table cluster_properties change objectid objectid bigint(20) not null;
-
-create unique index i_cp_propkey on cluster_properties (propkey);
