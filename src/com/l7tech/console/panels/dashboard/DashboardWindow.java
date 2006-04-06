@@ -296,9 +296,9 @@ public class DashboardWindow extends JFrame implements LogonListener {
             SortedMap periodMap = currentRange.getAllPeriods();
             {
                 List chartBins = new ArrayList();
-                long now = System.currentTimeMillis();
 
-                Map currentPeriods = periodMap.subMap(new Long(now - currentRange.getChartRange()), new Long(now));
+                Long lastestPeriodStart = (Long)periodMap.lastKey();
+                Map currentPeriods = periodMap.tailMap(new Long(lastestPeriodStart.longValue() - currentRange.getChartRange()));
                 final Set chartedPeriods = currentRange.getChartedPeriods();
                 for (Iterator i = currentPeriods.keySet().iterator(); i.hasNext();) {
                     Long period = (Long)i.next();
@@ -320,7 +320,6 @@ public class DashboardWindow extends JFrame implements LogonListener {
                     if (lastPeriod != null) {
                         PeriodData data = (PeriodData)periodMap.get(lastPeriod);
                         rightPanelBin = data.get(whichNode, whichService);
-                        if (rightPanelBin.getPeriodStart() + (rightPanelBin.getInterval() * 2) < System.currentTimeMillis()) rightPanelBin = null;
                     }
                 }
             } else {
@@ -335,47 +334,40 @@ public class DashboardWindow extends JFrame implements LogonListener {
                 rightPanelBin = clusterStatusAdmin.getLastestMetricsSummary(whichNode, whichService, resolution, (int)currentRange.getRightPanelRange());
             }
 
-            int numPolicyFail = 0, numRoutingFail = 0, numSuccess = 0, numTotal = 0;
-            int frontMin = 0, frontMax = 0, backMin = 0, backMax = 0;
-            double frontAvg = 0.0, backAvg = 0.0;
+            if (rightPanelBin != null) {
+                final int numPolicyFail = rightPanelBin.getNumAttemptedRequest() - rightPanelBin.getNumAuthorizedRequest();
+                final int numRoutingFail = rightPanelBin.getNumAuthorizedRequest() - rightPanelBin.getNumCompletedRequest();
+                final int numSuccess = rightPanelBin.getNumCompletedRequest();
+                final int numTotal = rightPanelBin.getNumAttemptedRequest();
 
-            if (rightPanelBin == null) {
-                fromTimeLabel.setText("");
-                toTimeLabel.setText("");
-            } else {
+                final int frontMin = rightPanelBin.getMinFrontendResponseTime();
+                final double frontAvg = rightPanelBin.getAverageFrontendResponseTime();
+                final int frontMax = rightPanelBin.getMaxFrontendResponseTime();
+
+                final int backMin = rightPanelBin.getMinBackendResponseTime();
+                final double backAvg = rightPanelBin.getAverageBackendResponseTime();
+                final int backMax = rightPanelBin.getMaxBackendResponseTime();
+
+                numPolicyFailField.setText(Integer.toString(numPolicyFail));
+                numSuccessField.setText(Integer.toString(numSuccess));
+                numRoutingFailField.setText(Integer.toString(numRoutingFail));
+                numTotalField.setText(Integer.toString(numTotal));
+
+                frontMinField.setText(Integer.toString(frontMin));
+                frontAvgField.setText(Long.toString(Math.round(frontAvg)));
+                frontMaxField.setText(Integer.toString(frontMax));
+
+                backMinField.setText(Integer.toString(backMin));
+                backAvgField.setText(Long.toString(Math.round(backAvg)));
+                backMaxField.setText(Integer.toString(backMax));
+
                 fromTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodStart()), new StringBuffer(), FIELD_POSITION_ZERO).toString());
                 toTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodEnd()), new StringBuffer(), FIELD_POSITION_ZERO).toString());
 
-                numPolicyFail = rightPanelBin.getNumAttemptedRequest() - rightPanelBin.getNumAuthorizedRequest();
-                numRoutingFail = rightPanelBin.getNumAuthorizedRequest() - rightPanelBin.getNumCompletedRequest();
-                numSuccess = rightPanelBin.getNumCompletedRequest();
-                numTotal = rightPanelBin.getNumAttemptedRequest();
-
-                frontMin = rightPanelBin.getMinFrontendResponseTime();
-                frontAvg = rightPanelBin.getAverageFrontendResponseTime();
-                frontMax = rightPanelBin.getMaxFrontendResponseTime();
-
-                backMin = rightPanelBin.getMinBackendResponseTime();
-                backAvg = rightPanelBin.getAverageBackendResponseTime();
-                backMax = rightPanelBin.getMaxBackendResponseTime();
+                StringBuffer sb = new StringBuffer();
+                statusUpdatedFormat.format(new Object[] { new Date() }, sb, FIELD_POSITION_ZERO);
+                statusLabel.setText(sb.toString());
             }
-
-            numPolicyFailField.setText(Integer.toString(numPolicyFail));
-            numSuccessField.setText(Integer.toString(numSuccess));
-            numRoutingFailField.setText(Integer.toString(numRoutingFail));
-            numTotalField.setText(Integer.toString(numTotal));
-
-            frontMinField.setText(Integer.toString(frontMin));
-            frontAvgField.setText(Long.toString(Math.round(frontAvg)));
-            frontMaxField.setText(Integer.toString(frontMax));
-
-            backMinField.setText(Integer.toString(backMin));
-            backAvgField.setText(Long.toString(Math.round(backAvg)));
-            backMaxField.setText(Integer.toString(backMax));
-
-            StringBuffer sb = new StringBuffer();
-            statusUpdatedFormat.format(new Object[] { new Date() }, sb, FIELD_POSITION_ZERO);
-            statusLabel.setText(sb.toString());
 
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "Error getting data from SSG", e);
