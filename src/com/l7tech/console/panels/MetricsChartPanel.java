@@ -47,14 +47,16 @@ public class MetricsChartPanel extends ChartPanel {
     /** Color for the horizontal line representing average frontend response times. */
     private static final Color FRONTEND_RESPONSE_AVG_COLOR = new Color(95, 83, 173);
 
-    /** Color for the high-low bars representing min-max frontend response times. */
-    private static final Color FRONTEND_RESPONSE_MINMAX_COLOR = new Color(186, 189, 255, 128);
+    /** Color for the high-low bars representing min-max frontend response times.
+        Transparency is used to allow backend response times to be overlaid on
+        frontend response times while keeping both remain visible. */
+    private static final Color FRONTEND_RESPONSE_MINMAX_COLOR = GetAlphaEquiv(186, 189, 225, 192);
 
     /** Color for the horizontal line representing average backend response times. */
-    private static final Color BACKEND_RESPONSE_AVG_COLOR = new Color(49, 53, 17);
+    private static final Color BACKEND_RESPONSE_AVG_COLOR = new Color(77, 86, 0);
 
     /** Color for the high-low bars representing min-max backend response times. */
-    private static final Color BACKEND_RESPONSE_MINMAX_COLOR = new Color(217, 225, 78, 128);
+    private static final Color BACKEND_RESPONSE_MINMAX_COLOR = GetAlphaEquiv(223, 235, 91, 192);
 
     /** Stroke for the horizontal line representing average response times. */
     private static final BasicStroke RESPONSE_AVG_STROKE = new BasicStroke(2.f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
@@ -252,6 +254,22 @@ public class MetricsChartPanel extends ChartPanel {
                        tooltip, FIELD_POSITION_ZERO);
             return tooltip.toString();
         }
+    }
+
+    /**
+     * Generates a transparent color such that when painted on a white
+     * background will look the same as the given opaque color. That is, find
+     * (r, g, b, alpha) such that (r, g, b, alpha) + white = (r0, g0, b0, 0).
+     * <p/>
+     * This is used for matching the response time min-max bar color to the right
+     * panel icon legend color. It is neccessary because the min-max bar uses
+     * transparency while the icon legend is designed with opaque color.
+     */
+    private static Color GetAlphaEquiv(int r0, int g0, int b0, int a) {
+        final int r = Math.round(Math.max(0.f, (r0 + a - 255) * 255.f / a));
+        final int g = Math.round(Math.max(0.f, (g0 + a - 255) * 255.f / a));
+        final int b = Math.round(Math.max(0.f, (b0 + a - 255) * 255.f / a));
+        return new Color(r, g, b, a);
     }
 
     /**
