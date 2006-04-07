@@ -294,7 +294,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
             // Find all current data that hasn't been charted yet, and add it to the chart
             SortedMap periodMap = currentRange.getAllPeriods();
-            {
+            if (! periodMap.isEmpty()) {
                 List chartBins = new ArrayList();
 
                 Long lastestPeriodStart = (Long)periodMap.lastKey();
