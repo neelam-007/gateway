@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
+import com.l7tech.server.identity.AuthenticationResult;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;

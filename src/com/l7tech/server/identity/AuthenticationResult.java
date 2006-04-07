@@ -1,11 +1,13 @@
-package com.l7tech.identity;
+package com.l7tech.server.identity;
 
+import com.l7tech.identity.Group;
+import com.l7tech.identity.User;
 import org.apache.commons.collections.LRUMap;
 
 import java.security.cert.X509Certificate;
 
 /**
- * Created on successful authentication events.  Semi-threadsafe (mutators are synchronized).  Used in
+ * Created on successful authentication events.  Semi-threadsafe (mutators are synchronized).  Used in 
  */
 public final class AuthenticationResult {
     public static final AuthenticationResult AUTHENTICATED_UNKNOWN_USER = new AuthenticationResult();
@@ -45,7 +47,7 @@ public final class AuthenticationResult {
     }
 
     public synchronized void setCachedGroupMembership(Group group, Boolean isMember) {
-        if (authorizedGroups == null) authorizedGroups = new LRUMap(Integer.getInteger(this.getClass().getName() + ".cacheSize", 50).intValue());
+        if (authorizedGroups == null) authorizedGroups = new LRUMap(AuthCache.GROUP_CACHE_SIZE);
         authorizedGroups.put(group, isMember);
     }
 

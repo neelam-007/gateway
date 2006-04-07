@@ -11,10 +11,10 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.Identity;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.mapping.*;
-import com.l7tech.objectmodel.EntityManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
@@ -22,7 +22,6 @@ import com.l7tech.server.identity.mapping.AttributeConfigManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -133,7 +132,7 @@ public class ServerMappingAssertion extends ServerIdentityAssertion {
     protected AssertionStatus validateCredentials(IdentityProvider provider,
                                                   LoginCredentials pc,
                                                   PolicyEnforcementContext context)
-            throws AuthenticationException, FindException, IOException
+            throws AuthenticationException
     {
         String clientName = null;
         XmlSecurityToken[] tokens = context.getRequest().getSecurityKnob().getProcessorResult().getXmlSecurityTokens();
@@ -149,30 +148,39 @@ public class ServerMappingAssertion extends ServerIdentityAssertion {
             return AssertionStatus.FAILED;
         }
 
-        Collection results = provider.search(assertion.isValidForUsers(), assertion.isValidForGroups(), identitySearchMappings[0], clientName);
-        if (results.size() == 1) {
+        try {
+            // TODO caching here?
+            // TODO caching here?
+            // TODO caching here?
+            // TODO caching here?
+            // TODO caching here?
+            Collection results = provider.search(assertion.isValidForUsers(), assertion.isValidForGroups(), identitySearchMappings[0], clientName);
+            if (results.size() == 1) {
 
-            EntityHeader header = (EntityHeader) results.iterator().next();
-            Identity identity;
-            if (header.getType() == EntityType.USER) {
-                identity = provider.getUserManager().findByPrimaryKey(header.getStrId());
-            } else if (header.getType() == EntityType.GROUP) {
-                identity = provider.getGroupManager().findByPrimaryKey(header.getStrId());
-            } else {
-                throw new AuthenticationException("Identity was neither a User nor a Group");
-            }
+                EntityHeader header = (EntityHeader) results.iterator().next();
+                Identity identity;
+                if (header.getType() == EntityType.USER) {
+                    identity = provider.getUserManager().findByPrimaryKey(header.getStrId());
+                } else if (header.getType() == EntityType.GROUP) {
+                    identity = provider.getGroupManager().findByPrimaryKey(header.getStrId());
+                } else {
+                    throw new AuthenticationException("Identity was neither a User nor a Group");
+                }
 
-            Object[] values = identityRetrieveMappings[0].extractValues(identity);
-            if (values.length == 1) {
-                context.setVariable(assertion.getVariableName(), values[0]);
-                return AssertionStatus.NONE;
+                Object[] values = identityRetrieveMappings[0].extractValues(identity);
+                if (values.length == 1) {
+                    context.setVariable(assertion.getVariableName(), values[0]);
+                    return AssertionStatus.NONE;
+                } else {
+                    auditor.logAndAudit(AssertionMessages.MAPPING_NO_IDVALUE);
+                    return AssertionStatus.FAILED;
+                }
             } else {
                 auditor.logAndAudit(AssertionMessages.MAPPING_NO_IDVALUE);
                 return AssertionStatus.FAILED;
             }
-        } else {
-            auditor.logAndAudit(AssertionMessages.MAPPING_NO_IDVALUE);
-            return AssertionStatus.FAILED;
+        } catch (FindException e) {
+            throw new AuthenticationException("Couldn't search for users and/or groups", e);
         }
     }
 }

@@ -10,6 +10,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.mapping.IdentityMapping;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.identity.AuthenticationResult;
 
 import java.security.cert.X509Certificate;
 import java.util.*;

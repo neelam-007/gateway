@@ -3,13 +3,13 @@ package com.l7tech.identity.ldap;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
-import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.ldap.*;
+import com.l7tech.server.identity.AuthenticationResult;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;

@@ -104,7 +104,7 @@ public class SecureSpanConstants {
     public static final String CERT_VALID = "valid";
 
     /**
-     * @see {@link com.l7tech.identity.AuthenticationResult#isCertSignedByStaleCA()}
+     * @see {@link com.l7tech.server.identity.AuthenticationResult#isCertSignedByStaleCA()}
      */
     public static final String CERT_STALE = "stale";
 

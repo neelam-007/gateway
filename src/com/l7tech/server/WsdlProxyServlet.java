@@ -5,7 +5,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
-import com.l7tech.identity.AuthenticationResult;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;

@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.AuthenticationResult;
 import sun.misc.BASE64Decoder;
 
 import javax.servlet.ServletConfig;
@@ -18,8 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Level;
 
 /**

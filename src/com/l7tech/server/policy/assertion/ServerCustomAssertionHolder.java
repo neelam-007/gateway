@@ -1,13 +1,13 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.http.CookieUtils;
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
@@ -18,8 +18,7 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.http.CookieUtils;
-import com.l7tech.common.http.HttpCookie;
+import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -27,20 +26,19 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
-import com.l7tech.identity.AuthenticationResult;
-import com.l7tech.identity.UserBean;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.security.*;
 import java.util.*;

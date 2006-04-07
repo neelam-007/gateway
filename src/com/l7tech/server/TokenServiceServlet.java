@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -94,7 +95,7 @@ public class TokenServiceServlet extends HttpServlet {
         try {
             context.setAuditContext(auditContext);
 
-            AssertionStatus status = AssertionStatus.UNDEFINED;
+            AssertionStatus status;
             try {
                 final StashManager stashManager = StashManagerFactory.createStashManager();
                 request.initialize(stashManager, ctype, req.getInputStream());

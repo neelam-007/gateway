@@ -6,7 +6,6 @@ import com.l7tech.common.LicenseException;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
@@ -15,6 +14,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.server.identity.AuthenticationResult;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;

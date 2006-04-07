@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ServletUtils;

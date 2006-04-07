@@ -4,7 +4,6 @@
 
 package com.l7tech.server.policy.assertion.identity;
 
-import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.objectmodel.FindException;
@@ -12,6 +11,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.identity.AuthenticationResult;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Level;

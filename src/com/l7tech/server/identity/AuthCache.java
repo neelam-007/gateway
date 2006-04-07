@@ -3,18 +3,15 @@
  */
 package com.l7tech.server.identity;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
+import com.l7tech.common.util.Background;
 import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.common.util.Background;
 import org.apache.commons.collections.LRUMap;
 
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.*;
 
 /**
  * @author alex
@@ -22,6 +19,9 @@ import java.util.*;
 public final class AuthCache {
     public static final int SUCCESS_CACHE_TIME = Integer.getInteger(AuthCache.class.getName() + ".maxSuccessTime", 60000).intValue();
     public static final int FAILURE_CACHE_TIME = Integer.getInteger(AuthCache.class.getName() + ".maxFailureTime", 30000).intValue();
+    public static final int SUCCESS_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".successCacheSize", 2000).intValue();
+    public static final int FAILURE_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".failureCacheSize", 200).intValue();
+    public static final int GROUP_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".perIdentityGroupMembershipCacheSize", 50).intValue();
 
     private static final Logger logger = Logger.getLogger(AuthCache.class.getName());
 
@@ -29,29 +29,21 @@ public final class AuthCache {
     private static final int DELETER_DELAY = 30 * 1000;
     private static final int DELETER_PERIOD = 10 * 60 * 1000;
 
-    private final LRUMap successCache = new LRUMap(Integer.getInteger(AuthCache.class.getName() + ".successCacheSize", 2000).intValue());
-    private final LRUMap failureCache = new LRUMap(Integer.getInteger(AuthCache.class.getName() + ".failureCacheSize", 200).intValue());
-    private final ReadWriteLock rwlock = new ReaderPreferenceReadWriteLock();
+    private final LRUMap successCache = new LRUMap(SUCCESS_CACHE_SIZE);
+    private final LRUMap failureCache = new LRUMap(FAILURE_CACHE_SIZE);
 
     private AuthCache() {
         Background.schedule(new TimerTask() {
             public void run() {
-                Set tbd = new HashSet();
+                int removed;
                 try {
                     logger.finest("Looking for stale cache entries");
-                    findStaleEntries(tbd, successCache);
-                    findStaleEntries(tbd, failureCache);
-
-                    int num = 0;
-                    rwlock.writeLock().acquire();
-                    for (Iterator i = tbd.iterator(); i.hasNext();) {
-                        Object creds = i.next();
-                        failureCache.remove(creds);
-                        successCache.remove(creds);
-                        num++;
+                    synchronized (this) {
+                        long now = System.currentTimeMillis();
+                        removed = removeStaleEntries(now, successCache) +
+                                  removeStaleEntries(now, failureCache);
                     }
-                    rwlock.writeLock().release();
-                    logger.log(Level.FINE, "Deleted {0} stale cache entries", new Object[] {new Integer(num)});
+                    logger.log(Level.FINE, "Deleted {0} stale cache entries", new Object[] {new Integer(removed)});
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     logger.log(Level.WARNING, "Interrupted waiting for cache lock");
@@ -61,12 +53,13 @@ public final class AuthCache {
         }, DELETER_DELAY, DELETER_PERIOD);
     }
 
-    private void findStaleEntries(Set tbd, LRUMap cache) throws InterruptedException {
-        rwlock.readLock().acquire();
-        for (Iterator i = cache.entrySet().iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry)i.next();
-            LoginCredentials creds = (LoginCredentials)entry.getKey();
-            Object result = entry.getValue();
+    /**
+     * Caller must hold this's mutex.
+     */
+    private int removeStaleEntries(long now, LRUMap cache) throws InterruptedException {
+        int num = 0;
+        for (Iterator i = cache.values().iterator(); i.hasNext();) {
+            Object result = i.next();
             long time = -1;
             if (result instanceof Long) {
                 time = ((Long)result).longValue();
@@ -76,11 +69,12 @@ public final class AuthCache {
             } else {
                 logger.warning("Found an unexpected entry in cache: " + result);
             }
-            if (time < 0 || (time + DELETER_MAX_AGE < System.currentTimeMillis())) {
-                tbd.add(creds);
+            if (time < 0 || (time + DELETER_MAX_AGE < now)) {
+                i.remove();
+                num++;
             }
         }
-        rwlock.readLock().release();
+        return num;
     }
 
     private static class InstanceHolder {
@@ -106,10 +100,9 @@ public final class AuthCache {
                                                     int maxSuccessAge, int maxFailAge)
             throws AuthenticationException
     {
-        final long now = System.currentTimeMillis();
         String credString = creds.toString();
         try {
-            Object cached = getCacheEntry(creds, credString, now, maxSuccessAge, maxFailAge);
+            Object cached = getCacheEntry(creds, credString, maxSuccessAge, maxFailAge);
             if (cached instanceof AuthenticationResult) {
                 return (AuthenticationResult)cached;
             } else if (cached != null) {
@@ -117,10 +110,10 @@ public final class AuthCache {
             }
 
             // There was a cache miss before, so someone has to authenticate it.
-            // Let's make sure only one thread does so.
-            String mutex = (Long.toString(idp.getConfig().getOid()) + credString).intern();
-            synchronized(mutex) {
-                cached = getCacheEntry(creds, credString, now, maxSuccessAge, maxFailAge);
+            // Let's make sure only one thread does so on this SSG.
+            String credsMutex = (Long.toString(idp.getConfig().getOid()) + credString).intern();
+            synchronized(credsMutex) {
+                cached = getCacheEntry(creds, credString, maxSuccessAge, maxFailAge);
                 if (cached instanceof AuthenticationResult) {
                     // Someone else got there first with a success
                     return (AuthenticationResult)cached;
@@ -136,19 +129,20 @@ public final class AuthCache {
                 } catch (AuthenticationException e) {
                     thrown = e;
                 }
-                rwlock.writeLock().acquire();
                 String which;
-                final Long lnow = new Long(now);
-                if (result == null) {
-                    which = "failed";
-                    failureCache.put(creds, lnow);
-                    successCache.remove(creds);
-                } else {
-                    which = "successful";
-                    successCache.put(creds, result);
-                    failureCache.remove(creds);
+
+                synchronized (this) {
+                    if (result == null) {
+                        which = "failed";
+                        failureCache.put(creds, new Long(System.currentTimeMillis()));
+                        successCache.remove(creds);
+                    } else {
+                        which = "successful";
+                        successCache.put(creds, result);
+                        failureCache.remove(creds);
+                    }
                 }
-                rwlock.writeLock().release();
+
                 if (logger.isLoggable(Level.FINE))
                     logger.fine("Caching " + which + " authentication for " + creds);
 
@@ -165,17 +159,21 @@ public final class AuthCache {
         }
     }
 
+    /**
+     * Gets a cache entry
+     */
     private Object getCacheEntry(LoginCredentials creds,
                                  String credString,
-                                 long now,
                                  int maxSuccessAge,
                                  int maxFailAge)
             throws InterruptedException
     {
-        rwlock.readLock().acquire();
-        Long cachedFailureTime = (Long)failureCache.get(creds);
-        AuthenticationResult cachedAuthResult = (AuthenticationResult)successCache.get(creds);
-        rwlock.readLock().release();
+        Long cachedFailureTime;
+        AuthenticationResult cachedAuthResult;
+        synchronized (this) {
+            cachedFailureTime = (Long)failureCache.get(creds);
+            cachedAuthResult = (AuthenticationResult)successCache.get(creds);
+        }
         if (cachedAuthResult == null && cachedFailureTime == null) return null;
 
         String log;
@@ -194,7 +192,7 @@ public final class AuthCache {
             returnValue = cachedAuthResult;
         }
 
-        if (cacheAddedTime + maxAge > now) {
+        if (cacheAddedTime + maxAge > System.currentTimeMillis()) {
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE, "Using cached {0} for {1}", new String[] {log, credString});
             return returnValue;

@@ -6,8 +6,8 @@ package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.message.HttpResponseKnob;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
@@ -15,18 +15,18 @@ import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.identity.AuthCache;
+import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 
-import java.io.IOException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
@@ -34,7 +34,6 @@ import java.util.logging.Level;
  * is authorized to do so.
  *
  * @author alex
- * @version $Revision$
  */
 public abstract class ServerIdentityAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
@@ -90,35 +89,9 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             throw new IllegalStateException("Can't call checkRequest() when no valid identityProviderOid has been set!");
         }
 
-        String name;
         try {
             IdentityProvider provider = getIdentityProvider(context);
-            AuthenticationResult authResult = AuthCache.getInstance().getCachedAuthResult(
-                pc,
-                provider,
-                context.getAuthSuccessCacheTime(),
-                context.getAuthFailureCacheTime()
-            );
-            if (authResult == null) return authFailed(context, pc, null);
-
-            if (authResult.isCertSignedByStaleCA()) {
-                HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
-                hrk.setHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS, SecureSpanConstants.CERT_STALE);
-            }
-
-            User user = authResult.getUser();
-
-            name = user.getLogin();
-            if (name == null) name = user.getName();
-            if (name == null) name = user.getSubjectDn();
-            if (name == null) name = user.getUniqueIdentifier();
-
-            // Authentication succeeded
-            context.setAuthenticationResult(authResult);
-            auditor.logAndAudit(AssertionMessages.AUTHENTICATED, new String[] {name});
-
-            // Make sure this guy matches our criteria
-            return checkUser(authResult, context);
+            return validateCredentials(provider, pc, context);
         } catch (InvalidClientCertificateException icce) {
             auditor.logAndAudit(AssertionMessages.INVALID_CERT, new String[] {pc.getLogin()});
             // set some response header so that the CP is made aware of this situation
@@ -145,9 +118,13 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     protected AssertionStatus validateCredentials(IdentityProvider provider,
                                                   LoginCredentials pc,
                                                   PolicyEnforcementContext context)
-            throws AuthenticationException, FindException, IOException
-    {
-        AuthenticationResult authResult = provider.authenticate(pc);
+        throws AuthenticationException, FindException {
+        AuthenticationResult authResult = AuthCache.getInstance().getCachedAuthResult(
+            pc,
+            provider,
+            context.getAuthSuccessCacheTime(),
+            context.getAuthFailureCacheTime()
+        );
         if (authResult == null) return authFailed(context, pc, null);
 
         if (authResult.isCertSignedByStaleCA()) {

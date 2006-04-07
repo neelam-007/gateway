@@ -4,12 +4,12 @@
 
 package com.l7tech.server.policy.assertion.identity;
 
-import com.l7tech.identity.AuthenticationResult;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.identity.AuthenticationResult;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;

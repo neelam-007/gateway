@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.identity.AuthenticationResult;
 
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;

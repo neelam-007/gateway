@@ -8,7 +8,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.identity.User;
-import com.l7tech.identity.AuthenticationResult;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
@@ -30,7 +30,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 4, 2004<br/>
- * $Id$<br/>
  */
 public class ServerSecureConversation implements ServerAssertion {
     private final Auditor auditor;

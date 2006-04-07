@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 package com.l7tech.admin.rmi;
 
@@ -15,6 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.admin.AdminSessionManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.AuthenticationResult;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 

@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.event.identity.Authenticated;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.PersistentIdentityProvider;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
