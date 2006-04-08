@@ -191,6 +191,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
     private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws PolicyAssertionException {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
+        context.setRoutedServiceUrl(url);
 
         Throwable thrown = null;
         try {

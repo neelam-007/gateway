@@ -26,6 +26,7 @@ public abstract class ProcessingContext {
 
     private LoginCredentials credentials;
     private final List runOnClose = new ArrayList();
+    private long endTime;
 
     /**
      * Create a processing context holding the specified request and response.
@@ -60,6 +61,15 @@ public abstract class ProcessingContext {
 
     public synchronized void runOnClose( Runnable runMe ) {
         runOnClose.add( runMe );
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime() {
+        if (endTime != 0) throw new IllegalStateException("Can't call setEndTime() twice");
+        endTime = System.currentTimeMillis();
     }
 
     /**

@@ -13,6 +13,7 @@ import java.util.*;
  * @author  Benoit Mahe (bmahe@w3.org)
  */
 public class ISO8601Date {
+    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
     private static boolean check(StringTokenizer st, String token) throws ParseException {
         try {
@@ -30,7 +31,7 @@ public class ISO8601Date {
         // YYYY-MM-DDThh:mm:ss.sTZD
         StringTokenizer st = new StringTokenizer(isodate, "-T:.+Z", true);
 
-        Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        Calendar calendar = new GregorianCalendar(UTC);
         calendar.clear();
         try {
             // Year
@@ -176,13 +177,17 @@ public class ISO8601Date {
         return String.valueOf(i);
     }
 
+    public static String format(Date date) {
+        return format(date, UTC);
+    }
+
     /**
      * Generate a ISO 8601 date 
      * @param date a Date instance
      * @return a string representing the date in the ISO 8601 format
      */
-    public static String format(Date date) {
-        Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    public static String format(Date date, TimeZone tz) {
+        Calendar calendar = new GregorianCalendar(tz);
         calendar.setTime(date);
         StringBuffer buffer = new StringBuffer();
         buffer.append(calendar.get(Calendar.YEAR));
@@ -198,7 +203,22 @@ public class ISO8601Date {
         buffer.append(twoDigit(calendar.get(Calendar.SECOND)));
         buffer.append(".");
         buffer.append(threeDigit(calendar.get(Calendar.MILLISECOND)));
-        buffer.append("Z");
+        if (tz == UTC)
+            buffer.append("Z");
+        else {
+            int offsec = tz.getOffset(date.getTime()) / 1000;
+            int h = offsec / 3600;
+            int m = offsec - (h * 3600);
+            String hours = Integer.toString(Math.abs(h));
+            String minutes = Integer.toString(Math.abs(m));
+
+            buffer.append(offsec < 0 ? "-" : "+");
+            if (hours.length() == 1) buffer.append("0");
+            buffer.append(hours);
+            buffer.append(":");
+            if (minutes.length() == 1) buffer.append("0");
+            buffer.append(minutes);
+        }
         return buffer.toString();
     }
 }

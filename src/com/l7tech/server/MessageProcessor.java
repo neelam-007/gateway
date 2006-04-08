@@ -352,8 +352,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{e.getMessage()}, e);
             return AssertionStatus.SERVER_ERROR;
         } finally {
+            context.setEndTime();
             RoutingStatus rstat = context.getRoutingStatus();
-            final int frontTime = (int)(System.currentTimeMillis() - context.getStartTime());
+            final int frontTime = (int)(context.getEndTime() - context.getStartTime());
             final int backTime = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
             if (attemptedRequest) {
                 if (stats != null) stats.attemptedRequest();

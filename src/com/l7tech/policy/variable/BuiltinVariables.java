@@ -25,6 +25,18 @@ public class BuiltinVariables {
 
     private static final Map metadataByName = new HashMap();
 
+    public static final String TIMESUFFIX_FORMAT_ISO8601 = "iso8601";
+    public static final String TIMESUFFIX_ZONE_UTC = "utc";
+    public static final String TIMESUFFIX_ZONE_LOCAL = "local";
+    
+    public static final String URLSUFFIX_HOST = "host";
+    public static final String URLSUFFIX_PROTOCOL = "protocol";
+    public static final String URLSUFFIX_PORT = "port";
+    public static final String URLSUFFIX_FILE = "file";
+    public static final String URLSUFFIX_PATH = "path";
+    public static final String URLSUFFIX_QUERY = "query";
+    public static final String URLSUFFIX_FRAGMENT = "fragment";
+
     public static boolean isSupported(String name) {
         return getMetadata(name) != null;
     }

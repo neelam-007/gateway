@@ -6,17 +6,17 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.wsdl.Operation;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
-import java.net.MalformedURLException;
 
 /**
  * @author alex
@@ -38,10 +38,8 @@ public class ServerVariables {
         if (var == null) {
             // Try prefixed name
             int pos = lname.lastIndexOf(".");
-            if (pos > 0)
-                var = (Variable)varsByPrefix.get(lname.substring(0,pos));
-            else
-                var = (Variable)varsByPrefix.get(lname);
+            if (pos > 0) var = (Variable)varsByPrefix.get(lname.substring(0,pos));
+            if (var == null) var = (Variable)varsByPrefix.get(lname);
         }
         return var;
     }
@@ -49,8 +47,8 @@ public class ServerVariables {
 
     private static String[] getHeaderValues(String prefix, String name, PolicyEnforcementContext context) {
         if (!name.startsWith(prefix)) throw new IllegalArgumentException("HTTP Header Getter can't handle variable named '" + name + "'!");
-        String dotname = name.substring(prefix.length());
-        if (!dotname.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the header name.");
+        String suffix = name.substring(prefix.length());
+        if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the header name.");
         String hname = name.substring(prefix.length()+1);
         return context.getRequest().getHttpRequestKnob().getHeaderValues(hname);
     }
@@ -101,7 +99,7 @@ public class ServerVariables {
         }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return getUrlValue(name, context.getRequest().getHttpRequestKnob().getRequestUrl());
+                return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, context.getRequest().getHttpRequestKnob().getRequestUrl());
             }
         }),
         new Variable("request.http.secure", new Getter() {
@@ -158,15 +156,44 @@ public class ServerVariables {
         }),
         new Variable(BuiltinVariables.PREFIX_SERVICE_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return getUrlValue(name, context.getRoutedServiceUrl());
+                return getUrlValue(BuiltinVariables.PREFIX_SERVICE_URL, name, context.getRoutedServiceUrl());
+            }
+        }),
+        new Variable(BuiltinVariables.PREFIX_GATEWAY_TIME, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_GATEWAY_TIME, name, new TimeVariableUtils.LazyLong() {
+                    public long get() {
+                        return System.currentTimeMillis();
+                    }
+                });
+            }
+        }),
+        new Variable(BuiltinVariables.PREFIX_REQUEST_TIME, new Getter() {
+            public Object get(String name, final PolicyEnforcementContext context) {
+                return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_REQUEST_TIME, name, new TimeVariableUtils.LazyLong() {
+                    public long get() {
+                        return context.getStartTime();
+                    }
+                });
+            }
+        }),
+        new Variable(BuiltinVariables.PREFIX_RESPONSE_TIME, new Getter() {
+            public Object get(String name, final PolicyEnforcementContext context) {
+                return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_RESPONSE_TIME, name, new TimeVariableUtils.LazyLong() {
+                    public long get() {
+                        long endTime = context.getEndTime();
+                        if (endTime == 0) endTime = System.currentTimeMillis();
+                        return endTime;
+                    }
+                });
             }
         }),
     };
 
-    private static Object getUrlValue(String name, Object u) {
-        String dotname = name.substring(BuiltinVariables.PREFIX_REQUEST_URL.length());
-        if (dotname.length() == 0) return u; // Unsuffixed gets the full URL
-        String part = dotname.substring(1);
+    private static Object getUrlValue(String prefix, String name, Object u) {
+        String suffix = name.substring(prefix.length());
+        if (suffix.length() == 0) return u; // Unsuffixed gets the full URL
+        String part = suffix.substring(1);
         URL url;
         if (u instanceof URL) {
             url = (URL)u;
@@ -179,11 +206,11 @@ public class ServerVariables {
             }
         }
         final String protocol = url.getProtocol();
-        if ("host".equalsIgnoreCase(part)) {
+        if (BuiltinVariables.URLSUFFIX_HOST.equalsIgnoreCase(part)) {
             return url.getHost();
-        } else if ("protocol".equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.URLSUFFIX_PROTOCOL.equalsIgnoreCase(part)) {
             return protocol;
-        } else if ("port".equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.URLSUFFIX_PORT.equalsIgnoreCase(part)) {
             int port = url.getPort();
             if (port == -1) {
                 if ("http".equalsIgnoreCase(protocol)) {
@@ -201,13 +228,13 @@ public class ServerVariables {
                 }
             }
             return Integer.toString(port);
-        } else if ("file".equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.URLSUFFIX_FILE.equalsIgnoreCase(part)) {
             return url.getFile();
-        } else if ("path".equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.URLSUFFIX_PATH.equalsIgnoreCase(part)) {
             return url.getPath();
-        } else if ("query".equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.URLSUFFIX_QUERY.equalsIgnoreCase(part)) {
             return url.getQuery();
-        } else if ("fragment".equalsIgnoreCase(part)) {
+        } else if (BuiltinVariables.URLSUFFIX_FRAGMENT.equalsIgnoreCase(part)) {
             return url.getRef();
         } else {
             logger.log(Level.WARNING, "Can't handle variable named " + name);
