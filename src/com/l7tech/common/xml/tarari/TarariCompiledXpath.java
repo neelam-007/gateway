@@ -185,12 +185,6 @@ class TarariCompiledXpath extends CompiledXpath {
                             final Object nodeValueMaker = new Object() {
                                 public String toString() {
                                     if (node == null) throw new IllegalStateException();
-                                    return node.getValue();
-                                }
-                            };
-                            final Object textContentMaker = new Object() {
-                                public String toString() {
-                                    if (node == null) throw new IllegalStateException();
                                     return node.getXPathValue();
                                 }
                             };
