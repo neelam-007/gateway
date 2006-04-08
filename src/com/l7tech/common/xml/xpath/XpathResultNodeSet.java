@@ -99,7 +99,8 @@ public interface XpathResultNodeSet {
      * doesn't have any meaningful "value".  Contrast with getTextContent().
      *
      * <ul>
-     * <li>For an element, this always returns null.
+     * <li>For an element, this returns the concatenated value of all text nodes in the element and its children,
+     *     per the XPath recommendation.  May be empty, but never null.
      * <li>For attributes, this is the value.  May be empty, but never null.
      * <li>For processing instructions, this is the entire string of attributes, e.g. <code>name="foo" type="bar"</code>
      * <li>For any other type of node, the behavior of this method isn't further defined.
@@ -111,25 +112,6 @@ public interface XpathResultNodeSet {
      * @return the value, per the above, or null if the ordinal is out of range.
      */
     String getNodeValue(int ordinal);
-
-    /**
-     * Get the textual representation of the node in this nodeset with the specified ordinal,
-     * or null if there's no such node or if no textual representation is available.
-     * This is essentially equivalent to doing nodeToString() on the node.
-     * Contrast with getNodeValue().
-     * <ul>
-     * <li>For an element, this returns the textual XML representation of this element and all its children.  Never null.
-     * <li>For attributes, this is the value.  May be empty, but never null.
-     * <li>For processing instructions, this is the entire string of attributes, e.g. <code>name="foo" type="bar"</code>
-     * <li>For any other type of node, the behavior of this method isn't further defined.
-     * </ul>
-     * If you need to call more than one accessor, consider using {@link #getIterator()} instead -- it will be
-     * faster.
-     *
-     * @param ordinal the ordinal of the node in this result set.  Must be nonnegative and less than {@link #size()}.
-     * @return the value, per the above, or null if the ordinal is out of range.
-     */
-    String getTextContent(int ordinal);
 
     /** A nodeset that is always empty. */
     static final XpathResultNodeSet EMPTY_NODESET = new XpathResultNodeSet() {
@@ -162,10 +144,6 @@ public interface XpathResultNodeSet {
         }
 
         public String getNodeValue(int ordinal) {
-            return null;
-        }
-
-        public String getTextContent(int ordinal) {
             return null;
         }
 

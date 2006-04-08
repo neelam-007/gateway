@@ -13,7 +13,6 @@ public class XpathResultNode {
     public Object localNameHaver;
     public Object prefixHaver;
     public Object nodeNameHaver;
-    public Object textContentHaver;
     public Object nodeValueHaver;
 
     /**
@@ -85,7 +84,8 @@ public class XpathResultNode {
      * doesn't have any meaningful "value".  Contrast with getTextContent().
      *
      * <ul>
-     * <li>For an element, this always returns null.
+     * <li>For an element, this returns the concatenated value of all text nodes in the element and its children,
+     *     per the XPath recommendation.  May be empty, but never null.
      * <li>For attributes, this is the value.  May be empty, but never null.
      * <li>For processing instructions, this is the entire string of attributes, e.g. <code>name="foo" type="bar"</code>
      * <li>For any other type of node, the behavior of this method isn't further defined.
@@ -95,22 +95,5 @@ public class XpathResultNode {
      */
     public String getNodeValue() {
         return nodeValueHaver == null ? null : nodeValueHaver.toString();
-    }
-
-    /**
-     * Get the textual representation of thsi node, or null if no textual representation is available.
-     * This is essentially equivalent to doing nodeToString() on the node.
-     * Contrast with getNodeValue().
-     * <ul>
-     * <li>For an element, this returns the textual XML representation of this element and all its children.  Never null.
-     * <li>For attributes, this is the value.  May be empty, but never null.
-     * <li>For processing instructions, this is the entire string of attributes, e.g. <code>name="foo" type="bar"</code>
-     * <li>For any other type of node, the behavior of this method isn't further defined.
-     * </ul>
-     *
-     * @return the value, per the above, or null if the ordinal is out of range.
-     */
-    public String getTextContent() {
-        return textContentHaver == null ? null : textContentHaver.toString();
     }
 }

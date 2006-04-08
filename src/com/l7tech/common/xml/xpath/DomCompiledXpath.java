@@ -186,16 +186,10 @@ public class DomCompiledXpath extends CompiledXpath {
                         return new XpathResultIterator() {
                             private Iterator i = result.iterator();
                             private Node node = null;
-                            private Object textContentMaker = new Object() {
-                                public String toString() {
-                                    if (node == null) throw new IllegalStateException();
-                                    return node.getTextContent();
-                                }
-                            };
                             private Object nodeValueMaker = new Object() {
                                 public String toString() {
                                     if (node == null) throw new IllegalStateException();
-                                    return node.getNodeValue();
+                                    return node.getTextContent();
                                 }
                             };
 
@@ -215,7 +209,6 @@ public class DomCompiledXpath extends CompiledXpath {
                                 template.prefixHaver = node.getPrefix();
                                 template.nodeNameHaver = node.getNodeName();
                                 template.nodeValueHaver = nodeValueMaker;
-                                template.textContentHaver = textContentMaker;
                             }
                         };
                     }
@@ -250,14 +243,8 @@ public class DomCompiledXpath extends CompiledXpath {
 
                     public String getNodeValue(int ordinal) {
                         final Node node = getNode(ordinal);
-                        return node == null ? null : node.getNodeValue();
+                        return node == null ? null : node.getTextContent();
                     }
-
-                    public String getTextContent(int ordinal) {
-                        final Node node = getNode(ordinal);
-                        return node == null ? null : node.getNodeValue();
-                    }
-
                 };
             }
         };
