@@ -21,14 +21,14 @@ public class BuiltinVariables {
     public static final String PREFIX_REQUEST_TIME = "request.time";
     public static final String PREFIX_RESPONSE_TIME = "response.time";
     public static final String PREFIX_SERVICE_URL = "service.url";
-    public static final String PREFIX_REQUEST_URL = "request.http.url";
+    public static final String PREFIX_REQUEST_URL = "request.url";
 
     private static final Map metadataByName = new HashMap();
 
     public static final String TIMESUFFIX_FORMAT_ISO8601 = "iso8601";
     public static final String TIMESUFFIX_ZONE_UTC = "utc";
     public static final String TIMESUFFIX_ZONE_LOCAL = "local";
-    
+
     public static final String URLSUFFIX_HOST = "host";
     public static final String URLSUFFIX_PROTOCOL = "protocol";
     public static final String URLSUFFIX_PORT = "port";

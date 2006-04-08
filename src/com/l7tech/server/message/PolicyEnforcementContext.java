@@ -46,6 +46,7 @@ import java.net.URL;
  */
 public class PolicyEnforcementContext extends ProcessingContext {
     private final long startTime = System.currentTimeMillis();
+    private long endTime;
     private final RequestId requestId;
     private ArrayList incrementedCounters = new ArrayList();
     private final Map deferredAssertions = new LinkedHashMap();
@@ -398,5 +399,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setRoutedServiceUrl(URL routedServiceUrl) {
         this.routedServiceUrl = routedServiceUrl;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime() {
+        if (endTime != 0) throw new IllegalStateException("Can't call setEndTime() twice");
+        endTime = System.currentTimeMillis();
     }
 }
