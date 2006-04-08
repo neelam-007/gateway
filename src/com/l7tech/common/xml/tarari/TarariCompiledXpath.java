@@ -377,11 +377,6 @@ class TarariCompiledXpath extends CompiledXpath {
                                 t.nodeValueHaver = nodeValueMaker;
                                 t.textContentHaver = textContentMaker;
                             }
-
-                            public String toString() {
-                                // The contract of next() allows us to do this here instead
-                                return node == null ? null : node.getNodeValue();
-                            }
                         };
                     }
 
