@@ -7,11 +7,9 @@ package com.l7tech.common.xml.xpath;
 
 import com.l7tech.common.xml.DomElementCursor;
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.util.XmlUtil;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Node;
-import org.w3c.dom.Element;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.util.Iterator;
@@ -188,6 +186,18 @@ public class DomCompiledXpath extends CompiledXpath {
                         return new XpathResultIterator() {
                             private Iterator i = result.iterator();
                             private Node node = null;
+                            private Object textContentMaker = new Object() {
+                                public String toString() {
+                                    if (node == null) throw new IllegalStateException();
+                                    return node.getTextContent();
+                                }
+                            };
+                            private Object nodeValueMaker = new Object() {
+                                public String toString() {
+                                    if (node == null) throw new IllegalStateException();
+                                    return node.getNodeValue();
+                                }
+                            };
 
                             public boolean hasNext() {
                                 return i.hasNext();
@@ -204,12 +214,8 @@ public class DomCompiledXpath extends CompiledXpath {
                                 template.localNameHaver = node.getLocalName();
                                 template.prefixHaver = node.getPrefix();
                                 template.nodeNameHaver = node.getNodeName();
-                                template.valueHaver = this; // expensive, so don't do this one unless it's asked-for
-                            }
-
-                            public String toString() {
-                                // The XpathResultIterator.next() contract lets us cache state that only lasts until next next()
-                                return node == null ? null : getNodeValue(node);
+                                template.nodeValueHaver = nodeValueMaker;
+                                template.textContentHaver = textContentMaker;
                             }
                         };
                     }
@@ -223,32 +229,35 @@ public class DomCompiledXpath extends CompiledXpath {
                     }
 
                     public int getType(int ordinal) {
-                        return getNode(ordinal).getNodeType();
+                        final Node n = getNode(ordinal);
+                        return n == null ? -1 : n.getNodeType();
                     }
 
                     public String getNodePrefix(int ordinal) {
-                        return getNode(ordinal).getPrefix();
+                        final Node node = getNode(ordinal);
+                        return node == null ? null : node.getPrefix();
                     }
 
                     public String getNodeLocalName(int ordinal) {
-                        return getNode(ordinal).getLocalName();
+                        final Node node = getNode(ordinal);
+                        return node == null ? null : node.getLocalName();
                     }
 
                     public String getNodeName(int ordinal) {
-                        return getNode(ordinal).getNodeName();
+                        final Node node = getNode(ordinal);
+                        return node == null ? null : node.getNodeName();
                     }
 
                     public String getNodeValue(int ordinal) {
-                        return getNodeValue(getNode(ordinal));
+                        final Node node = getNode(ordinal);
+                        return node == null ? null : node.getNodeValue();
                     }
 
-                    String getNodeValue(Node n) {
-                        if (n instanceof Element) {
-                            Element element = (Element)n;
-                            return XmlUtil.getTextValue(element);
-                        }
-                        return n.getNodeValue();
+                    public String getTextContent(int ordinal) {
+                        final Node node = getNode(ordinal);
+                        return node == null ? null : node.getNodeValue();
                     }
+
                 };
             }
         };

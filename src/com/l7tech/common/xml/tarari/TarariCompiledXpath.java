@@ -5,11 +5,14 @@
 
 package com.l7tech.common.xml.tarari;
 
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.SoftwareFallbackException;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.xpath.*;
+import com.tarari.xml.XmlResult;
 import com.tarari.xml.cursor.XmlCursor;
+import com.tarari.xml.output.OutputFormat;
 import com.tarari.xml.rax.cursor.RaxCursor;
 import com.tarari.xml.rax.cursor.RaxCursorFactory;
 import com.tarari.xml.rax.fastxpath.FNode;
@@ -25,6 +28,7 @@ import com.tarari.xml.xpath10.parser.XPathParseException;
 import org.w3c.dom.Node;
 
 import javax.xml.xpath.XPathExpressionException;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -39,6 +43,7 @@ import java.util.logging.Logger;
 class TarariCompiledXpath extends CompiledXpath {
     private static final Logger logger = Logger.getLogger(TarariCompiledXpath.class.getName());
     private static final RaxCursorFactory raxCursorFactory = new RaxCursorFactory();
+    private static final OutputFormat outputFormat = new OutputFormat();
 
     // Globally registered expr for simultaneous xpath, or null if it couldn't be registered.
     private final FastXpath fastXpath;
@@ -182,6 +187,18 @@ class TarariCompiledXpath extends CompiledXpath {
                             int cur = 0;
                             int size = size();
                             FNode node = null;
+                            final Object nodeValueMaker = new Object() {
+                                public String toString() {
+                                    if (node == null) throw new IllegalStateException();
+                                    return node.getValue();
+                                }
+                            };
+                            final Object textContentMaker = new Object() {
+                                public String toString() {
+                                    if (node == null) throw new IllegalStateException();
+                                    return node.getXPathValue();
+                                }
+                            };
 
                             public boolean hasNext() {
                                 return ns() != null && cur < ns().size();
@@ -194,12 +211,8 @@ class TarariCompiledXpath extends CompiledXpath {
                                 t.localNameHaver = node.getLocalName();
                                 t.nodeNameHaver = node.getQName();
                                 t.prefixHaver = node.getPrefix();
-                                t.valueHaver = this; // defer this one, since it might be expensive
-                            }
-
-                            public String toString() {
-                                // The contract of next() allows us to do this here instead
-                                return node == null ? null : node.getXPathValue();
+                                t.nodeValueHaver = nodeValueMaker;
+                                t.textContentHaver = textContentMaker;
                             }
                         };
                     }
@@ -229,6 +242,12 @@ class TarariCompiledXpath extends CompiledXpath {
                     }
 
                     public String getNodeValue(int ordinal) {
+                        if (ns() == null) return null;
+                        FNode node = ns().getNode(ordinal);
+                        return node.getValue();
+                    }
+
+                    public String getTextContent(int ordinal) {
                         if (ns() == null) return null;
                         FNode node = ns().getNode(ordinal);
                         return node.getXPathValue();
@@ -333,6 +352,16 @@ class TarariCompiledXpath extends CompiledXpath {
                             int cur = 0;
                             int size = size();
                             XmlCursor node = null;
+                            private final Object nodeValueMaker = new Object() {
+                                public String toString() {
+                                    return node.getNodeValue();
+                                }
+                            };
+                            private final Object textContentMaker = new Object() {
+                                public String toString() {
+                                    return nodeToString(node);
+                                }
+                            };
 
                             public boolean hasNext() {
                                 return cur < ns.size();
@@ -345,7 +374,8 @@ class TarariCompiledXpath extends CompiledXpath {
                                 t.localNameHaver = node.getNodeLocalName();
                                 t.nodeNameHaver = node.getNodeName();
                                 t.prefixHaver = node.getNodePrefix();
-                                t.valueHaver = this; // defer this one, since it might be expensive
+                                t.nodeValueHaver = nodeValueMaker;
+                                t.textContentHaver = textContentMaker;
                             }
 
                             public String toString() {
@@ -379,9 +409,28 @@ class TarariCompiledXpath extends CompiledXpath {
                         XmlCursor node = ns.getNode(ordinal);
                         return node.getNodeValue();
                     }
+
+                    public String getTextContent(int ordinal) {
+                        XmlCursor node = ns.getNode(ordinal);
+                        return nodeToString(node);
+                    }
                 };
             }
         };
+    }
+
+    /** Convert a tarari XmlCursor to its string representation. */
+    private String nodeToString(XmlCursor node) {
+        BufferPoolByteArrayOutputStream os = new BufferPoolByteArrayOutputStream();
+        try {
+            XmlResult xr = new XmlResult(os);
+            node.writeTo(outputFormat, xr);
+            return os.toString();
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        } finally {
+            os.close();
+        }
     }
 
     private static int getDomTypeForXmlCursor(XmlCursor node) {

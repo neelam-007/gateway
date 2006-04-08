@@ -148,12 +148,12 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         switch (nodeType) {
             case Node.ELEMENT_NODE:
                 auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND);
-                context.setVariable(resultVariable, ns.getNodeValue(0));
+                context.setVariable(resultVariable, ns.getTextContent(0));
                 return AssertionStatus.NONE;
 
             case Node.TEXT_NODE:
                 auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
-                context.setVariable(resultVariable, ns.getNodeValue(0));
+                context.setVariable(resultVariable, ns.getTextContent(0));
                 return AssertionStatus.NONE;
 
             default:
@@ -162,7 +162,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         }
 
         auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND);
-        context.setVariable(resultVariable, ns.getNodeValue(0));
+        context.setVariable(resultVariable, ns.getTextContent(0));
         return AssertionStatus.NONE;
     }
 }
