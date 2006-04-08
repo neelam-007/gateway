@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * @author alex
@@ -38,6 +40,8 @@ public class ServerVariables {
             int pos = lname.lastIndexOf(".");
             if (pos > 0)
                 var = (Variable)varsByPrefix.get(lname.substring(0,pos));
+            else
+                var = (Variable)varsByPrefix.get(lname);
         }
         return var;
     }
@@ -95,9 +99,9 @@ public class ServerVariables {
                 return context.getRequest().getHttpRequestKnob().getRequestUri();
             }
         }),
-        new Variable("request.http.url", new Getter() {
+        new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRequest().getHttpRequestKnob().getRequestUrl();
+                return getUrlValue(name, context.getRequest().getHttpRequestKnob().getRequestUrl());
             }
         }),
         new Variable("request.http.secure", new Getter() {
@@ -152,7 +156,64 @@ public class ServerVariables {
                 return getHeaderValues(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, name, context);
             }
         }),
+        new Variable(BuiltinVariables.PREFIX_SERVICE_URL, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                return getUrlValue(name, context.getRoutedServiceUrl());
+            }
+        }),
     };
+
+    private static Object getUrlValue(String name, Object u) {
+        String dotname = name.substring(BuiltinVariables.PREFIX_REQUEST_URL.length());
+        if (dotname.length() == 0) return u; // Unsuffixed gets the full URL
+        String part = dotname.substring(1);
+        URL url;
+        if (u instanceof URL) {
+            url = (URL)u;
+        } else {
+            try {
+                url = new URL(u.toString());
+            } catch (MalformedURLException e) {
+                logger.log(Level.WARNING, "URL cannot be parsed: {0}", new String[] {u.toString()});
+                return null;
+            }
+        }
+        final String protocol = url.getProtocol();
+        if ("host".equalsIgnoreCase(part)) {
+            return url.getHost();
+        } else if ("protocol".equalsIgnoreCase(part)) {
+            return protocol;
+        } else if ("port".equalsIgnoreCase(part)) {
+            int port = url.getPort();
+            if (port == -1) {
+                if ("http".equalsIgnoreCase(protocol)) {
+                    port = 80;
+                } else if ("https".equalsIgnoreCase(protocol)) {
+                    port = 443;
+                } else if ("ftp".equalsIgnoreCase(protocol)) {
+                    port = 21;
+                } else if ("smtp".equalsIgnoreCase(protocol)) {
+                    port = 25;
+                } else if ("pop3".equalsIgnoreCase(protocol)) {
+                    port = 110;
+                } else if ("imap".equalsIgnoreCase(protocol)) {
+                    port = 143;
+                }
+            }
+            return Integer.toString(port);
+        } else if ("file".equalsIgnoreCase(part)) {
+            return url.getFile();
+        } else if ("path".equalsIgnoreCase(part)) {
+            return url.getPath();
+        } else if ("query".equalsIgnoreCase(part)) {
+            return url.getQuery();
+        } else if ("fragment".equalsIgnoreCase(part)) {
+            return url.getRef();
+        } else {
+            logger.log(Level.WARNING, "Can't handle variable named " + name);
+            return null;
+        }
+    }
 
     static {
         for (int i = 0; i < VARS.length; i++) {

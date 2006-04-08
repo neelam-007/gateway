@@ -17,6 +17,12 @@ public class BuiltinVariables {
     public static final String PREFIX_RESPONSE_HTTP_HEADER = "response.http.header";
     public static final String PREFIX_RESPONSE_HTTP_HEADER_VALUES = "response.http.headerValues";
 
+    public static final String PREFIX_GATEWAY_TIME = "gateway.time";
+    public static final String PREFIX_REQUEST_TIME = "request.time";
+    public static final String PREFIX_RESPONSE_TIME = "response.time";
+    public static final String PREFIX_SERVICE_URL = "service.url";
+    public static final String PREFIX_REQUEST_URL = "request.http.url";
+
     private static final Map metadataByName = new HashMap();
 
     public static boolean isSupported(String name) {
@@ -59,7 +65,7 @@ public class BuiltinVariables {
         new VariableMetadata("request.tcp.localPort", false, false, null, false),
         new VariableMetadata("request.http.method", false, false, null, false),
         new VariableMetadata("request.http.uri", false, false, null, false),
-        new VariableMetadata("request.http.url", false, false, null, false),
+        new VariableMetadata(PREFIX_REQUEST_URL, true, false, null, false),
         new VariableMetadata("request.http.secure", false, false, null, false),
         new VariableMetadata("request.http.queryString", false, false, null, false),
         new VariableMetadata("auditLevel", false, false, null, true),
@@ -69,6 +75,11 @@ public class BuiltinVariables {
         new VariableMetadata("request.soap.urn", false, false, "request.soap.namespace", false),
         new VariableMetadata("requestId", false, false, null, false),
         new VariableMetadata("routingStatus", false, false, null, false),
+        new VariableMetadata(PREFIX_GATEWAY_TIME, true, false, null, false),
+        new VariableMetadata(PREFIX_REQUEST_TIME, true, false, null, false),
+        new VariableMetadata(PREFIX_RESPONSE_TIME, true, false, null, false),
+        new VariableMetadata(PREFIX_SERVICE_URL, true, false, null, false),
+
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, true, false, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
     };

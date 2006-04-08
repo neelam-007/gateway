@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.message;
@@ -40,6 +38,7 @@ import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
+import java.net.URL;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
@@ -51,7 +50,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private ArrayList incrementedCounters = new ArrayList();
     private final Map deferredAssertions = new LinkedHashMap();
     private boolean replyExpected;
-    private RoutingStatus routingStatus = RoutingStatus.NONE;
     private AuthenticationResult authenticationResult = null;
     private Level auditLevel;
     private boolean auditSaveRequest;
@@ -65,13 +63,18 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private Set seenAssertionStatus = new HashSet();
     private AuditContext auditContext = null;
     private final Map variables = new HashMap();
-    private long routingStartTime;
-    private long routingEndTime;
     private boolean isStealthResponseMode = false;
     private int authSuccessCacheTime = AuthCache.SUCCESS_CACHE_TIME;
     private int authFailureCacheTime = AuthCache.FAILURE_CACHE_TIME;
     private PolicyContextCache cache;
     private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
+    private boolean operationAttempted = false;
+    private Operation cachedOperation = null;
+
+    private RoutingStatus routingStatus = RoutingStatus.NONE;
+    private URL routedServiceUrl;
+    private long routingStartTime;
+    private long routingEndTime;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -384,6 +387,16 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return authFailureCacheTime;
     }
 
-    private boolean operationAttempted = false;
-    private Operation cachedOperation = null;
+    /**
+     * Gets the last URL to which the SSG <em>attempted</em> to send this request.
+     *
+     * @see #getRoutingStatus to find out whether the routing was successful.
+     */
+    public URL getRoutedServiceUrl() {
+        return routedServiceUrl;
+    }
+
+    public void setRoutedServiceUrl(URL routedServiceUrl) {
+        this.routedServiceUrl = routedServiceUrl;
+    }
 }
