@@ -142,7 +142,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                         X509Certificate certIssuerCert = null;
                         try {
                             certIssuerCert = certIssuerTrust.getCertificate();
-                            subjectCertificate.verify(certIssuerCert.getPublicKey());
+                            CertUtils.cachedVerify(subjectCertificate, certIssuerCert.getPublicKey());
                         } catch (CertificateException e) {
                             throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
                         } catch (IOException e) {

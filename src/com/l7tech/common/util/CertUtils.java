@@ -9,19 +9,19 @@ import com.l7tech.common.security.CertificateExpiry;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
+import org.apache.commons.collections.LRUMap;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  *
@@ -30,6 +30,8 @@ import java.util.logging.Logger;
  */
 public class CertUtils {
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
+    public static final String PROPBASE = CertUtils.class.getName();
+    private static final int CERT_VERIFY_CACHE_MAX = Integer.getInteger(PROPBASE + ".certVerifyCacheSize", 500).intValue();
     private static CertificateFactory certFactory;
 
     public static final String ALG_MD5 = "MD5";
@@ -37,6 +39,88 @@ public class CertUtils {
     public static final String FINGERPRINT_HEX = "hex";
     public static final String FINGERPRINT_RAW_HEX = "rawhex";
     public static final String FINGERPRINT_BASE64 = "b64";
+
+    // Map of VerifiedCert => Boolean.TRUE
+    private static final LRUMap certVerifyCache = new LRUMap(CERT_VERIFY_CACHE_MAX);
+
+    private static class VerifiedCert {
+        final byte[] certBytes;
+        final byte[] publicKeyBytes;
+        final int hashCode;
+
+        public VerifiedCert(X509Certificate cert, PublicKey key) throws CertificateEncodingException {
+            this(cert.getEncoded(), key.getEncoded());
+        }
+
+        public VerifiedCert(byte[] certBytes, byte[] publicKeyBytes) {
+            this.certBytes = certBytes;
+            this.publicKeyBytes = publicKeyBytes;
+            this.hashCode = makeHashCode();
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final VerifiedCert that = (VerifiedCert)o;
+
+            if (!Arrays.equals(certBytes, that.certBytes)) return false;
+            if (!Arrays.equals(publicKeyBytes, that.publicKeyBytes)) return false;
+
+            return true;
+        }
+
+        private int makeHashCode() {
+            int c = 7;
+            c += 17 * Arrays.hashCode(certBytes);
+            c += 29 * Arrays.hashCode(publicKeyBytes);
+            return c;
+        }
+
+        public int hashCode() {
+            return hashCode;
+        }
+
+        /** @return true if this cert has already been verified with this public key. */
+        public boolean isVerified() {
+            final Object got;
+            synchronized (certVerifyCache) {
+                got = certVerifyCache.get(this);
+            }
+            return got instanceof Boolean && ((Boolean)got).booleanValue();
+        }
+
+        /** Report that this cert was successfully verified with its public key. */
+        public void onVerified() {
+            synchronized (certVerifyCache) {
+                certVerifyCache.put(this, Boolean.TRUE);
+            }
+        }
+    }
+
+    /** Same behavior as X509Certificate.verify(publicKey), but memoizes the result. */
+    public static void cachedVerify(X509Certificate cert, PublicKey publicKey) throws NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException {
+        VerifiedCert vc = new VerifiedCert(cert, publicKey);
+        if (vc.isVerified()) {
+            if (logger.isLoggable(Level.FINER)) logger.finer("Verified cert signature (cached): " + cert.getSubjectDN().toString());
+            return; // cache hit
+        }
+
+        cert.verify(publicKey);
+        vc.onVerified();
+    }
+
+    /** Same behavior as X509Certificate.verify(publicKey, sigProvider), but memoizes the result. */
+    public static void cachedVerify(X509Certificate cert, PublicKey publicKey, String sigProvider) throws NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException {
+        VerifiedCert vc = new VerifiedCert(cert, publicKey);
+        if (vc.isVerified()) {
+            if (logger.isLoggable(Level.FINER)) logger.finer("Verified cert signature (cached): " + cert.getSubjectDN().toString());
+            return; // cache hit
+        }
+
+        cert.verify(publicKey, sigProvider);
+        vc.onVerified();
+    }
 
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
         return (X509Certificate)getFactory().generateCertificate(new ByteArrayInputStream(bytes));

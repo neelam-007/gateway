@@ -141,7 +141,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             }
 
             try {
-                clientCertChain[0].verify(trustedCaCert.getPublicKey());
+                CertUtils.cachedVerify(clientCertChain[0], trustedCaCert.getPublicKey());
             } catch (GeneralSecurityException e ) {
                 final String msg = "Couldn't verify that client cert was signed by trusted CA";
                 logger.log( Level.WARNING, msg, e );

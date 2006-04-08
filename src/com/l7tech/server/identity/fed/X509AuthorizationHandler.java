@@ -87,7 +87,7 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
                 }
 
                 // Check that cert was signed by CA key
-                requestCert.verify(trustedCert.getCertificate().getPublicKey());
+                CertUtils.cachedVerify(requestCert, trustedCert.getCertificate().getPublicKey());
             } catch ( CertificateException e ) {
                 logger.log( Level.WARNING, e.getMessage(), e );
                 throw new BadCredentialsException(e.getMessage(), e);

@@ -182,7 +182,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
             X509Certificate caTrustCert = caTrust.getCertificate();
 
-            serverCertChain[0].verify(caTrustCert.getPublicKey());
+            CertUtils.cachedVerify(serverCertChain[0], caTrustCert.getPublicKey());
             return;
         } catch (IOException e) {
             final String msg = "Couldn't decode stored CA certificate with DN '" + issuerDn + "'";
