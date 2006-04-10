@@ -687,6 +687,9 @@
                 <exclude name="com/l7tech/common/xml/tarari/TarariCompiledStylesheetImpl.class" />
                 <exclude name="com/l7tech/common/xml/tarari/util/**/*"/>
 
+                <!-- SchemaEntry relies on NamedEntityImp -->
+                <exclude name="com/l7tech/common/xml/schema/SchemaEntry*.class/"/>
+
                 <!-- Exclude unless Log4j is used -->
                 <exclude name="com/l7tech/common/util/Log4jJdkLogAppender.class"/>
 
