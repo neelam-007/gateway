@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.identity.fed;
@@ -18,7 +16,6 @@ import com.l7tech.identity.Group;
  *
  * @see FederatedGroup
  * @author alex
- * @version $Revision$
  */
 public class VirtualGroup extends FederatedGroup {
     public VirtualGroup() {
@@ -54,6 +51,35 @@ public class VirtualGroup extends FederatedGroup {
         FederatedGroup imp = (FederatedGroup)objToCopy;
         setSamlEmailPattern((String)imp.getGroupBean().getProperties().get(PROP_SAML_EMAIL_PATTERN));
         setX509SubjectDnPattern((String)imp.getGroupBean().getProperties().get(PROP_X509_DN_PATTERN));
+    }
+
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        final VirtualGroup that = (VirtualGroup)o;
+
+        String samlEmailPattern = getSamlEmailPattern();
+        String thatSamlEmailPattern = that.getSamlEmailPattern();
+        if (samlEmailPattern != null ? !samlEmailPattern.equals(thatSamlEmailPattern) : thatSamlEmailPattern != null)
+            return false;
+
+        String x509DnPattern = getX509SubjectDnPattern();
+        String thatX509DnPattern = that.getX509SubjectDnPattern();
+        if (x509DnPattern != null ? !x509DnPattern.equals(thatX509DnPattern) : thatX509DnPattern != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        String samlEmailPattern = getSamlEmailPattern();
+        result = 31 * result + (samlEmailPattern != null ? samlEmailPattern.hashCode() : 0);
+        String x509DnPattern = getX509SubjectDnPattern();
+        result = 31 * result + (x509DnPattern != null ? x509DnPattern.hashCode() : 0);
+        return result;
     }
 
     private static final String PROP_SAML_EMAIL_PATTERN = "samlEmailPattern";

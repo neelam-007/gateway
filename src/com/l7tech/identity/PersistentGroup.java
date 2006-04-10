@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.identity;
@@ -19,7 +17,6 @@ import java.util.Map;
  * Abstract superclass of {@link Group}s that are stored in the database, as opposed to in external directories.
  *
  * @author alex
- * @version $Revision$
  */
 public abstract class PersistentGroup extends NamedEntityImp implements Group {
     public static final String PROPERTIES_ENCODING = "UTF-8";
@@ -128,18 +125,21 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
 
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PersistentGroup)) return false;
-        final PersistentGroup groupImp = (PersistentGroup) o;
-        return !(_oid != DEFAULT_OID ? !(_oid == groupImp._oid) : groupImp._oid != DEFAULT_OID);
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        final PersistentGroup that = (PersistentGroup)o;
+
+        if (getProviderId() != that.getProviderId()) return false;
+
+        return true;
     }
 
     public int hashCode() {
-        if ( _oid != DEFAULT_OID ) return (int)_oid;
-        if ( _name == null ) return System.identityHashCode(this);
-
-        int hash = _name.hashCode();
-        hash += 29 * (int)bean.getProviderId();
-        return hash;
+        int result = super.hashCode();
+        long providerOid = getProviderId();
+        result = 31 * result + (int)(providerOid ^ (providerOid >>> 32));
+        return result;
     }
 
     protected GroupBean bean;

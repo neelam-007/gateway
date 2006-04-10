@@ -7,7 +7,7 @@ import org.apache.commons.collections.LRUMap;
 import java.security.cert.X509Certificate;
 
 /**
- * Created on successful authentication events.  Semi-threadsafe (mutators are synchronized).  Used in 
+ * Created on successful authentication events.  Semi-threadsafe (mutators are synchronized).
  */
 public final class AuthenticationResult {
     public static final AuthenticationResult AUTHENTICATED_UNKNOWN_USER = new AuthenticationResult();
@@ -52,7 +52,7 @@ public final class AuthenticationResult {
     }
 
     public synchronized Boolean getCachedGroupMembership(Group group) {
-        if (authorizedGroups == null) return Boolean.FALSE;
+        if (authorizedGroups == null) return null;
         return (Boolean)authorizedGroups.get(group);
     }
 

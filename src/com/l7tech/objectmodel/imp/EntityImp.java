@@ -27,7 +27,20 @@ public class EntityImp implements Entity, Serializable {
     public int getVersion() { return _version; }
     public void setVersion(int version) { _version = version; }
 
-    private static final long serialVersionUID = -1265669197588490571L;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final EntityImp entityImp = (EntityImp)o;
+
+        if (_oid != entityImp._oid) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        return (int)(_oid ^ (_oid >>> 32));
+    }
 
     protected int _version;
 	protected long _oid;

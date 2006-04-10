@@ -36,27 +36,55 @@ public final class AuthCache {
         Background.schedule(new TimerTask() {
             public void run() {
                 int removed;
-                try {
-                    logger.finest("Looking for stale cache entries");
-                    synchronized (this) {
-                        long now = System.currentTimeMillis();
-                        removed = removeStaleEntries(now, successCache) +
-                                  removeStaleEntries(now, failureCache);
-                    }
-                    logger.log(Level.FINE, "Deleted {0} stale cache entries", new Object[] {new Integer(removed)});
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    logger.log(Level.WARNING, "Interrupted waiting for cache lock");
+                logger.finest("Looking for stale cache entries");
+                synchronized (this) {
+                    long now = System.currentTimeMillis();
+                    removed = removeStaleEntries(now, successCache) +
+                              removeStaleEntries(now, failureCache);
                 }
-
+                logger.log(Level.FINE, "Deleted {0} stale cache entries", new Object[] {new Integer(removed)});
             }
         }, DELETER_DELAY, DELETER_PERIOD);
+    }
+
+    private static class CacheKey {
+        private int cachedHashcode = -1;
+        private final long providerOid;
+        private final LoginCredentials creds;
+
+        public CacheKey(long providerOid, LoginCredentials creds) {
+            this.providerOid = providerOid;
+            this.creds = creds;
+        }
+
+        /** @noinspection RedundantIfStatement*/
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final CacheKey cacheKey = (CacheKey)o;
+
+            if (providerOid != cacheKey.providerOid) return false;
+            if (creds != null ? !creds.equals(cacheKey.creds) : cacheKey.creds != null) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            if (cachedHashcode == -1) {
+                int result;
+                result = (int)(providerOid ^ (providerOid >>> 32));
+                result = 31 * result + (creds != null ? creds.hashCode() : 0);
+                cachedHashcode = result;
+            }
+            return cachedHashcode;
+        }
     }
 
     /**
      * Caller must hold this's mutex.
      */
-    private int removeStaleEntries(long now, LRUMap cache) throws InterruptedException {
+    private int removeStaleEntries(long now, LRUMap cache) {
         int num = 0;
         for (Iterator i = cache.values().iterator(); i.hasNext();) {
             Object result = i.next();
@@ -101,78 +129,71 @@ public final class AuthCache {
             throws AuthenticationException
     {
         String credString = creds.toString();
-        try {
-            Object cached = getCacheEntry(creds, credString, maxSuccessAge, maxFailAge);
+        final long providerOid = idp.getConfig().getOid();
+        final CacheKey ckey = new CacheKey(providerOid, creds);
+        Object cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
+        if (cached instanceof AuthenticationResult) {
+            return (AuthenticationResult)cached;
+        } else if (cached != null) {
+            return null;
+        }
+
+        // There was a cache miss before, so someone has to authenticate it.
+        // Let's make sure only one thread does so on this SSG.
+        String credsMutex = (Long.toString(providerOid) + credString).intern();
+        synchronized (credsMutex) {
+            cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
             if (cached instanceof AuthenticationResult) {
+                // Someone else got there first with a success
                 return (AuthenticationResult)cached;
             } else if (cached != null) {
+                // Someone else got there first with a failure
                 return null;
             }
 
-            // There was a cache miss before, so someone has to authenticate it.
-            // Let's make sure only one thread does so on this SSG.
-            String credsMutex = (Long.toString(idp.getConfig().getOid()) + credString).intern();
-            synchronized(credsMutex) {
-                cached = getCacheEntry(creds, credString, maxSuccessAge, maxFailAge);
-                if (cached instanceof AuthenticationResult) {
-                    // Someone else got there first with a success
-                    return (AuthenticationResult)cached;
-                } else if (cached != null) {
-                    // Someone else got there first with a failure
-                    return null;
-                }
+            AuthenticationResult result = null;
+            AuthenticationException thrown = null;
+            try {
+                result = idp.authenticate(creds);
+            } catch (AuthenticationException e) {
+                thrown = e;
+            }
+            String which;
 
-                AuthenticationResult result = null;
-                AuthenticationException thrown = null;
-                try {
-                    result = idp.authenticate(creds);
-                } catch (AuthenticationException e) {
-                    thrown = e;
-                }
-                String which;
-
-                synchronized (this) {
-                    if (result == null) {
-                        which = "failed";
-                        failureCache.put(creds, new Long(System.currentTimeMillis()));
-                        successCache.remove(creds);
-                    } else {
-                        which = "successful";
-                        successCache.put(creds, result);
-                        failureCache.remove(creds);
-                    }
-                }
-
-                if (logger.isLoggable(Level.FINE))
-                    logger.fine("Caching " + which + " authentication for " + creds);
-
-                if (thrown != null) {
-                    throw thrown;
+            synchronized (this) {
+                if (result == null) {
+                    which = "failed";
+                    failureCache.put(ckey, new Long(System.currentTimeMillis()));
+                    successCache.remove(ckey);
                 } else {
-                    return result;
+                    which = "successful";
+                    successCache.put(ckey, result);
+                    failureCache.remove(ckey);
                 }
             }
 
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new AuthenticationException("Interrupted waiting for cache lock", e);
+            if (logger.isLoggable(Level.FINE))
+                logger.log(Level.FINE,
+                        "Caching {0} authentication for {1} on IdP \"{2}\"",
+                        new String[]{which, credString, idp.getConfig().getName()});
+
+            if (thrown != null) {
+                throw thrown;
+            } else {
+                return result;
+            }
         }
     }
 
     /**
      * Gets a cache entry
      */
-    private Object getCacheEntry(LoginCredentials creds,
-                                 String credString,
-                                 int maxSuccessAge,
-                                 int maxFailAge)
-            throws InterruptedException
-    {
+    private Object getCacheEntry(CacheKey ckey, String credString, IdentityProvider idp, int maxSuccessAge, int maxFailAge) {
         Long cachedFailureTime;
         AuthenticationResult cachedAuthResult;
         synchronized (this) {
-            cachedFailureTime = (Long)failureCache.get(creds);
-            cachedAuthResult = (AuthenticationResult)successCache.get(creds);
+            cachedFailureTime = (Long)failureCache.get(ckey);
+            cachedAuthResult = (AuthenticationResult)successCache.get(ckey);
         }
         if (cachedAuthResult == null && cachedFailureTime == null) return null;
 
@@ -194,11 +215,11 @@ public final class AuthCache {
 
         if (cacheAddedTime + maxAge > System.currentTimeMillis()) {
             if (logger.isLoggable(Level.FINE))
-                logger.log(Level.FINE, "Using cached {0} for {1}", new String[] {log, credString});
+                logger.log(Level.FINE, "Using cached {0} for {1} on IdP \"{2}\"", new String[] {log, credString, idp.getConfig().getName()});
             return returnValue;
         } else {
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Cached {0} for {1} is stale; will reauthenticate", new String[] {log, credString});
+                logger.log(Level.FINE, "Cached {0} for {1} is stale on IdP \"{2}\"; will reauthenticate", new String[] {log, credString, idp.getConfig().getName()});
             }
             return null;
         }
