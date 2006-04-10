@@ -17,6 +17,8 @@ import java.text.MessageFormat;
  * @version $Revision$
  */
 public abstract class AssertionDescription {
+    private static final String NODESCRIPTION_FOUND_MSG = "<b><font color=\"red\">No description found for assertion: </font></b>";
+
     /**
      * the subclasses must implement the
      * @param assertion
@@ -75,7 +77,10 @@ public abstract class AssertionDescription {
                 desc = null;
             }
         }
-        return MessageFormat.format(desc, parameters());
+        if (desc != null) {
+            return MessageFormat.format(desc, parameters());
+        }
+        return NODESCRIPTION_FOUND_MSG + assertionClass.getName();
     }
 
 
@@ -110,7 +115,6 @@ public abstract class AssertionDescription {
 
     protected Assertion assertion;
 }
-
 
 
 
