@@ -8,19 +8,14 @@ package com.l7tech.server.communityschemas;
 
 import com.l7tech.common.util.LSInputImpl;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.TarariSchemaResolver;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
-import org.apache.xmlbeans.XmlException;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.ls.LSInput;
@@ -33,6 +28,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,9 +40,9 @@ import java.util.logging.Logger;
  *
  * @author flascelles@layer7-tech.com
  */
-public class CommunitySchemaManager extends HibernateDaoSupport implements ApplicationContextAware {
-    private ApplicationContext applicationContext;
-    private ServerConfig serverConfig;
+public class CommunitySchemaManager extends HibernateEntityManager implements ApplicationContextAware {
+
+    //- PUBLIC
 
     public CommunitySchemaManager() {
     }
@@ -61,18 +57,11 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
     }
 
     public Collection findAll() throws FindException {
-        String queryall = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName();
-        Collection output = getHibernateTemplate().find(queryall);
+        Collection output = super.findAll();
+
         // make sure the soapenv schema is always there
-        if (output.isEmpty()) {
-            SchemaEntry defaultEntry = newDefaultEntry();
-            try {
-                save(defaultEntry);
-            } catch (SaveException e) {
-                logger.log(Level.WARNING, "cannot save default soap xsd", e);
-            }
-            output = new ArrayList();
-            output.add(defaultEntry);
+        if (!containsSoapEnv(output)) {
+            output = addSoapEnv(output);
         }
 
         return output;
@@ -85,6 +74,11 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
         String queryname = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".name = ?";
         Collection output = getHibernateTemplate().find(queryname, schemaName);
+
+        if (SOAP_SCHEMA_NAME.equals(schemaName) && !containsSoapEnv(output)) {
+            output = addSoapEnv(output);
+        }
+
         return output;
     }
 
@@ -95,29 +89,16 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
         String querytns = "from " + TABLE_NAME + " in class " + SchemaEntry.class.getName() +
                           " where " + TABLE_NAME + ".tns = ?";
         Collection output = getHibernateTemplate().find(querytns, tns);
+
+        if (SOAP_SCHEMA_TNS.equals(tns) && !containsSoapEnv(output)) {
+            output = addSoapEnv(output);
+        }
+
         return output;
     }
 
     public long save(SchemaEntry newSchema) throws SaveException {
-        Long res = (Long)getHibernateTemplate().save(newSchema);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    logger.fine("updating tarari schemas post-save from " + CommunitySchemaManager.class.getName());
-                    try {
-                        TarariLoader.updateSchemasToCard(applicationContext);
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } /*catch (SchemaLoadingException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    }*/ catch (XmlException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    }
-                }
-            }
-        });
+        Long res = (Long) getHibernateTemplate().save(newSchema);
         if (res == null) {
             throw new SaveException("unexpected value returned from HibernateTemplate.save (null)");
         }
@@ -125,47 +106,26 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
     }
 
     public void update(SchemaEntry existingSchema) throws UpdateException {
-        getHibernateTemplate().update(existingSchema);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    logger.fine("updating tarari schemas post-update from " + CommunitySchemaManager.class.getName());
-                    try {
-                        TarariLoader.updateSchemasToCard(applicationContext);
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    }/* catch (SchemaLoadingException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    }*/ catch (XmlException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    }
-                }
-            }
-        });
+        // Get current object (Load from DB to ensure previous values are available in the session)
+        try {
+            SchemaEntry fromDb = (SchemaEntry) findByPrimaryKey(SchemaEntry.class, existingSchema.getOid());
+            if(fromDb==null) throw new UpdateException("Schema does not exist '"+existingSchema.getName()+"'");
+
+            // Update any potentially modified fields
+            fromDb.setName(existingSchema.getName());
+            fromDb.setTns(existingSchema.getTns());
+            fromDb.setSchema(existingSchema.getSchema());
+
+            // Commit
+            getSession().update(fromDb);
+        }
+        catch(FindException fe) {
+            throw new UpdateException(fe.getMessage(), fe.getCause());
+        }
     }
 
     public void delete(SchemaEntry existingSchema) throws DeleteException {
         getHibernateTemplate().delete(existingSchema);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-            public void afterCompletion(int status) {
-                if (status == TransactionSynchronization.STATUS_COMMITTED) {
-                    logger.fine("updating tarari schemas post-delete from " + CommunitySchemaManager.class.getName());
-                    try {
-                        TarariLoader.updateSchemasToCard(applicationContext);
-                    } catch (FindException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    } /*catch (SchemaLoadingException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    }*/ catch (XmlException e) {
-                        logger.log(Level.WARNING, "Error updating schemas to tarari card", e);
-                    }
-                }
-            }
-        });
     }
 
     /**
@@ -268,11 +228,25 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
 
     }
 
+    public Class getImpClass() {
+        return SchemaEntry.class;
+    }
+
+    public Class getInterfaceClass() {
+        return SchemaEntry.class;
+    }
+
+    public String getTableName() {
+        return TABLE_NAME;
+    }
+
+    //- PRIVATE
+
     private SchemaEntry newDefaultEntry() {
         SchemaEntry defaultEntry = new SchemaEntry();
         defaultEntry.setSchema(SOAP_SCHEMA);
-        defaultEntry.setName("soapenv");
-        defaultEntry.setTns("http://schemas.xmlsoap.org/soap/envelope/");
+        defaultEntry.setName(SOAP_SCHEMA_NAME);
+        defaultEntry.setTns(SOAP_SCHEMA_TNS);
         return defaultEntry;
     }
 
@@ -310,8 +284,43 @@ public class CommunitySchemaManager extends HibernateDaoSupport implements Appli
         return resolved;
     }
 
+    private boolean containsSoapEnv(Collection schemaEntries) {
+        return containsShemaWithName(schemaEntries, SOAP_SCHEMA_NAME);
+    }
+
+    private boolean containsShemaWithName(Collection schemaEntries, String schemaName) {
+        boolean contains = false;
+
+        for (Iterator iterator = schemaEntries.iterator(); iterator.hasNext();) {
+            SchemaEntry schemaEntry = (SchemaEntry) iterator.next();
+            if (schemaName.equals(schemaEntry.getName())) {
+                contains = true;
+                break;
+            }
+        }
+
+        return contains;
+    }
+
+    private Collection addSoapEnv(Collection collection) {
+        SchemaEntry defaultEntry = newDefaultEntry();
+        try {
+            save(defaultEntry);
+        } catch (SaveException e) {
+            logger.log(Level.WARNING, "cannot save default soap xsd", e);
+        }
+        ArrayList completeList = new ArrayList(collection);
+        completeList.add(defaultEntry);
+        return completeList;
+    }
+
+    private ApplicationContext applicationContext;
+    private ServerConfig serverConfig;
+
     private static final String TABLE_NAME = "community_schema";
-    private final Logger logger = Logger.getLogger(CommunitySchemaManager.class.getName());
+    private static final Logger logger = Logger.getLogger(CommunitySchemaManager.class.getName());
+    private static final String SOAP_SCHEMA_NAME = "soapenv";
+    private static final String SOAP_SCHEMA_TNS = "http://schemas.xmlsoap.org/soap/envelope/";
     private static final String SOAP_SCHEMA = "<?xml version='1.0' encoding='UTF-8' ?>\n" +
             "<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n" +
             "           xmlns:tns=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +

@@ -238,6 +238,7 @@ public final class RegistryImpl extends Registry
         serviceAdmin = null;
         jmsAdmin = null;
         trustedCertAdmin = null;
+        schemaAdmin = null;
         customAssertionsRegistrar = null;
         auditAdmin = null;
         clusterStatusAdmin = null;

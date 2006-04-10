@@ -8,11 +8,13 @@ package com.l7tech.server.service;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -20,6 +22,8 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.beans.BeansException;
 import org.hibernate.Session;
 import org.hibernate.HibernateException;
@@ -34,7 +38,7 @@ import java.util.logging.Logger;
 /**
  * Manages PublishedService instances.
  */
-public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager, ApplicationContextAware {
+public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager, ApplicationContextAware, ApplicationListener {
     private ServiceCache serviceCache;
     private ApplicationContext applicationContext;
 
@@ -333,6 +337,21 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 }
             }
         });
+    }
+
+    public void onApplicationEvent(ApplicationEvent event) {
+        if(event instanceof EntityInvalidationEvent) {
+            EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
+            if(SchemaEntry.class.isAssignableFrom(eie.getEntityClass())) {
+                logger.info("Updating Tarari schemas.");
+                try {
+                    TarariLoader.updateSchemasToCard(applicationContext);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Error updating schemas to tarari card " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+        }
+
     }
 
     private void initializeServiceCache() throws ObjectModelException {

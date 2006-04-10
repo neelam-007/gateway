@@ -8,6 +8,8 @@ package com.l7tech.common.xml.schema;
 
 import java.io.Serializable;
 
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+
 /**
  * A row in the communityschema table. These xml schemas are meant to define additional
  * elements that are potentially common to more than one services such as envelope schemas
@@ -15,14 +17,7 @@ import java.io.Serializable;
  *
  * @author flascelles@layer7-tech.com
  */
-public class SchemaEntry implements Serializable {
-    public long getOid() {
-        return oid;
-    }
-
-    public void setOid(long oid) {
-        this.oid = oid;
-    }
+public class SchemaEntry extends NamedEntityImp {
 
     public String getSchema() {
         return schema;
@@ -40,20 +35,10 @@ public class SchemaEntry implements Serializable {
         this.tns = tns;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String toString() {
-        return "SchemaEntry oid:" + oid + " schema: " + schema;
+        return "SchemaEntry oid:" + getOid() + " schema: " + schema;
     }
 
-    private long oid = -1;
     private String schema;
     private String tns;
-    private String name;
 }

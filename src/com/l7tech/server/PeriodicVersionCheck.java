@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * {@link com.l7tech.server.service.ServiceCache}.  ServiceCache should extend this class
  * and implement its abstract methods.
  *
- * @author alex
+ * @author alex, $Author$
  * @version $Revision$
  */
 public abstract class PeriodicVersionCheck extends TimerTask {
@@ -90,17 +90,20 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         } else {
             for (Iterator i = updatesAndAdditions.iterator(); i.hasNext();) {
                 Long updatedOid = (Long)i.next();
-                Entity updatedEntity = null;
-                try {
-                    updatedEntity = _manager.findEntity(updatedOid.longValue());
-                } catch (FindException e) {
-                    updatedEntity = null;
-                    logger.log(Level.WARNING, "Entity that was updated or created " +
-                      "cannot be retrieved", e);
+                Integer newVersion = (Integer)dbversions.get(updatedOid);
+                if (checkAddOrUpdate(updatedOid, newVersion)) {
+                    Entity updatedEntity = null;
+                    try {
+                        updatedEntity = _manager.findEntity(updatedOid.longValue());
+                    } catch (FindException e) {
+                        updatedEntity = null;
+                        logger.log(Level.WARNING, "Entity that was updated or created " +
+                          "cannot be retrieved", e);
+                    }
+                    if (updatedEntity != null) {
+                        addOrUpdate(updatedEntity);
+                    } // otherwise, next version check shall delete this service from cache
                 }
-                if (updatedEntity != null) {
-                    addOrUpdate(updatedEntity);
-                } // otherwise, next version check shall delete this service from cache
             }
             for (Iterator i = deletions.iterator(); i.hasNext();) {
                 Long key = (Long)i.next();
@@ -118,14 +121,53 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         onDelete(oid.longValue());
     }
 
+    private boolean checkAddOrUpdate(Long oid, Integer version) {
+        boolean loadEntity = preSave(oid.longValue(), version.intValue());
+        if(!loadEntity) {
+            _cachedVersionMap.put(oid, version); // If not loading then update now
+        }
+        return loadEntity;
+    }
+
     private void addOrUpdate(Entity updatedEntity) {
         _cachedVersionMap.put(new Long(updatedEntity.getOid()), new Integer(updatedEntity.getVersion()));
         onSave(updatedEntity);
     }
 
+
+    /**
+     * Override to be notified of deleted entities.
+     *
+     * <p>This implementation does nothing.</p>
+     *
+     * @param removedOid The oid of the deleted Entity
+     */
     protected abstract void onDelete(long removedOid);
 
-    protected abstract void onSave(Entity updatedEntity);
+    /**
+     * Override to receive notification of updated entities.
+     *
+     * <p>If this method returns true then onSave will be called
+     * with the updated Entity.</p>
+     *
+     * <p>This implementation returns true.</p>
+     *
+     * @param updatedOid     The id of the updated Entity
+     * @param updatedVersion The version number of the updated Entity
+     * @return true if the entity data is required
+     */
+    protected boolean preSave(long updatedOid, int updatedVersion) {
+        return true;
+    }
+
+    /**
+     * Override to be passed updated entities.
+     *
+     * <p>This implementation does nothing.</p>
+     *
+     * @param updatedEntity the updated Entity
+     */
+    protected void onSave(Entity updatedEntity) {}
 
     public long getFrequency() {
         return DEFAULT_FREQUENCY;

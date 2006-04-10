@@ -33,7 +33,13 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-<!--
+
+    <!--
+      Event multicaster for supporting non-container managed event listeners.
+    -->
+    <bean id="applicationEventMulticaster" class="com.l7tech.spring.util.SafeApplicationEventMulticaster"/>
+
+    <!--
         Internal Identity Provider
 
         The factory method with support with construction arguments. The bean must be instantiated
@@ -577,7 +583,7 @@
         </property>
     </bean>
 
-    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManager">
+    <bean id="clusterPropertyManagerTarget" class="com.l7tech.cluster.ClusterPropertyManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -663,5 +669,12 @@
         </property>
     </bean>
 
+    <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
+        <property name="entityManagers">
+            <list>
+                <ref local="communitySchemaManager"/>
+            </list>
+        </property>
+    </bean>
 
 </beans>

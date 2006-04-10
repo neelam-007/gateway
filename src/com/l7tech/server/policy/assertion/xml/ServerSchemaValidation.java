@@ -10,6 +10,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.ElementCursor;
+import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -19,14 +20,20 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
+import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.spring.util.WeakReferenceApplicationListener;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.w3c.dom.ls.LSInput;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -55,21 +62,38 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class ServerSchemaValidation implements ServerAssertion {
+public class ServerSchemaValidation implements ServerAssertion, ApplicationListener {
     private static final String MSG_PAYLOAD_NS = "Hardware schema validation succeeded but the tns " +
             "did not match the assertion at hand. Returning failure.";
 
     //- PUBLIC
 
+    public void onApplicationEvent(ApplicationEvent event) {
+        if(schemaHasDependencies) {
+            if(event instanceof EntityInvalidationEvent) {
+                EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
+                if(SchemaEntry.class.isAssignableFrom(eie.getEntityClass())) {
+                    logger.info("Invalidating cached validation schema.");
+                    schema = null; // flush cached schema
+                }
+            }
+        }
+    }
+
     /**
      *
      */
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
+        this.schemaHasDependencies = false;
         this.schemaValidationAssertion = data;
         this.springContext = springContext;
         this.auditor = new Auditor(this, springContext, logger);
-        GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
 
+        // Listen for community schema updates
+        WeakReferenceApplicationListener.addApplicationListener(springContext, this);
+
+        // Tarari
+        GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
         if (tarariContext != null) {
             try {
                 SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
@@ -127,12 +151,21 @@ public class ServerSchemaValidation implements ServerAssertion {
             }
         }
 
-        if(schema==null) {
+        Schema validationSchema = schema;
+        if(validationSchema==null) {
+            logger.info("Loading schema for message validation.");
             try {
                 CommunitySchemaManager manager = (CommunitySchemaManager) springContext.getBean("communitySchemaManager");
                 SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-                sf.setResourceResolver(manager.communityLSResourceResolver());
-                schema = sf.newSchema(new StreamSource(new StringReader(schemaValidationAssertion.getSchema())));
+                final LSResourceResolver delegate = manager.communityLSResourceResolver();
+                sf.setResourceResolver(new LSResourceResolver(){
+                    public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+                        schemaHasDependencies = true;
+                        return delegate.resolveResource(type, namespaceURI, publicId, systemId, baseURI);
+                    }
+                });
+                validationSchema = sf.newSchema(new StreamSource(new StringReader(schemaValidationAssertion.getSchema())));
+                schema = validationSchema;
             }
             catch(SAXException se) {
                 String msg = "parsing exception";
@@ -142,7 +175,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         }
 
         SchemaValidationErrorHandler reporter = new SchemaValidationErrorHandler();
-        Validator v = schema.newValidator();
+        Validator v = validationSchema.newValidator();
         v.setErrorHandler(reporter);
         v.setResourceResolver(XmlUtil.getSafeLSResourceResolver());
 
@@ -174,6 +207,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     private final ApplicationContext springContext;
     private String tarariNamespaceUri;
     private Schema schema;
+    private boolean schemaHasDependencies;
     private SchemaValidation schemaValidationAssertion;
 
     /**

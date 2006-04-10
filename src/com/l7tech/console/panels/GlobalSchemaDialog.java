@@ -304,8 +304,7 @@ public class GlobalSchemaDialog extends JDialog {
             try {
                 checkEntryForUnresolvedImports(toedit);
                 reg.getSchemaAdmin().saveSchemaEntry(toedit);
-                ((AbstractTableModel)schemaTable.getModel()).fireTableDataChanged();
-                TableUtil.adjustColumnWidth(schemaTable, 1);
+                populate();
             } catch (RemoteException e) {
                 logger.log(Level.WARNING, "error saving schema entry", e);
             } catch (SaveException e) {
@@ -335,32 +334,31 @@ public class GlobalSchemaDialog extends JDialog {
 
     private void close() {
         // check the state of all schemas. make sure none of them contain unresolved exports
+        boolean okToClose = true;
         Registry reg = Registry.getDefault();
         if (reg != null && reg.getSchemaAdmin() != null) {
-            Collection allschemas = null;
             try {
-                allschemas = reg.getSchemaAdmin().findAllSchemas();
+                Collection allschemas = reg.getSchemaAdmin().findAllSchemas();
+                for (Iterator iterator = allschemas.iterator(); iterator.hasNext();) {
+                    SchemaEntry schemaEntry = (SchemaEntry) iterator.next();
+                    if (checkEntryForUnresolvedImports(schemaEntry)) {
+                        okToClose = false;
+                        break;
+                    }
+                }
             } catch (RemoteException e) {
                 logger.log(Level.WARNING, "could not get schemas", e);
-                GlobalSchemaDialog.this.dispose();
             } catch (FindException e) {
                 logger.log(Level.WARNING, "could not get schemas", e);
-                GlobalSchemaDialog.this.dispose();
             }
-            boolean okToClose = true;
-            for (Iterator iterator = allschemas.iterator(); iterator.hasNext();) {
-                SchemaEntry schemaEntry = (SchemaEntry) iterator.next();
-                if (checkEntryForUnresolvedImports(schemaEntry)) {
-                    okToClose = false;
-                    break;
-                }
-            }
-            // prevent closing this dialog if the state is dirty
-            if (!okToClose) return;
         } else {
             logger.warning("No access to registry. Cannot check for unresolved exports.");
         }
-        GlobalSchemaDialog.this.dispose();
+
+        // prevent closing this dialog if the state is known to be dirty
+        if (okToClose) {
+            GlobalSchemaDialog.this.dispose();
+        }
     }
 
     private void help() {
