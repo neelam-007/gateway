@@ -120,7 +120,13 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
             return AssertionStatus.NOT_APPLICABLE;
         }
 
-        return validateMessage(msg);
+        AssertionStatus status = validateMessage(msg);
+        // not pretty, but functional ...
+        if(!isRequest(routing) && status==AssertionStatus.BAD_REQUEST) {
+            status = AssertionStatus.BAD_RESPONSE;
+        }
+
+        return status;
     }
 
     //- PACKAGE
@@ -136,8 +142,8 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
         try {
             elementsToValidate = getXMLElementsToValidate(soapmsg);
         } catch (InvalidDocumentFormatException e) {
-            logger.log(Level.INFO, "The document to validate does not respect the expected format", e);
-            return AssertionStatus.FAILED;
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{"The document to validate does not respect the expected format"});
+            return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
         }
         if (elementsToValidate == null || elementsToValidate.length < 1) {
             if (schemaValidationAssertion.isApplyToArguments()) {
@@ -147,7 +153,7 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
                 return AssertionStatus.NONE;
             } else {
                 auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
-                return AssertionStatus.FAILED;
+                return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
             }
         }
 
@@ -190,7 +196,7 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
                 for (Iterator it = errors.iterator(); it.hasNext();) {
                     auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {it.next().toString()});
                 }
-                return AssertionStatus.FAILED;
+                return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
             }
         }
 
@@ -216,7 +222,7 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
     private Message getMessageToValidate(RoutingStatus routing, PolicyEnforcementContext context) throws IOException {
         Message msg;
 
-        if (routing == RoutingStatus.ROUTED || routing == RoutingStatus.ATTEMPTED) {
+        if (!isRequest(routing)) {
             // try to validate response
             auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_RESPONSE);
 
@@ -239,6 +245,16 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
         }
 
         return msg;
+    }
+
+    private boolean isRequest(RoutingStatus routing) {
+        boolean isRequest = true;
+
+        if (routing == RoutingStatus.ROUTED || routing == RoutingStatus.ATTEMPTED) {
+            isRequest = false;
+        }
+
+        return isRequest;
     }
 
     /**
@@ -285,7 +301,8 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
             return checkRootNamespace(doc);
 
         } catch (SAXException e) {
-            throw new PolicyAssertionException(null, "could not parse request or response document", e);
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{"Invalid XML " + e.getMessage()}, e);
+            return AssertionStatus.BAD_REQUEST; // Gets altered to BAD_RESPONSE if this is not the request ...
         } catch (NoSuchPartException e) {
             throw new RuntimeException(e); // Can't happen -- first part is currently never read destructively
         }

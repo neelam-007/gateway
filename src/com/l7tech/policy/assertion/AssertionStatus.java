@@ -38,6 +38,7 @@ public class AssertionStatus {
     /** Generic catch-all status */
     public static final AssertionStatus SERVER_ERROR        = make( SERVER + 0, Level.INFO, "Internal Server Error" );
     public static final AssertionStatus SERVER_AUTH_FAILED  = make( SERVER + 1, Level.INFO, "Access Denied by Protected Service" );
+    public static final AssertionStatus BAD_RESPONSE        = make( SERVER + 2, Level.INFO, "Bad Response from Protected Service" );
 
     /** A generic negative result */
     public static final AssertionStatus FALSIFIED = make( POLICY + 0, Level.INFO, "Assertion Falsified" );
