@@ -20,14 +20,13 @@ import org.jfree.data.time.TimeTableXYDataset;
 import org.jfree.data.xy.XYDataset;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -156,6 +155,13 @@ public class MetricsChartPanel extends ChartPanel {
     /** Chart containing all plots with shared time axis. */
     private JFreeChart _chart;
 
+    /** Holding area for metrics bins waiting to be added, when
+        {@link _freezeData} is true. */
+    private final List _binsToAdd = new ArrayList();
+
+    /** Indicates if displayed data needs to be frozen temporarily. */
+    private boolean _freezeData = false;
+
     /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("responseTimeTooltipFormat"));
@@ -259,7 +265,7 @@ public class MetricsChartPanel extends ChartPanel {
     /**
      * Generates a transparent color such that when painted on a white
      * background will look the same as the given opaque color. That is, find
-     * (r, g, b, alpha) such that (r, g, b, alpha) + white = (r0, g0, b0, 0).
+     * (r, g, b, a) such that (r, g, b, a) + white = (r0, g0, b0, 0).
      * <p/>
      * This is used for matching the response time min-max bar color to the right
      * panel icon legend color. It is neccessary because the min-max bar uses
@@ -388,9 +394,9 @@ public class MetricsChartPanel extends ChartPanel {
         xAxis.setFixedAutoRange(_maxTimeRange);
         final CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(xAxis);
         combinedPlot.setGap(0.);
-        combinedPlot.add(rPlot, 35);    // These weights are tweaked to match
-        combinedPlot.add(iPlot, 5);     // the matching numeric display panel
-        combinedPlot.add(mPlot, 60);    // next to the corresponding plots.
+        combinedPlot.add(rPlot, 35);
+        combinedPlot.add(iPlot, 5);
+        combinedPlot.add(mPlot, 60);
         combinedPlot.setOrientation(PlotOrientation.VERTICAL);
 
         _chart = new JFreeChart(null,   // chart title
@@ -403,6 +409,7 @@ public class MetricsChartPanel extends ChartPanel {
         setChart(_chart);
         setPopupMenu(null);             // Suppresses right-click pop menu.
         setRangeZoomable(false);        // Suppresses range (y-axis) zooming.
+        setFillZoomRectangle(true);
         setInitialDelay(100);           // Makes tool tip respond fast.
         setDismissDelay(Integer.MAX_VALUE); // Makes tool tip display indefinitely.
         setReshowDelay(100);
@@ -416,6 +423,11 @@ public class MetricsChartPanel extends ChartPanel {
      * @param metricsBins new data to be added
      */
     public synchronized void addData(List metricsBins) {
+        if (_freezeData) {
+            _binsToAdd.addAll(metricsBins);
+            return;
+        }
+
         // Temporarily disable notification so plots won't be redrawn needlessly
         // when datasets are changing. Note that this does not entirely prevent
         // the datasets from being accessed.
@@ -519,5 +531,28 @@ public class MetricsChartPanel extends ChartPanel {
         }
 
         setXAxisRangeIfNoData();
+    }
+
+    public void mousePressed(MouseEvent e) {
+        // The user is starting to drag-draw the rubberband zoom box. Need to
+        // temporarily suspend changing the displayed data, otherwise the
+        // rubberband zoom box will appear jumpy. Starts caching new data to be
+        // added. But no need to cache clearData() calls because they won't
+        // happen during zooming.
+        // @see http://www.jfree.org/phpBB2/viewtopic.php?t=10022&highlight=zoom+dynamic
+        _freezeData = true;
+        super.mousePressed(e);
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        super.mouseReleased(e);
+        _freezeData = false;
+
+        // The user has finished zooming.
+        // Adds any metrics bins waiting to be added.
+        if (! _binsToAdd.isEmpty()) {
+            addData(_binsToAdd);
+        }
+        _binsToAdd.clear();
     }
 }

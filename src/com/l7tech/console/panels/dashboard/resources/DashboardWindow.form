@@ -261,7 +261,7 @@
                   </component>
                   <component id="fa248" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="239" y="25" width="44" height="14"/>
+                      <xy x="237" y="25" width="47" height="14"/>
                       <grid row="0" column="5" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="2" fill="0"/>
                     </constraints>
                     <properties>
@@ -270,7 +270,7 @@
                   </component>
                   <component id="55533" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="97" y="25" width="48" height="14"/>
+                      <xy x="95" y="25" width="51" height="14"/>
                       <grid row="0" column="1" row-span="1" col-span="3" vsize-policy="0" hsize-policy="0" anchor="2" fill="0"/>
                     </constraints>
                     <properties>
@@ -762,7 +762,9 @@
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <xy x="12" y="67" width="322" height="20"/>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3">
+                    <minimum-size width="-1" height="2"/>
+                  </grid>
                 </constraints>
                 <properties>
                   <focusable value="false"/>
@@ -774,7 +776,9 @@
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <xy x="12" y="234" width="322" height="20"/>
-                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3">
+                    <minimum-size width="-1" height="2"/>
+                  </grid>
                 </constraints>
                 <properties>
                   <focusable value="false"/>
