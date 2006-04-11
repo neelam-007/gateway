@@ -583,7 +583,7 @@
         </property>
     </bean>
 
-    <bean id="clusterPropertyManagerTarget" class="com.l7tech.cluster.ClusterPropertyManager">
+    <bean id="clusterPropertyManager" class="com.l7tech.cluster.ClusterPropertyManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
