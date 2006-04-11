@@ -26,6 +26,8 @@ public class RoutingFolderNode extends AbstractPaletteFolderNode {
         insert(new HttpRoutingNode(), index++);
         insert(new BridgeRoutingNode(), index++);
         insert(new JmsRoutingNode(), index++);
+        insert(new HardcodedResponsePaletteNode(), index++);
+        insert(new EchoRoutingAssertionPaletteNode(), index++);        
         // insert(new SmtpRoutingNode(), index++);
     }
 }
