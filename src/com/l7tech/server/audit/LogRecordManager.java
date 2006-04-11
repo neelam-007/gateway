@@ -161,7 +161,9 @@ public class LogRecordManager {
                         ResettableRmiProxyFactoryBean pfb = new ResettableRmiProxyFactoryBean();
                         pfb.setServiceInterface(ClusterLogin.class);
                         pfb.setRefreshStubOnConnectFailure(false);
-                        pfb.setRegistryClientSocketFactory(new SslRMIClientSocketFactory());
+                        SslRMIClientSocketFactory socketFactory = new SslRMIClientSocketFactory();
+                        socketFactory.setHost(clusterNodeInfo.getAddress());
+                        pfb.setRegistryClientSocketFactory(socketFactory);
                         pfb.setServiceUrl(adminServiceNamingURL.toString());
                         pfb.afterPropertiesSet();
                         ClusterLogin cl = (ClusterLogin) pfb.getObject();
@@ -174,8 +176,8 @@ public class LogRecordManager {
                 }
             });
         }
-        catch(PrivilegedActionException pae) {
-            Throwable cause = pae.getCause();
+        catch(Exception e) {
+            Throwable cause = e.getCause();
             if(cause instanceof FindException) {
                 throw (FindException) cause;
             }

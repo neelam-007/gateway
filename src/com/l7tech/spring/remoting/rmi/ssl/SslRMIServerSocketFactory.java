@@ -14,8 +14,11 @@ import java.net.SocketImplFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -277,12 +280,19 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      * equality.</p>
      */
     public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (obj == this) return true;
-        if (!(obj instanceof SslRMIServerSocketFactory))
-            return false;
-        SslRMIServerSocketFactory that = (SslRMIServerSocketFactory)obj;
-        return (getClass().equals(that.getClass()) && checkParameters(that));
+        boolean equal = false;
+
+        if (obj != null) {
+            if (obj == this) {
+                equal = true;
+            }
+            else if (obj instanceof SslRMIServerSocketFactory) {
+                SslRMIServerSocketFactory that = (SslRMIServerSocketFactory) obj;
+                equal = getClass().equals(that.getClass()) && checkParameters(that);
+            }
+        }
+
+        return equal;
     }
 
     /**
@@ -307,6 +317,17 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      */
     public static Context getContext() {
         return (Context) contextLocal.get();
+    }
+
+    /**
+     * Sets the <code>SSLFailureHandler</code> to be called if the server trust
+     * failed. If <b>null</b> clears the existing handler
+     *
+     * @param trustFailureHandler the new SSL failure handler
+     * @see SSLTrustFailureHandler
+     */
+    public static synchronized void setTrustFailureHandler(SSLTrustFailureHandler trustFailureHandler) {
+        SslRMIServerSocketFactory.trustFailureHandler = trustFailureHandler;
     }
 
     /**
@@ -348,6 +369,9 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger(SslRMIServerSocketFactory.class.getName());
+
+    private static SSLTrustFailureHandler trustFailureHandler = null;
     private static SSLServerSocketFactory defaultSSLSocketFactory = null;
     private static ThreadLocal contextLocal = new ThreadLocal();
 
@@ -424,7 +448,7 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
         }
         kmf.init(ks, pwd);
         keyManagers = kmf.getKeyManagers();
-        ctx.init(keyManagers, null, null);
+        ctx.init(keyManagers, new TrustManager[]{new SSLServerTrustManager()}, null);
         ssf = ctx.getServerSocketFactory();
         defaultSSLSocketFactory = ssf;
         return defaultSSLSocketFactory;
@@ -439,5 +463,48 @@ public class SslRMIServerSocketFactory implements RMIServerSocketFactory {
      */
     private void setContext(SSLSocket socket) {
         contextLocal.set(new Context(socket.getSession()));
+    }
+
+    /**
+     * The internal <code>X509TrustManager</code> that invokes the trust failure
+     * handler if it has been set
+     */
+    private static class SSLServerTrustManager implements X509TrustManager {
+
+        /**
+         * @see javax.net.ssl.X509TrustManager#getAcceptedIssuers()
+         */
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+
+        /**
+         * @see javax.net.ssl.X509TrustManager#checkClientTrusted(java.security.cert.X509Certificate[], String)
+         */
+        public void checkClientTrusted(X509Certificate[] chain, String authType)
+          throws CertificateException {
+            SSLTrustFailureHandler tfh = trustFailureHandler;
+            if(tfh!=null && tfh.handle(null, chain, authType)) {
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine("Accepted client certificate.");
+                }
+            }
+            else {
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine("Rejected client certificate.");
+                }
+                throw new CertificateException("Untrusted client certificate.");
+            }
+        }
+
+        /**
+         * This handler is for Server side only so this is not used.
+         *
+         * @see javax.net.ssl.X509TrustManager#checkServerTrusted(java.security.cert.X509Certificate[], String)
+         */
+        public void checkServerTrusted(X509Certificate[] chain, String authType)
+          throws CertificateException {
+            throw new CertificateException();
+        }
     }
 }

@@ -89,6 +89,20 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
         // might already have been initialized anyway if someone in the JVM
         // already called SSLSocketFactory.getDefault().
         //
+
+        // Need to init the trust handler for server-side clients else equality
+        // checking will fail.
+        checkInit();
+    }
+
+    /**
+     * Allow the host to be set, this is necessary if the servers idea of its name
+     * does not match the name the client uses to connect.
+     *
+     * @param host the host name to use
+     */
+    public void setHost(String host) {
+        this.host = host;
     }
 
     /**
@@ -110,16 +124,24 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
      * comma-separated list of SSL/TLS protocol versions to
      * enable.</p>
      */
-    public Socket createSocket(String host, int port) throws IOException {
+    public Socket createSocket(String csHost, int csPort) throws IOException {
         checkInit();
+
+        // Derive the host
+        final String connectHost = getHost(csHost);
 
         // Retrieve the SSLSocketFactory
         //
-        final SocketFactory sslSocketFactory = getClientSocketFactory(host);
+        final SocketFactory sslSocketFactory = getClientSocketFactory(connectHost);
+
+        if(logger.isLoggable(Level.FINE)) {
+            logger.fine("Connecting to host '"+connectHost+"', using socket factory '"+sslSocketFactory+"'.");
+        }
+
         // Create the SSLSocket
         //
         final SSLSocket sslSocket = (SSLSocket)
-          sslSocketFactory.createSocket(host, port);
+          sslSocketFactory.createSocket(connectHost, csPort);
         // Set the SSLSocket Enabled Cipher Suites
         //
         final String enabledCipherSuites = (String)
@@ -180,7 +202,12 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
                 if(obj instanceof SslRMIClientSocketFactory) {
                     SslRMIClientSocketFactory other = (SslRMIClientSocketFactory) obj;
                     if(other.trustFailureHandler == this.trustFailureHandler) {
-                        equal = true;
+                        if(host==null || other.host==null) {
+                            equal = true;
+                        }
+                        else {
+                            equal = host.equals(other.host);
+                        }
                     }
                 }
             }
@@ -197,18 +224,21 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
      *         <code>SslRMIClientSocketFactory</code>.
      */
     public int hashCode() {
-        return 17 * (trustFailureHandler==null ? SslRMIClientSocketFactory.class.hashCode() : trustFailureHandler.hashCode());
+        return SslRMIClientSocketFactory.class.hashCode() +
+                (host==null ? 0 : host.hashCode()) +
+                (trustFailureHandler==null ? 0 : trustFailureHandler.hashCode());
     }
 
     //- PRIVATE
 
-    private static final long serialVersionUID = -8310631444933958385L;
+    private static final long serialVersionUID = 2L;
     private static final Logger logger = Logger.getLogger(SslRMIClientSocketFactory.class.getName());
 
     private static KeyManagerFactory currentKeyManagerFactory;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
 
     //
+    private String host; // host if not the default
     private transient SSLTrustFailureHandler trustFailureHandler;
     private transient Map socketFactoryByHost;
 
@@ -294,6 +324,22 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
         }
 
         return resolved;
+    }
+
+    /**
+     * Get the host.
+     *
+     * @param host the suggested host name.
+     * @return the host name to connect to
+     */
+   private String getHost(String host) {
+        String hostToUse = host;
+
+        if(this.host!=null) {
+            hostToUse = this.host;
+        }
+
+        return hostToUse;
     }
 
     private SocketFactory getClientSocketFactory(String serverHostname) {

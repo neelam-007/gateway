@@ -31,9 +31,22 @@
             </list>
         </property>
     </bean>
+    <!-- Handler for SSL RMI Client certificates -->
+    <bean id="setNode2NodeInternalTrustFailureHandler"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod">
+            <value>com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory.setTrustFailureHandler</value>
+        </property>
+        <property name="arguments">
+            <list>
+                <ref local="internalSslTrustFailureHandler"/>
+            </list>
+        </property>
+    </bean>
 
     <!-- admin services, Rmi socket factories -->
-    <bean id="rmiServerSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory">
+    <bean id="rmiServerSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIServerSocketFactory"
+          depends-on="setNode2NodeInternalTrustFailureHandler">
         <property name="keyStoreType">
             <ref bean='sslKeystoreType'/>
         </property>
@@ -47,6 +60,29 @@
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
           depends-on="setKeyManagerFactoryForNodeToNodeRMI, setInternalTrustFailureHandler"/>
+
+    <bean id="rmiClusterClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
+          depends-on="setKeyManagerFactoryForNodeToNodeRMI, setInternalTrustFailureHandler, setNode2NodeInternalTrustFailureHandler">
+        <property name="host">
+            <!-- Extract host name from this nodes cluster node info -->
+            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                <property name="targetObject">
+                    <!-- Get this nodes info -->
+                    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+                        <property name="targetObject">
+                            <ref bean="clusterInfoManager"/>
+                        </property>
+                        <property name="targetMethod">
+                            <value>getSelfNodeInf</value>
+                        </property>
+                    </bean>
+                </property>
+                <property name="targetMethod">
+                    <value>getAddress</value>
+                </property>
+            </bean>
+        </property>
+    </bean>
 
     <bean id="adminSessionInvocationFactory" class="com.l7tech.spring.remoting.rmi.AdminSessionInvocationFactory"/>
 
@@ -104,6 +140,9 @@
         </property>
     </bean>
     <bean id="sharedClusterExportProperties" parent="baseExportProperties" abstract="true">
+        <property name="clientSocketFactory">
+            <ref bean="rmiClusterClientSocketFactory"/>
+        </property>
         <property name="remoteInvocationExecutor">
             <bean class="com.l7tech.spring.remoting.rmi.ClusterRemoteInvocationExecutor">
                 <constructor-arg>
