@@ -584,9 +584,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
             if (CookieUtils.isPassThroughCookie(ssgc)) {
                 if (ssgc.isNew()) {
-                   auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[] {ssgc.getCookieName()});
-                } else {
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[] {ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
+                } else {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[] {ssgc.getCookieName()});
                 }
                 HttpCookie newCookie = new HttpCookie(
                     ssgc.getCookieName(),
