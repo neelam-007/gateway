@@ -1359,6 +1359,24 @@ public class WssProcessorImpl implements WssProcessor {
                 } else
                     return super.getTransform(s);
             }
+
+            public SignatureMethod getSignatureMethod(String alg, Object param) throws NoSuchAlgorithmException, NoSuchProviderException {
+                final SignatureMethod sm = super.getSignatureMethod(alg, param);
+                if (SignatureMethod.RSA.equals(alg)) {
+                    // Wrap with memoized version
+                    return new MemoizedRsaSha1SignatureMethod(sm);
+                }
+                return sm;
+            }
+
+            public void releaseSignatureMethod(SignatureMethod sm) {
+                if (sm instanceof MemoizedRsaSha1SignatureMethod) {
+                    MemoizedRsaSha1SignatureMethod msm = (MemoizedRsaSha1SignatureMethod)sm;
+                    super.releaseSignatureMethod(msm.getDelegate());
+                } else
+                    super.releaseSignatureMethod(sm);
+            }
+
         });
         Validity validity = sigContext.verify(sigElement, signingKey);
 
