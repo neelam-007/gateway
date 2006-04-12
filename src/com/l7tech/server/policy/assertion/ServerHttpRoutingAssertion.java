@@ -585,10 +585,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (CookieUtils.isPassThroughCookie(ssgc)) {
                 if (ssgc.isNew()) {
                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_UPDATECOOKIE, new String[] {ssgc.getCookieName()});
+                } else {
+                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[] {ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
                 }
-
-                auditor.logAndAudit(AssertionMessages.HTTPROUTE_ADDCOOKIE_VERSION, new String[] {ssgc.getCookieName(), String.valueOf(ssgc.getVersion())});
-
                 HttpCookie newCookie = new HttpCookie(
                     ssgc.getCookieName(),
                     ssgc.getCookieValue(),
@@ -602,7 +601,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 // attach and record
                 attached.add(newCookie);
-                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, newCookie.toExternalForm()));
+                routedRequestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_COOKIE, newCookie.getCookieValue()));
             }
         }
 
