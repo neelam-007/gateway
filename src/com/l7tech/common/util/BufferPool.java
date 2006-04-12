@@ -101,12 +101,16 @@ public class BufferPool {
      * Return a no-longer-needed buffer to the pool.  The buffer need not have been allocated using this class
      * originally, as long as it is larger than {@link #MIN_BUFFER_SIZE},
      * although allocating all buffers through this class will help ensure that the buffer sizes stay reasonable.
+     * <p/>
+     * Buffers must be returned only on threads that will be calling getBuffer() some time in the future.
+     * Specifically, buffers <b>must not</b> be returned on the Finalizer thread since small buffers will
+     * just accumulate there forever.
      *
      * @param buffer the buffer to return to the pool. No action is taken if this is null or smaller than {@link #MIN_BUFFER_SIZE}.
      */
     public static void returnBuffer(byte[] buffer) {
         if (buffer == null || buffer.length < MIN_BUFFER_SIZE) return;
-        assert !"Finalizer".equals(Thread.currentThread().getName());        
+        assert !"Finalizer".equals(Thread.currentThread().getName());
         if (buffer.length > 1024 * 1024) {
             returnHugeBuffer(buffer);
             return;
