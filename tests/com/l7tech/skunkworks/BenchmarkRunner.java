@@ -92,7 +92,13 @@ public class BenchmarkRunner {
                 thread.interrupt();
             }
         }
-        threads = null;
+    }
+
+    public void stopAll() {
+        killAllThreads();
+        synchronized (this) {
+            this.notifyAll();
+        }
     }
 
     /**

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.skunkworks;
@@ -15,6 +14,7 @@ import junit.framework.TestSuite;
  * @version 1.0
  */
 public class BenchmarkRunnerTest extends TestCase {
+    final Object mutex = new Object();
     volatile int runnableInvocationsCounter = 0;
 
     public BenchmarkRunnerTest(String name) {
@@ -34,16 +34,26 @@ public class BenchmarkRunnerTest extends TestCase {
         for (int i = 0; i < counts.length; i++) {
             int count = counts[i];
 
-            runnableInvocationsCounter = 0;
+            synchronized (mutex) {
+                runnableInvocationsCounter = 0;
+            }
+
             Runnable testRunnable = new Runnable() {
                 public void run() {
-                    runnableInvocationsCounter++;
+                    synchronized (mutex) {
+                        runnableInvocationsCounter++;
+                    }
                 }
             };
+
             BenchmarkRunner rr = new BenchmarkRunner(testRunnable, count);
             rr.run();
+            final int counter;
+            synchronized (mutex) {
+                counter = runnableInvocationsCounter;
+            }
             assertTrue("Expected " + count + " invocations, received  " +
-              runnableInvocationsCounter, count == runnableInvocationsCounter);
+              counter, count == counter);
         }
     }
 }
