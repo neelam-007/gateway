@@ -3,18 +3,18 @@
  */
 package com.l7tech.server.identity;
 
-import com.l7tech.common.util.Background;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.apache.commons.collections.LRUMap;
+import com.whirlycott.cache.*;
+import com.whirlycott.cache.impl.ConcurrentHashMapImpl;
+import com.whirlycott.cache.policy.LFUMaintenancePolicy;
 
-import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author alex
+ * Cached authentication.
  */
 public final class AuthCache {
     public static final int SUCCESS_CACHE_TIME = Integer.getInteger(AuthCache.class.getName() + ".maxSuccessTime", 60000).intValue();
@@ -25,26 +25,22 @@ public final class AuthCache {
 
     private static final Logger logger = Logger.getLogger(AuthCache.class.getName());
 
-    private static final int DELETER_MAX_AGE = 60 * 60 * 1000;
-    private static final int DELETER_DELAY = 30 * 1000;
-    private static final int DELETER_PERIOD = 10 * 60 * 1000;
-
-    private final LRUMap successCache = new LRUMap(SUCCESS_CACHE_SIZE);
-    private final LRUMap failureCache = new LRUMap(FAILURE_CACHE_SIZE);
+    private final Cache cache;
 
     private AuthCache() {
-        Background.schedule(new TimerTask() {
-            public void run() {
-                int removed;
-                logger.finest("Looking for stale cache entries");
-                synchronized (this) {
-                    long now = System.currentTimeMillis();
-                    removed = removeStaleEntries(now, successCache) +
-                              removeStaleEntries(now, failureCache);
-                }
-                logger.log(Level.FINE, "Deleted {0} stale cache entries", new Object[] {new Integer(removed)});
-            }
-        }, DELETER_DELAY, DELETER_PERIOD);
+        CacheConfiguration cc = new CacheConfiguration();
+        cc.setMaxSize(SUCCESS_CACHE_SIZE + FAILURE_CACHE_SIZE);
+        cc.setName("AuthCache_unified");
+        cc.setBackend(ConcurrentHashMapImpl.class.getName());
+        cc.setPolicy(LFUMaintenancePolicy.class.getName());
+        cc.setTunerSleepTime(10);
+
+        final ManagedCache managedCache = new ConcurrentHashMapImpl();
+        final CacheMaintenancePolicy policy = new LFUMaintenancePolicy();
+        policy.setCache(managedCache);
+        policy.setConfiguration(cc);
+
+        cache = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { policy });
     }
 
     private static class CacheKey {
@@ -79,30 +75,6 @@ public final class AuthCache {
             }
             return cachedHashcode;
         }
-    }
-
-    /**
-     * Caller must hold this's mutex.
-     */
-    private int removeStaleEntries(long now, LRUMap cache) {
-        int num = 0;
-        for (Iterator i = cache.values().iterator(); i.hasNext();) {
-            Object result = i.next();
-            long time = -1;
-            if (result instanceof Long) {
-                time = ((Long)result).longValue();
-            } else if (result instanceof AuthenticationResult) {
-                AuthenticationResult authenticationResult = (AuthenticationResult)result;
-                time = authenticationResult.getTimestamp();
-            } else {
-                logger.warning("Found an unexpected entry in cache: " + result);
-            }
-            if (time < 0 || (time + DELETER_MAX_AGE < now)) {
-                i.remove();
-                num++;
-            }
-        }
-        return num;
     }
 
     private static class InstanceHolder {
@@ -160,16 +132,12 @@ public final class AuthCache {
             }
             String which;
 
-            synchronized (this) {
-                if (result == null) {
-                    which = "failed";
-                    failureCache.put(ckey, new Long(System.currentTimeMillis()));
-                    successCache.remove(ckey);
-                } else {
-                    which = "successful";
-                    successCache.put(ckey, result);
-                    failureCache.remove(ckey);
-                }
+            if (result == null) {
+                which = "failed";
+                cache.store(ckey, new Long(System.currentTimeMillis()));
+            } else {
+                which = "successful";
+                cache.store(ckey, result);
             }
 
             if (logger.isLoggable(Level.FINE))
@@ -189,11 +157,13 @@ public final class AuthCache {
      * Gets a cache entry
      */
     private Object getCacheEntry(CacheKey ckey, String credString, IdentityProvider idp, int maxSuccessAge, int maxFailAge) {
-        Long cachedFailureTime;
-        AuthenticationResult cachedAuthResult;
-        synchronized (this) {
-            cachedFailureTime = (Long)failureCache.get(ckey);
-            cachedAuthResult = (AuthenticationResult)successCache.get(ckey);
+        Long cachedFailureTime = null;
+        AuthenticationResult cachedAuthResult = null;
+        Object cachedObj = cache.retrieve(ckey);
+        if (cachedObj instanceof Long) {
+            cachedFailureTime = (Long)cachedObj;
+        } else if (cachedObj instanceof AuthenticationResult) {
+            cachedAuthResult = (AuthenticationResult)cachedObj;
         }
         if (cachedAuthResult == null && cachedFailureTime == null) return null;
 
