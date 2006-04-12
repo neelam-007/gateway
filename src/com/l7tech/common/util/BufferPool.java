@@ -106,6 +106,7 @@ public class BufferPool {
      */
     public static void returnBuffer(byte[] buffer) {
         if (buffer == null || buffer.length < MIN_BUFFER_SIZE) return;
+        assert !"Finalizer".equals(Thread.currentThread().getName());        
         if (buffer.length > 1024 * 1024) {
             returnHugeBuffer(buffer);
             return;
