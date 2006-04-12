@@ -54,6 +54,7 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
     }
 
     public void setName( String name ) {
+        super.setName(name);
         bean.setName( name );
     }
 

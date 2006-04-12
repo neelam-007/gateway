@@ -108,4 +108,27 @@ public class InternalGroupMembership extends GroupMembership {
         this.memberSubgroupId = memberSubgroupId;
     }
 
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        final InternalGroupMembership that = (InternalGroupMembership)o;
+
+        if (memberProviderOid != that.memberProviderOid) return false;
+        if (thisGroupOid != that.thisGroupOid) return false;
+        if (memberSubgroupId != null ? !memberSubgroupId.equals(that.memberSubgroupId) : that.memberSubgroupId != null)
+            return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int)(thisGroupOid ^ (thisGroupOid >>> 32));
+        result = 31 * result + (int)(memberProviderOid ^ (memberProviderOid >>> 32));
+        result = 31 * result + (memberSubgroupId != null ? memberSubgroupId.hashCode() : 0);
+        return result;
+    }
 }

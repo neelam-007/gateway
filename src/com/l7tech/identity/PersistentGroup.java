@@ -87,6 +87,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     }
 
     public void setName( String name ) {
+        super.setName(name);
         bean.setName( name );
     }
 
