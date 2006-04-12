@@ -65,12 +65,12 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
             if (wasMember == null) {
                 // Cache miss
                 if (gman.isMember(authResult.getUser(), targetGroup)) {
-                    authResult.setCachedGroupMembership(targetGroup, Boolean.TRUE);
+                    authResult.setCachedGroupMembership(targetGroup, true);
                     logger.finest("membership established");
                     return AssertionStatus.NONE;
                 }
 
-                authResult.setCachedGroupMembership(targetGroup, Boolean.FALSE);
+                authResult.setCachedGroupMembership(targetGroup, false);
                 logger.info("user not member of group");
                 return AssertionStatus.UNAUTHORIZED;
             }

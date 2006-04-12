@@ -6,22 +6,22 @@ package com.l7tech.common.util;
 
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.security.CertificateExpiry;
+import com.whirlycott.cache.Cache;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
-import org.apache.commons.collections.LRUMap;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
-import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -41,7 +41,11 @@ public class CertUtils {
     public static final String FINGERPRINT_BASE64 = "b64";
 
     // Map of VerifiedCert => Boolean.TRUE
-    private static final LRUMap certVerifyCache = new LRUMap(CERT_VERIFY_CACHE_MAX);
+    private static final Cache certVerifyCache =
+            WhirlycacheFactory.createCache("certCache",
+                                           CERT_VERIFY_CACHE_MAX,
+                                           WhirlycacheFactory.POLICY_LRU,
+                                           2);
 
     private static class VerifiedCert {
         final byte[] certBytes;
@@ -58,6 +62,7 @@ public class CertUtils {
             this.hashCode = makeHashCode();
         }
 
+        /** @noinspection RedundantIfStatement*/
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -85,7 +90,7 @@ public class CertUtils {
         public boolean isVerified() {
             final Object got;
             synchronized (certVerifyCache) {
-                got = certVerifyCache.get(this);
+                got = certVerifyCache.retrieve(this);
             }
             return got instanceof Boolean && ((Boolean)got).booleanValue();
         }
@@ -93,7 +98,7 @@ public class CertUtils {
         /** Report that this cert was successfully verified with its public key. */
         public void onVerified() {
             synchronized (certVerifyCache) {
-                certVerifyCache.put(this, Boolean.TRUE);
+                certVerifyCache.store(this, Boolean.TRUE);
             }
         }
     }

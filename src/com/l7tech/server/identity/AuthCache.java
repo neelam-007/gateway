@@ -6,9 +6,10 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.common.util.WhirlycacheFactory;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.whirlycott.cache.*;
-import com.whirlycott.cache.impl.ConcurrentHashMapImpl;
-import com.whirlycott.cache.policy.LFUMaintenancePolicy;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,26 +22,18 @@ public final class AuthCache {
     public static final int FAILURE_CACHE_TIME = Integer.getInteger(AuthCache.class.getName() + ".maxFailureTime", 30000).intValue();
     public static final int SUCCESS_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".successCacheSize", 2000).intValue();
     public static final int FAILURE_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".failureCacheSize", 200).intValue();
-    public static final int GROUP_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".perIdentityGroupMembershipCacheSize", 50).intValue();
+    public static final int GROUP_CACHE_SIZE = Integer.getInteger(AuthCache.class.getName() + ".groupMembershipCacheSize", 5000).intValue();
 
     private static final Logger logger = Logger.getLogger(AuthCache.class.getName());
 
     private final Cache cache;
 
     private AuthCache() {
-        CacheConfiguration cc = new CacheConfiguration();
-        cc.setMaxSize(SUCCESS_CACHE_SIZE + FAILURE_CACHE_SIZE);
-        cc.setName("AuthCache_unified");
-        cc.setBackend(ConcurrentHashMapImpl.class.getName());
-        cc.setPolicy(LFUMaintenancePolicy.class.getName());
-        cc.setTunerSleepTime(10);
-
-        final ManagedCache managedCache = new ConcurrentHashMapImpl();
-        final CacheMaintenancePolicy policy = new LFUMaintenancePolicy();
-        policy.setCache(managedCache);
-        policy.setConfiguration(cc);
-
-        cache = new CacheDecorator(managedCache, cc, new CacheMaintenancePolicy[] { policy });
+        String name = "AuthCache_unified";
+        int size = SUCCESS_CACHE_SIZE + FAILURE_CACHE_SIZE;
+        int tunerInterval = 1;
+        cache = size < 1 ? null :
+                WhirlycacheFactory.createCache(name, size, WhirlycacheFactory.POLICY_LFU, tunerInterval);
     }
 
     private static class CacheKey {
@@ -111,27 +104,49 @@ public final class AuthCache {
         }
 
         // There was a cache miss before, so someone has to authenticate it.
-        // Let's make sure only one thread does so on this SSG.
-        String credsMutex = (Long.toString(providerOid) + credString).intern();
-        synchronized (credsMutex) {
-            cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
-            if (cached instanceof AuthenticationResult) {
-                // Someone else got there first with a success
-                return (AuthenticationResult)cached;
-            } else if (cached != null) {
-                // Someone else got there first with a failure
-                return null;
-            }
 
-            AuthenticationResult result = null;
-            AuthenticationException thrown = null;
-            try {
-                result = idp.authenticate(creds);
-            } catch (AuthenticationException e) {
-                thrown = e;
-            }
-            String which;
+        // We'll allow multiple simultaneous authentications for the same credentials only for internal password auth
+        boolean concurrentOk = idp instanceof InternalIdentityProvider &&
+                creds.getFormat() == CredentialFormat.CLEARTEXT;
 
+        if (cache != null && concurrentOk) {
+            // Let's make sure only one thread does so on this SSG.
+            // Lock username so we only auth it on one thread at a time
+            String credsMutex = (Long.toString(providerOid) + credString).intern();
+            synchronized (credsMutex) {
+                // Recheck cache now that we have the username lock
+                cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
+                if (cached instanceof AuthenticationResult) {
+                    // Someone else got there first with a success
+                    return (AuthenticationResult)cached;
+                } else if (cached != null) {
+                    // Someone else got there first with a failure
+                    return null;
+                }
+                return getAndCacheNewResult(creds, credString, ckey, idp);
+            }
+        }
+
+        // Either AUTH_ONE_AT_A_TIME specifically or all caching in general is disabled.  Skip locking and Just Do It.
+        return getAndCacheNewResult(creds, credString, ckey, idp);
+    }
+
+    // If caller wants only one thread at a time to authenticate any given username,
+    // caller is responsible for ensuring that only one thread at a time calls this per username,
+    private AuthenticationResult getAndCacheNewResult(LoginCredentials creds, String credString, CacheKey ckey, IdentityProvider idp)
+            throws AuthenticationException
+    {
+        AuthenticationResult result = null;
+        AuthenticationException thrown = null;
+        try {
+            result = idp.authenticate(creds);
+        } catch (AuthenticationException e) {
+            thrown = e;
+        }
+        String which;
+
+        // Skip if cache is disabled
+        if (cache != null) {
             if (result == null) {
                 which = "failed";
                 cache.store(ckey, new Long(System.currentTimeMillis()));
@@ -142,14 +157,14 @@ public final class AuthCache {
 
             if (logger.isLoggable(Level.FINE))
                 logger.log(Level.FINE,
-                        "Caching {0} authentication for {1} on IdP \"{2}\"",
-                        new String[]{which, credString, idp.getConfig().getName()});
+                           "Caching {0} authentication for {1} on IdP \"{2}\"",
+                           new String[]{which, credString, idp.getConfig().getName()});
+        }
 
-            if (thrown != null) {
-                throw thrown;
-            } else {
-                return result;
-            }
+        if (thrown != null) {
+            throw thrown;
+        } else {
+            return result;
         }
     }
 
@@ -157,6 +172,7 @@ public final class AuthCache {
      * Gets a cache entry
      */
     private Object getCacheEntry(CacheKey ckey, String credString, IdentityProvider idp, int maxSuccessAge, int maxFailAge) {
+        if (cache == null) return null; // fail fast if cache is disabled
         Long cachedFailureTime = null;
         AuthenticationResult cachedAuthResult = null;
         Object cachedObj = cache.retrieve(ckey);
