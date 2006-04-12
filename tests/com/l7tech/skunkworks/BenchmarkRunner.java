@@ -3,7 +3,9 @@ package com.l7tech.skunkworks;
 import EDU.oswego.cs.dl.util.concurrent.BrokenBarrierException;
 import EDU.oswego.cs.dl.util.concurrent.Rendezvous;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +38,8 @@ public class BenchmarkRunner {
     private Runnable runnable;
     private int runCount;
     private boolean running;
+
+    /** @noinspection FieldCanBeLocal silly idea bugs */
     private volatile boolean allThreadsCompletedNormally = false;
 
     /**
@@ -50,7 +54,6 @@ public class BenchmarkRunner {
     public BenchmarkRunner(Runnable r, int times) {
         this(r,times,r.toString());
     }
-
 
     /**
      * @return true if running, false otherwise
@@ -144,12 +147,8 @@ public class BenchmarkRunner {
         int runnableCount = runCount;
         // if not set
         if (threadCount == 0) {
-            int adjustedThreads = threadCount;
             threadCount = estimateThreads(runnableCount);
-            // adjust if reminder
-            int r = (runnableCount % threadCount) == 0 ? 0 : 1;
-            adjustedThreads = threadCount + r;
-            threadCount = adjustedThreads;
+            if (threadCount < 1) threadCount = 1;
         }
 
         if (threadCount < 1) throw new IllegalStateException("Invalid thread count: " + threadCount);
