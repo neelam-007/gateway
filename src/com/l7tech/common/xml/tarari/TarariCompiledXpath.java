@@ -6,8 +6,9 @@
 package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.SoftwareFallbackException;
+import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.xpath.*;
 import com.tarari.xml.cursor.XmlCursor;
 import com.tarari.xml.rax.cursor.RaxCursor;
@@ -113,9 +114,9 @@ class TarariCompiledXpath extends CompiledXpath {
         return fastXpath;
     }
 
-    public XpathResult getXpathResult(TarariElementCursor cursor) throws XPathExpressionException {
+    public XpathResult getXpathResult(TarariElementCursor cursor, boolean requireCursor) throws XPathExpressionException {
         final TarariMessageContextImpl tmContext = cursor.getTarariMessageContext();
-        if (fastXpath == null || fastXpath.getExpression() == null)
+        if (requireCursor || fastXpath == null || fastXpath.getExpression() == null)
             return fallbackToDirectXPath(tmContext); // expression was too complex to simplify into TNF
 
         final GlobalTarariContextImpl tarariContext = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
@@ -202,6 +203,11 @@ class TarariCompiledXpath extends CompiledXpath {
                                 t.prefixHaver = node.getPrefix();
                                 t.nodeValueHaver = nodeValueMaker;
                             }
+
+                            public ElementCursor nextElementAsCursor() throws NoSuchElementException {
+                                if (cur >= size || ns() == null) throw new NoSuchElementException("No more matching nodes");
+                                return null; // not supported for FNodeSet
+                            }
                         };
                     }
 
@@ -252,7 +258,7 @@ class TarariCompiledXpath extends CompiledXpath {
         }
     }
 
-    private XpathResult fallbackToDirectXPath(TarariMessageContextImpl tctx) throws XPathExpressionException {
+    private XpathResult fallbackToDirectXPath(final TarariMessageContextImpl tctx) throws XPathExpressionException {
         // We're now committed to using Direct XPath results for this
 
         RaxCursor cursor = raxCursorFactory.createCursor("", tctx.getRaxDocument());
@@ -352,6 +358,16 @@ class TarariCompiledXpath extends CompiledXpath {
                                 t.nodeNameHaver = node.getNodeName();
                                 t.prefixHaver = node.getNodePrefix();
                                 t.nodeValueHaver = nodeValueMaker;
+                            }
+
+                            public ElementCursor nextElementAsCursor() throws NoSuchElementException {
+                                if (cur >= size) throw new NoSuchElementException("No more matching nodes");
+                                XmlCursor n = ns.getNode(cur);
+                                if (n.getNodeType() != XmlCursor.ELEMENT && n.getNodeType() != XmlCursor.ROOT)
+                                    return null;
+                                node = n;
+                                cur++;
+                                return new TarariElementCursor(node, tctx, false);
                             }
                         };
                     }

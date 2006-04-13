@@ -10,6 +10,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.xpath.CompiledXpath;
 import com.l7tech.common.xml.xpath.DomCompiledXpath;
 import com.l7tech.common.xml.xpath.XpathResult;
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import org.w3c.dom.*;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -31,13 +32,30 @@ public class DomElementCursor extends ElementCursor {
      * Create a new DomElementCursor that provides read-only access to the specified Document.  Caller must
      * ensure that nobody else modifies the Document during the lifetime of this DomElementCursor instance.
      *
-     * @param doc the Document to wrap.  Must not be null.
+     * Moves to the root of the document.
+     *
+     * @param n the Document to wrap.  Must not be null.
      */
-    public DomElementCursor(Document doc) {
-        if (doc == null) throw new IllegalArgumentException("doc must be non-null");
-        this.doc = doc;
-        this.cur = doc.getDocumentElement();
+    public DomElementCursor(Node n) {
+        this(n, true);
     }
+
+    /**
+     * Create a new DomElementCursor that provides read-only access to the specified Document.  Caller must
+     * ensure that nobody else modifies the Document during the lifetime of this DomElementCursor instance.
+     *
+     * @param n                     the Document to wrap.  Must not be null.
+     * @param moveToDocumentElement true if this cursor should be positioned at the document element; false if it should be left at the specified node.
+     */
+    public DomElementCursor(Node n, boolean moveToDocumentElement) {
+        if (n == null) throw new IllegalArgumentException("node must be non-null");
+        if (n.getNodeType() != Node.ELEMENT_NODE && n.getNodeType() != Node.DOCUMENT_NODE)
+            throw new IllegalArgumentException("node must be an Element or Document");
+
+        doc = n.getNodeType() == Node.DOCUMENT_NODE ? (Document)n : n.getOwnerDocument();
+        cur = moveToDocumentElement ? doc.getDocumentElement() : n;
+    }
+
 
     private DomElementCursor(Document doc, Node cur, LinkedList stack) {
         this.doc = doc;
@@ -78,7 +96,7 @@ public class DomElementCursor extends ElementCursor {
         if (discard)
             stack.removeLast();
         else
-            cur = (Element)stack.removeFirst();
+            cur = (Element)stack.removeLast();
     }
 
     public void moveToDocumentElement() {
@@ -196,11 +214,11 @@ public class DomElementCursor extends ElementCursor {
     /**
      * @return the current Node of this DomElementCursor.  Might be Element or Document.  Never null. 
      */
-    public Object asDomNode() {
+    public Node asDomNode() {
         return cur;
     }
 
-    public XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException {
+    public XpathResult getXpathResult(CompiledXpath compiledXpath, boolean unused) throws XPathExpressionException {
         if (compiledXpath == CompiledXpath.ALWAYS_TRUE)
             return XpathResult.RESULT_TRUE;
         if (compiledXpath == CompiledXpath.ALWAYS_FALSE)
@@ -214,5 +232,15 @@ public class DomElementCursor extends ElementCursor {
         // This can't happen -- currently there are only two impls, TarariCompiledXpath and DomCompiledXpath,
         // and TarariCompiledXpath extends DomCompiledXpath.
         throw new IllegalArgumentException("Unsupported CompiledXpath of type " + compiledXpath.getClass().getName());
+    }
+
+    public byte[] canonicalize(String[] inclusiveNamespacePrefixes) throws IOException {
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        try {
+            XmlUtil.canonicalize(cur, baos);
+            return baos.toByteArray();
+        } finally {
+            baos.close();
+        }
     }
 }

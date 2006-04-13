@@ -6,6 +6,7 @@ package com.l7tech.common.util;
 
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
+import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import org.apache.xml.serialize.OutputFormat;
@@ -260,12 +261,34 @@ public class XmlUtil {
         }
     };
 
+    private static ThreadLocal exclusiveCanonicalizer = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            return new ExclusiveC11r();
+        }
+    };
+
     private static Canonicalizer getTransparentXMLSerializer() {
         return (Canonicalizer)transparentXMLSerializer.get();
     }
 
+    private static Canonicalizer getExclusiveCanonicalizer() {
+        return (Canonicalizer)exclusiveCanonicalizer.get();
+    }
+
     public static void nodeToOutputStream(Node node, OutputStream os) throws IOException {
         Canonicalizer canon = getTransparentXMLSerializer();
+        canon.canonicalize(node, os);
+    }
+
+    /**
+     * Serializes the specified node using an exclusive canonicalizer.
+     * @param node
+     * @param os
+     * @throws IOException
+     */
+    public static void canonicalize(Node node, OutputStream os) throws IOException {
+        // TODO inclusive namespaces?
+        Canonicalizer canon = getExclusiveCanonicalizer();
         canon.canonicalize(node, os);
     }
 

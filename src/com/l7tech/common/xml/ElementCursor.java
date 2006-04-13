@@ -311,10 +311,24 @@ public abstract class ElementCursor {
      * a new XpathResult instance.
      *
      * @param compiledXpath the compiled XPath to run against this cursor.  Must not be null.
+     * @param requireCursor true if any nodeset result must be navigable using an ElementCursor. Disables fastxpath for this result.
      * @return the results of running this XPath against this cursor at its current position.  Never null.
      * @throws XPathExpressionException if the match failed and no result could be produced.
      */
-    public abstract XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException;
+    public abstract XpathResult getXpathResult(CompiledXpath compiledXpath, boolean requireCursor) throws XPathExpressionException;
+
+    /**
+     * Run the specified already-compiled XPath expression against this cursor at its current position and return
+     * a new XpathResult instance. Equivalent to calling {@link #getXpathResult(com.l7tech.common.xml.xpath.CompiledXpath, boolean)} with
+     * the second argument <code>false</code>.
+     *
+     * @param compiledXpath the compiled XPath to run against this cursor.  Must not be null.
+     * @return the results of running this XPath against this cursor at its current position.  Never null.
+     * @throws XPathExpressionException if the match failed and no result could be produced.
+     */
+    public XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException {
+        return getXpathResult(compiledXpath, false);
+    }
 
     /**
      * Convenience method that runs the specified already-compiled XPath expression against this cursor
@@ -331,7 +345,36 @@ public abstract class ElementCursor {
      */
     public boolean matches(CompiledXpath compiledXpath) throws XPathExpressionException {
         if (compiledXpath == null) throw new IllegalArgumentException("compiledXpath must be provided");
-        XpathResult result = getXpathResult(compiledXpath);
+        XpathResult result = getXpathResult(compiledXpath, false);
         return result != null && result.matches();
     }
+
+    public int visitChildElements(Visitor visitor) throws InvalidDocumentFormatException {
+        pushPosition();
+        try {
+            if (!moveToFirstChildElement()) return 0;
+            int num = 0;
+
+            do {
+                pushPosition();
+                try {
+                    visitor.visit(this);
+                } finally {
+                    popPosition(false);
+                }
+                num++;
+            } while (moveToNextSiblingElement());
+
+            return num;
+        } finally {
+            popPosition(false);
+        }
+    }
+
+    public abstract byte[] canonicalize(String[] inclusiveNamespacePrefixes) throws IOException;
+
+    public interface Visitor {
+        void visit(ElementCursor ec) throws InvalidDocumentFormatException;
+    }
+
 }

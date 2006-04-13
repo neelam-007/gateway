@@ -5,6 +5,7 @@
 
 package com.l7tech.common.xml.tarari;
 
+import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.util.ArrayUtils;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.xpath.CompiledXpath;
@@ -20,6 +21,8 @@ import org.w3c.dom.Element;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * An {@link ElementCursor} implementation that wraps a Tarari XmlCursor and provides features tuned for the
@@ -30,10 +33,20 @@ class TarariElementCursor extends ElementCursor {
     private XmlCursor c;
 
     public TarariElementCursor(XmlCursor xmlCursor, TarariMessageContextImpl tarariMessageContext) {
+        this(xmlCursor, tarariMessageContext, true);
+    }
+
+    TarariElementCursor(XmlCursor xmlCursor, TarariMessageContextImpl tmci, boolean moveToRoot) {
         if (xmlCursor == null) throw new IllegalArgumentException("An XmlCursor must be provided");
         this.c = xmlCursor;
-        this.tarariMessageContext = tarariMessageContext;
-        c.toDocumentElement(); // Make sure it's pointing at an element
+        this.tarariMessageContext = tmci;
+        if (moveToRoot) {
+            c.toDocumentElement(); // Make sure it's pointing at an element
+        } else {
+            if (c.getNodeType() != XmlCursor.ELEMENT && c.getNodeType() != XmlCursor.ROOT)
+                throw new IllegalArgumentException("Cursor was not pointed at an Element or Document");
+        }
+
     }
 
     /**
@@ -53,7 +66,7 @@ class TarariElementCursor extends ElementCursor {
     }
 
     public ElementCursor duplicate() {
-        return new TarariElementCursor(c.duplicate(), tarariMessageContext);
+        return new TarariElementCursor(c.duplicate(), tarariMessageContext, false);
     }
 
     public void pushPosition() {
@@ -220,7 +233,24 @@ class TarariElementCursor extends ElementCursor {
         return (Element)output.getResultRoot();
     }
 
-    public XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException {
+    public byte[] canonicalize(String[] inclusiveNamespacePrefixes) throws IOException {
+        OutputFormat of = new OutputFormat();
+        of.setMethod(OutputFormat.METHOD_C14N_EXCLUSIVE);
+        of.setC14nWithComments(false);
+        of.setOmitXmlDeclaration(true);
+        if (inclusiveNamespacePrefixes != null && inclusiveNamespacePrefixes.length > 0)
+            of.setC14nInclusivePrefixList(new ArrayList(Arrays.asList(inclusiveNamespacePrefixes)));
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+        try {
+            XmlResult xr = new XmlResult(baos);
+            c.writeTo(of, xr);
+            return baos.toByteArray();
+        } finally {
+            baos.close();
+        }
+    }
+
+    public XpathResult getXpathResult(CompiledXpath compiledXpath, boolean requireCursor) throws XPathExpressionException {
         if (compiledXpath == CompiledXpath.ALWAYS_TRUE)
             return XpathResult.RESULT_TRUE;
         if (compiledXpath == CompiledXpath.ALWAYS_FALSE)
@@ -228,7 +258,7 @@ class TarariElementCursor extends ElementCursor {
 
         if (compiledXpath instanceof TarariCompiledXpath) {
             TarariCompiledXpath tarariCompiledXpath = (TarariCompiledXpath)compiledXpath;
-            return tarariCompiledXpath.getXpathResult(this);
+            return tarariCompiledXpath.getXpathResult(this, requireCursor);
         }
 
         // Someone passed a non-Tarari CompiledXpath to a Tarari cursor.  It shouldn't be possible to even
