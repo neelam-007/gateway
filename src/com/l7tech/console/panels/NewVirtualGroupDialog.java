@@ -96,7 +96,7 @@ public class NewVirtualGroupDialog extends JDialog {
 
         Actions.setEscKeyStrokeDisposes(this);
 
-        groupNameTextField.setDocument(new FilterDocument(24,
+        groupNameTextField.setDocument(new FilterDocument(128,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 if (str == null) return false;

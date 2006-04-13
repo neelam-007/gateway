@@ -227,7 +227,7 @@ public class NewGroupDialog extends JDialog {
 
         groupIdTextField.
                 setDocument(
-                        new FilterDocument(24,
+                        new FilterDocument(128,
                                 new FilterDocument.Filter() {
                                     public boolean accept(String str) {
                                         return str != null;
