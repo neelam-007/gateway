@@ -801,6 +801,10 @@ public class PolicyApplicationContext extends ProcessingContext {
             policyUpdated = true;
             ssg.getRuntime().clearSessionCookies();
             logger.info("New policy saved successfully");
+        } catch (ServerCertificateUntrustedException e) {
+            if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
+            logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
+            throw new ServerCertificateUntrustedException(e);
         } catch (ConfigurationException e) {
             if (requestInterceptor != null) requestInterceptor.onPolicyError(ssg, pak, e);
             logger.warning("Policy download failed: " + ExceptionUtils.getMessage(e));
