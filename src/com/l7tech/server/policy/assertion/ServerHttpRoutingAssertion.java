@@ -10,6 +10,7 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
@@ -39,6 +40,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.HttpConnectionManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -70,7 +72,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private final String[] varNames;
     private final int maxFailoverAttempts;
     private final HttpRoutingAssertion httpRoutingAssertion;
-    private final CommonsHttpClient httpClient;
+    private final HttpConnectionManager connectionManager;
     private final SSLContext sslContext;
     private static final String IV_USER = "IV_USER";
 
@@ -80,11 +82,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         int max = httpRoutingAssertion.getMaxConnections();
 
-        MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
+        MultiThreadedHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
         connectionManager.setMaxConnectionsPerHost(max);
         connectionManager.setMaxTotalConnections(max * 10);
-        //connectionManager.setConnectionStaleCheckingEnabled( false );
-        httpClient = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout());
+        this.connectionManager = connectionManager;
 
         auditor = new Auditor(this, applicationContext, logger);
         try {
@@ -379,16 +380,21 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
 
+            Object connectionId = null;
             if (!httpRoutingAssertion.isPassthroughHttpAuthentication() &&
                 routedRequestParams.getNtlmAuthentication() == null &&
                 routedRequestParams.getPasswordAuthentication() == null) {
                 routedRequestParams.setContentLength(new Long(contentLength));
+            }
+            else if (httpRoutingAssertion.isPassthroughHttpAuthentication()){
+                connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
             }
 
             Collection cookiesToSend = Collections.EMPTY_LIST;
             if (httpRoutingAssertion.isCopyCookies())
                 cookiesToSend = copyCookiesOutbound(routedRequestParams, context, url.getHost());
 
+            CommonsHttpClient httpClient = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout(), connectionId);
             routedRequest = httpClient.createRequest(GenericHttpClient.POST, routedRequestParams);
             final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
             routedRequest.setInputStream(bodyInputStream);

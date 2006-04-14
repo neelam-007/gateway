@@ -35,15 +35,23 @@ public class CommonsHttpClient implements GenericHttpClient {
     private final HttpConnectionManager cman;
     private final int connectionTimeout;
     private final int timeout;
+    private final Object identity;
+    private final boolean isBindingManager;
 
     public CommonsHttpClient(HttpConnectionManager cman) {
-        this(cman,0,0); // no timeouts
+        this(cman, 0, 0, null); // no timeouts
     }
 
     public CommonsHttpClient(HttpConnectionManager cman, int connectTimeout, int timeout) {
+        this(cman, connectTimeout, timeout, null);
+    }
+
+    public CommonsHttpClient(HttpConnectionManager cman, int connectTimeout, int timeout, Object identity) {
         this.cman = cman;
         this.connectionTimeout = connectTimeout;
         this.timeout = timeout;
+        this.identity = identity;
+        this.isBindingManager = cman instanceof IdentityBindingHttpConnectionManager;
     }
 
     public static MultiThreadedHttpConnectionManager newConnectionManager(int maxConnectionsPerHost, int maxTotalConnections) {
@@ -62,6 +70,7 @@ public class CommonsHttpClient implements GenericHttpClient {
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
+        stampBindingIdentity();
         final HostConfiguration hconf;
         final URL targetUrl = params.getTargetUrl();
         final String targetProto = targetUrl.getProtocol();
@@ -117,6 +126,7 @@ public class CommonsHttpClient implements GenericHttpClient {
         List headers = params.getExtraHeaders();
         for (Iterator i = headers.iterator(); i.hasNext();) {
             HttpHeader header = (HttpHeader)i.next();
+            doBinding(header);
             httpMethod.addRequestHeader(header.getName(), header.getFullValue());
         }
 
@@ -144,6 +154,7 @@ public class CommonsHttpClient implements GenericHttpClient {
                 if (method == null)
                     throw new IllegalStateException("This request has already been closed");
 
+                stampBindingIdentity();
                 final int status;
                 final ContentTypeHeader contentType;
                 final Long contentLength;
@@ -213,12 +224,43 @@ public class CommonsHttpClient implements GenericHttpClient {
             }
 
             public void close() {
+                stampBindingIdentity();
                 if (method != null) {
                     method.releaseConnection();
                     method = null;
                 }
             }
         };
+    }
+
+    private void stampBindingIdentity() {
+        if (isBindingManager) {
+            IdentityBindingHttpConnectionManager bcm =
+                    (IdentityBindingHttpConnectionManager) cman;
+
+            bcm.setId(identity);
+        }
+    }
+
+    private void doBinding(HttpHeader header) {
+        if (isBindingManager) {
+            IdentityBindingHttpConnectionManager bcm =
+                    (IdentityBindingHttpConnectionManager) cman;
+
+            if (HttpConstants.HEADER_AUTHORIZATION.equalsIgnoreCase(header.getName())) {
+                String value = header.getFullValue();
+                if(value!=null) {
+                    value = value.trim();
+                    if(!value.startsWith("Basic") && !value.startsWith("Digest")) {
+                        logger.warning("Binding authorization header '"+value+"'.");
+                        bcm.bind();
+                    }
+                    else {
+                        logger.warning("Not binding authorization header '"+value+"'.");
+                    }
+                }
+            }
+        }
     }
 
     private HttpState getHttpState(HttpClient client, GenericHttpRequestParams params) {

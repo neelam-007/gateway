@@ -7,6 +7,7 @@ package com.l7tech.common.message;
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.util.IteratorEnumeration;
+import com.l7tech.server.transport.http.ConnectionId;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -141,6 +142,10 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         if (param instanceof X509Certificate[])
             return (X509Certificate[])param;
         throw new IOException("Request X509Certificate was unsupported type " + param.getClass());
+    }
+
+    public Object getConnectionIdentifier() {
+        return ConnectionId.getConnectionId();
     }
 
     public boolean isSecure() {

@@ -53,9 +53,33 @@
         <filter-class>com.l7tech.server.admin.ws.AdminWebServiceFilter</filter-class>
     </filter>
 
+    <filter>
+        <filter-name>wsdlFilter</filter-name>
+        <filter-class>com.l7tech.server.WsdlFilter</filter-class>
+        <init-param>
+            <param-name>wsdl-forward-uri</param-name>
+            <param-value>/ssg/wsdl?uri={0}</param-value>
+        </init-param>
+    </filter>
+
+    <filter>
+        <filter-name>connectionIdFilter</filter-name>
+        <filter-class>com.l7tech.server.transport.http.ConnectionIdFilter</filter-class>
+    </filter>
+
     <filter-mapping>
         <filter-name>input-timeout</filter-name>
         <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>connectionIdFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>wsdlFilter</filter-name>
+        <url-pattern>/xml/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>

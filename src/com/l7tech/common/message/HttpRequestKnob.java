@@ -91,5 +91,7 @@ public interface HttpRequestKnob extends TcpKnob {
 
     Enumeration getParameterNames();
 
+    Object getConnectionIdentifier();
+
     String getQueryString();
 }

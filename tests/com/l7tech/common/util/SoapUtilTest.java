@@ -113,6 +113,7 @@ public class SoapUtilTest extends TestCase {
             public String getRemoteAddress() {return null;}
             public String getRemoteHost() {return null;}
             public int getLocalPort() {return 0;}
+            public Object getConnectionIdentifier() {return new Object();};
         });
         return output;
     }

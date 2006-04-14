@@ -34,6 +34,10 @@ public final class HttpConstants {
     public static final int STATUS_ERROR_RANGE_START = 400; // inclusive
     public static final int STATUS_ERROR_RANGE_END = 600; // non inclusive
 
+    // methods
+    public static final String METHOD_GET = "GET";
+    public static final String METHOD_POST = "POST";
+
     // encodings
     public static final String ENCODING_UTF8 = "UTF-8";
 }
