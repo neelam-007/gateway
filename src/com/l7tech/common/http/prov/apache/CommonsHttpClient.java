@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * GenericHttpClient driver for the Apache Commons HTTP client.
@@ -252,11 +253,10 @@ public class CommonsHttpClient implements GenericHttpClient {
                 if(value!=null) {
                     value = value.trim();
                     if(!value.startsWith("Basic") && !value.startsWith("Digest")) {
-                        logger.warning("Binding authorization header '"+value+"'.");
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.log(Level.FINE, "Binding authorization header '"+value+"'.");
+                        }
                         bcm.bind();
-                    }
-                    else {
-                        logger.warning("Not binding authorization header '"+value+"'.");
                     }
                 }
             }
