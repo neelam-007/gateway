@@ -64,7 +64,7 @@ public class JarChecker {
                     log("Skipping class: " + className);
                 }                
                 else {
-                    log("Loading class: " + className);
+                    //log("Loading class: " + className);
                     try {
                         Class.forName(className);
                     } catch (Throwable e) {
