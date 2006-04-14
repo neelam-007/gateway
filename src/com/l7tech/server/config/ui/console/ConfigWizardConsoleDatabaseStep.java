@@ -26,7 +26,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private SsgDatabaseConfigBean databaseBean;
     private static final String STEP_INFO = "This step lets you create or setup a connection to the SSG database";
     private static final String HEADER_DB_CONN_TYPE = "-- Select Database Connection Type --\n";
-    private static final String HEADER_DB_INFO = "-- Information for new or existing database --";
+    private static final String HEADER_NEW_DB_INFO = "-- Information for new database --";
+    private static final String HEADER_EXISTING_DB_INFO = "-- Information for existing database --";
 
     private static final String PROMPT_MAKE_NEW_DB = "1) Create a new SSG database\n";
     private static final String PROMPT_USE_EXISTING_DB = "2) Connect to an existing SSG database\n";
@@ -39,16 +40,54 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private static final String TITLE = "SSG Database Setup";
     private DBActions dbActions;
 
-//    private static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
-//    private static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
-
     public ConfigWizardConsoleDatabaseStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
         super(parentWiz, osFunctions);
         init();
     }
 
+    void doUserInterview(boolean validated) throws WizardNavigationException {
+        printText(STEP_INFO + "\n");
+
+        try {
+            boolean isNewDb = doDbConnectionTypePrompts(true);
+            doDBInfoPrompts(isNewDb);
+            storeInput();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public String getTitle() {
         return TITLE;
+    }
+
+    private boolean getConfirmationFromUser(String message) throws IOException, WizardNavigationException {
+        String[] prompts = new String[] {
+                message + " : [n]",
+        };
+
+        String input = getData(prompts, "n", true);
+        if (input != null) {
+            return (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y"));
+        }
+        return false;
+
+    }
+
+
+    private String selectDefault(String fromBean, String fromProps) {
+        return StringUtils.isEmpty(fromBean)?fromProps:fromBean;
+    }
+
+    private void init() {
+        try {
+            dbActions = new DBActions();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(DBActions.MYSQL_CLASS_NOT_FOUND_MSG);
+        }
+        configBean = new SsgDatabaseConfigBean(osFunctions);
+        databaseBean = (SsgDatabaseConfigBean)configBean;
+        configCommand = new SsgDatabaseConfigCommand(configBean);
     }
 
     private boolean doDbTest() {
@@ -60,7 +99,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String dbName = databaseBean.getDbName();
         String dbUsername = databaseBean.getDbUsername();
         String dbPassword = databaseBean.getDbPassword();
-        
+
         if (createNewDb) {
             success = dbActions.doCreateDb(privUsername, privPassword, dbHostname, dbName, dbUsername, dbPassword, false, this);
         }
@@ -69,97 +108,6 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         }
 
         return success;
-    }
-
-    private boolean getConfirmationFromUser(String message) throws IOException, WizardNavigationException {
-        String[] prompts = new String[] {
-            message + " : [n]",
-        };
-
-        String input = getData(prompts, "n");
-        if (input != null) {
-            return (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y"));
-        }
-        return false;
-
-    }
-
-    //DBActionsListener Implementations
-    public  void showErrorMessage(String errorMsg) {
-        out.println("****  " + errorMsg + "  ****");
-        out.flush();
-    }
-
-    public boolean getOverwriteConfirmationFromUser(String dbName) {
-        String errorMsg = "The database named \"" + dbName + "\" already exists. Would you like to overwrite it?";
-        boolean confirmed = false;
-        try {
-            confirmed = getConfirmationFromUser(errorMsg);
-            if (confirmed) {
-                confirmed = getConfirmationFromUser("Are you sure you wan to overwrite the database? This cannot be undone.");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (WizardNavigationException e) {
-            return false;
-        }
-        return confirmed;
-    }
-
-    public void confirmCreateSuccess() {
-        out.println("Database Successfully Created");
-        out.flush();
-    }
-
-    public char[] getPrivilegedPassword() {
-        return null;
-    }
-
-    public void hideErrorMessage() {}
-
-    public boolean getGenericUserConfirmation(String msg) {
-        String[] prompts = new String[] {
-            msg + " : [n]",
-        };
-
-        String input = null;
-        try {
-            input = getData(prompts, "n");
-            return (input != null && (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")));
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (WizardNavigationException e) {
-            return false;
-        }
-        return false;
-    }
-
-    private void init() {
-        try {
-            dbActions = new DBActions();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(DBActions.MYSQL_CLASS_NOT_FOUND_MSG);
-        }
-        configBean = new SsgDatabaseConfigBean(osFunctions);
-        databaseBean = (SsgDatabaseConfigBean)configBean;
-        command = new SsgDatabaseConfigCommand(configBean);
-    }
-
-    void doUserInterview(boolean validated) throws WizardNavigationException {
-        out.println(STEP_INFO);
-        out.flush();
-
-        try {
-            boolean isNewDb = doDbConnectionTypePrompts(true);
-            doDBInfoPrompts(isNewDb);
-            storeInput();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String selectDefault(String fromBean, String fromProps) {
-        return StringUtils.isEmpty(fromBean)?fromProps:fromBean;
     }
 
     private void doDBInfoPrompts(boolean isNewDb) throws IOException, WizardNavigationException {
@@ -174,6 +122,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String defaultDbName = null;
         String defaultDbUsername = null;
         String defaultDbPassword = null;
+        String defaultRootUsername = null;
+        String defaultRootPasswd = null;
 
         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
 
@@ -190,60 +140,68 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         defaultDbUsername = selectDefault(databaseBean.getDbUsername(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_USERNAME));
         defaultDbPassword = selectDefault(databaseBean.getDbPassword(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD));
 
-        out.println(HEADER_DB_INFO);
-        out.flush();
+        defaultRootUsername = selectDefault(databaseBean.getPrivUsername(), "root");
+        defaultRootPasswd = selectDefault(databaseBean.getPrivPassword(), "");
 
         if (isNewDb) {
-            doGetRootUsernamePrompt("root");
-            doGetRootPasswordPrompt("");
+            printText(HEADER_NEW_DB_INFO + "\n");
+            doGetRootUsernamePrompt(defaultRootUsername);
+            doGetRootPasswordPrompt(defaultRootPasswd);
         }
+        else {
+            printText(HEADER_EXISTING_DB_INFO + "\n");
+        }
+
         doDbHostnamePrompt(defaultHostname);
         doDBNamePrompt(defaultDbName);
         doDBUsernamePrompts(defaultDbUsername);
         doDBPasswordPrompts(defaultDbPassword);
-
     }
 
-    private void doGetRootPasswordPrompt(String defaultPassword) throws IOException, WizardNavigationException {
+    private String doGetRootPasswordPrompt(String defaultPassword) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-            "Please enter the root database username (needed to create a new database): [" + defaultPassword + "] ",
+            "Please enter the root database users' password (needed to create a new database): [" + defaultPassword + "] ",
         };
-        databaseBean.setPrivPassword(getData(prompts, defaultPassword));
+        String passwd = getData(prompts, defaultPassword, true);
+        databaseBean.setPrivPassword(passwd);
+        return passwd;
     }
 
-    private void doGetRootUsernamePrompt(String defaultUsername) throws IOException, WizardNavigationException {
+    private String doGetRootUsernamePrompt(String defaultUsername) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
-            "Please enter the root database users' password (needed to create a new database): [" + defaultUsername + "] ",
+             "Please enter the root database username (needed to create a new database): [" + defaultUsername + "] ",
         };
-        databaseBean.setPrivUserName(getData(prompts, defaultUsername));
+        String username = getData(prompts, defaultUsername, true);
+        databaseBean.setPrivUserName(username);
+        return username;
     }
 
     private void doDBPasswordPrompts(String defaultDbPassword) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
             PROMPT_DB_PASSWORD + "[" + defaultDbPassword + "]",
         };
-        databaseBean.setDbPassword(getData(prompts, defaultDbPassword));
+        databaseBean.setDbPassword(getData(prompts, defaultDbPassword, true));
     }
 
     private void doDBUsernamePrompts(String defaultDbUsername) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
             PROMPT_DB_USERNAME + "[" + defaultDbUsername + "]",
         };
-        databaseBean.setDbUsername(getData(prompts, defaultDbUsername));
+        databaseBean.setDbUsername(getData(prompts, defaultDbUsername, true));
     }
 
     private void doDBNamePrompt(String defaultDbName) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
                 PROMPT_DB_NAME + "[" + defaultDbName + "]",
         };
-        databaseBean.setDbName(getData(prompts, defaultDbName).trim());
+        databaseBean.setDbName(getData(prompts, defaultDbName, true).trim());
     }
 
     private void doDbHostnamePrompt(String defaultHostname) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
                 PROMPT_DB_HOSTNAME + "[" + defaultHostname + "]",
         };
-        databaseBean.setDbHostname(getData(prompts, defaultHostname).trim());
+        databaseBean.setDbHostname(getData(prompts, defaultHostname, true).trim());
     }
 
     private boolean doDbConnectionTypePrompts(boolean isCurrentDbExists) throws WizardNavigationException, IOException {
@@ -256,7 +214,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 PROMPT_USE_EXISTING_DB,
                 "please make a selection: [" + defaultValue + "]",
         };
-        String input = getData(prompts, "2");
+        String input = getData(prompts, "2", true);
         boolean isNewDb = input != null && input.trim().equals("1");
         databaseBean.setCreateDb(isNewDb);
         return isNewDb;
@@ -271,4 +229,78 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         return !invalidFields && doDbTest();
     }
 
+//DBActionsListener Implementations
+
+    public  void showErrorMessage(String errorMsg) {
+        printText(new String[] {
+            "****  " + errorMsg + "  ****\n",
+            "\n",
+        });
+    }
+
+    public boolean getOverwriteConfirmationFromUser(String dbName) {
+        String errorMsg = "The database named \"" + dbName + "\" already exists. Would you like to overwrite it?";
+        boolean confirmed = false;
+        try {
+            confirmed = getConfirmationFromUser(errorMsg);
+            if (confirmed) {
+                confirmed = getConfirmationFromUser("Are you sure you wan to overwrite the database? This cannot be undone.");
+            } else {
+                showErrorMessage("The Wizard cannot proceed without a valid database, please make a new selection");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (WizardNavigationException e) {
+            return false;
+        }
+        return confirmed;
+    }
+
+    public void confirmCreateSuccess() {
+        printText("Database Successfully Created\n");
+    }
+
+    public String getPrivilegedUsername() {
+        String username = null;
+        try {
+            username = doGetRootUsernamePrompt("root");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (WizardNavigationException e) {
+            return null;
+        }
+        return username;
+    }
+
+    public char[] getPrivilegedPassword() {
+        String passwd = null;
+        try {
+            passwd = doGetRootPasswordPrompt("");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (WizardNavigationException e) {
+            return null;
+        }
+        return passwd.toCharArray();
+    }
+
+    public void hideErrorMessage() {/*noop for console wizard*/}
+
+
+    public boolean getGenericUserConfirmation(String msg) {
+        String[] prompts = new String[] {
+            msg + " : [n]",
+        };
+
+        String input = null;
+        try {
+            input = getData(prompts, "n", true);
+            return (input != null && (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (WizardNavigationException e) {
+            return false;
+        }
+        return false;
+    }
 }

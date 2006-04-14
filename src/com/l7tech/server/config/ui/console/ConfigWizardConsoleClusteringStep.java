@@ -29,7 +29,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private void init() {
         configBean = new ClusteringConfigBean(osFunctions);
         clusterBean = (ClusteringConfigBean) configBean;
-        command = new ClusteringConfigCommand(configBean);
+        configCommand = new ClusteringConfigCommand(configBean);
         showNavigation = false;
     }
 
@@ -38,14 +38,12 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         String defaultClusterHostname = getDefaultHostName();
 
         if (!validated) {
-            out.println("*** There were errors in your input, please try again. ***");
-            out.flush();
+            printText("*** There were errors in your input, please try again. ***\n");
         }
 
         try {
             doHostnamePrompt(defaultClusterHostname);
-            out.println();
-            out.flush();
+            printText("\n");
             doClusterTypePrompt(false);
             storeInput();
         } catch (IOException e) {
@@ -67,7 +65,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             "-- Specify Hostname -- \n",
             "The hostname will be used to identify the SSG and generate its certificates\n",
             "What hostname would you like to use? [" + defaultClusterHostname + "] : ",
-        }, defaultClusterHostname);
+        }, defaultClusterHostname, true);
 
         clusterBean.setClusterHostname(input.trim());
     }
@@ -75,7 +73,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private void doClusterTypePrompt(boolean invalidInput) throws IOException, WizardNavigationException {
 
         if (invalidInput) {
-            out.println("Please select one of the options shown");
+            printText("Please select one of the options shown\n");
         }
 
         //get clustering type preference
@@ -96,7 +94,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         clusterTypePrompts.add("Please make a selection: [1]");
 
 
-        String input = getData((String[])clusterTypePrompts.toArray(new String[clusterTypePrompts.size()]), "1");
+        String input = getData((String[])clusterTypePrompts.toArray(new String[clusterTypePrompts.size()]), "1", true);
         int clusterType = ClusteringConfigBean.CLUSTER_NONE;
         try {
             int selectedIndex = Integer.parseInt(input) - 1;

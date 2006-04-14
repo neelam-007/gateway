@@ -16,8 +16,7 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
     }
 
     void doUserInterview(boolean validated) throws WizardNavigationException {
-        out.println("Press <Enter> to continue");
-        out.flush();
+        printText("Press <Enter> to continue\n");
 
         try {
             handleInput(reader.readLine());

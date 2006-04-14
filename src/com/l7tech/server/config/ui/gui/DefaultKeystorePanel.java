@@ -1,5 +1,7 @@
 package com.l7tech.server.config.ui.gui;
 
+import com.l7tech.server.config.PasswordValidator;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -47,20 +49,25 @@ public class DefaultKeystorePanel extends KeystorePanel{
     }
 
     public boolean validateInput() {
-        boolean isValid = true;
         setLabelDefaults();
+        PasswordValidator validator = new PasswordValidator() {
+            public String[] validate(String password1, String password2) {
+                boolean isValid = true;
+                if (password1.length() < 6) {
+                    passwordMsg.setForeground(Color.RED);
+                    isValid = false;
+                }
 
-        if (ksPassword.getPassword().length < 6) {
-            passwordMsg.setForeground(Color.RED);
-            isValid = false;
-        }
-
-        if(!(new String(ksPassword.getPassword()).equals(new String(ksPasswordAgain.getPassword())))) {
-            passwordAgainMsg.setForeground(Color.RED);
-            isValid = false;
-        }
-
-        return isValid;
+                if(!(new String(ksPassword.getPassword()).equals(new String(ksPasswordAgain.getPassword())))) {
+                    passwordAgainMsg.setForeground(Color.RED);
+                    isValid = false;
+                }
+                if (!isValid) return new String[1];
+                return null;
+            }
+        };
+        String[] validationErrors = validator.validate(String.valueOf(ksPassword.getPassword()), String.valueOf(ksPasswordAgain.getPassword()));
+        return validationErrors == null;
     }
 
     private void setLabelDefaults() {

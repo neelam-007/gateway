@@ -26,8 +26,8 @@ public class ConfigurationWizard {
 
     public static final int MOVING_PREV = 2;
 
-    private static final String PREV_COMMAND = "B";
-    private static final String GENERAL_NAV_HEADER = "At any time press " + PREV_COMMAND + " to go to the previous step";
+//    private static final String PREV_COMMAND = "B";
+//    private static final String GENERAL_NAV_HEADER = "At any time press " + PREV_COMMAND + " to go to the previous step";
 
     protected OSSpecificFunctions osFunctions;
 
@@ -37,6 +37,7 @@ public class ConfigurationWizard {
     private PrintWriter pw;
     private InputStream in;
     String currentVersion;
+    private String keystoreType;
 
     public ConfigurationWizard(InputStream in, PrintWriter out) {
         osFunctions = OSDetector.getOSSpecificActions();
@@ -111,15 +112,6 @@ public class ConfigurationWizard {
         return hadFailures;
     }
 
-    public void handleInput(String input) throws WizardNavigationException {
-
-        if (input != null) {
-            if (PREV_COMMAND.equalsIgnoreCase(input)) {
-                throw new WizardNavigationException(WizardNavigationException.NAVIGATE_PREV);
-            }
-        };
-    }
-
     private void init() {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
 
@@ -156,7 +148,7 @@ public class ConfigurationWizard {
             step = (ConfigWizardConsoleStep) stepsIterator.next();
             step.showTitle();
             if (step.isShowNavigation()) {
-                pw.println(GENERAL_NAV_HEADER);
+                pw.println(ConsoleWizardUtils.GENERAL_NAV_HEADER);
                 pw.println();
             }
             try {
@@ -203,5 +195,13 @@ public class ConfigurationWizard {
 
     public String getCurrentVersion() {
         return currentVersion;
+    }
+
+    public void setKeystoreType(String ksType) {
+        this.keystoreType = ksType;
+    }
+
+    public String getKeystoreType() {
+        return keystoreType;
     }
 }

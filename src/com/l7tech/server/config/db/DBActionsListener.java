@@ -15,5 +15,7 @@ public interface DBActionsListener {
 
     char[] getPrivilegedPassword();
 
+    String getPrivilegedUsername();
+
     boolean getGenericUserConfirmation(String msg);
 }

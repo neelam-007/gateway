@@ -548,6 +548,9 @@ public class DBActions {
                 int status = result.getStatus();
                 if ( status == DBActions.DB_SUCCESS) {
                     isOk = true;
+                    if (ui != null) {
+                        ui.confirmCreateSuccess();
+                    }
                 } else {
                     switch (status) {
                         case DBActions.DB_UNKNOWNHOST_FAILURE:
@@ -593,9 +596,7 @@ public class DBActions {
                 if (ui != null) ui.showErrorMessage(errorMsg);
                 isOk = false;
             }
-            if (ui != null) {
-                ui.confirmCreateSuccess();
-            }
+
             return isOk;
         }
 
@@ -632,6 +633,22 @@ public class DBActions {
                     }
                     if (shouldUpgrade) {
                         try {
+                            if (privUsername == null || privUsername.length() == 0) {
+                                if (ui != null) {
+                                    privUsername = ui.getPrivilegedUsername();
+                                }
+                            }
+                            if (privPassword == null || privPassword.length() == 0) {
+                                if (ui != null) {
+                                    char [] temppwd = ui.getPrivilegedPassword();
+                                    if (temppwd == null) {
+                                        return false;
+                                    }
+                                    privPassword = String.valueOf(temppwd);
+                                } else {
+                                    return false;
+                                }
+                            }
                             isOk = doDbUpgrade(hostname, dbName, currentVersion, dbVersion, privUsername, privPassword, ui);
                         } catch (IOException e) {
                             errorMsg = "There was an error while attempting to upgrade the database";
@@ -689,7 +706,12 @@ public class DBActions {
 
         char[]  passwd = privPassword.toCharArray();
         if (passwd == null || passwd.length == 0) {
-            if (ui != null) passwd = ui.getPrivilegedPassword();
+            if (ui != null) {
+                passwd = ui.getPrivilegedPassword();
+            }
+            if (null == passwd) {
+                return false;
+            }
         }
         logger.info("Attempting to upgrade the existing database \"" + dbName+ "\"");
         DBActions.DBActionsResult upgradeResult = upgradeDbSchema(hostname, privUsername, new String(passwd), dbName, dbVersion, currentVersion, OSDetector.getOSSpecificActions());

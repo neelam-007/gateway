@@ -26,9 +26,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     private JPanel ksDataPanel;
     private KeystorePanel whichKeystorePanel;
 
-//    private DefaultKeystorePanel defaultPanel = new DefaultKeystorePanel();
-//    private LunaKeystorePanel lunaPanel = new LunaKeystorePanel();
-
     BorderLayout borderLayout = new BorderLayout();
 
     String[] keystoresList = null;
@@ -49,8 +46,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     private JPanel ksConfigPanel;
     private JRadioButton doKsConfig;
     private JRadioButton dontDoKsConfig;
-//    private JTextPane errorMessages;
-
 
     public ConfigWizardKeystorePanel(WizardStepPanel next, OSSpecificFunctions functions) {
         super(next, functions);
@@ -74,7 +69,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
                 ksBean.setKsPassword(((DefaultKeystorePanel)whichKeystorePanel).getKsPassword());
                 ksBean.setDoBothKeys(((DefaultKeystorePanel)whichKeystorePanel).doBothKeys());
             } else {
-                //ksBean.overwriteLunaCerts(lunaPanel.isOverwriteExisting());
                 ksBean.setLunaInstallationPath(((LunaKeystorePanel)whichKeystorePanel).getLunaInstallPath());
                 ksBean.setLunaJspPath(((LunaKeystorePanel)whichKeystorePanel).getLunaJSPPath());
             }
@@ -84,11 +78,6 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
 
     protected void updateView(HashMap settings) {
         boolean isLunaOk = true;
-//        try {
-//            isLunaOk = LunaProber.isPartitionLoggedIn();
-//        } catch (ClassNotFoundException e) {
-//            isLunaOk = false;
-//        }
         String[] keystores = getKeystores(isLunaOk);
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;
 

@@ -1,13 +1,15 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.exceptions.WizardNavigationException;
+import com.l7tech.server.config.PasswordValidator;
 import com.l7tech.server.config.beans.ConfigurationBean;
-
-import java.io.*;
-
+import com.l7tech.server.config.commands.ConfigurationCommand;
+import com.l7tech.server.config.exceptions.WizardNavigationException;
 import org.apache.commons.lang.StringUtils;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 /**
  * User: megery
@@ -16,16 +18,14 @@ import org.apache.commons.lang.StringUtils;
  */
 public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
+    private ConsoleWizardUtils consoleWizardUtils;
     ConfigurationWizard parent;
-    protected final PrintWriter out;
-    protected final InputStream in;
 
-   protected ConfigurationCommand configCommand;
+    protected ConfigurationBean configBean = null;
 
     protected OSSpecificFunctions osFunctions = null;
-    protected ConfigurationBean configBean = null;
     protected BufferedReader reader;
-    protected ConfigurationCommand command;
+    protected ConfigurationCommand configCommand;
 
     protected boolean readyToAdvance;
 
@@ -33,10 +33,9 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     public BaseConsoleStep(ConfigurationWizard parent_, OSSpecificFunctions osFunctions) {
         this.parent = parent_;
-        this.in = parent.getInputSteam();
-        this.out = parent.getWriter();
         this.osFunctions = osFunctions;
-        reader = new BufferedReader(new InputStreamReader(in));
+        reader = new BufferedReader(new InputStreamReader(parent.getInputSteam()));
+        consoleWizardUtils = ConsoleWizardUtils.getInstance(parent.getInputSteam(), parent.getWriter());
         readyToAdvance = false;
     }
 
@@ -45,19 +44,8 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         if (!validateStep()) showStep(false);
     }
 
-    public void showTitle() {
-        String title = getTitle();
-        String banner = StringUtils.repeat("-", title.length());
-
-        out.println();
-        out.println(banner);
-        out.println(title);
-        out.println(banner);
-        out.flush();
-    }
-
     public ConfigurationCommand getConfigurationCommand() {
-        return command;
+        return configCommand;
     }
 
     public boolean shouldApplyConfiguration() {
@@ -76,37 +64,43 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         return parent;
     }
 
+    public void showTitle() {
+        String title = getTitle();
+        String banner = StringUtils.repeat("-", title.length());
+
+        consoleWizardUtils.printText(new String[] {
+                "\n",
+                banner + "\n",
+                title + "\n",
+                banner + "\n",
+        });
+    }
+
+    protected String getMatchingPasswords(String prompt1, String prompt2, PasswordValidator validator) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getMatchingDataWithConfirm(prompt1, prompt2, -1, validator);
+    }
+
     protected void handleInput(String input) throws WizardNavigationException {
-        parent.handleInput(input);
+        consoleWizardUtils.handleInput(input);
+    }
+
+    protected String getData(String[] promptLines, String defaultValue, boolean isNavAware) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getData(promptLines, defaultValue, isNavAware);
+    }
+
+    protected void printText(String[] textToPrint) {
+        consoleWizardUtils.printText(textToPrint);
+    }
+
+    protected void printText(String textToPrint) {
+        consoleWizardUtils.printText(textToPrint);
     }
 
     protected void storeInput() {
-        if (command != null) {
-            getParent().storeCommand(command);
+        if (configCommand != null) {
+            getParent().storeCommand(configCommand);
         }
     }
-
-    protected String getData(String[] promptLines, String defaultValue) throws IOException, WizardNavigationException {
-        doPromptLines(promptLines);
-        String input = reader.readLine();
-        handleInput(input);
-        if (StringUtils.isEmpty(input)) {
-            input = defaultValue;
-        }
-        return input;
-    }
-
-
-    private void doPromptLines(String[] promptLines) {
-        if (promptLines != null) {
-            for (int i = 0; i < promptLines.length; i++) {
-                String promptLine = promptLines[i];
-                out.print(promptLine);
-            }
-            out.flush();
-        }
-    }
-
 
     abstract boolean validateStep();
 

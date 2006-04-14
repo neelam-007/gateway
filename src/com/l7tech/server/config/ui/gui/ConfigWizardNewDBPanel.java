@@ -291,127 +291,127 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         theLabel.setForeground(Color.RED);
     }
 
-    private boolean doExistingDb(String hostname, String name, String username, String password) {
-        String errorMsg;
-        boolean isOk = false;
+//    private boolean doExistingDb(String hostname, String name, String username, String password) {
+//        String errorMsg;
+//        boolean isOk = false;
+//
+//        DBActions.DBActionsResult status;
+//        logger.info("Attempting to connect to an existing database (" + hostname + "/" + name + ")" + "using username/password \"" + username + "/" + password + "\"");
+//        status = dbActions.checkExistingDb(hostname, name, username, password);
+//        if (status.getStatus() == DBActions.DB_SUCCESS) {
+//            logger.info(CONNECTION_SUCCESSFUL_MSG);
+//            logger.info("Now Checking database version");
+//            String dbVersion = dbActions.checkDbVersion(hostname, name, username, password);
+//            String currentVersion = getParentWizard().getCurrentVersion();
+//            if (dbVersion == null) {
+//                errorMsg = "The " + dbName + " database does not appear to be a valid SSG database.";
+//                logger.warning(errorMsg);
+//                showErrorMessage(errorMsg);
+//                isOk = false;
+//            } else {
+//                if (dbVersion.equals(currentVersion)) {
+//                    logger.info("Database version is correct (" + dbVersion + ")");
+//                    hideErrorMessage();
+//                    isOk = true;
+//                }
+//                else {
+//                    errorMsg = "The current database version (" + dbVersion+ ") is incorrect (needs to be " + currentVersion + ") and needs to be upgraded" ;
+//                    logger.warning(errorMsg);
+//                    try {
+//                        isOk = doDbUpgrade(hostname, name, currentVersion, dbVersion);
+//                    } catch (IOException e) {
+//                        errorMsg = "There was an error while attempting to upgrade the database";
+//                        logger.severe(errorMsg);
+//                        logger.severe(e.getMessage());
+//                        showErrorMessage(errorMsg);
+//                        isOk = true;
+//                    }
+//                }
+//            }
+//        } else {
+//            switch (status.getStatus()) {
+//                case DBActions.DB_UNKNOWNHOST_FAILURE:
+//                    errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
+//                    logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
+//                    logger.warning(errorMsg);
+//                    showErrorMessage(errorMsg);
+//                    isOk = false;
+//                    break;
+//                case DBActions.DB_AUTHORIZATION_FAILURE:
+//                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
+//                    errorMsg = "There was an authentication error when attempting to connect to the database \"" + name + "\" using the username \"" +
+//                            username + "\" and password \"" + password + "\". Please check your input and try again.";
+//                    showErrorMessage(errorMsg);
+//                    logger.warning("There was an authentication error when attempting to connect to the database \"" + name + "\" using the username \"" +
+//                            username + "\" and password \"" + password + "\".");
+//                    isOk = false;
+//                    break;
+//                case DBActions.DB_UNKNOWNDB_FAILURE:
+//                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
+//                    errorMsg = "Could not connect to the database \"" + name + "\". The database does not exist or the user \"" + username + "\" does not have permission to access it." +
+//                            "Please check your input and try again.";
+//                    showErrorMessage(errorMsg);
+//                    logger.warning("Could not connect to the database \"" + name + "\". The database does not exist.");
+//                    isOk = false;
+//                    break;
+//                default:
+//                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
+//                    errorMsg = GENERIC_DBCONNECT_ERROR_MSG;
+//                    showErrorMessage(errorMsg);
+//                    logger.warning("There was an unknown error while attempting to connect to the database.");
+//                    isOk = false;
+//                    break;
+//            }
+//        }
+//        return isOk;
+//    }
 
-        DBActions.DBActionsResult status;
-        logger.info("Attempting to connect to an existing database (" + hostname + "/" + name + ")" + "using username/password \"" + username + "/" + password + "\"");
-        status = dbActions.checkExistingDb(hostname, name, username, password);
-        if (status.getStatus() == DBActions.DB_SUCCESS) {
-            logger.info(CONNECTION_SUCCESSFUL_MSG);
-            logger.info("Now Checking database version");
-            String dbVersion = dbActions.checkDbVersion(hostname, name, username, password);
-            String currentVersion = getParentWizard().getCurrentVersion();
-            if (dbVersion == null) {
-                errorMsg = "The " + dbName + " database does not appear to be a valid SSG database.";
-                logger.warning(errorMsg);
-                showErrorMessage(errorMsg);
-                isOk = false;
-            } else {
-                if (dbVersion.equals(currentVersion)) {
-                    logger.info("Database version is correct (" + dbVersion + ")");
-                    hideErrorMessage();
-                    isOk = true;
-                }
-                else {
-                    errorMsg = "The current database version (" + dbVersion+ ") is incorrect (needs to be " + currentVersion + ") and needs to be upgraded" ;
-                    logger.warning(errorMsg);
-                    try {
-                        isOk = doDbUpgrade(hostname, name, currentVersion, dbVersion);
-                    } catch (IOException e) {
-                        errorMsg = "There was an error while attempting to upgrade the database";
-                        logger.severe(errorMsg);
-                        logger.severe(e.getMessage());
-                        showErrorMessage(errorMsg);
-                        isOk = true;
-                    }
-                }
-            }
-        } else {
-            switch (status.getStatus()) {
-                case DBActions.DB_UNKNOWNHOST_FAILURE:
-                    errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
-                    logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                    logger.warning(errorMsg);
-                    showErrorMessage(errorMsg);
-                    isOk = false;
-                    break;
-                case DBActions.DB_AUTHORIZATION_FAILURE:
-                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                    errorMsg = "There was an authentication error when attempting to connect to the database \"" + name + "\" using the username \"" +
-                            username + "\" and password \"" + password + "\". Please check your input and try again.";
-                    showErrorMessage(errorMsg);
-                    logger.warning("There was an authentication error when attempting to connect to the database \"" + name + "\" using the username \"" +
-                            username + "\" and password \"" + password + "\".");
-                    isOk = false;
-                    break;
-                case DBActions.DB_UNKNOWNDB_FAILURE:
-                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                    errorMsg = "Could not connect to the database \"" + name + "\". The database does not exist or the user \"" + username + "\" does not have permission to access it." +
-                            "Please check your input and try again.";
-                    showErrorMessage(errorMsg);
-                    logger.warning("Could not connect to the database \"" + name + "\". The database does not exist.");
-                    isOk = false;
-                    break;
-                default:
-                    logger.info(CONNECTION_UNSUCCESSFUL_MSG);
-                    errorMsg = GENERIC_DBCONNECT_ERROR_MSG;
-                    showErrorMessage(errorMsg);
-                    logger.warning("There was an unknown error while attempting to connect to the database.");
-                    isOk = false;
-                    break;
-            }
-        }
-        return isOk;
-    }
-
-    private boolean doDbUpgrade(String hostname, String dbName, String currentVersion, String dbVersion) throws IOException {
-        boolean isOk = false;
-        String msg = "The \"" + dbName + "\" database appears to be a " + dbVersion + " database and needs to be upgraded to " + currentVersion + "\n" +
-                "Would you like to attempt an upgrade?";
-
-        int result = JOptionPane.showConfirmDialog(this,msg,
-                "Incorrect Database Version", JOptionPane.YES_NO_OPTION);
-
-        if (result == JOptionPane.OK_OPTION) {
-            char[]  passwd = privPassword.getPassword();
-            if (passwd == null || passwd.length == 0) {
-                passwd = showGetPasswordDialog("Please enter the root database password:");
-            }
-            logger.info("Attempting to upgrade the existing database \"" + dbName+ "\"");
-//            String errorMessage = null;
-            DBActions.DBActionsResult upgradeResult = dbActions.upgradeDbSchema(hostname, privUsername.getText(), new String(passwd), dbName, dbVersion, currentVersion, osFunctions);
-            switch (upgradeResult.getStatus()) {
-                case DBActions.DB_SUCCESS:
-                    logger.info("Database successfully upgraded");
-                    isOk = true;
-                    break;
-                case DBActions.DB_AUTHORIZATION_FAILURE:
-                    msg = "login to the database with the supplied credentials failed, please try again";
-                    logger.warning(msg);
-                    showErrorMessage(msg);
-                    isOk = false;
-                    break;
-                case DBActions.DB_UNKNOWNHOST_FAILURE:
-                    msg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
-                    logger.warning(msg);
-                    showErrorMessage(msg);
-                    isOk = false;
-                    break;
-                default:
-                    msg = "Database upgrade process failed";
-                    showErrorMessage(msg);
-                    logger.warning(msg);
-                    isOk = false;
-                    break;
-            }
-        } else {
-            showErrorMessage("The database must be a correct version before proceeding.");
-            isOk = false;
-        }
-        return isOk;
-    }
+//    private boolean doDbUpgrade(String hostname, String dbName, String currentVersion, String dbVersion) throws IOException {
+//        boolean isOk = false;
+//        String msg = "The \"" + dbName + "\" database appears to be a " + dbVersion + " database and needs to be upgraded to " + currentVersion + "\n" +
+//                "Would you like to attempt an upgrade?";
+//
+//        int result = JOptionPane.showConfirmDialog(this,msg,
+//                "Incorrect Database Version", JOptionPane.YES_NO_OPTION);
+//
+//        if (result == JOptionPane.OK_OPTION) {
+//            char[]  passwd = privPassword.getPassword();
+//            if (passwd == null || passwd.length == 0) {
+//                passwd = showGetPasswordDialog("Please enter the root database password:");
+//            }
+//            logger.info("Attempting to upgrade the existing database \"" + dbName+ "\"");
+////            String errorMessage = null;
+//            DBActions.DBActionsResult upgradeResult = dbActions.upgradeDbSchema(hostname, privUsername.getText(), new String(passwd), dbName, dbVersion, currentVersion, osFunctions);
+//            switch (upgradeResult.getStatus()) {
+//                case DBActions.DB_SUCCESS:
+//                    logger.info("Database successfully upgraded");
+//                    isOk = true;
+//                    break;
+//                case DBActions.DB_AUTHORIZATION_FAILURE:
+//                    msg = "login to the database with the supplied credentials failed, please try again";
+//                    logger.warning(msg);
+//                    showErrorMessage(msg);
+//                    isOk = false;
+//                    break;
+//                case DBActions.DB_UNKNOWNHOST_FAILURE:
+//                    msg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
+//                    logger.warning(msg);
+//                    showErrorMessage(msg);
+//                    isOk = false;
+//                    break;
+//                default:
+//                    msg = "Database upgrade process failed";
+//                    showErrorMessage(msg);
+//                    logger.warning(msg);
+//                    isOk = false;
+//                    break;
+//            }
+//        } else {
+//            showErrorMessage("The database must be a correct version before proceeding.");
+//            isOk = false;
+//        }
+//        return isOk;
+//    }
 
     private char[] showGetPasswordDialog(String s) {
 
@@ -441,6 +441,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
             options[1]);
     }
 
+    //DBActionsListener implementations
     public void showErrorMessage(String errorMsg) {
         errorMessagePane.setText(errorMsg);
         errorMessagePane.setVisible(true);
@@ -461,11 +462,15 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         return isOkToOverwrite;
     }
 
-    public void confirmCreateSuccess() {
-    }
+    public void confirmCreateSuccess() {}
 
     public void hideErrorMessage() {
         errorMessagePane.setVisible(false);
+    }
+
+    public String getPrivilegedUsername() {
+        String tempun = privUsername.getText();
+        return (null == tempun || tempun == "")?"root":tempun;
     }
 
     public char[] getPrivilegedPassword() {

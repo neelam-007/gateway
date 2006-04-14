@@ -19,17 +19,16 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
     }
 
     void doUserInterview(boolean validated) throws WizardNavigationException {
-        out.println("Here are the results");
+        printText("Here are the results\n");
         List logs = ListHandler.getLogList();
         if (logs != null) {
             for (Iterator iterator = logs.iterator(); iterator.hasNext();) {
                 String s = (String) iterator.next();
-                out.println(s);
+                printText(s + "\n");
             }
         }
 
-        out.println("Press <Enter> to finish the wizard");
-        out.flush();
+        printText("Press <Enter> to finish the wizard\n");
 
         try {
             handleInput(reader.readLine());

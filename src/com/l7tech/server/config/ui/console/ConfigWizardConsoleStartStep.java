@@ -26,9 +26,11 @@ public class ConfigWizardConsoleStartStep extends BaseConsoleStep {
     }
 
     void doUserInterview(boolean validated) throws WizardNavigationException {
-        out.println("This wizard will configure a newly installed Secure Span Gateway (SSG)");
-        out.println("Press <Enter> to continue");
-        out.flush();
+        printText(new String[] {
+                "This wizard will configure a newly installed Secure Span Gateway (SSG)\n",
+                "Press <Enter> to continue\n",
+        });
+        
 
         try {
             handleInput(reader.readLine());
