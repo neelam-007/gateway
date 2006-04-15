@@ -17,7 +17,7 @@ public final class AuthenticationResult {
             WhirlycacheFactory.createCache("groupMemberships",
                                            AuthCache.GROUP_CACHE_SIZE,
                                            WhirlycacheFactory.POLICY_LFU,
-                                           1);
+                                           71);
 
     private AuthenticationResult() {
         user = null;
@@ -58,6 +58,7 @@ public final class AuthenticationResult {
         private final String userId;
         private final long groupProviderOid;
         private final String groupId;
+        private final int hashCode;
 
         public CacheKey(long userProviderOid, String userId, long groupProviderOid, String groupId) {
             if (userId == null || groupId == null) throw new NullPointerException();
@@ -65,6 +66,7 @@ public final class AuthenticationResult {
             this.userId = userId;
             this.groupProviderOid = groupProviderOid;
             this.groupId = groupId;
+            this.hashCode = makeHashCode();
         }
 
         /** @noinspection RedundantIfStatement*/
@@ -83,6 +85,10 @@ public final class AuthenticationResult {
         }
 
         public int hashCode() {
+            return hashCode;
+        }
+
+        private int makeHashCode() {
             int result;
             result = (int)(userProviderOid ^ (userProviderOid >>> 32));
             result = 29 * result + userId.hashCode();
@@ -96,7 +102,7 @@ public final class AuthenticationResult {
         if (groupMembershipCache == null) return; // fail fast if caching disabled
         groupMembershipCache.store(new CacheKey(user.getProviderId(), user.getUniqueIdentifier(),
                                                 group.getProviderId(), group.getUniqueIdentifier()),
-                                   new Long(System.currentTimeMillis() * (isMember ? -1 : 1)));
+                                   new Long(System.currentTimeMillis() * (isMember ? 1 : -1)));
     }
 
     public Boolean getCachedGroupMembership(Group group) {

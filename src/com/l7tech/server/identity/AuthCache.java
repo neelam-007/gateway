@@ -31,7 +31,7 @@ public final class AuthCache {
     private AuthCache() {
         String name = "AuthCache_unified";
         int size = SUCCESS_CACHE_SIZE + FAILURE_CACHE_SIZE;
-        int tunerInterval = 1;
+        int tunerInterval = 59;
         cache = size < 1 ? null :
                 WhirlycacheFactory.createCache(name, size, WhirlycacheFactory.POLICY_LFU, tunerInterval);
     }

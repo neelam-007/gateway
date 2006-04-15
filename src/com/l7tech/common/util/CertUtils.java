@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  */
 public class CertUtils {
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
-    public static final String PROPBASE = CertUtils.class.getName();
+    private static final String PROPBASE = CertUtils.class.getName();
     private static final int CERT_VERIFY_CACHE_MAX = Integer.getInteger(PROPBASE + ".certVerifyCacheSize", 500).intValue();
     private static CertificateFactory certFactory;
 
@@ -45,7 +45,7 @@ public class CertUtils {
             WhirlycacheFactory.createCache("certCache",
                                            CERT_VERIFY_CACHE_MAX,
                                            WhirlycacheFactory.POLICY_LRU,
-                                           2);
+                                           127);
 
     private static class VerifiedCert {
         final byte[] certBytes;
@@ -89,17 +89,13 @@ public class CertUtils {
         /** @return true if this cert has already been verified with this public key. */
         public boolean isVerified() {
             final Object got;
-            synchronized (certVerifyCache) {
-                got = certVerifyCache.retrieve(this);
-            }
+            got = certVerifyCache.retrieve(this);
             return got instanceof Boolean && ((Boolean)got).booleanValue();
         }
 
         /** Report that this cert was successfully verified with its public key. */
         public void onVerified() {
-            synchronized (certVerifyCache) {
-                certVerifyCache.store(this, Boolean.TRUE);
-            }
+            certVerifyCache.store(this, Boolean.TRUE);
         }
     }
 
@@ -205,7 +201,7 @@ public class CertUtils {
         "Decipher Only",
     };
 
-    public static String getThumbprintSHA1(X509Certificate cert) throws CertificateEncodingException 
+    public static String getThumbprintSHA1(X509Certificate cert) throws CertificateEncodingException
     {
         try {
             return getCertificateFingerprint(cert, ALG_SHA1, FINGERPRINT_BASE64);
@@ -521,7 +517,7 @@ public class CertUtils {
             cert.checkValidity(); // will abort if this throws
             if (i + 1 < chain.length) {
                 try {
-                    cert.verify(chain[i + 1].getPublicKey());
+                    cachedVerify(cert, chain[i + 1].getPublicKey());
                 } catch (Exception e) {
                     // This is a serious problem with the cert chain presented by the peer.  Do a full abort.
                     throw new CertificateException("Unable to verify signature in peer certificate chain: " + e);
@@ -530,7 +526,7 @@ public class CertUtils {
 
             if (cert.getIssuerDN().toString().equals(trustedDN.toString())) {
                 try {
-                    cert.verify(trustedCert.getPublicKey());
+                    cachedVerify(cert, trustedCert.getPublicKey());
                     return; // success
                 } catch (Exception e) {
                     // Server SSL cert might have changed.  Attempt to reimport it
