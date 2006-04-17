@@ -67,7 +67,7 @@ class PathValidator {
     private Map seenVariables = new HashMap();
     private boolean seenSpecificUserAssertion = false;
 
-    boolean seenAccessControl = false; 
+    boolean seenAccessControl = false;
     boolean seenRouting = false;
 
     PathValidator(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
@@ -403,6 +403,8 @@ class PathValidator {
             processJmsRouting((JmsRoutingAssertion)a);
         } else if (a instanceof EchoRoutingAssertion) {
             // Nothing to see here, folks. Move along...
+        } else if (a instanceof HardcodedResponseAssertion) {
+            //almost exactly the same as EchoRoutingAssertion, but not.
         } else {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
               "This message routing protocol is not supported.",

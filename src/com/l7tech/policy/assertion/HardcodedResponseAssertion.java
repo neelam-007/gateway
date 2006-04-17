@@ -7,7 +7,7 @@ import com.l7tech.policy.variable.ExpandVariables;
  * A pseudo-routing assertion that returns a hardcoded response message, with a hardcoded
  * response status and content type.
  */
-public class HardcodedResponseAssertion extends Assertion implements UsesVariables {
+public class HardcodedResponseAssertion extends RoutingAssertion implements UsesVariables {
     private int responseStatus = 200;
     private String responseContentType = ContentTypeHeader.XML_DEFAULT.getFullValue();
     private String responseBody = null;

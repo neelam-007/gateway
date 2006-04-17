@@ -82,6 +82,10 @@ public class AddRoutingAssertionAdvice implements Advice {
                 pc.proceed();
         } else if (assertions[0] instanceof EchoRoutingAssertion) {
             pc.proceed();
+        } else if (assertions[0] instanceof HardcodedResponseAssertion) {
+            pc.proceed();
+        } else {
+            throw new IllegalArgumentException("Can't handle " + assertions[0].getClass().getName());
         }
     }
 }
