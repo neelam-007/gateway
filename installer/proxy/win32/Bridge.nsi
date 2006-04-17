@@ -204,6 +204,7 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\${J2RE}"
   Delete "$INSTDIR\Uninstall.exe"
   Delete "$INSTDIR\SSBService.exe"
+  Delete "$INSTDIR\logging.properties"
 
   ;Remove shortcut
   ReadRegStr ${TEMP} "${MUI_STARTMENUPAGE_REGISTRY_ROOT}" "${MUI_STARTMENUPAGE_REGISTRY_KEY}" "${MUI_STARTMENUPAGE_REGISTRY_VALUENAME}"
