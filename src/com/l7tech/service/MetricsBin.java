@@ -2,10 +2,9 @@ package com.l7tech.service;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A statistical bin for collecting service metrics. Conceptually, a bin has
@@ -34,6 +33,8 @@ public class MetricsBin implements Serializable, Comparable {
     public static final int RES_DAILY = 2;
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
+    private static final Logger logger = Logger.getLogger(MetricsBin.class.getName());
 
     /** MAC address of the cluster node from which this bin is collected. */
     private String _clusterNodeId;
@@ -90,32 +91,6 @@ public class MetricsBin implements Serializable, Comparable {
     }
 
     /**
-     * Returns the nominal period interval for a given bin resolution.
-     *
-     * @param resolution    bin resolution; one of {@link #RES_FINE},
-     *                      {@link #RES_HOURLY} or {@link #RES_DAILY}
-     * @return time interval (in milliseconds)
-     * @throws IllegalArgumentException if <code>resolution</code> is {@link #RES_FINE}
-     */
-    public static int intervalFor(final int resolution) {
-        int result = -1;
-        switch (resolution) {
-            case RES_FINE: {
-                throw new IllegalArgumentException("Fine interval is variable.");
-            }
-            case RES_HOURLY: {
-                result = 60 * 60 * 1000;
-                break;
-            }
-            case RES_DAILY: {
-                result = 24 * 60 * 60 * 1000;
-                break;
-            }
-        }
-        return result;
-    }
-
-    /**
      * Calculates the start time of a nominal period that would bracket the
      * given time instance.
      *
@@ -141,21 +116,71 @@ public class MetricsBin implements Serializable, Comparable {
                 break;
             }
             case RES_HOURLY: {
-                GregorianCalendar cal = new GregorianCalendar();
+                Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(millis);
-                cal.set(GregorianCalendar.MINUTE, 0);
-                cal.set(GregorianCalendar.SECOND, 0);
-                cal.set(GregorianCalendar.MILLISECOND, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
                 result = cal.getTimeInMillis();
                 break;
             }
             case RES_DAILY: {
-                GregorianCalendar cal = new GregorianCalendar();
+                Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(millis);
-                cal.set(GregorianCalendar.HOUR_OF_DAY, 0);
-                cal.set(GregorianCalendar.MINUTE, 0);
-                cal.set(GregorianCalendar.SECOND, 0);
-                cal.set(GregorianCalendar.MILLISECOND, 0);
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                result = cal.getTimeInMillis();
+                break;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Calculates the end time of a nominal period that would bracket the
+     * given time instance.
+     *
+     * @param resolution    bin resolution; one of {@link #RES_FINE}, {@link #RES_HOURLY}
+     *                      or {@link #RES_DAILY}
+     * @param fineInterval  fine bin interval (in milliseconds); requried if
+     *                      <code>resolution</code> is {@link #RES_FINE}
+     * @param millis        time instance to be bracketed (as UTC milliseconds from epoch)
+     * @return start time of the nominal period (as UTC milliseconds from epoch)
+     * @throws IllegalArgumentException if <code>resolution</code> is {@link #RES_FINE}
+     *                                  but <code>fineInterval</code> <= 0
+     */
+    public static long periodEndFor(final int resolution,
+                                    final int fineInterval,
+                                    final long millis) {
+        long result = -1;
+        switch (resolution) {
+            case RES_FINE: {
+                if (fineInterval <= 0) {
+                    throw new IllegalArgumentException("Fine bin interval is required.");
+                }
+                result = ((millis / fineInterval) + 1) * fineInterval;
+                break;
+            }
+            case RES_HOURLY: {
+                Calendar cal = Calendar.getInstance();
+                cal.setTimeInMillis(millis);
+                cal.add(Calendar.HOUR_OF_DAY, 1);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                result = cal.getTimeInMillis();
+                break;
+            }
+            case RES_DAILY: {
+                Calendar cal = Calendar.getInstance();
+                cal.setTimeInMillis(millis);
+                cal.add(Calendar.DAY_OF_MONTH, 1);
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
                 result = cal.getTimeInMillis();
                 break;
             }
@@ -271,8 +296,20 @@ public class MetricsBin implements Serializable, Comparable {
         _clusterNodeId = clusterNodeId;
         _serviceOid = serviceOid;
         _resolution = resolution;
-        _interval = resolution == RES_FINE ? fineInterval : intervalFor(resolution);
         _periodStart = periodStartFor(resolution, fineInterval, startTime);
+        if (resolution == RES_FINE) {
+            _interval = fineInterval;
+        } else if (resolution == RES_HOURLY) {
+            _interval = 60 * 60 * 1000;
+        } else if (resolution == RES_DAILY) {
+            // Not neccessarily 24 hours, e.g., when switching Daylight Savings Time.
+            final long periodEnd = periodEndFor(resolution, fineInterval, startTime);
+            _interval = (int)(periodEnd - _periodStart);
+            if (_interval != 24 * 60 * 60 * 1000 && logger.isLoggable(Level.FINE))
+                logger.fine("Created non-24-hour long daily bin: interval = " +
+                            (_interval / 60. / 60. / 1000.) + " hours, start time = " +
+                            new Date(startTime));
+        }
         _startTime = startTime;
         _endTime = _startTime;  // Signifies end time has not been set.
     }

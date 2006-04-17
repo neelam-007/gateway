@@ -2,9 +2,9 @@ package com.l7tech.server.service;
 
 import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
 import com.l7tech.common.util.Background;
-import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.util.ServerResourceUtils;
 import com.l7tech.service.MetricsBin;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
@@ -36,9 +36,6 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     private final Timer hourlyTimer = new Timer("ServiceMetricsManager.hourlyTimer" /* name */, true /* isDaemon */);
     private final Timer dailyTimer = new Timer("ServiceMetricsManager.dailyTimer" /* name */, true /* isDaemon */);
 
-    private final FineTask fineTask = new FineTask();
-    private final HourlyTask hourlyTask = new HourlyTask();
-    private final DailyTask dailyTask = new DailyTask();
     private final Flusher flusher = new Flusher();
 
     private PlatformTransactionManager transactionManager;
@@ -86,8 +83,8 @@ public class ServiceMetricsManager extends HibernateDaoSupport
      */
     private class FineTask extends TimerTask {
         public void run() {
-            if (logger.isLoggable(Level.FINE))
-                logger.fine("FineTask running at " + ISO8601Date.format(new Date()));
+            if (logger.isLoggable(Level.FINER))
+                logger.finer("FineTask running at " + new Date());
             Iterator itor = _serviceMetricsMap.values().iterator();
             while (itor.hasNext()) {
                 ServiceMetrics serviceMetrics = (ServiceMetrics)itor.next();
@@ -129,6 +126,13 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             }
             if (logger.isLoggable(Level.FINE))
                 logger.fine("Daily archiving task completed; archived " + num + " daily bins");
+
+            // Schedule the next timer execution at the end of current period
+            // (with a new task instance because a task cannot be reused).
+            Date nextTimerDate = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, System.currentTimeMillis()));
+            dailyTimer.schedule(new DailyTask(), nextTimerDate);
+            if (logger.isLoggable(Level.FINE))
+                logger.fine("Scheduled next daily archive task for " + nextTimerDate);
         }
     }
 
@@ -458,33 +462,26 @@ public class ServiceMetricsManager extends HibernateDaoSupport
             getServiceMetrics(service.getOid());
         }
 
-        // Gets current time in local time zone and locale.
-        final GregorianCalendar now = new GregorianCalendar();
-        now.setLenient(true);
+        // Schedule the timers.
+        final long now = System.currentTimeMillis();
 
-        // Sets fine resolution timer task; starting a fine interval from now.
-        GregorianCalendar nextFineStart = (GregorianCalendar)now.clone();
-        nextFineStart.setTimeInMillis(((now.getTimeInMillis() / _fineBinInterval) + 1) * _fineBinInterval);
-        fineTimer.scheduleAtFixedRate(fineTask, nextFineStart.getTime(), _fineBinInterval);
+        // Sets fine resolution timer to excecute every fine interval; starting at the next fine period.
+        final Date nextFineStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_FINE, _fineBinInterval, now));
+        fineTimer.scheduleAtFixedRate(new FineTask(), nextFineStart, _fineBinInterval);
         logger.config("Fine archive interval is " + _fineBinInterval + "ms");
-        logger.config("Scheduled first fine archive task for " + nextFineStart.getTime());
+        logger.config("Scheduled first fine archive task for " + nextFineStart);
 
-        // Sets hourly resolution timer task to execute on the hour; starting at the next hour.
-        GregorianCalendar nextHourStart = (GregorianCalendar)now.clone();
-        nextHourStart.set(Calendar.HOUR, now.get(Calendar.HOUR) + 1);
-        nextHourStart.set(Calendar.MINUTE, 0);
-        nextHourStart.set(Calendar.SECOND, 0);
-        hourlyTimer.scheduleAtFixedRate(hourlyTask, nextHourStart.getTime(), 60 * 60 * 1000);
-        logger.config("Scheduled first hourly archive task for " + nextHourStart.getTime());
+        // Sets hourly resolution timer every hour; starting at the next hourly period.
+        final Date nextHourlyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_HOURLY, 0, now));
+        hourlyTimer.scheduleAtFixedRate(new HourlyTask(), nextHourlyStart, HOUR);
+        logger.config("Scheduled first hourly archive task for " + nextHourlyStart);
 
-        // Sets daily resolution timer task to execute at midnight; starting at the next midnight.
-        GregorianCalendar nextDayStart = (GregorianCalendar)now.clone();
-        nextDayStart.set(Calendar.DATE, now.get(Calendar.DATE) + 1);
-        nextDayStart.set(Calendar.HOUR, 0);
-        nextDayStart.set(Calendar.MINUTE, 0);
-        nextDayStart.set(Calendar.SECOND, 0);
-        dailyTimer.scheduleAtFixedRate(dailyTask, nextDayStart.getTime(), 24 * 60 * 60 * 1000);
-        logger.config("Scheduled first daily archive task for " + nextDayStart.getTime());
+        // Sets daily resolution timer to execute at the next daily period.
+        // But can't just schedule at fixed rate of 24-hours interval because a
+        // calender day varies, e.g., when switching Daylight Savings Time.
+        final Date nextDailyStart = new Date(MetricsBin.periodEndFor(MetricsBin.RES_DAILY, 0, now));
+        dailyTimer.schedule(new DailyTask(), nextDailyStart);
+        logger.config("Scheduled first daily archive task for " + nextDailyStart);
 
         // Flusher waits forever on {@link #queue}
         flusher.start();

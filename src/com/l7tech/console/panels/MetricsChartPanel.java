@@ -23,7 +23,6 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
-import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.List;
@@ -165,7 +164,6 @@ public class MetricsChartPanel extends ChartPanel {
     /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("responseTimeTooltipFormat"));
-        private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
         private final TimeTableXYDataset _messageRates;
 
         public ResponseTimeToolTipGenerator(TimeTableXYDataset messageRates) {
@@ -195,19 +193,16 @@ public class MetricsChartPanel extends ChartPanel {
             final int backAvg = responseTimes.getY(1, item).intValue();
             final int backMin = responseTimes.getStartY(1, item).intValue();
 
-            final StringBuffer tooltip = new StringBuffer();
-            FMT.format(new Object[] {startTime, endTime,
-                                     frontLabel,  new Integer(frontMax),new Integer(frontAvg), new Integer(frontMin),
-                                     backLabel, new Integer(backMax), new Integer(backAvg), new Integer(backMin)},
-                         tooltip, FIELD_POSITION_ZERO);
-            return tooltip.toString();
+            return FMT.format(new Object[]{
+                    startTime, endTime,
+                    frontLabel, new Integer(frontMax), new Integer(frontAvg), new Integer(frontMin),
+                    backLabel, new Integer(backMax), new Integer(backAvg), new Integer(backMin)});
         }
     }
 
     /** A tool tip generator for the alert indicator plot. */
     private static class AlertIndicatorToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("alertIndicatorTooltipFormat"));
-        private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
             final TimeTableXYDataset messageRates = (TimeTableXYDataset) dataset;
@@ -219,16 +214,13 @@ public class MetricsChartPanel extends ChartPanel {
             final double msgRate = messageRates.getY(series, item).doubleValue();
             final int numMsg = (int)Math.round(msgRate * (endTime.getTime() - startTime.getTime()) / 1000.);
 
-            final StringBuffer tooltip = new StringBuffer();
-            FMT.format(new Object[] {startTime, endTime, seriesLabel, new Integer(numMsg), new Double(msgRate)}, tooltip, FIELD_POSITION_ZERO);
-            return tooltip.toString();
+            return FMT.format(new Object[] {startTime, endTime, seriesLabel, new Integer(numMsg), new Double(msgRate)});
         }
     }
 
     /** A tool tip generator for the message rate plot. */
     private static class MessageRateToolTipGenerator implements XYToolTipGenerator {
         private static final MessageFormat FMT = new MessageFormat(_resources.getString("messageRateTooltipFormat"));
-        private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
 
         public String generateToolTip(XYDataset dataset, int series, int item) {
             final TimeTableXYDataset messageRates = (TimeTableXYDataset) dataset;
@@ -252,13 +244,10 @@ public class MetricsChartPanel extends ChartPanel {
                 return null;    // No tooltip if no message.
             }
 
-            final StringBuffer tooltip = new StringBuffer();
-            FMT.format(new Object[] {startTime, endTime,
-                                     failureLabel, new Integer(numFailure), new Double(failureRate),
-                                     violationLabel, new Integer(numViolation), new Double(violationRate),
-                                     successLabel, new Integer(numSuccess), new Double(successRate)},
-                       tooltip, FIELD_POSITION_ZERO);
-            return tooltip.toString();
+            return FMT.format(new Object[]{startTime, endTime,
+                    failureLabel, new Integer(numFailure), new Double(failureRate),
+                    violationLabel, new Integer(numViolation), new Double(violationRate),
+                    successLabel, new Integer(numSuccess), new Double(successRate)});
         }
     }
 

@@ -21,7 +21,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
-import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -38,7 +37,6 @@ public class DashboardWindow extends JFrame implements LogonListener {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.dashboard.resources.DashboardWindow");
 
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(resources.getString("rightPanel.timeFormat"));
-    private static final FieldPosition FIELD_POSITION_ZERO = new FieldPosition(0);
 
     private final ClusterStatusAdmin clusterStatusAdmin;
     private final ServiceAdmin serviceAdmin;
@@ -361,12 +359,10 @@ public class DashboardWindow extends JFrame implements LogonListener {
                 backAvgField.setText(Long.toString(Math.round(backAvg)));
                 backMaxField.setText(Integer.toString(backMax));
 
-                fromTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodStart()), new StringBuffer(), FIELD_POSITION_ZERO).toString());
-                toTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodEnd()), new StringBuffer(), FIELD_POSITION_ZERO).toString());
+                fromTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodStart())));
+                toTimeLabel.setText(TIME_FORMAT.format(new Date(rightPanelBin.getPeriodEnd())));
 
-                StringBuffer sb = new StringBuffer();
-                statusUpdatedFormat.format(new Object[] { new Date() }, sb, FIELD_POSITION_ZERO);
-                statusLabel.setText(sb.toString());
+                statusLabel.setText(statusUpdatedFormat.format(new Object[] { new Date() }));
             }
 
         } catch (RemoteException e) {

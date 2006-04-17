@@ -1,6 +1,9 @@
 package com.l7tech.server.service;
 
-import EDU.oswego.cs.dl.util.concurrent.*;
+import EDU.oswego.cs.dl.util.concurrent.BoundedChannel;
+import EDU.oswego.cs.dl.util.concurrent.Channel;
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import com.l7tech.service.MetricsBin;
 
 import java.util.logging.Level;
@@ -97,7 +100,7 @@ public class ServiceMetrics {
         if (nodeId == null || nodeId.length() == 0) throw new IllegalArgumentException("nodeId must not be null or empty");
         if (fineInterval < 0) throw new IllegalArgumentException("fineInterval must be positive");
         if (queue == null) throw new NullPointerException();
-        
+
         this._queue = queue;
         _serviceOid = serviceOid;
         _clusterNodeId = nodeId;
@@ -116,6 +119,10 @@ public class ServiceMetrics {
 
     public String getClusterNodeId() {
         return _clusterNodeId;
+    }
+
+    public long getDailyBinPeriodEnd() {
+        return _currentDailyBin.getPeriodEnd();
     }
 
     /**
