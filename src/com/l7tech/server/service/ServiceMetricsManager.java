@@ -4,7 +4,6 @@ import EDU.oswego.cs.dl.util.concurrent.BoundedPriorityQueue;
 import com.l7tech.common.util.Background;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.util.ServerResourceUtils;
 import com.l7tech.service.MetricsBin;
 import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
@@ -68,13 +67,13 @@ public class ServiceMetricsManager extends HibernateDaoSupport
     }
 
     public void destroy() throws Exception {
-        fineTimer.cancel();
-        hourlyTimer.cancel();
-        dailyTimer.cancel();
-        fineDeleter.cancel();
-        hourlyDeleter.cancel();
-        dailyDeleter.cancel();
-        flusher.quit();
+        if (fineTimer != null) fineTimer.cancel();
+        if (hourlyTimer != null) hourlyTimer.cancel();
+        if (dailyTimer != null) dailyTimer.cancel();
+        if (fineDeleter != null) fineDeleter.cancel();
+        if (hourlyDeleter != null) hourlyDeleter.cancel();
+        if (dailyDeleter != null) dailyDeleter.cancel();
+        if (flusher != null) flusher.quit();
     }
 
     /**
