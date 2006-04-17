@@ -26,6 +26,7 @@ import com.l7tech.service.PublishedService;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -129,6 +130,8 @@ class PathValidator {
         } else if (a instanceof SamlBrowserArtifact) {
             seenAccessControl = true;
             setSeenCredentials(a, true);
+        } else if (a instanceof Regex) {
+            validateRegex((Regex)a);
         }
 
         if (a instanceof SetsVariables) {
@@ -140,6 +143,20 @@ class PathValidator {
         }
 
         setSeen(a.getClass());
+    }
+
+    private void validateRegex(Regex a) {
+        // check encoding is supported (should that not be checked by the dialog?)
+        if (a.getEncoding() != null && a.getEncoding().length() > 0) {
+            byte[] toto = "foo".getBytes();
+            try {
+                new String(toto, 0, toto.length, a.getEncoding());
+            } catch (UnsupportedEncodingException e) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                                                                    "The encoding '" + a.getEncoding() + "' is not supported",
+                                                                    null));
+            }
+        }
     }
 
     private void processOversizedText(OversizedTextAssertion oversizedTextAssertion) {
