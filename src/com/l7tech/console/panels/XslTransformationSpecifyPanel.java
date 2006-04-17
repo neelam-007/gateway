@@ -3,7 +3,6 @@
  */
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
 import com.japisoft.xmlpad.PopupModel;
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
@@ -85,10 +84,10 @@ public class XslTransformationSpecifyPanel extends JPanel {
         urlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 OkCancelDialog dlg = new OkCancelDialog(parent, resources.getString("urlDialog.title"), true, new UrlPanel(resources.getString("urlDialog.prompt"), null));
+                Utilities.centerOnScreen(dlg);
                 dlg.pack();
                 dlg.setVisible(true);
-                Utilities.centerOnScreen(dlg);
-                URL url = (URL)dlg.getValue();
+                String url = (String)dlg.getValue();
                 if (url != null) {
                     readFromUrl(url);
                 }
@@ -183,19 +182,16 @@ public class XslTransformationSpecifyPanel extends JPanel {
             }
         } catch (FileNotFoundException e) {
             log.log(Level.FINE, "cannot open file" + filename, e);
-            return;
         } finally {
             ResourceUtils.closeQuietly(fis);
         }
     }
 
-    private void readFromUrl(URL url) {
-        String urlstr = url.toString();
-
+    private void readFromUrl(String urlstr) {
         // try to get document
         InputStream is;
         try {
-            is = url.openStream();
+            is = new URL(urlstr).openStream();
         } catch (IOException e) {
             xslDialog.displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
             return;
@@ -263,8 +259,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
             log.log(Level.WARNING, "Couldn't parse XSLT", e);
             return false;
         }
-        if (doc == null) return false;
-        return docIsXsl(doc);
+        return doc != null && docIsXsl(doc);
     }
 
     private static boolean docIsXsl(Document doc) {
