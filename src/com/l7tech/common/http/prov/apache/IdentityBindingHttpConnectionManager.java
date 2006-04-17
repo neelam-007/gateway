@@ -206,7 +206,9 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
      * @param httpConnection The connection to release
      */
     public void releaseConnection(HttpConnection httpConnection) {
-        logger.info("Releasing connection.");
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "Releasing connection.");
+        }
 
         ThreadLocalInfo tli = getInfo();
         Object identity = tli!=null ? tli.getId() : null;
@@ -216,7 +218,9 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
                 bound = setBoundHttpConnection(identity, httpConnection);
             }
             else {
-                logger.info("Connection is bound, retaining.");
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Connection is bound, retaining.");
+                }
                 bound = true;
             }
         }
@@ -301,12 +305,16 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
                         }
                     }
                     else {
-                        logger.info("Disposing invalid bound connection for identity '"+identity+"'.");
+                        if(logger.isLoggable(Level.FINE)) {
+                            logger.fine("Disposing invalid bound connection for identity '"+identity+"'.");
+                        }
                         hci.dispose();
                     }
                 }
                 else {
-                    logger.info("No bound connection info for identity '"+identity+"'.");
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine("No bound connection info for identity '"+identity+"'.");
+                    }
                 }
             }
             catch(InterruptedException ie) {
@@ -566,7 +574,9 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
                     (IdentityBindingHttpConnectionManager) managerRef.get();
 
             if (manager == null) {
-                logger.info("Cancelled timer task for GC'd connection manager.");
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine("Cancelled timer task for GC'd connection manager.");
+                }
                 cancel();
             }
             else {
@@ -598,7 +608,9 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
 
                         if (!manager.isValid(httpConnectionInfo, timeNow)) {
                             if (httpConnectionInfo.isInUse()) {
-                                logger.fine("Not releasing in use connection.");
+                                if(logger.isLoggable(Level.FINE)) {
+                                    logger.fine("Not releasing in use connection.");
+                                }
                             }
                             else {
                                 identitiesForRemoval.add(identifier);
@@ -623,7 +635,9 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
                     }
                 }
                 if(!identitiesForRemoval.isEmpty()) {
-                    logger.info("Released connections with identifiers " + identitiesForRemoval);
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine("Released connections with identifiers " + identitiesForRemoval);
+                    }
                 }
             }
         }
