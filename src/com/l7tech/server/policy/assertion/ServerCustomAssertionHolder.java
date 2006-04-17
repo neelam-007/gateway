@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
@@ -357,6 +358,25 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         public Map getContext() {
             return context;
         }
+
+        /**
+         * Access a context variable from the policy enforcement context
+         */
+        public Object getVariable(String name) {
+            try {
+                return pec.getVariable(name);
+            } catch (NoSuchVariableException e) {
+                logger.log(Level.INFO, "bad variable requested by custom assertion", e);
+            }
+            return null;
+        }
+
+        /**
+         * Set a context variable from the policy enforcement context
+         */
+        public void setVariable(String name, Object value) {
+            pec.setVariable(name, value);
+        }
     }
 
     private class CustomServiceRequest extends CustomService implements ServiceRequest {
@@ -377,7 +397,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             context.put("originalCookies", Collections.unmodifiableCollection(new ArrayList(newCookies)));
             // plug in the message parts in here
             context.put("messageParts", extractParts(pec.getRequest()));
-            
+
             securityContext = new SecurityContext() {
                 public Subject getSubject() {
                     return Subject.getSubject(AccessController.getContext());
@@ -432,6 +452,25 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                     pec.addCookie(CookieUtils.fromServletCookie(cookie, true));
                 }
             }
+        }
+
+        /**
+         * Access a context variable from the policy enforcement context
+         */
+        public Object getVariable(String name) {
+            try {
+                return pec.getVariable(name);
+            } catch (NoSuchVariableException e) {
+                logger.log(Level.INFO, "bad variable requested by custom assertion", e);
+            }
+            return null;
+        }
+
+        /**
+         * Set a context variable from the policy enforcement context
+         */
+        public void setVariable(String name, Object value) {
+            pec.setVariable(name, value);
         }
     }
 }

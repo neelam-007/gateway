@@ -43,4 +43,14 @@ public interface ServiceRequest {
      * @return the map of key/value pairs represnting the invocation context.
      */
     Map getContext();
+
+    /**
+     * Access a context variable from the policy enforcement context
+     */
+    Object getVariable(String name);
+
+    /**
+     * Set a context variable from the policy enforcement context
+     */
+    void setVariable(String name, Object value);
 }
