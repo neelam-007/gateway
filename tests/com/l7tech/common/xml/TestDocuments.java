@@ -86,7 +86,24 @@ public final class TestDocuments {
 
     public static final String WEBLOGIC_WSDL = DIR + "weblogic_wsdl.xml";
 
+
+    public static class SecurityPolicies {
+        private final String DIR = "com/l7tech/policy/resources/";
+
+        private final String ROUND3_MS_WSDL = "wssp_interop_apr_2006/round3_ms.wsdl";
+
+        public InputStream getRound3MsWsdl() throws FileNotFoundException {
+            return getInputStream(DIR + ROUND3_MS_WSDL);
+        }
+    }
+    private static final SecurityPolicies SECURITYPOLICIES = new SecurityPolicies();
+
+
     private TestDocuments() { }
+
+    public static SecurityPolicies getSecurityPolicies() {
+        return SECURITYPOLICIES;
+    }
 
     public static Document getTestDocument(String resourcetoread)
       throws IOException, SAXException {

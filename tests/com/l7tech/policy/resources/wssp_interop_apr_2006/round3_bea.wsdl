@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="" targetNamespace="http://example.com/ws/2004/09/policy" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:s0="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:s1="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:s2="http://example.com/ws/2004/09/policy" xmlns:s3="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:s4="http://schemas.xmlsoap.org/wsdl/soap/">
+  <s0:Policy s1:Id="A12Endpoint">
+    <SP:AsymmetricBinding xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:AlgorithmSuite>
+          <wsp:Policy>
+            <SP:TripleDesRsa15/>
+          </wsp:Policy>
+        </SP:AlgorithmSuite>
+        <SP:Layout>
+          <wsp:Policy>
+            <SP:Lax/>
+          </wsp:Policy>
+        </SP:Layout>
+        <SP:IncludeTimestamp/>
+        <SP:OnlySignEntireHeadersAndBody/>
+        <SP:InitiatorToken>
+          <wsp:Policy>
+            <SP:X509Token SP:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient">
+              <wsp:Policy>
+                <SP:WssX509V3Token10/>
+              </wsp:Policy>
+            </SP:X509Token>
+          </wsp:Policy>
+        </SP:InitiatorToken>
+        <SP:RecipientToken>
+          <wsp:Policy>
+            <SP:X509Token SP:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/Never">
+              <wsp:Policy>
+                <SP:WssX509V3Token10/>
+              </wsp:Policy>
+            </SP:X509Token>
+          </wsp:Policy>
+        </SP:RecipientToken>
+      </wsp:Policy>
+    </SP:AsymmetricBinding>
+    <SP:Wss10 xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:MustSupportRefKeyIdentifier/>
+        <SP:MustSupportRefIssuerSerial/>
+      </wsp:Policy>
+    </SP:Wss10>
+  </s0:Policy>
+  <s0:Policy s1:Id="A11Endpoint">
+    <SP:AsymmetricBinding xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:AlgorithmSuite>
+          <wsp:Policy>
+            <SP:Basic256Rsa15/>
+          </wsp:Policy>
+        </SP:AlgorithmSuite>
+        <SP:Layout>
+          <wsp:Policy>
+            <SP:Lax/>
+          </wsp:Policy>
+        </SP:Layout>
+        <SP:IncludeTimestamp/>
+        <SP:OnlySignEntireHeadersAndBody/>
+        <SP:InitiatorToken>
+          <wsp:Policy>
+            <SP:X509Token SP:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient">
+              <wsp:Policy>
+                <SP:WssX509V3Token10/>
+              </wsp:Policy>
+            </SP:X509Token>
+          </wsp:Policy>
+        </SP:InitiatorToken>
+        <SP:RecipientToken>
+          <wsp:Policy>
+            <SP:X509Token SP:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/Never">
+              <wsp:Policy>
+                <SP:WssX509V3Token10/>
+              </wsp:Policy>
+            </SP:X509Token>
+          </wsp:Policy>
+        </SP:RecipientToken>
+      </wsp:Policy>
+    </SP:AsymmetricBinding>
+    <SP:Wss10 xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:MustSupportRefKeyIdentifier/>
+        <SP:MustSupportRefIssuerSerial/>
+      </wsp:Policy>
+    </SP:Wss10>
+  </s0:Policy>
+  <s0:Policy s1:Id="AMessage">
+    <SP:SignedParts xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <SP:Body/>
+    </SP:SignedParts>
+    <SP:EncryptedParts xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <SP:Body/>
+    </SP:EncryptedParts>
+  </s0:Policy>
+  <s0:Policy s1:Id="T3Endpoint">
+    <SP:TransportBinding xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:AlgorithmSuite>
+          <wsp:Policy>
+            <SP:Basic256Rsa15/>
+          </wsp:Policy>
+        </SP:AlgorithmSuite>
+        <SP:Layout>
+          <wsp:Policy>
+            <SP:Lax/>
+          </wsp:Policy>
+        </SP:Layout>
+        <SP:IncludeTimestamp/>
+        <SP:TransportToken>
+          <wsp:Policy>
+            <SP:HttpsToken RequireClientCertificate="false"/>
+          </wsp:Policy>
+        </SP:TransportToken>
+      </wsp:Policy>
+    </SP:TransportBinding>
+    <SP:SignedSupportingTokens xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:UsernameToken SP:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient"/>
+      </wsp:Policy>
+    </SP:SignedSupportingTokens>
+    <SP:Wss10 xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:MustSupportRefKeyIdentifier/>
+        <SP:MustSupportRefIssuerSerial/>
+      </wsp:Policy>
+    </SP:Wss10>
+  </s0:Policy>
+  <s0:Policy s1:Id="T1Endpoint">
+    <SP:TransportBinding xmlns:SP="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+      <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy">
+        <SP:AlgorithmSuite>
+          <wsp:Policy>
+            <SP:Basic256Rsa15/>
+          </wsp:Policy>
+        </SP:AlgorithmSuite>
+        <SP:Layout>
+          <wsp:Policy>
+            <SP:Lax/>
+          </wsp:Policy>
+        </SP:Layout>
+        <SP:IncludeTimestamp/>
+        <SP:TransportToken>
+          <wsp:Policy>
+            <SP:HttpsToken RequireClientCertificate="false"/>
+          </wsp:Policy>
+        </SP:TransportToken>
+      </wsp:Policy>
+    </SP:TransportBinding>
+  </s0:Policy>
+  <types>
+    <xs:schema blockDefault="#all" elementFormDefault="qualified" targetNamespace="http://example.com/ws/2004/09/policy" xmlns:s0="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:s1="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:s2="http://example.com/ws/2004/09/policy" xmlns:s3="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:s4="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy" xmlns:tns="http://example.com/ws/2004/09/policy" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsoap11="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <xs:element name="EchoRequest" type="xs:string"/>
+      <xs:element name="EchoResponse" type="xs:string"/>
+    </xs:schema>
+  </types>
+  <message name="EchoInMessage">
+    <part element="s2:EchoRequest" name="Body"/>
+  </message>
+  <message name="EchoOutMessage">
+    <part element="s2:EchoResponse" name="Body"/>
+  </message>
+  <portType name="Test">
+    <operation name="Echo">
+      <input message="s2:EchoInMessage" s3:Action="http://example.com/ws/2004/09/policy/Test/EchoRequest"/>
+      <output message="s2:EchoOutMessage" s3:Action="http://example.com/ws/2004/09/policy/Test/EchoResponse"/>
+    </operation>
+  </portType>
+  <binding name="NoSecurityBinding" type="s2:Test">
+    <s4:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="Echo">
+      <s4:operation soapAction="http://example.com/ws/2004/09/policy/Test/EchoRequest"/>
+      <input>
+        <s4:body use="literal"/>
+      </input>
+      <output>
+        <s4:body use="literal"/>
+      </output>
+    </operation>
+  </binding>
+  <binding name="T1Binding" type="s2:Test">
+    <s4:binding style="document" transport="http://schemas.xmlsoap.org/soap/https"/>
+    <s0:Policy>
+      <s0:PolicyReference URI="#T1Endpoint"/>
+    </s0:Policy>
+    <operation name="Echo">
+      <s4:operation soapAction="http://example.com/ws/2004/09/policy/Test/EchoRequest"/>
+      <input>
+        <s4:body use="literal"/>
+      </input>
+      <output>
+        <s4:body use="literal"/>
+      </output>
+    </operation>
+  </binding>
+  <binding name="T3Binding" type="s2:Test">
+    <s4:binding style="document" transport="http://schemas.xmlsoap.org/soap/https"/>
+    <s0:Policy>
+      <s0:PolicyReference URI="#T3Endpoint"/>
+    </s0:Policy>
+    <operation name="Echo">
+      <s4:operation soapAction="http://example.com/ws/2004/09/policy/Test/EchoRequest"/>
+      <input>
+        <s4:body use="literal"/>
+      </input>
+      <output>
+        <s4:body use="literal"/>
+      </output>
+    </operation>
+  </binding>
+  <binding name="A11Binding" type="s2:Test">
+    <s4:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <s0:Policy>
+      <s0:PolicyReference URI="#A11Endpoint"/>
+    </s0:Policy>
+    <operation name="Echo">
+      <s4:operation soapAction="http://example.com/ws/2004/09/policy/Test/EchoRequest"/>
+      <input>
+        <s4:body use="literal"/>
+        <s0:Policy>
+          <s0:PolicyReference URI="#AMessage"/>
+        </s0:Policy>
+      </input>
+      <output>
+        <s4:body use="literal"/>
+        <s0:Policy>
+          <s0:PolicyReference URI="#AMessage"/>
+        </s0:Policy>
+      </output>
+    </operation>
+  </binding>
+  <binding name="A12Binding" type="s2:Test">
+    <s4:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <s0:Policy>
+      <s0:PolicyReference URI="#A12Endpoint"/>
+    </s0:Policy>
+    <operation name="Echo">
+      <s4:operation soapAction="http://example.com/ws/2004/09/policy/Test/EchoRequest"/>
+      <input>
+        <s4:body use="literal"/>
+        <s0:Policy>
+          <s0:PolicyReference URI="#AMessage"/>
+        </s0:Policy>
+      </input>
+      <output>
+        <s4:body use="literal"/>
+        <s0:Policy>
+          <s0:PolicyReference URI="#AMessage"/>
+        </s0:Policy>
+      </output>
+    </operation>
+  </binding>
+  <service name="Test">
+    <port binding="s2:NoSecurityBinding" name="NoSecurityPort">
+      <s4:address location="http://webservice.bea.com:80/wspolicy/round3/EchoService"/>
+    </port>
+    <port binding="s2:T1Binding" name="T1Port">
+      <s4:address location="https://webservice.bea.com:9002/wspolicy/round3/EchoService/T1"/>
+    </port>
+    <port binding="s2:T3Binding" name="T3Port">
+      <s4:address location="https://webservice.bea.com:9002/wspolicy/round3/EchoService/T3"/>
+    </port>
+    <port binding="s2:A11Binding" name="A11Port">
+      <s4:address location="http://webservice.bea.com:80/wspolicy/round3/EchoService/A11"/>
+    </port>
+    <port binding="s2:A12Binding" name="A12Port">
+      <s4:address location="http://webservice.bea.com:80/wspolicy/round3/EchoService/A12"/>
+    </port>
+  </service>
+</definitions>
