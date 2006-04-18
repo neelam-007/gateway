@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.HardcodedResponseAssertion;
  */
 public class HardcodedResponsePaletteNode extends AbstractLeafPaletteNode {
     public HardcodedResponsePaletteNode() {
-        super("Hardcoded Response", "com/l7tech/console/resources/MessageLength-16x16.gif");
+        super("Template Response", "com/l7tech/console/resources/MessageLength-16x16.gif");
     }
 
     public Assertion asAssertion() {

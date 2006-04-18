@@ -1,6 +1,7 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.variable.BuiltinVariables;
@@ -421,7 +422,15 @@ class PathValidator {
         } else if (a instanceof EchoRoutingAssertion) {
             // Nothing to see here, folks. Move along...
         } else if (a instanceof HardcodedResponseAssertion) {
-            //almost exactly the same as EchoRoutingAssertion, but not.
+            //validations for this assertion
+            HardcodedResponseAssertion ass = (HardcodedResponseAssertion)a;
+            try {
+                ContentTypeHeader.parseValue(ass.getResponseContentType());
+            } catch (IOException e) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                    "the content type is invalid. " + e.getMessage(),
+                    null));
+            }
         } else {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath,
               "This message routing protocol is not supported.",

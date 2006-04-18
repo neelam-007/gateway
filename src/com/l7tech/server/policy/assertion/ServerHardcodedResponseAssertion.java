@@ -22,6 +22,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * The Server side Hardcoded Response.
@@ -42,9 +43,17 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
         try {
             ctype = ContentTypeHeader.parseValue(ass.getResponseContentType());
         } catch (IOException e) {
-            contentType = null;
-            message = null;
-            status = 500;
+            // fla bugfix, instead of breaking policy completly, log the problem (which was not done before)
+            // as warning and fallback on a safe value
+            logger.log(Level.WARNING, "Error parsing content type. Falling back on text/plain", e);
+            try {
+                contentType = ContentTypeHeader.parseValue("text/plain");
+            } catch (IOException e1) {
+                // can't happen
+                throw new RuntimeException(e);
+            }
+            message = ass.getResponseBody();
+            status = ass.getResponseStatus();
             return;
         }
 
@@ -61,6 +70,18 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
         StashManager stashManager = StashManagerFactory.createStashManager(); // TODO use Spring for this instead
 
         Message response = context.getResponse();
+        // fla bugfix attach the status before closing otherwise, it's lost
+        HttpResponseKnob hrk = null;
+        try {
+            hrk = response.getHttpResponseKnob();
+        } catch (IllegalStateException e) {
+            hrk = null;
+            logger.warning("there is no httpresponseknob to attach the status code to");
+        }
+        if (hrk != null) {
+            logger.fine("setting status " + status + " to existing httpresponseknob");
+            hrk.setStatus(status);
+        }
         response.close();
         try {
             String msg = message;
@@ -74,10 +95,6 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
                     e);
             return AssertionStatus.FAILED;
         }
-
-        HttpResponseKnob hrk = (HttpResponseKnob) response.getKnob(HttpResponseKnob.class);
-        if (hrk != null)
-            hrk.setStatus(status);
         context.setRoutingStatus(RoutingStatus.ROUTED);
         return AssertionStatus.NONE;
     }

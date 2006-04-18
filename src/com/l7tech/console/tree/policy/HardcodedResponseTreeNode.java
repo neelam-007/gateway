@@ -23,7 +23,7 @@ public class HardcodedResponseTreeNode extends LeafAssertionTreeNode{
     }
 
     public String getName() {
-        return "Hardcoded Response";
+        return "Template Response";
     }
 
     protected String iconResource(boolean open) {
