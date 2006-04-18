@@ -91,11 +91,22 @@ public final class TestDocuments {
         private final String DIR = "com/l7tech/policy/resources/";
 
         private final String ROUND3_MS_WSDL = "wssp_interop_apr_2006/round3_ms.wsdl";
+        private final String ROUND3_IBM_WSDL = "wssp_interop_apr_2006/round3_ibm.wsdl";
+        private final String ROUND3_BEA_WSDL = "wssp_interop_apr_2006/round3_bea.wsdl";
 
         public InputStream getRound3MsWsdl() throws FileNotFoundException {
             return getInputStream(DIR + ROUND3_MS_WSDL);
         }
+
+        public InputStream getRound3IbmWsdl() throws FileNotFoundException {
+            return getInputStream(DIR + ROUND3_IBM_WSDL);
+        }
+
+        public InputStream getRound3BeaWsdl() throws FileNotFoundException {
+            return getInputStream(DIR + ROUND3_BEA_WSDL);
+        }
     }
+
     private static final SecurityPolicies SECURITYPOLICIES = new SecurityPolicies();
 
 
