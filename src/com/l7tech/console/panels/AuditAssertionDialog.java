@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.util.logging.Level;
 
 /**
  * Dialog for editing the properties of an {@link AuditAssertion}.
@@ -26,6 +27,8 @@ public class AuditAssertionDialog extends JDialog {
 
     private static final String THRESH_PREFIX = "(NOTE: the server is currently not recording below level ";
     private static final String THRESH_SUFFIX = ")";
+    private Font existingFont;
+    private Level currentServerThreshhold;
 
     public AuditAssertionDialog(Frame owner, AuditAssertion ass, String serverThreshold) throws HeadlessException {
         super(owner, "Audit Assertion Properties", true);
@@ -35,7 +38,12 @@ public class AuditAssertionDialog extends JDialog {
         levelCombo.setSelectedItem(ass.getLevel());
         saveRequestCheckbox.setSelected(ass.isSaveRequest());
         saveResponseCheckbox.setSelected(ass.isSaveResponse());
-        thresholdLabel.setText(THRESH_PREFIX + serverThreshold + THRESH_SUFFIX);
+
+        existingFont = thresholdLabel.getFont();
+
+        //get the current server level
+        currentServerThreshhold = Level.parse(serverThreshold);
+        updateThresholdLabel();
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -54,7 +62,30 @@ public class AuditAssertionDialog extends JDialog {
             }
         });
 
+        levelCombo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateThresholdLabel();
+            }
+
+        });
+
         getContentPane().add(mainPanel);
+    }
+
+    private void updateThresholdLabel() {
+        String selected = (String) levelCombo.getSelectedItem();
+        String defaultText = THRESH_PREFIX + currentServerThreshhold.getName() + THRESH_SUFFIX;
+        String text = defaultText;
+        if (selected != null) {
+            Level selectedLevel;
+            try {
+                selectedLevel = Level.parse(selected);
+                if ( selectedLevel.intValue() < currentServerThreshhold.intValue()) {
+                    text = "<html><font color='red'>" + defaultText + "</font></html>";
+                }
+            } catch (IllegalArgumentException iax) {}
+        }
+        thresholdLabel.setText(text);
     }
 
     public boolean isModified() {
