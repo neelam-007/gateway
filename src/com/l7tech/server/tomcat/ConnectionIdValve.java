@@ -3,6 +3,7 @@ package com.l7tech.server.tomcat;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import javax.servlet.ServletException;
 
 import org.apache.catalina.connector.Request;
@@ -44,7 +45,9 @@ public class ConnectionIdValve extends ValveBase {
                 synchronized(connectionSequenceLock) {
                     id = ++connectionSequence;
                 }
-                logger.info("Setting id for connection '"+id+"'.");
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Setting id for connection '"+id+"'.");
+                }
                 connectionId.set(Long.valueOf(id));
             }
         });
