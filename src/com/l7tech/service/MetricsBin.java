@@ -16,11 +16,10 @@ import java.util.logging.Level;
  * But since timers are not exact, a bin also has the <b>actual</b> time
  * interval when the bin actually starts and ends.
  * <p/>
- * This class is not thread safe for performance reason. Since the typical usage
- * is such that mutable methods are called only during the open state and
- * immutable methods are called only during the closed state, synchronization
- * will be more efficiently handled by the owner of this object, who controls
- * when to change from open to close state.
+ * This class has limited thread safety for mutable methods only. For performance
+ * reason, there is no synchronization for immutable methods and hibernate
+ * setter/getter methods because, in typical usage, mutable methods are called
+ * only during the open state, which never overlaps the closed state.
  *
  * @author rmak
  */
@@ -83,6 +82,17 @@ public class MetricsBin implements Serializable, Comparable {
 
     /** Sum over backend response times (in milliseconds) of all completed requests. */
     private long _sumBackendResponseTime;
+
+    /** Protects write access to {@link #_numAttemptedRequest}, {@link #_minFrontendResponseTime},
+     * {@link #_maxFrontendResponseTime} and {@link #_sumFrontendResponseTime}. */
+    private transient Object _attemptedLock = new Object();
+
+    /** Protects write access to {@link #_numAuthorizedRequest}. */
+    private transient Object _authorizedLock = new Object();
+
+    /** Protects write access to {@link #_numCompletedRequest}, {@link #_minBackendResponseTime},
+     * {@link #_maxBackendResponseTime} and {@link #_sumBackendResponseTime}. */
+    private transient Object _completedLock = new Object();
 
     private static void checkResolutionType(int res) {
         if (res != RES_FINE && res != RES_HOURLY && res != RES_DAILY) {
@@ -558,41 +568,47 @@ public class MetricsBin implements Serializable, Comparable {
 
     /** Records an attempted request. */
     public void addAttemptedRequest(final int frontendResponseTime) {
-        if (_numAttemptedRequest == 0) {
-            _minFrontendResponseTime = frontendResponseTime;
-            _maxFrontendResponseTime = frontendResponseTime;
-        } else {
-            if (frontendResponseTime < _minFrontendResponseTime) {
+        synchronized(_attemptedLock) {
+            if (_numAttemptedRequest == 0) {
                 _minFrontendResponseTime = frontendResponseTime;
-            }
-            if (frontendResponseTime > _maxFrontendResponseTime) {
                 _maxFrontendResponseTime = frontendResponseTime;
+            } else {
+                if (frontendResponseTime < _minFrontendResponseTime) {
+                    _minFrontendResponseTime = frontendResponseTime;
+                }
+                if (frontendResponseTime > _maxFrontendResponseTime) {
+                    _maxFrontendResponseTime = frontendResponseTime;
+                }
             }
+            _sumFrontendResponseTime += frontendResponseTime;
+            ++ _numAttemptedRequest;
         }
-        _sumFrontendResponseTime += frontendResponseTime;
-        ++ _numAttemptedRequest;
     }
 
     /** Records an authorized request. */
     public void addAuthorizedRequest() {
-        ++ _numAuthorizedRequest;
+        synchronized(_authorizedLock) {
+            ++ _numAuthorizedRequest;
+        }
     }
 
     /** Records a completed request. */
     public void addCompletedRequest(final int backendResponseTime) {
-        if (_numCompletedRequest == 0) {
-            _minBackendResponseTime = backendResponseTime;
-            _maxBackendResponseTime = backendResponseTime;
-        } else {
-            if (backendResponseTime < _minBackendResponseTime) {
+        synchronized(_completedLock) {
+            if (_numCompletedRequest == 0) {
                 _minBackendResponseTime = backendResponseTime;
-            }
-            if (backendResponseTime > _maxBackendResponseTime) {
                 _maxBackendResponseTime = backendResponseTime;
+            } else {
+                if (backendResponseTime < _minBackendResponseTime) {
+                    _minBackendResponseTime = backendResponseTime;
+                }
+                if (backendResponseTime > _maxBackendResponseTime) {
+                    _maxBackendResponseTime = backendResponseTime;
+                }
             }
+            _sumBackendResponseTime += backendResponseTime;
+            ++ _numCompletedRequest;
         }
-        _sumBackendResponseTime += backendResponseTime;
-        ++ _numCompletedRequest;
     }
 
     public String toString() {
