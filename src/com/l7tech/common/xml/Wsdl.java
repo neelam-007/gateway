@@ -8,10 +8,17 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.apache.ws.policy.util.PolicyFactory;
+import org.apache.ws.policy.util.DOMPolicyReader;
+import org.apache.ws.policy.util.PolicyRegistry;
+import org.apache.ws.policy.Policy;
+import org.apache.ws.policy.PolicyReference;
+import org.apache.ws.policy.Assertion;
 
 import javax.wsdl.*;
 import javax.wsdl.Service;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
@@ -23,6 +30,7 @@ import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
 import javax.xml.soap.SOAPConstants;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -81,6 +89,16 @@ public class Wsdl {
      * SOAP binding use encoded (deprecated but WS-I)
      */
     public static final String USE_ENCODED = "encoded";
+
+    /**
+     * wsp:Policy and PolicyReference parser.
+     */
+    private DOMPolicyReader policyReader = (DOMPolicyReader)PolicyFactory.getPolicyReader(PolicyFactory.DOM_POLICY_READER);
+
+    /**
+     * Stores top-level policies found in this WSDL.
+     */
+    private PolicyRegistry policyRegistry = null;
 
     /**
      * bitmask that accepts all bindings
@@ -240,6 +258,157 @@ public class Wsdl {
             }
         }
         return filtered;
+    }
+
+    /** @return true if the specified ExtensibilityElement is a wsp:Policy element. */
+    public boolean isPolicy(ExtensibilityElement ee) {
+        return getPolicyUue(ee) != null;
+    }
+
+    public static class BadPolicyReferenceException extends Exception {
+        public BadPolicyReferenceException() {
+            super();
+        }
+
+        public BadPolicyReferenceException(String message) {
+            super(message);
+        }
+
+        public BadPolicyReferenceException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public BadPolicyReferenceException(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    /**
+     * @return a Policy if the specified ExtensibilityElement is a wsp:Policy or resolvable wsp:PolicyReference,
+     *         or null if it isn't.
+     * @throws BadPolicyReferenceException if the element is a PolicyReference but it can't be resolved to a Policy
+     */
+    public Policy toPolicy(ExtensibilityElement ee) throws BadPolicyReferenceException {
+        UnknownExtensibilityElement uee = getPolicyUue(ee);
+        if (uee != null)
+            return policyReader.readPolicy(uee.getElement());
+
+        uee = getPolicyReferenceUue(ee);
+        if (uee == null) return null;
+        PolicyReference ref = policyReader.readPolicyReference(uee.getElement());
+        if (ref == null) throw new BadPolicyReferenceException("Unable to parse wsp:PolicyReference");
+        Policy p = getPolicyRegistry().lookup(ref.getPolicyURIString());
+        if (p == null) throw new BadPolicyReferenceException("Unable to resolve policy reference: URI=" + ref.getPolicyURIString());
+        return p;
+    }
+
+    /** @return true if the specified ExtensibilityElkement is a wsp:PolicyReference element. */
+    public boolean isPolicyReference(ExtensibilityElement ee) {
+        return getPolicyReferenceUue(ee) != null;
+    }
+
+    /** @return a PolicyReference if the specified ExtensibilityElement is a wsp:PolicyReference, or null if it isn't. */
+    public PolicyReference toPolicyReference(ExtensibilityElement ee) {
+        UnknownExtensibilityElement uee = getPolicyReferenceUue(ee);
+        if (uee == null) return null;
+        return policyReader.readPolicyReference(uee.getElement());
+    }
+
+    /** @return a UEE if this is a wsp:Policy element, or null if it isn't. */
+    private UnknownExtensibilityElement getPolicyUue(ExtensibilityElement ee) {
+        if (!(ee instanceof UnknownExtensibilityElement))
+            return null;
+
+        QName qname = ee.getElementType();
+        if (!("Policy".equals(qname.getLocalPart())))
+            return null;
+        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
+            return null;
+
+        return (UnknownExtensibilityElement)ee;
+    }
+
+    /** @return a PolicyRegistry that will find top-level policies in this WSDL. */
+    public PolicyRegistry getPolicyRegistry() {
+        if (policyRegistry != null) return policyRegistry;
+        policyRegistry = new PolicyRegistry();
+
+        // Pre-register all top-level policies
+        List policies = getPolicies();
+        for (Iterator i = policies.iterator(); i.hasNext();) {
+            Policy policy = (Policy)i.next();
+            policyRegistry.register(policy.getPolicyURI(), policy);
+        }
+
+        return policyRegistry;
+    }
+
+    /** @return a UEE if this is a wsp:PolicyReference element, or null if it isn't. */
+    private UnknownExtensibilityElement getPolicyReferenceUue(ExtensibilityElement ee) {
+        if (!(ee instanceof UnknownExtensibilityElement))
+            return null;
+
+        QName qname = ee.getElementType();
+        if (!("PolicyReference".equals(qname.getLocalPart())))
+            return null;
+        if (!("http://schemas.xmlsoap.org/ws/2004/09/policy".equals(qname.getNamespaceURI())))
+            return null;
+
+        return (UnknownExtensibilityElement)ee;
+    }
+
+    /**
+     * @return the top-level Policy elements of this WSDL, as {@link org.apache.ws.policy.Policy} instances.
+     *         May be empty, but never null.
+     *
+     */
+    public List getPolicies() {
+        List ret = new ArrayList();
+        List exts = getDefinition().getExtensibilityElements();
+        DOMPolicyReader policyReader = (DOMPolicyReader)PolicyFactory.getPolicyReader(PolicyFactory.DOM_POLICY_READER);
+        for (Iterator i = exts.iterator(); i.hasNext();) {
+            ExtensibilityElement ee = (ExtensibilityElement)i.next();
+            UnknownExtensibilityElement uee = getPolicyUue(ee);
+            if (uee != null) {
+                Policy policy = policyReader.readPolicy(uee.getElement());
+                if (policy != null) ret.add(policy);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * @return the computed effective policy for this input message, merged with per-operation and per-binding policies (if any), or null if no policy is in effect.
+     */
+    public Assertion getEffectiveInputPolicy(Binding binding, BindingOperation operation)
+            throws BadPolicyReferenceException
+    {
+        // Accumulate the effective policy
+        Assertion ep = null;
+        ep = mergePolicies(ep, binding.getExtensibilityElements());
+        ep = mergePolicies(ep, operation.getExtensibilityElements());
+        ep = mergePolicies(ep, operation.getBindingInput().getExtensibilityElements());
+        return ep;
+    }
+
+    public Assertion getEffectiveOutputPolicy(Binding binding, BindingOperation operation)
+            throws BadPolicyReferenceException
+    {
+        // Accumulate the effective policy
+        Assertion ep = null;
+        ep = mergePolicies(ep, binding.getExtensibilityElements());
+        ep = mergePolicies(ep, operation.getExtensibilityElements());
+        ep = mergePolicies(ep, operation.getBindingOutput().getExtensibilityElements());
+        return ep;
+    }
+
+    private Assertion mergePolicies(Assertion currentPolicy, List extensibilityElements) throws BadPolicyReferenceException {
+        for (Iterator i = extensibilityElements.iterator(); i.hasNext();) {
+            Policy p = toPolicy((ExtensibilityElement)i.next());
+            if (p == null) continue;
+            currentPolicy = currentPolicy == null ? p : currentPolicy.merge(p, getPolicyRegistry());
+        }
+        return currentPolicy;
     }
 
     /**
@@ -840,7 +1009,6 @@ public class Wsdl {
      * extract base URI from the URL specified.
      *
      * @param url
-     * @return
      */
     public static String extractBaseURI(String url) {
 
