@@ -9,6 +9,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.identity.User;
 
 import javax.wsdl.Operation;
 import java.net.MalformedURLException;
@@ -80,6 +81,17 @@ public class ServerVariables {
         new Variable("request.tcp.remoteHost", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 return context.getRequest().getTcpKnob().getRemoteHost();
+            }
+        }),
+        new Variable("request.authenticateduser", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                String user = "nobody";
+                User authenticatedUser = context.getAuthenticatedUser();
+                if (authenticatedUser != null) {
+                    user = authenticatedUser.getName();
+                    if (user == null) user = authenticatedUser.getUniqueIdentifier();
+                }
+                return user;
             }
         }),
         new Variable("request.tcp.localPort", new Getter() {

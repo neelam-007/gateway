@@ -74,6 +74,7 @@ public class BuiltinVariables {
         new VariableMetadata("request.tcp.remoteAddress", false, false, null, false),
         new VariableMetadata("request.tcp.remoteip", false, false, "request.tcp.remoteAddress", false),
         new VariableMetadata("request.tcp.remoteHost", false, false, null, false),
+        new VariableMetadata("request.authenticateduser", false, false, null, false),
         new VariableMetadata("request.tcp.localPort", false, false, null, false),
         new VariableMetadata("request.http.method", false, false, null, false),
         new VariableMetadata("request.http.uri", false, false, null, false),
