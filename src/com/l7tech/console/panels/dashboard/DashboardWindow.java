@@ -115,6 +115,9 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
     private final MessageFormat statusUpdatedFormat = new MessageFormat(resources.getString("status.updated"));
 
+    /** Whether previous attempt to connect to gateway was successful. */
+    private boolean connected = false;
+
     public DashboardWindow() throws HeadlessException {
         super(resources.getString("window.title"));
 
@@ -364,12 +367,24 @@ public class DashboardWindow extends JFrame implements LogonListener {
                 statusLabel.setText(statusUpdatedFormat.format(new Object[] { new Date() }));
             }
 
+            if (! connected) {
+                logger.log(Level.INFO, "Reconnected to SSG.");
+            }
+            connected = true;
         } catch (RemoteException e) {
-            logger.log(Level.WARNING, "Error getting data from SSG", e);
-            statusLabel.setText("Error receiving data: " + e.toString());
+            if (connected) {
+                // Log only once per disconnect. Don't flood logger with same warning.
+                logger.log(Level.WARNING, "Disconnected from SSG", e);
+            }
+            connected = false;
+            if (! statusLabel.getText().contains("[Disconnected]")) {
+                statusLabel.setText("[Disconnected] " + statusLabel.getText());
+            }
         } catch (FindException e) {
             logger.log(Level.WARNING, "SSG can't get data", e);
-            statusLabel.setText("SSG can't get data: " + e.toString());
+            if (! statusLabel.getText().contains("[Gateway cannot find data]")) {
+                statusLabel.setText("[Gateway cannot find data] " + statusLabel.getText());
+            }
         }
     }
 
