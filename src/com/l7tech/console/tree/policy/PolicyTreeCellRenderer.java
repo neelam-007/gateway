@@ -49,7 +49,8 @@ public class PolicyTreeCellRenderer extends DefaultTreeCellRenderer {
         if (icon != null) {
             setIcon(icon);
         }
-        if (node instanceof HttpRoutingAssertionTreeNode || node instanceof JmsRoutingAssertionTreeNode) {
+        if (node instanceof HttpRoutingAssertionTreeNode || node instanceof EchoRoutingAssertionPolicyNode ||
+            node instanceof HardcodedResponseTreeNode || node instanceof JmsRoutingAssertionTreeNode) {
             setFont(boldFont);
         }
         return this;
