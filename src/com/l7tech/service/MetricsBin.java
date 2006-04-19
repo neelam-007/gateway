@@ -33,7 +33,7 @@ public class MetricsBin implements Serializable, Comparable {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-    private static final Logger logger = Logger.getLogger(MetricsBin.class.getName());
+    private static final Logger _logger = Logger.getLogger(MetricsBin.class.getName());
 
     /** MAC address of the cluster node from which this bin is collected. */
     private String _clusterNodeId;
@@ -315,10 +315,11 @@ public class MetricsBin implements Serializable, Comparable {
             // Not neccessarily 24 hours, e.g., when switching Daylight Savings Time.
             final long periodEnd = periodEndFor(resolution, fineInterval, startTime);
             _interval = (int)(periodEnd - _periodStart);
-            if (_interval != 24 * 60 * 60 * 1000 && logger.isLoggable(Level.FINE))
-                logger.fine("Created non-24-hour long daily bin: interval = " +
-                            (_interval / 60. / 60. / 1000.) + " hours, start time = " +
-                            new Date(startTime));
+            if (_interval != 24 * 60 * 60 * 1000 && _logger.isLoggable(Level.FINE)) {
+                _logger.fine("Created non-24-hour long daily bin: interval = " +
+                             (_interval / 60. / 60. / 1000.) + " hours, start time = " +
+                             new Date(startTime));
+            }
         }
         _startTime = startTime;
         _endTime = _startTime;  // Signifies end time has not been set.
@@ -567,7 +568,17 @@ public class MetricsBin implements Serializable, Comparable {
     }
 
     /** Records an attempted request. */
-    public void addAttemptedRequest(final int frontendResponseTime) {
+    public void addAttemptedRequest(int frontendResponseTime) {
+        if (frontendResponseTime < 0) {
+            // Don't really know what causes negative response time sometimes,
+            // or if this still happens. Just suppress it and log warning.
+            // (Bugzilla # 2328)
+            _logger.warning("Negative frontend response time (" + frontendResponseTime +
+                            " ms) suppressed (forced to zero) in " + describeResolution(_resolution) +
+                            " bin (period start = " + new Date(_periodStart) + ").");
+            frontendResponseTime = 0;
+        }
+
         synchronized(_attemptedLock) {
             if (_numAttemptedRequest == 0) {
                 _minFrontendResponseTime = frontendResponseTime;
@@ -593,7 +604,17 @@ public class MetricsBin implements Serializable, Comparable {
     }
 
     /** Records a completed request. */
-    public void addCompletedRequest(final int backendResponseTime) {
+    public void addCompletedRequest(int backendResponseTime) {
+        if (backendResponseTime < 0) {
+            // Don't really know what causes negative response time sometimes,
+            // or if this still happens. Just suppress it and log warning.
+            // (Bugzilla # 2328)
+            _logger.warning("Negative backend response time (" + backendResponseTime +
+                            " ms) suppressed (forced to zero) in " + describeResolution(_resolution) +
+                            " bin (period start = " + new Date(_periodStart) + ").");
+            backendResponseTime = 0;
+        }
+
         synchronized(_completedLock) {
             if (_numCompletedRequest == 0) {
                 _minBackendResponseTime = backendResponseTime;
