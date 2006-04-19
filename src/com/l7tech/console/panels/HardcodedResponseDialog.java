@@ -14,7 +14,7 @@ import java.awt.event.ActionListener;
  * Config dialog for HardcodedResponseAssertion.
  */
 public class HardcodedResponseDialog extends JDialog {
-    private static final String TITLE = "Hardcoded Response";
+    private static final String TITLE = "Template Response";
     private final InputValidator validator = new InputValidator(this, TITLE);
     private JPanel mainPanel;
     private JButton cancelButton;
