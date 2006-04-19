@@ -521,6 +521,8 @@ public class MetricsChartPanel extends ChartPanel {
         // the datasets from being accessed.
         _chart.setNotify(false);
 
+        resume();
+
         _frontendResponseTimes.delete(0, _frontendResponseTimes.getItemCount() - 1);
         _backendResponseTimes.delete(0, _backendResponseTimes.getItemCount() - 1);
 
@@ -542,6 +544,7 @@ public class MetricsChartPanel extends ChartPanel {
             // Should not get here.
         }
 
+        restoreAutoDomainBounds();
         setXAxisRangeIfNoData();
     }
 

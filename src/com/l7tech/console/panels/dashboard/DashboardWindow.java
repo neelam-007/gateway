@@ -250,7 +250,6 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
         chartPanel.removeAll();
         chartPanel.add(currentRange.getMetricsChartPanel(), BorderLayout.CENTER);
-        currentRange.getMetricsChartPanel().restoreAutoDomainBounds();
         chartPanel.repaint();
     }
 
