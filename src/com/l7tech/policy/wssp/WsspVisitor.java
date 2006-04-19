@@ -20,6 +20,7 @@ import java.util.Map;
  * Superclass for something that visits each node in a WS-SP subtree and gathers configuration state.
  */
 abstract class WsspVisitor {
+    static final String IS_REQUEST = "isRequest";
     private final WsspVisitor parent;
 
     protected WsspVisitor(WsspVisitor parent) {
@@ -198,4 +199,8 @@ abstract class WsspVisitor {
         }
     }
 
+    public boolean isSimpleProperty(String propName) throws PolicyConversionException {
+        if (parent != null) return parent.isSimpleProperty(propName);
+        throw new PolicyConversionException("Unrecognized property: " + propName);
+    }
 }

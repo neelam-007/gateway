@@ -7,14 +7,12 @@ package com.l7tech.policy.wssp;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import org.apache.ws.policy.PrimitiveAssertion;
 
 import javax.xml.namespace.QName;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -36,15 +34,10 @@ abstract class SecurityBinding extends WsspVisitor {
                 "Lax",
                 "LaxTimestampFirst",
         }));
-        bindingProperties.put("IncludeTimestamp", new PrimitiveAssertionConverter() {
-            public Assertion convert(WsspVisitor v, PrimitiveAssertion p) throws PolicyConversionException {
-                v.setSimpleProperty("Timestamp", true);
-                return null;
-            }
-        });
+        bindingProperties.put("IncludeTimestamp", new SimplePropertySetter("Timestamp", true));
         bindingProperties.put("InitiatorToken", new InitiatorToken("InitiatorToken."));
         bindingProperties.put("RecipientToken", new PrimitiveAssertionIgnorer());
-        bindingProperties.put("OnlySignEntireHeadersAndBody", new UnsupportedSecurityBindingProperty());
+        bindingProperties.put("OnlySignEntireHeadersAndBody", new SimplePropertySetter("EntireHeaderAndBodySignatures", true));
     }
 
     private final PrimitiveAssertion primitiveAssertion;
@@ -76,9 +69,31 @@ abstract class SecurityBinding extends WsspVisitor {
             gatherPropertiesFromSubPolicy(primitiveAssertion);
             onGatheredProperties();
         }
+
         AllAssertion all = new AllAssertion();
         all.addChild(new TrueAssertion());
-        // TODO populate all from currently set properties
+
+        // populate all from currently set properties
+
+        // TODO we currently use this only as a hint to enable X509
+        boolean signWithX509 = false;
+        for (Iterator i = initiatorTokenTypes.iterator(); i.hasNext();) {
+            QName n = (QName)i.next();
+            if (n.getLocalPart().startsWith("WssX509"))
+                signWithX509 = true;
+        }
+
+        boolean encryptForX509 = false;
+        for (Iterator i = recipientTokenTypes.iterator(); i.hasNext();) {
+            QName n = (QName)i.next();
+            if (n.getLocalPart().startsWith("WssX509"))
+                encryptForX509 = true;
+        }
+
+        if (encryptForX509 || signWithX509) all.addChild(new RequestWssX509Cert());
+
+        // TODO we are currently ignoring layouts
+
         return all;
     }
 
@@ -105,7 +120,11 @@ abstract class SecurityBinding extends WsspVisitor {
 
         public Assertion convert(WsspVisitor v, PrimitiveAssertion p) throws PolicyConversionException {
             final Map tokenTypes = new HashMap();
-            tokenTypes.put("X509Token", new QnamePropertyGatherer(prefix + "X509Token", new String[] { "WssX509V3Token10" }) {
+            tokenTypes.put("X509Token", new QnamePropertyGatherer(prefix + "X509Token",
+                                                                  new String[] {
+                                                                          "WssX509V3Token10"
+                                                                  })
+            {
                 protected void preconvert(WsspVisitor v, PrimitiveAssertion p) throws PolicyConversionException {
                     String includeToken = p.getAttribute(new QName(p.getName().getNamespaceURI(), "IncludeToken"));
                     if (!("http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient".equals(includeToken)))
@@ -160,7 +179,7 @@ abstract class SecurityBinding extends WsspVisitor {
         }
     }
 
-    private static class UnsupportedSecurityBindingProperty implements PrimitiveAssertionConverter {
+    static class UnsupportedSecurityBindingProperty implements PrimitiveAssertionConverter {
         public Assertion convert(WsspVisitor v, PrimitiveAssertion p) throws PolicyConversionException {
             throw new PolicyConversionException("Security binding property not yet supported: " + p.getName());
         }

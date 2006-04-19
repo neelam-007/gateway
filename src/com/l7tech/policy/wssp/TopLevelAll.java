@@ -5,10 +5,19 @@
 
 package com.l7tech.policy.wssp;
 
+import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+
 import javax.xml.namespace.QName;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Gathers state for a single policy branch (ie, an All assertion in a normalized policy).
@@ -16,8 +25,33 @@ import java.util.HashSet;
  * zero or one Trust10, zero or one Wss10, zero or one SignedParts, and zero or one EncryptedParts.
  */
 class TopLevelAll extends WsspVisitor {
+    // Ciphers Martha can decorate with
+    private static final Map CIPHERS_OUT = new LinkedHashMap();
+    static {
+        CIPHERS_OUT.put("Basic256Rsa15", XencUtil.AES_256_CBC);
+        CIPHERS_OUT.put("Basic192Rsa15", XencUtil.AES_192_CBC);
+        CIPHERS_OUT.put("Basic128Rsa15", XencUtil.AES_256_CBC);
+        CIPHERS_OUT.put("TripleDesRsa15", XencUtil.TRIPLE_DES_CBC);
+    }
+
+    // Ciphers Trogdor can undecorate
+    private static final Map CIPHERS_IN = new LinkedHashMap();
+    static {
+        // Trogdor can accept anything Martha can produce
+        CIPHERS_IN.putAll(CIPHERS_OUT);
+
+        // Additionally, RSA-OAEP is supported (read-only)
+        CIPHERS_IN.put("Basic256", XencUtil.AES_256_CBC);
+        CIPHERS_IN.put("Basic192", XencUtil.AES_192_CBC);
+        CIPHERS_IN.put("Basic128", XencUtil.AES_256_CBC);
+        CIPHERS_IN.put("TripleDes", XencUtil.TRIPLE_DES_CBC);
+    }
+
     private Set algorithmSuites = new HashSet();
     private boolean timestamp = false;
+    private boolean entireHeaderAndBodySignatures = false;
+    private boolean signBody = false;
+    private boolean encryptBody = false;
 
     protected TopLevelAll(WsspVisitor parent) {
         super(parent);
@@ -29,7 +63,7 @@ class TopLevelAll extends WsspVisitor {
 
     protected boolean maybeAddPropertyQnameValue(String propName, QName propValue) {
         if ("AlgorithmSuite".equals(propName)) {
-            algorithmSuites.add(propValue);
+            algorithmSuites.add(propValue.getLocalPart());
             return true;
         }
         return super.maybeAddPropertyQnameValue(propName, propValue);
@@ -39,7 +73,83 @@ class TopLevelAll extends WsspVisitor {
         if ("Timestamp".equals(propName)) {
             timestamp = propValue;
             return true;
+        } else if ("EntireHeaderAndBodySignatures".equals(propName)) {
+            entireHeaderAndBodySignatures = propValue;
+            return true;
+        } else if ("SignBody".equals(propName)) {
+            signBody = propValue;
+            return true;
+        } else if ("EncryptBody".equals(propName)) {
+            encryptBody = propValue;
+            return true;
         }
         return super.maybeSetSimpleProperty(propName, propValue);
+    }
+
+    protected Assertion recursiveConvertAll(org.apache.ws.policy.Assertion p) throws PolicyConversionException {
+        AllAssertion all = (AllAssertion)super.recursiveConvertAll(p);
+
+        boolean isRequest = isSimpleProperty(IS_REQUEST);
+
+        // Now mix in the state we gathered while doing the conversion
+        // TODO wiating for Alex to merge this into HEAD
+        // if (timestamp) all.addChild(new RequestWssTimestamp());
+
+        if (signBody || entireHeaderAndBodySignatures) {
+            if (isRequest)
+                all.addChild(new RequestWssIntegrity());
+            else
+                all.addChild(new ResponseWssIntegrity());
+        }
+        if (encryptBody) {
+            Assertion conf = isRequest ? makeRequestConfidentiality(null) : makeResponseConfidentiality(null);
+            all.addChild(conf);
+        }
+
+        return all;
+    }
+
+    private Assertion makeRequestConfidentiality(XpathExpression xpath) throws PolicyConversionException {
+        String alg = null;
+        Set entries = CIPHERS_OUT.entrySet();
+        for (Iterator i = entries.iterator(); i.hasNext();) {
+            Map.Entry entry = (Map.Entry)i.next();
+            if (algorithmSuites.contains(entry.getKey())) {
+                alg = entry.getValue().toString();
+                break;
+            }
+        }
+        if (alg == null) {
+            throw new PolicyConversionException(
+                    "Unable to comply with this policy -- request encryption is required, but no compatible AlgorithmSuite" +
+                            " was specified.  Supported (for outgoing requests): " +
+                    HexUtils.join(" ", (String[])CIPHERS_OUT.keySet().toArray(new String[0])));
+        }
+
+        RequestWssConfidentiality conf = xpath == null ? new RequestWssConfidentiality() : new RequestWssConfidentiality(xpath);
+        conf.setXEncAlgorithm(alg);
+        return conf;
+    }
+
+    private Assertion makeResponseConfidentiality(XpathExpression xpath) throws PolicyConversionException {
+        boolean foundOne = false;
+        OneOrMoreAssertion crypt = new OneOrMoreAssertion();
+        for (Iterator i = algorithmSuites.iterator(); i.hasNext();) {
+            String localName = (String)i.next();
+            String alg = (String)CIPHERS_IN.get(localName);
+            if (alg != null) {
+                foundOne = true;
+                ResponseWssConfidentiality conf = xpath == null ? new ResponseWssConfidentiality() : new ResponseWssConfidentiality(xpath);
+                conf.setXEncAlgorithm(alg);
+                crypt.addChild(conf);
+            }
+        }
+        if (!foundOne) {
+            throw new PolicyConversionException(
+                    "Unable to comply with this poliyc -- response encryptiong is required, but no compatible AlgorithmSuite" +
+                            " was specified.  Supported (for incoming responses): " +
+                            HexUtils.join(" ", (String[])CIPHERS_IN.keySet().toArray(new String[0])));
+        }
+        return crypt;
     }
 }
