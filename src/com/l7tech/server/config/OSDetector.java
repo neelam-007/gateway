@@ -24,8 +24,7 @@ public class OSDetector {
             OSName = System.getProperty("os.name");
             if (isWindows()) {
                 osf_ = new WindowsSpecificFunctions(OSName);
-            }
-            if (isLinux()) {
+            } else if (isLinux()) {
                 osf_ = new LinuxSpecificFunctions(OSName);
             }
             else {
