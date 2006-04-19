@@ -8,6 +8,7 @@ package com.l7tech.policy.wssp;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -49,7 +50,7 @@ public class WsspParserTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    public void testParseSample1() throws Exception {
+    public void testParseWsdl() throws Exception {
         InputStream is = TestDocuments.getSecurityPolicies().getRound3MsWsdl();
         Wsdl wsdl = Wsdl.newInstance("", XmlUtil.parse(is));
         assertNotNull(wsdl);
@@ -113,7 +114,6 @@ public class WsspParserTest extends TestCase {
         writer.writePolicy((Policy)blat, baos);
         Document d = XmlUtil.parse(new ByteArrayInputStream(baos.toByteArray()));
         XmlUtil.nodeToFormattedOutputStream(d, out);
-
     }
 
     private void printPolicies(List opexts, Wsdl wsdl, PrintStream out, String indent) throws Wsdl.BadPolicyReferenceException {
@@ -124,5 +124,27 @@ public class WsspParserTest extends TestCase {
                 out.println(indent + "Policy:" + policy.getPolicyURI());
             }
         }
+    }
+
+    public void testGenerateSsbPolicy() throws Exception {
+        InputStream is = TestDocuments.getSecurityPolicies().getRound3MsWsdl();
+        Wsdl wsdl = Wsdl.newInstance("", XmlUtil.parse(is));
+        assertNotNull(wsdl);
+
+        Binding a11Binding = wsdl.getBinding("A11Binding");
+        BindingOperation echoOp = a11Binding.getBindingOperation("Echo", null, null);
+        Policy echoInPolicy = (Policy)wsdl.getEffectiveInputPolicy(a11Binding, echoOp);
+        Policy echoOutPolicy = (Policy)wsdl.getEffectiveOutputPolicy(a11Binding, echoOp);
+
+        WsspReader wsspReader = new WsspReader();
+        com.l7tech.policy.assertion.Assertion gotInput =
+                wsspReader.convertFromWssp((Policy)echoInPolicy.normalize(wsdl.getPolicyRegistry()));
+        com.l7tech.policy.assertion.Assertion gotOutput =
+                wsspReader.convertFromWssp((Policy)echoOutPolicy.normalize(wsdl.getPolicyRegistry()));
+        AllAssertion result = new AllAssertion();
+        result.addChild(gotInput);
+        result.addChild(gotOutput);
+
+        log.info("Converted policy: " + result);
     }
 }

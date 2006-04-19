@@ -14,7 +14,7 @@ import javax.xml.namespace.QName;
 /**
  * @author mike
  */
-public class SignedParts extends PrimitiveAssertion {
+class SignedParts extends PrimitiveAssertion {
     public static final String WSSP_NS = "http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200512";
 
     public static final QName spBody = new QName(WSSP_NS, "Body");

@@ -5,19 +5,6 @@
 
 package com.l7tech.policy.wssp;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import javax.xml.namespace.QName;
-
-import org.apache.ws.policy.Policy;
-import org.apache.ws.policy.PrimitiveAssertion;
-
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -25,11 +12,13 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.*;
+import org.apache.ws.policy.Policy;
+import org.apache.ws.policy.PrimitiveAssertion;
+
+import javax.xml.namespace.QName;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Converts a layer 7 policy into a WS-SecurityPolicy tree.
@@ -66,7 +55,6 @@ public class WsspWriter {
      *
      * @param layer7Root  the layer 7 policy tree to convert.  Must not be null.
      * @return  the converted Apache Policy.  Never null.
-     * @throws PolicyException if the specified policy tree cannot be expressed in WS-SecurityPolicy format.
      */
     public Policy convertFromLayer7(Assertion layer7Root) throws PolicyAssertionException {
         if(!(layer7Root instanceof AllAssertion)) {
@@ -563,7 +551,7 @@ public class WsspWriter {
     }
 
     /**
-     * Get all the instances of the given class from the given collection 
+     * Get all the instances of the given class from the given collection
      */
     private Collection getInstancesOf(Collection items, Class clazz) {
         List found = new ArrayList();
