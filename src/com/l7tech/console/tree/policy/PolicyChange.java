@@ -16,6 +16,9 @@ public class PolicyChange {
     private Assertion policy = null;
     private PolicyEvent event = null;
     private PublishedService service = null;
+    protected AssertionTreeNode newChild;
+    protected AssertionTreeNode parent;
+    protected int childLocation;
 
     /**
      * Construct the policy change that will invoke advices for a given policy
@@ -55,6 +58,18 @@ public class PolicyChange {
      */
     public PolicyEvent getEvent() {
         return this.event;
+    }
+
+    public AssertionTreeNode getNewChild() {
+        return newChild;
+    }
+
+    public AssertionTreeNode getParent() {
+        return parent;
+    }
+
+    public int getChildLocation() {
+        return childLocation;
     }
 
     /**

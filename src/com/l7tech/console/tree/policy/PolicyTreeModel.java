@@ -334,9 +334,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      */
     private static class PolicyTreeModelChange extends PolicyChange {
         private PolicyTreeModel treeModel = null;
-        private AssertionTreeNode newChild;
-        private AssertionTreeNode parent;
-        private int childLocation;
+
         protected Advice[] advices = null;
         protected int adviceIndex = 0;
 
