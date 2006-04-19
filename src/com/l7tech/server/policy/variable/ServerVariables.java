@@ -4,20 +4,23 @@
 package com.l7tech.server.policy.variable;
 
 import com.l7tech.common.message.SoapKnob;
+import com.l7tech.common.message.TcpKnob;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.RequestId;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
+import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.identity.User;
 
 import javax.wsdl.Operation;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * @author alex
@@ -38,9 +41,13 @@ public class ServerVariables {
         Variable var = (Variable)varsByName.get(lname);
         if (var == null) {
             // Try prefixed name
-            int pos = lname.lastIndexOf(".");
-            if (pos > 0) var = (Variable)varsByPrefix.get(lname.substring(0,pos));
-            if (var == null) var = (Variable)varsByPrefix.get(lname);
+            int pos = -1;
+            do {
+                pos = lname.indexOf(".", pos+1);
+                String tryname = pos < 0 ? lname : lname.substring(0,pos);
+                var = (Variable)varsByPrefix.get(tryname);
+                if (var != null) break;
+            } while (pos > 0);
         }
         return var;
     }
@@ -80,7 +87,19 @@ public class ServerVariables {
         new Variable("request.tcp.remoteip", remoteIpGetter),
         new Variable("request.tcp.remoteHost", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRequest().getTcpKnob().getRemoteHost();
+                TcpKnob tk = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+                return tk == null ? null : tk.getRemoteHost();
+            }
+        }),
+        new Variable("request.authenticateduser", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                String user = null;
+                User authenticatedUser = context.getAuthenticatedUser();
+                if (authenticatedUser != null) {
+                    user = authenticatedUser.getName();
+                    if (user == null) user = authenticatedUser.getUniqueIdentifier();
+                }
+                return user;
             }
         }),
         new Variable("request.authenticateduser", new Getter() {
@@ -96,38 +115,50 @@ public class ServerVariables {
         }),
         new Variable("request.tcp.localPort", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return String.valueOf(context.getRequest().getTcpKnob().getLocalPort());
+                TcpKnob tk = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+                return tk == null ? null : String.valueOf(tk.getLocalPort());
             }
         }),
         new Variable("request.http.method", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRequest().getHttpRequestKnob().getMethod();
+                HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                return hrk == null ? null : hrk.getMethod();
             }
         }),
         new Variable("request.http.uri", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRequest().getHttpRequestKnob().getRequestUri();
+                HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                return hrk == null ? null : hrk.getRequestUri();
             }
         }),
         new Variable(BuiltinVariables.PREFIX_REQUEST_URL, new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, context.getRequest().getHttpRequestKnob().getRequestUrl());
+                HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                return hrk == null ? null : getUrlValue(BuiltinVariables.PREFIX_REQUEST_URL, name, hrk.getRequestUrl());
             }
         }),
         new Variable("request.http.secure", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return String.valueOf(context.getRequest().getHttpRequestKnob().isSecure());
+                HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                return hrk == null ? null : String.valueOf(hrk.isSecure());
             }
         }),
         new Variable("request.http.queryString", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRequest().getHttpRequestKnob().getQueryString();
+                HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                return hrk == null ? null : hrk.getQueryString();
+            }
+        }),
+        new Variable("request.elapsedTime", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                return Long.toString(System.currentTimeMillis() - context.getStartTime());
             }
         }),
         new SettableVariable("auditLevel",
             new Getter() {
                 public Object get(String name, PolicyEnforcementContext context) {
-                    return context.getAuditLevel().getName();
+                    Level level = context.getAuditLevel();
+                    return level == null ? null : level.getName();
                 }
             },
             new Setter() {
@@ -146,7 +177,8 @@ public class ServerVariables {
         new Variable("request.soap.urn", soapNamespaceGetter),
         new Variable("requestId", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
-                return context.getRequestId();
+                RequestId id = context.getRequestId();
+                return id == null ? null : id.toString();
             }
         }),
         new Variable("routingStatus", new Getter() {
@@ -189,22 +221,12 @@ public class ServerVariables {
                 });
             }
         }),
-        new Variable(BuiltinVariables.PREFIX_RESPONSE_TIME, new Getter() {
-            public Object get(String name, final PolicyEnforcementContext context) {
-                return TimeVariableUtils.getTimeValue(BuiltinVariables.PREFIX_RESPONSE_TIME, name, new TimeVariableUtils.LazyLong() {
-                    public long get() {
-                        long endTime = context.getEndTime();
-                        if (endTime == 0) endTime = System.currentTimeMillis();
-                        return endTime;
-                    }
-                });
-            }
-        }),
     };
 
     private static Object getUrlValue(String prefix, String name, Object u) {
+        if (u == null) return null;
         String suffix = name.substring(prefix.length());
-        if (suffix.length() == 0) return u; // Unsuffixed gets the full URL
+        if (suffix.length() == 0) return u.toString(); // Unsuffixed gets the full URL
         String part = suffix.substring(1);
         URL url;
         if (u instanceof URL) {
@@ -273,7 +295,8 @@ public class ServerVariables {
 
     private static class RemoteIpGetter implements Getter {
         public Object get(String name, PolicyEnforcementContext context) {
-            return context.getRequest().getTcpKnob().getRemoteAddress();
+            TcpKnob tk = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+            return tk == null ? null : tk.getRemoteAddress();
         }
     }
 

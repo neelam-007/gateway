@@ -19,7 +19,6 @@ public class BuiltinVariables {
 
     public static final String PREFIX_GATEWAY_TIME = "gateway.time";
     public static final String PREFIX_REQUEST_TIME = "request.time";
-    public static final String PREFIX_RESPONSE_TIME = "response.time";
     public static final String PREFIX_SERVICE_URL = "service.url";
     public static final String PREFIX_REQUEST_URL = "request.url";
 
@@ -59,9 +58,12 @@ public class BuiltinVariables {
         VariableMetadata meta = (VariableMetadata)metadataByName.get(lname);
         if (meta == null) {
             // Try prefixed name
-            int pos = lname.lastIndexOf(".");
-            if (pos > 0)
+            int pos = lname.indexOf(".");
+            while (pos > 0) {
                 meta = (VariableMetadata)metadataByName.get(lname.substring(0,pos));
+                if (meta != null) break;
+                pos = lname.indexOf(".", pos+1);
+            }
         }
         return meta;
     }
@@ -88,9 +90,9 @@ public class BuiltinVariables {
         new VariableMetadata("request.soap.urn", false, false, "request.soap.namespace", false),
         new VariableMetadata("requestId", false, false, null, false),
         new VariableMetadata("routingStatus", false, false, null, false),
+        new VariableMetadata("request.elapsedTime", false, false, null, false),
         new VariableMetadata(PREFIX_GATEWAY_TIME, true, false, null, false),
         new VariableMetadata(PREFIX_REQUEST_TIME, true, false, null, false),
-        new VariableMetadata(PREFIX_RESPONSE_TIME, true, false, null, false),
         new VariableMetadata(PREFIX_SERVICE_URL, true, false, null, false),
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, true, false, null, false),
