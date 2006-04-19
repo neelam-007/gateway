@@ -151,15 +151,17 @@ public class MetricsChartPanel extends ChartPanel {
      */
     private final TimeTableXYDataset _messageRates;
 
+    /** The shared time (x-) axis. */
+    private final DateAxis _xAxis;
+
     /** Chart containing all plots with shared time axis. */
     private JFreeChart _chart;
 
-    /** Holding area for metrics bins waiting to be added, when
-        {@link _freezeData} is true. */
-    private final List _binsToAdd = new ArrayList();
+    /** Holding area for metrics bins waiting to be added; when {@link _suspended} is true. */
+    private final SortedSet _binsToAdd = new TreeSet();
 
-    /** Indicates if displayed data needs to be frozen temporarily. */
-    private boolean _freezeData = false;
+    /** Indicates if chart data updating is suspended. */
+    private boolean _suspended = false;
 
     /** A tool tip generator for the response time plot. */
     private static class ResponseTimeToolTipGenerator implements XYToolTipGenerator {
@@ -372,16 +374,16 @@ public class MetricsChartPanel extends ChartPanel {
         // Now combine all plots to share the same time (x-)axis.
         //
 
-        final DateAxis xAxis = new DateAxis(null) {
+        _xAxis = new DateAxis(null) {
             public void setRange(Range range, boolean turnOffAutoRange, boolean notify) {
-                // Do not zoom in any small than the nominal bin interval.
+                // Do not zoom in any smaller than the nominal bin interval.
                 if ((range.getUpperBound() - range.getLowerBound()) >= _binInterval)
                     super.setRange(range, turnOffAutoRange, notify);
             }
         };
-        xAxis.setAutoRange(true);
-        xAxis.setFixedAutoRange(_maxTimeRange);
-        final CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(xAxis);
+        _xAxis.setAutoRange(true);
+        _xAxis.setFixedAutoRange(_maxTimeRange);
+        final CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(_xAxis);
         combinedPlot.setGap(0.);
         combinedPlot.add(rPlot, 35);
         combinedPlot.add(iPlot, 5);
@@ -406,14 +408,35 @@ public class MetricsChartPanel extends ChartPanel {
         setXAxisRangeIfNoData();
     }
 
+    /** Stores away metrics bins waiting to be added (when chart data updating is suspended). */
+    private void storeBinsToAdd(List metricsBins) {
+        _binsToAdd.addAll(metricsBins);
+
+        // Limits the memory used by bins waiting to be added; by removing bins
+        // older than our maximum allowed time range.
+        if (! _binsToAdd.isEmpty()) {
+            final MetricsBin oldestBin = (MetricsBin)_binsToAdd.last();
+            final long lowerBound = oldestBin.getPeriodEnd() - _maxTimeRange;
+
+            for (Iterator i = _binsToAdd.iterator(); i.hasNext();) {
+                final MetricsBin bin = (MetricsBin)i.next();
+                if (bin.getPeriodStart() < lowerBound) {
+                    i.remove();
+                } else {
+                    break;  // The rest are within maximum allowed time range.
+                }
+            }
+        }
+    }
+
     /**
      * Adds metric bins to the dataset and update the plots.
      *
      * @param metricsBins new data to be added
      */
     public synchronized void addData(List metricsBins) {
-        if (_freezeData) {
-            _binsToAdd.addAll(metricsBins);
+        if (_suspended) {
+            storeBinsToAdd(metricsBins);
             return;
         }
 
@@ -522,26 +545,38 @@ public class MetricsChartPanel extends ChartPanel {
         setXAxisRangeIfNoData();
     }
 
+    /** Suspends updating of displayed chart data. */
+    private synchronized void suspend() {
+        _suspended = true;
+    }
+
+    /** Resumes updating of displayed chart data. */
+    private synchronized void resume() {
+        _suspended = false;
+
+        // Now adds bins waiting to be added.
+        if (! _binsToAdd.isEmpty()) {
+            addData(Arrays.asList(_binsToAdd.toArray()));
+            _binsToAdd.clear();
+        }
+    }
+
     public void mousePressed(MouseEvent e) {
         // The user is starting to drag-draw the rubberband zoom box. Need to
-        // temporarily suspend changing the displayed data, otherwise the
-        // rubberband zoom box will appear jumpy. Starts caching new data to be
-        // added. But no need to cache clearData() calls because they won't
-        // happen during zooming.
+        // temporarily suspend updating the chart data, otherwise the rubberband
+        // zoom box will appear jumpy.
         // @see http://www.jfree.org/phpBB2/viewtopic.php?t=10022&highlight=zoom+dynamic
-        _freezeData = true;
+        suspend();
         super.mousePressed(e);
     }
 
     public void mouseReleased(MouseEvent e) {
-        super.mouseReleased(e);
-        _freezeData = false;
-
         // The user has finished zooming.
-        // Adds any metrics bins waiting to be added.
-        if (! _binsToAdd.isEmpty()) {
-            addData(_binsToAdd);
+        super.mouseReleased(e);
+
+        // Resumes chart data updating only if not zoomed in.
+        if (_xAxis.isAutoRange()) {
+            resume();
         }
-        _binsToAdd.clear();
     }
 }
