@@ -947,6 +947,7 @@
 
                 <exclude name="com/l7tech/common/xml/SoapMessageGenerator.class"/>
                 <exclude name="com/l7tech/common/xml/Wsdl.class"/>
+                <exclude name="com/l7tech/common/xml/DOMResultXMLStreamWriter.class"/>
                 <exclude name="com/l7tech/common/xml/XpathEvaluator.class"/>
                 <exclude name="com/l7tech/common/xml/XpathExpression.class"/>
             </fileset>
