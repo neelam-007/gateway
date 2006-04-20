@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.dom.DOMResult;
+import javax.xml.XMLConstants;
 
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.PrimitiveAssertion;
@@ -73,6 +74,7 @@ public class WsspWriter {
      * @param layer7Root the layer 7 policy tree to use. Must not be null.
      */
     public static void decorate(Document wsdl, Assertion layer7Root) throws PolicyAssertionException {
+        addPreferredNamespacesIfAvailable(wsdl.getDocumentElement());
         WsspWriter wsspWriter = new WsspWriter();
         Policy wssp = wsspWriter.convertFromLayer7(layer7Root);
         Policy inputWssp = wsspWriter.convertFromLayer7(layer7Root, true);
@@ -81,8 +83,6 @@ public class WsspWriter {
         wssp.setId(SoapUtil.generateUniqueId("policy", 1));
         inputWssp.setId(SoapUtil.generateUniqueId("policy", 2));
         outputWssp.setId(SoapUtil.generateUniqueId("policy", 3));
-
-        DOMResult dr = new DOMResult(wsdl.createDocumentFragment());
 
         StAXPolicyWriter pw = (StAXPolicyWriter) PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER);
         Element wsspElement = toElement(wsdl, pw, wssp);
@@ -245,6 +245,12 @@ public class WsspWriter {
     private static final String NAMESPACE_SOAP_11 = "http://schemas.xmlsoap.org/wsdl/soap/";
 
     private static final String PREFIX_SECURITY_POLICY = "sp";
+
+    private static final String[][] PREFERRED_NAMESPACE_PREFIXES = new String[][] {
+            {"wsp", "http://schemas.xmlsoap.org/ws/2004/09/policy"},
+            {"wsu", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"},
+            {"sp", "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy"}
+    };
 
     // Security Policy Elements
     private static final String SPELE_TOKEN_RECIPIENT = "RecipientToken";
@@ -686,6 +692,43 @@ public class WsspWriter {
         return found;
     }
 
+    /**
+     * Add the preferred prefixes to the document element.
+     *
+     * Only add if the prefix is not already used and the namespace is not
+     * already declared.
+     */
+    private static void addPreferredNamespacesIfAvailable(Element targetElement) {
+        Map nsMap = XmlUtil.getNamespaceMap(targetElement);
+
+        for (int n=0; n<PREFERRED_NAMESPACE_PREFIXES.length; n++) {
+            String prefix = (String) PREFERRED_NAMESPACE_PREFIXES[n][0];
+            String namesp = (String) PREFERRED_NAMESPACE_PREFIXES[n][1];
+
+            if (!nsMap.containsKey(prefix)) {
+                boolean found = false;
+
+                for (Iterator iterator = nsMap.entrySet().iterator(); iterator.hasNext(); ) {
+                    Map.Entry entry = (Map.Entry) iterator.next();
+                    String currentNS = (String) entry.getValue();
+                    if (namesp.equals(currentNS)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    if (prefix == null || XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
+                        targetElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE, namesp);
+                    }
+                    else {
+                        targetElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namesp);
+                    }
+                }
+            }
+        }
+    }
+
     private static Element buildPolicyReference(Document factory, Policy policy) {
         Element policyReference = factory.createElementNS("http://schemas.xmlsoap.org/ws/2004/09/policy", "wsp:PolicyReference");
         policyReference.setAttribute("URI", "#"+policy.getId());
@@ -698,10 +741,22 @@ public class WsspWriter {
      */
     private static Element toElement(Document target, StAXPolicyWriter pw, Policy policy) throws PolicyAssertionException {
         try {
-            DOMResult dr = new DOMResult(target.createDocumentFragment());
-            pw.writePolicy(policy, new DOMResultXMLStreamWriter(dr));
-            DocumentFragment policyFragment = (DocumentFragment) dr.getNode();
-            return (Element) policyFragment.getFirstChild();
+            Map nsMap = XmlUtil.getNamespaceMap(target.getDocumentElement());
+            Element container = target.createElement("fragmentWithNamespaces");
+            for(Iterator iterator = nsMap.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                String prefix = (String) entry.getKey();
+                String namesp = (String) entry.getValue();
+
+                if (XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
+                    container.setAttribute(XMLConstants.XMLNS_ATTRIBUTE, namesp);
+                }
+                else {
+                    container.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namesp);
+                }
+            }
+            pw.writePolicy(policy, new DOMResultXMLStreamWriter(new DOMResult(container)));
+            return (Element) container.getFirstChild();
         }
         catch(XMLStreamException xse) {
             throw new PolicyAssertionException(null, "Could not create DOM from WS-SecurityPolicy", xse);

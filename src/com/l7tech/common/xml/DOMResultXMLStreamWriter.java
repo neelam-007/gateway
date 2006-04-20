@@ -50,10 +50,10 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
         prefixStack.push(new HashMap());
         namespaceStack = new Stack();
         namespaceStack.push(new HashMap());
-
     }
 
     public void close() throws XMLStreamException {
+        ensureNotClosed();
         closed = true;
     }
 

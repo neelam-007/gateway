@@ -23,6 +23,8 @@ import org.apache.ws.policy.util.PolicyFactory;
 import org.apache.ws.policy.util.PolicyWriter;
 import org.apache.ws.policy.util.StAXPolicyWriter;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.DocumentFragment;
 
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.Assertion;
