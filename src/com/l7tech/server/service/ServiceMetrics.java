@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * @author rmak
  */
 public class ServiceMetrics {
-    private static final Logger logger = Logger.getLogger(ServiceMetrics.class.getName());
+    private static final Logger _logger = Logger.getLogger(ServiceMetrics.class.getName());
 
     /**
      * Protects {@link _currentFineBin}. This is reader-preference because the MessageProcessor "reads"
@@ -37,17 +37,17 @@ public class ServiceMetrics {
      * Note that we can't use {@link _currentFineBin}'s monitor to protect the field,
      * since the monitor belongs to the object, not the field, which gets reset constantly.
      */
-    private final ReadWriteLock fineLock = new ReaderPreferenceReadWriteLock();
+    private final ReadWriteLock _fineLock = new ReaderPreferenceReadWriteLock();
 
     /**
-     * Protects {@link _currentHourlyBin}.  Not a ReadWriteLock due to infrequent use.
+     * Protects {@link _currentHourlyBin}.
      */
-    private final Object hourlyLock = new Object();
+    private final ReadWriteLock _hourlyLock = new ReaderPreferenceReadWriteLock();
 
     /**
-     * Protects {@link _currentDailyBin}.  Not a ReadWriteLock due to infrequent use.
+     * Protects {@link _currentDailyBin}.
      */
-    private final Object dailyLock = new Object();
+    private final ReadWriteLock _dailyLock = new ReaderPreferenceReadWriteLock();
 
     /**
      * Archived bins are added to this {@link Channel} when they are finished.
@@ -121,80 +121,74 @@ public class ServiceMetrics {
         return _clusterNodeId;
     }
 
-    public long getDailyBinPeriodEnd() {
-        return _currentDailyBin.getPeriodEnd();
+    /**
+     * Pins down the current bins, i.e., stops current bins from being archived
+     * and new current bins being created until {@link #unlockCurrentBins()} is
+     * called.
+     * <p/>
+     * This is used to ensure group of calls to {@link #addAttemptedRequest},
+     * {@link #addAuthorizedRequest}, {@link #addCompletedRequest} are applied
+     * to the same current bins.
+     * <p/>
+     * TODO This is neccessary because we are using counters for the old categories
+     * (Attempted, Authorized, Completed) which are successively inclusive and
+     * needs to be incremented as a group. If we instead use counters for
+     * the new categories (Routing Failure, Policy Violation, Success), which
+     * are mutually exclusive, callers will not have to worry about locking, and
+     * synchronization with the archive*Bins methods can be internalized.
+     */
+    public void lockCurrentBins() {
+        try {
+            _fineLock.readLock().acquire();
+            _hourlyLock.readLock().acquire();
+            _dailyLock.readLock().acquire();
+        } catch (InterruptedException e) {
+            _logger.warning("Interrupted waiting for current bins read lock.");
+            unlockCurrentBins();
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public void unlockCurrentBins() {
+        _fineLock.readLock().release();
+        _hourlyLock.readLock().release();
+        _dailyLock.readLock().release();
     }
 
     /**
      * Records an attempted request.
+     *
+     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
+     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
      */
     public void addAttemptedRequest(final int frontendResponseTime) {
-        // Use locking to prevent the current bins from being archived when they are being modified.
-        try {
-            fineLock.readLock().acquire();
-            _currentFineBin.addAttemptedRequest(frontendResponseTime);
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted waiting for fine read lock");
-            Thread.currentThread().interrupt();
-        } finally {
-            fineLock.readLock().release();
-        }
-
-        synchronized (hourlyLock) {
-            _currentHourlyBin.addAttemptedRequest(frontendResponseTime);
-        }
-
-        synchronized (dailyLock) {
-            _currentDailyBin.addAttemptedRequest(frontendResponseTime);
-        }
+        _currentFineBin.addAttemptedRequest(frontendResponseTime);
+        _currentHourlyBin.addAttemptedRequest(frontendResponseTime);
+        _currentDailyBin.addAttemptedRequest(frontendResponseTime);
     }
 
     /**
      * Records an authorized request.
+     *
+     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
+     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
      */
     public void addAuthorizedRequest() {
-        // Use locking to prevent the current bins from being archived when they are being modified.
-        try {
-            fineLock.readLock().acquire();
-            _currentFineBin.addAuthorizedRequest();
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted waiting for fine read lock");
-            Thread.currentThread().interrupt();
-        } finally {
-            fineLock.readLock().release();
-        }
-
-        synchronized (hourlyLock) {
-            _currentHourlyBin.addAuthorizedRequest();
-        }
-
-        synchronized (dailyLock) {
-            _currentDailyBin.addAuthorizedRequest();
-        }
+        _currentFineBin.addAuthorizedRequest();
+        _currentHourlyBin.addAuthorizedRequest();
+        _currentDailyBin.addAuthorizedRequest();
     }
 
     /**
      * Records a completed request.
+     *
+     * Calls to {@link #addAttemptedRequest}, {@link #addAuthorizedRequest}, {@link #addCompletedRequest}
+     * should be surrounded by {@link #lockCurrentBins()} and {@link #unlockCurrentBins()}.
      */
     public void addCompletedRequest(final int backendResponseTime) {
-        // Use locking to prevent the current bins from being archived when they are being modified.
-        try {
-            fineLock.readLock().acquire();
-            _currentFineBin.addCompletedRequest(backendResponseTime);
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted waiting for fine read lock");
-            Thread.currentThread().interrupt();
-        } finally {
-            fineLock.readLock().release();
-        }
-
-        synchronized (hourlyLock) {
-            _currentHourlyBin.addCompletedRequest(backendResponseTime);
-        }
-
-        synchronized (dailyLock) {
-            _currentDailyBin.addCompletedRequest(backendResponseTime);
-        }
+        _currentFineBin.addCompletedRequest(backendResponseTime);
+        _currentHourlyBin.addCompletedRequest(backendResponseTime);
+        _currentDailyBin.addCompletedRequest(backendResponseTime);
     }
 
     /**
@@ -205,22 +199,22 @@ public class ServiceMetrics {
     public void archiveFineBin(final long limit) {
         // Use locking to stop further modification to the current bin before it is archived.
         try {
-            fineLock.writeLock().acquire();
+            _fineLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
             _currentFineBin.setEndTime(now);
             try {
                 _queue.put(_currentFineBin);
             } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Interrupted waiting for queue", e);
+                _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
             }
             // TODO what happens when the interval changes?
             _currentFineBin = new MetricsBin(now, _fineInterval, MetricsBin.RES_FINE, _clusterNodeId, _serviceOid);
         } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "Interrupted waiting for fine write lock");
+            _logger.warning("Interrupted waiting for fine bin write lock");
             Thread.currentThread().interrupt();
         } finally {
-            fineLock.writeLock().release();
+            _fineLock.writeLock().release();
         }
     }
 
@@ -231,16 +225,22 @@ public class ServiceMetrics {
      */
     public void archiveHourlyBin(final long limit) {
         // Use locking to stop further modification to the current bin before it is archived.
-        synchronized (hourlyLock) {
+        try {
+            _hourlyLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
             _currentHourlyBin.setEndTime(now);
             try {
                 _queue.put(_currentHourlyBin);
             } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Interrupted waiting for queue", e);
+                _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
             }
             _currentHourlyBin = new MetricsBin(now, 0, MetricsBin.RES_HOURLY, _clusterNodeId, _serviceOid);
+        } catch (InterruptedException e) {
+            _logger.warning("Interrupted waiting for hourly bin write lock");
+            Thread.currentThread().interrupt();
+        } finally {
+            _hourlyLock.writeLock().release();
         }
     }
 
@@ -251,16 +251,22 @@ public class ServiceMetrics {
      */
     public void archiveDailyBin(final long limit) {
         // Use locking to stop further modification to the current bin before it is archived.
-        synchronized (dailyLock) {
+        try {
+            _dailyLock.writeLock().acquire();
             final long now = System.currentTimeMillis();
             _currentDailyBin.setEndTime(now);
             try {
                 _queue.put(_currentDailyBin);
             } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Interrupted waiting for queue", e);
+                _logger.log(Level.WARNING, "Interrupted waiting for queue", e);
                 Thread.currentThread().interrupt();
             }
             _currentDailyBin = new MetricsBin(now, 0, MetricsBin.RES_DAILY, _clusterNodeId, _serviceOid);
+        } catch (InterruptedException e) {
+            _logger.warning("Interrupted waiting for daily bin write lock");
+            Thread.currentThread().interrupt();
+        } finally {
+            _dailyLock.writeLock().release();
         }
     }
 }

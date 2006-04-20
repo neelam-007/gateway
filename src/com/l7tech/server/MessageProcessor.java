@@ -117,20 +117,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         return reallyProcessMessage(context);
     }
 
-    /*
-     * TODO We derive the new statistics categories (Routing Failure, Policy
-     *      Violation, Success) from the old statistics categories (Attempted,
-     *      Authorized, Completed). But this is prone to timing error because
-     *      the old categories are successively inclusive and needs to be
-     *      incremented atomically. For example, if a message should be counted
-     *      as success (i.e., attempted, authorized and completed), but the
-     *      new categories are calculated between the increments to the
-     *      atttempted counter and the authorized counter, the result would be
-     *      wrong. To fix this, we should use only the new mutually exclusive
-     *      categories as counters. That will take a bit of work. For now, I
-     *      just move the old categories counter increments very close together
-     *      to narrow the time gap when discrepancy can occur.
-     */
     private AssertionStatus reallyProcessMessage(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException, PolicyVersionException, LicenseException, MethodNotAllowedException {
         context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
@@ -285,8 +271,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             } catch (FindException e) {
                 auditor.logAndAudit(MessageProcessingMessages.CANNOT_GET_STATS_OBJECT, null, e);
             }
-            attemptedRequest = true;    // Postpones metric counting until we can
-                                        // compute response time in the finally block.
+            attemptedRequest = true;
+
             status = serverPolicy.checkRequest(context);
 
             // Execute deferred actions for request, then response
@@ -352,14 +338,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{e.getMessage()}, e);
             return AssertionStatus.SERVER_ERROR;
         } finally {
+            boolean authorizedRequest = false;
+            boolean completedRequest = false;
+
             context.setEndTime();
             RoutingStatus rstat = context.getRoutingStatus();
-            final int frontTime = (int)(context.getEndTime() - context.getStartTime());
-            final int backTime = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
-            if (attemptedRequest) {
-                if (stats != null) stats.attemptedRequest();
-                if (metrics != null) metrics.addAttemptedRequest(frontTime);
-            }
 
             // Check auditing hints, position here since our "success" may be a back end service fault
             if(isAuditHintingEnabled()) {
@@ -372,14 +355,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (status == AssertionStatus.NONE) {
                 // Policy execution concluded successfully
-                if (stats != null) stats.authorizedRequest();
-                if (metrics != null) metrics.addAuthorizedRequest();
+                authorizedRequest = true;
                 if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
                     /* We include NONE because it's valid (albeit silly)
                     for a policy to contain no RoutingAssertion */
                     auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
-                    if (stats != null) stats.completedRequest();
-                    if (metrics != null) metrics.addCompletedRequest(backTime);
+                    completedRequest = true;
                 } else {
                     // This can only happen when a post-routing assertion fails
                     auditor.logAndAudit(MessageProcessingMessages.SERVER_ERROR);
@@ -392,9 +373,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     response.getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_END)
                 {
                     // Most likely the failure was in the routing assertion.
-                    // Still counted as attempted and authorized; but not routed.
-                    if (stats != null) stats.authorizedRequest();
-                    if (metrics != null) metrics.addAuthorizedRequest();
+                    // We want this to show up as a routing failure, instead of a policy violation.
+                    authorizedRequest = true;
                 }
 
                 // Add audit details
@@ -413,6 +393,37 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                     // Most likely the failure was in some other assertion
                     auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
+                }
+            }
+
+            if (stats != null) {
+                if (attemptedRequest) {
+                    stats.attemptedRequest();
+                    if (authorizedRequest) {
+                        stats.authorizedRequest();
+                        if (completedRequest) {
+                            stats.completedRequest();
+                        }
+                    }
+                }
+            }
+
+            if (metrics != null) {
+                final int frontTime = (int)(context.getEndTime() - context.getStartTime());
+                final int backTime = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
+                metrics.lockCurrentBins();
+                try {
+                    if (attemptedRequest) {
+                        metrics.addAttemptedRequest(frontTime);
+                        if (authorizedRequest) {
+                            metrics.addAuthorizedRequest();
+                            if (completedRequest) {
+                                metrics.addCompletedRequest(backTime);
+                            }
+                        }
+                    }
+                } finally {
+                    metrics.unlockCurrentBins();
                 }
             }
 
