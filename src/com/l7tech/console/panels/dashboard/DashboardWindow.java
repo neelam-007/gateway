@@ -127,6 +127,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
         this.clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
         this.serviceAdmin = Registry.getDefault().getServiceManager();
 
+        statusLabel.setText("");
+
         chartPanel.setLayout(new BorderLayout());
 
         timeRangeCombo.setModel(new DefaultComboBoxModel(ALL_RANGES));
@@ -377,14 +379,10 @@ public class DashboardWindow extends JFrame implements LogonListener {
                 logger.log(Level.WARNING, "Disconnected from SSG", e);
             }
             connected = false;
-            if (! statusLabel.getText().contains("[Disconnected]")) {
-                statusLabel.setText("[Disconnected] " + statusLabel.getText());
-            }
+            statusLabel.setText("[Disconnected] " + e.getMessage());
         } catch (FindException e) {
             logger.log(Level.WARNING, "SSG can't get data", e);
-            if (! statusLabel.getText().contains("[Gateway cannot find data]")) {
-                statusLabel.setText("[Gateway cannot find data] " + statusLabel.getText());
-            }
+            statusLabel.setText("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage());
         }
     }
 
