@@ -1021,10 +1021,6 @@ public class SoapUtil {
         return id;
     }
 
-    public static void main(String[] args) {
-        System.out.println(generateUniqueId(null, 1));
-    }
-
     /**
      * Append a wsu:Timestamp element to the specified parent element, showing the specified
      * time, or the current time if it isn't specified.
