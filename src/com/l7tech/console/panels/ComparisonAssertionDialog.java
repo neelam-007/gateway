@@ -27,7 +27,7 @@ public class ComparisonAssertionDialog extends JDialog {
     private JLabel verbLabel;
 
     public ComparisonAssertionDialog(Frame owner, final ComparisonAssertion assertion) throws HeadlessException {
-        super(owner, "Equality", true);
+        super(owner, "Comparison", true);
 
         add(mainPanel);
 
