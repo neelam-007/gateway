@@ -42,6 +42,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.WssTimestamp;
 
 /**
  * Converts a layer 7 policy into a WS-SecurityPolicy tree.
@@ -301,6 +302,7 @@ public class WsspWriter {
     private static final Collection SUPPORTED_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(new Object[]{
         SslAssertion.class,
         WssBasic.class,
+        WssTimestamp.class,
         RequestWssX509Cert.class,
         RequestWssIntegrity.class,
         RequestWssConfidentiality.class,
@@ -579,7 +581,9 @@ public class WsspWriter {
 
         bindingPolicy.addTerm(buildAlgorithmSuite(algorithmSuite));
         bindingPolicy.addTerm(buildLayout());
-        bindingPolicy.addTerm(buildTimestamp());
+        if (containsInstanceOf(l7Assertions, WssTimestamp.class)) {
+            bindingPolicy.addTerm(buildTimestamp());
+        }
 
         org.apache.ws.policy.Assertion outerPolicy = assertion;
         outerPolicy.addTerm(binding);

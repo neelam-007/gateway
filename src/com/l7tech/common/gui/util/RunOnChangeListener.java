@@ -1,5 +1,7 @@
 package com.l7tech.common.gui.util;
 
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
@@ -11,7 +13,7 @@ import javax.swing.event.ChangeListener;
  * @author $Author$
  * @version $Revision$
  */
-public class RunOnChangeListener implements ChangeListener, DocumentListener {
+public class RunOnChangeListener implements ChangeListener, DocumentListener, ItemListener {
 
     //- PUBLIC
 
@@ -48,6 +50,13 @@ public class RunOnChangeListener implements ChangeListener, DocumentListener {
      * @see DocumentListener
      */
     public void removeUpdate(DocumentEvent e) {
+        runnable.run();
+    }
+
+    /**
+     * @see ItemListener
+     */
+    public void itemStateChanged(ItemEvent e) {
         runnable.run();
     }
 

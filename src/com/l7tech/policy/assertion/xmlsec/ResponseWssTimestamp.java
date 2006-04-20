@@ -25,6 +25,26 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
     
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
+    private boolean signatureRequired = true;
+
+    /**
+     * Should the response timestamp be signed (default true).
+     *
+     * @return true for signing
+     */
+    public boolean isSignatureRequired() {
+        return signatureRequired;
+    }
+
+    /**
+     * Set the timestamp signature flag (default true).
+     *
+     * @param signatureRequired True to sign the response signature.
+     */
+    public void setSignatureRequired(boolean signatureRequired) {
+        this.signatureRequired = signatureRequired;
+    }
+
     /**
      * Expiry time of the timestamp, always in milliseconds, regardless of {@link #getTimeUnit}.
      */
