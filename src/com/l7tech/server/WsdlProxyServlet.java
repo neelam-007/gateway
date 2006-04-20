@@ -13,8 +13,11 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wssp.WsspWriter;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
+import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.service.resolution.SoapActionResolver;
 import com.l7tech.server.service.resolution.UrnResolver;
 import com.l7tech.service.PublishedService;
@@ -64,6 +67,7 @@ import java.util.logging.Level;
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private ServerConfig serverConfig;
+    private FilterManager filterManager;
     SoapActionResolver sactionResolver = new SoapActionResolver();
     UrnResolver nsResolver = new UrnResolver();
 
@@ -75,6 +79,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         super.init(config);
         WebApplicationContext appcontext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         serverConfig = (ServerConfig)appcontext.getBean("serverConfig");
+        filterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager");
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -145,7 +150,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 serviceId = Long.parseLong(serviceStr);
                 ps = resolveService(serviceId);
                 if (ps == null) {
-                    throw new FindException("Service id " + serviceStr + " did not resovle any service");
+                    throw new FindException("Service id " + serviceStr + " did not resolve any service.");
                 }
             } catch (NumberFormatException e) {
                 throw new FindException("cannot parse long from " + serviceStr, e);
@@ -174,7 +179,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return (PublishedService)services.iterator().next();
             }
             if (services.size() == 0) {
-                throw new FindException("URI param " + uriparam + " did not resovle any service");
+                throw new FindException("URI param '" + uriparam + "' did not resolve any service.");
             }
         }
         // narrow it down using soapaction (if provided)
@@ -188,7 +193,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return (PublishedService)services.iterator().next();
             }
             if (services.size() == 0) {
-                throw new FindException("SoapAction param " + sactionparam + " did not resovle any service");
+                throw new FindException("SoapAction param '" + sactionparam + "' did not resolve any service.");
             }
         }
         // narrow it down using ns (if provided)
@@ -202,7 +207,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return (PublishedService)services.iterator().next();
             }
             if (services.size() == 0) {
-                throw new FindException("ns param " + nsparam + " did not resovle any service");
+                throw new FindException("ns param '" + nsparam + "' did not resolve any service.");
             }
         }
 
@@ -257,7 +262,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     }
                 }
             }
-            outputServiceDescription(req, res, svc);
+            outputServiceDescription(req, res, svc, results);
             logger.info("Returned description for service, " + svc.getOid());
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             ListResults listres;
@@ -329,6 +334,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return "/ssg/wsil2xhtml.xml";
     }
 
+    /**
+     * TODO what about other bindings?
+     * TODO what about other namespaces (http://schemas.xmlsoap.org/wsdl/soap12/)
+     */
     private void substituteSoapAddressURL(Document wsdl, URL newURL) {
         // get http://schemas.xmlsoap.org/wsdl/ 'port' element
         NodeList portlist = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "port");
@@ -344,7 +353,48 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void outputServiceDescription(HttpServletRequest req, HttpServletResponse res, PublishedService svc) throws IOException {
+    /**
+     *
+     */
+    private void addSecurityPolicy(Document wsdl, PublishedService svc, AuthenticationResult[] results) {
+        try{
+            if (Boolean.getBoolean("com.l7tech.server.wssp")) {
+                Assertion effectivePolicy = null;
+                if(results==null) {
+                    Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
+                    effectivePolicy = filterManager.applyAllFilters(null, rootassertion);
+                }
+                else {
+                    for(int r=0; r<results.length; r++) {
+                        Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
+                        rootassertion = filterManager.applyAllFilters(results[r].getUser(), rootassertion);
+                        if (rootassertion != null) {
+                            effectivePolicy = rootassertion;
+                            break;
+                        }
+                    }
+                }
+                if (effectivePolicy != null) {
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.log(Level.FINE, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
+                    }
+
+                    WsspWriter.decorate(wsdl, effectivePolicy);
+                }
+                else {
+                    logger.info("No policy to add!");
+                }
+            }
+            else {
+                logger.fine("WS-SecurityPolicy decoration not enabled.");
+            }
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Could not add policy to WSDL.", e);
+        }
+    }
+
+    private void outputServiceDescription(HttpServletRequest req, HttpServletResponse res, PublishedService svc, AuthenticationResult[] results) throws IOException {
         Document wsdlDoc = null;
         try {
             wsdlDoc = XmlUtil.stringToDocument(svc.getWsdlXml());
@@ -369,6 +419,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                              port + routinguri);
         }
         substituteSoapAddressURL(wsdlDoc, ssgurl);
+        addSecurityPolicy(wsdlDoc, svc, results);
 
         // output the wsdl
         res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
@@ -423,20 +474,15 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // decide which ones make the cut
         for (Iterator i = allServices.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
-            if (results == null || results.length < 1) {
-                if (policyAllowAnonymous(svc)) {
-                    output.add(svc);
-                }
-            } else {
-                if (policyAllowAnonymous(svc)) {
-                    output.add(svc);
-                } else {
-                    for (int j = 0; j < results.length; j++) {
-                        AuthenticationResult result = results[j];
-                        User requestor = result.getUser();
-                        if (userCanSeeThisService(requestor, svc))
-                            output.add(svc);
-                    }
+            if (policyAllowAnonymous(svc)) {
+                output.add(svc);
+            }
+            else if (results != null) {
+                for (int j = 0; j < results.length; j++) {
+                    AuthenticationResult result = results[j];
+                    User requestor = result.getUser();
+                    if (userCanSeeThisService(requestor, svc))
+                        output.add(svc);
                 }
             }
         }

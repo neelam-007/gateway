@@ -998,6 +998,34 @@ public class SoapUtil {
     private static final SecureRandom rand = new SecureRandom();
 
     /**
+     * Generate an id with the specified basename.
+     *
+     * <p>Uses the specified basename as the start of the Id.</p>
+     *
+     * <p>The generated id is in the form "id-1-b5084f383f3063ddf12f03325d5f3ac0".</p>
+     *
+     * @param basename The base name for the id (may be null)
+     * @param basenumber The base number for the id
+     * @return The generated id
+     */
+    public static String generateUniqueId(String basename, int basenumber) {
+        if (basename == null) {
+            basename = "id";
+        }
+
+        byte[] randbytes = new byte[16];
+        rand.nextBytes(randbytes);
+
+        String id = basename + "-" + basenumber + "-" + HexUtils.hexDump(randbytes);
+
+        return id;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(generateUniqueId(null, 1));
+    }
+
+    /**
      * Append a wsu:Timestamp element to the specified parent element, showing the specified
      * time, or the current time if it isn't specified.
      * @param parent      element which will contain the new timestamp subelement

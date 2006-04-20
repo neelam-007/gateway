@@ -292,6 +292,57 @@ public class XmlUtil {
         canon.canonicalize(node, os);
     }
 
+    /**
+     * Add whitespace to a document for readability.
+     *
+     * @param document The document to modify
+     * @param indent True to indent each nested element
+     */
+    public static void format(Document document, boolean indent) {
+        format(document.getDocumentElement(), 0, indent ? 2 : 0);
+    }
+
+    /**
+     * Add whitespace to an element for readability.
+     *
+     * @param element The element to modify
+     * @param initialIndent the initial indentation
+     * @param levelIndent the indentation per level/depth
+     */
+    public static void format(Element element, int initialIndent, int levelIndent) {
+        Document document = element.getOwnerDocument();
+        NodeList children = element.getChildNodes();
+
+        PaddingCharSequence pcs = new PaddingCharSequence(' ', initialIndent);
+        if (element.hasChildNodes()) element.appendChild(document.createTextNode("\n"+pcs.toString()));
+        pcs.addLength(levelIndent);
+        Node currentNode = element.getFirstChild();
+        Stack elementStack = new Stack();
+
+        while (currentNode != null) {
+            if (currentNode.getNodeType() == Node.ELEMENT_NODE) {
+                currentNode.getParentNode().insertBefore(document.createTextNode("\n"+pcs.toString()),currentNode);
+                if (currentNode.hasChildNodes()) currentNode.appendChild(document.createTextNode("\n"+pcs.toString()));
+            }
+            if (currentNode.hasChildNodes()) {
+                elementStack.push(currentNode);
+                pcs.addLength(levelIndent);
+                currentNode = currentNode.getFirstChild();
+            }
+            else {
+                Node nextNode = currentNode.getNextSibling();
+                if (nextNode == null && !elementStack.isEmpty()) {
+                    nextNode = (Node) elementStack.pop();
+                    pcs.addLength(-1*levelIndent);
+                    currentNode = nextNode.getNextSibling();
+                }
+                else {
+                    currentNode = nextNode;
+                }
+            }
+        }
+    }
+
     public static void nodeToOutputStream(Node node, OutputStream os, String encoding) throws IOException {
         OutputFormat of = new OutputFormat();
         of.setEncoding(encoding);

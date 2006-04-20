@@ -2,14 +2,33 @@ package com.l7tech.policy.wssp;
 
 import java.util.Collections;
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.StreamFilter;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.ws.policy.Policy;
 import org.apache.ws.policy.util.PolicyFactory;
+import org.apache.ws.policy.util.PolicyWriter;
+import org.apache.ws.policy.util.StAXPolicyWriter;
+import org.w3c.dom.Document;
 
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.DOMResultXMLStreamWriter;
 
 import junit.framework.TestCase;
 import junit.framework.Test;
@@ -39,6 +58,20 @@ public class WsspWriterTest extends TestCase {
 
     public void testWriteT1() throws Exception {
         test(L7_POLICY_T1);
+    }
+
+    public void testDOMWrite() throws Exception {
+        Policy wssp = new WsspWriter().convertFromLayer7(WspReader.parsePermissively(XmlUtil.stringToDocument(L7_POLICY_T1).getDocumentElement()));
+        StAXPolicyWriter pw = (StAXPolicyWriter) PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER);
+        pw.writePolicy(wssp, (XMLStreamWriter)Proxy.newProxyInstance(WsspWriterTest.class.getClassLoader(), new Class[]{XMLStreamWriter.class}, new InvocationHandler(){
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                System.out.println(method.getName() + " - " + method.getParameterTypes().length);
+                return null;
+            }
+        }));
+        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+        pw.writePolicy(wssp, new DOMResultXMLStreamWriter(new DOMResult(document)));
+        System.out.println(XmlUtil.nodeToFormattedString(document));
     }
 
     private void test(String l7policyXmlStr) throws Exception {
@@ -178,6 +211,4 @@ public class WsspWriterTest extends TestCase {
             "        </L7p:ResponseWssConfidentiality>\n" +
             "    </wsp:All>\n" +
             "</wsp:Policy>";
-
-
 }

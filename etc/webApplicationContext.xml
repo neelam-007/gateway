@@ -251,6 +251,19 @@
             </list>
         </constructor-arg>
     </bean>
+
+    <!-- server side policy filter manager for WS-SecurityPolicies -->
+    <bean id="wsspolicyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
+        <constructor-arg>
+            <ref bean="identityProviderConfigManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <list>
+                <value>com.l7tech.server.policy.filter.HideUnsupportedClientAssertions</value>
+            </list>
+        </constructor-arg>
+    </bean>
+
     <!-- server side client cert manager -->
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
         <property name="sessionFactory">
