@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.imp.EntityImp;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.Arrays;
 
 /**
  * An audit detail record.
@@ -127,5 +128,35 @@ public class AuditDetail extends EntityImp implements Serializable {
     /** @deprecated only for persistence */
     public void setException(String exception) {
         this.exception = exception;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        final AuditDetail that = (AuditDetail) o;
+
+        if (auditOid != that.auditOid) return false;
+        if (componentId != that.componentId) return false;
+        if (messageId != that.messageId) return false;
+        if (ordinal != that.ordinal) return false;
+        if (time != that.time) return false;
+        if (auditRecord != null ? !auditRecord.equals(that.auditRecord) : that.auditRecord != null) return false;
+        if (exception != null ? !exception.equals(that.exception) : that.exception != null) return false;
+        if (!Arrays.equals(params, that.params)) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 29 * result + (int) (auditOid ^ (auditOid >>> 32));
+        result = 29 * result + (int) (time ^ (time >>> 32));
+        result = 29 * result + messageId;
+        result = 29 * result + componentId;
+        result = 29 * result + (exception != null ? exception.hashCode() : 0);
+        result = 29 * result + ordinal;
+        return result;
     }
 }
