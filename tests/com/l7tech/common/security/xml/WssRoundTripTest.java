@@ -70,7 +70,8 @@ public class WssRoundTripTest extends TestCase {
 
     public void testSignedAndEncryptedUsernameToken() throws Exception {
         runRoundTripTest(new NamedTestDocument("Signed and Encrypted UsernameToken",
-                                               wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument()));
+                                               wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument()),
+                         false);
     }
 
     public void testEncryptedBodySignedEnvelope() throws Exception {
