@@ -97,6 +97,8 @@ public class BuiltinVariables {
 
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER, true, false, null, false),
         new VariableMetadata(BuiltinVariables.PREFIX_REQUEST_HTTP_HEADER_VALUES, true, true, null, false),
+
+        new VariableMetadata("response.http.status", false, false, null, false),
     };
 
     static {

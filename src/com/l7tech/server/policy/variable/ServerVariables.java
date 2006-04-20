@@ -6,6 +6,7 @@ package com.l7tech.server.policy.variable;
 import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.RequestId;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -219,6 +220,12 @@ public class ServerVariables {
                         return context.getStartTime();
                     }
                 });
+            }
+        }),
+        new Variable("response.http.status", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+                return hrk == null ? null : Integer.toString(hrk.getStatus());
             }
         }),
     };

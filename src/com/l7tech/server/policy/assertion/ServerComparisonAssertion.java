@@ -10,6 +10,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
 
 /**
@@ -34,13 +35,13 @@ public class ServerComparisonAssertion implements ServerAssertion {
         Map vars = context.getVariableMap(variablesUsed, auditor);
 
         ComparisonOperator op = assertion.getOperator();
-        String left = getValue(assertion.getExpression1(), vars);
+        Comparable left = getValue(assertion.getExpression1(), vars);
         if (left == null) {
             auditor.logAndAudit(AssertionMessages.COMPARISON_NULL);
             return AssertionStatus.FAILED;
         }
 
-        String right;
+        Comparable right;
         if (op.isUnary()) {
             right = null;
         } else {
@@ -51,6 +52,21 @@ public class ServerComparisonAssertion implements ServerAssertion {
             }
         }
 
+        if (NUMERIC.matcher(left.toString()).matches() &&
+            right != null &&
+            NUMERIC.matcher(right.toString()).matches()) {
+            Comparable oleft = left;
+            Comparable oright = right;
+            try {
+                left = Double.valueOf(left.toString());
+                right = Double.valueOf(right.toString());
+            } catch (NumberFormatException e) {
+                left = oleft;
+                right = oright;
+            }
+        }
+
+
         boolean match = op.compare(left, right, !assertion.isCaseSensitive());
         if (assertion.isNegate()) match = !match;
         auditor.logAndAudit(match ? AssertionMessages.COMPARISON_OK : AssertionMessages.COMPARISON_NOT);
@@ -60,4 +76,6 @@ public class ServerComparisonAssertion implements ServerAssertion {
     private String getValue(String expression1, Map variables) {
         return ExpandVariables.process(expression1, variables);
     }
+
+    private static final Pattern NUMERIC = Pattern.compile("^-?\\d+(?:\\.\\d*)?(?:[eE][+-]\\d+)?$");
 }
