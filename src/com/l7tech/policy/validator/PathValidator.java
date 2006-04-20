@@ -321,7 +321,10 @@ class PathValidator {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "The assertion must be positioned before the routing assertion.", null));
             }
-        } else if (a instanceof RequestWssIntegrity || a instanceof ResponseWssConfidentiality) {
+        } else if (a instanceof RequestWssIntegrity ||
+                    a instanceof ResponseWssConfidentiality ||
+                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired())
+                  ) {
             // REASONS FOR THIS RULE
             //
             // 1. For RequestWssIntegrity:
@@ -350,7 +353,7 @@ class PathValidator {
             }
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
-            if (a instanceof RequestWssIntegrity) {
+            if (a instanceof RequestWssIntegrity || a instanceof RequestWssTimestamp) {
                 if (seenRouting && isDefaultActor(a)) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       "This assertion should occur before the request is routed.", null));
@@ -529,9 +532,9 @@ class PathValidator {
                   "functioning properly.");
                 for (Iterator iterator = feedback.iterator(); iterator.hasNext();) {
                     RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)iterator.next();
-                    msg.append("<br>Namespace: " + fb.ns);
-                    msg.append(", Operation Name: " + fb.operationName);
-                    msg.append(", Message Name: " + fb.msgname);
+                    msg.append("<br>Namespace: ").append(fb.ns);
+                    msg.append(", Operation Name: ").append(fb.operationName);
+                    msg.append(", Message Name: ").append(fb.msgname);
                 }
                 result.addError(new PolicyValidatorResult.Error(a,
                   assertionPath,
@@ -589,59 +592,51 @@ class PathValidator {
     }
 
     private boolean normallyBeforeRouting(Assertion a) {
-        if (a instanceof SslAssertion && !a.isCredentialSource())
-            return true;
-        return false;
+        return a instanceof SslAssertion && !a.isCredentialSource();
     }
 
     private boolean involvesSignature(Assertion a) {
-        if (a instanceof SecureConversation ||
-          a instanceof RequestWssIntegrity ||
-          a instanceof RequestWssX509Cert ||
-          a instanceof ResponseWssIntegrity)
-            return true;
-        return false;
+        return a instanceof SecureConversation ||
+               a instanceof RequestWssIntegrity ||
+               a instanceof RequestWssX509Cert ||
+               a instanceof ResponseWssIntegrity ||
+              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired());
     }
 
     private boolean onlyForSoap(Assertion a) {
-        if (a instanceof SecureConversation || a instanceof WssBasic ||
-          a instanceof RequestWssConfidentiality || a instanceof RequestWssIntegrity ||
-          a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
-          a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
-          a instanceof RequestWssSaml || a instanceof SwAAssertion ||
-          a instanceof RequestWssKerberos || a instanceof WsiBspAssertion)
-            return true;
-        return false;
+        return a instanceof SecureConversation || a instanceof WssBasic ||
+               a instanceof RequestWssConfidentiality || a instanceof RequestWssIntegrity ||
+               a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
+               a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
+               a instanceof RequestWssSaml || a instanceof SwAAssertion || a instanceof RequestWssTimestamp ||
+               a instanceof RequestWssKerberos || a instanceof WsiBspAssertion;
     }
 
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
-        if (a instanceof XpathBasedAssertion ||
-          a instanceof XslTransformation ||
-          a instanceof RequestSwAAssertion ||
-          a instanceof RequestWssReplayProtection ||
-          a instanceof WsTrustCredentialExchange ||
-          a instanceof WsFederationPassiveTokenExchange ||
-          a instanceof WsFederationPassiveTokenRequest ||
-          a instanceof UsesVariables)
-            return true;
-        return false;
+        return a instanceof XpathBasedAssertion ||
+               a instanceof XslTransformation ||
+               a instanceof RequestSwAAssertion ||
+               a instanceof RequestWssReplayProtection ||
+               a instanceof UsesVariables ||
+               a instanceof WsTrustCredentialExchange ||
+               a instanceof WsFederationPassiveTokenExchange ||
+               a instanceof WsFederationPassiveTokenRequest ||
+              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired());
     }
 
     private boolean seenCredentials(Assertion context) {
-        String actor = assertionToActor(context);
-        return seenCredentials(actor);
+        return seenCredentials(assertionToActor(context));
     }
 
     public boolean seenCredentials(String actor) {
         Boolean currentvalue = (Boolean)seenCredentials.get(actor);
-        if (currentvalue == null) return false;
-        else return currentvalue.booleanValue();
+        return currentvalue != null && currentvalue.booleanValue();
     }
 
     private void setSeenCredentials(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenCredentials.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
+        seenCredentials.put(actor, Boolean.valueOf(value));
     }
 
     private boolean seenCredentialsSinceModified(Assertion context) {
@@ -651,8 +646,7 @@ class PathValidator {
 
     private boolean seenCredentialsSinceModified(String actor) {
         Boolean currentvalue = (Boolean)seenCredentialsSinceModified.get(actor);
-        if (currentvalue == null) return false;
-        else return currentvalue.booleanValue();
+        return currentvalue != null && currentvalue.booleanValue();
     }
 
     private void setSeenCredentialsSinceModified(Assertion context, boolean value) {
@@ -663,26 +657,23 @@ class PathValidator {
     private boolean seenWssSignature(Assertion context) {
         String actor = assertionToActor(context);
         Boolean currentvalue = (Boolean)seenWssSignature.get(actor);
-        if (currentvalue == null) return false;
-        else return currentvalue.booleanValue();
+        return currentvalue != null && currentvalue.booleanValue();
     }
 
     private void setSeenWssSignature(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenWssSignature.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
+        seenWssSignature.put(actor, Boolean.valueOf(value));
     }
 
     private boolean seenSamlSecurity(Assertion context) {
         String actor = assertionToActor(context);
         Boolean currentvalue = (Boolean)seenSamlSecurity.get(actor);
-        if (currentvalue == null) return false;
-        else return currentvalue.booleanValue();
+        return currentvalue != null && currentvalue.booleanValue();
     }
 
     private boolean seenVariable(String var) {
         Boolean cur = (Boolean)seenVariables.get(var);
-        if (cur == null) return false;
-        else return cur.booleanValue();
+        return cur != null && cur.booleanValue();
     }
 
     private void setSeenVariable(String var) {
@@ -691,7 +682,7 @@ class PathValidator {
 
     private void setSeenSamlStatement(Assertion context, boolean value) {
         String actor = assertionToActor(context);
-        seenSamlSecurity.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
+        seenSamlSecurity.put(actor, Boolean.valueOf(value));
     }
 
     private boolean haveSeen(Class assertionClass) {

@@ -120,6 +120,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Element addedUsernameTokenHolder = null; // dummy element to hold fully-encrypted usernametoken.  will be removed later
         if (dreq.getUsernameTokenCredentials() != null) {
             Element usernameToken = createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
+            if (dreq.isSignUsernameToken()) signList.add(usernameToken);
             if (dreq.isEncryptUsernameToken()) {
                 addedUsernameTokenHolder = XmlUtil.createAndAppendElementNS(securityHeader,
                                                                             "EncryptedUsernameToken",

@@ -20,17 +20,18 @@ public class UrlPanel extends TextEntryPanel {
     private static final Logger logger = Logger.getLogger(UrlPanel.class.getName());
 
     public UrlPanel() {
-        this("Prompt:", null);
+        this("URL:", null);
     }
 
     public UrlPanel(String label, String initialValue) {
         super(label, "url", initialValue);
     }
 
-    protected String getSemanticError(String text) {
+    protected String getSemanticError(Object model) {
+        if (model == null || model.toString().length() == 0) return null;
         InputStream readme = null;
         try {
-            URLConnection conn = new URL(text).openConnection();
+            URLConnection conn = new URL(model.toString()).openConnection();
             conn.connect();
             readme = conn.getInputStream();
             return null;
@@ -45,9 +46,10 @@ public class UrlPanel extends TextEntryPanel {
         }
     }
 
-    protected String getSyntaxError(String text) {
+    protected String getSyntaxError(Object model) {
+        if (model == null || model.toString().length() == 0) return null;
         try {
-            URL url = new URL(textField.getText());
+            URL url = new URL(model.toString());
             if (url.getHost() == null || url.getHost().length() == 0) {
                 return "no host";
             } else {
@@ -58,11 +60,4 @@ public class UrlPanel extends TextEntryPanel {
         }
     }
 
-    protected Object getModel(String text) {
-        try {
-            return new URL(text);
-        } catch (MalformedURLException e) {
-            throw new IllegalStateException("PropertyChangeEvent was fired with invalid URL");
-        }
-    }
 }

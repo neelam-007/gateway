@@ -404,4 +404,18 @@ public class AssertionMessages extends Messages {
     public static final M WSI_SAML_REQUEST_FAIL           = m(7704, Level.INFO, "Failing non WS-I SAML Token Profile compliant request.");
     public static final M WSI_SAML_RESPONSE_FAIL          = m(7705, Level.INFO, "Failing non WS-I SAML Token Profile compliant response.");
     public static final M WSI_SAML_XPATH_ERROR            = m(7706, Level.WARNING, "Server WS-I SAML Token Profile rules are incorrect.");
+
+    public static final M REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE   = m(7800, Level.INFO, true, false, "Request is either not XML or not SOAP; assertion is not applicable");
+    public static final M REQUEST_WSS_TIMESTAMP_NOTIMESTAMP     = m(7801, Level.INFO, "No Timestamp found in the request");
+    public static final M REQUEST_WSS_TIMESTAMP_NOT_SIGNED      = m(7802, Level.INFO, "Timestamp found in the request, but was not signed");
+    public static final M REQUEST_WSS_TIMESTAMP_CREATED_FUTURE  = m(7803, Level.WARNING, "Timestamp found in the request, but Created time was too far in the future");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED         = m(7804, Level.WARNING, "Timestamp found in the request, but expired too long ago");
+    public static final M REQUEST_WSS_TIMESTAMP_NO_EXPIRES      = m(7805, Level.WARNING, "Timestamp found in the request, but has no Expires time");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.WARNING, "Timestamp found in the request and is not expired, but lifetime exceeds configured maximum");
+    public static final M REQUEST_WSS_TIMESTAMP_NO_CREATED      = m(7807, Level.WARNING, "Timestamp found in the request, but has no Created time");
+
+    public static final M RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE = m(7900, Level.WARNING, "Unsupported Security Token Type: {0}");
+    public static final M RESPONSE_WSS_TOKEN_NO_CREDS         = m(7901, Level.WARNING, true, false, "No credentials were available from the request");
+    public static final M RESPONSE_WSS_TOKEN_NO_USERNAME      = m(7902, Level.WARNING, true, false, "Credentials were available, but no username could be found");
+    public static final M RESPONSE_WSS_TOKEN_NO_PASSWORD     = m(7903, Level.WARNING, true, false, "Password inclusion was requested, but no password could be found");
 }

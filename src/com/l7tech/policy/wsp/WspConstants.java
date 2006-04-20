@@ -8,6 +8,7 @@ package com.l7tech.policy.wsp;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.ComparisonOperator;
+import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
@@ -166,6 +167,18 @@ public class WspConstants {
             }
         },
 
+        new BasicTypeMapping(TimeUnit.class, "abbreviation") {
+            protected String objectToString(Object target) {
+                return ((TimeUnit)target).getAbbreviation();
+            }
+
+            protected Object stringToObject(String value) throws InvalidPolicyStreamException {
+                TimeUnit tu = TimeUnit.fromAbbreviation(value);
+                if (tu == null) throw new InvalidPolicyStreamException("Unknown TimeUnit abbreviation: '" + value + "'");
+                return tu;
+            }
+        },
+
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
         new ArrayTypeMapping(new String[0], "stringArrayValue"),
@@ -247,12 +260,15 @@ public class WspConstants {
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
         new AssertionMapping(new OversizedTextAssertion(), "OversizedText"),
         new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),
+        new AssertionMapping(new EchoRoutingAssertion(), "EchoRoutingAssertion"),
         new AssertionMapping(new HardcodedResponseAssertion(), "HardcodedResponse"),
+        new AssertionMapping(new ResponseWssTimestamp(), "ResponseWssTimestamp"),
+        new AssertionMapping(new RequestWssTimestamp(), "RequestWssTimestamp"),
+        new AssertionMapping(new ResponseWssSecurityToken(), "ResponseWssSecurityToken"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),
         new AssertionMapping(new MappingAssertion(), "IdentityMapping"),
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),
         new AssertionMapping(new WsiSamlAssertion(), "WsiSamlAssertion"),
-        new AssertionMapping(new EchoRoutingAssertion(), "EchoRoutingAssertion"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

@@ -14,16 +14,16 @@ public class RegexPanel extends TextEntryPanel {
         super(label, "pattern", initialValue);
     }
 
-    protected String getSyntaxError(String text) {
+    protected String getSyntaxError(Object model) {
         try {
-            Pattern.compile(text);
+            Pattern.compile(model.toString());
             return null;
         } catch (PatternSyntaxException e) {
             return e.toString();
         }
     }
 
-    protected String getSemanticError(String text) {
+    protected String getSemanticError(Object model) {
         // No distinction between syntax and semantics for regex
         return null;
     }

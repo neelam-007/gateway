@@ -12,7 +12,7 @@ import com.l7tech.common.security.xml.KeyReference;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
-public class ResponseWssIntegrity extends XmlSecurityAssertionBase {
+public class ResponseWssIntegrity extends XmlSecurityAssertionBase implements ResponseWssConfig {
     private String keyReference = KeyReference.BST.getName();
     public ResponseWssIntegrity() {
         setXpathExpression(XpathExpression.soapBodyXpathValue());

@@ -30,5 +30,8 @@ public class XmlSecurityFolderNode extends AbstractPaletteFolderNode {
         insert(new ResponseWssIntegrityNode(), index++);
         insert(new ResponseWssConfidentialityNode(), index++);
         insert(new RequestWssReplayProtectionNode(), index++);
+        insert(new RequestWssTimestampPaletteNode(), index++);
+        insert(new ResponseWssTimestampPaletteNode(), index++);
+        insert(new ResponseWssSecurityTokenPaletteNode(), index++);
     }
 }

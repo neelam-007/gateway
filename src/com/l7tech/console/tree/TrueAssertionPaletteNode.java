@@ -8,11 +8,11 @@ import com.l7tech.policy.assertion.TrueAssertion;
  * The class represents a node element in the TreeModel.
  * It represents the TrueAssertion node.
  */
-public class TrueNode extends AbstractLeafPaletteNode {
+public class TrueAssertionPaletteNode extends AbstractLeafPaletteNode {
     /**
-     * construct the <CODE>TrueNode</CODE> instance.
+     * construct the <CODE>TrueAssertionPaletteNode</CODE> instance.
      */
-    public TrueNode() {
+    public TrueAssertionPaletteNode() {
         super("Continue processing", "com/l7tech/console/resources/check16.gif");
     }
 

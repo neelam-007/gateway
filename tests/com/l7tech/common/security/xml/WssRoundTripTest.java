@@ -12,6 +12,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.skunkworks.wsibsp.WsiBSPValidator;
@@ -25,6 +26,8 @@ import org.w3c.dom.Node;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -63,6 +66,11 @@ public class WssRoundTripTest extends TestCase {
     public void testSimple() throws Exception {
         runRoundTripTest(new NamedTestDocument("Simple",
                                                wssDecoratorTest.getSimpleTestDocument()));
+    }
+
+    public void testSignedAndEncryptedUsernameToken() throws Exception {
+        runRoundTripTest(new NamedTestDocument("Signed and Encrypted UsernameToken",
+                                               wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument()));
     }
 
     public void testEncryptedBodySignedEnvelope() throws Exception {
@@ -215,6 +223,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setSignTimestamp();
         reqs.setUsernameTokenCredentials(td.usernameToken);
         reqs.setEncryptUsernameToken(td.encryptUsernameToken);
+        reqs.setSignUsernameToken(td.signUsernameToken);
         reqs.setSuppressBst(td.suppressBst);
         reqs.setUseDerivedKeys(td.useDerivedKeys);
         if (td.secureConversationKey != null) {
@@ -288,6 +297,13 @@ public class WssRoundTripTest extends TestCase {
                     log.info("It was used to sign: " + signedElement.asElement().getLocalName());
                 }
             }
+        }
+
+        if (td.signUsernameToken) {
+            Map ns = new HashMap();
+            ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
+            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, incomingMessage, "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
+            assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
         }
 
         // If timestamp was supposed to be signed, make sure it actually was

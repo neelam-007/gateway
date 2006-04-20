@@ -21,17 +21,17 @@ public class OkCancelDialog extends JDialog {
     private JPanel innerPanel;
     private JPanel mainPanel;
 
-    private final TextEntryPanel textEntryPanel;
+    private final ValidatedPanel validatedPanel;
 
-    public OkCancelDialog(Frame owner, String title, boolean modal, TextEntryPanel panel) {
+    public OkCancelDialog(Frame owner, String title, boolean modal, ValidatedPanel panel) {
         super(owner, title, modal);
-        this.textEntryPanel = panel;
+        this.validatedPanel = panel;
         initialize();
     }
 
-    public OkCancelDialog(Dialog owner, String title, boolean modal, TextEntryPanel panel) {
+    public OkCancelDialog(Dialog owner, String title, boolean modal, ValidatedPanel panel) {
         super(owner, title, modal);
-        this.textEntryPanel = panel;
+        this.validatedPanel = panel;
         initialize();
     }
 
@@ -42,13 +42,13 @@ public class OkCancelDialog extends JDialog {
             }
         });
 
-        textEntryPanel.addPropertyChangeListener("ok", new PropertyChangeListener() {
+        validatedPanel.addPropertyChangeListener("ok", new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 okButton.setEnabled(evt.getNewValue() == Boolean.TRUE);
             }
         });
 
-        textEntryPanel.addPropertyChangeListener(textEntryPanel.getPropertyName(), new PropertyChangeListener() {
+        validatedPanel.addPropertyChangeListener(validatedPanel.getPropertyName(), new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 value = evt.getNewValue();
             }
@@ -68,18 +68,17 @@ public class OkCancelDialog extends JDialog {
 
         okButton.setDefaultCapable(true);
         getRootPane().setDefaultButton(okButton);
-        okButton.setEnabled(textEntryPanel.isSyntaxOk());
-        innerPanel.setLayout(new BorderLayout());
-        innerPanel.add(textEntryPanel, BorderLayout.CENTER);
+        okButton.setEnabled(validatedPanel.isSyntaxOk());
+        innerPanel.add(validatedPanel);
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                textEntryPanel.focusText();
+                validatedPanel.focusFirstComponent();
             }
         });
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-        setContentPane(mainPanel);
+        getContentPane().add(mainPanel);
     }
 
     private void cancel() {

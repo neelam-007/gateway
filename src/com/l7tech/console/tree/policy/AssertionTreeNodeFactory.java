@@ -45,8 +45,8 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
-        assertionMap.put(TrueAssertion.class, TruePolicyNode.class);
-        assertionMap.put(FalseAssertion.class, FalsePolicyNode.class);
+        assertionMap.put(TrueAssertion.class, TrueAssertionPolicyNode.class);
+        assertionMap.put(FalseAssertion.class, FalseAssertionPolicyNode.class);
 
         assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
         assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
@@ -61,7 +61,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionTreeNode.class);
         assertionMap.put(JmsRoutingAssertion.class, JmsRoutingAssertionTreeNode.class);
         assertionMap.put(EchoRoutingAssertion.class, EchoRoutingAssertionPolicyNode.class);
-        
+
         assertionMap.put(RequestWssIntegrity.class, RequestWssIntegrityTreeNode.class);
         assertionMap.put(ResponseWssIntegrity.class, ResponseWssIntegrityTreeNode.class);
         assertionMap.put(RequestWssConfidentiality.class, RequestWssConfidentialityTreeNode.class);
@@ -93,8 +93,11 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(StealthFault.class, StealthFaultTreeNode.class);
         assertionMap.put(SqlAttackAssertion.class, SqlAttackAssertionTreeNode.class);
         assertionMap.put(OversizedTextAssertion.class, OversizedTextAssertionTreeNode.class);
-        assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);        
+        assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
+        assertionMap.put(ResponseWssTimestamp.class, ResponseWssTimestampPolicyNode.class);
+        assertionMap.put(RequestWssTimestamp.class, RequestWssTimestampPolicyNode.class);
         assertionMap.put(HardcodedResponseAssertion.class, HardcodedResponseTreeNode.class);
+        assertionMap.put(ResponseWssSecurityToken.class, ResponseWssSecurityTokenPolicyNode.class);
         assertionMap.put(RequestWssKerberos.class, KerberosTreeNode.class);
         assertionMap.put(MappingAssertion.class, MappingAssertionPolicyNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);

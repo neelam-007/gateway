@@ -414,6 +414,14 @@ public class DecorationRequirements {
         return includeKerberosTicket;
     }
 
+    public boolean isSignUsernameToken() {
+        return signUsernameToken;
+    }
+
+    public void setSignUsernameToken(boolean signUsernameToken) {
+        this.signUsernameToken = signUsernameToken;
+    }
+
     public void setIncludeKerberosTicket(boolean includeKerberosTicket) {
         this.includeKerberosTicket = includeKerberosTicket;
     }
@@ -490,6 +498,7 @@ public class DecorationRequirements {
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
     private UsernameToken usernameTokenCredentials = null;
+    private boolean signUsernameToken = false;
     private Element senderSamlToken = null;
     private SecureConversationSession secureConversationSession = null;
     private boolean includeTimestamp = true;

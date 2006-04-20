@@ -1,17 +1,19 @@
+/**
+ * Copyright (C) 2006 Layer 7 Technologies Inc.
+ */
 package com.l7tech.console.tree.policy;
 
-
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.FalseAssertion;
 
 import javax.swing.*;
 
 /**
- * Class TruePolicyNode is a policy node that corresponds the
- * <code>TrueAssertion</code>.
+ * Class FalseAssertionPolicyNode is a policy node that corresponds the
+ * <code>FalseAssertion</code>.
  */
-public class TruePolicyNode extends LeafAssertionTreeNode {
+public class FalseAssertionPolicyNode extends LeafAssertionTreeNode {
 
-    public TruePolicyNode(TrueAssertion assertion) {
+    public FalseAssertionPolicyNode(FalseAssertion assertion) {
         super(assertion);
     }
 
@@ -19,7 +21,7 @@ public class TruePolicyNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Continue processing";
+        return "Stop processing";
     }
 
     /**
@@ -57,6 +59,6 @@ public class TruePolicyNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/check16.gif";
+        return "com/l7tech/console/resources/Stop16.gif";
     }
 }
