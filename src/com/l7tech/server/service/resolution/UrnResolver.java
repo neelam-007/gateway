@@ -8,10 +8,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.xml.sax.SAXException;
 
-import javax.wsdl.BindingInput;
-import javax.wsdl.BindingOperation;
-import javax.wsdl.Definition;
-import javax.wsdl.Part;
+import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.xml.namespace.QName;
@@ -24,37 +21,35 @@ import java.util.List;
  */
 public class UrnResolver extends WsdlOperationServiceResolver {
 
-    protected String getTargetValue(Definition def, BindingOperation operation) {
-        BindingInput input = operation.getBindingInput();
-        String uri = null;
-        if (input != null) {
-            Iterator eels = input.getExtensibilityElements().iterator();
+    protected String getTargetValue(Definition def, BindingOperation bindingOperation) {
+        BindingInput bindingInput = bindingOperation.getBindingInput();
+        if (bindingInput != null) {
+            Iterator eels = bindingInput.getExtensibilityElements().iterator();
             ExtensibilityElement ee;
             while (eels.hasNext()) {
                 ee = (ExtensibilityElement)eels.next();
                 if (ee instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody)ee;
-                    uri = body.getNamespaceURI();
+                    String uri = body.getNamespaceURI();
                     if (uri != null) return uri;
                 }
             }
         }
 
-        if (uri == null) {
-            List parts = operation.getOperation().getInput().getMessage().getOrderedParts(null);
+        Input input = bindingOperation.getOperation().getInput();
+        if (input != null) {
+            List parts = input.getMessage().getOrderedParts(null);
             if (parts.size() > 0) {
                 Part firstPart = (Part)parts.get(0);
                 QName elementName = firstPart.getElementName();
                 if (elementName != null) {
-                    uri = elementName.getNamespaceURI();
+                    String uri = elementName.getNamespaceURI();
                     if (uri != null) return uri;
                 }
             }
         }
 
-        if (uri == null) uri = def.getTargetNamespace();
-
-        return uri;
+        return def.getTargetNamespace();
     }
 
     protected Object getRequestValue(Message request) throws ServiceResolutionException {
@@ -64,7 +59,7 @@ public class UrnResolver extends WsdlOperationServiceResolver {
                 if (uris == null || uris.length < 1)
                     return null;
 
-                // TODO there might be a way to properly handle a request with multiple payload URIs 
+                // TODO there might be a way to properly handle a request with multiple payload URIs
                 String sawUri = null;
                 for (int i = 0; i < uris.length; i++) {
                     String uri = uris[i];
