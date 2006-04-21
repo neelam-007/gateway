@@ -85,13 +85,14 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         }
 
         String sentMessageId = context.getL7aMessageId();
+        SignedElement[] wereSigned = wssRes.getElementsThatWereSigned();
         if (sentMessageId != null) {
             String receivedRelatesTo = SoapUtil.getL7aRelatesTo(soapmsg);
             log.log(Level.FINEST, "Response included L7a:RelatesTo of \"" + receivedRelatesTo + "\"");
             if (receivedRelatesTo != null) {
                 if (!sentMessageId.equals(receivedRelatesTo.trim()))
                     throw new ResponseValidationException("Response does not include L7a:RelatesTo matching L7a:MessageID from request");
-                if (!wasElementSigned(wssRes, SoapUtil.getL7aRelatesToElement(soapmsg)))
+                if (wereSigned != null && wereSigned.length > 0 && !wasElementSigned(wssRes, SoapUtil.getL7aRelatesToElement(soapmsg)))
                     throw new ResponseValidationException("Response included a matching L7a:RelatesTo, but it was not signed");
 
             }
@@ -107,7 +108,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
                                                         data.getXpathExpression().getExpression(),
                                                         data.getXpathExpression().getNamespaces(),
                                                         false,
-                                                        wssRes.getElementsThatWereSigned(),
+                                                        wereSigned,
                                                         "signed");
         } catch (ProcessorException e) {
             throw new PolicyAssertionException(data, e);
