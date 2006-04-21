@@ -389,6 +389,34 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
         return in;
     }
+
+    /**
+     * Check if the given assertion has a child of the given type.
+     *
+     * @param in The assertion to check
+     * @param assertionClass The type to find
+     * @return true if the given assertion or one of its children is the correct type
+     */
+    public static boolean contains(Assertion in, Class assertionClass) {
+        boolean found = false;
+
+        if (assertionClass.isInstance(in)) {
+            found = true;
+        }
+        else  if (in instanceof CompositeAssertion) {
+            CompositeAssertion comp = (CompositeAssertion) in;
+            List kids = comp.getChildren();
+            for (Iterator iterator = kids.iterator(); iterator.hasNext();) {
+                Assertion assertion = (Assertion) iterator.next();
+                if (contains(assertion, assertionClass)) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        return found;
+    }
 }
 
 

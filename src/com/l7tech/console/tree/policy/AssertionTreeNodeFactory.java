@@ -103,6 +103,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(MappingAssertion.class, MappingAssertionPolicyNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
+        assertionMap.put(WsspAssertion.class, WsspAssertionPolicyNode.class);
     }
 
     /**

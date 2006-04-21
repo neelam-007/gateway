@@ -9,6 +9,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.WsspAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -360,30 +361,22 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private void addSecurityPolicy(Document wsdl, PublishedService svc, AuthenticationResult[] results) {
         try{
             if (Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
-                Assertion effectivePolicy = null;
-                if(results==null) {
-                    Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
-                    effectivePolicy = filterManager.applyAllFilters(null, rootassertion);
-                }
-                else {
-                    for(int r=0; r<results.length; r++) {
-                        Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
-                        rootassertion = filterManager.applyAllFilters(results[r].getUser(), rootassertion);
-                        if (rootassertion != null) {
-                            effectivePolicy = rootassertion;
-                            break;
-                        }
-                    }
-                }
-                if (effectivePolicy != null) {
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.log(Level.FINE, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
-                    }
+                Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
+                if (Assertion.contains(rootassertion, WsspAssertion.class)) {
+                    Assertion effectivePolicy = filterManager.applyAllFilters(null, rootassertion);
+                    if (effectivePolicy != null) {
+                            if (logger.isLoggable(Level.FINE)) {
+                                logger.log(Level.FINE, "Effective policy for user: \n" + WspWriter.getPolicyXml(effectivePolicy));
+                            }
 
-                    WsspWriter.decorate(wsdl, effectivePolicy);
+                            WsspWriter.decorate(wsdl, effectivePolicy);
+                    }
+                    else {
+                        logger.info("No policy to add!");
+                    }
                 }
                 else {
-                    logger.info("No policy to add!");
+                    logger.info("No WSSP Assertion in policy, not adding policy to WSDL.");
                 }
             }
             else {

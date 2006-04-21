@@ -124,6 +124,7 @@ public class AllAssertions {
         new WsiBspAssertion(),
         new WsiSamlAssertion(),
         new EchoRoutingAssertion(),
+        new WsspAssertion(),
     };
 
 
@@ -180,6 +181,7 @@ public class AllAssertions {
         new WsiBspAssertion(),
         new WsiSamlAssertion(),
         new EchoRoutingAssertion(),
+        new WsspAssertion(),            
     };
 
     public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {

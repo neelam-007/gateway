@@ -270,6 +270,7 @@ public class WspConstants {
         new AssertionMapping(new MappingAssertion(), "IdentityMapping"),
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),
         new AssertionMapping(new WsiSamlAssertion(), "WsiSamlAssertion"),
+        new AssertionMapping(new WsspAssertion(), "WsspAssertion"),
 
         // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
         new UnknownAssertionMapping(),

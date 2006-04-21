@@ -85,6 +85,7 @@
                 <L7p:WsiBspAssertion/>
                 <L7p:WsiSamlAssertion/>
                 <L7p:EchoRoutingAssertion/>
+                <L7p:WsspAssertion/>
             </wsp:OneOrMore>
         </wsp:All>
         <wsp:ExactlyOne wsp:Usage="Required">

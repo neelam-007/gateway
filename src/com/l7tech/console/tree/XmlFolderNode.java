@@ -40,6 +40,7 @@ public class XmlFolderNode extends AbstractPaletteFolderNode {
         insert(new InverseHttpFormPostNode(), index++);
         insert(new WsiBspPaletteNode(), index++);
         insert(new WsiSamlPaletteNode(), index++);
+        insert(new WsspPaletteNode(), index++);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.MESSAGE).iterator();
