@@ -59,7 +59,7 @@ abstract class WsspVisitor {
 
     /** Replace empty composite assertion with null, or singleton composite with it's single child. */
     static Assertion collapse(Assertion in) {
-        return Assertion.simplify(in);
+        return Assertion.simplify(in, false);
     }
 
     protected Assertion recursiveConvertPolicy(org.apache.ws.policy.Assertion p) throws PolicyConversionException {

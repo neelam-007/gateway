@@ -152,6 +152,17 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return newKids;
     }
 
+    void simplify() {
+        List newKids = new ArrayList();
+        for (Iterator i = children.iterator(); i.hasNext();) {
+            Assertion assertion = (Assertion)i.next();
+            assertion = simplify(assertion, true);
+            if (assertion != null)
+                newKids.add(assertion);
+        }
+        setChildren(newKids);
+    }
+
     public String toIndentedString(int indentLevel) {
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < indentLevel; ++i)

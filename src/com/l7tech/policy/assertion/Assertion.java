@@ -287,6 +287,23 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
     }
 
+
+    /**
+     * Simplify any children of this assertion.  For a leaf assertion, this takes no action.
+     * For a composite assertion, this calls {@link #simplify(Assertion, boolean)} on each child reference
+     * and removes any assertions that turn out empty.
+     * <p/>
+     * Note that this method might result in an empty composite assertion.
+     * <p/>
+     * To simplify this assertion itself, call the static method {@link #simplify(Assertion, boolean)} on
+     * this assertion.  This can't be an instance method since it might need to change ie. a composite assertion
+     * into a leaf assertion.
+     */
+    void simplify() {
+        // Leaf assertions have nothing to do here
+        return;
+    }
+
     /**
      * Simplify the specified assertion tree.  This is a static method because it might need to change
      * ie. a composite assertion into a singleton (or even simplify a do-nothing policy right down to a null
@@ -310,13 +327,29 @@ public abstract class Assertion implements Cloneable, Serializable {
      *      -> AND(foo bar baz blat OR(blee blah) bloo XOR(bleet bloat) zee)
      * </pre>
      * </ul>
+     *
+     * @param in   the assertion reference to simplify.  If this is null, this method will immediately return null.
+     * @param recurseChildren   if true, child assertions will be recursively simplified.  Otherwise, only the
+     *                          specified assertion will be simplified.
+     *                          <p/>
+     *                          You can gain some performance by passing recurseChildren as false when you are
+     *                          building a policy from the bottom up -- this will avoid needlessly resimplifying
+     *                          the already-simplified bits as you assemble the policy.
+     * @return the simplified reference, possibly null if the policy contained nothing but empty composite assertions.
      */
-    public static Assertion simplify(Assertion in) {
+    public static Assertion simplify(Assertion in, boolean recurseChildren) {
         while (in instanceof CompositeAssertion) {
             CompositeAssertion comp = (CompositeAssertion)in;
             List kids = comp.getChildren();
             if (kids.size() < 1)
                 return null;
+
+            if (recurseChildren) {
+                for (Iterator i = kids.iterator(); i.hasNext();) {
+                    Assertion assertion = (Assertion)i.next();
+                    assertion.simplify();
+                }
+            }
 
             if (comp instanceof AllAssertion) {
                 // Check for an All that contains only primitive assertions and other All's, and merge them
