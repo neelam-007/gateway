@@ -55,7 +55,7 @@ public class ComparisonAssertionPropertiesAction extends NodeAction {
         ComparisonAssertion eq = (ComparisonAssertion)node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
         ComparisonAssertionDialog eqd = new ComparisonAssertionDialog(f, eq);
-        Actions.setEscKeyStrokeDisposes(eqd);
+        Utilities.setEscKeyStrokeDisposes(eqd);
         eqd.pack();
         Utilities.centerOnScreen(eqd);
         eqd.setVisible(true);

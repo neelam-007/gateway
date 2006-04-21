@@ -32,14 +32,14 @@ public class NoClientCert extends JDialog {
     public static final int REQUESTED_CSR = 2;
     private int exitCondition = CLOSED;
 
-    public NoClientCert(Dialog owner, String ssgName) {
+    public NoClientCert(Dialog owner, String ssgName, boolean allowCsr) {
         super(owner, true);
-        initialize(ssgName);
+        initialize(ssgName, allowCsr);
     }
 
-    public NoClientCert(Frame owner, String ssgName) {
+    public NoClientCert(Frame owner, String ssgName, boolean allowCsr) {
         super(owner, true);
-        initialize(ssgName);
+        initialize(ssgName, allowCsr);
     }
 
     /**
@@ -49,7 +49,7 @@ public class NoClientCert extends JDialog {
         return exitCondition;
     }
 
-    private void initialize(String ssgName) {
+    private void initialize(String ssgName, boolean allowCsr) {
         setContentPane(mainPanel);
         setTitle("Client Certificate Not Found");
         lbl1.setText("There is no client certificate for use with");
@@ -65,12 +65,17 @@ public class NoClientCert extends JDialog {
                 NoClientCert.this.dispose();
             }
         });
-        csrButton.addActionListener(new ActionListener(){
-            public void actionPerformed(ActionEvent e) {
-                exitCondition = REQUESTED_CSR;
-                NoClientCert.this.dispose();
-            }
-        });
+        if (allowCsr) {
+            csrButton.addActionListener(new ActionListener(){
+                public void actionPerformed(ActionEvent e) {
+                    exitCondition = REQUESTED_CSR;
+                    NoClientCert.this.dispose();
+                }
+            });
+        } else {
+            csrButton.setEnabled(false);
+            csrButton.setVisible(false);
+        }
 
         AbstractAction closeaction = new AbstractAction() {
                                         public void actionPerformed(ActionEvent e) {
@@ -93,7 +98,7 @@ public class NoClientCert extends JDialog {
     }
 
     public static void main(String[] args) {
-        NoClientCert dlg =  new NoClientCert((Frame)null, "blah.acme.com");
+        NoClientCert dlg =  new NoClientCert((Frame)null, "blah.acme.com", true);
         dlg.pack();
         dlg.setVisible(true);
         System.exit(0);

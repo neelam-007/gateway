@@ -5,28 +5,6 @@
 
 package com.l7tech.policy.wssp;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.XMLConstants;
-
-import org.apache.ws.policy.Policy;
-import org.apache.ws.policy.PrimitiveAssertion;
-import org.apache.ws.policy.util.PolicyFactory;
-import org.apache.ws.policy.util.StAXPolicyWriter;
-import org.w3c.dom.Document;
-import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -37,12 +15,21 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.WssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.*;
+import org.apache.ws.policy.Policy;
+import org.apache.ws.policy.PrimitiveAssertion;
+import org.apache.ws.policy.util.PolicyFactory;
+import org.apache.ws.policy.util.StAXPolicyWriter;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.dom.DOMResult;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Converts a layer 7 policy into a WS-SecurityPolicy tree.
@@ -303,6 +290,7 @@ public class WsspWriter {
         SslAssertion.class,
         WssBasic.class,
         WssTimestamp.class,
+        RequestWssTimestamp.class,
         RequestWssX509Cert.class,
         RequestWssIntegrity.class,
         RequestWssConfidentiality.class,
@@ -323,7 +311,7 @@ public class WsspWriter {
             Assertion assertion = (Assertion) iterator.next();
 
             if(!isSupportedAssertion(assertion)) {
-                throw new PolicyAssertionException(assertion, "Not supported.");
+                throw new PolicyAssertionException(assertion, "Assertion not supported: " + assertion);
             }
             else if(isWssAssertion(assertion)) {
                 usesWss = true;
@@ -581,7 +569,7 @@ public class WsspWriter {
 
         bindingPolicy.addTerm(buildAlgorithmSuite(algorithmSuite));
         bindingPolicy.addTerm(buildLayout());
-        if (containsInstanceOf(l7Assertions, WssTimestamp.class)) {
+        if (containsInstanceOf(l7Assertions, WssTimestamp.class) || containsInstanceOf(l7Assertions, RequestWssTimestamp.class)) {
             bindingPolicy.addTerm(buildTimestamp());
         }
 

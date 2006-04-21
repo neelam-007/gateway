@@ -1,17 +1,16 @@
 package com.l7tech.console.action;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import javax.swing.*;
-
-import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.panels.WssTimestampDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.WssTimestampPolicyNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.WssTimestampDialog;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.xmlsec.WssTimestamp;
+
+import javax.swing.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Edits the {@link com.l7tech.policy.assertion.xmlsec.WssTimestamp} properties.
@@ -61,7 +60,7 @@ public class WssTimestampPropertiesAction extends NodeAction {
         WssTimestamp ass = (WssTimestamp)node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
         WssTimestampDialog dlg = new WssTimestampDialog(f, true, ass);
-        Actions.setEscKeyStrokeDisposes(dlg);
+        Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

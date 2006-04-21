@@ -57,7 +57,7 @@ public class HttpFormPostPropertiesAction extends NodeAction {
         JFrame f = TopComponents.getInstance().getMainWindow();
         HttpFormPostDialog hfpd = new HttpFormPostDialog(f, hfp);
         hfpd.setModal(true);
-        Actions.setEscKeyStrokeDisposes(hfpd);
+        Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
         hfpd.setSize(800, 600);
         Utilities.centerOnScreen(hfpd);

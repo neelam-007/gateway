@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.FederatedUserPropertiesAction;
 import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
@@ -87,7 +86,7 @@ public class NewFederatedUserDialog extends JDialog {
 
         setTitle(resources.getString("federated.user.dialog.title"));
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent event) {

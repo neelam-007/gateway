@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2006 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.panels;
+package com.l7tech.common.gui.widgets;
 
 import javax.swing.*;
 import java.awt.*;

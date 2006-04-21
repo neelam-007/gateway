@@ -5,11 +5,11 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
-import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -110,7 +110,7 @@ public class IdentityPolicyView extends JDialog {
         if (suffix != null && suffix.length() > 0) setTitle("Identity Policy - " + suffix);
         else setTitle("Identity Policy");
         setContentPane(getWindowContentPane());
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         initializeListeners();
     }
 

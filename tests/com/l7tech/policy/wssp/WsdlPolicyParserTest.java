@@ -8,23 +8,17 @@ package com.l7tech.policy.wssp;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.ws.policy.Assertion;
 import org.apache.ws.policy.Policy;
-import org.apache.ws.policy.util.PolicyFactory;
-import org.apache.ws.policy.util.PolicyWriter;
-import org.w3c.dom.Document;
 
 import javax.wsdl.Binding;
 import javax.wsdl.BindingInput;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.BindingOutput;
 import javax.wsdl.extensions.ExtensibilityElement;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Collection;
@@ -33,17 +27,17 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * test the ability to read wssp and emit layer 7 policy
+ * Tests the ability of the Wsdl class to read wssp embedded in a WSDL and compute the effective policy.
  */
-public class WsspParserTest extends TestCase {
-    private static Logger log = Logger.getLogger(WsspParserTest.class.getName());
+public class WsdlPolicyParserTest extends TestCase {
+    private static Logger log = Logger.getLogger(WsdlPolicyParserTest.class.getName());
 
-    public WsspParserTest(String name) {
+    public WsdlPolicyParserTest(String name) {
         super(name);
     }
 
     public static Test suite() {
-        return new TestSuite(WsspParserTest.class);
+        return new TestSuite(WsdlPolicyParserTest.class);
     }
 
     public static void main(String[] args) {
@@ -105,15 +99,10 @@ public class WsspParserTest extends TestCase {
         assertNotNull(A11echo);
 
         Assertion echoInputPolicy = wsdl.getEffectiveInputPolicy(A11binding, A11echo);
-        Assertion blat = echoInputPolicy.normalize(wsdl.getPolicyRegistry());
-
-        PolicyWriter writer = PolicyFactory.getPolicyWriter(PolicyFactory.StAX_POLICY_WRITER);
+        Policy policy = (Policy)echoInputPolicy.normalize(wsdl.getPolicyRegistry());
 
         out.println("\n\nEffective policy for echo input (binding A11):\n");
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        writer.writePolicy((Policy)blat, baos);
-        Document d = XmlUtil.parse(new ByteArrayInputStream(baos.toByteArray()));
-        XmlUtil.nodeToFormattedOutputStream(d, out);
+        WsspReaderTest.displayWispyPolicy(policy, out);
     }
 
     private void printPolicies(List opexts, Wsdl wsdl, PrintStream out, String indent) throws Wsdl.BadPolicyReferenceException {
@@ -124,32 +113,5 @@ public class WsspParserTest extends TestCase {
                 out.println(indent + "Policy:" + policy.getPolicyURI());
             }
         }
-    }
-
-    public void testGenerateSsbPolicy() throws Exception {
-        // Get WSDL
-        InputStream is = TestDocuments.getSecurityPolicies().getRound3MsWsdl();
-        Wsdl wsdl = Wsdl.newInstance("", XmlUtil.parse(is));
-        assertNotNull(wsdl);
-
-        // Get effective policies for the A11GBinding's Echo operation
-        Binding a11Binding = wsdl.getBinding("A11Binding");
-        BindingOperation echoOp = a11Binding.getBindingOperation("Echo", null, null);
-        Policy echoInPolicy = (Policy)wsdl.getEffectiveInputPolicy(a11Binding, echoOp);
-        Policy echoOutPolicy = (Policy)wsdl.getEffectiveOutputPolicy(a11Binding, echoOp);
-
-        // Convert input policy to layer7 format
-        WsspReader wsspReader = new WsspReader();
-        Policy echoInNormalized = (Policy)echoInPolicy.normalize(wsdl.getPolicyRegistry());
-        Policy echoOutNormalized = (Policy)echoOutPolicy.normalize(wsdl.getPolicyRegistry());
-        com.l7tech.policy.assertion.Assertion ssbRequestPolicy = wsspReader.convertFromWsspForRequest(echoInNormalized);
-        com.l7tech.policy.assertion.Assertion ssbResponsePolicy = wsspReader.convertFromWsspForResponse(echoOutNormalized);
-
-        AllAssertion ssbPolicy = new AllAssertion();
-        ssbPolicy.addChild(ssbRequestPolicy);
-        ssbPolicy.addChild(ssbResponsePolicy);
-
-        // Display converted policy
-        log.info("Converted policy: " + ssbPolicy);
     }
 }

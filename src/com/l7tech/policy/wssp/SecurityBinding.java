@@ -6,9 +6,9 @@
 package com.l7tech.policy.wssp;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import org.apache.ws.policy.PrimitiveAssertion;
 
 import javax.xml.namespace.QName;
@@ -22,7 +22,9 @@ abstract class SecurityBinding extends WsspVisitor {
     private static final Logger logger = Logger.getLogger(SecurityBinding.class.getName());
     private static final Map bindingProperties = new HashMap();
     static {
-        bindingProperties.put("TransportToken", new UnsupportedSecurityBindingProperty());
+        bindingProperties.put("TransportToken", new QnamePropertyGatherer("TransportToken", new String[] {
+                "HttpsToken",  // TODO support RequireClientCertificate attribute
+        }));
         bindingProperties.put("AlgorithmSuite", new QnamePropertyGatherer("AlgorithmSuite", new String[] {
                 "Basic256Rsa15",
                 "Basic192Rsa15",
@@ -43,6 +45,7 @@ abstract class SecurityBinding extends WsspVisitor {
     private final PrimitiveAssertion primitiveAssertion;
     private final Map converterMap;
     private boolean gatheredProperties = false;
+    private Set transportTokens = new HashSet();
     private Set initiatorTokenTypes = new HashSet();
     private Set recipientTokenTypes = new HashSet();
     private Set layouts = new HashSet();
@@ -70,31 +73,33 @@ abstract class SecurityBinding extends WsspVisitor {
             onGatheredProperties();
         }
 
+        boolean isRequest = isSimpleProperty(IS_REQUEST);
+
         AllAssertion all = new AllAssertion();
-        all.addChild(new TrueAssertion());
 
         // populate all from currently set properties
 
         // TODO we currently use this only as a hint to enable X509
-        boolean signWithX509 = false;
-        for (Iterator i = initiatorTokenTypes.iterator(); i.hasNext();) {
-            QName n = (QName)i.next();
-            if (n.getLocalPart().startsWith("WssX509"))
-                signWithX509 = true;
-        }
-
-        boolean encryptForX509 = false;
-        for (Iterator i = recipientTokenTypes.iterator(); i.hasNext();) {
-            QName n = (QName)i.next();
-            if (n.getLocalPart().startsWith("WssX509"))
-                encryptForX509 = true;
-        }
-
+        boolean signWithX509 = setContainsQnameWhoseLocalNameStartsWith(initiatorTokenTypes, "WssX509");
+        boolean encryptForX509 = setContainsQnameWhoseLocalNameStartsWith(recipientTokenTypes, "WssX509");
         if (encryptForX509 || signWithX509) all.addChild(new RequestWssX509Cert());
 
         // TODO we are currently ignoring layouts
 
-        return all;
+        // TODO support requireClientCert attribute
+        boolean useSsl = setContainsQnameWhoseLocalNameStartsWith(transportTokens, "HttpsToken");
+        if (isRequest && useSsl) all.addChild(new SslAssertion(false));
+
+        return all.isEmpty() ? null : all;
+    }
+
+    private static boolean setContainsQnameWhoseLocalNameStartsWith(Set set, String prefix) {
+        for (Iterator i = set.iterator(); i.hasNext();) {
+            QName n = (QName)i.next();
+            if (n.getLocalPart().startsWith(prefix))
+                return true;
+        }
+        return false;
     }
 
     protected boolean maybeAddPropertyQnameValue(String propName, QName propValue) {
@@ -103,6 +108,9 @@ abstract class SecurityBinding extends WsspVisitor {
             return true;
         } else if ("RecipientToken.X509Token".equals(propName)) {
             recipientTokenTypes.add(propValue);
+            return true;
+        } else if ("TransportToken".equals(propName)) {
+            transportTokens.add(propValue);
             return true;
         } else if ("Layout".equals(propName)) {
             layouts.add(propValue);

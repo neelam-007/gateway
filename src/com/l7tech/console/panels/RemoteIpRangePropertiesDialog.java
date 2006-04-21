@@ -6,6 +6,7 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RemoteIpRange;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -54,7 +55,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         contents.setLayout(new BorderLayout(0,0));
         contents.add(makeGlobalPanel(), BorderLayout.CENTER);
         contents.add(makeBottomButtonsPanel(), BorderLayout.SOUTH);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         setCallbacks();
         setInitialValues();

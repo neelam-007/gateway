@@ -11,7 +11,6 @@ import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
@@ -253,7 +252,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         initializeView();
         enableOrDisableComponents();
         applyFormSecurity();
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
     }
 

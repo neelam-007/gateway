@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.IpListPanel;
+import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;

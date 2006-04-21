@@ -9,6 +9,8 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.OkCancelDialog;
+import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.policy.assertion.xml.XslTransformation;

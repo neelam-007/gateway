@@ -79,11 +79,13 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private String[] overrideIpAddresses = null;
     private PersistentPolicyManager persistentPolicyManager = new PersistentPolicyManager(); // policy store that gets saved to disk
     private FederatedSamlTokenStrategy fedSamlTokenStrategy = null; // non-default saml token strategy, or null
+    private URL serverUrl = null; // Special URL for generic (non-SSG) services
 
     private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
     private transient X509Certificate lastSeenPeerCertificate = null;
     private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
+    private boolean genericService = false; // true if the server is not actually an SSG
 
     /**
      * Copy all persistent (non-Runtime) settings from that Ssg into this Ssg (except Id), overwriting this Ssg's
@@ -278,7 +280,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         this.ssgPort = ssgPort;
     }
 
-    public URL getServerUrl() {
+    private URL computeSsgUrl() {
         URL url = null;
         try {
             url = new URL(SSG_PROTOCOL, getSsgAddress(), getSsgPort(), getSsgFile());
@@ -287,11 +289,36 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
             try {
                 return new URL("");
             } catch (MalformedURLException e1) {
-                log.log(Level.SEVERE, "This can't have happened", e);
-                return null; // totally can't happen
+                throw new RuntimeException(e1); // can't happen
             }
         }
         return url;
+    }
+
+    public URL getServerUrl() {
+        if (serverUrl == null) serverUrl = computeSsgUrl();
+        return serverUrl;
+    }
+
+    /**
+     * Set the server URL.
+     * If the url is not null, this also sets the SSG hostname,
+     * port (either SSL or regular depending if the URL is http or https),
+     * and file.
+     */
+    public void setServerUrl(URL url) {
+        this.serverUrl = url;
+        if (url == null)
+            return;
+        if (url.equals(computeSsgUrl())) // If it's the same as the one we'd generate, no need to change anything else.
+            return;
+
+        setSsgAddress(url.getHost());
+        if ("https".equalsIgnoreCase(url.getProtocol()))
+            setSslPort(url.getPort());
+        else
+            setSsgPort(url.getPort());
+        setSsgFile(url.getFile());
     }
 
     public URL getServerSslUrl() {
@@ -720,5 +747,15 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     public void setFailoverStrategyName(String name) {
         failoverStrategyName = name;
+    }
+
+    /** @param generic  true if this service is not actually an SSG, but is just a generic URL to be posted to. */
+    public void setGeneric(boolean generic) {
+        this.genericService = generic;
+    }
+
+    /** @return true if this service is not actually an SSG, but is just a generic URL to be posted to. */
+    public boolean isGeneric() {
+        return this.genericService;
     }
 }

@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.util.TimeUnit;
+import com.l7tech.common.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 
 import javax.swing.*;

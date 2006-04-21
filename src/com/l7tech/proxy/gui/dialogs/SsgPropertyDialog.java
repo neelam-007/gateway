@@ -31,6 +31,8 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.net.MalformedURLException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -74,14 +76,19 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
     private SsgPropertyDialog(final Ssg ssg, final int bindPort) {
         super("Gateway Account Properties");
+        this.ssg = ssg;
         this.bindPort = bindPort;
         tabbedPane.add("General", getGeneralPane(ssg));
         tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
-        tabbedPane.add("Bridge Policy", getBridgePolicyPane());
+        if (ssg.isGeneric()) {
+            ssg.setUseSslByDefault(false);
+            getBridgePolicyPane(); // hide the bridge policy pane for generic services
+        } else {
+            tabbedPane.add("Bridge Policy", getBridgePolicyPane());
+        }
         tabbedPane.add("Service Policies", getPoliciesPane());
         ssg.addSsgListener(this);
-        this.ssg = ssg;
         modelToView();
         pack();
     }
@@ -241,7 +248,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 try {
                     X509Certificate cert = ssg.getClientCertificate();
                     if (cert == null) {
-                        NoClientCert dlg = new NoClientCert(SsgPropertyDialog.this, ssgName());
+                        NoClientCert dlg = new NoClientCert(SsgPropertyDialog.this, ssgName(), !ssg.isGeneric());
                         dlg.pack();
                         Utilities.centerOnScreen(dlg);
                         dlg.setVisible(true);
@@ -461,7 +468,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private SsgNetworkPanel getNetworkPane() {
         if (networkPane == null)
-            networkPane = new SsgNetworkPanel(validator);
+            networkPane = new SsgNetworkPanel(validator, !ssg.isGeneric());
         return networkPane;
     }
 
@@ -499,7 +506,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.HORIZONTAL,
                                             new Insets(25, 25, 0, 25), 0, 0));
 
-            pane.add(new JLabel("Gateway Host Name:"),
+            pane.add(new JLabel(ssg.isGeneric() ? "Service URL:" : "Gateway Host Name:"),
                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
@@ -592,15 +599,27 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (fieldServerAddress == null) {
             fieldServerAddress = new ContextMenuTextField();
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
-            fieldServerAddress.setToolTipText("<HTML>Gateway host name or address, for example<br><address>gateway.example.com");
-            validator.constrainTextFieldToBeNonEmpty("Gateway server address", fieldServerAddress,
-                                                     new InputValidator.ValidationRule() {
-                                                         public String getValidationError() {
-                                                             if (!ValidationUtils.isValidDomain(fieldServerAddress.getText()))
-                                                                 return "Gateway server address must be a valid host name or IP address.";
-                                                             return null;
-                                                         }
-                                                     });
+            if (ssg.isGeneric()) {
+                fieldServerAddress.setToolTipText("<HTML>Web service POST URL, for example <br><address>http://service.example.com/soap");
+                validator.constrainTextFieldToBeNonEmpty("Service URL", fieldServerAddress,
+                                                         new InputValidator.ValidationRule() {
+                                                             public String getValidationError() {
+                                                                 if (!ValidationUtils.isValidUrl(fieldServerAddress.getText()))
+                                                                     return "Service URL must be a valid URL.";
+                                                                 return null;
+                                                             }
+                                                         });
+            } else {
+                fieldServerAddress.setToolTipText("<HTML>Gateway host name or address, for example<br><address>gateway.example.com");
+                validator.constrainTextFieldToBeNonEmpty("Gateway server address", fieldServerAddress,
+                                                         new InputValidator.ValidationRule() {
+                                                             public String getValidationError() {
+                                                                 if (!ValidationUtils.isValidDomain(fieldServerAddress.getText()))
+                                                                     return "Gateway server address must be a valid host name or IP address.";
+                                                                 return null;
+                                                             }
+                                                         });
+            }
         }
         return fieldServerAddress;
     }
@@ -684,8 +703,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                        ssg.getLocalEndpoint());
             getNetworkPane().setWsdlEndpoint("http://localhost:" + bindPort + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
-            fieldServerAddress.setText(ssg.getSsgAddress());
-            fieldKerberosName.setText(ssg.getKerberosName());
+
+            if (ssg.isGeneric())
+                getFieldServerAddress().setText(ssg.getServerUrl().toExternalForm());
+            else
+                getFieldServerAddress().setText(ssg.getSsgAddress());
+            getFieldKerberosName().setText(ssg.getKerberosName());
 
             getNetworkPane().setSsgPort(ssg.getSsgPort());
             getNetworkPane().setSslPort(ssg.getSslPort());
@@ -706,51 +729,63 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      * Caller is responsible for hiding and disposing of the property dialog.
      */
     protected void commitChanges() {
-        synchronized (ssg) {
-
-            if (!ssg.isFederatedGateway()) {
-                TrustedSsgIdentityPanel tp = (TrustedSsgIdentityPanel)ssgIdentityPane;
-                ssg.setKerberosName(fieldKerberosName.getText());
-                ssg.setUsername(tp.getUsernameTextField().getText().trim());
-                ssg.setSavePasswordToDisk(tp.getSavePasswordCheckBox().isSelected());
-                ssg.setChainCredentialsFromClient(tp.getUseClientCredentialCheckBox().isSelected());
-                ssg.setEnableKerberosCredentials(tp.getUseKerberosCredentialCheckbox().isSelected());
-
-                // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
-                // a blank password to access a service, he can leave the password field blank in the logon
-                // dialog when it eventually appears.
-                char[] pass = tp.getUserPasswordField().getPassword();
-
-                // Make sure prompting is enabled
-                ssg.getRuntime().setCachedPassword(pass.length > 0 ? tp.getUserPasswordField().getPassword() : null);
-            } else {
-                FederatedSsgIdentityPanel fp = (FederatedSsgIdentityPanel)ssgIdentityPane;
-
-                AbstractSamlTokenStrategy astrat = ssg.getWsTrustSamlTokenStrategy();
-                if(astrat!=null) {
-                    updateStrategyFromView(astrat, fp);
-                    astrat.clearCachedToken();
+        try {
+            synchronized (ssg) {
+                // Try to set server URL first since it might throw
+                if (ssg.isGeneric()) {
+                    ssg.setServerUrl(new URL(getFieldServerAddress().getText().trim()));
+                } else {
+                    ssg.setSsgAddress(getFieldServerAddress().getText().trim().toLowerCase());
                 }
 
-                // Force chain credentials to be off if this is a fed ssg
-                ssg.setChainCredentialsFromClient(false);
-            }
+                if (!ssg.isFederatedGateway()) {
+                    TrustedSsgIdentityPanel tp = (TrustedSsgIdentityPanel)ssgIdentityPane;
+                    ssg.setKerberosName(getFieldKerberosName().getText());
+                    ssg.setUsername(tp.getUsernameTextField().getText().trim());
+                    ssg.setSavePasswordToDisk(tp.getSavePasswordCheckBox().isSelected());
+                    ssg.setChainCredentialsFromClient(tp.getUseClientCredentialCheckBox().isSelected());
+                    ssg.setEnableKerberosCredentials(tp.getUseKerberosCredentialCheckbox().isSelected());
 
-            // applicable to both trusted and federated SSG
-            ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
-            ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
-            ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
-            ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());
-            ssg.setFailoverStrategyName(getNetworkPane().getFailoverStrategyName());
+                    // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
+                    // a blank password to access a service, he can leave the password field blank in the logon
+                    // dialog when it eventually appears.
+                    char[] pass = tp.getUserPasswordField().getPassword();
 
-            if (getNetworkPane().isCustomPorts()) {
-                ssg.setSsgPort(getNetworkPane().getSsgPort());
-                ssg.setSslPort(getNetworkPane().getSslPort());
-            } else {
-                ssg.setSsgPort(referenceSsg.getSsgPort());
-                ssg.setSslPort(referenceSsg.getSslPort());
+                    // Make sure prompting is enabled
+                    ssg.getRuntime().setCachedPassword(pass.length > 0 ? tp.getUserPasswordField().getPassword() : null);
+                } else {
+                    FederatedSsgIdentityPanel fp = (FederatedSsgIdentityPanel)ssgIdentityPane;
+
+                    AbstractSamlTokenStrategy astrat = ssg.getWsTrustSamlTokenStrategy();
+                    if(astrat!=null) {
+                        updateStrategyFromView(astrat, fp);
+                        astrat.clearCachedToken();
+                    }
+
+                    // Force chain credentials to be off if this is a fed ssg
+                    ssg.setChainCredentialsFromClient(false);
+                }
+
+                // applicable to both trusted and federated SSG
+                ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
+                ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
+                ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());
+                ssg.setFailoverStrategyName(getNetworkPane().getFailoverStrategyName());
+
+                if (getNetworkPane().isCustomPorts()) {
+                    ssg.setSsgPort(getNetworkPane().getSsgPort());
+                    ssg.setSslPort(getNetworkPane().getSslPort());
+                } else {
+                    ssg.setSsgPort(referenceSsg.getSsgPort());
+                    ssg.setSslPort(referenceSsg.getSslPort());
+                }
+                ssg.getRuntime().reset();
             }
-            ssg.getRuntime().reset();
+        } catch (MalformedURLException e) {
+            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                          "The specified server URL is not valid.",
+                                          "Invalid server URL",
+                                          JOptionPane.ERROR_MESSAGE);
         }
         modelToView();
     }

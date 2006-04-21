@@ -51,7 +51,7 @@ public class AuditAssertionPropertiesAction extends SecureAction {
         AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getMainWindow(), subject.getAssertion(), thresold.getName());
         aad.pack();
         Utilities.centerOnScreen(aad);
-        Actions.setEscKeyStrokeDisposes(aad);
+        Utilities.setEscKeyStrokeDisposes(aad);
         aad.setVisible(true);
         if (aad.isModified()) {
             subject.setUserObject(aad.getAssertion());

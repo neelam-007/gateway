@@ -3,6 +3,9 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.widgets.OkCancelDialog;
+import com.l7tech.common.gui.widgets.UrlPanel;
+
 import javax.swing.*;
 import java.awt.*;
 

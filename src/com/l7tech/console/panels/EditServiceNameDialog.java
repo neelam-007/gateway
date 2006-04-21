@@ -4,7 +4,6 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
@@ -68,7 +67,7 @@ public class EditServiceNameDialog extends JDialog {
         initComponents();
         pack();
         Utilities.centerOnScreen(this);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     /**

@@ -45,7 +45,7 @@
               <text resource-bundle="com/l7tech/console/resources/HttpRoutingAssertionDialog" key="defaultUrlButton.text"/>
             </properties>
           </component>
-          <component id="c2b89" class="com.l7tech.console.panels.UrlPanel" binding="urlPanel">
+          <component id="c2b89" class="com.l7tech.common.gui.widgets.UrlPanel" binding="urlPanel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>

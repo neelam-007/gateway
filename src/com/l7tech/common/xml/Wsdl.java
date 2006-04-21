@@ -31,10 +31,7 @@ import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.namespace.QName;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -99,6 +96,7 @@ public class Wsdl {
      * Stores top-level policies found in this WSDL.
      */
     private PolicyRegistry policyRegistry = null;
+    private List topLevelPolicies = null;
 
     /**
      * bitmask that accepts all bindings
@@ -291,11 +289,11 @@ public class Wsdl {
     public Policy toPolicy(ExtensibilityElement ee) throws BadPolicyReferenceException {
         UnknownExtensibilityElement uee = getPolicyUue(ee);
         if (uee != null)
-            return policyReader.readPolicy(uee.getElement());
+            return readPolicySafely(uee.getElement());
 
         uee = getPolicyReferenceUue(ee);
         if (uee == null) return null;
-        PolicyReference ref = policyReader.readPolicyReference(uee.getElement());
+        PolicyReference ref = readPolicyReferenceSafely(uee.getElement());
         if (ref == null) throw new BadPolicyReferenceException("Unable to parse wsp:PolicyReference");
         Policy p = getPolicyRegistry().lookup(ref.getPolicyURIString());
         if (p == null) throw new BadPolicyReferenceException("Unable to resolve policy reference: URI=" + ref.getPolicyURIString());
@@ -311,7 +309,32 @@ public class Wsdl {
     public PolicyReference toPolicyReference(ExtensibilityElement ee) {
         UnknownExtensibilityElement uee = getPolicyReferenceUue(ee);
         if (uee == null) return null;
-        return policyReader.readPolicyReference(uee.getElement());
+        return readPolicyReferenceSafely(uee.getElement());
+    }
+
+    /** Read a policy element, canonicalizing it first to bring down any needed namespace decls. */
+    private Policy readPolicySafely(Element e) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            XmlUtil.canonicalize(e, baos);
+            return policyReader.readPolicy(new ByteArrayInputStream(baos.toByteArray()));
+        } catch (IOException e1) {
+            throw new RuntimeException(e1); // can't happen
+        }
+    }
+
+    /** Read a policy reference element, canonicalizing it first to bring down any needed namespace decls. */
+    private PolicyReference readPolicyReferenceSafely(Element e) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            XmlUtil.canonicalize(e, baos);
+            Document d = XmlUtil.parse(new ByteArrayInputStream(baos.toByteArray()));
+            return policyReader.readPolicyReference(d.getDocumentElement());
+        } catch (IOException e1) {
+            throw new RuntimeException(e1); // can't happen
+        } catch (SAXException e1) {
+            throw new RuntimeException(e1); // can't happen
+        }
     }
 
     /** @return a UEE if this is a wsp:Policy element, or null if it isn't. */
@@ -363,18 +386,18 @@ public class Wsdl {
      *
      */
     public List getPolicies() {
+        if (topLevelPolicies != null) return topLevelPolicies;
         List ret = new ArrayList();
         List exts = getDefinition().getExtensibilityElements();
-        DOMPolicyReader policyReader = (DOMPolicyReader)PolicyFactory.getPolicyReader(PolicyFactory.DOM_POLICY_READER);
         for (Iterator i = exts.iterator(); i.hasNext();) {
             ExtensibilityElement ee = (ExtensibilityElement)i.next();
             UnknownExtensibilityElement uee = getPolicyUue(ee);
             if (uee != null) {
-                Policy policy = policyReader.readPolicy(uee.getElement());
-                if (policy != null) ret.add(policy);
+                Policy p = readPolicySafely(uee.getElement());
+                if (p != null) ret.add(p);
             }
         }
-        return ret;
+        return topLevelPolicies = ret;
     }
 
     /**
@@ -383,6 +406,7 @@ public class Wsdl {
     public Assertion getEffectiveInputPolicy(Binding binding, BindingOperation operation)
             throws BadPolicyReferenceException
     {
+        getPolicyRegistry();
         // Accumulate the effective policy
         Assertion ep = null;
         ep = mergePolicies(ep, binding.getExtensibilityElements());
@@ -394,6 +418,7 @@ public class Wsdl {
     public Assertion getEffectiveOutputPolicy(Binding binding, BindingOperation operation)
             throws BadPolicyReferenceException
     {
+        getPolicyRegistry();
         // Accumulate the effective policy
         Assertion ep = null;
         ep = mergePolicies(ep, binding.getExtensibilityElements());

@@ -6,7 +6,6 @@
 package com.l7tech.policy.wssp;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import org.apache.ws.policy.PrimitiveAssertion;
@@ -58,37 +57,39 @@ abstract class WsspVisitor {
         }
     }
 
+    /** Replace empty composite assertion with null, or singleton composite with it's single child. */
+    static Assertion collapse(Assertion in) {
+        return Assertion.simplify(in);
+    }
+
     protected Assertion recursiveConvertPolicy(org.apache.ws.policy.Assertion p) throws PolicyConversionException {
         AllAssertion all = new AllAssertion();
         for (Iterator i = p.getTerms().iterator(); i.hasNext();) {
-            final Assertion converted = recursiveConvert((org.apache.ws.policy.Assertion)i.next());
+            final Assertion converted = collapse(recursiveConvert((org.apache.ws.policy.Assertion)i.next()));
             if (converted != null)
                 all.addChild(converted);
         }
-        if (all.getChildren().isEmpty()) all.addChild(new TrueAssertion());
-        return all;
+        return collapse(all);
     }
 
     protected Assertion recursiveConvertXor(org.apache.ws.policy.Assertion p) throws PolicyConversionException {
         ExactlyOneAssertion one = new ExactlyOneAssertion();
         for (Iterator i = p.getTerms().iterator(); i.hasNext();) {
-            final Assertion converted = recursiveConvert((org.apache.ws.policy.Assertion)i.next());
+            final Assertion converted = collapse(recursiveConvert((org.apache.ws.policy.Assertion)i.next()));
             if (converted != null)
                 one.addChild(converted);
         }
-        if (one.getChildren().isEmpty()) one.addChild(new TrueAssertion());
-        return one;
+        return collapse(one);
     }
 
     protected Assertion recursiveConvertAll(org.apache.ws.policy.Assertion p) throws PolicyConversionException {
         AllAssertion all = new AllAssertion();
         for (Iterator i = p.getTerms().iterator(); i.hasNext();) {
-            final Assertion converted = recursiveConvert((org.apache.ws.policy.Assertion)i.next());
+            final Assertion converted = collapse(recursiveConvert((org.apache.ws.policy.Assertion)i.next()));
             if (converted != null)
                 all.addChild(converted);
         }
-        if (all.getChildren().isEmpty()) all.addChild(new TrueAssertion());
-        return all;
+        return collapse(all);
     }
 
     /**
@@ -105,10 +106,10 @@ abstract class WsspVisitor {
         PrimitiveAssertionConverter converter = (PrimitiveAssertionConverter)getConverterMap().get(name);
         if (converter == null)
             throw new PolicyConversionException("Element not recognized this this context: " + p.getName());
-        return converter.convert(this, p);
+        return collapse(converter.convert(this, p));
     }
 
-    protected void gatherPropertiesFromSubPolicy(PrimitiveAssertion p) throws PolicyConversionException {
+    protected Assertion gatherPropertiesFromSubPolicy(PrimitiveAssertion p) throws PolicyConversionException {
         org.apache.ws.policy.Assertion term = p;
         QName name = p.getName();
 
@@ -125,7 +126,7 @@ abstract class WsspVisitor {
             throw new PolicyConversionException("Assertion does not contain a wsp:Policy/wsp:ExactlyOne/wsp:All element (policy not normalized?)");
 
         // Gather all properties from the All and its children.  Can assume that there is only one choice left since policy is normalized
-        recursiveConvert(term);
+        return recursiveConvert(term);
     }
 
     private org.apache.ws.policy.Assertion moveDown(org.apache.ws.policy.Assertion term, QName name) throws PolicyConversionException {

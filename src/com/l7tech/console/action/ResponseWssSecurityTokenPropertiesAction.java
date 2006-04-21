@@ -54,7 +54,7 @@ public class ResponseWssSecurityTokenPropertiesAction extends NodeAction {
         ResponseWssSecurityToken ass = (ResponseWssSecurityToken) node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
         ResponseWssSecurityTokenDialog dlg = new ResponseWssSecurityTokenDialog(f, true, ass);
-        Actions.setEscKeyStrokeDisposes(dlg);
+        Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

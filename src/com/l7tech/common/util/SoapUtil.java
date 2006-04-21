@@ -18,11 +18,12 @@ import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
-import javax.wsdl.extensions.soap.SOAPBinding;
-import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap.*;
 import javax.xml.namespace.QName;
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPHeader;
 import javax.xml.transform.dom.DOMSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1409,6 +1410,37 @@ public class SoapUtil {
             log.info("this request payload yields more than one match during operation search: " + tmp.toString());
             return null;
         }
+    }
+
+    public static String findTargetNamespace(Definition def, BindingOperation bindingOperation) {
+        BindingInput bindingInput = bindingOperation.getBindingInput();
+        if (bindingInput != null) {
+            Iterator eels = bindingInput.getExtensibilityElements().iterator();
+            ExtensibilityElement ee;
+            while (eels.hasNext()) {
+                ee = (ExtensibilityElement)eels.next();
+                if (ee instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                    javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)ee;
+                    String uri = body.getNamespaceURI();
+                    if (uri != null) return uri;
+                }
+            }
+        }
+
+        Input input = bindingOperation.getOperation().getInput();
+        if (input != null) {
+            List parts = input.getMessage().getOrderedParts(null);
+            if (parts.size() > 0) {
+                Part firstPart = (Part)parts.get(0);
+                QName elementName = firstPart.getElementName();
+                if (elementName != null) {
+                    String uri = elementName.getNamespaceURI();
+                    if (uri != null) return uri;
+                }
+            }
+        }
+
+        return def.getTargetNamespace();
     }
 
     private interface OperationSearchContext {

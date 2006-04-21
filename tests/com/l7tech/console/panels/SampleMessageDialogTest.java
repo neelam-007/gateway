@@ -7,7 +7,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.service.SampleMessage;
-import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,7 +24,7 @@ public class SampleMessageDialogTest {
         smd.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         smd.pack();
         Utilities.centerOnScreen(smd);
-        Actions.setEscKeyStrokeDisposes(smd);
+        Utilities.setEscKeyStrokeDisposes(smd);
         smd.setVisible(true);
     }
 }

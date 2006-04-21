@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.common.gui.util.Utilities;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -28,7 +29,7 @@ public class EditFederatedIPWizard extends IdentityProviderWizard {
         setTitle("Edit Federated Identity Provider Wizard");
         setShowDescription(false);
         getButtonTest().setVisible(false);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         wizardInput = iProvider;
 

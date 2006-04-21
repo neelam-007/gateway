@@ -3,7 +3,6 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.console.action.SecureAction;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.AuditDetailAssertionPropertiesDialog;
 import com.l7tech.common.gui.util.Utilities;
@@ -85,7 +84,7 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
                                                                  getAssertion());
                 aad.pack();
                 Utilities.centerOnScreen(aad);
-                Actions.setEscKeyStrokeDisposes(aad);
+                Utilities.setEscKeyStrokeDisposes(aad);
                 aad.setVisible(true);
                 if (aad.isModified()) {
                     assertionChanged();

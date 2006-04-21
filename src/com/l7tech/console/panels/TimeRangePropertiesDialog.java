@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.TimeOfDayRange;
 import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -76,7 +77,7 @@ public class TimeRangePropertiesDialog extends JDialog {
 
         itemsToToggleForTimeOfDay.clear();
         itemsToToggleForDayOfWeek.clear();
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         
         // calculate UTC offset
         int totOffsetInMin = Calendar.getInstance().getTimeZone().getOffset(System.currentTimeMillis()) / (1000*60);

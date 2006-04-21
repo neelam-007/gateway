@@ -201,7 +201,7 @@ public class FindIdentitiesDialog extends JDialog {
                 windowAction(CMD_CANCEL);
             }
         });
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         addComponentListener(new ComponentAdapter() {
             /**
              * Invoked when the component has been made visible.

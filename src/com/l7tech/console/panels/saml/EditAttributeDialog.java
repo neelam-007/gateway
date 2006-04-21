@@ -1,7 +1,6 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.beaneditor.BeanListener;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
@@ -75,7 +74,7 @@ public class EditAttributeDialog extends JDialog {
         initComponents();
         pack();
         Utilities.centerOnScreen(this);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
     /**

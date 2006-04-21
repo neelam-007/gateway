@@ -7,7 +7,6 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.Actions;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
@@ -119,7 +118,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         contentPane.setLayout(new BorderLayout());
         getServiceEndpointPanel().setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 10));
         contentPane.add(getServiceEndpointPanel(), BorderLayout.NORTH);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         
         mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));

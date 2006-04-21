@@ -6,7 +6,6 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 
@@ -118,7 +117,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
             wizardPanel.readSettings(assertion);
             wizardPanel.addChangeListener(wizardPanelChangeListener);
         }
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         buttonCancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();

@@ -25,7 +25,6 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.rmi.RemoteException;
-import java.io.IOException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -95,8 +94,8 @@ public class GlobalSchemaDialog extends JDialog {
         setListeners();
 
         // support Enter and Esc keys
-        Actions.setEscKeyStrokeDisposes(this);
-        Actions.setEnterAction(this, new AbstractAction() {
+        Utilities.setEscKeyStrokeDisposes(this);
+        Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 close();
             }

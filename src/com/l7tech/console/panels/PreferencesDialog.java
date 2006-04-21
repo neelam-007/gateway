@@ -98,7 +98,7 @@ public class PreferencesDialog extends JDialog {
                 windowAction(CMD_CANCEL);
             }
         });
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         lfComboBox = new JComboBox();
 

@@ -1,9 +1,8 @@
 /**
  * Copyright (C) 2006 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.panels;
+package com.l7tech.common.gui.widgets;
 
-import com.l7tech.console.action.Actions;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
@@ -36,7 +35,7 @@ public class OkCancelDialog extends JDialog {
     }
 
     private void initialize() {
-        Actions.setEscAction(this, new AbstractAction() {
+        Utilities.setEscAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }

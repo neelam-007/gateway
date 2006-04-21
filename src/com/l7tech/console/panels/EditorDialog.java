@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.action.Actions;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,7 +27,7 @@ public class EditorDialog extends JDialog {
 
   private void initEditorDialog(boolean resizable) {
     setResizable(resizable);
-    Actions.setEscKeyStrokeDisposes(this);  
+    Utilities.setEscKeyStrokeDisposes(this);
     getContentPane().setLayout(new GridBagLayout());
     GridBagConstraints constraints
       = new  GridBagConstraints(0,  // gridx

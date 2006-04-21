@@ -35,7 +35,7 @@ public class MappingAssertionPropertiesAction extends SecureAction {
         MappingAssertionDialog aad = new MappingAssertionDialog(TopComponents.getInstance().getMainWindow(), subject.getAssertion(), true);
         aad.pack();
         Utilities.centerOnScreen(aad);
-        Actions.setEscKeyStrokeDisposes(aad);
+        Utilities.setEscKeyStrokeDisposes(aad);
         aad.setVisible(true);
         if (aad.isModified()) {
             subject.setUserObject(aad.getAssertion());

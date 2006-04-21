@@ -1,7 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.console.action.Actions;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.table.MapBackedTableModel;
 
 import javax.swing.*;
@@ -10,10 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.util.TreeMap;
-import java.util.Comparator;
 import java.util.Properties;
-import java.io.FileOutputStream;
-import java.io.IOException;
 
 
 /**
@@ -105,37 +102,37 @@ public class AboutBox extends JDialog implements ActionListener {
         this.setTitle("About the " + product /*+ " " + "Version" + " " + version*/);
         this.getContentPane().add(tabPanel, BorderLayout.CENTER);
         infoPanel.add(new JLabel("Product: " + product),
-          new GridBagConstraints(0, 1, 1, 1, 0d, 0d,
-            GridBagConstraints.WEST,
-            GridBagConstraints.NONE, ins, 0, 0));
+                      new GridBagConstraints(0, 1, 1, 1, 0d, 0d,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.NONE, ins, 0, 0));
         infoPanel.add(resLabel,
-          new GridBagConstraints(1, 1, 1, 1, 1d, 0d,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL, ins, 0, 0));
+                      new GridBagConstraints(1, 1, 1, 1, 1d, 0d,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.HORIZONTAL, ins, 0, 0));
 
         infoPanel.add(new JLabel("Version: " + version),
-          new GridBagConstraints(0, 2, 1, 1, 0d, 0d,
-            GridBagConstraints.WEST,
-            GridBagConstraints.NONE, ins, 0, 0));
+                      new GridBagConstraints(0, 2, 1, 1, 0d, 0d,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.NONE, ins, 0, 0));
         infoPanel.add(resourceMeter,
-          new GridBagConstraints(1, 2, 1, 1, 1d, 0d,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL, ins, 0, 0));
+                      new GridBagConstraints(1, 2, 1, 1, 1d, 0d,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.HORIZONTAL, ins, 0, 0));
 
 
         infoPanel.add(new JLabel("System Properties:", JLabel.LEFT),
-          new GridBagConstraints(0, 3, 3, 1, 1d, 0d,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.HORIZONTAL, ins, 0, 0));
+                      new GridBagConstraints(0, 3, 3, 1, 1d, 0d,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.HORIZONTAL, ins, 0, 0));
 
         infoPanel.add(jsp,
-          new GridBagConstraints(0, 4, 3, 1, 1d, 1d,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.BOTH, new Insets(1, 1, 1, 1), 0, 0));
+                      new GridBagConstraints(0, 4, 3, 1, 1d, 1d,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.BOTH, new Insets(1, 1, 1, 1), 0, 0));
         infoPanel.add(urlLabel,
-          new GridBagConstraints(0, 5, 3, 1, 0d, 0d,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.NONE, ins, 0, 0));
+                      new GridBagConstraints(0, 5, 3, 1, 0d, 0d,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.NONE, ins, 0, 0));
 
         jsp.setPreferredSize(logoLabel.getPreferredSize());
         jsp.setMaximumSize(logoLabel.getPreferredSize());
@@ -156,7 +153,7 @@ public class AboutBox extends JDialog implements ActionListener {
         resLabel.setMinimumSize(resourceMeter.getPreferredSize());
         resLabel.setMaximumSize(resourceMeter.getPreferredSize());
         setResizable(true);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
     }
 
 

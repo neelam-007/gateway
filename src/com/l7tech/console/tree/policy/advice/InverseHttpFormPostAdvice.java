@@ -1,7 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.InverseHttpFormPostDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
@@ -26,7 +25,7 @@ public class InverseHttpFormPostAdvice implements Advice {
         InverseHttpFormPost hfp = (InverseHttpFormPost)assertions[0];
         InverseHttpFormPostDialog hfpd = new InverseHttpFormPostDialog(f, hfp);
         hfpd.setModal(true);
-        Actions.setEscKeyStrokeDisposes(hfpd);
+        Utilities.setEscKeyStrokeDisposes(hfpd);
         hfpd.pack();
         Utilities.centerOnScreen(hfpd);
         hfpd.setVisible(true);

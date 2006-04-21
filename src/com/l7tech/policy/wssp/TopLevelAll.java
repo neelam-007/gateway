@@ -11,10 +11,7 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 import javax.xml.namespace.QName;
 import java.util.*;
@@ -87,14 +84,19 @@ class TopLevelAll extends WsspVisitor {
     }
 
     protected Assertion recursiveConvertAll(org.apache.ws.policy.Assertion p) throws PolicyConversionException {
-        AllAssertion all = (AllAssertion)super.recursiveConvertAll(p);
+        Assertion converted = super.recursiveConvertAll(p);
+        final AllAssertion all;
+        if (converted instanceof AllAssertion) {
+            all = (AllAssertion)converted;
+        } else {
+            all = new AllAssertion();
+            if (converted != null)
+                all.addChild(converted);
+        }
 
         boolean isRequest = isSimpleProperty(IS_REQUEST);
 
         // Now mix in the state we gathered while doing the conversion
-        // TODO wiating for Alex to merge this into HEAD
-        // if (timestamp) all.addChild(new RequestWssTimestamp());
-
         if (signBody || entireHeaderAndBodySignatures) {
             if (isRequest)
                 all.addChild(new RequestWssIntegrity());
@@ -106,7 +108,13 @@ class TopLevelAll extends WsspVisitor {
             all.addChild(conf);
         }
 
-        return all;
+        if (isRequest && timestamp) {
+            final RequestWssTimestamp ta = new RequestWssTimestamp();
+            ta.setSignatureRequired(signBody || entireHeaderAndBodySignatures);
+            all.addChild(ta);
+        }
+
+        return collapse(all);
     }
 
     private Assertion makeRequestConfidentiality(XpathExpression xpath) throws PolicyConversionException {
@@ -146,10 +154,10 @@ class TopLevelAll extends WsspVisitor {
         }
         if (!foundOne) {
             throw new PolicyConversionException(
-                    "Unable to comply with this poliyc -- response encryptiong is required, but no compatible AlgorithmSuite" +
+                    "Unable to comply with this policy -- response encryptiong is required, but no compatible AlgorithmSuite" +
                             " was specified.  Supported (for incoming responses): " +
                             HexUtils.join(" ", (String[])CIPHERS_IN.keySet().toArray(new String[0])));
         }
-        return crypt;
+        return collapse(crypt);
     }
 }

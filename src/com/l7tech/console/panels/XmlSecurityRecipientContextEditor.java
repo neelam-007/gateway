@@ -92,13 +92,13 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         specificRecipientRradio.addActionListener(al);
         defaultRadio.addActionListener(al);
 
-        Actions.setEscAction(this, new AbstractAction() {
+        Utilities.setEscAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
-        Actions.setEnterAction(this, new AbstractAction() {
+        Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 ok();
             }

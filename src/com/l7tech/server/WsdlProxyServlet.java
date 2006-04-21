@@ -66,6 +66,7 @@ import java.util.logging.Level;
  * Date: Sep 15, 2003<br/>
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
+    public static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
     private ServerConfig serverConfig;
     private FilterManager filterManager;
     SoapActionResolver sactionResolver = new SoapActionResolver();
@@ -358,7 +359,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
      */
     private void addSecurityPolicy(Document wsdl, PublishedService svc, AuthenticationResult[] results) {
         try{
-            if (Boolean.getBoolean("com.l7tech.server.wssp")) {
+            if (Boolean.getBoolean(PROPERTY_WSSP_ATTACH)) {
                 Assertion effectivePolicy = null;
                 if(results==null) {
                     Assertion rootassertion = WspReader.parsePermissively(svc.getPolicyXml());

@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 
 import java.io.Serializable;
 import java.util.*;
@@ -285,5 +286,76 @@ public abstract class Assertion implements Cloneable, Serializable {
               ((CompositeAssertion)a).getChildren().size() > 0);
         }
     }
+
+    /**
+     * Simplify the specified assertion tree.  This is a static method because it might need to change
+     * ie. a composite assertion into a singleton (or even simplify a do-nothing policy right down to a null
+     * policy reference!).
+     * <p/>
+     * The following transformations will be performed:
+     * <ul>
+     * <li>Empty composite assertions will be removed:
+     * <pre>
+     *      AND() -> null
+     *      AND(foo OR() baz) -> AND(foo baz)
+     * </pre>
+     * <li>Singleton composites will be replaced by their single child:
+     * <pre>
+     *     AND(foo OR(bar) baz) -> AND(foo bar baz)
+     *     AND(blat) -> blat
+     * </pre>
+     * <li>Nested ANDs will be eliminated:
+     * <pre>
+     *     AND(AND(AND(foo bar) baz) AND(blat OR(blee blah) bloo XOR(bleet bloat) zee))
+     *      -> AND(foo bar baz blat OR(blee blah) bloo XOR(bleet bloat) zee)
+     * </pre>
+     * </ul>
+     */
+    public static Assertion simplify(Assertion in) {
+        while (in instanceof CompositeAssertion) {
+            CompositeAssertion comp = (CompositeAssertion)in;
+            List kids = comp.getChildren();
+            if (kids.size() < 1)
+                return null;
+
+            if (comp instanceof AllAssertion) {
+                // Check for an All that contains only primitive assertions and other All's, and merge them
+                boolean sawAll = false;
+                for (Iterator i = kids.iterator(); i.hasNext();) {
+                    Assertion assertion = (Assertion)i.next();
+                    if (assertion instanceof AllAssertion) sawAll = true;
+                }
+                if (sawAll) {
+                    // This All contains other Alls.  Eliminate our immediate child Alls.
+                    AllAssertion old = (AllAssertion)comp.getCopy();
+                    comp.clearChildren();
+                    kids = old.getChildren();
+                    for (Iterator i = kids.iterator(); i.hasNext();) {
+                        Assertion kid = (Assertion)i.next();
+                        if (kid instanceof AllAssertion) {
+                            // Merge in grandkids
+                            AllAssertion kidAll = (AllAssertion)kid;
+                            List grandkids = kidAll.getChildren();
+                            for (Iterator j = grandkids.iterator(); j.hasNext();) {
+                                Assertion grandkid = (Assertion)j.next();
+                                comp.addChild(grandkid);
+                            }
+                        } else {
+                            // Merge in simple kids
+                            comp.addChild(kid);
+                        }
+                    }
+                    // Repeat the operation on the same node to see if it can be simplified some more
+                    continue;
+                }
+            }
+
+            if (kids.size() != 1)
+                break;
+            in = (Assertion)kids.get(0);
+        }
+        return in;
+    }
 }
+
 

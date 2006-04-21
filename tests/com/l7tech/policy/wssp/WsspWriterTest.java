@@ -1,40 +1,24 @@
 package com.l7tech.policy.wssp;
 
-import java.util.Collections;
-import java.io.ByteArrayOutputStream;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.StreamFilter;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.apache.ws.policy.Policy;
-import org.apache.ws.policy.util.PolicyFactory;
-import org.apache.ws.policy.util.PolicyWriter;
-import org.apache.ws.policy.util.StAXPolicyWriter;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.DocumentFragment;
-
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.DOMResultXMLStreamWriter;
-
-import junit.framework.TestCase;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.ws.policy.Policy;
+import org.apache.ws.policy.util.PolicyFactory;
+import org.apache.ws.policy.util.StAXPolicyWriter;
+import org.w3c.dom.Document;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.dom.DOMResult;
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 /**
  * @author Steve Jones, $Author$
@@ -85,7 +69,7 @@ public class WsspWriterTest extends TestCase {
         System.out.println(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(policyDocStr)));
     }
 
-    private static final String L7_POLICY_T1 =
+    static final String L7_POLICY_T1 =
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
             "        <L7p:SslAssertion/>\n" +
@@ -96,7 +80,7 @@ public class WsspWriterTest extends TestCase {
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 
-    private static final String WSSP_POLICY_T1 =
+    static final String WSSP_POLICY_T1 =
             "  <wsp:Policy wsu:Id=\"T1Endpoint\">\n" +
             "    <!-- Policy alternative T1 - Anonymous client -->\n" +
             "    <sp:TransportBinding>\n" +
@@ -121,7 +105,21 @@ public class WsspWriterTest extends TestCase {
             "    </sp:TransportBinding>\n" +
             "  </wsp:Policy>";
 
-    private static final String L7_POLICY_A11 =
+    static final String L7_POLICY_T3 =
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:SslAssertion/>\n" +
+            "        <wsse:SecurityToken xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">\n" +
+            "            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#UsernameToken</wsse:TokenType>\n" +
+            "            <L7p:Properties/>\n" +
+            "        </wsse:SecurityToken>\n" +
+            "        <L7p:RequestWssTimestamp>\n" +
+            "            <L7p:SignatureRequired booleanValue=\"false\"/>\n" +
+            "        </L7p:RequestWssTimestamp>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>";
+
+    static final String L7_POLICY_A11 =
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" " +
             "            xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -145,7 +143,7 @@ public class WsspWriterTest extends TestCase {
             "    </wsp:All>\n" +
             "</wsp:Policy>";
 
-    private static final String WSSP_POLICY_A11 =
+    static final String WSSP_POLICY_A11 =
             "<wsp:Policy wsu:Id=\"A11Endpoint\">\n" +
             "    <!-- Asymmetric Policy A11 - X509 with mutual authentication and AES 256 -->\n" +
             "    <sp:AsymmetricBinding>\n" +
@@ -190,7 +188,7 @@ public class WsspWriterTest extends TestCase {
             "    </sp:Wss10>\n" +
             "  </wsp:Policy>";
 
-    private static final String L7_POLICY_A12 =
+    static final String L7_POLICY_A12 =
             "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" " +
             "            xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +

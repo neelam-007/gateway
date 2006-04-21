@@ -12,6 +12,7 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.FilterDocument;
 
@@ -76,8 +77,8 @@ public class GlobalSchemaEntryEditor extends JDialog {
         xmlDisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
 
         // support Enter and Esc keys
-        Actions.setEscKeyStrokeDisposes(this);
-        Actions.setEnterAction(this, new AbstractAction() {
+        Utilities.setEscKeyStrokeDisposes(this);
+        Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }

@@ -10,6 +10,7 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;
@@ -156,13 +157,13 @@ public class SoapServiceRoutingURIEditor extends JDialog {
             public void keyTyped(KeyEvent e) {}
         });
 
-        Actions.setEscAction(this, new AbstractAction() {
+        Utilities.setEscAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
-        Actions.setEnterAction(this, new AbstractAction() {
+        Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 ok();
             }

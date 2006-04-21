@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.ResponseWssSecurityToken;
+import com.l7tech.common.gui.widgets.OkCancelDialog;
 
 import java.awt.*;
 import java.util.ResourceBundle;

@@ -43,14 +43,15 @@ class SsgNetworkPanel extends JPanel {
     private JPanel sslPortFieldPanel;
     private JPanel ssgPortFieldPanel;
     private JPanel ipListPanel;
+    private JPanel outgoingRequestsPanel;
     private IpListPanel ipList;
 
-    public SsgNetworkPanel(InputValidator validator) {
+    public SsgNetworkPanel(InputValidator validator, boolean enableOutgoingRequestsPanel) {
         this.validator = validator;
-        initialize();
+        initialize(enableOutgoingRequestsPanel);
     }
 
-    private void initialize() {
+    private void initialize(boolean enableOutgoingRequestsPanel) {
         setLayout(new BorderLayout());
         add(networkPane);
 
@@ -120,6 +121,10 @@ class SsgNetworkPanel extends JPanel {
         ipListPanel.removeAll();
         ipListPanel.setLayout(new BorderLayout());
         ipListPanel.add(ipList, BorderLayout.CENTER);
+
+        if (!enableOutgoingRequestsPanel) {
+            outgoingRequestsPanel.setVisible(false);
+        }
 
         updateCustomPortsEnableState();
     }

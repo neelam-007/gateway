@@ -40,7 +40,8 @@ public class ClientRequestWssTimestamp extends ClientAssertion {
                 } else {
                     wssReqs = context.getAlternateWssRequirements(assertion.getRecipientContext());
                 }
-                wssReqs.setSignTimestamp(); // TODO make signature optional?
+                if (assertion.isSignatureRequired())
+                    wssReqs.setSignTimestamp();
                 return AssertionStatus.NONE;
             }
         });

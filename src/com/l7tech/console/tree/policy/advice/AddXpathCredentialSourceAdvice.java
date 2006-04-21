@@ -1,7 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.XpathCredentialSourcePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
@@ -26,7 +25,7 @@ public class AddXpathCredentialSourceAdvice implements Advice {
         JFrame f = TopComponents.getInstance().getMainWindow();
 
         XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(assertion, f, true);
-        Actions.setEscKeyStrokeDisposes(dlg);
+        Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
 //        dlg.setVisible(true);

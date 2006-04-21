@@ -57,7 +57,7 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
         ResponseWssTimestamp ass = (ResponseWssTimestamp)node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
         ResponseWssTimestampDialog dlg = new ResponseWssTimestampDialog(f, true, ass);
-        Actions.setEscKeyStrokeDisposes(dlg);
+        Utilities.setEscKeyStrokeDisposes(dlg);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);

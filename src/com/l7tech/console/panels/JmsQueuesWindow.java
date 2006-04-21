@@ -10,7 +10,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.JmsUtilities;
@@ -96,7 +95,7 @@ public class JmsQueuesWindow extends JDialog {
 
         that.pack();
         that.enableOrDisableButtons();
-        Actions.setEscKeyStrokeDisposes(that);
+        Utilities.setEscKeyStrokeDisposes(that);
         return that;
     }
 

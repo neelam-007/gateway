@@ -3,7 +3,6 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.AuditDetailAssertionPropertiesDialog;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
@@ -30,7 +29,7 @@ public class AddAuditAdviceAssertion implements Advice {
         AuditDetailAssertionPropertiesDialog aad = new AuditDetailAssertionPropertiesDialog(mw, subject);
         aad.pack();
         Utilities.centerOnScreen(aad);
-        Actions.setEscKeyStrokeDisposes(aad);
+        Utilities.setEscKeyStrokeDisposes(aad);
         aad.setVisible(true);
         if (aad.isModified()) {
             pc.proceed();

@@ -66,7 +66,7 @@ public class RegexPropertiesAction extends NodeAction {
             }
         });
 
-        Actions.setEscKeyStrokeDisposes(rd);
+        Utilities.setEscKeyStrokeDisposes(rd);
         rd.pack();
         rd.setSize(800, 600);
         Utilities.centerOnScreen(rd);

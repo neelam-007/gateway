@@ -23,10 +23,12 @@ public class TrustedSsgIdentityPanel extends SsgIdentityPanel {
     private JCheckBox useClientCredentialCheckBox;
     private JCheckBox useKerberosCredentialsCheckBox;
     private JCheckBox savePasswordCheckBox;
+    private final Ssg ssg;
 
     public TrustedSsgIdentityPanel(Ssg ssg) {
         setLayout(new BorderLayout());
         add(mainPanel);
+        this.ssg = ssg;
     }
 
     public JButton getClientCertButton() {
@@ -38,7 +40,8 @@ public class TrustedSsgIdentityPanel extends SsgIdentityPanel {
     }
 
     public ImageIcon getGeneralPaneImageIcon() {
-        return IconManager.getSmallTrustedSsgDiagram();
+        return ssg.isGeneric() ? IconManager.getSmallGenericServiceDiagram()
+                               : IconManager.getSmallTrustedSsgDiagram();
     }
 
     public JCheckBox getUseClientCredentialCheckBox() {

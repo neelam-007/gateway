@@ -3,7 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.SqlAttackAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputAdapter;
@@ -70,7 +69,7 @@ public class SqlAttackDialog extends JDialog {
             }
         });
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         populateProtectionList();
 
     }

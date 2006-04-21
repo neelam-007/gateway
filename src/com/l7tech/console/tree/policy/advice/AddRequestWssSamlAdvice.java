@@ -1,7 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.panels.Wizard;
@@ -47,7 +46,7 @@ public class AddRequestWssSamlAdvice implements Advice {
             }
         });
 
-        Actions.setEscKeyStrokeDisposes(w);
+        Utilities.setEscKeyStrokeDisposes(w);
         w.pack();
         w.setSize(850, 500);
         Utilities.centerOnScreen(w);

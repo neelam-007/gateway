@@ -96,7 +96,7 @@ public class CreateServiceWsdlAction extends SecureAction {
                 Wizard w = new WsdlCreateWizard(f, p);
 
                 w.addWizardListener(wizardListener);
-                Actions.setEscKeyStrokeDisposes(w);
+                Utilities.setEscKeyStrokeDisposes(w);
                 w.pack();
                 w.setSize(850, 500);
                 Utilities.centerOnScreen(w);

@@ -10,11 +10,9 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
 import com.l7tech.console.panels.LogPanel;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
 
@@ -84,7 +82,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         // saveMenuItem listener
         getSaveMenuItem().

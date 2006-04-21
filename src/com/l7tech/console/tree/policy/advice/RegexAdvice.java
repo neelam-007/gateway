@@ -5,7 +5,6 @@ import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.RegexDialog;
 import com.l7tech.console.beaneditor.BeanAdapter;
-import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.common.gui.util.Utilities;
@@ -36,7 +35,7 @@ public class RegexAdvice implements Advice {
             }
         });
 
-        Actions.setEscKeyStrokeDisposes(rd);
+        Utilities.setEscKeyStrokeDisposes(rd);
         rd.pack();
         rd.setSize(800, 600);
         Utilities.centerOnScreen(rd);

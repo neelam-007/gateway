@@ -5,6 +5,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.common.gui.util.Utilities;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -31,7 +32,7 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
         setResizable(true);
         setTitle("Create LDAP Identity Provider Wizard");
         setShowDescription(false);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         wizardInput = new LdapIdentityProviderConfig();
         ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());

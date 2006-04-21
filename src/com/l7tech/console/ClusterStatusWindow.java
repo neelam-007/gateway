@@ -5,7 +5,6 @@ import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.audit.LogonEvent;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.panels.EditGatewayNameDialog;
@@ -105,7 +104,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         initResources();
         initAdminConnection();
         initCaches();

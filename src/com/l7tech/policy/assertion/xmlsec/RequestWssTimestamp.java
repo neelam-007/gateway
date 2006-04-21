@@ -45,6 +45,10 @@ public class RequestWssTimestamp extends Assertion implements SecurityHeaderAddr
         this.timeUnit = timeUnit;
     }
 
+    public String toString() {
+        return super.toString() + " signatureRequired=" + signatureRequired;
+    }
+
     private TimeUnit timeUnit = TimeUnit.SECONDS;
     private int maxExpiryMilliseconds = 60 * 60 * 1000; // One hour
     private boolean signatureRequired = true;

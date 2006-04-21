@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
@@ -94,7 +93,7 @@ public class NewVirtualGroupDialog extends JDialog {
         }
         });
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         groupNameTextField.setDocument(new FilterDocument(128,
                         new FilterDocument.Filter() {

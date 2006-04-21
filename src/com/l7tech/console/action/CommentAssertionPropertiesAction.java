@@ -55,7 +55,7 @@ public class CommentAssertionPropertiesAction extends NodeAction {
         CommentAssertion ca = (CommentAssertion)node.asAssertion();
         JFrame f = TopComponents.getInstance().getMainWindow();
         CommentAssertionDialog cad = new CommentAssertionDialog(f, ca);
-        Actions.setEscKeyStrokeDisposes(cad);
+        Utilities.setEscKeyStrokeDisposes(cad);
         cad.pack();
         Utilities.centerOnScreen(cad);
         cad.setVisible(true);

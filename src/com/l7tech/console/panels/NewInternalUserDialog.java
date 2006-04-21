@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -126,7 +125,7 @@ public class NewInternalUserDialog extends JDialog {
         panel.setLayout(new GridBagLayout());
         setTitle(resources.getString("dialog.title"));
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent event) {

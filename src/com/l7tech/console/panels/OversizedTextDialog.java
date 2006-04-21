@@ -7,7 +7,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.InputValidator;
-import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 
 import javax.swing.*;
@@ -79,7 +78,7 @@ public class OversizedTextDialog extends JDialog {
         soapEnvCheckBox.addChangeListener(changeListener);
         payloadCheckBox.addChangeListener(changeListener);
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         getRootPane().setDefaultButton(okButton);
 
         Utilities.enableGrayOnDisabled(textLengthField);

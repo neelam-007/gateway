@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
@@ -55,7 +54,7 @@ public class NewGroupDialog extends JDialog {
      */
     public NewGroupDialog(JFrame parent, IdentityProviderConfig ipc) {
         super(parent, true);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         this.parent = parent;
         this.ipc = ipc;
         initResources();
@@ -125,7 +124,7 @@ public class NewGroupDialog extends JDialog {
                 windowAction(CMD_CANCEL);
             }
         });
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         
 
         // user name label

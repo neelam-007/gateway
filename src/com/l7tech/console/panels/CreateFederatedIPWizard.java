@@ -1,10 +1,10 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.common.gui.util.Utilities;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -23,7 +23,7 @@ public class CreateFederatedIPWizard extends Wizard {
         setResizable(true);
         setTitle("Create Federated Identity Provider Wizard");
         setShowDescription(false);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
         
         wizardInput = new FederatedIdentityProviderConfig();
 

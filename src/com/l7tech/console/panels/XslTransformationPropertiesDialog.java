@@ -1,9 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -57,7 +55,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         }
         this.assertion = assertion;
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         directionLabel.setLabelFor(directionCombo);
         whichMimePartLabel.setLabelFor(whichMimePartSpinner);

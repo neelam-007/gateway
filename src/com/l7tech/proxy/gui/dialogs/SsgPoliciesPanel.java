@@ -6,11 +6,17 @@
 package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.OkCancelDialog;
+import com.l7tech.common.gui.widgets.UrlPanel;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.wssp.PolicyConversionException;
+import com.l7tech.policy.wssp.WsspReader;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -19,6 +25,7 @@ import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -29,6 +36,9 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.tree.TreeModel;
+import javax.wsdl.Binding;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,7 +46,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.net.URL;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,8 +79,8 @@ class SsgPoliciesPanel extends JPanel {
     private JTable policyTable;
     private ArrayList displayPolicies;
     private DisplayPolicyTableModel displayPolicyTableModel;
-    private JButton buttonFlushPolicies;
-    private JButton importButton;
+    private JButton importFileButton;
+    private JButton importWsdlButton;
     private JButton exportButton;
     private JButton changeButton;
     private JButton deleteButton;
@@ -94,7 +106,7 @@ class SsgPoliciesPanel extends JPanel {
                                         GridBagConstraints.HORIZONTAL,
                                         new Insets(14, 6, 0, 6), 0, 0));
 
-        buttonFlushPolicies = new JButton("Clear Policy Cache");
+        JButton buttonFlushPolicies = new JButton("Clear Policy Cache");
         buttonFlushPolicies.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 policyCache.clearPolicies();
@@ -160,9 +172,11 @@ class SsgPoliciesPanel extends JPanel {
         policyButtons.add(getChangeButton());
         policyButtons.add(getDeleteButton());
         policyButtons.add(Box.createGlue());
-        policyButtons.add(getImportButton());
+        policyButtons.add(getImportFileButton());
+        policyButtons.add(getImportWsdlButton());
         policyButtons.add(getExportButton());
-        Utilities.equalizeButtonSizes(new AbstractButton[] { getImportButton(),
+        Utilities.equalizeButtonSizes(new AbstractButton[] { getImportFileButton(),
+                                                             getImportWsdlButton(),
                                                              getExportButton(),
                                                              getChangeButton(),
                                                              getDeleteButton() });
@@ -203,10 +217,177 @@ class SsgPoliciesPanel extends JPanel {
         col.setMaxWidth(width);
     }
 
-    public JButton getImportButton() {
-        if (importButton == null) {
-            importButton = new JButton("Import");
-            importButton.addActionListener(new ActionListener() {
+    public JButton getImportWsdlButton() {
+        if (importWsdlButton == null) {
+            importWsdlButton = new JButton("Import WSDL");
+            importWsdlButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    UrlPanel p = new UrlPanel();
+                    OkCancelDialog dialog = new OkCancelDialog(Gui.getInstance().getFrame(),
+                                                               "Enter a WSDL URL",
+                                                               true, p);
+                    dialog.setModal(true);
+                    dialog.pack();
+                    Utilities.centerOnScreen(dialog);
+                    dialog.setVisible(true);
+
+                    String urlString = (String)dialog.getValue();
+                    if (urlString == null) return; // Canceled
+
+                    try {
+                        final Document wsdlDoc = XmlUtil.parse(new URL(urlString).openStream());
+                        log.fine("Downloaded WSDL document: " + XmlUtil.nodeToFormattedString(wsdlDoc));
+                        log.fine("Scanning WSDL document for policies...");
+                        final Wsdl wsdl = Wsdl.newInstance(urlString, wsdlDoc);
+                        Binding binding = chooseBinding(wsdl);
+                        if (binding == null) return; // canceled
+
+                        // Find all already-used proxy URIs
+                        Set usedUris = new HashSet();
+                        Set paks = policyCache.getPolicyAttachmentKeys();
+                        for (Iterator i = paks.iterator(); i.hasNext();) {
+                            PolicyAttachmentKey pak = (PolicyAttachmentKey)i.next();
+                            usedUris.add(pak.getProxyUri());
+                        }
+
+                        List operations = binding.getBindingOperations();
+                        for (Iterator i = operations.iterator(); i.hasNext();) {
+                            BindingOperation operation = (BindingOperation)i.next();
+
+                            org.apache.ws.policy.Assertion wsspIn  = wsdl.getEffectiveInputPolicy(binding, operation);
+                            org.apache.ws.policy.Assertion wsspOut = wsdl.getEffectiveOutputPolicy(binding, operation);
+
+                            WsspReader converter = new WsspReader();
+                            try {
+                                Assertion all = converter.convertFromWssp(
+                                        (org.apache.ws.policy.Policy)wsspIn.normalize(wsdl.getPolicyRegistry()),
+                                        (org.apache.ws.policy.Policy)wsspOut.normalize(wsdl.getPolicyRegistry()));
+
+                                Policy newPolicy = new Policy(all, null);
+
+                                // Make a new unique uri
+                                String proxyUriBase = "/" + binding.getQName().getLocalPart();
+                                String proxyUri = proxyUriBase;
+                                int num = 1;
+                                while (usedUris.contains(proxyUri))
+                                    proxyUri = proxyUriBase + num++;
+
+                                // attach this policy at the appropriate location
+                                String soapAction = SoapUtil.findSoapAction(operation);
+                                String uri = SoapUtil.findTargetNamespace(wsdl.getDefinition(), operation);
+                                PolicyAttachmentKey pak = new PolicyAttachmentKey(uri, soapAction, proxyUri);
+                                pak.setBeginsWithMatch(false);
+                                pak.setPersistent(true);
+                                try {
+                                    policyCache.setPolicy(pak, newPolicy);
+                                } catch (PolicyLockedException e1) {
+                                    // extremely unlikely to happen -- proxyUri was unique when we created it a second ago
+                                    // Can only happen if a client request thread causes this exact PAK to be created during this
+                                    // time window
+                                    throw new PolicyConversionException(e1);
+                                }
+                                updatePolicyPanel();
+                                log.log(Level.INFO, "Successfully imported policy for binding=" + binding.getQName() + " operation=" + operation);
+
+                            } catch (PolicyConversionException e1) {
+                                log.log(Level.WARNING, "Unable to import policy", e1);
+                                JOptionPane.showMessageDialog(getRootPane(),
+                                                              "Unable to convert policy for binding " +
+                                                                      binding.getQName().getLocalPart() + ": " + e1.getMessage() +
+                                                              "\n\nThis binding will not be imported.",
+                                                              "Unable to import policy",
+                                                              JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                    } catch (IOException e1) {
+                        log.log(Level.WARNING, "Error reading WSDL URL", e1);
+                        JOptionPane.showMessageDialog(getRootPane(),
+                                                      "Unable to read the specified URL: " + e1.getMessage(),
+                                                      "Unable to read URL",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    } catch (SAXException e1) {
+                        log.log(Level.WARNING, "Error parsing WSDL XML", e1);
+                        JOptionPane.showMessageDialog(getRootPane(),
+                                                      "Unable to parse the specified WSDL: " + e1.getMessage(),
+                                                      "Unable to parse WSDL",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    } catch (WSDLException e1) {
+                        log.log(Level.WARNING, "Error parsing WSDL", e1);
+                        JOptionPane.showMessageDialog(getRootPane(),
+                                                      "Unable to parse the specified WSDL: " + e1.getMessage(),
+                                                      "Unable to parse WSDL",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    } catch (Wsdl.BadPolicyReferenceException e1) {
+                        // Can't actually happen -- we'd have caught this earlier on
+                        log.log(Level.WARNING, "Error importing policy from WSDL", e1);
+                        JOptionPane.showMessageDialog(getRootPane(),
+                                                      "Unable to import policy from the specified WSDL: " + e1.getMessage(),
+                                                      "Unable to parse WSDL",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+
+                private Binding chooseBinding(Wsdl wsdl) throws SAXException {
+                    List bindings = new ArrayList(wsdl.getBindings());
+                    List bindingsWithPolicies = new ArrayList();
+                    List badBindings = new ArrayList();
+                    for (Iterator i = bindings.iterator(); i.hasNext();) {
+                        Binding binding = (Binding)i.next();
+                        List ops = binding.getBindingOperations();
+                        for (Iterator j = ops.iterator(); j.hasNext();) {
+                            BindingOperation op = (BindingOperation)j.next();
+                            try {
+                                if (wsdl.getEffectiveInputPolicy(binding, op) != null ||
+                                        wsdl.getEffectiveOutputPolicy(binding, op) != null)
+                                    bindingsWithPolicies.add(binding);
+                            } catch (Wsdl.BadPolicyReferenceException e) {
+                                // Ignore this binding -- it has a bad reference
+                                log.log(Level.WARNING, "Unable to follow policy reference in WSDL: ", e);
+                                badBindings.add(binding);
+                            }
+                        }
+                    }
+
+                    if (badBindings.size() > 0) {
+                        // Warn about bad bindings
+                        StringBuffer sb = new StringBuffer();
+                        for (Iterator i = badBindings.iterator(); i.hasNext();) {
+                            Binding binding = (Binding)i.next();
+                            sb.append(binding.getQName().getLocalPart()).append(" ");
+                        }
+                        JOptionPane.showMessageDialog(getRootPane(),
+                                                      "The following bindings had unresolvable policy references, and were ignored:\n"
+                                                              + sb.toString(),
+                                                      "Unable to resolve attached policies",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+
+                    if (bindingsWithPolicies.size() < 1)
+                        throw new SAXException("The specified WSDL does not contain any bindings with attached policies.");
+
+                    if (bindingsWithPolicies.size() < 2)
+                        return (Binding)bindingsWithPolicies.get(0);
+
+                    Object[] bindingNames = bindingsWithPolicies.toArray();
+                    Object bindingName = JOptionPane.showInputDialog(getRootPane(),
+                                                                     "Select the binding whose policy you wish to import.",
+                                                                     "Select a binding.",
+                                                                     JOptionPane.QUESTION_MESSAGE,
+                                                                     null,
+                                                                     bindingNames,
+                                                                     null);
+
+                    return (Binding)bindingName;
+                }
+            });
+        }
+        return importWsdlButton;
+    }
+
+    public JButton getImportFileButton() {
+        if (importFileButton == null) {
+            importFileButton = new JButton("Import file");
+            importFileButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                     JFileChooser fc = Utilities.createJFileChooser();
                     fc.setFileFilter(createPolicyFileFilter());
@@ -248,27 +429,27 @@ class SsgPoliciesPanel extends JPanel {
                             // TODO Figure out: which third-party bug was this awful catch block put here to work around, and is it safe to remove yet?
                             log.log(Level.WARNING, "Error importing policy", nfe);
                             JOptionPane.showMessageDialog(getRootPane(),
-                              "Unable to import the specified file: " + nfe.getMessage(),
-                              "Unable to read file",
-                              JOptionPane.ERROR_MESSAGE);
+                                                          "Unable to import the specified file: " + nfe.getMessage(),
+                                                          "Unable to read file",
+                                                          JOptionPane.ERROR_MESSAGE);
                         } catch (IOException e) {
                             log.log(Level.WARNING, "Error importing policy", e);
                             JOptionPane.showMessageDialog(getRootPane(),
-                              "Unable to import the specified file: " + e.getMessage(),
-                              "Unable to read file",
-                              JOptionPane.ERROR_MESSAGE);
+                                                          "Unable to import the specified file: " + e.getMessage(),
+                                                          "Unable to read file",
+                                                          JOptionPane.ERROR_MESSAGE);
                         } catch (PolicyLockedException e) {
                             log.log(Level.WARNING, "Error saving policy", e);
                             JOptionPane.showMessageDialog(getRootPane(),
-                              "Unable to save the new policy: " + e.getMessage() + "\nPlease try again.",
-                              "Unable to save policy",
-                              JOptionPane.ERROR_MESSAGE);
+                                                          "Unable to save the new policy: " + e.getMessage() + "\nPlease try again.",
+                                                          "Unable to save policy",
+                                                          JOptionPane.ERROR_MESSAGE);
                         } catch (SAXException e) {
                             log.log(Level.WARNING, "Error importing policy", e);
                             JOptionPane.showMessageDialog(getRootPane(),
-                              "Unable to import the specified file due to malformed XML: " + e.getMessage(),
-                              "Unable to read file",
-                              JOptionPane.ERROR_MESSAGE);
+                                                          "Unable to import the specified file due to malformed XML: " + e.getMessage(),
+                                                          "Unable to read file",
+                                                          JOptionPane.ERROR_MESSAGE);
                         } finally {
                             if (policyIs != null) try { policyIs.close(); } catch (IOException e) {}
                         }
@@ -276,7 +457,7 @@ class SsgPoliciesPanel extends JPanel {
                 }
             });
         }
-        return importButton;
+        return importFileButton;
     }
 
     public JButton getExportButton() {
@@ -311,9 +492,9 @@ class SsgPoliciesPanel extends JPanel {
                         } catch (IOException e) {
                             log.log(Level.WARNING, "Error exporting policy", e);
                             JOptionPane.showMessageDialog(getRootPane(),
-                              "Unable to export to the specified file: " + e.getMessage(),
-                              "Unable to export file",
-                              JOptionPane.ERROR_MESSAGE);
+                                                          "Unable to export to the specified file: " + e.getMessage(),
+                                                          "Unable to export file",
+                                                          JOptionPane.ERROR_MESSAGE);
                         } finally {
                             if (os != null) try { os.close(); } catch (IOException e) { }
                         }
@@ -370,9 +551,9 @@ class SsgPoliciesPanel extends JPanel {
                     } catch (PolicyLockedException e1) {
                         log.log(Level.WARNING, "Error saving policy", e1);
                         JOptionPane.showMessageDialog(getRootPane(),
-                          "Unable to save the edited policy: " + e1.getMessage() + "\nPlease try again.",
-                          "Unable to save policy",
-                          JOptionPane.ERROR_MESSAGE);
+                                                      "Unable to save the edited policy: " + e1.getMessage() + "\nPlease try again.",
+                                                      "Unable to save policy",
+                                                      JOptionPane.ERROR_MESSAGE);
                     }
                     lastSelectedPolicy = newPak;
                     updatePolicyPanel();

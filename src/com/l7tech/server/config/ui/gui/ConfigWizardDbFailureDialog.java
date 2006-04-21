@@ -1,7 +1,6 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.Actions;
 import com.l7tech.server.config.db.DBActions;
 
 import javax.swing.*;
@@ -47,7 +46,7 @@ public class ConfigWizardDbFailureDialog extends JDialog {
                 break;
         }
         inputPanel.add(reasonPanel, BorderLayout.CENTER);
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent evt) {

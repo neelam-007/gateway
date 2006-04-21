@@ -388,7 +388,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
 
     private void initialize() {
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         initializeEncryptionConfig();
         initializeResponseSignatureConfig();

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.security.xml.KeyReference;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.gui.widgets.ValidatedPanel;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssSecurityToken;
 
 import javax.swing.*;

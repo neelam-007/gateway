@@ -1,11 +1,10 @@
 /**
  * Copyright (C) 2006 Layer 7 Technologies Inc.
  */
-package com.l7tech.console.panels;
+package com.l7tech.common.gui.widgets;
 
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.common.gui.widgets.SquigglyTextField;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

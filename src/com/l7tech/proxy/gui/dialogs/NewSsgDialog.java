@@ -26,6 +26,7 @@ public class NewSsgDialog extends JDialog {
     private JRadioButton radioFederatedGateway;
     private JRadioButton radioTokenFederatedPassive;
     private JRadioButton radioTrustedGateway;
+    private JRadioButton radioRawUrl;
     private JLabel imageLabel;
     private JPanel imagePanel;
     private JComboBox trustedSsgComboBox;
@@ -81,6 +82,7 @@ public class NewSsgDialog extends JDialog {
         ButtonGroup bg1 = new ButtonGroup();
         bg1.add(radioTrustedGateway);
         bg1.add(radioFederatedGateway);
+        bg1.add(radioRawUrl);
 
         ButtonGroup bg2 = new ButtonGroup();
         bg2.add(radioTokenOther);
@@ -126,6 +128,7 @@ public class NewSsgDialog extends JDialog {
         radioTokenOther.addActionListener(radioChanged);
         radioTokenTrustedGateway.addActionListener(radioChanged);
         radioTokenFederatedPassive.addActionListener(radioChanged);
+        radioRawUrl.addActionListener(radioChanged);
         checkButtonState();
     }
 
@@ -135,6 +138,9 @@ public class NewSsgDialog extends JDialog {
         boolean haveTrusted = trustedSsgComboBox.getModel().getSize() > 0;
         if (radioTrustedGateway.isSelected()) {
             wantImage = IconManager.getTrustedSsgDiagram();
+            fed = false;
+        } else if (radioRawUrl.isSelected()) {
+            wantImage = IconManager.getGenericServiceDiagram();
             fed = false;
         } else if (radioTokenTrustedGateway.isSelected()) {
             wantImage = IconManager.getFederatedSsgDiagram();
@@ -160,10 +166,11 @@ public class NewSsgDialog extends JDialog {
             return null;
 
         // Configure the Ssg
+        ssg.setGeneric(false);
         if (radioTrustedGateway.isSelected()) {
             // Trusted SSG
             ssg.setTrustedGateway(null);
-        } else {
+        } else if (radioFederatedGateway.isSelected()) {
             // Federated SSG
             if (radioTokenTrustedGateway.isSelected()) {
                 Ssg trustSsg = (Ssg)trustedSsgComboBox.getSelectedItem();
@@ -179,7 +186,11 @@ public class NewSsgDialog extends JDialog {
             } else {
                 throw new IllegalStateException("Invalid radio button state!");
             }
-
+        } else if (radioRawUrl.isSelected()) {
+            ssg.setTrustedGateway(null);
+            ssg.setGeneric(true);
+        } else {
+            throw new IllegalStateException("Invalid radio button state!");
         }
         return ssg;
     }

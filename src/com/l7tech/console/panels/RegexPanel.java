@@ -3,6 +3,8 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.widgets.TextEntryPanel;
+
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 

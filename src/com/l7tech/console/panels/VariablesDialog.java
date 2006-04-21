@@ -6,11 +6,11 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.treetable.AbstractTreeTableModel;
 import com.l7tech.console.util.treetable.JTreeTable;
 import com.l7tech.console.util.treetable.TreeTableModel;
-import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -147,7 +147,7 @@ public class VariablesDialog extends JDialog {
             }
         });
 
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
         innerPanel.setLayout(new BorderLayout());
         JScrollPane scrollPane = new JScrollPane(treeTable);

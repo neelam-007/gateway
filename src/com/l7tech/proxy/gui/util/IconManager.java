@@ -24,10 +24,12 @@ public class IconManager {
     private static ImageIcon splashImage;
     private static Image iconAppIcon;
     private static ImageIcon trustedSsgDiagram;
+    private static ImageIcon genericServiceDiagram;
     private static ImageIcon federatedSsgDiagram;
     private static ImageIcon federatedSsgWithTokenServiceDiagram;
     private static ImageIcon federatedSsgWithFederationServiceDiagram;
     private static ImageIcon smtrustedSsgDiagram;
+    private static ImageIcon smgenericServiceDiagram;
     private static ImageIcon smfederatedSsgDiagram;
     private static ImageIcon smfederatedSsgWithTokenServiceDiagram;
     private static ImageIcon smfederatedSsgWithFederationServiceDiagram;
@@ -55,6 +57,12 @@ public class IconManager {
         return smtrustedSsgDiagram;
     }
 
+    public static ImageIcon getGenericServiceDiagram() {
+        if (genericServiceDiagram == null)
+            genericServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_generic_service.png");
+        return genericServiceDiagram;
+    }
+
     public static ImageIcon getFederatedSsgDiagram() {
         if (federatedSsgDiagram == null)
             federatedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg.png");
@@ -65,6 +73,12 @@ public class IconManager {
         if (smfederatedSsgDiagram == null)
             smfederatedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_small_federated_ssg.png");
         return smfederatedSsgDiagram;
+    }
+
+    public static ImageIcon getSmallGenericServiceDiagram() {
+        if (smgenericServiceDiagram == null)
+            smgenericServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_small_generic_service.png");
+        return smgenericServiceDiagram;
     }
 
     public static ImageIcon getFederatedSsgWithTokenServiceDiagram() {

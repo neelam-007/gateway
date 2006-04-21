@@ -25,6 +25,7 @@ class SsgTableModel extends AbstractTableModel implements SsgListener {
     private static final Logger log = Logger.getLogger(SsgTableModel.class.getName());
     private final String SSG_TYPE_FEDERATED = "Federated";
     private final String SSG_TYPE_TRUSTED = "Trusted";
+    private final String SSG_TYPE_GENERIC = "Generic service";
 
     private SsgManager ssgManager;
     private SortedSet model = null;
@@ -127,10 +128,14 @@ class SsgTableModel extends AbstractTableModel implements SsgListener {
                 public int compare(Ssg ssg1, Ssg ssg2) {
                     String ssgaType = SSG_TYPE_TRUSTED;
                     String ssgbType = SSG_TYPE_TRUSTED;
-                    if(ssg1.isFederatedGateway()) {
+                    if (ssg1.isGeneric()) {
+                        ssgaType = SSG_TYPE_GENERIC;
+                    } else if (ssg1.isFederatedGateway()) {
                         ssgaType = SSG_TYPE_FEDERATED;
                     }
-                    if(ssg2.isFederatedGateway()) {
+                    if (ssg2.isGeneric()) {
+                        ssgbType = SSG_TYPE_GENERIC;
+                    } else if (ssg2.isFederatedGateway()) {
                         ssgbType = SSG_TYPE_FEDERATED;
                     }
                     return compareStringsThatMightBeNull(ssgaType, ssgbType);
@@ -191,7 +196,9 @@ class SsgTableModel extends AbstractTableModel implements SsgListener {
                 case 1:
                     return ssg.getLocalEndpoint();
                 case 2:
-                    if(ssg.isFederatedGateway()) {
+                    if (ssg.isGeneric()) {
+                        return SSG_TYPE_GENERIC;
+                    } else if(ssg.isFederatedGateway()) {
                         return SSG_TYPE_FEDERATED;
                     } else {
                         return SSG_TYPE_TRUSTED;
@@ -259,7 +266,6 @@ class SsgTableModel extends AbstractTableModel implements SsgListener {
     /**
      * Return the row containing the given ssg, or -1 if it isn't in the table.
      * @param ssg
-     * @return
      */
     int getRow(Ssg ssg) {
         if (ssg == null)

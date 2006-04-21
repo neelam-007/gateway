@@ -4,7 +4,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
@@ -202,7 +201,7 @@ public class CertManagerWindow extends JDialog {
 
         pack();
         enableOrDisableButtons();
-        Actions.setEscKeyStrokeDisposes(this);
+        Utilities.setEscKeyStrokeDisposes(this);
 
     }
 

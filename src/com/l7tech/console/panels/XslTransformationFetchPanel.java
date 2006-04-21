@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
 import javax.swing.*;
