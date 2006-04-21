@@ -478,7 +478,8 @@ public class GClient {
             }
             response = request.getResponse();
             statusLabel.setText(Integer.toString(response.getStatus()));
-            lengthLabel.setText(response.getContentLength().toString());
+            final Long clen = response.getContentLength();
+            lengthLabel.setText(clen == null ? "(null)" : clen.toString());
             ContentTypeHeader type = response.getContentType();
             ctypeLabel.setText(String.valueOf(type == null ? null : type.getFullValue()));
             if (type == null) type = ContentTypeHeader.TEXT_DEFAULT;
