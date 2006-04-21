@@ -118,6 +118,7 @@ public class LogPanel extends JPanel {
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
+    private LogPanelBoundComponents lpbc = new LogPanelBoundComponents();
     private int[] tableColumnWidths = new int[20];
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private String msgFilterNode = "";
@@ -129,7 +130,6 @@ public class LogPanel extends JPanel {
     private JPanel selectPane;
     private JPanel filterPane;
     private JLabel filterLabel;
-    private JPanel controlPane;
     private JScrollPane msgTablePane;
     private JPanel statusPane;
     private JTable msgTable;
@@ -137,7 +137,6 @@ public class LogPanel extends JPanel {
     private JScrollPane associatedLogsScrollPane;
     private JTextArea msgDetails;
     private JSlider slider;
-    private JCheckBox autoRefresh;
     private DefaultTableModel logTableModel;
     private FilteredLogTableSorter logTableSorter;
     private JLabel msgTotal;
@@ -158,15 +157,6 @@ public class LogPanel extends JPanel {
     private final StringBuffer unformattedRequestXml;
     private final StringBuffer unformattedResponseXml;
     private DateField startDateField;
-    private JRadioButton viewCurrentRadioButton;
-    private JRadioButton viewHistoricRadioButton;
-    private JComboBox startDateComboBox;
-    private JPanel startDatePane;
-    private JPanel viewHistoricPane;
-    private JPanel viewCurrentPane;
-    private JSpinner rangeSpinner;
-    private JButton updateSelectionButton;
-    private JComboBox limitUnitComboBox;
     private JSplitPane logSplitPane;
     private JSplitPane selectionSplitPane;
     private boolean connected = false;
@@ -273,57 +263,57 @@ public class LogPanel extends JPanel {
 
     private void init() {
         ButtonGroup viewButtonGroup = new ButtonGroup();
-        viewButtonGroup.add(viewCurrentRadioButton);
-        viewButtonGroup.add(viewHistoricRadioButton);
+        viewButtonGroup.add(lpbc.viewCurrentRadioButton);
+        viewButtonGroup.add(lpbc.viewHistoricRadioButton);
 
-        viewCurrentRadioButton.addItemListener(new ItemListener(){
+        lpbc.viewCurrentRadioButton.addItemListener(new ItemListener(){
             public void itemStateChanged(ItemEvent e) {
                 updateControlState();
             }
         });
 
-        Utilities.setFont(controlPane, new java.awt.Font("Dialog", 0, 11));
+        Utilities.setFont(lpbc.controlPane, new java.awt.Font("Dialog", 0, 11));
 
-        autoRefresh.addActionListener(new ActionListener() {
+        lpbc.autoRefresh.addActionListener(new ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 updateLogAutoRefresh();
             }
         });
 
-        limitUnitComboBox.setModel(new DefaultComboBoxModel(new String[]{"hrs.", "days", "wks."}));
+        lpbc.limitUnitComboBox.setModel(new DefaultComboBoxModel(new String[]{"hrs.", "days", "wks."}));
 
-        startDatePane.setLayout(new BorderLayout());
+        lpbc.startDatePane.setLayout(new BorderLayout());
         startDateField = CalendarFactory.createDateField();
-        startDatePane.add(startDateField, BorderLayout.CENTER);
+        lpbc.startDatePane.add(startDateField, BorderLayout.CENTER);
 
-        startDateComboBox.setModel(new DefaultComboBoxModel(
+        lpbc.startDateComboBox.setModel(new DefaultComboBoxModel(
                 new String[]{"00:00", "03:00", "06:00", "09:00", "12:00", "15:00", "18:00", "21:00"}));
 
-        rangeSpinner.setValue(new Integer(24));
+        lpbc.rangeSpinner.setValue(new Integer(24));
 
-        updateSelectionButton.addActionListener(new ActionListener() {
+        lpbc.updateSelectionButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 updateViewSelection();
             }
         });
 
         // select after adding date field to ensure correct initial enabled state
-        viewCurrentRadioButton.setSelected(true);
+        lpbc.viewCurrentRadioButton.setSelected(true);
     }
 
     private void updateControlState() {
         clearLogCache();
         if(connected) {
-            if(viewCurrentRadioButton.isSelected()) {
-                Utilities.setEnabled(viewCurrentPane, true);
-                Utilities.setEnabled(autoRefresh, true); // for logs this is not in the panel
-                Utilities.setEnabled(viewHistoricPane, false);
+            if(lpbc.viewCurrentRadioButton.isSelected()) {
+                Utilities.setEnabled(lpbc.viewCurrentPane, true);
+                Utilities.setEnabled(lpbc.autoRefresh, true); // for logs this is not in the panel
+                Utilities.setEnabled(lpbc.viewHistoricPane, false);
                 refreshLogs();
             }
             else {
-                Utilities.setEnabled(viewCurrentPane, false);
-                Utilities.setEnabled(autoRefresh, false);
-                Utilities.setEnabled(viewHistoricPane, true);
+                Utilities.setEnabled(lpbc.viewCurrentPane, false);
+                Utilities.setEnabled(lpbc.autoRefresh, false);
+                Utilities.setEnabled(lpbc.viewHistoricPane, true);
                 updateLogAutoRefresh();
             }
 
@@ -407,8 +397,8 @@ public class LogPanel extends JPanel {
     public boolean isAutoRefresh() {
         Window pWin = SwingUtilities.getWindowAncestor(this);
         return pWin!=null && pWin.isVisible()
-                && autoRefresh.isEnabled()
-                && autoRefresh.isSelected();
+                && lpbc.autoRefresh.isEnabled()
+                && lpbc.autoRefresh.isSelected();
     }
 
     private void updateLogAutoRefresh() {
@@ -430,20 +420,20 @@ public class LogPanel extends JPanel {
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.HOUR_OF_DAY, startDateComboBox.getSelectedIndex() * 3);
+        calendar.set(Calendar.HOUR_OF_DAY, lpbc.startDateComboBox.getSelectedIndex() * 3);
 
-        long range = ((Integer)rangeSpinner.getValue()).intValue();
+        long range = ((Integer)lpbc.rangeSpinner.getValue()).intValue();
 
         Date startDate = null;
         Date endDate = null;
 
         if(range>=0) {
             startDate = calendar.getTime();
-            endDate = new Date(startDate.getTime() + (range * UNIT_FACTOR[limitUnitComboBox.getSelectedIndex()]));
+            endDate = new Date(startDate.getTime() + (range * UNIT_FACTOR[lpbc.limitUnitComboBox.getSelectedIndex()]));
         }
         else {
             endDate = calendar.getTime();
-            startDate = new Date(endDate.getTime() + (range * UNIT_FACTOR[limitUnitComboBox.getSelectedIndex()]));
+            startDate = new Date(endDate.getTime() + (range * UNIT_FACTOR[lpbc.limitUnitComboBox.getSelectedIndex()]));
         }
 
         refreshLogs(startDate, endDate);
@@ -700,8 +690,8 @@ public class LogPanel extends JPanel {
         updateLogsRefreshTimerDelay();
         clearMsgTable();
 
-        Utilities.setEnabled(viewCurrentRadioButton, true);
-        Utilities.setEnabled(viewHistoricRadioButton, true);
+        Utilities.setEnabled(lpbc.viewCurrentRadioButton, true);
+        Utilities.setEnabled(lpbc.viewHistoricRadioButton, true);
         updateControlState();
     }
 
@@ -716,8 +706,8 @@ public class LogPanel extends JPanel {
         getFilteredLogTableSorter().onDisconnect();
 
         setHint("Disconnected");
-        Utilities.setEnabled(controlPane, false);
-        Utilities.setEnabled(autoRefresh, false);
+        Utilities.setEnabled(lpbc.controlPane, false);
+        Utilities.setEnabled(lpbc.autoRefresh, false);
     }
 
     /**
@@ -920,8 +910,8 @@ public class LogPanel extends JPanel {
         JPanel microControlPane = new JPanel();
         microControlPane.setLayout(new BoxLayout(microControlPane, BoxLayout.X_AXIS));
 
-        autoRefresh.setSelected(true);
-        microControlPane.add(autoRefresh);
+        lpbc.autoRefresh.setSelected(true);
+        microControlPane.add(lpbc.autoRefresh);
 
         return microControlPane;
     }
@@ -931,7 +921,7 @@ public class LogPanel extends JPanel {
      * @return  JPanel
      */
     private JPanel getControlPane(){
-        return controlPane;
+        return lpbc.controlPane;
     }
 
     /**
@@ -1271,7 +1261,7 @@ public class LogPanel extends JPanel {
 
     public void refreshView() {
         if(connected) {
-            if(viewCurrentRadioButton.isSelected()) {
+            if(lpbc.viewCurrentRadioButton.isSelected()) {
                 refreshLogs();
             }
             else {
@@ -1616,7 +1606,7 @@ public class LogPanel extends JPanel {
     }
 
     public boolean importView(File file) throws IOException {
-        viewHistoricRadioButton.setSelected(true);
+        lpbc.viewHistoricRadioButton.setSelected(true);
 
         XStream xstream = new XStream(new DomDriver());
         InputStream in = null;
@@ -1702,5 +1692,19 @@ public class LogPanel extends JPanel {
         public int compareTo(Object o) {
             return new Long(ssgLogRecord.getMillis()).compareTo(new Long(((WriteableLogMessage)o).ssgLogRecord.getMillis()));
         }
+    }
+
+    private static class LogPanelBoundComponents {
+        private JPanel controlPane;
+        private JPanel viewHistoricPane;
+        private JPanel viewCurrentPane;
+        private JCheckBox autoRefresh;
+        private JButton updateSelectionButton;
+        private JComboBox startDateComboBox;
+        private JRadioButton viewCurrentRadioButton;
+        private JRadioButton viewHistoricRadioButton;
+        private JPanel startDatePane;
+        private JComboBox limitUnitComboBox;
+        private JSpinner rangeSpinner;
     }
 }
