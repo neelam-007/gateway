@@ -14,7 +14,21 @@
     <bean id="preferences" class="com.l7tech.console.util.Preferences" factory-method="getPreferences">
     </bean>
 
-    <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"/>
+    <bean id="rmiClientSocketFactory" class="com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory"
+          depends-on="setLazyTrustFailureHandlerInit"/>
+
+    <!-- Set lazy trust handler init for discovery of SSL certificates -->
+    <bean id="setLazyTrustFailureHandlerInit"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod">
+            <value>com.l7tech.spring.remoting.rmi.ssl.SslRMIClientSocketFactory.setLazyTrustFailureHandler</value>
+        </property>
+        <property name="arguments">
+            <list>
+                <value>true</value>
+            </list>
+        </property>
+    </bean>
 
     <bean id="adminLogin" class="com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean">
         <property name="serviceInterface">

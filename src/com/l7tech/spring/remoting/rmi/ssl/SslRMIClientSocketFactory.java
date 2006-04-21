@@ -1,7 +1,5 @@
 package com.l7tech.spring.remoting.rmi.ssl;
 
-import sun.security.x509.X500Name;
-
 import javax.net.SocketFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -52,6 +50,18 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
     //- PUBLIC
 
     /**
+     * Set the SSLTrustFailureHandler to be lazily initialized.
+     *
+     * <p>When set to true the handler is not created until a connection
+     * attempt is made, else it is initialized during instance creation.</p>
+     *
+     * @param lazy True for lazy initialization.
+     */
+    public static void setLazyTrustFailureHandler(boolean lazy) {
+        lazyInitTrustFailureHandler = lazy;   
+    }
+
+    /**
      * Sets the <code>SSLFailureHandler</code> to be called if the server trust
      * failed. If <b>null</b> clears the existing handler.
      *
@@ -92,7 +102,11 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
 
         // Need to init the trust handler for server-side clients else equality
         // checking will fail.
-        checkInit();
+        //
+        // Initialization MUST be lazy on the client or cert discovery will
+        // break.
+        //
+        if (!lazyInitTrustFailureHandler) checkInit();
     }
 
     /**
@@ -236,6 +250,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
 
     private static KeyManagerFactory currentKeyManagerFactory;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
+    private static boolean lazyInitTrustFailureHandler = false;
 
     //
     private String host; // host if not the default
@@ -248,7 +263,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
      */
     private static class SSLClientTrustManager implements X509TrustManager {
         private final X509TrustManager delegate;
-        private final SSLTrustFailureHandler trustFailureHandler;
+        private final SSLTrustFailureHandler sslTrustFailureHandler;
 
         /**
          * Package subclassing
@@ -262,7 +277,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
                 throw new IllegalArgumentException("The X509 Trust Manager is required");
             }
             this.delegate = delegate;
-            this.trustFailureHandler = trustFailureHandler;
+            this.sslTrustFailureHandler = trustFailureHandler;
         }
 
         /**
@@ -286,7 +301,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
         public void checkServerTrusted(X509Certificate[] chain, String authType)
           throws CertificateException {
 
-            if (trustFailureHandler == null) {  // not specified
+            if (sslTrustFailureHandler == null) {  // not specified
                 delegate.checkServerTrusted(chain, authType);
             } else {
                 try {
@@ -294,13 +309,13 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
                     // name by throwing an exception, this is is bit of a hack and can
                     // be removed if we don't want to check the host name for trusted
                     // certificates.
-                    trustFailureHandler.handle(null, chain, authType);
+                    sslTrustFailureHandler.handle(null, chain, authType);
                     if (delegate.getAcceptedIssuers().length == 0) {
                         throw new CertificateException("No trusted issuers.");
                     }
                     delegate.checkServerTrusted(chain, authType);
                 } catch (CertificateException e) {
-                    if (!trustFailureHandler.handle(e, chain, authType)) {
+                    if (!sslTrustFailureHandler.handle(e, chain, authType)) {
                         throw e;
                     }
                 }
