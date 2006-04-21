@@ -109,14 +109,6 @@ public class WssDecoratorImpl implements WssDecorator {
             xencDesiredNextSibling = sc;
         }
 
-        // If there are any WSA headers in the message, and we are signing anything else, then sign them too
-        Element messageId = SoapUtil.getL7aMessageIdElement(message);
-        if (messageId != null && !signList.isEmpty())
-            signList.add(messageId);
-        Element relatesTo = SoapUtil.getL7aRelatesToElement(message);
-        if (relatesTo != null && !signList.isEmpty())
-            signList.add(relatesTo);
-
         Element addedUsernameTokenHolder = null; // dummy element to hold fully-encrypted usernametoken.  will be removed later
         if (dreq.getUsernameTokenCredentials() != null) {
             Element usernameToken = createUsernameToken(securityHeader, dreq.getUsernameTokenCredentials());
@@ -132,6 +124,22 @@ public class WssDecoratorImpl implements WssDecorator {
                 cryptList.add(addedUsernameTokenHolder);
             }
         }
+
+        Element saml = null;
+        if (dreq.getSenderSamlToken() != null) {
+            saml = addSamlSecurityToken(securityHeader, dreq.getSenderSamlToken());
+            if (dreq.isIncludeSamlTokenInSignature()) {
+                signList.add(saml);
+            }
+        }
+
+        // If there are any WSA headers in the message, and we are signing anything else, then sign them too
+        Element messageId = SoapUtil.getL7aMessageIdElement(message);
+        if (messageId != null && !signList.isEmpty())
+            signList.add(messageId);
+        Element relatesTo = SoapUtil.getL7aRelatesToElement(message);
+        if (relatesTo != null && !signList.isEmpty())
+            signList.add(relatesTo);
 
         // Add sender cert
         KeyInfoDetails senderCertKeyInfo = null;
@@ -175,18 +183,10 @@ public class WssDecoratorImpl implements WssDecorator {
             sct = addSecurityContextToken(c, securityHeader, session.getId());
         }
 
-        Element saml = null;
-        if (dreq.getSenderSamlToken() != null) {
-            saml = addSamlSecurityToken(securityHeader, dreq.getSenderSamlToken());
-            if (dreq.isIncludeSamlTokenInSignature()) {
-                signList.add(saml);
-            }
-        }
-
         final Element signature;
         Element addedEncKey = null;
         XencUtil.XmlEncKey addedEncKeyXmlEncKey = null;
-        if (dreq.getElementsToSign().size() > 0) {
+        if (signList.size() > 0) {
             Key senderSigningKey;
             final KeyInfoDetails signatureKeyInfo;
             if (sct != null) {
@@ -307,7 +307,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
             signature = addSignature(c,
                 senderSigningKey,
-                (Element[])(dreq.getElementsToSign().toArray(new Element[0])),
+                (Element[])(signList.toArray(new Element[0])),
                 securityHeader,
                 signatureKeyInfo);
             if (xencDesiredNextSibling == null)
