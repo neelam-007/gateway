@@ -1219,6 +1219,51 @@ public class XmlUtil {
         }
     }
 
+    /**
+     * Strip all elements and attributes using the given namespace from the
+     * given node.
+     *
+     * <p>Note that this does not remove any namespace declarations.</p>
+     *
+     * @param node The node to check.
+     */
+    public static void stripNamespace(Node node, String namespace) {
+        if (node != null && namespace != null) {
+            // attributes
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                NamedNodeMap nodeAttrs = node.getAttributes();
+                List attrsForRemoval = new ArrayList();
+                for (int n=0; n<nodeAttrs.getLength(); n++) {
+                    Attr attribute = (Attr) nodeAttrs.item(n);
+                    if (namespace.equals(attribute.getNamespaceURI())) {
+                        attrsForRemoval.add(attribute);
+                    }
+                }
+                for (Iterator iterator = attrsForRemoval.iterator(); iterator.hasNext();) {
+                    Attr attribute = (Attr) iterator.next();
+                    ((Element)node).removeAttributeNode(attribute);
+                }
+            }
+
+            // children
+            NodeList nodes = node.getChildNodes();
+            List nodesForRemoval = new ArrayList();
+            for (int n=0; n<nodes.getLength(); n++) {
+                Node child = nodes.item(n);
+                if (namespace.equals(child.getNamespaceURI())) {
+                    nodesForRemoval.add(child);
+                }
+                else {
+                    stripNamespace(child, namespace);
+                }
+            }
+            for (Iterator iterator = nodesForRemoval.iterator(); iterator.hasNext();) {
+                Node nodeToRemove = (Node) iterator.next();
+                node.removeChild(nodeToRemove);                
+            }
+        }
+    }
+
     public static Document softXSLTransform(Document source, Transformer transformer, Map params) throws TransformerException {
         final DOMResult outputTarget = new DOMResult();
         if (params != null && !params.isEmpty()) {
