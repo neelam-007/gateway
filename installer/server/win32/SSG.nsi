@@ -137,6 +137,8 @@ Section "SecureSpan Gateway" SecCopyUI
   Rename "$INSTDIR\jdk1.5.0_04-windows-i586-p-redist" "$INSTDIR\jdk"
   ;etc/install.properties not having version as suffix to jdk 
   ;File /r "${BUILD_DIR}\install\ssg\jdk" this would include the linux jvm
+  ; Windows installer has to remove the tarari_raxj.jar file
+  Delete "$INSTDIR\tomcat\webapps\ROOT\WEB-INF\lib\tarari_raxj.jar"
 
   SetOutPath "$INSTDIR/bin"
   File "${BUILD_DIR}\..\native\win32\uptime\Release\uptime.exe"
