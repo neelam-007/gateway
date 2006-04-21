@@ -39,11 +39,13 @@ public class ServerRequestWssTimestamp implements ServerAssertion {
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         XmlKnob reqXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
-        SecurityKnob reqSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
         if (reqXml == null) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE);
             return AssertionStatus.NOT_APPLICABLE;
         }
+
+        SecurityKnob reqSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
+        if (reqSec == null) return notimestamp();
 
         try {
             if (!context.getRequest().isSoap()) {
