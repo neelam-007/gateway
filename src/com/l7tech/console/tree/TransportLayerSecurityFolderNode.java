@@ -27,6 +27,5 @@ public class TransportLayerSecurityFolderNode extends AbstractPaletteFolderNode 
     protected void loadChildren() {
         children = null;
         insert(new SslTransportNode(false), 0);
-        insert(new StealthFaultNode(), 1);
     }
 }

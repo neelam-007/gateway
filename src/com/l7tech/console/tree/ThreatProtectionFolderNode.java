@@ -27,6 +27,7 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
     protected void loadChildren() {
         int index = 0;
         children = null;
+        insert( new StealthFaultNode(), index++ );
         insert( new SqlAttackAssertionPaletteNode(), index++ );
         insert( new RequestSizeLimitPaletteNode(), index++ );
         insert( new OversizedTextAssertionPaletteNode(), index++ );
