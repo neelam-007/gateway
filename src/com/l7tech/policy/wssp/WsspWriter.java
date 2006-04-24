@@ -5,6 +5,29 @@
 
 package com.l7tech.policy.wssp;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.dom.DOMResult;
+
+import org.apache.ws.policy.Policy;
+import org.apache.ws.policy.PrimitiveAssertion;
+import org.apache.ws.policy.util.PolicyFactory;
+import org.apache.ws.policy.util.StAXPolicyWriter;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -15,21 +38,13 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.*;
-import org.apache.ws.policy.Policy;
-import org.apache.ws.policy.PrimitiveAssertion;
-import org.apache.ws.policy.util.PolicyFactory;
-import org.apache.ws.policy.util.StAXPolicyWriter;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.dom.DOMResult;
-import java.util.*;
-import java.util.logging.Logger;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.WssTimestamp;
 
 /**
  * Converts a layer 7 policy into a WS-SecurityPolicy tree.
@@ -39,9 +54,10 @@ import java.util.logging.Logger;
  * <ul>
  *   <li>TLS with or without client certificate.</li>
  *   <li>WSS Username Token</li>
+ *   <li>WSS Timestamp</li>
  *   <li>WSS Signature</li>
- *   <li>WSS Integrity</li>
- *   <li>WSS Confidentiality</li>
+ *   <li>WSS Integrity (Header / Body only)</li>
+ *   <li>WSS Confidentiality (Header / Body only)</li>
  * <ul>
  *
  * <p>Currently all generated policies will use the Lax layout. The algorithm
@@ -83,7 +99,7 @@ public class WsspWriter {
         if (inputWsspElement.hasChildNodes()) wsdlDocEle.insertBefore(inputWsspElement, wsdlDocEle.getFirstChild());
         wsdlDocEle.insertBefore(wsspElement, wsdlDocEle.getFirstChild());
 
-        // add the main ref <wsp:PolicyReference URI="#A12Endpoint" wsdl:required="true"/>
+        // add the main ref
         NodeList bindingNodeList = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "binding");
         for (int i = 0; i < bindingNodeList.getLength(); i++) {
             Element binding = (Element)bindingNodeList.item(i);
@@ -168,7 +184,7 @@ public class WsspWriter {
      * then "Message Policy Subject" for the given type.</p>
      *
      * TODO support for faults
-     * TODO policies for operation instances
+     * TODO policies for operation instances (rather than jus in / out)
      *
      * @param layer7Root  the layer 7 policy tree to convert.  Must not be null.
      * @param isInput true if this is the input message
@@ -187,31 +203,27 @@ public class WsspWriter {
         // Policy stub
         Policy wssp = new Policy();
 
+        Collection encryptionAssertions = null;
+        Collection signingAssertions = null;
         if (isInput) {
-            if (containsInstanceOf(l7Assertions, RequestWssConfidentiality.class)) {
-                PrimitiveAssertion encryptedParts = new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_ENCRYPTED_PARTS, PREFIX_SECURITY_POLICY));
-                encryptedParts.addTerm(new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_PART_BODY, PREFIX_SECURITY_POLICY)));
-                wssp.addTerm(encryptedParts);
-            }
-
-            if (containsInstanceOf(l7Assertions, RequestWssIntegrity.class)) {
-                PrimitiveAssertion encryptedParts = new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_SIGNED_PARTS, PREFIX_SECURITY_POLICY));
-                encryptedParts.addTerm(new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_PART_BODY, PREFIX_SECURITY_POLICY)));
-                wssp.addTerm(encryptedParts);
-            }
+            encryptionAssertions = getInstancesOf(l7Assertions, RequestWssConfidentiality.class);
+            signingAssertions = getInstancesOf(l7Assertions, RequestWssIntegrity.class);
         }
         else {
-            if (containsInstanceOf(l7Assertions, ResponseWssConfidentiality.class)) {
-                PrimitiveAssertion encryptedParts = new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_ENCRYPTED_PARTS, PREFIX_SECURITY_POLICY));
-                encryptedParts.addTerm(new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_PART_BODY, PREFIX_SECURITY_POLICY)));
-                wssp.addTerm(encryptedParts);
-            }
+            encryptionAssertions = getInstancesOf(l7Assertions, ResponseWssConfidentiality.class);
+            signingAssertions = getInstancesOf(l7Assertions, ResponseWssIntegrity.class);
+        }
 
-            if (containsInstanceOf(l7Assertions, ResponseWssIntegrity.class)) {
-                PrimitiveAssertion encryptedParts = new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_SIGNED_PARTS, PREFIX_SECURITY_POLICY));
-                encryptedParts.addTerm(new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_PART_BODY, PREFIX_SECURITY_POLICY)));
-                wssp.addTerm(encryptedParts);
-            }
+        if (!encryptionAssertions.isEmpty()) {
+            PrimitiveAssertion encryptedParts = new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_ENCRYPTED_PARTS, PREFIX_SECURITY_POLICY));
+            buildParts(encryptedParts, encryptionAssertions);
+            wssp.addTerm(encryptedParts);
+        }
+
+        if (!signingAssertions.isEmpty()) {
+            PrimitiveAssertion signedParts = new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_SIGNED_PARTS, PREFIX_SECURITY_POLICY));
+            buildParts(signedParts, signingAssertions);
+            wssp.addTerm(signedParts);
         }
 
         return wssp;
@@ -267,14 +279,21 @@ public class WsspWriter {
     private static final String SPELE_SIGNED_PARTS = "SignedParts";
     private static final String SPELE_ENCRYPTED_PARTS = "EncryptedParts";
     private static final String SPELE_PART_BODY = "Body";
+    private static final String SPELE_PART_HEADER = "Header";
 
     // Security Policy Attributes
+    private static final String SPATTR_NAME = "Name";
+    private static final String SPATTR_NAMESPACE = "Namespace";
     private static final String SPATTR_INCL_TOKEN = "IncludeToken";
     private static final String SPATTR_REQ_CLIENT_CERT = "RequireClientCertificate";
 
     // Security Policy Attribute Values
     private static final String SPVALUE_INCL_TOKEN_NEVER = "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/Never";
     private static final String SPVALUE_INCL_TOKEN_ALWAYSTORECIPIENT = "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient";
+
+    // Pattern for Headers (Encryption/Signing)
+    private static final String BODY_PATTERN = "/{http://schemas.xmlsoap.org/soap/envelope/}Envelope/{http://schemas.xmlsoap.org/soap/envelope/}Body";
+    private static final Pattern HEADER_PATTERN = Pattern.compile("/\\{http://schemas.xmlsoap.org/soap/envelope/\\}Envelope/\\{http://schemas.xmlsoap.org/soap/envelope/\\}Header/\\{([^\\s}]{1,1024})}([^\\s}:/\\(\\){}\\[\\]]{1,1024})");
 
     // WSS assertions
     private static final Collection WSS_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(new Object[]{
@@ -316,10 +335,10 @@ public class WsspWriter {
             else if(isWssAssertion(assertion)) {
                 usesWss = true;
 
-                ensureBodyOnly(getInstancesOf(assertions, RequestWssConfidentiality.class));
-                ensureBodyOnly(getInstancesOf(assertions, ResponseWssConfidentiality.class));
-                ensureBodyOnly(getInstancesOf(assertions, RequestWssIntegrity.class));
-                ensureBodyOnly(getInstancesOf(assertions, ResponseWssIntegrity.class));
+                ensureHeaderOrBodyXpathsOnly(getInstancesOf(assertions, RequestWssConfidentiality.class));
+                ensureHeaderOrBodyXpathsOnly(getInstancesOf(assertions, ResponseWssConfidentiality.class));
+                ensureHeaderOrBodyXpathsOnly(getInstancesOf(assertions, RequestWssIntegrity.class));
+                ensureHeaderOrBodyXpathsOnly(getInstancesOf(assertions, ResponseWssIntegrity.class));
             }
             else if(assertion instanceof SslAssertion) {
                 SslAssertion sslAssertion = (SslAssertion) assertion;
@@ -603,28 +622,70 @@ public class WsspWriter {
         return isOneOf(WSS_ASSERTIONS, assertion.getClass());
     }
 
+    private void buildParts(org.apache.ws.policy.Assertion assertion, Collection xpathAssertions) {
+        boolean bodyDone = false;
+        for (Iterator assertionIter=xpathAssertions.iterator(); assertionIter.hasNext();) {
+            XpathBasedAssertion confAssertion = (XpathBasedAssertion) assertionIter.next();
+
+            String pattern = confAssertion.pattern();
+            Map namespaces = confAssertion.namespaceMap();
+            pattern = expandXpath(pattern, namespaces);
+
+            if(pattern.equals(BODY_PATTERN)) {
+                if (!bodyDone) {
+                    bodyDone = true;
+                    assertion.addTerm(new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_PART_BODY, PREFIX_SECURITY_POLICY)));
+                }
+            }
+            else {
+                Matcher headerMatcher = HEADER_PATTERN.matcher(pattern);
+                if (headerMatcher.matches()) {
+                    PrimitiveAssertion headerAssertion = new PrimitiveAssertion(new QName(NAMESPACE_SECURITY_POLICY, SPELE_PART_HEADER, PREFIX_SECURITY_POLICY));
+                    headerAssertion.addAttribute(new QName(SPATTR_NAMESPACE), headerMatcher.group(1));
+                    String elementName = headerMatcher.group(2);
+                    if (!"*".equals(elementName)) {
+                        headerAssertion.addAttribute(new QName(SPATTR_NAME), elementName);
+                    }
+                    assertion.addTerm(headerAssertion);
+                }
+            }
+        }
+    }
+
     /**
      * This just expands the assertions XPath to be QNameish then checks it is a simple
-     * XPath for the body "/Envelope/Body"
+     * XPath for the body "/Envelope/Body" or a header "/Envelope/Header/{xx}yy"
      */
-    private void ensureBodyOnly(Collection xpathAssertions) throws PolicyAssertionException {
+    private void ensureHeaderOrBodyXpathsOnly(Collection xpathAssertions) throws PolicyAssertionException {
         for (Iterator iterator = xpathAssertions.iterator(); iterator.hasNext();) {
             XpathBasedAssertion xpathBasedAssertion = (XpathBasedAssertion) iterator.next();
             String pattern = xpathBasedAssertion.pattern();
             Map namespaces = xpathBasedAssertion.namespaceMap();
 
-            for(Iterator iterator1 = namespaces.entrySet().iterator(); iterator1.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) iterator1.next();
-                String prefix = (String) entry.getKey();
-                String uri = (String) entry.getValue();
+            pattern = expandXpath(pattern, namespaces);
 
-                pattern = pattern.replaceAll("(?!/)"+prefix+":", "{"+uri+"}");
-            }
-
-            if(!pattern.equals("/{http://schemas.xmlsoap.org/soap/envelope/}Envelope/{http://schemas.xmlsoap.org/soap/envelope/}Body")) {
-                throw new PolicyAssertionException(xpathBasedAssertion, "Assertion XPath not supported (Body only '"+xpathBasedAssertion.pattern()+"')");
+            if(!pattern.equals(BODY_PATTERN)) {
+                Matcher headerMatcher = HEADER_PATTERN.matcher(pattern);
+                if (!headerMatcher.matches())
+                    throw new PolicyAssertionException(xpathBasedAssertion, "Assertion XPath not supported (Body or Headers only '"+xpathBasedAssertion.pattern()+"')");
             }
         }
+    }
+
+    /**
+     * Expands the XPath to be QNameish
+     */
+    private String expandXpath(String pattern, Map namespaces) {
+
+        for(Iterator iterator1 = namespaces.entrySet().iterator(); iterator1.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) iterator1.next();
+            String prefix = (String) entry.getKey();
+            String uri = (String) entry.getValue();
+
+            pattern = pattern.replaceAll("(?!/)"+prefix+":", "{"+uri+"}");
+        }
+
+        return pattern;
     }
 
     /**
