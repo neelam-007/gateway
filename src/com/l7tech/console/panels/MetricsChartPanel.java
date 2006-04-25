@@ -63,10 +63,10 @@ public class MetricsChartPanel extends ChartPanel {
     private static final Color SUCCESS_COLOR = new Color(0, 120, 0);
 
     /** Color for policy violation messages stack bars and alert indicators. */
-    private static final Color POLICY_VIOLATION_COLOR = new Color(255, 255, 0);
+    private static final Color POLICY_VIOLATION_COLOR = new Color(245, 240, 17);
 
     /** Color for routing failure messages stack bars and alert indicators. */
-    private static final Color ROUTING_FAILURE_COLOR = new Color(255, 0, 0);
+    private static final Color ROUTING_FAILURE_COLOR = new Color(255, 20, 20);
 
     /**
      * Background color of the indicator plot. Chosen to enhance visibility of
