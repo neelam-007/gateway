@@ -44,6 +44,9 @@ public class SslPeerHttpClient implements GenericHttpClient {
         if ("https".equalsIgnoreCase(proto)) {
             CurrentSslPeer.set(sslPeer);
             p.setSslSocketFactory(socketFactory);
+            if (socketFactory instanceof SslPeerLazyDelegateSocketFactory) {
+                ((SslPeerLazyDelegateSocketFactory)socketFactory).initialize();
+            }
         }
 
         final GenericHttpRequest request = client.createRequest(method, p);

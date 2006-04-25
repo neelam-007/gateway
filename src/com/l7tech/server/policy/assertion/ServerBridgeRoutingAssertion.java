@@ -35,9 +35,9 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.ssl.SslPeerHttpClient;
+import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -413,7 +413,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         // Attach SSL support
         client = new SslPeerHttpClient(client,
                                        ssg,
-                                       ClientProxySecureProtocolSocketFactory.getInstance());
+                                       new SslPeerLazyDelegateSocketFactory(ssg));
 
         if (ssg.isUseOverrideIpAddresses()) {
             // Attach failover client
