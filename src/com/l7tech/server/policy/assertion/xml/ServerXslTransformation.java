@@ -130,6 +130,7 @@ public class ServerXslTransformation implements ServerAssertion {
 
     private final Pattern[] fetchUrlPatterns;
     private final CachedStylesheet preconfiguredStylesheet;
+    private final String xslParseErrorMessage;
 
     private final String[] varsUsed;
 
@@ -157,17 +158,21 @@ public class ServerXslTransformation implements ServerAssertion {
             }
             this.fetchUrlPatterns = (Pattern[])patterns.toArray(new Pattern[0]);
             this.preconfiguredStylesheet = null;
+            this.xslParseErrorMessage = null;
         } else {
             final byte[] xsltBytes = assertion.getXslSrc().getBytes();
             Templates softwareStylesheet = null;
+            String softwareStylesheetErrorMessage = null;
             try {
                 softwareStylesheet = compileSoftware(xsltBytes);
             } catch (ParseException e) {
-                auditor.logAndAudit(AssertionMessages.XSLT_BAD_XSL, new String[] { ExceptionUtils.getMessage(e) });
+                softwareStylesheetErrorMessage = ExceptionUtils.getMessage(e);
+                auditor.logAndAudit(AssertionMessages.XSLT_BAD_XSL, new String[] { softwareStylesheetErrorMessage });
             }
 
+            this.xslParseErrorMessage = softwareStylesheetErrorMessage;
             this.preconfiguredStylesheet =
-                    new CachedStylesheet(softwareStylesheet, compileTarari(xsltBytes));
+                    new CachedStylesheet(softwareStylesheet, compileTarari(xsltBytes), xslParseErrorMessage);
             this.fetchUrlPatterns = null;
         }
     }
@@ -466,7 +471,7 @@ public class ServerXslTransformation implements ServerAssertion {
                     logger.fine("Downloaded new XSLT from " + url.toExternalForm());
                     final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
                     TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(bytes);
-                    return new CachedStylesheet(compileSoftware(bytes), tarariStylesheet);
+                    return new CachedStylesheet(compileSoftware(bytes), tarariStylesheet, xslParseErrorMessage);
                 } catch (ParseException e) {
                     final String msg = ExceptionUtils.getMessage(e);
                     throw (IOException)new IOException(msg).initCause(e);
@@ -506,6 +511,7 @@ public class ServerXslTransformation implements ServerAssertion {
     private static class CachedStylesheet {
         private TarariCompiledStylesheet tarariStylesheet;
         private Templates softwareStylesheet;
+        private String softwareStylesheetParseErrorMessage;
 
         // This is in here so it doesn't get initialized until someone needs to use it
         private static final GenericHttpClient httpClient;
@@ -516,9 +522,10 @@ public class ServerXslTransformation implements ServerAssertion {
             httpClient = new CommonsHttpClient(connectionManager);
         }
 
-        public CachedStylesheet(Templates softwareStylesheet, TarariCompiledStylesheet tarariStylesheet) {
+        public CachedStylesheet(Templates softwareStylesheet, TarariCompiledStylesheet tarariStylesheet, String xslParseErrorMessage) {
             this.tarariStylesheet = tarariStylesheet;
             this.softwareStylesheet = softwareStylesheet;
+            this.softwareStylesheetParseErrorMessage = xslParseErrorMessage;
         }
 
         public AssertionStatus transform(TransformInput input, TransformOutput output)
@@ -554,6 +561,13 @@ public class ServerXslTransformation implements ServerAssertion {
                 throws PolicyAssertionException, SAXException, IOException {
             final Document doctotransform = t.asDocument();
             final Document outDoc;
+
+            if (softwareStylesheet == null) {
+                t.getAuditor().logAndAudit(AssertionMessages.XSLT_BAD_XSL,
+                        new String[] { softwareStylesheetParseErrorMessage });
+                return AssertionStatus.FAILED;
+            }
+
             try {
                 outDoc = XmlUtil.softXSLTransform(doctotransform, softwareStylesheet.newTransformer(), t.vars);
             } catch (TransformerException e) {

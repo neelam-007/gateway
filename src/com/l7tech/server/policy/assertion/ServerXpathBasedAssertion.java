@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  */
 public abstract class ServerXpathBasedAssertion implements ServerAssertion {
     protected final Auditor auditor;
+    private final String xpath;
     private final CompiledXpath compiledXpath;
 
     public ServerXpathBasedAssertion(XpathBasedAssertion assertion, ApplicationContext springContext) {
@@ -30,11 +31,17 @@ public abstract class ServerXpathBasedAssertion implements ServerAssertion {
             // Invalid expression -- disable processing
             compiledXpath = null;
         }
+        this.xpath = assertion.pattern();
         this.compiledXpath = compiledXpath;
     }
 
     /** @return the compiled xpath, or null if it was invalid and could not be compiled and so checkRequest should always fail. */
-    public CompiledXpath getCompiledXpath() {
+    protected CompiledXpath getCompiledXpath() {
         return compiledXpath;
+    }
+
+    /** @return the xpath, or null. */
+    protected String getXpath() {
+        return xpath;
     }
 }

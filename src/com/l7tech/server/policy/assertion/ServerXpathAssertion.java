@@ -55,7 +55,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
 
         CompiledXpath compiledXpath = getCompiledXpath();
         if (compiledXpath == null) {
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
+            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{getXpath()});
             return AssertionStatus.FALSIFIED;
         }
 
@@ -79,8 +79,9 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
             if (logger.isLoggable(Level.WARNING)) logger.log(Level.WARNING, "XPath failed: " + ExceptionUtils.getMessage(e), e);
         }
         if (xpathResult == null) {
-            auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST
-                                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE);
+            auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
+                                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
+                                new String[]{getXpath()});
             return AssertionStatus.FALSIFIED;
         }
 
@@ -136,8 +137,9 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
             auditor.logAndAudit(AssertionMessages.XPATH_MULTIPLE_RESULTS, new String[] { Integer.toString(size) });
 
         if (size < 1) {
-            auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST
-                                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE);
+            auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
+                                    : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
+                                new String[]{getXpath()});
             return AssertionStatus.FALSIFIED;
         }
 

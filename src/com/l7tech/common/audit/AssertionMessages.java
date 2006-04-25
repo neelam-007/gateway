@@ -117,6 +117,9 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_SUCCEED_RESPONSE                  = m(4711, Level.FINE, "XPath pattern matched response; assertion therefore succeeds.");
     public static final M XPATH_MULTIPLE_RESULTS                  = m(4712, Level.FINE, "XPath pattern found {0} results; .result variable will contain first value");
     public static final M XPATH_RESULTS                           = m(4713, Level.FINE, "XPath result #{0}: \"{1}\"");
+    public static final M XPATH_PATTERN_INVALID_MORE_INFO         = m(4714, Level.WARNING, "Cannot evaluate XPath expression: XPath pattern is invalid ''{0}''.");
+    public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST_MI    = m(4715, Level.INFO, "XPath pattern didn''t match request; assertion therefore fails; XPath is ''{0}''." );
+    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI   = m(4716, Level.INFO, "XPath pattern didn''t match response; assertion therefore fails; XPath is ''{0}''." );
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software xpath processing.");
