@@ -108,7 +108,7 @@ public class ServerEmailAlertAssertion implements ServerAssertion {
             message.addRecipient(javax.mail.Message.RecipientType.TO, address);
             message.setFrom(fromAddress);
             message.setSubject(ass.getSubject());
-            String body = ExpandVariables.process(ass.getMessage(), context.getVariableMap(varsUsed, auditor));
+            String body = ExpandVariables.process(ass.messageString(), context.getVariableMap(varsUsed, auditor));
             message.setText(body);
             Transport.send(message);
         } catch (MessagingException e) {

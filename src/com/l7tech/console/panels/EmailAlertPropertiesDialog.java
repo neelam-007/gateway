@@ -97,7 +97,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         portField.setText(Integer.toString(assertion.getSmtpPort()));
         addressField.setText(assertion.getTargetEmailAddress());
         subjectField.setText(assertion.getSubject());
-        messageField.setText(assertion.getMessage());
+        messageField.setText(assertion.messageString());
         fromAddressField.setText(assertion.getSourceEmailAddress());
     }
 
@@ -106,7 +106,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         assertion.setSmtpPort(safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT));
         assertion.setTargetEmailAddress(addressField.getText());
         assertion.setSubject(subjectField.getText());
-        assertion.setMessage(messageField.getText());
+        assertion.messageString(messageField.getText());
         assertion.setSourceEmailAddress(fromAddressField.getText());
     }
 

@@ -6,6 +6,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.TimeUnit;
@@ -36,6 +37,8 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.util.*;
 
@@ -202,7 +205,7 @@ public class WspConstants {
                                           SecurityTokenType.WSS_X509_BST), // freeze RequestWssX509Cert as SecurityToken or pre32 form; thaw pre32 form
         new SecurityTokenAssertionMapping(new SecureConversation(), "SecureConversation",
                                           SecurityTokenType.WSSC_CONTEXT), // freeze SecureConversation as SecurityToken or pre32 form; thaw pre32 form
-        new SecurityTokenAssertionMapping(new RequestWssSaml(), "RequestWssSaml", 
+        new SecurityTokenAssertionMapping(new RequestWssSaml(), "RequestWssSaml",
                                           SecurityTokenType.SAML_ASSERTION),
         new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate", "RequestXpathAssertion"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
@@ -251,7 +254,28 @@ public class WspConstants {
         new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new SnmpTrapAssertion(), "SnmpTrap"),
         new AssertionMapping(new ThroughputQuota(), "ThroughputQuota"),
-        new AssertionMapping(new EmailAlertAssertion(), "EmailAlert"),
+        new AssertionMapping(new EmailAlertAssertion(), "EmailAlert") {
+            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                if (source == null) { throw new IllegalArgumentException("Source cannot be null");}
+                NodeList messageNodes = source.getElementsByTagName("L7p:Message");
+                if (messageNodes.getLength() == 0) {
+                    super.populateObject(object, source, visitor);
+                } else {
+                    //this is an old style EmailAssertion
+                    Element messageNode = (Element)messageNodes.item(0);
+                    Node messageAttr = messageNode.getAttributeNode("stringValue");
+                    String message = messageAttr.getNodeValue();
+
+                    EmailAlertAssertion ema = (EmailAlertAssertion) object.target;
+                    ema.messageString(message);
+                    super.populateObject(object, source, PermissiveWspVisitor.INSTANCE);
+                }
+            }
+
+            protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
+                super.populateElement(wspWriter, element, object);
+            }
+        },
         new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
         new AssertionMapping(new InverseHttpFormPost(), "InverseHttpFormPost"),
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),

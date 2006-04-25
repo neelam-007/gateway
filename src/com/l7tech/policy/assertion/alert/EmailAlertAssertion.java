@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.policy.assertion.alert;
@@ -9,9 +7,12 @@ package com.l7tech.policy.assertion.alert;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.common.util.HexUtils;
+
+import java.io.IOException;
 
 /**
- * An assertion that sends an email message.
+ * An assertion that sends an email base64message.
  */
 public class EmailAlertAssertion extends Assertion implements UsesVariables {
     public static final String DEFAULT_HOST = "mail";
@@ -25,21 +26,21 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private String smtpHost = DEFAULT_HOST;
     private int smtpPort = DEFAULT_PORT;
     private String subject = DEFAULT_SUBJECT;
-    private String message = DEFAULT_MESSAGE;
+    private String base64message = "";
 
     public EmailAlertAssertion() {
     }
 
-    public EmailAlertAssertion(String subject, String message, String targetEmailAddress, String snmpServer) {
-        if (targetEmailAddress == null || snmpServer == null)
-            throw new NullPointerException();
-        if (subject == null) subject = "";
-        if (message == null) message = "";
-        this.subject = subject;
-        this.message = message;
-        this.targetEmailAddress = targetEmailAddress;
-        this.smtpHost = snmpServer;
-    }
+//    public EmailAlertAssertion(String subject, String message, String targetEmailAddress, String snmpServer) {
+//        if (targetEmailAddress == null || snmpServer == null)
+//            throw new NullPointerException();
+//        if (subject == null) subject = "";
+//        if (message == null) message = "";
+//        this.subject = subject;
+//        this.base64message = message;
+//        this.targetEmailAddress = targetEmailAddress;
+//        this.smtpHost = snmpServer;
+//    }
 
     public String getTargetEmailAddress() {
         return targetEmailAddress;
@@ -77,13 +78,25 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         this.subject = subject;
     }
 
-    public String getMessage() {
-        return message;
+    public String getBase64message() {
+        return base64message;
     }
 
-    public void setMessage(String message) {
+    public void setBase64message(String message) {
         if (message == null) message = "";
-        this.message = message;
+        base64message = message;
+    }
+
+    public String messageString() {
+        try {
+            return new String(HexUtils.decodeBase64(base64message, true));
+        } catch (IOException e) {
+            return base64message;
+        }
+    }
+
+    public void messageString(String text) {
+        setBase64message(HexUtils.encodeBase64(text.getBytes(), true));
     }
 
     /** @return the source email address.  May be empty but never null. */
@@ -97,6 +110,6 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(this.getMessage());
+        return ExpandVariables.getReferencedNames(this.messageString());
     }
 }

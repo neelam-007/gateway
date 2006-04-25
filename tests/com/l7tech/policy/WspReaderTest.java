@@ -349,12 +349,12 @@ public class WspReaderTest extends TestCase {
         EmailAlertAssertion ema = new EmailAlertAssertion();
         ema.setSubject("Hi there");
         ema.setTargetEmailAddress("blah@blah.example.com");
-        ema.setMessage(body);
+        ema.messageString(body);
 
         String emXml = WspWriter.getPolicyXml(ema);
         EmailAlertAssertion got = (EmailAlertAssertion)WspReader.parseStrictly(emXml);
 
-        assertEquals(got.getMessage(), body);
+        assertEquals(got.messageString(), body);
     }
 
 
