@@ -47,8 +47,9 @@ public class ResponseWssTimestampPanel extends ValidatedPanel {
         oldTimeUnit = timeUnit;
         comboModel.setSelectedItem(timeUnit);
         expiryTimeUnitCombo.setModel(comboModel);
-        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("#.####"));
+        final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
         numberFormatter.setValueClass(Double.class);
+        numberFormatter.setMinimum(Double.valueOf(0));
 
         expiryTimeField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
             public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {

@@ -24,6 +24,6 @@ public class RequestWssTimestampPaletteNode extends AbstractLeafPaletteNode {
      * @return the assertion this node represnts
      */
     public Assertion asAssertion() {
-        return new RequestWssTimestamp();
+        return RequestWssTimestamp.newInstance();
     }
 }

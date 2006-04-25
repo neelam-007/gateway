@@ -1,7 +1,5 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import javax.swing.*;
-
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.common.util.TimeUnit;
 
@@ -16,6 +14,13 @@ import com.l7tech.common.util.TimeUnit;
 public class WssTimestamp extends Assertion implements SecurityHeaderAddressable  {
 
     //- PUBLIC
+
+    public static WssTimestamp newInstance() {
+        WssTimestamp timestamp = new WssTimestamp();
+        timestamp.setRequestMaxExpiryMilliseconds(RequestWssTimestamp.DEFAULT_MAX_EXPIRY_TIME);
+        timestamp.setResponseExpiryMilliseconds(ResponseWssTimestamp.DEFAULT_EXPIRY_TIME);
+        return timestamp;
+    }
 
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;
@@ -42,11 +47,11 @@ public class WssTimestamp extends Assertion implements SecurityHeaderAddressable
     }
 
     public int getResponseExpiryMilliseconds() {
-        return responseMaxExpiryMilliseconds;
+        return responseExpiryMilliseconds;
     }
 
     public void setResponseExpiryMilliseconds(int expiryMillis) {
-        this.responseMaxExpiryMilliseconds = expiryMillis;
+        this.responseExpiryMilliseconds = expiryMillis;
     }
 
     public TimeUnit getResponseTimeUnit() {
@@ -59,10 +64,10 @@ public class WssTimestamp extends Assertion implements SecurityHeaderAddressable
 
     //- PRIVATE
 
-    private TimeUnit requestTimeUnit = TimeUnit.SECONDS;
-    private TimeUnit responseTimeUnit = TimeUnit.SECONDS;
-    private int requestMaxExpiryMilliseconds = 60 * 60 * 1000; // One hour
-    private int responseMaxExpiryMilliseconds = 60 * 60 * 1000; // One hour
+    private TimeUnit requestTimeUnit = TimeUnit.MINUTES;
+    private TimeUnit responseTimeUnit = TimeUnit.MINUTES;
+    private int requestMaxExpiryMilliseconds;
+    private int responseExpiryMilliseconds;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
 }

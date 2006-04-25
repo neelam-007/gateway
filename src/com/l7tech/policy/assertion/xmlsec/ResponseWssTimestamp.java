@@ -13,13 +13,28 @@ import com.l7tech.common.util.TimeUnit;
  * @author alex
  */
 public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig {
+
+    /**
+     * The recommended expiry time to use when creating response wss timestamps;
+     */
+    public static final int DEFAULT_EXPIRY_TIME = 5 * TimeUnit.MINUTES.getMultiplier();
+
+    /**
+     * Create a new ResponseWssTimestamp with default properties.
+     */
+    public static ResponseWssTimestamp newInstance() {
+        ResponseWssTimestamp timestamp = new ResponseWssTimestamp();
+        timestamp.setExpiryMilliseconds(ResponseWssTimestamp.DEFAULT_EXPIRY_TIME);
+        return timestamp;
+    }
+
     /**
      * Expiry time of the timestamp, always in milliseconds, regardless of {@link #timeUnit}.
      */
     private int expiryMillis;
 
     /** TimeUnit remembered purely for GUI purposes (no impact on {@link #expiryMillis})*/
-    private TimeUnit timeUnit = TimeUnit.SECONDS;
+    private TimeUnit timeUnit = TimeUnit.MINUTES;
 
     private String keyReference = KeyReference.BST.getName();
     

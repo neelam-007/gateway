@@ -13,6 +13,21 @@ import com.l7tech.common.util.TimeUnit;
  * must follow one of {@link RequestWssX509Cert}, {@link SecureConversation} or {@link RequestWssSaml}).
  */
 public class RequestWssTimestamp extends Assertion implements SecurityHeaderAddressable {
+
+    /**
+     * The recommended max expiry time to use when creating request wss timestamps;
+     */
+    public static final int DEFAULT_MAX_EXPIRY_TIME = TimeUnit.HOURS.getMultiplier(); // One hour
+
+    /**
+     * Create a new RequestWssTimestamp with default properties.
+     */
+    public static RequestWssTimestamp newInstance() {
+        RequestWssTimestamp timestamp = new RequestWssTimestamp();
+        timestamp.setMaxExpiryMilliseconds(RequestWssTimestamp.DEFAULT_MAX_EXPIRY_TIME);
+        return timestamp;
+    }
+
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;
     }
@@ -49,8 +64,8 @@ public class RequestWssTimestamp extends Assertion implements SecurityHeaderAddr
         return super.toString() + " signatureRequired=" + signatureRequired;
     }
 
-    private TimeUnit timeUnit = TimeUnit.SECONDS;
-    private int maxExpiryMilliseconds = 60 * 60 * 1000; // One hour
+    private TimeUnit timeUnit = TimeUnit.MINUTES;
+    private int maxExpiryMilliseconds;
     private boolean signatureRequired = true;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 }
