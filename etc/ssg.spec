@@ -80,6 +80,24 @@ else
 	echo "kernel.panic = 10" >> /etc/sysctl.conf
 fi
 
+# fix file limits
+
+limits=`egrep -e \^\*\.\*soft\.\*nofile\.\*4096\$ /etc/security/limits.conf`
+
+if [ "$limits" ]; then
+	echo -n ""
+	# already installed
+else
+	echo "# Layer 7 Limits"  >> /etc/security/limits.conf
+	echo "*               soft    nproc   2047"  >> /etc/security/limits.conf
+	echo "*               hard    nproc   16384"  >> /etc/security/limits.conf
+	echo "*               soft    nofile  4096"  >> /etc/security/limits.conf
+	echo "*               hard    nofile  63536"  >> /etc/security/limits.conf
+	# 4096 files open and stuff
+fi
+
+# fix the getty
+
 gettys=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
 
 if [ "$gettys" ]; then
