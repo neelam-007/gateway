@@ -15,10 +15,11 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,9 +38,6 @@ public class XslTransformationSpecifyPanel extends JPanel {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XslTransformationPropertiesDialog");
 
     public static final int CONTROL_SPACING = 5;
-    private static final String XSL_TOPEL_NAME = "transform";
-    private static final String XSL_TOPEL_NAME2 = "stylesheet";
-    private static final String XSL_NS = "http://www.w3.org/1999/XSL/Transform";
 
     private JPanel mainPanel;
     private JPanel xsltPanel;
@@ -265,21 +263,13 @@ public class XslTransformationSpecifyPanel extends JPanel {
     }
 
     private static boolean docIsXsl(Document doc) {
-        Element rootEl = doc.getDocumentElement();
-
-        if (!XSL_NS.equals(rootEl.getNamespaceURI())) {
-            log.log(Level.WARNING, "document is not valid xslt (namespace is not + " + XSL_NS + ")");
+        try {
+            TransformerFactory.newInstance().newTemplates(new DOMSource(XmlUtil.parse(new StringReader(XmlUtil.nodeToString(doc)), false)));
+        } catch (Exception e) {
+            log.log(Level.INFO, "document is not valid xslt", e);
             return false;
         }
-
-        if (XSL_TOPEL_NAME.equals(rootEl.getLocalName())) {
-            return true;
-        } else if (XSL_TOPEL_NAME2.equals(rootEl.getLocalName())) {
-            return true;
-        }
-        log.log(Level.WARNING, "document is not xslt (top element " + rootEl.getLocalName() +
-          " is not " + XSL_TOPEL_NAME + " or " + XSL_TOPEL_NAME2 + ")");
-        return false;
+        return true;
     }
 
 }
