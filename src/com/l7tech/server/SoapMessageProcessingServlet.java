@@ -1,5 +1,7 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
  */
 
 package com.l7tech.server;
@@ -143,8 +145,19 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 }
             }
 
+            SoapFaultDetail faultDetail = context.getFaultDetail();
+
             if (status == AssertionStatus.NONE) {
+
                 if (response.getKnob(MimeKnob.class) == null) {
+                    // check if there's something in the faultDetail for us that may have been set by one of the
+                    // assertions even though the policy succeeded (thanks you Continue Processing Assertion)
+                     if (faultDetail != null) {
+                        logger.fine("policy succeeded, but a soap fault is present. Returning this soap fault");
+                        sendFault(context, faultDetail, hrequest, hresponse);
+                        return;
+                    }
+
                     // Routing successful, but no actual response received, probably due to a one-way JMS send.
                     hresponse.setStatus(200);
                     hresponse.setContentType(null);
@@ -163,9 +176,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.fine("servlet transport returned status " + routeStat +
                             ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
 
-            } else if (context.getFaultDetail() != null) {
+            } else if (faultDetail != null) {
                 logger.fine("returning special soap fault");
-                sendFault(context, context.getFaultDetail(), hrequest, hresponse);
+                sendFault(context, faultDetail, hrequest, hresponse);
             } else if (respKnob.hasChallenge()) {
                 logger.fine("servlet transport returning challenge");
                 respKnob.beginChallenge();

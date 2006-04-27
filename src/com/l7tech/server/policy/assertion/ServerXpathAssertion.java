@@ -40,9 +40,10 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
     public ServerXpathAssertion(SimpleXpathAssertion assertion, ApplicationContext springContext, boolean isReq) {
         super(assertion, springContext);
         this.req = isReq;
-        this.foundVariable = assertion.foundVariable();
-        this.countVariable = assertion.countVariable();
-        this.resultVariable = assertion.resultVariable();
+        foundVariable = assertion.foundVariable();
+        resultVariable = assertion.resultVariable();
+        countVariable = assertion.countVariable();
+
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
@@ -56,16 +57,25 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         CompiledXpath compiledXpath = getCompiledXpath();
         if (compiledXpath == null) {
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID_MORE_INFO, new String[]{getXpath()});
-            return AssertionStatus.FALSIFIED;
+            //the xpath could not be compiled, so the assertion cannot work ... FAILED
+            return AssertionStatus.FAILED;
         }
 
         final ElementCursor cursor;
         try {
+            if (!message.isXml()) {
+                auditNotXml();
+
+                //the mesage isn't XML, so an XPath can't be applied ... NOT_APPLICABLE
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+
             final XmlKnob xmlKnob = message.getXmlKnob();
             cursor = xmlKnob.getElementCursor();
+
         } catch (SAXException e) {
-            auditor.logAndAudit(req ? AssertionMessages.XPATH_REQUEST_NOT_XML
-                                    : AssertionMessages.XPATH_RESPONSE_NOT_XML);
+            auditNotXml();
+            //can't proceed cause the XML message probably isn't well formed ... FAILED
             return AssertionStatus.FAILED;
         }
 
@@ -82,6 +92,8 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
             auditor.logAndAudit(req ? AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST_MI
                                     : AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI,
                                 new String[]{getXpath()});
+
+            //the xpath ran, but nothing was matched ... FALSIFIED
             return AssertionStatus.FALSIFIED;
         }
 
@@ -166,5 +178,9 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND);
         context.setVariable(resultVariable, ns.getNodeValue(0));
         return AssertionStatus.NONE;
+    }
+
+    private void auditNotXml() {
+        auditor.logAndAudit(req ? AssertionMessages.XPATH_REQUEST_NOT_XML: AssertionMessages.XPATH_RESPONSE_NOT_XML);
     }
 }

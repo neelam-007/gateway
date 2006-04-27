@@ -22,7 +22,6 @@ import java.util.Map;
 /**
  * Tests the ServerRequestXpathAssertion class.
  * @author franco
- * @version $Revision$
  */
 public class RequestXpathAssertionTest extends TestCase {
 
@@ -49,7 +48,7 @@ public class RequestXpathAssertionTest extends TestCase {
             final String xp = failingXpaths[i];
             System.out.println("xpath should fail: " + xp);
             ret = getResultForXPath(xp);
-            assertTrue((ret == AssertionStatus.FALSIFIED || ret == AssertionStatus.SERVER_ERROR));
+            assertTrue((ret == AssertionStatus.FALSIFIED || ret == AssertionStatus.FAILED));
         }
     }
 
