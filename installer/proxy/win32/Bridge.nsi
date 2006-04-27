@@ -67,22 +67,53 @@
 
   ReserveFile "${NSISDIR}\Contrib\Icons\modern-header 2.bmp"
 
+; checks for previous installations and warns user if detected
+Function CheckPreviousInstalls
+
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT}" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.4.1" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.4" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.1" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} 3.0" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} HEAD" ""
+  StrCmp ${TEMP} "" 0 foundpreviousinstall
+
+  DetailPrint "No previous installation of ${MUI_PRODUCT} detected."
+  Goto done
+
+  foundpreviousinstall:
+    DetailPrint "existing ${MUI_PRODUCT} installation detected at ${TEMP}"
+    MessageBox MB_YESNO "The ${MUI_PRODUCT} appears to be already installed on this system at location ${TEMP}. Do you want to continue anyway?" IDNO abortinstall
+      MessageBox MB_OK "Make sure the current version is not running and click OK to continue."
+        DetailPrint "Previous version of product detected but user chooses to proceed anyway."
+        Goto done
+
+  abortinstall:
+    DetailPrint "Installation of ${MUI_PRODUCT} aborted due to previous installation detection."
+    Abort
+
+  done:
+FunctionEnd
+
 ;--------------------------------
 ;Installer Sections
 
 Section "SecureSpan Bridge" SecCopyUI
   ; First, let's check that the product was not already installed.
-  ; check if ssg is already installed
-  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT}" ""
-  StrCmp ${TEMP} "" 0 foundpreviousinstall
-  ReadRegStr ${TEMP} HKCU "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}" ""
-  StrCmp ${TEMP} "" cleaninstall
-  foundpreviousinstall:
-    DetailPrint "existing ${MUI_PRODUCT} installation detected at ${TEMP}"
-    MessageBox MB_YESNO "The ${MUI_PRODUCT} appears to be already installed on this system at location ${TEMP}. Do you want to continue anyway?" IDNO endofinstall
-      MessageBox MB_OK "Make sure the current version is stopped and click OK to continue."
-
-  cleaninstall:
+  Call CheckPreviousInstalls
 
   ; Before copying anything, let's stop the Windows service (if any)
   ExecWait 'sc stop "SecureSpan Bridge"' $0
@@ -123,7 +154,7 @@ Section "SecureSpan Bridge" SecCopyUI
   !insertmacro MUI_STARTMENU_WRITE_END
 
   ;Register with Add/Remove programs
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "DisplayName" "${MUI_PRODUCT}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "DisplayName" "${MUI_PRODUCT} ${MUI_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "UninstallString" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "InstallLocation" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${MUI_PRODUCT} ${MUI_VERSION}" "Publisher" "${COMPANY}"
