@@ -234,10 +234,24 @@ public class DashboardWindow extends JFrame implements LogonListener {
         clusterStatusAdmin = null;
         serviceAdmin = null;
         refreshTimer.start();
+        clusterNodeCombo.setEnabled(true);
+        publishedServiceCombo.setEnabled(true);
+        timeRangeCombo.setEnabled(true);
+        connected = true;
     }
 
     public void onLogoff(LogonEvent e) {
         refreshTimer.stop();
+        if (connected) {
+            statusLabel.setText("[Disconnected] " + statusLabel.getText().trim());
+        } else {
+            // Was already disconnected due to some error. Clears out the exception message.
+            statusLabel.setText("[Disconnected]");
+        }
+        clusterNodeCombo.setEnabled(false);
+        publishedServiceCombo.setEnabled(false);
+        timeRangeCombo.setEnabled(false);
+        connected = false;
     }
 
     public void setVisible(boolean vis) {
@@ -254,7 +268,9 @@ public class DashboardWindow extends JFrame implements LogonListener {
     }
 
     private synchronized void resetData() {
-        currentRange.clear();
+        if (connected) {
+            currentRange.clear();
+        } // else keep displayed data around when disconnected
 
         chartPanel.removeAll();
         chartPanel.add(currentRange.getMetricsChartPanel(), BorderLayout.CENTER);
