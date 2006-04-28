@@ -338,9 +338,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{e.getMessage()}, e);
             return AssertionStatus.SERVER_ERROR;
         } finally {
-            boolean authorizedRequest = false;
-            boolean completedRequest = false;
-
             context.setEndTime();
             RoutingStatus rstat = context.getRoutingStatus();
 
@@ -355,12 +352,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (status == AssertionStatus.NONE) {
                 // Policy execution concluded successfully
-                authorizedRequest = true;
                 if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
                     /* We include NONE because it's valid (albeit silly)
                     for a policy to contain no RoutingAssertion */
                     auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
-                    completedRequest = true;
                 } else {
                     // This can only happen when a post-routing assertion fails
                     auditor.logAndAudit(MessageProcessingMessages.SERVER_ERROR);
@@ -368,14 +363,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
             } else {
                 // Policy execution was not successful
-
-                if (response.getHttpResponseKnob().getStatus() >= HttpConstants.STATUS_ERROR_RANGE_START &&
-                    response.getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_END)
-                {
-                    // Most likely the failure was in the routing assertion.
-                    // We want this to show up as a routing failure, instead of a policy violation.
-                    authorizedRequest = true;
-                }
 
                 // Add audit details
                 if (rstat == RoutingStatus.ATTEMPTED) {
@@ -393,6 +380,32 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                     // Most likely the failure was in some other assertion
                     auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
+                }
+            }
+
+            boolean authorizedRequest = false;
+            boolean completedRequest = false;
+            if (status == AssertionStatus.NONE) {
+                // Policy execution concluded successfully.
+                authorizedRequest = true;
+                // Considered success (i.e., completed); unless we have routing
+                // assertion and the routed response has HTTP error status: then
+                // it's a routing failure.
+                if (rstat == RoutingStatus.NONE) {
+                    completedRequest = true;
+                } else if (rstat == RoutingStatus.ROUTED) {
+                    if (response.getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_START) {
+                        completedRequest = true;
+                    }
+                }
+            } else {
+                // Policy execution was not successful.
+                // Considered policy violation (i.e., not authorized); unless we
+                // have routing assertion and it failed or the routed response
+                // has HTTP error status: then it's a routing failure.
+                if (rstat == RoutingStatus.ATTEMPTED ||
+                    (rstat == RoutingStatus.ROUTED && response.getHttpResponseKnob().getStatus() >= 400)) {
+                    authorizedRequest = true;
                 }
             }
 
