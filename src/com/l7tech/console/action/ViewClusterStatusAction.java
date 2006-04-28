@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.ClusterStatusWindow;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.Group;
 
@@ -51,8 +52,9 @@ public class ViewClusterStatusAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        getClusterStatusWindow().setVisible(true);
-        getClusterStatusWindow().setState(Frame.NORMAL);
+        ClusterStatusWindow csw = getClusterStatusWindow();
+        csw.setVisible(true);
+        csw.toFront();
     }
 
      /**
@@ -76,7 +78,6 @@ public class ViewClusterStatusAction extends SecureAction {
             }
 
             public void windowClosing(final WindowEvent e) {
-                clusterStatusWindow.dispose();
                 clusterStatusWindow = null;
             }
         });
@@ -86,15 +87,17 @@ public class ViewClusterStatusAction extends SecureAction {
 
     public void onLogon(LogonEvent e) {
         super.onLogon(e);
-        if (clusterStatusWindow == null)
-              return;
-          clusterStatusWindow.onLogon(e);
+        ClusterStatusWindow csw = clusterStatusWindow;
+        if (csw != null) {
+            csw.onLogon(e);
+        }
     }
 
     public void onLogoff(LogonEvent e) {
         super.onLogoff(e);
-        if (clusterStatusWindow == null)
-              return;
-          clusterStatusWindow.onLogoff(e);
+        ClusterStatusWindow csw = clusterStatusWindow;
+        if (csw != null) {
+            csw.onLogoff(e);
+        }
     }
 }

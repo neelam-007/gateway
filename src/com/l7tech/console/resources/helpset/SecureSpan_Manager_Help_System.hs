@@ -2,7 +2,7 @@
 <!DOCTYPE helpset PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp HelpSet Version 1.0//EN" "http://java.sun.com/products/javahelp/helpset_1_0.dtd">
 
 <helpset version="1.0">
-  <title>SecureSpan Manager Help System</title>
+  <title>SecureSpan Manager - Help</title>
    <maps>
     <homeID>welcome_htm</homeID>
     <mapref location="SecureSpan_Manager_Help_System_map.xml" />

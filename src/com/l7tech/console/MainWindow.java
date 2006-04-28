@@ -175,6 +175,9 @@ public class MainWindow extends JFrame {
     private double preferredHorizontalSplitLocation = 0.27;
     private boolean maximizeOnStart = false;
 
+    /* child windows */
+    private Window helpWindow;
+
     /**
      * MainWindow constructor comment.
      */
@@ -1893,42 +1896,61 @@ public class MainWindow extends JFrame {
      * This procedure adds the JavaHelp to PMC application.
      */
     public void showHelpTopics(ActionEvent e) {
-        HelpSet hs = null;
-        URL url = null;
-        HelpBroker javaHelpBroker = null;
-        String helpsetName = "SSG Help";
-
-        try {
-            // Find the helpSet URL file.
-            url = cl.getResource(HELP_PATH);
-            hs = new HelpSet(cl, url);
-            javaHelpBroker = hs.createHelpBroker();
-            Object source = e.getSource();
-
-            if (source instanceof Window) {
-                ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
-            }
-            javaHelpBroker.setDisplayed(true);
-
-            // Have to set the icon after setDisplayed (else window is null)
-            Window window = ((DefaultHelpBroker)javaHelpBroker).getWindowPresentation().getHelpWindow();
+        Window window = helpWindow;
+        if (window != null) {
             if(window instanceof JFrame) {
-                ((JFrame)window).setIconImage(getIconImage());
+                ((JFrame)window).setState(Frame.NORMAL);
             }
-        } catch (MissingResourceException ex) {
-            //Make sure the URL exists.
-            if (url == null) {
+            window.toFront();
+        }
+        else {
+            HelpSet hs = null;
+            URL url = null;
+            HelpBroker javaHelpBroker = null;
+            String helpsetName = "SSG Help";
+
+            try {
+                // Find the helpSet URL file.
+                url = cl.getResource(HELP_PATH);
+                hs = new HelpSet(cl, url);
+                javaHelpBroker = hs.createHelpBroker();
+                Object source = e.getSource();
+
+                if (source instanceof Window) {
+                    ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
+                }
+                javaHelpBroker.setDisplayed(true);
+
+                // Have to set the icon after setDisplayed (else window is null)
+                window = ((DefaultHelpBroker)javaHelpBroker).getWindowPresentation().getHelpWindow();
+                if(window instanceof JFrame) {
+                    ((JFrame)window).setIconImage(getIconImage());
+                }
+                window.addWindowListener(new WindowAdapter() {
+                    public void windowClosed(final WindowEvent e) {
+                        helpWindow = null;
+                    }
+
+                    public void windowClosing(final WindowEvent e) {
+                        helpWindow = null;
+                    }
+                });
+                helpWindow = window;
+            } catch (MissingResourceException ex) {
+                //Make sure the URL exists.
+                if (url == null) {
+                    JOptionPane.showMessageDialog(MainWindow.this,
+                      "Help URL is missing",
+                      "Bad HelpSet Path ",
+                      JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (HelpSetException hex) {
                 JOptionPane.showMessageDialog(MainWindow.this,
-                  "Help URL is missing",
-                  "Bad HelpSet Path ",
+                  helpsetName + " is not available",
+                  "Warning",
                   JOptionPane.WARNING_MESSAGE);
+                log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
             }
-        } catch (HelpSetException hex) {
-            JOptionPane.showMessageDialog(MainWindow.this,
-              helpsetName + " is not available",
-              "Warning",
-              JOptionPane.WARNING_MESSAGE);
-            log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
         }
     }
 

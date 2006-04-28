@@ -7,7 +7,9 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
@@ -38,8 +40,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat(resources.getString("rightPanel.timeFormat"));
 
-    private final ClusterStatusAdmin clusterStatusAdmin;
-    private final ServiceAdmin serviceAdmin;
+    private ClusterStatusAdmin clusterStatusAdmin;
+    private ServiceAdmin serviceAdmin;
 
     private static final int fineChartRange = 10 * 60 * 1000; // 10 minutes
     private static final int hourlyChartRange = 60 * 60 * 60 * 1000; // 60 hours
@@ -124,8 +126,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
         ImageIcon imageIcon = new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
 
-        this.clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-        this.serviceAdmin = Registry.getDefault().getServiceManager();
+        Utilities.setEscKeyStrokeDisposes(this);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         statusLabel.setText("");
 
@@ -145,13 +147,12 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                refreshTimer.stop();
-                dispose();
+                setVisible(false);
             }
         });
 
         try {
-            currentServiceHeaders = serviceAdmin.findAllPublishedServices();
+            currentServiceHeaders = getServiceAdmin().findAllPublishedServices();
             EntityHeader[] comboItems = new EntityHeader[currentServiceHeaders.length + 1];
             System.arraycopy(currentServiceHeaders, 0, comboItems, 1, currentServiceHeaders.length);
             comboItems[0] = ALL_SERVICES;
@@ -162,7 +163,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
         }
 
         try {
-            currentClusterNodes = clusterStatusAdmin.getClusterStatus();
+            currentClusterNodes = getClusterStatusAdmin().getClusterStatus();
             ClusterNodeInfo[] comboItems = new ClusterNodeInfo[currentClusterNodes.length + 1];
             System.arraycopy(currentClusterNodes, 0, comboItems, 1, currentClusterNodes.length);
             comboItems[0] = ALL_NODES;
@@ -230,6 +231,8 @@ public class DashboardWindow extends JFrame implements LogonListener {
     }
 
     public void onLogon(LogonEvent e) {
+        clusterStatusAdmin = null;
+        serviceAdmin = null;
         refreshTimer.start();
     }
 
@@ -262,6 +265,9 @@ public class DashboardWindow extends JFrame implements LogonListener {
         final EntityHeader[] newServiceHeaders;
         final ClusterNodeInfo[] newNodes;
         try {
+            ServiceAdmin serviceAdmin = getServiceAdmin();
+            ClusterStatusAdmin clusterStatusAdmin = getClusterStatusAdmin();
+
             newServiceHeaders = serviceAdmin.findAllPublishedServices();
             if (!Arrays.equals(currentServiceHeaders, newServiceHeaders)) {
                 updateComboModel(currentServiceHeaders, newServiceHeaders, serviceComboModel);
@@ -380,6 +386,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
             }
             connected = false;
             statusLabel.setText("[Disconnected] " + e.getMessage());
+            ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to get dashboard data.");
         } catch (FindException e) {
             logger.log(Level.WARNING, "SSG can't get data", e);
             statusLabel.setText("[Problem on Gateway] " + e.getMessage() == null ? "" : e.getMessage());
@@ -388,7 +395,7 @@ public class DashboardWindow extends JFrame implements LogonListener {
 
     private void findNewBins(Range range) throws RemoteException, FindException {
         long last = range.getLastPeriodDownloaded();
-        List newBins = clusterStatusAdmin.findMetricsBins(null, new Long(last + 1), null, new Integer(range.getResolution()), null);
+        List newBins = getClusterStatusAdmin().findMetricsBins(null, new Long(last + 1), null, new Integer(range.getResolution()), null);
         if (newBins.size() > 0)
             logger.info("Found " + newBins.size() + " MetricsBins for range " + range.toString());
 
@@ -437,5 +444,22 @@ public class DashboardWindow extends JFrame implements LogonListener {
         }
     }
 
+    private ClusterStatusAdmin getClusterStatusAdmin() {
+        ClusterStatusAdmin csa = this.clusterStatusAdmin;
+        if (csa == null) {
+            csa = Registry.getDefault().getClusterStatusAdmin();
+            this.clusterStatusAdmin = csa;
+        }
+        return csa;
+    }
+
+    private ServiceAdmin getServiceAdmin() {
+        ServiceAdmin sa = this.serviceAdmin;
+        if (sa == null) {
+            sa = Registry.getDefault().getServiceManager();
+            this.serviceAdmin = sa;
+        }
+        return sa;
+    }
 
 }

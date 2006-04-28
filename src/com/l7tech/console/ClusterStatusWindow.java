@@ -12,6 +12,7 @@ import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.util.*;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.service.ServiceAdmin;
 
@@ -26,15 +27,15 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
-
+import java.util.logging.Level;
 
 /*
- * This class is a window extended from JFrame to show the cluster status.
- *
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
+* This class is a window extended from JFrame to show the cluster status.
+*
+* Copyright (C) 2003 Layer 7 Technologies Inc.
+*
+* $Id$
+*/
 
 public class ClusterStatusWindow extends JFrame implements LogonListener {
 
@@ -105,6 +106,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
         Utilities.setEscKeyStrokeDisposes(this);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         initResources();
         initAdminConnection();
         initCaches();
@@ -129,15 +131,6 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
     private void exitMenuEventHandler() {
         getStatusRefreshTimer().stop();
         this.dispose();
-    }
-
-    /**
-     * Return the reference to the window object.
-     *
-     * @return JFrame
-     */
-    private JFrame getClusterStatusWindow() {
-        return this;
     }
 
     /**
@@ -858,6 +851,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                         if (isRemoteExceptionCaught()) {
                             // the connection to the cluster is down
                             cleanUp();
+                            ErrorManager.getDefault().notify(Level.WARNING, getRemoteException(), "Error getting data from SecureSpan Gateway.");
                         }
                     }
                 }
@@ -1092,7 +1086,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                 nodeNameSelected = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
 
                 // ask user to confirm                 // Make sure
-                if ((JOptionPane.showConfirmDialog(getClusterStatusWindow(),
+                if ((JOptionPane.showConfirmDialog(ClusterStatusWindow.this,
                   "Are you sure you want to delete " +
                   nodeNameSelected + "?",
                   "Delete Stale Node",
@@ -1105,7 +1099,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                                 logger.warning("ClusterStatusAdmin service is not available. Cannot delete the node: " + nodeNameSelected);
 
                                 JOptionPane.
-                                  showMessageDialog(getClusterStatusWindow(),
+                                  showMessageDialog(ClusterStatusWindow.this,
                                     dsnDialogResources.getString("delete.stale.node.error.connection.lost"),
                                     dsnDialogResources.getString("delete.stale.node.error.title"),
                                     JOptionPane.ERROR_MESSAGE);
@@ -1118,7 +1112,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                             } catch (DeleteException e) {
                                 logger.warning("Cannot delete the node: " + nodeNameSelected);
                                 JOptionPane.
-                                  showMessageDialog(getClusterStatusWindow(),
+                                  showMessageDialog(ClusterStatusWindow.this,
                                     dsnDialogResources.getString("delete.stale.node.error.delete"),
                                     dsnDialogResources.getString("delete.stale.node.error.title"),
                                     JOptionPane.ERROR_MESSAGE);
@@ -1126,7 +1120,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                             } catch (RemoteException e) {
                                 logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
                                 JOptionPane.
-                                  showMessageDialog(getClusterStatusWindow(),
+                                  showMessageDialog(ClusterStatusWindow.this,
                                     dsnDialogResources.getString("delete.stale.node.error.remote.exception"),
                                     dsnDialogResources.getString("delete.stale.node.error.title"),
                                     JOptionPane.ERROR_MESSAGE);
@@ -1183,7 +1177,7 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
                 nodeName = (String)getClusterStatusTable().getValueAt(tableRow, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
                 nodeId = (String)getClusterStatusTable().getValueAt(tableRow, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
 
-                EditGatewayNameDialog dialog = new EditGatewayNameDialog(getClusterStatusWindow(), clusterStatusAdmin, nodeId, nodeName);
+                EditGatewayNameDialog dialog = new EditGatewayNameDialog(ClusterStatusWindow.this, clusterStatusAdmin, nodeId, nodeName);
                 dialog.setVisible(true);
             }
         }

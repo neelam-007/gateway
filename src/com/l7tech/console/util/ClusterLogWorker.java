@@ -41,7 +41,7 @@ public class ClusterLogWorker extends SwingWorker {
     private Map currentNodeList;
     private List requests;
     private Map retrievedLogs;
-    private boolean remoteExceptionCaught;
+    private RemoteException remoteException;
     private java.util.Date currentClusterSystemTime = null;
     private final Date startDate;
     private final Date endDate;
@@ -80,7 +80,6 @@ public class ClusterLogWorker extends SwingWorker {
 
         this.requests = requests;
 
-        remoteExceptionCaught = false;
         retrievedLogs = new HashMap();
     }
 
@@ -99,7 +98,16 @@ public class ClusterLogWorker extends SwingWorker {
      * @return  true if remote exception is caught, false otherwise.
      */
     public boolean isRemoteExceptionCaught() {
-        return remoteExceptionCaught;
+        return remoteException != null;
+    }
+
+    /**
+     * Get the remote exception or null.
+     *
+     * @return the exception or null
+     */
+    public RemoteException getRemoteException() {
+        return remoteException;
     }
 
     /**
@@ -147,7 +155,7 @@ public class ClusterLogWorker extends SwingWorker {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to find cluster status from server", e);
         } catch (RemoteException e) {
-            remoteExceptionCaught = true;
+            remoteException = e;
             logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
         }
 
@@ -214,12 +222,10 @@ public class ClusterLogWorker extends SwingWorker {
                     }
                 } catch (RemoteException e) {
                     logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
-                    remoteExceptionCaught = true;
-                    throw new RuntimeException(e);
+                    remoteException = e;
+                    return null;
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
-                    remoteExceptionCaught = true;
-                    throw new RuntimeException(e);
                 }
 
                 if (newLogs.size() > 0) {
@@ -246,8 +252,9 @@ public class ClusterLogWorker extends SwingWorker {
         try {
             currentClusterSystemTime = clusterStatusService.getCurrentClusterSystemTime();
         } catch (RemoteException e) {
-            remoteExceptionCaught = true;
+            remoteException = e;
             logger.log(Level.SEVERE, "Remote exception when retrieving cluster status from server", e);
+            return null;
         }
 
         if (currentClusterSystemTime == null) {

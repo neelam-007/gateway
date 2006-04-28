@@ -88,6 +88,7 @@ public class AboutBox extends JDialog implements ActionListener {
         enableEvents(AWTEvent.WINDOW_EVENT_MASK);
         initUI();
         pack();
+        setAlwaysOnTop(true);
         setLocationRelativeTo(parent);
         rThread.start();
     }

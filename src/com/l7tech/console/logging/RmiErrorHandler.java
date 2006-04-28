@@ -9,6 +9,9 @@ import com.l7tech.console.util.TopComponents;
 import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.rmi.NoSuchObjectException;
+import java.rmi.UnknownHostException;
+import java.rmi.ConnectIOException;
+import java.rmi.ConnectException;
 import java.util.logging.Level;
 
 /**
@@ -27,9 +30,23 @@ public class RmiErrorHandler implements ErrorHandler {
      */
     public void handle(ErrorEvent e) {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
+        final RemoteException rex = (RemoteException) ExceptionUtils.getCauseIfCausedBy(e.getThrowable(), RemoteException.class);
+        boolean isDisconnect = false;
+
+        if (throwable instanceof SocketException ||
+            rex instanceof ConnectException ||
+            rex instanceof ConnectIOException ||
+            rex instanceof NoSuchObjectException ||
+            rex instanceof UnknownHostException) {
+            // prevent error cascade during repaint if it's a network problem
+            e.getLogger().log(Level.WARNING, "Disconnected from gateway, notifiying workspace.");
+            getMainWindow().disconnectFromGateway();
+            isDisconnect = true;
+        }
+
+
         if (throwable instanceof RemoteException || throwable instanceof SocketException) {
-            if (throwable instanceof SocketException
-             || throwable instanceof NoSuchObjectException) {
+            if (isDisconnect) {
                 // prevent error cascade during repaint if it's a network problem
                 getMainWindow().disconnectFromGateway();
             }
@@ -37,8 +54,13 @@ public class RmiErrorHandler implements ErrorHandler {
             String message = ERROR_MESSAGE;
             e.getLogger().log(Level.SEVERE, message, t);
             Level level = Level.SEVERE;
-            if(throwable instanceof NoSuchObjectException) {
-                message = "Server restart, please log in again.";
+            if (rex instanceof NoSuchObjectException) {
+                message = "SecureSpan Gateway restarted, please log in again.";
+                level = Level.WARNING;
+                t = null;
+            }
+            else if (rex instanceof ConnectException) {
+                message = "SecureSpan Gateway unavailable (Network issue or server stopped).";
                 level = Level.WARNING;
                 t = null;
             }
