@@ -13,6 +13,7 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
+import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 
 import javax.swing.*;
@@ -120,6 +121,10 @@ public class ConfigurationWizard extends Wizard {
     public void applyConfiguration() {
         log.info("Applying the configuration changes");
         HashMap commands = (HashMap) wizardInput;
+
+        //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
+        AppServerConfigCommand appserverCommand = new AppServerConfigCommand(osFunctions);
+        commands.put(appserverCommand.getClass().getName(), appserverCommand);
 
         //we need to add this to make sure that non clustering/db/etc. specific actions occur
         LoggingConfigCommand loggingCommand = new LoggingConfigCommand(null, osFunctions);

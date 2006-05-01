@@ -626,15 +626,8 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         try {
             fis = new FileInputStream(tomcatServerConfigFile);
             Document doc = XmlUtil.parse(fis);
-            NodeList list = doc.getDocumentElement().getElementsByTagName("Connector");
-            for (int i = 0; i < list.getLength(); i++) {
-                Element el = (Element)list.item(i);
-                if (el.hasAttribute("secure") && el.getAttribute("secure").equalsIgnoreCase("true")) {
-                    el.setAttribute(XML_KSFILE, sslKeyStorePath);
-                    el.setAttribute(XML_KSPASS, new String(ksPassword));
-                    el.setAttribute(XML_KSTYPE, getKsType());
-                }
-            }
+
+            doConnectorElementInServerConfig(doc, sslKeyStorePath, ksPassword);
             fis.close();
             fis = null;
 
@@ -659,6 +652,18 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 try {
                     fos.close();
                 } catch (IOException e) {}
+            }
+        }
+    }
+
+    private void doConnectorElementInServerConfig(Document doc, String sslKeyStorePath, char[] ksPassword) {
+        NodeList list = doc.getDocumentElement().getElementsByTagName("Connector");
+        for (int i = 0; i < list.getLength(); i++) {
+            Element el = (Element)list.item(i);
+            if (el.hasAttribute("secure") && el.getAttribute("secure").equalsIgnoreCase("true")) {
+                el.setAttribute(XML_KSFILE, sslKeyStorePath);
+                el.setAttribute(XML_KSPASS, new String(ksPassword));
+                el.setAttribute(XML_KSTYPE, getKsType());
             }
         }
     }
