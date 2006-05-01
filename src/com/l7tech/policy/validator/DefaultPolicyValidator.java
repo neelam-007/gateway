@@ -45,8 +45,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         for (int i = 0; i < ass.length; i++) {
             if (ass[i] instanceof OneOrMoreAssertion) {
                 if ((i+1 < ass.length) && (ass[i+1] instanceof CommentAssertion)) {
-                    System.out.println("Path " + ap + " ignored for validation purposes");
-                    log.info("Path " + ap + " ignored for validation purposes");
+                    log.fine("Path " + ap + " ignored for validation purposes");
                     return;
                 }
             }
