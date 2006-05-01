@@ -43,10 +43,21 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         // paths that have the pattern "OR, Comment" should be ignored completly (bugzilla #2449)
         for (int i = 0; i < ass.length; i++) {
-            if (ass[i] instanceof OneOrMoreAssertion) {
-                if ((i+1 < ass.length) && (ass[i+1] instanceof CommentAssertion)) {
-                    log.fine("Path " + ap + " ignored for validation purposes");
-                    return;
+            if (ass[i] instanceof CommentAssertion) {
+                if (ass[i].getParent() instanceof OneOrMoreAssertion) {
+                    // if the parent OR has something else than comments as children, the this path should be ignored
+                    OneOrMoreAssertion parent = (OneOrMoreAssertion)ass[i].getParent();
+                    boolean onlyCommentsInOR = true;
+                    for (Iterator parit = parent.children(); parit.hasNext();) {
+                        if (!(parit.next() instanceof CommentAssertion)) {
+                            onlyCommentsInOR = false;
+                            break;
+                        }
+                    }
+                    if (!onlyCommentsInOR) {
+                        log.fine("Path " + ap + " ignored for validation purposes");
+                        return;
+                    }
                 }
             }
         }
