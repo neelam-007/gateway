@@ -4,6 +4,8 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CommentAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.service.PublishedService;
 
@@ -38,8 +40,21 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
     public void validatePath(AssertionPath ap, PolicyValidatorResult r, PublishedService service) {
         Assertion[] ass = ap.getPath();
+
+        // paths that have the pattern "OR, Comment" should be ignored completly (bugzilla #2449)
+        for (int i = 0; i < ass.length; i++) {
+            if (ass[i] instanceof OneOrMoreAssertion) {
+                if ((i+1 < ass.length) && (ass[i+1] instanceof CommentAssertion)) {
+                    System.out.println("Path " + ap + " ignored for validation purposes");
+                    log.info("Path " + ap + " ignored for validation purposes");
+                    return;
+                }
+            }
+        }
+
         PathValidator pv = new PathValidator(ap, r, service);
         for (int i = 0; i < ass.length; i++) {
+            if (ass[i] instanceof CommentAssertion) continue;
             pv.validate(ass[i]);
         }
 
@@ -49,7 +64,14 @@ public class DefaultPolicyValidator extends PolicyValidator {
             DeferredValidate dv = (DeferredValidate)dIt.next();
             dv.validate(pv, ass);
         }
+        // last assertion should be last non-comment assertion
         Assertion lastAssertion = ap.lastAssertion();
+        for (int i = ass.length-1; i >= 0; i--) {
+            if (!(ass[i] instanceof CommentAssertion)) {
+                lastAssertion = ass[i];
+                break;
+            }
+        }
         if (!pv.seenRouting) { // no routing report that
             r.addWarning(new PolicyValidatorResult.
               Warning(lastAssertion, ap, "No route assertion.", null));
