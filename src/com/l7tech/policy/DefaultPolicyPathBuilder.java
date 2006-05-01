@@ -47,6 +47,12 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     public PolicyPathResult generate(Assertion assertion) {
         // bugzilla 2449 remove all comment assertions before generating paths
+        try {
+            assertion = (Assertion)assertion.clone();
+        } catch (CloneNotSupportedException e) {
+            // should not happen
+            throw new RuntimeException(e);
+        }
         removeComments(assertion);
         //
         Set paths = generatePaths(assertion);
