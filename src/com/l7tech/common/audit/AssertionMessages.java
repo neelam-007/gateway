@@ -410,11 +410,11 @@ public class AssertionMessages extends Messages {
 
     public static final M REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE   = m(7800, Level.INFO, true, false, "Request is either not XML or not SOAP; assertion is not applicable");
     public static final M REQUEST_WSS_TIMESTAMP_NOTIMESTAMP     = m(7801, Level.INFO, "No Timestamp found in the request");
-    public static final M REQUEST_WSS_TIMESTAMP_NOT_SIGNED      = m(7802, Level.INFO, "Timestamp found in the request, but was not signed");
+    public static final M REQUEST_WSS_TIMESTAMP_NOT_SIGNED      = m(7802, Level.WARNING, "Timestamp found in the request, but was not signed");
     public static final M REQUEST_WSS_TIMESTAMP_CREATED_FUTURE  = m(7803, Level.WARNING, "Timestamp found in the request, but Created time was too far in the future");
     public static final M REQUEST_WSS_TIMESTAMP_EXPIRED         = m(7804, Level.WARNING, "Timestamp found in the request, but expired too long ago");
     public static final M REQUEST_WSS_TIMESTAMP_NO_EXPIRES      = m(7805, Level.WARNING, "Timestamp found in the request, but has no Expires time");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.WARNING, "Timestamp found in the request and is not expired, but lifetime exceeds configured maximum");
+    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.INFO, "Timestamp found in the request and is not expired, but lifetime exceeds configured maximum; will constrain to maximum");
     public static final M REQUEST_WSS_TIMESTAMP_NO_CREATED      = m(7807, Level.WARNING, "Timestamp found in the request, but has no Created time");
 
     public static final M RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE = m(7900, Level.WARNING, "Unsupported Security Token Type: {0}");

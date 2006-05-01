@@ -29,12 +29,17 @@ public class ServerRequestWssTimestamp implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerRequestWssTimestamp.class.getName());
     private final RequestWssTimestamp assertion;
     private final Auditor auditor;
-    private static final int CREATED_FUTURE_FUZZ = (60 * 1000);
-    private static final int EXPIRES_PAST_FUZZ = (60 * 1000);
+    private static final int DEFAULT_CREATED_FUTURE_FUZZ = (60 * 1000);
+    private static final int DEFAULT_EXPIRES_PAST_FUZZ = (60 * 1000);
+
+    private final int createdFutureFuzz = Integer.getInteger(this.getClass().getName() + ".createdFutureGrace", DEFAULT_CREATED_FUTURE_FUZZ).intValue();
+    private final int expiresPastFuzz = Integer.getInteger(this.getClass().getName() + ".expiresPastGrace", DEFAULT_EXPIRES_PAST_FUZZ).intValue();
 
     public ServerRequestWssTimestamp(RequestWssTimestamp assertion, ApplicationContext spring) {
         this.assertion = assertion;
         this.auditor = new Auditor(this, spring, logger);
+        logger.info("Created future grace period: " + createdFutureFuzz);
+        logger.info("Expires past grace period: " + expiresPastFuzz);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -76,28 +81,28 @@ public class ServerRequestWssTimestamp implements ServerAssertion {
         }
 
         long created = createdEl.asDate().getTime();
-        if (created - CREATED_FUTURE_FUZZ > now) {
+        if (created - createdFutureFuzz > now) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_CREATED_FUTURE);
             return AssertionStatus.BAD_REQUEST;
         }
 
         WssTimestampDate expiresEl = wssTimestamp.getExpires();
         long expires;
-        if (expiresEl == null) {
-            expires = created + assertion.getMaxExpiryMilliseconds();  // Expires is optional according to BSP 1.0
-        } else {
+        if (expiresEl != null) {
             expires = expiresEl.asDate().getTime();
+        } else {
+            expires = created + assertion.getMaxExpiryMilliseconds();  // Expires is optional according to BSP 1.0
         }
 
-        if (expires + EXPIRES_PAST_FUZZ < now) {
+        long window = expires - now;
+        if (window > assertion.getMaxExpiryMilliseconds()) {
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE);
+            expires = now + assertion.getMaxExpiryMilliseconds();
+        }
+
+        if (expires + expiresPastFuzz < now) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRED);
             return AssertionStatus.BAD_REQUEST;
-        } else {
-            long window = expires - now;
-            if (window > assertion.getMaxExpiryMilliseconds()) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE);
-                return AssertionStatus.BAD_REQUEST;
-            }
         }
         return AssertionStatus.NONE;
     }
