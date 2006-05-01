@@ -1,6 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CommentAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 
@@ -45,6 +46,9 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @return the result of the build
      */
     public PolicyPathResult generate(Assertion assertion) {
+        // bugzilla 2449 remove all comment assertions before generating paths
+        removeComments(assertion);
+        //
         Set paths = generatePaths(assertion);
         int pathOrder = 0;
         for (Iterator iterator = paths.iterator(); iterator.hasNext(); pathOrder++) {
@@ -57,6 +61,21 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         return new DefaultPolicyPathResult(paths);
     }
 
+    private static void removeComments(Assertion assertion) {
+        if (assertion instanceof CompositeAssertion) {
+            CompositeAssertion parent = (CompositeAssertion)assertion;
+            Iterator i = parent.children();
+            while (i.hasNext()) {
+                Assertion child = (Assertion)i.next();
+                if (child instanceof CommentAssertion) {
+                    parent.removeChild(child);
+                    i = parent.children();
+                } else if (child instanceof CompositeAssertion) {
+                    removeComments(child);
+                }
+            }
+        }
+    }
 
     /**
      * generate possible assertion paths
