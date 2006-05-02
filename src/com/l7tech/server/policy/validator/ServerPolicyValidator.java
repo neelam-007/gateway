@@ -5,6 +5,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.kerberos.KerberosConfigException;
 import com.l7tech.common.security.kerberos.KerberosClient;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderType;
@@ -19,6 +20,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.UnknownAssertion;
+import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MappingAssertion;
@@ -42,6 +44,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
+import java.nio.charset.Charset;
 
 /**
  * Performs server side policy validation.
@@ -257,6 +260,34 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 detail = " [" + (className.substring(className.lastIndexOf('.')+1)) + "]";
             }
             r.addError(new PolicyValidatorResult.Error(a, ap, MessageFormat.format(message, new Object[]{detail}), null));
+        }
+        else if (a instanceof HttpFormPost) {
+            HttpFormPost httpFormPost = (HttpFormPost) a;
+
+            StringBuffer contentTypeBuffer = new StringBuffer();
+            HttpFormPost.FieldInfo[] fieldInfos = httpFormPost.getFieldInfos();
+            for (int i = 0; i < fieldInfos.length; i++) {
+                HttpFormPost.FieldInfo fieldInfo = fieldInfos[i];
+                String contentType = fieldInfo.getContentType();
+                try {
+                    ContentTypeHeader cth = ContentTypeHeader.parseValue(contentType);
+                    String encoding = cth.getEncoding();
+                    if (!Charset.isSupported(encoding)) {
+                        throw new IllegalStateException();
+                    }
+                }
+                catch(Exception e) {
+                    if (contentTypeBuffer.length() > 0) contentTypeBuffer.append(", ");
+                    contentTypeBuffer.append("'");
+                    contentTypeBuffer.append(contentType);
+                    contentTypeBuffer.append("'");
+                }
+            }
+
+            if (contentTypeBuffer.length() > 0) {
+                String msg = "Invalid MIME Content-Type(s): " + contentTypeBuffer.toString();
+                r.addError(new PolicyValidatorResult.Error(a, ap, msg, null));
+            }
         }
 
         // not else-if since this is also a credential source

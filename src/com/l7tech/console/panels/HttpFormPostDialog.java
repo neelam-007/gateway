@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.HttpFormPost;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.mime.ContentTypeHeader;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -69,13 +70,27 @@ public class HttpFormPostDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ArrayList infos = new ArrayList();
+                StringBuffer invalidContentTypes = new StringBuffer();
                 for (int i = 0; i < fieldListModel.getSize(); i++) {
                     FieldInfoListElement element = (FieldInfoListElement) fieldListModel.elementAt(i);
+                    if (!element.isValid()) {
+                        invalidContentTypes.append("\n");
+                        invalidContentTypes.append(element.fieldInfo.getContentType());
+                    }
                     infos.add(element.fieldInfo);
                 }
-                assertion.setFieldInfos((HttpFormPost.FieldInfo[])infos.toArray(new HttpFormPost.FieldInfo[0]));
-                assertionModified = true;
-                dispose();
+                if (invalidContentTypes.length() > 0) {
+                    JOptionPane.showMessageDialog(
+                            HttpFormPostDialog.this,
+                            "Invalid MIME Content-Type(s): " + invalidContentTypes.toString(),
+                            "Invalid HTTP Form Field(s)",
+                            JOptionPane.WARNING_MESSAGE);
+                }
+                else {
+                    assertion.setFieldInfos((HttpFormPost.FieldInfo[])infos.toArray(new HttpFormPost.FieldInfo[0]));
+                    assertionModified = true;
+                    dispose();
+                }
             }
         });
 
@@ -163,6 +178,17 @@ public class HttpFormPostDialog extends JDialog {
 
         public FieldInfoListElement(HttpFormPost.FieldInfo fieldInfo) {
             this.fieldInfo = fieldInfo;
+        }
+
+        public boolean isValid() {
+            boolean valid = false;
+            try {
+                ContentTypeHeader.parseValue(fieldInfo.getContentType());
+                valid = true;
+            }
+            catch(Exception e) {
+            }
+            return valid;
         }
 
         public String toString() {
