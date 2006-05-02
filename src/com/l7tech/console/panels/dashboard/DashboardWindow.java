@@ -255,10 +255,13 @@ public class DashboardWindow extends JFrame implements LogonListener {
     }
 
     public void setVisible(boolean vis) {
-        if (vis)
+        if (vis) {
             refreshTimer.start();
-        else
+            currentRange.getMetricsChartPanel().restoreAutoRange(); // In case chart was zoomed in when closed.
+            currentRange.getMetricsChartPanel().resume();           // In case chart was suspended when closed.
+        } else {
             refreshTimer.stop();
+        }
         super.setVisible(vis);
     }
 

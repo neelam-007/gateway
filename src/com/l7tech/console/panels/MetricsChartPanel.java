@@ -154,6 +154,12 @@ public class MetricsChartPanel extends ChartPanel {
     /** The shared time (x-) axis. */
     private final DateAxis _xAxis;
 
+    /** Y-axis for the response time plot. */
+    private final NumberAxis _rYAxis;
+
+    /** Y-axis for the message rate plot. */
+    private final NumberAxis _mYAxis;
+
     /** Chart containing all plots with shared time axis. */
     private JFreeChart _chart;
 
@@ -301,10 +307,10 @@ public class MetricsChartPanel extends ChartPanel {
         // Top plot for response time.
         //
 
-        final NumberAxis rYAxis = new NumberAxis(RESPONSE_TIME_AXIS_LABEL);
-        rYAxis.setAutoRange(true);
-        rYAxis.setRangeType(RangeType.POSITIVE);
-        rYAxis.setAutoRangeMinimumSize(10.);
+        _rYAxis = new NumberAxis(RESPONSE_TIME_AXIS_LABEL);
+        _rYAxis.setAutoRange(true);
+        _rYAxis.setRangeType(RangeType.POSITIVE);
+        _rYAxis.setAutoRangeMinimumSize(10.);
         final TimePeriodValueWithHighLowRenderer rRenderer = new TimePeriodValueWithHighLowRenderer();
         rRenderer.setDrawBarOutline(false);
         rRenderer.setSeriesStroke(0, RESPONSE_AVG_STROKE);
@@ -314,7 +320,7 @@ public class MetricsChartPanel extends ChartPanel {
         rRenderer.setSeriesPaint(1, BACKEND_RESPONSE_AVG_COLOR);
         rRenderer.setSeriesFillPaint(1, BACKEND_RESPONSE_MINMAX_COLOR);
         rRenderer.setBaseToolTipGenerator(new ResponseTimeToolTipGenerator(_messageRates));
-        final XYPlot rPlot = new XYPlot(_responseTimes, null, rYAxis, rRenderer);
+        final XYPlot rPlot = new XYPlot(_responseTimes, null, _rYAxis, rRenderer);
         rPlot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
 
         //
@@ -357,10 +363,10 @@ public class MetricsChartPanel extends ChartPanel {
         // Bottom plot for message rate.
         //
 
-        final NumberAxis mYAxis = new NumberAxis(MESSAGE_RATE_AXIS_LABEL);
-        mYAxis.setAutoRange(true);
-        mYAxis.setRangeType(RangeType.POSITIVE);
-        mYAxis.setAutoRangeMinimumSize(0.0001);     // Still allows 1 msg per day to be visible.
+        _mYAxis = new NumberAxis(MESSAGE_RATE_AXIS_LABEL);
+        _mYAxis.setAutoRange(true);
+        _mYAxis.setRangeType(RangeType.POSITIVE);
+        _mYAxis.setAutoRangeMinimumSize(0.0001);     // Still allows 1 msg per day to be visible.
         final StackedXYBarRenderer mRenderer = new StackedXYBarRendererEx();
         mRenderer.setDrawBarOutline(false);
         mRenderer.setSeriesPaint(0, SUCCESS_COLOR);         // success message rate
@@ -368,7 +374,7 @@ public class MetricsChartPanel extends ChartPanel {
         mRenderer.setSeriesPaint(2, ROUTING_FAILURE_COLOR); // routing failure message rate
         final MessageRateToolTipGenerator messageRateToolTipGenerator = new MessageRateToolTipGenerator();
         mRenderer.setBaseToolTipGenerator(messageRateToolTipGenerator);
-        final XYPlot mPlot = new XYPlot(_messageRates, null, mYAxis, mRenderer);
+        final XYPlot mPlot = new XYPlot(_messageRates, null, _mYAxis, mRenderer);
 
         //
         // Now combine all plots to share the same time (x-)axis.
@@ -521,6 +527,7 @@ public class MetricsChartPanel extends ChartPanel {
         // the datasets from being accessed.
         _chart.setNotify(false);
 
+        restoreAutoRange();
         resume();
 
         _frontendResponseTimes.delete(0, _frontendResponseTimes.getItemCount() - 1);
@@ -554,7 +561,7 @@ public class MetricsChartPanel extends ChartPanel {
     }
 
     /** Resumes updating of displayed chart data. */
-    private synchronized void resume() {
+    public synchronized void resume() {
         _suspended = false;
 
         // Now adds bins waiting to be added.
@@ -581,5 +588,11 @@ public class MetricsChartPanel extends ChartPanel {
         if (_xAxis.isAutoRange()) {
             resume();
         }
+    }
+
+    public void restoreAutoRange() {
+        _xAxis.setAutoRange(true);
+        _rYAxis.setAutoRange(true);
+        _mYAxis.setAutoRange(true);
     }
 }
