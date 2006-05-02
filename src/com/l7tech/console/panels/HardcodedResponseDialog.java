@@ -58,7 +58,7 @@ public class HardcodedResponseDialog extends JDialog {
 
     private void updateView() {
         httpStatus.setText(String.valueOf(assertion.getResponseStatus()));
-        String body = assertion.getResponseBody();
+        String body = assertion.responseBodyString();
         responseBody.setText(body == null ? "" : body);
         String ctype = assertion.getResponseContentType();
         contentType.setText(ctype == null ? "" : ctype);
@@ -78,7 +78,7 @@ public class HardcodedResponseDialog extends JDialog {
             status = 1;
         }
         assertion.setResponseStatus(status);
-        assertion.setResponseBody(responseBody.getText());
+        assertion.responseBodyString(responseBody.getText());
         assertion.setResponseContentType(contentType.getText());
         modified = true;
         confirmed = true;

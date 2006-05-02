@@ -52,13 +52,12 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
                 // can't happen
                 throw new RuntimeException(e);
             }
-            message = ass.getResponseBody();
+            message = ass.responseBodyString();
             status = ass.getResponseStatus();
             return;
         }
-
         contentType = ctype;
-        message = ass.getResponseBody();
+        message = ass.responseBodyString();
         status = ass.getResponseStatus();
     }
 
