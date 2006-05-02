@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.audit;
@@ -46,6 +44,13 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
     Level serverMessageAuditThreshold() throws RemoteException;
+
+    /**
+     * Get the level below which the server will not record audit detail records.
+     * @return the level currently applicable. Never null.
+     * @throws RemoteException if there was a problem communicating with the Gateway
+     */
+    Level serverDetailAuditThreshold() throws RemoteException;
 
     /**
      * Delete all sub-SEVERE AuditRecords that are more than 168 hours old (by default), while producing a new audit

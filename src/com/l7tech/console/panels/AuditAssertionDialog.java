@@ -4,8 +4,10 @@ import com.l7tech.policy.assertion.AuditAssertion;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -27,22 +29,28 @@ public class AuditAssertionDialog extends JDialog {
 
     private static final String THRESH_PREFIX = "(NOTE: the server is currently not recording below level ";
     private static final String THRESH_SUFFIX = ")";
-    private Font existingFont;
-    private Level currentServerThreshhold;
+    private Level currentServerThreshold;
 
     public AuditAssertionDialog(Frame owner, AuditAssertion ass, String serverThreshold) throws HeadlessException {
         super(owner, "Audit Assertion Properties", true);
         this.assertion = ass;
+        currentServerThreshold = Level.parse(serverThreshold);
 
-        levelCombo.setModel(new DefaultComboBoxModel(AuditAssertion.ALLOWED_LEVELS));
+        List allLevels = Arrays.asList(AuditAssertion.ALLOWED_LEVELS);
+        int thresholdPos = allLevels.indexOf(currentServerThreshold.getName());
+        if (thresholdPos > 0) thresholdPos -= 1; // Include one less than threshold
+        ArrayList levels = new ArrayList();
+        for (int i = thresholdPos; i < AuditAssertion.ALLOWED_LEVELS.length; i++) {
+            String s = AuditAssertion.ALLOWED_LEVELS[i];
+            levels.add(Level.parse(s).getLocalizedName());
+        }
+
+        levelCombo.setModel(new DefaultComboBoxModel(levels.toArray(new String[0])));
         levelCombo.setSelectedItem(ass.getLevel());
         saveRequestCheckbox.setSelected(ass.isSaveRequest());
         saveResponseCheckbox.setSelected(ass.isSaveResponse());
 
-        existingFont = thresholdLabel.getFont();
-
         //get the current server level
-        currentServerThreshhold = Level.parse(serverThreshold);
         updateThresholdLabel();
 
         okButton.addActionListener(new ActionListener() {
@@ -74,13 +82,13 @@ public class AuditAssertionDialog extends JDialog {
 
     private void updateThresholdLabel() {
         String selected = (String) levelCombo.getSelectedItem();
-        String defaultText = THRESH_PREFIX + currentServerThreshhold.getName() + THRESH_SUFFIX;
+        String defaultText = THRESH_PREFIX + currentServerThreshold.getName() + THRESH_SUFFIX;
         String text = defaultText;
         if (selected != null) {
             Level selectedLevel;
             try {
                 selectedLevel = Level.parse(selected);
-                if ( selectedLevel.intValue() < currentServerThreshhold.intValue()) {
+                if ( selectedLevel.intValue() < currentServerThreshold.intValue()) {
                     text = "<html><font color='red'>" + defaultText + "</font></html>";
                 }
             } catch (IllegalArgumentException iax) {}

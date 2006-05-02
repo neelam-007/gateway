@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.audit;
@@ -332,19 +330,27 @@ public class AuditAdminImpl implements AuditAdmin, ApplicationContextAware {
     }
 
     public Level serverMessageAuditThreshold() throws RemoteException {
+        return getAuditLevel(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD, "message", AuditContext.DEFAULT_MESSAGE_THRESHOLD);
+    }
+
+    public Level serverDetailAuditThreshold() throws RemoteException {
+        return getAuditLevel(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD, "detail", AuditContext.DEFAULT_ASSOCIATED_LOGS_THRESHOLD);
+    }
+
+    private Level getAuditLevel(String serverConfigParam, String which, Level defaultLevel) {
         // todo: consider moving this and the same code from AuditContextImpl in ServerConfig
-        String msgLevel = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);
+        String msgLevel = serverConfig.getProperty(serverConfigParam);
         Level output = null;
         if (msgLevel != null) {
             try {
                 output = Level.parse(msgLevel);
             } catch(IllegalArgumentException e) {
-                logger.warning("Invalid message threshold value '" + msgLevel + "'. Will use default " +
-                               AuditContext.DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+                logger.warning("Invalid " + which + " threshold value '" + msgLevel + "'. Will use default " +
+                               defaultLevel.getName() + " instead.");
             }
         }
         if (output == null) {
-            output = AuditContext.DEFAULT_MESSAGE_THRESHOLD;
+            output = defaultLevel;
         }
         return output;
     }

@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.panels.AuditDetailAssertionPropertiesDialog;
 import com.l7tech.common.gui.util.Utilities;
 
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 /**
  * Represents an AuditDetailAssertion in the policy tree.
@@ -79,9 +81,17 @@ public class AuditDetailAssertionTreeNode extends LeafAssertionTreeNode {
             }
 
             protected void performAction() {
+                Level level;
+                try {
+                    level = Registry.getDefault().getAuditAdmin().serverDetailAuditThreshold();
+                } catch (RemoteException e) {
+                    logger.log(Level.WARNING, "Couldn't get server's detail threshold; using default " + Level.INFO.toString());
+                    level = Level.INFO;
+                }
+
                 AuditDetailAssertionPropertiesDialog aad =
                         new AuditDetailAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(),
-                                                                 getAssertion());
+                                                                 getAssertion(), level);
                 aad.pack();
                 Utilities.centerOnScreen(aad);
                 Utilities.setEscKeyStrokeDisposes(aad);

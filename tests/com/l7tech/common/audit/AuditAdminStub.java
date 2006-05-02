@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.audit;
@@ -52,6 +50,10 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     public Level serverMessageAuditThreshold() throws RemoteException {
+        return Level.INFO;
+    }
+
+    public Level serverDetailAuditThreshold() throws RemoteException {
         return Level.INFO;
     }
 
