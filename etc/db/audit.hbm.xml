@@ -10,6 +10,8 @@
 -->
 
 <hibernate-mapping>
+    <typedef class="com.l7tech.objectmodel.CompressedStringType" name="ziptext"/>
+
     <class name="com.l7tech.common.audit.AuditRecord" table="audit_main" lazy="false">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
@@ -38,9 +40,9 @@
             <property name="serviceOid" column="service_oid" type="long"/>
             <property name="operationName" column="operation_name" type="string"/>
             <property name="authenticated" column="authenticated" type="boolean"/>
-            <property name="requestXml" column="request_xml" type="text"/>
+            <property name="requestXml" column="request_zipxml" type="ziptext"/>
             <property name="requestContentLength" column="request_length" type="int"/>
-            <property name="responseXml" column="response_xml" type="text"/>
+            <property name="responseXml" column="response_zipxml" type="ziptext"/>
             <property name="responseContentLength" column="response_length" type="int"/>
             <property name="responseHttpStatus" column="response_status" type="int"/>
             <property name="routingLatency" column="routing_latency" type="int"/>

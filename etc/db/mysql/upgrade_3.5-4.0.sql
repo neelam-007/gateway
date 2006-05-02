@@ -27,6 +27,20 @@ alter table audit_message drop column user_id;
 alter table audit_message drop column provider_oid;
 alter table audit_admin drop column admin_login;
 
+--
+-- Alter auditing of message to compress request and response message data
+--
+-- add temp columns for creation of compressed data
+alter table audit_message add column request_zipxml mediumblob; 
+alter table audit_message add column response_zipxml mediumblob; 
+
+-- migrate data
+update audit_message set request_zipxml = COMPRESS(request_xml) where request_xml is not null;
+update audit_message set response_zipxml = COMPRESS(response_xml) where response_xml is not null;
+
+-- remove old columns
+alter table audit_message drop column request_xml; 
+alter table audit_message drop column response_xml;
 
 -- Rename community_schemas.schema to work around reserved word
 alter table community_schemas change schema schema_xml mediumtext default '';
