@@ -29,11 +29,14 @@ import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
+import javax.wsdl.xml.WSDLLocator;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.namespace.QName;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -155,6 +158,88 @@ public class Wsdl {
         WSDLReader reader = fac.newWSDLReader();
         return new Wsdl(reader.readWSDL(documentBaseURI, wsdlDocument));
     }
+
+    /**
+     * Create the instance by reading a WSDL document into from
+     * the <code>Reader</code> character stream.
+     *
+     * @param documentBaseURI the document base URI of the WSDL definition
+     *                        described by the document.
+     *                        Can be <b>null</b>, in which case it will be
+     *                        ignored.
+     * @param reader          the character stream that contains the WSDL document,
+     *                        an XML document obeying the WSDL schema.
+     * @param allowLocalImports True to allow imports to be resolved to the
+     *                        local file system.
+     * @return the <code>Wsdl</code> instance
+     * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
+     */
+    public static Wsdl newInstance(final String documentBaseURI, final Reader reader, final boolean allowLocalImports)
+            throws WSDLException {
+        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLReader wsdlReader = fac.newWSDLReader();
+
+        return new Wsdl(wsdlReader.readWSDL(new WSDLLocator() {
+            private String lastResolvedUri = null;
+
+            public InputSource getBaseInputSource() {
+                InputSource is = new InputSource();
+                is.setCharacterStream(reader);
+                is.setSystemId(documentBaseURI);
+                return is;
+            }
+
+            public String getBaseURI() {
+                return documentBaseURI;
+            }
+
+            /**
+             * Resolve a (possibly relative) import.
+             *
+             * @param parentLocation A URI specifying the location of the document doing the importing.
+             *                       This can be null if the import location is not relative to the
+             *                       parent location.
+             * @param importLocation A URI specifying the location of the document to import. This might
+             *                       be relative to the parent document's location.
+             * @return the InputSource object or null if the import cannot be found.
+             */
+            public InputSource getImportInputSource(String parentLocation, String importLocation) {
+                InputSource is = null;
+                URI resolvedUri = null;
+                try {
+                    lastResolvedUri = importLocation; // ensure set even if not valid
+
+                    if (parentLocation != null) {
+                        URI base = new URI(parentLocation);
+                        URI relative = new URI(importLocation);
+                        resolvedUri = base.resolve(relative);
+                    }
+                    else {
+                        resolvedUri = new URI(importLocation);
+                    }
+
+                    lastResolvedUri = resolvedUri.toString();
+
+                    if (resolvedUri.isAbsolute()) {
+                        if (allowLocalImports || !"file".equals(resolvedUri.getScheme())) {
+                            is = new InputSource();
+                            is.setSystemId(resolvedUri.toString());
+                        }
+                    }
+                }
+                catch (URISyntaxException use) {
+                    // of interest?
+                }
+
+                return is;
+            }
+
+            public String getLatestImportURI() {
+                return lastResolvedUri;
+            }
+        }));
+    }
+
 
     /**
      * Create the instance by reading a WSDL document into from

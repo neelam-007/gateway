@@ -141,6 +141,8 @@ public class WSILSelectorPanel extends JDialog {
                 return "";
             }
         };
+        wsilTable.getTableHeader().setReorderingAllowed(false);
+        wsilTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         wsilTable.setModel(model);
     }
 

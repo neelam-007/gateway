@@ -54,6 +54,13 @@ public class SearchWsdlDialog extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
+    public SearchWsdlDialog(JFrame parent) throws RemoteException, FindException {
+        super(parent, resources.getString("window.title"), true);
+        initialize();
+        pack();
+        Utilities.centerOnScreen(this);
+    }
+
     private void initialize() throws RemoteException, FindException {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
