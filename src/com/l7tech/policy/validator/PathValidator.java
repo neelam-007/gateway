@@ -399,6 +399,12 @@ class PathValidator {
                   "This assertion should be preceeded by a SAML Security assertion.", null));
             }
         }
+        else if(a instanceof WssBasic) {
+            if(!haveSeen(SslAssertion.class)) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by a TLS/SSL assertion.", null));
+            }
+        }
 
         if (a instanceof UsesVariables) {
             UsesVariables ua = (UsesVariables)a;
@@ -623,7 +629,8 @@ class PathValidator {
                a instanceof WsTrustCredentialExchange ||
                a instanceof WsFederationPassiveTokenExchange ||
                a instanceof WsFederationPassiveTokenRequest ||
-              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired());
+              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired()) ||
+               a instanceof WssBasic;
     }
 
     private boolean seenCredentials(Assertion context) {
