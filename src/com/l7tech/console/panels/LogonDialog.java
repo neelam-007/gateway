@@ -541,7 +541,7 @@ public class LogonDialog extends JDialog {
     private void showInvalidCredentialsMessage() {
         parentFrame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         JOptionPane.
-          showMessageDialog(this,
+          showMessageDialog(parentFrame,
                             resources.getString("logon.invalid.credentials"),
                             "Warning",
                             JOptionPane.WARNING_MESSAGE);
@@ -665,14 +665,14 @@ public class LogonDialog extends JDialog {
                                            new Object[]{
                                                BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
             }
-            JOptionPane.showMessageDialog(this, msg, "Warning", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof ConnectException ||
           cause instanceof UnknownHostException) {
             log.log(Level.WARNING, "Could not connect, '"+cause.getMessage()+"'");
             String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{
                 host});
-            JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
             log.log(Level.WARNING, "Cound not connect, authentication error.");
@@ -680,30 +680,30 @@ public class LogonDialog extends JDialog {
         }
         else if (cause instanceof MalformedURLException) {
             String msg = resources.getString("logon.invalid.service.url");
-            JOptionPane.showMessageDialog(this, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
         }
         else if (cause instanceof RemoteException || cause instanceof IOException) {
             log.log(Level.WARNING, "Could not connect to admin service server", e);
             String msg = MessageFormat.format(resources.getString("service.unavailable.error"), new Object[]{
                 host});
-            JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else if (cause instanceof InvalidHostNameException) {
             InvalidHostNameException ihne = (InvalidHostNameException) cause;
             String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
                                               new Object[]{ihne.getExpectedHost(), ihne.getActualHost()});
-            JOptionPane.showMessageDialog(LogonDialog.this, msg, "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
             acceptedInvalidHosts.add(ihne.getExpectedHost());
         }
         else if (cause instanceof InvalidHostCertificateException) {
             String msg = MessageFormat.format(resources.getString("logon.certificate.problem"),
                                               new Object[]{host});
-            JOptionPane.showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
         else {
             log.log(Level.WARNING, "logon()", e);
             String msg = MessageFormat.format(resources.getString("logon.connect.error"), new Object[]{host});
-            JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
