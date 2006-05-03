@@ -16,7 +16,8 @@ public class BufferPool {
     public static final int MIN_BUFFER_SIZE = 1024;
 
     // Don't accumulate an infinite number of buffers in the pool
-    private static int MAX_BUFFERS_PER_LIST = 20;
+    private static int[] MAX_BUFFERS_PER_LIST = { 20, 20, 10, 4, 20, 15, 10, 5 };
+    private static int MAX_HUGE_BUFFERS = 4;
 
     private int[] sizes = { 1024, 4096, 16384, 65536, 128 * 1024, 256 * 1024, 512 * 1024, 1024 * 1024 };
 
@@ -130,13 +131,13 @@ public class BufferPool {
                 LinkedList buffers = this.buffers[i];
                 if (i <= LAST_LOCAL_INDEX) {
                     // Thread local -- no synch needed
-                    if (buffers.size() < MAX_BUFFERS_PER_LIST)
+                    if (buffers.size() < MAX_BUFFERS_PER_LIST[i])
                         buffers.add(buffer);
                     return;
                 }
                 // Shared -- synch needed
                 synchronized (buffers) {
-                    if (buffers.size() < MAX_BUFFERS_PER_LIST)
+                    if (buffers.size() < MAX_BUFFERS_PER_LIST[i])
                         buffers.add(buffer);
                     return;
                 }
@@ -174,21 +175,8 @@ public class BufferPool {
         final int size = buffer.length;
         if (size < 1024 * 1024) throw new IllegalArgumentException("size must be greater than 1mb");
         synchronized (pHuge) {
-            if (pHuge.size() >= MAX_BUFFERS_PER_LIST) {
-                // Throw out the smallest one
-                byte[] b = (byte[])pHuge.getFirst();
-                if (b.length >= buffer.length)
-                    return;
+            while (pHuge.size() >= MAX_HUGE_BUFFERS)
                 pHuge.removeFirst();
-            }
-            for (ListIterator i = pHuge.listIterator(); i.hasNext();) {
-                byte[] buff = (byte[])i.next();
-                if (buff.length >= size) {
-                    i.previous();
-                    i.add(buff);
-                    return;
-                }
-            }
             pHuge.add(buffer);
         }
     }
