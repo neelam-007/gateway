@@ -8,7 +8,10 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetailEvent;
+import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.event.FaultProcessed;
+
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -32,6 +35,10 @@ public class MessageProcessingAuditListener implements ApplicationListener {
         } else if (event instanceof MessageProcessed) {
             MessageProcessed mp = (MessageProcessed)event;
             auditContext.setCurrentRecord(messageSummaryAuditFactory.makeEvent(mp.getContext(), mp.getStatus()));
+        } else if (event instanceof FaultProcessed) {
+            FaultProcessed fp = (FaultProcessed)event;
+            AuditDetail detail = messageSummaryAuditFactory.makeEvent(fp.getContext(), fp.getFaultMessage());
+            if (detail!=null) auditContext.addDetail(detail);
         }
     }
 }

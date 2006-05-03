@@ -12,6 +12,8 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.common.http.HttpConstants;
 
 import java.util.logging.Level;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * An {@link AuditRecord} that describes the processing of a single message.
@@ -162,6 +164,20 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                 operationName = operationNameHaver.toString();
         }
         return operationName;
+    }
+
+    public void setDetails(Set details) {
+        if (details != null) {
+            for (Iterator iterator = details.iterator(); iterator.hasNext();) {
+                Object detailObj = iterator.next();
+                if (detailObj instanceof MessageSummaryAuditDetail) {
+                    MessageSummaryAuditDetail msad = (MessageSummaryAuditDetail) detailObj;
+                    if (!msad.shouldSave()) iterator.remove(); // we don't want to save this.
+                }
+            }
+        }
+
+        super.setDetails(details);
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */

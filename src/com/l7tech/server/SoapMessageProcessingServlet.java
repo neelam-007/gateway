@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
+import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -56,13 +57,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
+
+    private WebApplicationContext applicationContext;
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
     private ServerConfig serverConfig;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        WebApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
@@ -271,6 +274,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                            SoapFaultDetail faultDetail, HttpServletRequest req,
                            HttpServletResponse res) throws IOException, SAXException {
         OutputStream responseStream = null;
+        String faultXml = null;
         try {
             responseStream = res.getOutputStream();
             String actor = req.getRequestURL().toString();
@@ -283,13 +287,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
 
-            responseStream.write(SoapFaultUtils.generateSoapFaultXml(faultDetail.getFaultCode(),
+            faultXml = SoapFaultUtils.generateSoapFaultXml(faultDetail.getFaultCode(),
               faultDetail.getFaultString(),
               faultDetail.getFaultDetail(),
-              actor).getBytes());
+              actor);
+            responseStream.write(faultXml.getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
+
+        if (faultXml != null)
+            applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
     private String makePolicyUrl(HttpServletRequest hreq, long oid) {
@@ -313,6 +321,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                            HttpServletRequest hreq, HttpServletResponse hresp,
                            String faultCode, String faultString) throws IOException, SAXException {
         OutputStream responseStream = null;
+        String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
             String actor = hreq.getRequestURL().toString();
@@ -326,11 +335,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
             Element exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("policyURL", purl);
-            responseStream.write(SoapFaultUtils.generateSoapFaultXml(faultCode, faultString,
-              exceptiondetails, actor).getBytes());
+            faultXml = SoapFaultUtils.generateSoapFaultXml(faultCode, faultString,
+              exceptiondetails, actor);
+            responseStream.write(faultXml.getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
+
+        if (faultXml != null)
+            applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
     private boolean shouldSendBackPolicyUrl(PolicyEnforcementContext context) throws IOException {

@@ -7,6 +7,10 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.AuditDetailEvent;
+import com.l7tech.common.audit.MessageProcessingMessages;
+import com.l7tech.common.audit.MessageSummaryAuditDetail;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
@@ -142,6 +146,17 @@ public class MessageSummaryAuditFactory {
                                              serviceOid, serviceName, operationNameHaver,
                                              authenticated, identityProviderOid, userName, userId);
     }
+
+    public AuditDetail makeEvent(PolicyEnforcementContext context, String faultMessage) {
+        AuditDetail detail = null;
+
+        if (context.isAuditSaveResponse()) {
+            detail = new MessageSummaryAuditDetail(faultMessage);              
+        }
+
+        return detail;
+    }
+
 
     private String getOperationName(PolicyEnforcementContext context) {
         String operationName = null;
