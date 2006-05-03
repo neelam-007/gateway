@@ -15,6 +15,7 @@ import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.AuthenticationException;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
@@ -674,7 +675,7 @@ public class LogonDialog extends JDialog {
                 host});
             JOptionPane.showMessageDialog(parentFrame, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
-        else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException) {
+        else if (cause instanceof LoginException || cause instanceof FailedLoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
             log.log(Level.WARNING, "Cound not connect, authentication error.");
             showInvalidCredentialsMessage();
         }
