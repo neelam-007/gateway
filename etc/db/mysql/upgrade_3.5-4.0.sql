@@ -42,9 +42,6 @@ update audit_message set response_zipxml = COMPRESS(response_xml) where response
 alter table audit_message drop column request_xml; 
 alter table audit_message drop column response_xml;
 
--- Rename community_schemas.schema to work around reserved word
-alter table community_schemas change schema schema_xml mediumtext default '';
-
 --alter table service_resolution drop index `soapaction`;
 alter table service_resolution modify column soapaction mediumtext character set latin1 BINARY default '';
 alter table service_resolution modify column urn mediumtext character set latin1 BINARY default '';
