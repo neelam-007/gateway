@@ -268,24 +268,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             displayError("This does not appear to be a legal schema. Consult log for more information", null);
             return;
         }
-        /*if (contents == null || contents.length() < 1) {
-            log.warning("empty doc");
-            displayError(resources.getString("error.notschema"), null);
-            return;
-        }
-        Document doc = stringToDoc(contents);
-        if (doc == null) {
-            displayError(resources.getString("error.notschema"), null);
-            return;
-        }
-        if (!docIsSchema(doc)) {
-            displayError(resources.getString("error.notschema"), null);
-            return;
-        }*/
-
-        Document doc = stringToDoc(contents);
-        // before saving, make sure all imports are resolveable
-        if (checkForUnresolvedImports(doc)) {
+        try {
+            Document doc = XmlUtil.stringToDocument(contents);
+            if (checkForUnresolvedImports(doc)) {
+                return;
+            }
+        } catch (SAXException e) {
+            log.log(Level.WARNING, "issue with xml document", e);
+            displayError("The schema is not formatted properly. " + e.getMessage(), null);
             return;
         }
 
