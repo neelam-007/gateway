@@ -58,7 +58,7 @@ public class ConfigurationWizard extends Wizard {
     boolean hadFailures = false;
     private int clusteringType;
     private String keystoreType;
-    private String currentVersion;
+    private static String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
 
     /**
      * Creates new wizard
@@ -78,7 +78,6 @@ public class ConfigurationWizard extends Wizard {
      * @param panel
      */
     public void init(WizardStepPanel panel) {
-        currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
         setTitle("SSG Configuration Wizard for " + osFunctions.getOSName());
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
@@ -283,7 +282,7 @@ public class ConfigurationWizard extends Wizard {
         keystoreType = type;
     }
 
-    public String getCurrentVersion() {
+    public static String getCurrentVersion() {
         return currentVersion;
     }
 

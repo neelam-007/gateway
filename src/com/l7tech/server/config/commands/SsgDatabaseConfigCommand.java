@@ -2,6 +2,7 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
+import com.l7tech.server.config.ui.gui.ConfigurationWizard;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -27,6 +28,17 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_PROPERTY_COMMENTS = "This hibernate configuration file was created by the SSG configuration tool. It will be replaced if the tool is re-run";
     public static final String HIBERNATE_DEFAULT_CONNECTION_URL="jdbc:mysql://localhost/ssg?failOverReadOnly=false&autoReconnect=false&socketTimeout=120000&useNewIO=true&characterEncoding=UTF8&characterSetResults=UTF8";
     public static final String HIBERNATE_URL_AUTORECONNECTPOOLS_PATTERN="autoReconnectForPools=true(&*)";
+
+    //the package names change for these in 3.6/4.0
+    public static final String HIBERNATE_DIALECT_PROP_NAME = "hibernate.dialect";
+    private static final String HIBERNATE_DIALECT_PROP_VALUE = "org.hibernate.dialect.MySQLDialect";
+
+    private static final String HIBERNATE_TXN_FACTORY_PROP_NAME = "hibernate.transaction.factory_class";
+    private static final String HIBERNATE_TXN_FACTORY_PROP_VALUE = "org.hibernate.transaction.JDBCTransactionFactory";
+
+    private static final String HIBERNATE_CXN_PROVIDER_PROP_NAME = "hibernate.connection.provider_class";
+    private static final String HIBERNATE_CXN_PROVIDER_PROP_VALUE = "org.hibernate.connection.C3P0ConnectionProvider";
+
 
     private Pattern urlPattern = Pattern.compile("(^.*//).*(/).*(\\?.*$)");
 
@@ -92,6 +104,13 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             dbProps.setProperty(HIBERNATE_URL_KEY, newUrlString);
             dbProps.setProperty(HIBERNATE_USERNAME_KEY, dbUsername);
             dbProps.setProperty(HIBERNATE_PASSWORD_KEY, new String(dbPassword));
+
+            String currentVersion = ConfigurationWizard.getCurrentVersion();
+            if (Float.parseFloat(currentVersion) >= 3.6f) {
+                dbProps.setProperty(HIBERNATE_DIALECT_PROP_NAME, HIBERNATE_DIALECT_PROP_VALUE);
+                dbProps.setProperty(HIBERNATE_CXN_PROVIDER_PROP_NAME, HIBERNATE_CXN_PROVIDER_PROP_VALUE);
+                dbProps.setProperty(HIBERNATE_TXN_FACTORY_PROP_NAME, HIBERNATE_TXN_FACTORY_PROP_VALUE);
+            }
 
             fos = new FileOutputStream(dbConfigFile);
             dbProps.store(fos, HIBERNATE_PROPERTY_COMMENTS);

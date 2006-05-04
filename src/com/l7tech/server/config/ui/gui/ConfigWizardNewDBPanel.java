@@ -233,7 +233,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         String username = dbUsername.getText();
         String password = dbPassword.getText();
 
-        String currentVersion = getParentWizard().getCurrentVersion();
+        String currentVersion = ConfigurationWizard.getCurrentVersion();
         String theDbName = dbName.getText();
         String hostname = dbHostname.getText();
 

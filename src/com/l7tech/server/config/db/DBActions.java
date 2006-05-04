@@ -734,7 +734,7 @@ public class DBActions {
                 isOk = false;
                 break;
             default:
-                msg = "Database upgrade process failed";
+                msg = "Database upgrade process failed: " + upgradeResult.getErrorMessage();
                 if (ui != null) ui.showErrorMessage(msg);
                 logger.warning(msg);
                 isOk = false;
