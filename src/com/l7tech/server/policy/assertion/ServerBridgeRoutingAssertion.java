@@ -11,6 +11,7 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
@@ -408,7 +409,18 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
     private SimpleHttpClient newHttpClient() {
         // Set up HTTP client (use commons client)
-        GenericHttpClient client = new CommonsHttpClient(ssg.getRuntime().getHttpConnectionManager(), getConnectionTimeout(), getTimeout());
+        int hmax = bridgeRoutingAssertion.getMaxConnections();
+        int tmax = hmax * 10;
+        if (hmax <= 0) {
+            hmax = CommonsHttpClient.getDefaultMaxConnectionsPerHost();
+            tmax = CommonsHttpClient.getDefaultMaxTotalConnections();
+        }
+
+        StaleCheckingHttpConnectionManager connectionManager = new StaleCheckingHttpConnectionManager();
+        connectionManager.setMaxConnectionsPerHost(hmax);
+        connectionManager.setMaxTotalConnections(tmax);
+        connectionManager.setPerHostStaleCleanupCount(CommonsHttpClient.getDefaultStaleCheckCount());
+        GenericHttpClient client = new CommonsHttpClient(connectionManager);
 
         // Attach SSL support
         client = new SslPeerHttpClient(client,

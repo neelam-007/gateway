@@ -32,6 +32,7 @@ public class CommonsHttpClient implements GenericHttpClient {
     private static final Logger logger = Logger.getLogger(CommonsHttpClient.class.getName());
     public static final String PROP_MAX_CONN_PER_HOST = CommonsHttpClient.class.getName() + ".maxConnectionsPerHost";
     public static final String PROP_MAX_TOTAL_CONN = CommonsHttpClient.class.getName() + ".maxTotalConnections";
+    public static final String PROP_STALE_CHECKS = CommonsHttpClient.class.getName() + ".staleCheckCount";
 
     private final HttpConnectionManager cman;
     private final int connectionTimeout;
@@ -63,9 +64,24 @@ public class CommonsHttpClient implements GenericHttpClient {
     }
 
     public static MultiThreadedHttpConnectionManager newConnectionManager() {
-        int maxConnPerHost = Integer.getInteger(PROP_MAX_CONN_PER_HOST, 200).intValue();
-        int maxTotalConnections = Integer.getInteger(PROP_MAX_TOTAL_CONN, 2000).intValue();
+        int maxConnPerHost = getDefaultMaxConnectionsPerHost();
+        int maxTotalConnections = getDefaultMaxTotalConnections();
         return newConnectionManager(maxConnPerHost, maxTotalConnections);
+    }
+
+    public static int getDefaultMaxConnectionsPerHost() {
+        int maxConnPerHost = Integer.getInteger(PROP_MAX_CONN_PER_HOST, 200).intValue();
+        return maxConnPerHost;
+    }
+
+    public static int getDefaultMaxTotalConnections() {
+        int maxTotalConnections = Integer.getInteger(PROP_MAX_TOTAL_CONN, 2000).intValue();
+        return maxTotalConnections;
+    }
+
+    public static int getDefaultStaleCheckCount() {
+        int maxTotalConnections = Integer.getInteger(PROP_STALE_CHECKS, 1).intValue();
+        return maxTotalConnections;
     }
 
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)

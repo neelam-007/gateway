@@ -17,7 +17,7 @@ public class HttpRoutingAssertion
         extends RoutingAssertion
         implements UsesVariables, SetsVariables
 {
-    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 100; // Flagrantly in contravention of RFC2616!
+    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = -1;
     public static final String VAR_ROUTING_LATENCY = "httpRouting.latency";
     public static final String PROP_SSL_SESSION_TIMEOUT =
             HttpRoutingAssertion.class.getName() + ".sslSessionTimeoutSeconds";
@@ -46,7 +46,7 @@ public class HttpRoutingAssertion
 
 
     public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm) {
-        this(protectedServiceUrl, login, password, realm, -1);
+        this(protectedServiceUrl, login, password, realm, DEFAULT_MAX_CONNECTIONS_PER_HOST);
     }
 
     /**
@@ -76,8 +76,6 @@ public class HttpRoutingAssertion
         this.password = password;
         this.realm = realm;
         this.passthroughHttpAuthentication = false;
-
-        if (maxConnections == -1) maxConnections = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         this.maxConnections = maxConnections;
         this.copyCookies = copyCookies;
     }

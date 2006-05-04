@@ -3,7 +3,6 @@ package com.l7tech.common.http.prov.apache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -11,8 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +21,6 @@ import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpRecoverableException;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.protocol.Protocol;
 
 /**
@@ -35,20 +31,26 @@ import org.apache.commons.httpclient.protocol.Protocol;
  * <p>It is NOT guaranteed that bindings will be respected if you leave it up to GC to clean up
  * the HttpConnection.</p>
  *
+ * <p>This connection manager is not intended for use connecting to a large number of different
+ * hosts.</p>
+ *
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConnectionManager {
+public class IdentityBindingHttpConnectionManager extends StaleCheckingHttpConnectionManager {
 
     //- PUBLIC
 
+    /**
+     * Create a manager with the default binding timeout / max age and default
+     * stale connection cleanup.
+     */
     public IdentityBindingHttpConnectionManager() {
         bindingTimeout = DEFAULT_BINDING_TIMEOUT;
         bindingMaxAge = DEFAULT_BINDING_MAX_AGE;
         lock = new ReaderPreferenceReadWriteLock();
         connectionsById = new HashMap();
         info = new ThreadLocal();
-        cleanupTimer.schedule(new CleanupTimerTask(this), 5000, 5000);
     }
 
     /**
@@ -230,10 +232,74 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
         }
     }
 
-    //- PACKAGE
+    //- PROTECTED
 
-    void reallyReleaseConnection(HttpConnection httpConnection) {
-        super.releaseConnection(unwrap(httpConnection));
+    /**
+     * Periodic cleanup task (releases stale bound connections).
+     */
+    protected void doCleanup() {
+        // grab a copy of the MAP
+        long timeNow = 0;
+        Map connectionInfo = null;
+        boolean gotLock = false;
+        while (!gotLock) {
+            try {
+                lock.writeLock().acquire();
+                gotLock = true;
+                timeNow = System.currentTimeMillis();
+                connectionInfo = new HashMap(connectionsById);
+            }
+            catch(InterruptedException ie) {
+                logger.log(Level.WARNING, "Unexpected interruption acquiring read lock.", ie);
+            }
+            finally {
+                if (gotLock) lock.writeLock().release();
+            }
+        }
+
+        List identitiesForRemoval = new ArrayList();
+        if (connectionInfo != null) {
+            for(Iterator iterator = connectionInfo.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                Object identifier = entry.getKey();
+                HttpConnectionInfo httpConnectionInfo = (HttpConnectionInfo) entry.getValue();
+
+                if (!isValid(httpConnectionInfo, timeNow)) {
+                    if (httpConnectionInfo.isInUse()) {
+                        if(logger.isLoggable(Level.FINE)) {
+                            logger.fine("Not releasing in use connection.");
+                        }
+                    }
+                    else {
+                        identitiesForRemoval.add(identifier);
+                        httpConnectionInfo.dispose();
+                    }
+                }
+            }
+        }
+
+        gotLock = false;
+        while (!gotLock) {
+            try {
+                lock.writeLock().acquire();
+                gotLock = true;
+                connectionsById.keySet().removeAll(identitiesForRemoval);
+            }
+            catch(InterruptedException ie) {
+                logger.log(Level.WARNING, "Unexpected interruption acquiring read lock.", ie);
+            }
+            finally {
+                if (gotLock) lock.writeLock().release();
+            }
+        }
+        if (!identitiesForRemoval.isEmpty()) {
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine("Released connections with identifiers " + identitiesForRemoval);
+            }
+        }
+
+        // stale cleanup
+        super.doCleanup();
     }
 
     //- PRIVATE
@@ -245,7 +311,6 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
     private static final int DEFAULT_BINDING_TIMEOUT = 30000;
     private static final int MIN_BINDING_TIMEOUT = 100;
     private static final int MAX_BINDING_TIMEOUT = 300000;
-    private static final Timer cleanupTimer = new Timer("BoundConnectionCleanupTimer", true);
 
     private int bindingTimeout;
     private int bindingMaxAge;
@@ -454,6 +519,10 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
         return httpConnection;
     }
 
+    private void reallyReleaseConnection(HttpConnection httpConnection) {
+        super.releaseConnection(unwrap(httpConnection));
+    }
+
     /**
      * Holder for HttpConnection data
      */
@@ -555,91 +624,6 @@ public class IdentityBindingHttpConnectionManager extends MultiThreadedHttpConne
 
         public void bound() {
             bind = Boolean.FALSE;
-        }
-    }
-
-    /**
-     *
-     */
-    public static class CleanupTimerTask extends TimerTask {
-
-        private final WeakReference managerRef;
-
-        CleanupTimerTask(final IdentityBindingHttpConnectionManager manager) {
-            managerRef = new WeakReference(manager);
-        }
-
-        public void run() {
-            IdentityBindingHttpConnectionManager manager =
-                    (IdentityBindingHttpConnectionManager) managerRef.get();
-
-            if (manager == null) {
-                if(logger.isLoggable(Level.FINE)) {
-                    logger.fine("Cancelled timer task for GC'd connection manager.");
-                }
-                cancel();
-            }
-            else {
-                // grab a copy of the MAP
-                long timeNow = 0;
-                Map connectionInfo = null;
-                boolean gotLock = false;
-                while (!gotLock) {
-                    try {
-                        manager.lock.writeLock().acquire();
-                        gotLock = true;
-                        timeNow = System.currentTimeMillis();
-                        connectionInfo = new HashMap(manager.connectionsById);
-                    }
-                    catch(InterruptedException ie) {
-                        logger.log(Level.WARNING, "Unexpected interruption acquiring read lock.", ie);
-                    }
-                    finally {
-                        if (gotLock) manager.lock.writeLock().release();
-                    }
-                }
-
-                List identitiesForRemoval = new ArrayList();
-                if (connectionInfo != null) {
-                    for(Iterator iterator = connectionInfo.entrySet().iterator(); iterator.hasNext(); ) {
-                        Map.Entry entry = (Map.Entry) iterator.next();
-                        Object identifier = entry.getKey();
-                        HttpConnectionInfo httpConnectionInfo = (HttpConnectionInfo) entry.getValue();
-
-                        if (!manager.isValid(httpConnectionInfo, timeNow)) {
-                            if (httpConnectionInfo.isInUse()) {
-                                if(logger.isLoggable(Level.FINE)) {
-                                    logger.fine("Not releasing in use connection.");
-                                }
-                            }
-                            else {
-                                identitiesForRemoval.add(identifier);
-                                httpConnectionInfo.dispose();
-                            }
-                        }
-                    }
-                }
-
-                gotLock = false;
-                while (!gotLock) {
-                    try {
-                        manager.lock.writeLock().acquire();
-                        gotLock = true;
-                        manager.connectionsById.keySet().removeAll(identitiesForRemoval);
-                    }
-                    catch(InterruptedException ie) {
-                        logger.log(Level.WARNING, "Unexpected interruption acquiring read lock.", ie);
-                    }
-                    finally {
-                        if (gotLock) manager.lock.writeLock().release();
-                    }
-                }
-                if(!identitiesForRemoval.isEmpty()) {
-                    if(logger.isLoggable(Level.FINE)) {
-                        logger.fine("Released connections with identifiers " + identitiesForRemoval);
-                    }
-                }
-            }
         }
     }
 

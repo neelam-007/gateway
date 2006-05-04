@@ -80,11 +80,17 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         super(assertion, ctx);
         this.httpRoutingAssertion = assertion;
 
-        int max = httpRoutingAssertion.getMaxConnections();
+        int hmax = httpRoutingAssertion.getMaxConnections();
+        int tmax = hmax * 10;
+        if (hmax <= 0) {
+            hmax = CommonsHttpClient.getDefaultMaxConnectionsPerHost();
+            tmax = CommonsHttpClient.getDefaultMaxTotalConnections();
+        }
 
-        MultiThreadedHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
-        connectionManager.setMaxConnectionsPerHost(max);
-        connectionManager.setMaxTotalConnections(max * 10);
+        IdentityBindingHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
+        connectionManager.setMaxConnectionsPerHost(hmax);
+        connectionManager.setMaxTotalConnections(tmax);
+        connectionManager.setPerHostStaleCleanupCount(CommonsHttpClient.getDefaultStaleCheckCount());
         this.connectionManager = connectionManager;
 
         auditor = new Auditor(this, applicationContext, logger);
