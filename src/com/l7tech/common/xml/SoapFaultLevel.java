@@ -1,5 +1,7 @@
 package com.l7tech.common.xml;
 
+import java.io.Serializable;
+
 /**
  * Attached to a PolicyEnforcementContext and overridable through the FaultLevel assertion,
  * such an object tells the SSG what the soap fault returned to a requestor should look like
@@ -10,8 +12,11 @@ package com.l7tech.common.xml;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: May 4, 2006<br/>
+ *
+ * @see com.l7tech.policy.assertion.FaultLevel
+ * @see com.l7tech.server.message.PolicyEnforcementContext
  */
-public class SoapFaultLevel {
+public class SoapFaultLevel implements Serializable {
     public static final int DROP_CONNECTION = 0;
     public static final int TEMPLATE_FAULT = 1;
     public static final int GENERIC_FAULT = 2;

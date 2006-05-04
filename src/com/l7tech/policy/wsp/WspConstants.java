@@ -15,6 +15,7 @@ import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
@@ -281,6 +282,7 @@ public class WspConstants {
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new ComparisonAssertion(), "ComparisonAssertion"),
         new AssertionMapping(new StealthFault(), "StealthFault"),
+        new AssertionMapping(new FaultLevel(), "FaultLevel"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
         new AssertionMapping(new OversizedTextAssertion(), "OversizedText"),
         new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),
@@ -337,6 +339,7 @@ public class WspConstants {
         new ArrayTypeMapping(new HttpFormPost.FieldInfo[0], "fieldInfoArray"),
         new ArrayTypeMapping(new String[0], "fieldNames"),
         new BeanTypeMapping(AuthenticationProperties.class, "authenticationInfo"),
+        new BeanTypeMapping(SoapFaultLevel.class, "soapFaultLevel"),
 
         // Backward compatibility with old policy documents
         WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,
