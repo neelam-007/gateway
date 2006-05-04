@@ -102,9 +102,7 @@ class JmsRequestHandler {
                 // WebSphere MQ doesn't like this with AUTO_ACKNOWLEDGE
                 // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
 
-                if( jmsRequest.getJMSReplyTo() != null ||
-                        jmsRequest.getJMSCorrelationID() != null ||
-                        jmsRequest.getJMSCorrelationIDAsBytes().length > 0) {
+                if(jmsRequest.getJMSReplyTo() != null || jmsRequest.getJMSCorrelationID() != null) {
                     context.setReplyExpected(true);
                 } else {
                     context.setReplyExpected(false);
