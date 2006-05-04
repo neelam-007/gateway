@@ -2,6 +2,7 @@ package com.l7tech.common.xml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.util.Registry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -40,6 +41,7 @@ import java.net.URISyntaxException;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -403,6 +405,10 @@ public class Wsdl {
         try {
             XmlUtil.canonicalize(e, baos);
             return policyReader.readPolicy(new ByteArrayInputStream(baos.toByteArray()));
+        } catch (NullPointerException npe) {
+            // TODO fix this bug in policyReader
+            logger.log(Level.WARNING, "Unable to read policy element: " + ExceptionUtils.getMessage(npe), npe);
+            return null;
         } catch (IOException e1) {
             throw new RuntimeException(e1); // can't happen
         }
@@ -414,7 +420,24 @@ public class Wsdl {
         try {
             XmlUtil.canonicalize(e, baos);
             Document d = XmlUtil.parse(new ByteArrayInputStream(baos.toByteArray()));
-            return policyReader.readPolicyReference(d.getDocumentElement());
+            Element ele = d.getDocumentElement();
+            String uri = ele.getAttribute("URI");
+            if (uri == null || uri.length() < 1) {
+                // Work-around NPE in policy reader when reference uses wsp:URI="..." instead of just URI="..."
+                uri = ele.getAttributeNS(ele.getNamespaceURI(), "URI");
+                if (uri == null || uri.length() < 1) {
+                    logger.warning("Ignoring policy reference with no URI attribute");
+                    return null;
+                }
+                // Hack the element so it contains the correct attribute, without a wsp: prefix
+                ele.removeAttributeNS(ele.getNamespaceURI(), "URI");
+                ele.setAttribute("URI", uri);
+            }
+            return policyReader.readPolicyReference(ele);
+        } catch (NullPointerException npe) {
+            // TODO fix this bug in policyReader
+            logger.log(Level.WARNING, "Unable to read policy reference element: " + ExceptionUtils.getMessage(npe), npe);
+            return null;
         } catch (IOException e1) {
             throw new RuntimeException(e1); // can't happen
         } catch (SAXException e1) {
