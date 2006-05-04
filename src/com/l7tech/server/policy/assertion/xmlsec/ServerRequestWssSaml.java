@@ -116,21 +116,16 @@ public class ServerRequestWssSaml implements ServerAssertion {
             LoginCredentials credentials = context.getCredentials();
             assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults);
             if (validateResults.size() > 0) {
-                StringBuffer sb = new StringBuffer();
                 StringBuffer sb2 = new StringBuffer();
                 boolean firstPass = true;
                 for (Iterator iterator = validateResults.iterator(); iterator.hasNext();) {
                     if (!firstPass) {
-                        sb.append("\n");
                         sb2.append(", ");
                     }
                     SamlAssertionValidate.Error error = (SamlAssertionValidate.Error)iterator.next();
-                    sb.append(error.toString());
                     sb2.append(error.toString());
                     firstPass = false;
                 }
-                SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_CLIENT, sb.toString(), null);
-                context.setFaultDetail(sfd);
                 String error = "SAML Assertion Validation Errors:" + sb2.toString();
                 auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED, new String[] {sb2.toString()});
                 logger.log(Level.INFO, error);

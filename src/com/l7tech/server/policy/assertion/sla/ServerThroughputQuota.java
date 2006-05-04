@@ -80,8 +80,6 @@ public class ServerThroughputQuota implements ServerAssertion {
                 logger.info(msg);
                 auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET,
                                     new String[] {assertion.getCounterName()});
-                SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER, msg, null);
-                context.setFaultDetail(sfd);
                 return AssertionStatus.FALSIFIED;
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
@@ -100,8 +98,6 @@ public class ServerThroughputQuota implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED,
                                     new String[] {assertion.getCounterName(), limit, Long.toString(val)});
                 logger.info(msg);
-                SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER, msg, null);
-                context.setFaultDetail(sfd);
                 return AssertionStatus.FALSIFIED;
             }
         }
@@ -144,9 +140,6 @@ public class ServerThroughputQuota implements ServerAssertion {
                          "] was exceeded " + "(current value is " + val + ")";
             auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED,
                                 new String[] {assertion.getCounterName(), limit, Long.toString(val)});
-            logger.info(msg);
-            SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER, msg, null);
-            context.setFaultDetail(sfd);
             return AssertionStatus.FALSIFIED;
         }
     }

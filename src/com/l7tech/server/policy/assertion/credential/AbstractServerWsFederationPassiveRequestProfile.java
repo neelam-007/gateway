@@ -158,22 +158,19 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
             }
 
             public void routed(URL attemptedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
-                if(status==HttpConstants.STATUS_FOUND || status==HttpConstants.STATUS_SEE_OTHER) {
+                if (status == HttpConstants.STATUS_FOUND || status == HttpConstants.STATUS_SEE_OTHER) {
                     try {
                         String redirectUrl = headers.getOnlyOneValue(HttpConstants.HEADER_LOCATION);
-                        if(redirectUrl==null) {
+                        if (redirectUrl == null) {
                             logger.info("Invalid headers from service, missing redirect location.");
-                        }
-                        else {
-                            if(FederationPassiveClient.isFederationServerUrl(new URL(attemptedUrl, redirectUrl))) {
-                                context.setFaultDetail(new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER, "WS-Federation: Not Authorized.", null));
+                        } else {
+                            if (FederationPassiveClient.isFederationServerUrl(new URL(attemptedUrl, redirectUrl))) {
+                                auditor.logAndAudit(AssertionMessages.WSFEDPASS_UNAUTHORIZED);
                             }
                         }
-                    }
-                    catch(GenericHttpException e) {
+                    } catch (GenericHttpException e) {
                         logger.info("Invalid headers from service, multiple redirect locations.");
-                    }
-                    catch(MalformedURLException murle) {
+                    } catch (MalformedURLException murle) {
                         logger.log(Level.INFO, "Invalid redirect url.", murle);
                     }
                 }

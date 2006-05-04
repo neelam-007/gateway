@@ -369,6 +369,7 @@ public class AssertionMessages extends Messages {
     public static final M WSFEDPASS_SERVER_HTML_INVALID     = m(7309, Level.WARNING, "Cannot parse HTML from WS-Federation server");
     public static final M WSFEDPASS_CONFIG_INVALID          = m(7310, Level.WARNING, "Invalid IP/STS URL in policy configuration");
     public static final M WSFEDPASS_AUTH_FAILED             = m(7311, Level.WARNING, "Authentication with service failed");
+    public static final M WSFEDPASS_UNAUTHORIZED            = m(7312, Level.WARNING, "Not authorized to access this service.");
 
     // ServerRequestWssKerberos messages
     public static final M REQUEST_WSS_KERBEROS_NON_SOAP               = m(7401, Level.INFO, "Request not SOAP; unable to check for WS-Security Binary Security Token");
