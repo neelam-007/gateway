@@ -29,14 +29,14 @@ public class RequestWssTimestampPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Request Timestamp Assertion Properties";
+        return "Require Timestamp in Request Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/Edit Request Timestamp Assertion Properties";
+        return "View/Edit Require Timestamp Assertion Properties";
     }
 
     /**
