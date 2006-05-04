@@ -368,7 +368,13 @@ class SsgPoliciesPanel extends JPanel {
                     if (bindingsWithPolicies.size() < 2)
                         return (Binding)bindingsWithPolicies.get(0);
 
-                    Object[] bindingNames = bindingsWithPolicies.toArray();
+                    Binding[] bindingsArray = (Binding[]) bindingsWithPolicies.toArray(new Binding[0]);
+                    String[] bindingNames = new String[bindingsArray.length];
+                    for (int i = 0; i < bindingNames.length; i++) {
+                        Binding binding = (Binding) bindingsArray[i];
+                        bindingNames[i] = binding.getQName().getLocalPart() + " (" + binding.getQName().getNamespaceURI() + ")";
+                    }
+
                     Object bindingName = JOptionPane.showInputDialog(getRootPane(),
                                                                      "Select the binding whose policy you wish to import.",
                                                                      "Select a binding.",
@@ -377,7 +383,12 @@ class SsgPoliciesPanel extends JPanel {
                                                                      bindingNames,
                                                                      null);
 
-                    return (Binding)bindingName;
+                    for (int i = 0; i < bindingNames.length; i++) {
+                        String name = bindingNames[i];
+                        if (name != null && name.equals(bindingName))
+                            return bindingsArray[i];
+                    }
+                    return null;
                 }
             });
         }
