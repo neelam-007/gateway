@@ -93,32 +93,45 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
     }
 
     /**
-     * Method that returns the SHA-1 hash over admin certificate and the admin
-     * username.
-     * This provides a way for the admin to validate the server certificate.
+     * Method that returns the SHA-1 hash over admin certificate and the admins
+     * password.
+     *
+     * <p>This provides a way for the admin to validate the server certificate.</p>
+     *
+     * <p>Note that if you pass in an incorrect admin username you will get back
+     * garbage.</p>
      *
      * @param username The name of the user.
-     * @return The Server certificate.
+     * @return The hash.
      * @throws java.security.AccessControlException
      *                                  on access denied for the given credentials
      * @throws java.rmi.RemoteException on remote communicatiOn error
      */
     public byte[] getServerCertificate(String username)
       throws RemoteException, AccessControlException {
-        if (username == null) {
-            throw new AccessControlException("Illegal username or password");
-        }
         try {
-            User user = getInternalIdentityProvider().getUserManager().findByLogin(username);
-            String[] roles = getUserRoles(user);
-            if (!containsAdminAccessRole(roles)) {
-                throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
+            String digestWith = null;
+
+            if (username != null) {
+                try {
+                    User user = getInternalIdentityProvider().getUserManager().findByLogin(username);
+                    if (user != null) {
+                        String[] roles = getUserRoles(user);
+                        if (containsAdminAccessRole(roles)) {
+                            digestWith = user.getPassword();
+                        }
+                    }
+                } catch (FindException e) {
+                    // catch here so there is no difference to the client for one username vs another.
+                    logger.log(Level.WARNING, "Authentication provider error", e);
+                }
             }
 
-            return getDigest(user.getPassword(), serverCertificate);
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Authentication provider error", e);
-            throw (AccessControlException)new AccessControlException("Authentication failed").initCause(e);
+            if (digestWith == null) {
+                digestWith = Integer.toString(AdminLoginImpl.class.hashCode() * 17) + username;
+            }
+
+            return getDigest(digestWith, serverCertificate);
         } catch (InvalidIdProviderCfgException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
