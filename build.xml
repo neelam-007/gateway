@@ -172,9 +172,8 @@
     <target name="compile-one" depends="init-dev" if="compile.pattern">
         <echo message="Compiling **/*${compile.pattern}* in ${src.root}."/>
         <javac srcdir="src" destdir="${build.classes}" debug="on"
-               optimize="off"
-               includes="**/*${compile.pattern}*" deprecation="on" depend="on"
-               verbose="no">
+               optimize="off" includes="**/*${compile.pattern}*"
+               deprecation="on" verbose="no">
             <classpath refid="project.classpath"/>
         </javac>
     </target>
@@ -488,9 +487,9 @@
         </javadoc>
     </target>
 
-    <target name="compile.main" depends="init-dev, prepare, configure_properties.dev, compile13">
+    <target name="compile.main" depends="init-dev, prepare, configure_properties.dev, compile13, compile14">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-               deprecation="on" verbose="no" target="1.4" source="1.4">
+               deprecation="on" verbose="no" target="1.5" source="1.5">
             <compilerarg value="-Xlint" compiler="modern"/>
             <compilerarg value="-Xlint:-serial" compiler="modern"/>
             <compilerarg value="-Xlint:-path" compiler="modern"/>
@@ -626,6 +625,13 @@
                 <include name="com.ibm.mq.jar" if="include.jms.mqseries"/>
                 <include name="com.ibm.mqjms.jar" if="include.jms.mqseries"/>
                 <include name="connector.jar" if="include.jms.mqseries"/>
+
+                <!-- Include Tibco on dev builds -->
+                <include name="tibcrypt.jar" if="include.jms.tibco"/>
+                <include name="tibjms.jar" if="include.jms.tibco"/>
+                <include name="tibjmsadmin.jar" if="include.jms.tibco"/>
+                <include name="tibjmsapps.jar" if="include.jms.tibco"/>
+                <include name="tibrvjms.jar" if="include.jms.tibco"/>
 
                 <include name="ojdbc14.jar" if="db.oracle8"/>
                 <include name="ojdbc14.jar" if="db.oracle9"/>
@@ -1039,7 +1045,7 @@
     </target>
     <target name="testpackage.work" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
-               deprecation="on" depend="on" verbose="no"/>
+               deprecation="on" verbose="no"/>
         <exec executable="perl" failonerror="false" resultproperty="testpackage.manager.result">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
@@ -1079,7 +1085,7 @@
     <!-- Test LicenseGenerator package.  Always invoked by hand. -->
     <target name="testpackage.licensegenerator" depends="package.licensegenerator">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
-               deprecation="on" depend="on" verbose="no"/>
+               deprecation="on" verbose="no"/>
         <exec executable="perl" failonerror="true">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
@@ -1129,7 +1135,7 @@
     </target>
 
 
-    <target name="prepare.jms" if="dev.build" depends="prepare.jms.openjms, prepare.jms.mqseries"/>
+    <target name="prepare.jms" if="dev.build" depends="prepare.jms.openjms, prepare.jms.mqseries, prepare.jms.tibco"/>
 
     <target name="prepare.db" depends="
         prepare.db.oracle8,
@@ -1152,6 +1158,15 @@
         <echo>Copying MQSeries jars...</echo>
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib/gateway/jms/mqseries">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="prepare.jms.tibco" if="include.jms.tibco">
+        <echo>Copying Tibco EMS jars from ${src.root}/lib/gateway/jms/tibco to ${build.lib}...</echo>
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/jms/tibco">
                 <include name="*.jar"/>
             </fileset>
         </copy>
@@ -1355,7 +1370,7 @@
     -->
     <target name="compile13" depends="prepare, configure_properties.dev" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-               deprecation="on" depend="on" verbose="no" target="1.3" source="1.3">
+               deprecation="on" verbose="no" target="1.3" source="1.3">
             <!--
                 This has to bee in sinch with layer7-api jar package.
                 todo: find some better way to manage this centrally (ant 'references' or similar)
@@ -1376,6 +1391,22 @@
             <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>
 
             <classpath refid="project.classpath"/>
+        </javac>
+    </target>
+
+    <!--
+     ** 1.4 compile target - the files that require 1.4 source/target flags
+    -->
+    <target name="compile14" depends="prepare, configure_properties.dev" unless="compile.pattern">
+        <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
+            deprecation="on" verbose="no" target="1.4" source="1.4">
+            <classpath refid="project.classpath"/>
+
+            <include name="com/l7tech/proxy/**/*.java"/>
+            <include name="com/l7tech/common/**/*.java"/>
+            <exclude name="com/l7tech/policy/exporter/**/*.java"/>
+            <include name="com/l7tech/logging/**/*.java"/>
+            <include name="com/l7tech/policy/**/*.java"/>
         </javac>
     </target>
 
@@ -1469,7 +1500,7 @@
     <!-- ** tests compilation target -->
     <target name="compile-tests" depends="compile">
         <javac srcdir="tests" destdir="${build.test.classes}" debug="on" optimize="off"
-               deprecation="on" depend="on" verbose="no">
+               deprecation="on" verbose="no">
             <classpath refid="project.test.classpath"/>
         </javac>
         <copy todir="${build.test.classes}">
