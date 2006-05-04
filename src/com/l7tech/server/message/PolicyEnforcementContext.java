@@ -15,6 +15,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -57,6 +58,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean auditSaveResponse;
     private List assertionResults = Collections.EMPTY_LIST;
     private SoapFaultDetail faultDetail = null;
+    private SoapFaultLevel faultlevel = null;
     private boolean isAuthenticationMissing = false;
     private boolean isRequestPolicyViolated = false;
     private PublishedService service;
@@ -413,5 +415,22 @@ public class PolicyEnforcementContext extends ProcessingContext {
     public void setEndTime() {
         if (endTime != 0) throw new IllegalStateException("Can't call setEndTime() twice");
         endTime = System.currentTimeMillis();
+    }
+
+    /**
+     * tells the SSG what the soap fault returned to a requestor should look like
+     * when a policy evaluation fails
+     * @return if null, the system wide default value takes effect
+     */
+    public SoapFaultLevel getFaultlevel() {
+        return faultlevel;
+    }
+
+    /**
+     * tells the SSG what the soap fault returned to a requestor should look like
+     * when a policy evaluation fails
+     */
+    public void setFaultlevel(SoapFaultLevel faultlevel) {
+        this.faultlevel = faultlevel;
     }
 }
