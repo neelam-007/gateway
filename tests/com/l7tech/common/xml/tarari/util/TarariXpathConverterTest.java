@@ -220,4 +220,18 @@ public class TarariXpathConverterTest extends TestCase {
         got = TarariXpathConverter.convertToTarariXpath(map, gave);
         assertEquals("Undeclared namespaces with dashes should pass through unchanged", gave, got);                
     }
+    
+    public void testAlexBofaBug() throws Exception {
+        Map map = new HashMap();
+        map.put("soapenv", "http://blah/soapenv");
+        map.put("api", "http://blah/api");
+        map.put("osa", "http://blah/osa");
+        String gave="/soapenv:Envelope/soapenv:Body/api:RetrieveTransactionHistoryV001/api:osaRequestHeader/osa:rulesBag/osa:sets/osa:set[osa:name=\"routingRules\"]/osa:attributes/osa:attribute/osa:value";
+        try {
+            String got = TarariXpathConverter.convertToTarariXpath(map, gave);
+            fail("Invalid xpath was not detected");
+        } catch (ParseException e) {
+            // Ok
+        }
+    }
 }
