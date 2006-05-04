@@ -394,7 +394,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 if (rstat == RoutingStatus.NONE) {
                     completedRequest = true;
                 } else if (rstat == RoutingStatus.ROUTED) {
-                    if (response.getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_START) {
+                    if (!request.isHttpRequest() || response.getHttpResponseKnob().getStatus() < HttpConstants.STATUS_ERROR_RANGE_START) {
                         completedRequest = true;
                     }
                 }
@@ -404,7 +404,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 // have routing assertion and it failed or the routed response
                 // has HTTP error status: then it's a routing failure.
                 if (rstat == RoutingStatus.ATTEMPTED ||
-                    (rstat == RoutingStatus.ROUTED && response.getHttpResponseKnob().getStatus() >= 400)) {
+                    (rstat == RoutingStatus.ROUTED && (request.isHttpRequest() && response.getHttpResponseKnob().getStatus() >= HttpConstants.STATUS_ERROR_RANGE_START))) {
                     authorizedRequest = true;
                 }
             }
