@@ -45,6 +45,8 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_PASSTHROUGH_REQUEST_NC  = m(4031, Level.FINE, "Passthrough selected but no credentials in SSG request to pass along");
     public static final M HTTPROUTE_PASSTHROUGH_RESPONSE    = m(4032, Level.INFO, "Passthrough selected; adding challenge to SSG response");
     public static final M HTTPROUTE_PASSTHROUGH_RESPONSE_NC = m(4033, Level.FINE, "Passthrough selected but no challenge in routed response");
+    public static final M HTTPROUTE_RESPONSE_NOCONTENTTYPE  = m(4034, Level.WARNING, "Downstream service returned status ({0}) but is missing a content type header.");
+    public static final M HTTPROUTE_RESPONSE_NOXML          = m(4035, Level.WARNING, "Downstream service returned status ({0}) with non-xml payload.");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED = m(4100, Level.INFO, "Authentication Required");
