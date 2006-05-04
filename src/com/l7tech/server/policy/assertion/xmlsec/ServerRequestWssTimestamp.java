@@ -94,10 +94,10 @@ public class ServerRequestWssTimestamp implements ServerAssertion {
             expires = created + assertion.getMaxExpiryMilliseconds();  // Expires is optional according to BSP 1.0
         }
 
-        long window = expires - now;
+        long window = expires - created;
         if (window > assertion.getMaxExpiryMilliseconds()) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE);
-            expires = now + assertion.getMaxExpiryMilliseconds();
+            expires = created + assertion.getMaxExpiryMilliseconds();
         }
 
         if (expires + expiresPastFuzz < now) {
