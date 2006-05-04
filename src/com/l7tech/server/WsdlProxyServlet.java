@@ -398,20 +398,26 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "cannot parse wsdl", e);
         }
 
+        // TODO figure out if current user's effective policy requires SSl
+        // For now, we'll just scan the policy for any SSL assertion
+        boolean useSsl = svc.getPolicyXml().contains("SslAssertion");
+
         // change url of the wsdl
         // direct to http by default. choose http port based on port used for this request.
         int port = req.getServerPort();
-        if (port == 8443)
-            port = 8080;
-        else if (port == 443) port = 80;
+        if (port == 8443 || port == 8080)
+            port = useSsl ? 8443 : 8080;
+        else if (port == 443 || port == 80) port = useSsl ? 443 : 80;
+        else useSsl = false; // don't try to change the protocol if we don't recognize the port
+        String proto = useSsl ? "https" : "http";
         URL ssgurl;
         String routinguri = svc.getRoutingUri();
         if (routinguri == null || routinguri.length() < 1) {
-            ssgurl = new URL("http" + "://" + req.getServerName() + ":" +
+            ssgurl = new URL(proto + "://" + req.getServerName() + ":" +
                              port + SecureSpanConstants.SERVICE_FILE +
                              Long.toString(svc.getOid()));
         } else {
-            ssgurl = new URL("http" + "://" + req.getServerName() + ":" +
+            ssgurl = new URL(proto + "://" + req.getServerName() + ":" +
                              port + routinguri);
         }
         substituteSoapAddressURL(wsdlDoc, ssgurl);
