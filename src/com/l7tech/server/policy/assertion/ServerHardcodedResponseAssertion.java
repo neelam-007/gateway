@@ -79,7 +79,6 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
                     // This was probably not an HTTP request, so cookies are meaningless anyway.
                 }
             };
-            response.attachHttpResponseKnob(hrk);
         }
 
         hrk.setStatus(status);
