@@ -149,6 +149,9 @@ public class FailoverHttpClient implements GenericHttpClient {
                                 logger.finer("Buffering request body");
                                 try {
                                     HexUtils.copyStream(inputStream, baos);
+                                    bodyBytes = baos.toByteArray();
+                                    bis = new ByteArrayInputStream(bodyBytes);
+                                    inputStream = null;
                                 } catch (IOException e) {
                                     final String msg = "Unable to read request InputStream -- failover terminated";
                                     logger.log(Level.WARNING, msg, e);
@@ -157,9 +160,6 @@ public class FailoverHttpClient implements GenericHttpClient {
                                 } finally {
                                     baos.close();
                                 }
-                                bodyBytes = baos.toByteArray();
-                                bis = new ByteArrayInputStream(bodyBytes);
-                                inputStream = null;
                              } else if (inputStream == null) {
                                 // inputStream == null, inputStreamFactory != null
 
