@@ -79,7 +79,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private String[] overrideIpAddresses = null;
     private PersistentPolicyManager persistentPolicyManager = new PersistentPolicyManager(); // policy store that gets saved to disk
     private FederatedSamlTokenStrategy fedSamlTokenStrategy = null; // non-default saml token strategy, or null
-    private URL serverUrl = null; // Special URL for generic (non-SSG) services
+    private String serverUrl = null; // Special URL for generic (non-SSG) services
 
     private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
@@ -280,7 +280,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         this.ssgPort = ssgPort;
     }
 
-    private URL computeSsgUrl() {
+    public URL computeSsgUrl() {
         URL url = null;
         try {
             url = new URL(SSG_PROTOCOL, getSsgAddress(), getSsgPort(), getSsgFile());
@@ -295,24 +295,25 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         return url;
     }
 
-    public URL getServerUrl() {
-        if (serverUrl == null) serverUrl = computeSsgUrl();
+    public String getServerUrl() {
+        if (serverUrl == null && !isGeneric()) serverUrl = computeSsgUrl().toExternalForm();
         return serverUrl;
     }
 
     /**
      * Set the server URL.
-     * If the url is not null, this also sets the SSG hostname,
+     * If the urlStr is not null, this also sets the SSG hostname,
      * port (either SSL or regular depending if the URL is http or https),
      * and file.
      */
-    public void setServerUrl(URL url) {
-        this.serverUrl = url;
-        if (url == null)
+    public void setServerUrl(String urlStr) throws MalformedURLException {
+        this.serverUrl = urlStr;
+        if (urlStr == null)
             return;
-        if (url.equals(computeSsgUrl())) // If it's the same as the one we'd generate, no need to change anything else.
+        if (urlStr.equals(computeSsgUrl().toExternalForm())) // If it's the same as the one we'd generate, no need to change anything else.
             return;
 
+        URL url = new URL(urlStr);
         setSsgAddress(url.getHost());
         if ("https".equalsIgnoreCase(url.getProtocol()))
             setSslPort(url.getPort());
@@ -321,8 +322,9 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         setSsgFile(url.getFile());
     }
 
-    public URL getServerSslUrl() {
-        URL url = null;
+    public URL computeServerSslUrl() throws MalformedURLException {
+        URL url = new URL(getServerUrl());
+        if (isGeneric() || "https".equals(url.getProtocol())) return url;
         try {
             url = new URL("https", getSsgAddress(), getSslPort(), getSsgFile());
         } catch (MalformedURLException e) {

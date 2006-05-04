@@ -12,6 +12,7 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -114,7 +115,7 @@ public abstract class SsgKeyStoreManager {
     {
         logger.log(Level.FINER, "Discovering server certificate for Gateway " + ssg + " (" + ssg.getLocalEndpoint() + ")");
         CertificateDownloader cd = new CertificateDownloader(ssg.getRuntime().getHttpClient(),
-                                                             ssg.getServerUrl(),
+                                                             new URL(ssg.getServerUrl()),
                                                              credentials != null ? credentials.getUserName() : null,
                                                              credentials != null ? credentials.getPassword() : null);
 

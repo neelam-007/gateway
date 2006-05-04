@@ -45,9 +45,11 @@ class SsgNetworkPanel extends JPanel {
     private JPanel ipListPanel;
     private JPanel outgoingRequestsPanel;
     private IpListPanel ipList;
+    private boolean enableOutgoingRequestsPanel;
 
     public SsgNetworkPanel(InputValidator validator, boolean enableOutgoingRequestsPanel) {
         this.validator = validator;
+        this.enableOutgoingRequestsPanel = enableOutgoingRequestsPanel;
         initialize(enableOutgoingRequestsPanel);
     }
 
@@ -123,14 +125,19 @@ class SsgNetworkPanel extends JPanel {
         ipListPanel.add(ipList, BorderLayout.CENTER);
 
         if (!enableOutgoingRequestsPanel) {
-            outgoingRequestsPanel.setVisible(false);
+            sslPortFieldPanel.setEnabled(false);
+            ssgPortFieldPanel.setEnabled(false);
+            radioNonstandardPorts.setEnabled(false);
+            radioNonstandardPorts.setSelected(false);
+            radioStandardPorts.setEnabled(false);
+            radioStandardPorts.setSelected(false);
         }
 
         updateCustomPortsEnableState();
     }
 
     void updateCustomPortsEnableState() {
-        boolean en = radioNonstandardPorts.isSelected();
+        boolean en = enableOutgoingRequestsPanel && radioNonstandardPorts.isSelected();
         fieldSsgPort.setEnabled(en);
         fieldSslPort.setEnabled(en);
     }

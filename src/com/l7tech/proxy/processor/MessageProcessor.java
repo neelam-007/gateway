@@ -195,6 +195,10 @@ public class MessageProcessor {
     }
 
     private void handleAnySslException(final PolicyApplicationContext context, SSLException e, Ssg ssg) throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException {
+        if (context.getSsg().isGeneric()) {
+            // We won't try to handle SSL exceptions for generic services
+            throw new SSLException(e);
+        }
         if (context.getSsg().isFederatedGateway()) {
             SslPeer sslPeer = CurrentSslPeer.get();
             if (sslPeer == null)
@@ -311,7 +315,7 @@ public class MessageProcessor {
 
         // We'll just use the CertificateDownloader for this.
         CertificateDownloader cd = new CertificateDownloader(context.getHttpClient(),
-                                                             ssg.getServerUrl(),
+                                                             new URL(ssg.getServerUrl()),
                                                              context.getUsername(),
                                                              context.getPassword());
         try {
@@ -507,11 +511,13 @@ public class MessageProcessor {
         Ssg ssg = context.getSsg();
         URL url = null;
         try {
-            url = ssg.getServerUrl();
+            url = new URL(ssg.getServerUrl());
             if (context.isSslRequired()) {
                 if (context.isSslForbidden())
                     log.severe("Error: SSL is both forbidden and required by policy -- leaving SSL enabled");
-                if ("http".equalsIgnoreCase(url.getProtocol())) {
+                if ("http".equalsIgnoreCase(url.getProtocol()) ||
+                     "https".equalsIgnoreCase(url.getProtocol()))
+                {
                     log.info("Changing http to https per policy for this request (using SSL port " +
                       ssg.getSslPort() + ")");
                     url = new URL("https", url.getHost(), ssg.getSslPort(), url.getFile());

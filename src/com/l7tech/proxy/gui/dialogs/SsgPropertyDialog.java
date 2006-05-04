@@ -704,8 +704,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             getNetworkPane().setWsdlEndpoint("http://localhost:" + bindPort + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
 
-            if (ssg.isGeneric())
-                getFieldServerAddress().setText(ssg.getServerUrl().toExternalForm());
+            if (ssg.isGeneric()) {
+                getFieldServerAddress().setText(ssg.getServerUrl());
+            }
             else
                 getFieldServerAddress().setText(ssg.getSsgAddress());
             getFieldKerberosName().setText(ssg.getKerberosName());
@@ -733,9 +734,15 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             synchronized (ssg) {
                 // Try to set server URL first since it might throw
                 if (ssg.isGeneric()) {
-                    ssg.setServerUrl(new URL(getFieldServerAddress().getText().trim()));
+                    URL url = new URL(getFieldServerAddress().getText().trim());
+                    ssg.setServerUrl(url.toExternalForm());
+                    ssg.setSsgPort(url.getPort());
+                    ssg.setSsgFile(url.getFile());
+                    ssg.setSslPort(url.getPort());
+                    ssg.setSsgAddress(url.getHost());
                 } else {
                     ssg.setSsgAddress(getFieldServerAddress().getText().trim().toLowerCase());
+                    commitPorts();
                 }
 
                 if (!ssg.isFederatedGateway()) {
@@ -767,18 +774,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 }
 
                 // applicable to both trusted and federated SSG
-                ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
+                ssg.setUseSslByDefault(!ssg.isGeneric() && cbUseSslByDefault.isSelected());
                 ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
                 ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());
                 ssg.setFailoverStrategyName(getNetworkPane().getFailoverStrategyName());
 
-                if (getNetworkPane().isCustomPorts()) {
-                    ssg.setSsgPort(getNetworkPane().getSsgPort());
-                    ssg.setSslPort(getNetworkPane().getSslPort());
-                } else {
-                    ssg.setSsgPort(referenceSsg.getSsgPort());
-                    ssg.setSslPort(referenceSsg.getSslPort());
-                }
                 ssg.getRuntime().reset();
             }
         } catch (MalformedURLException e) {
@@ -788,6 +788,16 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                           JOptionPane.ERROR_MESSAGE);
         }
         modelToView();
+    }
+
+    private void commitPorts() {
+        if (getNetworkPane().isCustomPorts()) {
+            ssg.setSsgPort(getNetworkPane().getSsgPort());
+            ssg.setSslPort(getNetworkPane().getSslPort());
+        } else {
+            ssg.setSsgPort(referenceSsg.getSsgPort());
+            ssg.setSslPort(referenceSsg.getSslPort());
+        }
     }
 
     /**
