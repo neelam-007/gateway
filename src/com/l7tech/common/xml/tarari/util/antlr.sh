@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -cp ../../../../../../../lib/gateway/tarari/antlr.jar antlr.Tool xparser.g
+$JAVA_HOME/jre/bin/java -cp ../../../../../../../lib/antlr-2.7.6rc1.jar antlr.Tool xparser.g

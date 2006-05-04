@@ -1,12 +1,26 @@
-// $ANTLR 2.7.4: "xparser.g" -> "XprParser.java"$
+// $ANTLR 2.7.6 (20051207): "xparser.g" -> "XprParser.java"$
 
 package com.l7tech.common.xml.tarari.util;
 
-import antlr.*;
+import antlr.TokenBuffer;
+import antlr.TokenStreamException;
+import antlr.TokenStreamIOException;
+import antlr.ANTLRException;
+import antlr.LLkParser;
+import antlr.Token;
+import antlr.TokenStream;
+import antlr.RecognitionException;
+import antlr.NoViableAltException;
+import antlr.MismatchedTokenException;
+import antlr.SemanticException;
+import antlr.ParserSharedInputState;
 import antlr.collections.impl.BitSet;
 
-import java.io.PrintWriter;
-import java.util.Map;
+   //  stuff in the parser class file outside the class
+   // ...
+
+    import java.io.PrintWriter ;
+    import java.util.Map ;
 
 public class XprParser extends antlr.LLkParser       implements XprParserTokenTypes
  {
@@ -281,7 +295,7 @@ public XprParser(ParserSharedInputState state) {
 			match(SQLEFT);
 			inPred++; if (inPred > 1) throw new RecognitionException("Nested predicates not supported");
 			{
-			if ((_tokenSet_0.member(LA(1)))) {
+			if (((LA(1) >= ID && LA(1) <= PARENRIGHT))) {
 				ss=simplepredicate();
 				
 				n = ss ;
@@ -294,7 +308,7 @@ public XprParser(ParserSharedInputState state) {
 				n = "position() = "+y.getText() ;
 				
 			}
-			else if ((_tokenSet_1.member(LA(1)))) {
+			else if ((_tokenSet_0.member(LA(1)))) {
 				ss=stepExpr();
 				
 					   n = ss;
@@ -606,7 +620,7 @@ public XprParser(ParserSharedInputState state) {
 			int _cnt24=0;
 			_loop24:
 			do {
-				if ((_tokenSet_0.member(LA(1)))) {
+				if (((LA(1) >= ID && LA(1) <= PARENRIGHT))) {
 					ss=simplepredicatenoint();
 					n+=ss;
 				}
@@ -620,7 +634,7 @@ public XprParser(ParserSharedInputState state) {
 			{
 			_loop26:
 			do {
-				if ((_tokenSet_2.member(LA(1)))) {
+				if ((_tokenSet_1.member(LA(1)))) {
 					ss=simplepredicateint();
 					n+=ss;
 				}
@@ -633,8 +647,7 @@ public XprParser(ParserSharedInputState state) {
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_3);
+			recover(ex,_tokenSet_2);
 		}
 		return n;
 	}
@@ -668,9 +681,9 @@ public XprParser(ParserSharedInputState state) {
 					match(DASH);
 					n+=b.getText();
 				}
-				else if ((LA(1)==COL)) {
+				else if ((LA(1)==DCOL)) {
 					c = LT(1);
-					match(COL);
+					match(DCOL);
 					n+=c.getText();
 				}
 				else if ((LA(1)==EQ)) {
@@ -703,8 +716,7 @@ public XprParser(ParserSharedInputState state) {
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_4);
+			recover(ex,_tokenSet_3);
 		}
 		return n;
 	}
@@ -739,9 +751,9 @@ public XprParser(ParserSharedInputState state) {
 					match(DASH);
 					n+=b.getText();
 				}
-				else if ((LA(1)==COL)) {
+				else if ((LA(1)==DCOL)) {
 					c = LT(1);
-					match(COL);
+					match(DCOL);
 					n+=c.getText();
 				}
 				else if ((LA(1)==EQ)) {
@@ -779,8 +791,7 @@ public XprParser(ParserSharedInputState state) {
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_4);
+			recover(ex,_tokenSet_3);
 		}
 		return n;
 	}
@@ -827,6 +838,7 @@ public XprParser(ParserSharedInputState state) {
 		"SQRIGHT",
 		"ID",
 		"DASH",
+		"DCOL",
 		"EQ",
 		"STRING",
 		"PARENLEFT",
@@ -834,29 +846,24 @@ public XprParser(ParserSharedInputState state) {
 	};
 	
 	private static final long[] mk_tokenSet_0() {
-		long[] data = { 2066432L, 0L};
+		long[] data = { 34016L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_0 = new BitSet(mk_tokenSet_0());
 	private static final long[] mk_tokenSet_1() {
-		long[] data = { 34016L, 0L};
+		long[] data = { 4169728L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_1 = new BitSet(mk_tokenSet_1());
 	private static final long[] mk_tokenSet_2() {
-		long[] data = { 2074624L, 0L};
+		long[] data = { 16384L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_2 = new BitSet(mk_tokenSet_2());
 	private static final long[] mk_tokenSet_3() {
-		long[] data = { 16384L, 0L};
+		long[] data = { 4186112L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_3 = new BitSet(mk_tokenSet_3());
-	private static final long[] mk_tokenSet_4() {
-		long[] data = { 2091008L, 0L};
-		return data;
-	}
-	public static final BitSet _tokenSet_4 = new BitSet(mk_tokenSet_4());
 	
 	}

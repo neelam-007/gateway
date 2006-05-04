@@ -66,7 +66,7 @@ pathExpr
 	{
        wp.println( s ) ;
 	}
-	; 
+	;
 	exception
 	catch [ RecognitionException ex ] {
 		myReportError( ex.toString() ) ;
@@ -311,7 +311,7 @@ simplepredicateint  returns [String n]
 }
     : ( a:ID {n+=a.getText();}
       | b:DASH {n+=b.getText();}
-      | c:COL {n+=c.getText();}
+      | c:DCOL {n+=c.getText();}
       | d:EQ {n+=d.getText();}
       | e:STRING {n+='"' + e.getText() + '"';}
       | f:PARENLEFT {n+=f.getText();}
@@ -326,7 +326,7 @@ simplepredicatenoint    returns [String n]
 }
     : ( a:ID {n+=a.getText();}
       | b:DASH {n+=b.getText();}
-      | c:COL {n+=c.getText();}
+      | c:DCOL {n+=c.getText();}
       | d:EQ {n+=d.getText();}
       | e:STRING {n+='"' + e.getText() + '"';}
       | f:PARENLEFT {n+=f.getText();}
@@ -425,6 +425,9 @@ EQ  : '='
 
 DASH : '-'
      ;
+
+DCOL : ':' ':'
+      ;
 
 COL   : ':'
       ;

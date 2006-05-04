@@ -1,4 +1,4 @@
-// $ANTLR 2.7.4: "xparser.g" -> "XprParser.java"$
+// $ANTLR 2.7.6 (20051207): "xparser.g" -> "XprParser.java"$
 
 package com.l7tech.common.xml.tarari.util;
 
@@ -18,15 +18,16 @@ public interface XprLexerTokenTypes {
 	int SQRIGHT = 14;
 	int ID = 15;
 	int DASH = 16;
-	int EQ = 17;
-	int STRING = 18;
-	int PARENLEFT = 19;
-	int PARENRIGHT = 20;
-	int WS = 21;
-	int SEMI = 22;
-	int ESC = 23;
-	int DIGIT = 24;
-	int IDSTART = 25;
-	int IDV = 26;
-	int CHAR = 27;
+	int DCOL = 17;
+	int EQ = 18;
+	int STRING = 19;
+	int PARENLEFT = 20;
+	int PARENRIGHT = 21;
+	int WS = 22;
+	int SEMI = 23;
+	int ESC = 24;
+	int DIGIT = 25;
+	int IDSTART = 26;
+	int IDV = 27;
+	int CHAR = 28;
 }

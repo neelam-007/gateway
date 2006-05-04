@@ -1,13 +1,30 @@
-// $ANTLR 2.7.4: "xparser.g" -> "XprLexer.java"$
+// $ANTLR 2.7.6 (20051207): "xparser.g" -> "XprLexer.java"$
 
 package com.l7tech.common.xml.tarari.util;
 
-import antlr.*;
-import antlr.collections.impl.BitSet;
-
 import java.io.InputStream;
+import antlr.TokenStreamException;
+import antlr.TokenStreamIOException;
+import antlr.TokenStreamRecognitionException;
+import antlr.CharStreamException;
+import antlr.CharStreamIOException;
+import antlr.ANTLRException;
 import java.io.Reader;
 import java.util.Hashtable;
+import antlr.CharScanner;
+import antlr.InputBuffer;
+import antlr.ByteBuffer;
+import antlr.CharBuffer;
+import antlr.Token;
+import antlr.CommonToken;
+import antlr.RecognitionException;
+import antlr.NoViableAltForCharException;
+import antlr.MismatchedCharException;
+import antlr.TokenStream;
+import antlr.ANTLRHashString;
+import antlr.LexerSharedInputState;
+import antlr.collections.impl.BitSet;
+import antlr.SemanticException;
 
    // global stuff in the lexer file
 
@@ -109,12 +126,6 @@ tryAgain:
 					theRetToken=_returnToken;
 					break;
 				}
-				case ':':
-				{
-					mCOL(true);
-					theRetToken=_returnToken;
-					break;
-				}
 				case '"':
 				{
 					mSTRING(true);
@@ -154,7 +165,15 @@ tryAgain:
 					break;
 				}
 				default:
-				{
+					if ((LA(1)==':') && (LA(2)==':')) {
+						mDCOL(true);
+						theRetToken=_returnToken;
+					}
+					else if ((LA(1)==':') && (true)) {
+						mCOL(true);
+						theRetToken=_returnToken;
+					}
+				else {
 					if (LA(1)==EOF_CHAR) {uponEOF(); _returnToken = makeToken(Token.EOF_TYPE);}
 				else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 				}
@@ -373,6 +392,20 @@ tryAgain:
 		_returnToken = _token;
 	}
 	
+	public final void mDCOL(boolean _createToken) throws RecognitionException, CharStreamException, TokenStreamException {
+		int _ttype; Token _token=null; int _begin=text.length();
+		_ttype = DCOL;
+		int _saveIndex;
+		
+		match(':');
+		match(':');
+		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {
+			_token = makeToken(_ttype);
+			_token.setText(new String(text.getBuffer(), _begin, text.length()-_begin));
+		}
+		_returnToken = _token;
+	}
+	
 	public final void mCOL(boolean _createToken) throws RecognitionException, CharStreamException, TokenStreamException {
 		int _ttype; Token _token=null; int _begin=text.length();
 		_ttype = COL;
@@ -395,7 +428,7 @@ tryAgain:
 		match('"');
 		text.setLength(_saveIndex);
 		{
-		_loop54:
+		_loop55:
 		do {
 			if ((LA(1)=='\\')) {
 				mESC(false);
@@ -406,7 +439,7 @@ tryAgain:
 				}
 			}
 			else {
-				break _loop54;
+				break _loop55;
 			}
 			
 		} while (true);
@@ -464,17 +497,17 @@ tryAgain:
 		int _saveIndex;
 		
 		{
-		int _cnt60=0;
-		_loop60:
+		int _cnt61=0;
+		_loop61:
 		do {
 			if (((LA(1) >= '0' && LA(1) <= '9'))) {
 				mDIGIT(false);
 			}
 			else {
-				if ( _cnt60>=1 ) { break _loop60; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+				if ( _cnt61>=1 ) { break _loop61; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 			}
 			
-			_cnt60++;
+			_cnt61++;
 		} while (true);
 		}
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {
@@ -554,8 +587,8 @@ tryAgain:
 		int _saveIndex;
 		
 		{
-		int _cnt68=0;
-		_loop68:
+		int _cnt69=0;
+		_loop69:
 		do {
 			switch ( LA(1)) {
 			case 'a':  case 'b':  case 'c':  case 'd':
@@ -599,10 +632,10 @@ tryAgain:
 			}
 			default:
 			{
-				if ( _cnt68>=1 ) { break _loop68; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+				if ( _cnt69>=1 ) { break _loop69; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 			}
 			}
-			_cnt68++;
+			_cnt69++;
 		} while (true);
 		}
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {
