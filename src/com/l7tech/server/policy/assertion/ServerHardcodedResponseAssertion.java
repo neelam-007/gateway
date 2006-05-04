@@ -5,6 +5,8 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.Messages;
+import com.l7tech.common.http.HttpCookie;
+import com.l7tech.common.message.AbstractHttpResponseKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -21,8 +23,8 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The Server side Hardcoded Response.
@@ -70,17 +72,17 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
 
         Message response = context.getResponse();
         // fla bugfix attach the status before closing otherwise, it's lost
-        HttpResponseKnob hrk = null;
-        try {
-            hrk = response.getHttpResponseKnob();
-        } catch (IllegalStateException e) {
-            hrk = null;
-            logger.warning("there is no httpresponseknob to attach the status code to");
+        HttpResponseKnob hrk = (HttpResponseKnob)response.getKnob(HttpResponseKnob.class);
+        if (hrk == null) {
+            hrk = new AbstractHttpResponseKnob() {
+                public void addCookie(HttpCookie cookie) {
+                    // This was probably not an HTTP request, so cookies are meaningless anyway.
+                }
+            };
+            response.attachHttpResponseKnob(hrk);
         }
-        if (hrk != null) {
-            logger.fine("setting status " + status + " to existing httpresponseknob");
-            hrk.setStatus(status);
-        }
+
+        hrk.setStatus(status);
         response.close();
         try {
             String msg = message;
@@ -88,6 +90,7 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
                 msg = ExpandVariables.process(msg, context.getVariableMap(variablesUsed, auditor));
             }
             response.initialize(stashManager, contentType, new ByteArrayInputStream(msg.getBytes(contentType.getEncoding())));
+            response.attachHttpResponseKnob(hrk);
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[] {"Unable to produce hardcoded response"},
