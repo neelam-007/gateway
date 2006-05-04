@@ -61,7 +61,7 @@ public class PasswordDialog extends JDialog {
     /* the user to change the password for */
     private User user;
 
-    private int MIN_PASSWORD_LENGTH = 6;
+    private int MIN_PASSWORD_LENGTH = 1;
     private int MAX_PASSWORD_LENGTH = 32;
     private EntityListener listener;
     private UserPanel userPanel;
