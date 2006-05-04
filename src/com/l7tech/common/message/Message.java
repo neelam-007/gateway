@@ -92,9 +92,10 @@ public final class Message {
     {
         HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
         HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
-        rootFacet = null; // TODO close knobs we aren't preserving
-        rootFacet = new MimeFacet(this, sm, outerContentType, body);
+        if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
+        rootFacet = null; // null it first just in case MimeFacet c'tor throws
         invalidateCachedKnobs();
+        rootFacet = new MimeFacet(this, sm, outerContentType, body);
         if (reqKnob != null) attachHttpRequestKnob(reqKnob);
         if (respKnob != null) attachHttpResponseKnob(respKnob);
     }
