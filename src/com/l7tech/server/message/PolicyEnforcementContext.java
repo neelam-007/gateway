@@ -197,6 +197,11 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return faultDetail;
     }
 
+    /**
+     * This should no longer be called by the runtime assertions. SOAP Faults are
+     * now generated based on information recorded in auditor.
+     * @deprecated
+     */
     public void setFaultDetail(SoapFaultDetail faultDetail) {
         this.faultDetail = faultDetail;
     }
