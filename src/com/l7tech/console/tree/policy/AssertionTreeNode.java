@@ -13,7 +13,7 @@ import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;

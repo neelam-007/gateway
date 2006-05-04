@@ -5,7 +5,7 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.exporter.PolicyExporter;
+import com.l7tech.console.policy.exporter.PolicyExporter;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;

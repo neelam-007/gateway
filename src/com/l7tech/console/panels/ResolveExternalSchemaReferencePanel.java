@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.exporter.ExternalSchemaReference;
+import com.l7tech.console.policy.exporter.ExternalSchemaReference;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;

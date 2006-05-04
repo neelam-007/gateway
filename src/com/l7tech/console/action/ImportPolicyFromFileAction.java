@@ -5,7 +5,7 @@ import com.l7tech.console.tree.PoliciesFolderNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.console.policy.exporter.PolicyImporter;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 

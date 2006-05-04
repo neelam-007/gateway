@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.exporter.*;
+import com.l7tech.console.policy.exporter.*;
 
 import java.awt.*;
 

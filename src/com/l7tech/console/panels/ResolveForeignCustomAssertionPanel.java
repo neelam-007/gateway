@@ -1,8 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.exporter.CustomAssertionReference;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
+import com.l7tech.console.policy.exporter.CustomAssertionReference;
 
 import javax.swing.*;
 import java.awt.*;

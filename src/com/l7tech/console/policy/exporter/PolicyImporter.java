@@ -1,4 +1,4 @@
-package com.l7tech.policy.exporter;
+package com.l7tech.console.policy.exporter;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;

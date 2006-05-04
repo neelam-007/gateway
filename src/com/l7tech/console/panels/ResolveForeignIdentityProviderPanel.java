@@ -8,9 +8,7 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.policy.exporter.IdProviderReference;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
+import com.l7tech.console.policy.exporter.IdProviderReference;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

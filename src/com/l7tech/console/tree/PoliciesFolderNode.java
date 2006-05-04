@@ -2,7 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.policy.exporter.PolicyExporter;
+import com.l7tech.console.policy.exporter.PolicyExporter;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

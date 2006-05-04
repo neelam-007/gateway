@@ -4,7 +4,7 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.exporter.JMSEndpointReference;
+import com.l7tech.console.policy.exporter.JMSEndpointReference;
 
 import javax.swing.*;
 import java.awt.*;
