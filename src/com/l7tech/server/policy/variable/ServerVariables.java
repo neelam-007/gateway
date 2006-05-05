@@ -55,11 +55,15 @@ public class ServerVariables {
 
 
     private static String[] getHeaderValues(String prefix, String name, PolicyEnforcementContext context) {
+        // TODO what about response headers?
+        HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+        if (hrk == null) return new String[0];
+
         if (!name.startsWith(prefix)) throw new IllegalArgumentException("HTTP Header Getter can't handle variable named '" + name + "'!");
         String suffix = name.substring(prefix.length());
         if (!suffix.startsWith(".")) throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the header name.");
         String hname = name.substring(prefix.length()+1);
-        return context.getRequest().getHttpRequestKnob().getHeaderValues(hname);
+        return hrk.getHeaderValues(hname);
     }
 
 
