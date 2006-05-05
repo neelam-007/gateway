@@ -295,26 +295,31 @@ public class FaultLevelPropertiesDialog extends JDialog {
                 description = DROP_LEVEL_DESCRIPTION;
                 xmlContainer.setEditable(false);
                 editor.setText(DROP_LEVEL_SAMPLE);
+                urlCheckBox.setEnabled(false);
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 description = GEN_LEVEL_DESCRIPTION;
                 editor.setText(GEN_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
+                urlCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 description = MEDIUM_LEVEL_DESCRIPTION;
                 editor.setText(MEDIUM_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
+                urlCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 description = FULL_LEVEL_DESCRIPTION;
                 editor.setText(FULL_LEVEL_SAMPLE);
                 xmlContainer.setEditable(false);
+                urlCheckBox.setEnabled(true);
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 description = TEMPLATE_LEVEL_DESCRIPTION;
                 xmlContainer.setEditable(true);
                 editor.setText(lastUserEdits);
+                urlCheckBox.setEnabled(true);
                 break;
             default:
                 // can't happen (unless bug)
