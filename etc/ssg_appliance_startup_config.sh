@@ -20,7 +20,9 @@ cd
 # lm_sensors currently hates IBM gear
 # /sbin/chkconfig lm_sensors on
 /sbin/chkconfig apmd on
+/sbin/chkconfig mysqld on
 /sbin/chkconfig mysql on
+# Distro and msyql.com version
 /sbin/chkconfig ssg on
 /sbin/chkconfig tcp_tune on
 /sbin/chkconfig tarari on
