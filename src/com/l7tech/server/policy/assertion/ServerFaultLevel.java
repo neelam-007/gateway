@@ -19,10 +19,14 @@ import java.io.IOException;
  *
  * @see com.l7tech.policy.assertion.FaultLevel
  */
-public class ServerFaultLevel {
-    public ServerFaultLevel(FaultLevel assertion, ApplicationContext context) {}
+public class ServerFaultLevel implements ServerAssertion {
+    private FaultLevel assertion;
+    public ServerFaultLevel(FaultLevel assertion, ApplicationContext context) {
+        this.assertion = assertion;
+    }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        context.setFaultlevel(assertion.getLevelInfo());
         return AssertionStatus.NONE;
     }
 }

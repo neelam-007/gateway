@@ -121,7 +121,6 @@ public class FaultLevelPropertiesDialog extends JDialog {
     private void onComboSelection() {
         LevelComboItems currentselection = (LevelComboItems)levelBox.getSelectedItem();
         String description;
-        // todo, html tags in text(?)
         switch (currentselection.level) {
             case SoapFaultLevel.DROP_CONNECTION:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
@@ -130,12 +129,14 @@ public class FaultLevelPropertiesDialog extends JDialog {
             case SoapFaultLevel.GENERIC_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "return a generic SOAP fault without the details of the reason for " +
-                              "the policy violation.</p><p>A sample of such a SOAP fault is displayed below:</p></html>";
+                              "the policy violation.</p><p>A sample of such a SOAP fault is displayed " +
+                              "below:</p></html>";
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "return a SOAP fault which contains information regarding the reasons for " +
-                              "the policy violation.</p><p>A sample of such a SOAP fault is displayed below:</p></html>";
+                              "the policy violation.</p><p>A sample of such a SOAP fault is displayed " +
+                              "below:</p></html>";
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
@@ -146,7 +147,8 @@ public class FaultLevelPropertiesDialog extends JDialog {
             case SoapFaultLevel.TEMPLATE_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "return a SOAP fault based on a template provided by you. You can use " +
-                              "context variables as part of the template.</p><p><b>You must edit the template below:</b></p></html>";
+                              "context variables as part of the template.</p><p><b>You must edit the template " +
+                              "below:</b></p></html>";
                 break;
             default:
                 // can't happen (unless bug)
