@@ -24,7 +24,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 /**
- * Dialog box to edit the properties of a FaultLevel assertion
+ * Dialog box to edit the properties of a FaultLevel assertion.
  * <p/>
  * <p/>
  * <br/><br/>
@@ -207,9 +207,6 @@ public class FaultLevelPropertiesDialog extends JDialog {
         xmlEditorScrollPane.setLayout(new BorderLayout());
         xmlEditorScrollPane.add(xmlContainer.getView(), BorderLayout.CENTER);
         editor = uiAccessibility.getEditor();
-
-        // todo, other controls
-
         setInitialData();
     }
 
