@@ -3,11 +3,17 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.FaultLevel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.japisoft.xmlpad.XMLContainer;
+import com.japisoft.xmlpad.UIAccessibility;
+import com.japisoft.xmlpad.PopupModel;
+import com.japisoft.xmlpad.editor.XMLEditor;
+import com.japisoft.xmlpad.action.ActionModel;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
 
 /**
  * Dialog box to edit the properties of a FaultLevel assertion
@@ -28,12 +34,24 @@ public class FaultLevelPropertiesDialog extends JDialog {
     private JButton cancelButton;
     private JComboBox levelBox;
     private JTextPane descriptionPane;
-    private JScrollPane xmlEditorScrollPane;
+    private JPanel xmlEditorScrollPane;
+    private XMLContainer xmlContainer;
+    private XMLEditor editor;
+    private String lastUserEdits = "";
 
     public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject) {
         super(owner, TITLE, true);
         this.assertion = subject;
         initialize();
+    }
+
+    protected void processWindowEvent(WindowEvent e) {
+        super.processWindowEvent(e);
+        switch(e.getID()) {
+            case WindowEvent.WINDOW_OPENED:
+                onComboSelection();
+                break;
+        }
     }
 
     private void initialize() {
@@ -86,6 +104,36 @@ public class FaultLevelPropertiesDialog extends JDialog {
             }
         });
 
+        xmlContainer = new XMLContainer(true);
+        UIAccessibility uiAccessibility = xmlContainer.getUIAccessibility();
+        uiAccessibility.setTreeAvailable(false);
+        uiAccessibility.setTreeToolBarAvailable(false);
+        xmlContainer.setEditable(false);
+        uiAccessibility.setToolBarAvailable(false);
+        xmlContainer.setStatusBarAvailable(false);
+        PopupModel popupModel = xmlContainer.getPopupModel();
+        // remove the unwanted actions
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.PARSE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.FORMAT_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.LOAD_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.SAVEAS_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.NEW_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.INSERT_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.COMMENT_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_SELECTNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_COMMENTNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_COPYNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_CUTNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_EDITNODE_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_CLEANHISTORY_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_ADDHISTORY_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
+        popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
+        xmlEditorScrollPane.setLayout(new BorderLayout());
+        xmlEditorScrollPane.add(xmlContainer.getView(), BorderLayout.CENTER);
+        editor = uiAccessibility.getEditor();
+
         // todo, other controls
 
         setInitialData();
@@ -93,7 +141,6 @@ public class FaultLevelPropertiesDialog extends JDialog {
 
     public void setInitialData() {
         // todo, set initial data
-        onComboSelection();
     }
 
     private void ok() {
@@ -121,34 +168,89 @@ public class FaultLevelPropertiesDialog extends JDialog {
     private void onComboSelection() {
         LevelComboItems currentselection = (LevelComboItems)levelBox.getSelectedItem();
         String description;
+        if (xmlContainer.isEditable()) {
+            // remember what the user captured in case he comes back to this mode
+            lastUserEdits = editor.getText();
+        }
         switch (currentselection.level) {
             case SoapFaultLevel.DROP_CONNECTION:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "drop the connection with the requestor without returning anything.</p></html>";
+                xmlContainer.setEditable(false);
+                editor.setText("<!-- no fault -->");
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "return a generic SOAP fault without the details of the reason for " +
                               "the policy violation.</p><p>A sample of such a SOAP fault is displayed " +
                               "below:</p></html>";
+                editor.setText("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultstring>Assertion Falsified</faultstring>\n" +
+                        "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
+                        "            <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>");
+                xmlContainer.setEditable(false);
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "return a SOAP fault which contains information regarding the reasons for " +
                               "the policy violation.</p><p>A sample of such a SOAP fault is displayed " +
                               "below:</p></html>";
+                editor.setText("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultstring>Policy Falsified</faultstring>\n" +
+                        "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
+                        "            <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                        "            \t<l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
+                        "            \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
+                        "            \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
+                        "            \t</l7:assertionResult>\n" +
+                        "            </l7:policyResult>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>");
+                xmlContainer.setEditable(false);
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "return a SOAP fault which contains a full trace for each assertion " +
                               "evaluation in the policy whether the assertion was a success or " +
                               "failure.</p><p>A sample of such a SOAP fault is displayed below:</p></html>";
+                editor.setText("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultstring>Policy Falsified</faultstring>\n" +
+                        "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
+                        "            <l7:policyResult status=\"Falsified\" xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\" xmlns:l7p=\"http://www.layer7tech.com/ws/policy\">\n" +
+                        "            \t<l7:assertionResult status=\"OK\" assertion=\"l7p:RequestXpathAssertion\"/>\n" +
+                        "            \t<l7:assertionResult status=\"BAD\" assertion=\"l7p:WssUsernameToken\">\n" +
+                        "            \t    <l7:detailMessage id=\"4302\">This request did not contain any WSS level security.</l7:detailMessage>\n" +
+                        "            \t    <l7:detailMessage id=\"5204\">Request did not include an encrypted UsernameToken.</l7:detailMessage>\n" +
+                        "            \t</l7:assertionResult>\n" +
+                        "            </l7:policyResult>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>");
+                xmlContainer.setEditable(false);
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 description = "<html><p>In the case of a policy violation, the SecureSpan Gateway will " +
                               "return a SOAP fault based on a template provided by you. You can use " +
                               "context variables as part of the template.</p><p><b>You must edit the template " +
                               "below:</b></p></html>";
+                editor.setText(lastUserEdits);
+                xmlContainer.setEditable(true);
                 break;
             default:
                 // can't happen (unless bug)
