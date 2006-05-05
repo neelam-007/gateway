@@ -3,6 +3,10 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.FaultLevel;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.console.action.Actions;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.PopupModel;
@@ -14,6 +18,10 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 /**
  * Dialog box to edit the properties of a FaultLevel assertion
@@ -103,6 +111,8 @@ public class FaultLevelPropertiesDialog extends JDialog {
     private XMLEditor editor;
     private String lastUserEdits = "";
     public boolean oked = false;
+    private JCheckBox urlCheckBox;
+    private JButton helpButton;
 
     public FaultLevelPropertiesDialog(Frame owner, FaultLevel subject) {
         super(owner, TITLE, true);
@@ -122,7 +132,7 @@ public class FaultLevelPropertiesDialog extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
+        Utilities.equalizeButtonSizes(new AbstractButton[] {okButton, cancelButton, helpButton});
 
         // populate the combo box with the possible levels
         levelBox.setModel(new DefaultComboBoxModel(new LevelComboItems[] {
@@ -151,13 +161,11 @@ public class FaultLevelPropertiesDialog extends JDialog {
             }
         });
 
-        /* todo, add help button
         helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 help();
             }
         });
-        */
 
         Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
@@ -216,22 +224,50 @@ public class FaultLevelPropertiesDialog extends JDialog {
         if (initiallevel == SoapFaultLevel.TEMPLATE_FAULT) {
             lastUserEdits = assertion.getLevelInfo().getFaultTemplate();
         }
+
+        urlCheckBox.setSelected(assertion.getLevelInfo().isIncludePolicyDownloadURL());
     }
 
     private void ok() {
-        // todo, some sort of validation?
-
         int newlevel = ((LevelComboItems)levelBox.getSelectedItem()).level;
         assertion.getLevelInfo().setLevel(newlevel);
         if (newlevel == SoapFaultLevel.TEMPLATE_FAULT) {
-            assertion.getLevelInfo().setFaultTemplate(editor.getText());
+            String maybeXML = editor.getText();
+            try {
+                // make sure it's xml
+                Document doc = XmlUtil.stringToDocument(maybeXML);
+                // make sure there is a soap body
+                Element body = SoapUtil.getBodyElement(doc);
+                // make sure there is a fault child
+                java.util.List res = XmlUtil.findChildElementsByName(body, body.getNamespaceURI(), "Fault");
+                if (res.size() < 1) {
+                    displayError("The template does not appear to contain a SOAP Fault", "Invalid Template");
+                    return;
+                }
+            } catch (SAXException e) {
+                displayError("The template does not appear to contain well formed XML.\n" + e.getMessage(), "Invalid Template");
+                return;
+            } catch (InvalidDocumentFormatException e) {
+                displayError("The template does not appear to contain a SOAP Fault.\n" + e.getMessage(), "Invalid Template");
+                return;
+            }
+            assertion.getLevelInfo().setFaultTemplate(maybeXML);
         }
+        assertion.getLevelInfo().setIncludePolicyDownloadURL(urlCheckBox.isSelected());
         oked = true;
         cancel();
     }
 
     private void cancel() {
         dispose();
+    }
+
+    private void help() {
+        Actions.invokeHelp(this);
+    }
+
+    private void displayError(String msg, String title) {
+        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
     }
 
     private class LevelComboItems {
