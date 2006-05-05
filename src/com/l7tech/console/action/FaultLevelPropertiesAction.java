@@ -1,12 +1,15 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.FaultLevelTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.FaultLevelPropertiesDialog;
 import com.l7tech.policy.assertion.FaultLevel;
 import com.l7tech.common.gui.util.Utilities;
 
+import javax.swing.*;
 import java.awt.*;
+import java.util.logging.Level;
 
 /**
  * Action that triggers edit of FaultLevel properties.
@@ -44,5 +47,14 @@ public class FaultLevelPropertiesAction extends SecureAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
+        if (dlg.oked) {
+            JTree tree = TopComponents.getInstance().getPolicyTree();
+            if (tree != null) {
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged(subject);
+            } else {
+                log.log(Level.WARNING, "Unable to reach the policy tree.");
+            }
+        }
     }
 }
