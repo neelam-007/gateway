@@ -13,7 +13,6 @@ import java.io.IOException;
 public class HardcodedResponseAssertion extends RoutingAssertion implements UsesVariables {
     private int responseStatus = 200;
     private String responseContentType = ContentTypeHeader.XML_DEFAULT.getFullValue();
-    private String responseBody = null;
     private String base64ResponseBody = "";
 
     public HardcodedResponseAssertion() {
@@ -48,7 +47,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
     }
 
     public String[] getVariablesUsed() {
-        return ExpandVariables.getReferencedNames(responseBody + responseContentType);
+        return ExpandVariables.getReferencedNames(responseBodyString() + responseContentType);
     }
 
     public String getBase64ResponseBody() {
