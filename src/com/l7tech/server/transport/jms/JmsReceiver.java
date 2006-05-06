@@ -257,10 +257,10 @@ public class JmsReceiver implements ServerComponentLifecycle, ApplicationContext
             if ( _consumer != null ) {
                 try {
                     _consumer.close();
-                    _consumer = null;
                 } catch ( JMSException e ) {
                     _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
                 }
+                _consumer = null;
             }
 
             _queue = null;

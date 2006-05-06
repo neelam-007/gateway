@@ -19,6 +19,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import org.springframework.context.ApplicationContext;
@@ -108,12 +109,23 @@ class JmsRequestHandler {
                     context.setReplyExpected(false);
                 }
 
+                boolean stealthMode = false;
                 InputStream responseStream = null;
                 try {
                     status = messageProcessor.processMessage(context);
                     _logger.finest("Policy resulted in status " + status);
-                    if (context.getResponse().getKnob(XmlKnob.class) != null || context.getResponse().getKnob(MimeKnob.class) != null)
-                        responseStream = new ByteArrayInputStream(XmlUtil.toByteArray(context.getResponse().getXmlKnob().getDocumentReadOnly()));
+                    if (context.getResponse().getKnob(XmlKnob.class) != null ||
+                        context.getResponse().getKnob(MimeKnob.class) != null) {
+                        // if the policy is not successful AND the stealth flag is on, drop connection
+                        if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
+                            _logger.info("Policy returned error and stealth mode is set. " +
+                                        "Not sending response message.");
+                            stealthMode = true;
+                        }
+                        else {
+                            responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
+                        }
+                    }
                     else {
                         _logger.finer("No response received");
                         responseStream = null;
@@ -130,39 +142,54 @@ class JmsRequestHandler {
                 }
 
                 if ( responseStream == null ) {
-                    if ( faultMessage == null ) faultMessage = status.getMessage();
-                    try {
-                        responseStream = new ByteArrayInputStream(
-                                SoapFaultUtils.generateSoapFaultXml(faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
-                                                                    faultMessage, null, "").getBytes("UTF-8"));
-                    } catch (SAXException e) {
-                        throw new JmsRuntimeException(e);
+                    if (context.isStealthResponseMode()) {
+                        _logger.info("No response data available and stealth mode is set. " +
+                                    "Not sending response message.");
+                        stealthMode = true;
+                    }
+                    else {
+                        if ( faultMessage == null ) faultMessage = status.getMessage();
+                        try {
+                            String faultXml = SoapFaultUtils.generateSoapFaultXml(
+                                    faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
+                                    faultMessage, null, "");
+
+                            responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
+
+                            if (faultXml != null)
+                                springContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                        } catch (SAXException e) {
+                            throw new JmsRuntimeException(e);
+                        }
                     }
                 }
 
-                BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
-                final byte[] responseBytes;
-                try {
-                    HexUtils.copyStream(responseStream, baos);
-                    responseBytes = baos.toByteArray();
-                } finally {
-                    baos.close();
-                }
-                JmsKnob requestJmsKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
-                if (requestJmsKnob == null)
-                    throw new JmsRuntimeException("Request wasn't a JMS message");
-                if (requestJmsKnob.isBytesMessage()) {
-                    BytesMessage bresp = (BytesMessage)jmsResponse;
-                    bresp.writeBytes(responseBytes);
-                } else if ( jmsResponse instanceof TextMessage ) {
-                    TextMessage tresp = (TextMessage)jmsResponse;
-                    tresp.setText(new String(responseBytes, JmsUtil.DEFAULT_ENCODING));
-                } else {
-                    throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
-                                                   ". Only BytesMessage and TextMessage are supported" );
-                }
+                if (!stealthMode) {
+                    BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+                    final byte[] responseBytes;
+                    try {
+                        HexUtils.copyStream(responseStream, baos);
+                        responseBytes = baos.toByteArray();
+                    } finally {
+                        baos.close();
+                    }
 
-                sendResponse( jmsRequest, jmsResponse, bag, receiver, status );
+                    JmsKnob requestJmsKnob = (JmsKnob)context.getRequest().getKnob(JmsKnob.class);
+                    if (requestJmsKnob == null)
+                        throw new JmsRuntimeException("Request wasn't a JMS message");
+                    if (requestJmsKnob.isBytesMessage()) {
+                        BytesMessage bresp = (BytesMessage)jmsResponse;
+                        bresp.writeBytes(responseBytes);
+                    } else if ( jmsResponse instanceof TextMessage ) {
+                        TextMessage tresp = (TextMessage)jmsResponse;
+                        tresp.setText(new String(responseBytes, JmsUtil.DEFAULT_ENCODING));
+                    } else {
+                        throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
+                                                       ". Only BytesMessage and TextMessage are supported" );
+                    }
+
+                    sendResponse( jmsRequest, jmsResponse, bag, receiver, status );
+                }
             } catch (IOException e) {
                 _logger.log( Level.WARNING, e.toString(), e );
             } catch (JMSException e) {
