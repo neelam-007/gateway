@@ -10,6 +10,7 @@ import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.EntityChangeSet;
@@ -210,6 +211,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
         } else if (genericEvent instanceof LogonEvent) {
             LogonEvent le = (LogonEvent)genericEvent;
             User admin = (User)le.getSource();
+            String role = le.getRole();
             String ip = null;
             try {
                 ip = UnicastRemoteObject.getClientHost();
@@ -217,7 +219,8 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 logger.log(Level.WARNING, "cannot get remote ip", e);
             }
             return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
-                                        "Administrator logged in", admin.getProviderId(), admin.getLogin(), admin.getUniqueIdentifier(), ip);
+                                        Group.OPERATOR_GROUP_NAME.equals(role) ? "Operator logged in" : "Administrator logged in", 
+                                        admin.getProviderId(), admin.getLogin(), admin.getUniqueIdentifier(), ip);
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());
         }

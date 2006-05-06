@@ -19,6 +19,7 @@ public class LogonEvent extends ApplicationEvent {
 
 
     private final int type;
+    private final String role;
 
     /**
      * create the connection event
@@ -29,6 +30,20 @@ public class LogonEvent extends ApplicationEvent {
     public LogonEvent(Object source, int type) {
         super(source);
         this.type = type;
+        this.role = null;
+    }
+
+    /**
+     * create the connection event
+     *
+     * @param source the event source
+     * @param type   the event type
+     * @param role   the most interesting / relevant role for the user or event
+     */
+    public LogonEvent(Object source, int type, String role) {
+        super(source);
+        this.type = type;
+        this.role = role;
     }
 
     /**
@@ -38,4 +53,10 @@ public class LogonEvent extends ApplicationEvent {
         return type;
     }
 
+    /**
+     * @return the role (if available)
+     */
+    public String getRole() {
+        return role;
+    }
 }

@@ -69,7 +69,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
             }
             logger.info("" + getHighestRole(roles) + " "+user.getLogin() + " logged in from IP " + UnicastRemoteObject.getClientHost());
             AdminContext adminContext = (AdminContext)getApplicationContext().getBean("adminContextRemote");
-            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
+            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON, getHighestRoleName(roles)));
 
             String cookie = sessionManager.createSession(user);
 
@@ -177,6 +177,19 @@ public class AdminLoginImpl extends ApplicationObjectSupport implements AdminLog
 
         return "Unknown administrative role";
     }
+
+    private String getHighestRoleName(String[] roles) {
+        List aRoles = Arrays.asList(roles);
+        if (aRoles.contains(Group.ADMIN_GROUP_NAME)) {
+            return Group.ADMIN_GROUP_NAME;
+        }
+        if (aRoles.contains(Group.OPERATOR_GROUP_NAME)) {
+            return Group.OPERATOR_GROUP_NAME;
+        }
+
+        return null;
+    }
+
 
     public void afterPropertiesSet() throws Exception {
         checkidentityProviderConfigManager();
