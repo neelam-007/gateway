@@ -10,7 +10,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.SimpleHttpConnectionManager;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -22,6 +22,11 @@ import javax.wsdl.Service;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.soap.SOAPException;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.SSLSocket;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -33,6 +38,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -101,6 +107,8 @@ public class GClient {
     private JCheckBox reformatResponseMessageCheckBox;
     private JCheckBox validateBeforeSendCheckBox;
     private JComboBox contentTypeComboBox;
+    private JSpinner threadSpinner;
+    private JSpinner requestSpinner;
 
 
     //
@@ -113,6 +121,7 @@ public class GClient {
     private SoapMessageGenerator.Message[] requestMessages;
     private String rawResponse;
     private String formattedResponse;
+    private SSLSocketFactory sslSocketFactory;
 
     private boolean formatRequest() {
         return reformatRequestMessageCheckbox.isSelected();
@@ -166,6 +175,8 @@ public class GClient {
 
     private void buildControls() {
         contentTypeComboBox.setModel(new DefaultComboBoxModel(CONTENT_TYPES));
+        threadSpinner.setValue(new Integer(1));
+        requestSpinner.setValue(new Integer(1));
     }
 
     private void buildMenus(final JFrame frame) {
@@ -377,6 +388,7 @@ public class GClient {
         GClientLocationDialog locationChooser = new GClientLocationDialog((Frame)SwingUtilities.windowForComponent(parent));
         locationChooser.pack();
         Utilities.centerOnScreen(locationChooser);
+        locationChooser.setAlwaysOnTop(true);
         locationChooser.setVisible(true);
         if(locationChooser.wasOk()) {
             String uri = locationChooser.getOpenLocation();
@@ -426,18 +438,29 @@ public class GClient {
         }
     }
 
+    private SSLSocketFactory getSSLSocketFactory() throws Exception {
+        if (sslSocketFactory == null) {
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            X509TrustManager trustManager = new PermissiveX509TrustManager();
+            sslContext.init(null, new X509TrustManager[] {trustManager}, null);
+            sslSocketFactory = sslContext.getSocketFactory();
+        }
+        return sslSocketFactory;
+    }
+
     /**
      * Send the message text to the selected uri (if it parses)
      */
     private void sendMessage() {
-        String soapAction = soapActionTextField.getText();
-        String targetUrl = urlTextField.getText();
-        String message = requestTextArea.getText();
+        // clear existing output
+        formattedResponse = "";
+        rawResponse = "";
+        updateResponse();
 
-        GenericHttpClient client = null;
-        GenericHttpRequest request = null;
-        GenericHttpResponse response = null;
-        InputStream responseIn = null;
+        final String soapAction = soapActionTextField.getText();
+        final String targetUrl = urlTextField.getText();
+        final String message = requestTextArea.getText();
+
         try {
             byte[] requestBytes = null;
             if(validateBeforeSend()) {
@@ -448,14 +471,125 @@ public class GClient {
                 requestBytes = message.getBytes("UTF-8");
             }
 
-            client = new CommonsHttpClient(new MultiThreadedHttpConnectionManager());
+            int threads = ((Integer)threadSpinner.getValue()).intValue();
+            final int requests = ((Integer)requestSpinner.getValue()).intValue();
+
+            boolean isJms = targetUrl.startsWith("jms:/");
+
+            if(threads==1) {
+                if (isJms && requests > 1) throw new Exception("JMS not supported for multiple requests.");
+                final long startTime = System.currentTimeMillis();
+                for(int i=0; i<requests; i++) {
+                    String[] responseData = !isJms ?
+                            doMessage(soapAction, targetUrl, requestBytes) :
+                            doJmsMessage(soapAction, targetUrl, requestBytes);
+                    if(responseData!=null) {
+                        statusLabel.setText(responseData[0]);
+                        lengthLabel.setText(responseData[1]);
+                        ctypeLabel.setText(responseData[2]);
+                        rawResponse = responseData[3];
+                        try {
+                            formattedResponse = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseData[3]));
+                        } catch (SAXException e) {
+                            // Oh well, set as just text
+                            formattedResponse = rawResponse;
+                        }
+                        updateResponse();
+                    }
+                    else {
+                        // reset
+                        clientLocal.set(null);
+                    }
+                }
+                System.out.println("Processing requests took "+(System.currentTimeMillis()-startTime)+"ms.");
+            }
+            else {
+                if (isJms) throw new Exception("JMS not supported for multiple threads.");
+                final ThreadGroup requestGroup = new ThreadGroup("GClientRequests");
+                final Thread[] requestThreads = new Thread[threads];
+                final byte[] requestData = requestBytes;
+                final long startTime = System.currentTimeMillis();
+                for(int t=0; t<threads; t++) {
+                    requestThreads[t] = new Thread(requestGroup, new Runnable(){
+                        public void run() {
+                            for(int i=0; i<requests; i++) {
+                                String[] responseData = doMessage(soapAction, targetUrl, requestData);
+                                if(responseData==null) {
+                                    System.out.println("Request thread exiting after error!");
+                                    clientLocal.set(null);
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                    requestThreads[t].start();
+                }
+                while(requestGroup.activeCount()>0) {
+                    int liveCount = 0;
+                    for (int t = 0; t < requestThreads.length; t++) {
+                        Thread thread = requestThreads[t];
+                        if(thread.isAlive()) liveCount++;
+                    }
+                    if(liveCount==0) break;
+                    Thread.sleep(50);
+                }
+                System.out.println("Processing requests took "+(System.currentTimeMillis()-startTime)+"ms.");
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            displayThrowable(e);
+        }
+    }
+
+    private String[] doJmsMessage(String soapAction, String targetUrl, byte[] requestBytes) {
+        try {
+            JmsClient client = new JmsClient(new URI(targetUrl));
+            String response = client.getResponse(new String(requestBytes), true);
+            if (response != null) {
+                return new String[]{"0",
+                                    Integer.toString(response.length()),
+                                    "",
+                                    response};
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            displayThrowable(e);
+        }
+
+        return null;
+    }
+
+    /**
+     * Send the message text to the selected uri (if it parses)
+     * /
+    GenericHttpClient client = null;
+    {
+        SimpleHttpConnectionManager mhcm = new SimpleHttpConnectionManager();
+        //mhcm.setMaxConnectionsPerHost(100);
+        //mhcm.setMaxTotalConnections(100);
+        client = new CommonsHttpClient(mhcm);
+    }*/
+    ThreadLocal clientLocal = new ThreadLocal();
+    private String[] doMessage(String soapAction, String targetUrl, byte[] requestBytes) {
+
+        GenericHttpClient client = (GenericHttpClient) clientLocal.get();
+        if(client==null) {
+            client = new CommonsHttpClient(new SimpleHttpConnectionManager(), 30000, 30000);
+            clientLocal.set(client);
+        }
+        GenericHttpRequest request = null;
+        GenericHttpResponse response = null;
+        InputStream responseIn = null;
+        try {
             GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(targetUrl));
             String login = loginField.getText();
             char[] password = passwordField.getPassword();
             String ntlmDomain = ntlmDomainField.getText();
             String ntlmHost = ntlmHostField.getText();
             if (login != null && password != null) {
-                if (ntlmDomain != null) {
+                if (ntlmDomain != null && ntlmDomain.trim().length() > 0) {
                     String host = ntlmHost;
                     if (host == null) host = InetAddress.getLocalHost().getHostName();
                     params.setNtlmAuthentication(new NtlmAuthentication(login, password, ntlmDomain, host));
@@ -471,6 +605,10 @@ public class GClient {
                 params.setContentType(ContentTypeHeader.parseValue(contentType));
             }
             params.setExtraHeaders(new HttpHeader[]{new GenericHttpHeader(SoapUtil.SOAPACTION, soapAction)});
+            if(params.getTargetUrl().getProtocol().equals("https")) {
+                params.setSslSocketFactory(getSSLSocketFactory());
+            }
+
             request = client.createRequest(GenericHttpClient.POST, params);
             request.setInputStream(new ByteArrayInputStream(requestBytes));
             if (params.getNtlmAuthentication() == null && params.getPasswordAuthentication() == null) {
@@ -481,18 +619,14 @@ public class GClient {
             final Long clen = response.getContentLength();
             lengthLabel.setText(clen == null ? "(null)" : clen.toString());
             ContentTypeHeader type = response.getContentType();
-            ctypeLabel.setText(String.valueOf(type == null ? null : type.getFullValue()));
             if (type == null) type = ContentTypeHeader.TEXT_DEFAULT;
             responseIn = response.getInputStream();
             String responseText = new String(HexUtils.slurpStream(responseIn), type.getEncoding());
-            rawResponse = responseText;
-            try {
-                formattedResponse = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseText));
-            } catch (SAXException e) {
-                // Oh well, set as just text
-                formattedResponse = rawResponse;
-            }
-            updateResponse();
+
+            return new String[]{Integer.toString(response.getStatus()),
+                                response.getContentLength().toString(),
+                                String.valueOf(type == null ? null : type.getFullValue()),
+                                responseText};
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -503,5 +637,7 @@ public class GClient {
             if(response!=null) try {response.close(); }catch(Exception e){}
             if(request!=null) try {request.close(); }catch(Exception e){}
         }
+
+        return null;
     }
 }
