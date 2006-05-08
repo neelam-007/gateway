@@ -1590,15 +1590,13 @@ public class MainWindow extends JFrame {
             }
         });
 
-        treePanel = new JTabbedPane();
-        treePanel.addTab("Services", getServicesTree());
-        treePanel.setTabPlacement(JTabbedPane.TOP);
-        treePanel.setBorder(null);
-        JScrollPane serviceScroller = new JScrollPane(treePanel);
+        JScrollPane serviceScroller = new JScrollPane(getServicesTree());
         configureScrollPane(serviceScroller);
+        treePanel = new JTabbedPane();
+        treePanel.addTab("Services", serviceScroller);
 
         verticalSplitPane.setTopComponent(paletteSections);
-        verticalSplitPane.setBottomComponent(serviceScroller);
+        verticalSplitPane.setBottomComponent(treePanel);
 
         mainLeftPanel = new JPanel(new BorderLayout());
         mainLeftPanel.add(verticalSplitPane, BorderLayout.CENTER);
