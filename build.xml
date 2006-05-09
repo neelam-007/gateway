@@ -1822,17 +1822,6 @@
             </fileset>
         </copy>
 
-        <!-- Hack ssgruntimedefs.sh -->
-        <echo>Patching ${install.src.bin}/ssgruntimedefs.sh...</echo>
-        <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
-            <regexp pattern="TOMCAT_HOME\s*=\s*[a-zA-Z0-9 _\/\-\.\\]*"/>
-            <substitution expression="TOMCAT_HOME=${install.target.tomcat}"/>
-        </replaceregexp>
-        <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
-            <regexp pattern="JAVA_HOME\s*=\s*[a-zA-Z0-9 _\/\-\.\\]*"/>
-            <substitution expression="JAVA_HOME=${install.target.jdk}"/>
-        </replaceregexp>
-
         <!-- Make scripts executable -->
         <echo>Setting execute permissions on scripts...</echo>
         <chmod perm="0755">
