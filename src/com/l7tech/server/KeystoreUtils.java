@@ -1,14 +1,16 @@
-package com.l7tech.server.config;
+package com.l7tech.server;
 
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreInfo;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.common.util.ResourceUtils;
 
 import javax.net.ssl.KeyManagerFactory;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;

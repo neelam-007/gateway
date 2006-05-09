@@ -311,7 +311,7 @@
     </bean>
 
     <!-- keystore root cert and ssl config  -->
-    <bean id="keystore" class="com.l7tech.server.config.KeystoreUtils">
+    <bean id="keystore" class="com.l7tech.server.KeystoreUtils">
         <constructor-arg>
             <ref bean="serverConfig"/>
         </constructor-arg>

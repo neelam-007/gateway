@@ -1,7 +1,7 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.server.config.KeystoreUtils;
+import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.util.SetKeys;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.x509.X509V3CertificateGenerator;

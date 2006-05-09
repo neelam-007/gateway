@@ -10,7 +10,7 @@ import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.util.Background;
-import com.l7tech.server.config.KeystoreUtils;
+import com.l7tech.server.KeystoreUtils;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.DeleteException;

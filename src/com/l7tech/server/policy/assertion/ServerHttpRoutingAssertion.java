@@ -34,7 +34,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.config.KeystoreUtils;
+import com.l7tech.server.KeystoreUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;

@@ -1,7 +1,7 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.server.config.KeystoreUtils;
+import com.l7tech.server.KeystoreUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
