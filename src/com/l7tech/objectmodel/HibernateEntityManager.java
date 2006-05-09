@@ -134,6 +134,10 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
 
     public abstract Class getInterfaceClass();
 
+    public EntityType getEntityType() {
+        return EntityType.UNDEFINED;
+    }
+
     public abstract String getTableName();
 
     public Collection findAllHeaders() throws FindException {
@@ -145,7 +149,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
             if (entity instanceof NamedEntity) name = ((NamedEntity)entity).getName();
             if (name == null) name = "";
             final long id = entity.getOid();
-            headers.add(new EntityHeader(Long.toString(id), EntityType.fromInterface(getInterfaceClass()), name, EMPTY_STRING));
+            headers.add(new EntityHeader(Long.toString(id), getEntityType(), name, EMPTY_STRING));
         }
         return Collections.unmodifiableList(headers);
     }

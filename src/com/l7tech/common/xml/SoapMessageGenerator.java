@@ -1,6 +1,7 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.console.util.Registry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -520,7 +521,11 @@ public class SoapMessageGenerator {
         Types types = wsdl.getTypes();
         if (types == null) {
             // look for schema from other place
-            Element elem = Wsdl.getSchemaElement(wsdl.getDefinition());
+            Element elem = Wsdl.getSchemaElement(wsdl.getDefinition(), new Wsdl.UrlGetter() {
+                public String get(String url) throws IOException {
+                    return Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
+                }
+            });
             if (elem != null) {
                 return getSchemaParameterElements(elem, elementName, targetNamespace);
             }

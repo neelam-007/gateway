@@ -33,13 +33,7 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-
-    <!--
-      Event multicaster for supporting non-container managed event listeners.
-    -->
-    <bean id="applicationEventMulticaster" class="com.l7tech.spring.util.SafeApplicationEventMulticaster"/>
-
-    <!--
+<!--
         Internal Identity Provider
 
         The factory method with support with construction arguments. The bean must be instantiated
@@ -225,7 +219,7 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-    
+
     <!-- server side policy validator -->
     <bean id="policyValidator" class="com.l7tech.server.policy.validator.ServerPolicyValidator">
         <property name="jmsEndpointManager">
@@ -317,7 +311,7 @@
     </bean>
 
     <!-- keystore root cert and ssl config  -->
-    <bean id="keystore" class="com.l7tech.common.util.KeystoreUtils">
+    <bean id="keystore" class="com.l7tech.server.config.KeystoreUtils">
         <constructor-arg>
             <ref bean="serverConfig"/>
         </constructor-arg>
@@ -653,7 +647,7 @@
 
     <!--
     The MAC of this cluster node, so that we don't need to throw the whole
-    ClusterInfoManager around 
+    ClusterInfoManager around
     -->
     <bean id="clusterNodeId" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">

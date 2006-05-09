@@ -125,6 +125,10 @@ public class JmsEndpointManager extends HibernateEntityManager {
         return "jms_endpoint";
     }
 
+    public EntityType getEntityType() {
+        return EntityType.JMS_ENDPOINT;
+    }
+
     private final Logger _logger = Logger.getLogger(getClass().getName());
 
 }

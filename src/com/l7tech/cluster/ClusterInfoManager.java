@@ -1,7 +1,7 @@
 package com.l7tech.cluster;
 
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.server.config.KeystoreUtils;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;

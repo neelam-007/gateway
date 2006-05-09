@@ -91,7 +91,7 @@
     </bean>
 
     <!-- ssl config  -->
-    <bean id="keystore" class="com.l7tech.common.util.KeystoreUtils" depends-on="testKeys">
+    <bean id="keystore" class="com.l7tech.server.config.KeystoreUtils" depends-on="testKeys">
         <constructor-arg>
             <ref bean="serverConfig"/>
         </constructor-arg>

@@ -297,6 +297,10 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return "published_service";
     }
 
+    public EntityType getEntityType() {
+        return EntityType.SERVICE;
+    }
+
     public void setServiceCache(ServiceCache serviceCache) {
         this.serviceCache = serviceCache;
     }

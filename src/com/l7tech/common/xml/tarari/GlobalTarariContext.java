@@ -68,4 +68,9 @@ public interface GlobalTarariContext {
      *         null if hardware validation could not be attempted because the target namespace was loaded more than once.
      */
     Boolean validateDocument(TarariMessageContext doc, String desiredTargetNamespaceUri);
+
+    /**
+     * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
+     */
+    void compileAllXpaths();
 }

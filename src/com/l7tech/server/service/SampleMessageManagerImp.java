@@ -93,4 +93,8 @@ public class SampleMessageManagerImp extends HibernateEntityManager implements S
     public String getTableName() {
         return "sample_messages";
     }
+
+    public EntityType getEntityType() {
+        return EntityType.SAMPLE_MESSAGE;
+    }
 }

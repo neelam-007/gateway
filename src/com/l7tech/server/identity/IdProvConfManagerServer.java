@@ -156,6 +156,10 @@ public class IdProvConfManagerServer
         this.identityProviderFactory = identityProviderFactory;
     }
 
+    public EntityType getEntityType() {
+        return EntityType.ID_PROVIDER_CONFIG;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************

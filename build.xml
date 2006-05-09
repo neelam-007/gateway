@@ -1399,14 +1399,32 @@
     -->
     <target name="compile14" depends="prepare, configure_properties.dev" unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-            deprecation="on" verbose="no" target="1.4" source="1.4">
+            deprecation="on" verbose="off" target="1.4" source="1.4">
             <classpath refid="project.classpath"/>
 
-            <include name="com/l7tech/proxy/**/*.java"/>
+            <!-- All these includes should be maintained at 1.4 compatibility -->
             <include name="com/l7tech/common/**/*.java"/>
-            <exclude name="com/l7tech/policy/exporter/**/*.java"/>
-            <include name="com/l7tech/logging/**/*.java"/>
             <include name="com/l7tech/policy/**/*.java"/>
+            <include name="com/l7tech/proxy/**/*.java"/>
+            <include name="com/l7tech/objectmodel/EntityHeader.java"/>
+            <include name="com/l7tech/objectmodel/EntityType.java"/>
+
+            <!-- The following, as well as anything not included above, can go to 1.5 -->
+            <exclude name="com/l7tech/common/Authorizer.java"/>
+            <exclude name="com/l7tech/common/security/prov/luna/**/*.java"/>
+            <exclude name="com/l7tech/common/security/prov/ncipher/**/*.java"/>
+            <exclude name="com/l7tech/common/security/prov/phaos/**/*.java"/>
+            <exclude name="com/l7tech/common/security/prov/rsa/**/*.java"/>
+            <exclude name="com/l7tech/common/alert/**/*.java"/>
+            <exclude name="com/l7tech/common/audit/**/*.java"/>
+            <exclude name="com/l7tech/common/transport/jms/**/*.java"/>
+            <exclude name="com/l7tech/common/security/TrustedCert.java"/>
+            <exclude name="com/l7tech/common/security/TrustedCertAdmin.java"/>
+            <exclude name="com/l7tech/common/security/X509Entity.java"/>
+            <exclude name="com/l7tech/common/xml/SoapMessageGenerator.java"/>
+            <exclude name="com/l7tech/common/xml/schema/**/*.java"/>
+            <exclude name="com/l7tech/common/xml/tarari/**/*.java"/>
+            <exclude name="com/l7tech/policy/assertion/ext/**/*.java"/>
         </javac>
     </target>
 

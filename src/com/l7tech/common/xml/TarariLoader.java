@@ -9,7 +9,6 @@ package com.l7tech.common.xml;
 import com.l7tech.common.message.TarariMessageContextFactory;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
 import com.l7tech.objectmodel.FindException;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.beans.factory.BeanFactory;
@@ -99,7 +98,7 @@ public class TarariLoader {
      * if the set of registered global xpaths has changed since the last time a compile was done.
      */
     public static void compile() {
-        GlobalTarariContextImpl context = (GlobalTarariContextImpl)getGlobalContext();
+        GlobalTarariContext context = getGlobalContext();
         if (context != null) {
             try {
                 context.compileAllXpaths();

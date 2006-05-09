@@ -127,6 +127,10 @@ public class JmsConnectionManager extends HibernateEntityManager implements Init
         return "jms_connection";
     }
 
+    public EntityType getEntityType() {
+        return EntityType.JMS_CONNECTION;
+    }
+
     private JmsEndpointManager jmsEndpointManager;
 
     public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {

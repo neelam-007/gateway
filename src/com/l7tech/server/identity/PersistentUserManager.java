@@ -267,6 +267,9 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         this.clientCertManager = clientCertManager;
     }
 
+    public EntityType getEntityType() {
+        return EntityType.USER;
+    }
 
     /**
      * Subclasses can override this for custom initialization behavior.

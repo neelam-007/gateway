@@ -1,10 +1,11 @@
 package com.l7tech.common.security;
 
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.server.config.KeystoreUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.springframework.context.ApplicationContext;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,8 +16,6 @@ import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * The <code>Keys</code> class test.

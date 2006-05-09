@@ -140,7 +140,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             for (Iterator i = results.iterator(); i.hasNext();) {
                 PersistentGroup group = (PersistentGroup)i.next();
                 headers.add(new EntityHeader(group.getUniqueIdentifier(),
-                  EntityType.fromInterface(getInterfaceClass()),
+                  EntityType.GROUP,
                   group.getName(),
                   group.getDescription()));
             }
@@ -617,6 +617,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             throw new UpdateException(he.toString(), he);
         }
 
+    }
+
+    public EntityType getEntityType() {
+        return EntityType.GROUP;
     }
 
     protected IdentityProvider identityProvider;

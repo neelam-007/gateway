@@ -6,7 +6,7 @@
 
 package com.l7tech.server.identity;
 
-import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.server.config.KeystoreUtils;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.mapping.IdentityMapping;

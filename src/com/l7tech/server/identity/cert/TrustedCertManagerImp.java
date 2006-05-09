@@ -207,6 +207,10 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         return "trusted_cert";
     }
 
+    public EntityType getEntityType() {
+        return EntityType.TRUSTED_CERT;
+    }
+
     public TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException {
         Sync read = cacheLock.readLock();
         Sync write = cacheLock.writeLock();

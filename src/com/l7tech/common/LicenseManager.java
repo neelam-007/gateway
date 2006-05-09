@@ -5,9 +5,6 @@
 
 package com.l7tech.common;
 
-import com.l7tech.common.Feature;
-import com.l7tech.common.LicenseException;
-
 /**
  * Interface for LicenseManager.
  */

@@ -22,6 +22,7 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.config.KeystoreUtils;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;

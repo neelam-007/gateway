@@ -4,8 +4,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.BeansException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.config.KeystoreUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.KeystoreUtils;
 
 import java.io.IOException;
 import java.util.logging.Level;

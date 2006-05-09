@@ -1,23 +1,21 @@
 package com.l7tech.common.xml;
 
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.console.util.Registry;
+import org.apache.ws.policy.Assertion;
+import org.apache.ws.policy.Policy;
+import org.apache.ws.policy.PolicyReference;
+import org.apache.ws.policy.util.DOMPolicyReader;
+import org.apache.ws.policy.util.PolicyFactory;
+import org.apache.ws.policy.util.PolicyRegistry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.apache.ws.policy.util.PolicyFactory;
-import org.apache.ws.policy.util.DOMPolicyReader;
-import org.apache.ws.policy.util.PolicyRegistry;
-import org.apache.ws.policy.Policy;
-import org.apache.ws.policy.PolicyReference;
-import org.apache.ws.policy.Assertion;
 
 import javax.wsdl.*;
-import javax.wsdl.Service;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.http.HTTPBinding;
@@ -28,20 +26,20 @@ import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.factory.WSDLFactory;
+import javax.wsdl.xml.WSDLLocator;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
-import javax.wsdl.xml.WSDLLocator;
-import javax.xml.soap.SOAPConstants;
 import javax.xml.namespace.QName;
+import javax.xml.soap.SOAPConstants;
 import java.io.*;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -1245,17 +1243,22 @@ public class Wsdl {
         }
     }
 
+    public static interface UrlGetter {
+        String get(String url) throws IOException;
+    }
+
     /**
      * Get the schema element from the wsdl definiton.
      *
      * @param def the wsdl definition
-     * @return Element the "schema" element in the wsdl
+     * @param getter
+     *  @return Element the "schema" element in the wsdl
      * @throws RemoteException       if failed to call the remote object
      * @throws MalformedURLException if URL format is invalide
      * @throws IOException           when error occured in reading the wsdl document
      * @throws SAXException          when error occured in parsing XML
      */
-    public static Element getSchemaElement(Definition def)
+    public static Element getSchemaElement(Definition def, UrlGetter getter)
       throws RemoteException, MalformedURLException, IOException, SAXException {
         Element schemaElement = null;
         Import imp = null;
@@ -1269,7 +1272,7 @@ public class Wsdl {
                     // check if the schema is inside the file
                     String url = imp.getLocationURI();
                     String resolvedXml = null;
-                    resolvedXml = Registry.getDefault().getServiceManager().resolveWsdlTarget(url);
+                    resolvedXml = getter.get(url);
 
                     if (resolvedXml != null) {
                         Document resultDoc = XmlUtil.stringToDocument(resolvedXml);
@@ -1287,10 +1290,8 @@ public class Wsdl {
         }
 
         // if not found
-        if (schemaElement == null) {
-            if (imp != null && imp.getDefinition() != null) {
-                schemaElement = getSchemaElement(imp.getDefinition());
-            }
+        if (imp != null && imp.getDefinition() != null) {
+            schemaElement = getSchemaElement(imp.getDefinition(), getter);
         }
 
         return schemaElement;
