@@ -493,6 +493,8 @@
             <compilerarg value="-Xlint" compiler="modern"/>
             <compilerarg value="-Xlint:-serial" compiler="modern"/>
             <compilerarg value="-Xlint:-path" compiler="modern"/>
+            <compilerarg value="-Xlint:-unchecked" compiler="modern"/>
+            <compilerarg value="-Xlint:-dep-ann" compiler="modern"/>
             <classpath refid="project.classpath"/>
         </javac>
         <copy todir="${build.classes}">
