@@ -956,7 +956,7 @@
                 <include name="com/l7tech/common/security/prov/luna/*.class"/>
                 <include name="com/l7tech/common/security/prov/bc/*.class"/>
 
-                <exclude name="com/l7tech/common/xml/SoapMessageGenerator.class"/>
+                <exclude name="com/l7tech/common/xml/SoapMessageGenerator*.class"/>
                 <exclude name="com/l7tech/common/xml/Wsdl*.class"/>
                 <exclude name="com/l7tech/common/xml/DOMResultXMLStreamWriter.class"/>
                 <exclude name="com/l7tech/common/xml/XpathEvaluator.class"/>
