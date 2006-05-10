@@ -15,7 +15,9 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 /**
- * Provides a programmatic interface to the Bridge's message processor.
+ * Provides a programmatic interface to the Bridge's message processor.  Use {@link SecureSpanBridgeFactory} to
+ * obtain an implementation of this interface.
+ *
  * @author mike
  * @version 1.0
  */
@@ -57,15 +59,18 @@ public interface SecureSpanBridge {
     /**
      * Send a message to the service through the Gateway.
      * <p>
-     * If instructed by the Gateway, we will download and apply a security policy to the message and response.
+     * If the Gateway indicates that a specific security policy is required for this request, the Bridge will
+     * download the policy and cache it, applying it to this and future requests with the same SOAPAction, body
+     * namespace URI, and URI local part.
      * <p>
-     * The Gateway server certificate will be discovered if necessary.
+     * If the Gateway SSL server certificate is required but has not yet been discovered or imported, Gateway SSL
+     * server certificate discovery will be attempted using the currently configured credentials.
      * <p>
-     * We will apply for a client certificate if necessary.
+     * The Bridge will apply for a client certificate if necessary.
      *
      * @param soapAction the SOAPAction header to use for this message, including surrounding double-quote characters
      * @param message the SOAPEnvelope containing the message to send, as a DOM tree
-     * @return
+     * @return the {@link Result} returned by the Gateway.  Never null.
      * @throws SendException                if the operation failed due to one of the following problems:
      *      a client certificate was required but could not be obtained;
      *      this request cannot succeed until the client or server configuration is changed;
@@ -81,15 +86,17 @@ public interface SecureSpanBridge {
                                                             CertificateAlreadyIssuedException;
 
     /**
-     * As above, but takes the XML as a string.
+     * Send a message to the service through the Gateway.  This method behaves identically to
+     * {@link #send(String, org.w3c.dom.Document)},
+     * except it takes the message as an XML string instead of a DOM Document.
      *
      * @param soapAction the SOAPAction header to use for this message, including surrounding double-quote characters
      * @param message the SOAPEnvelope containing the message to send, as a String containing XML
-     * @return
+     * @return the {@link Result} returned by the Gateway.  Never null.
      * @throws SAXException if the provided message was not well-formed XML
-     * @throws SendException see above
-     * @throws BadCredentialsException see above
-     * @throws IOException see above
+     * @throws SendException see {@link #send(String, org.w3c.dom.Document)}
+     * @throws BadCredentialsException see {@link #send(String, org.w3c.dom.Document)}
+     * @throws IOException see {@link #send(String, org.w3c.dom.Document)}
      * @throws CertificateAlreadyIssuedException if we need a client cert but the Gateway has already issued us one
      */
     Result send(String soapAction, String message) throws SAXException, SendException, IOException, BadCredentialsException,
@@ -119,15 +126,17 @@ public interface SecureSpanBridge {
     X509Certificate getServerCert() throws IOException;
 
     /**
-     * Get the client certificate, or null if we don't currently have one.
-     * @return The client certificate, or null if we don't currently have one.
+     * Get the Bridge client certificate, if any.
+     *
+     * @return The client certificate, or null if there is no client certificate configured.
      * @throws IOException if the certificate was not recoverable due to a corrupt keystore.
      */
     X509Certificate getClientCert() throws IOException;
 
     /**
-     * Get the private key for the client certificate, or null if we don't currently have one.
-     * @return The private key, or null.
+     * Get the private key for the client certificate, if any.
+     *
+     * @return The private key, or null if there is no client certificate configured.
      * @throws BadCredentialsException if the private key could not be decrypted due to a bad password
      * @throws IOException if the keystore was corrupt
      * @throws RuntimeException if the cryptographic algorithm needed for this key is not available
@@ -135,8 +144,11 @@ public interface SecureSpanBridge {
     PrivateKey getClientCertPrivateKey() throws BadCredentialsException, IOException;
 
     /**
-     * Ensure the Gateway SSL certificate and Bridge's client ceritificate are available, downloading or applying
-     * for them as needed.
+     * Ensure the Gateway SSL certificate and Bridge's client ceritificate are available locally.  If the Gateway
+     * SSL certificate has not yet been discovered or imported, Gateway SSL certificate discovery will be attempted.
+     * If no Bridge client certificate has yet been obtained or imported, the Bridge will generate a new private key
+     * and send a certificate signing request to the Gateway to apply for a new client certificate.
+     *
      * @throws IOException if there was a network problem downloading the server cert
      * @throws IOException if there was a problem reading or writing the keystore file
      * @throws IOException if the keystore was corrupt
