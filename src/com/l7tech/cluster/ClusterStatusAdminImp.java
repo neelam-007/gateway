@@ -45,7 +45,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         this.serviceUsageManager = serviceUsageManager;
         this.accessManager = accessManager;
         this.clusterPropertyManager = clusterPropertyManager;
-        this.licenseManager = (GatewayLicenseManager)licenseManager; // XXX this is... Not Very Pretty
+        this.licenseManager = (GatewayLicenseManager)licenseManager;
         this.serviceMetricsManager = metricsManager;
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info manager is required");
