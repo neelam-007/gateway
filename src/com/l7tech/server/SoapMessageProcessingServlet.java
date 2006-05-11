@@ -124,13 +124,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             AssertionStatus status = messageProcessor.processMessage(context);
 
             // if the policy is not successful AND the stealth flag is on, drop connection
-            if (status != AssertionStatus.NONE && context.isStealthResponseMode()) {
-                logger.info("Policy returned error and stealth mode is set. " +
-                            "Instructing valve to drop connection completly.");
-                hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
-                                      ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
-                return;
-            } else if (status == AssertionStatus.SERVICE_NOT_FOUND) {
+            if (status != AssertionStatus.NONE) {
                 SoapFaultLevel faultLevelInfo = context.getFaultlevel();
                 if (faultLevelInfo == null) {
                     faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
@@ -140,8 +134,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                                 "Instructing valve to drop connection completly.");
                     hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
                                           ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                    return;
                 }
-                return;
             }
 
             // Send response headers
