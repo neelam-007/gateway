@@ -1011,7 +1011,12 @@ public class MessageProcessor {
 
             for (Iterator iterator = values.iterator(); iterator.hasNext();) {
                 String setCookieValue =  (String) iterator.next();
-                cookieSet.add(new HttpCookie(url, setCookieValue));
+                try {
+                    cookieSet.add(new HttpCookie(url, setCookieValue));
+                }
+                catch(HttpCookie.IllegalFormatException hcife) {
+                    log.warning("Ignoring illegal cookie header '"+setCookieValue+"'.");
+                }
             }
 
             HttpCookie[] existingCookies = context.getSessionCookies();

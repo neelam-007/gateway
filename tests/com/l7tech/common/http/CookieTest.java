@@ -108,7 +108,7 @@ public class CookieTest extends TestCase {
         assertEquals("Should not be secure", false, cookie.isSecure());
     }
 
-    public void testFullV1SetCookieHeader() {
+    public void testFullV1SetCookieHeader() throws Exception {
         String name = "test";
         String value = "testvalue";
         int maxAge = 300;

@@ -234,9 +234,14 @@ public class FederationPassiveClient {
             }
 
             List cookieHeaders = headers.getValues(HttpConstants.HEADER_SET_COOKIE);
-            for (Iterator iterator = cookieHeaders.iterator(); iterator.hasNext();) {
-                String value = (String) iterator.next();
-                cookies.add(new HttpCookie(ipStsUrl, value));
+            try {
+                for (Iterator iterator = cookieHeaders.iterator(); iterator.hasNext();) {
+                    String value = (String) iterator.next();
+                    cookies.add(new HttpCookie(ipStsUrl, value));
+                }
+            }
+            catch(HttpCookie.IllegalFormatException hcife) {
+                throw new CausedIOException("Illegal cookie header", hcife);
             }
 
             // assume that if we don't get cookies we're authorized in some other manner?

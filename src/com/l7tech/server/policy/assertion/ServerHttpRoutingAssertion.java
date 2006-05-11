@@ -594,7 +594,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         List newCookies = new ArrayList();
         for (Iterator i = setCookieValues.iterator(); i.hasNext();) {
             String setCookieValue = (String)i.next();
-            newCookies.add(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+            try {
+                newCookies.add(new HttpCookie(routedRequestParams.getTargetUrl(), setCookieValue));
+            }
+            catch (HttpCookie.IllegalFormatException hcife) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_INVALIDCOOKIE, new String[]{setCookieValue});
+            }
         }
 
         newCookies.removeAll(originalCookies);

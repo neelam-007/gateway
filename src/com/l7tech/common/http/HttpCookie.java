@@ -26,8 +26,10 @@ public class HttpCookie {
      *
      * @param headerFullValue the value of a Set-Cookie header, ie:
      *    "PREF=ID=e51:TM=686:LM=86:S=BL-w0; domain=.google.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT; secure".
+     * @throws HttpCookie.IllegalFormatException if the header cannot be parsed
      */
-    public HttpCookie(URL requestUrl, String headerFullValue) {//throws IOException {
+    public HttpCookie(URL requestUrl, String headerFullValue)
+            throws HttpCookie.IllegalFormatException {
         this(requestUrl.getHost(), requestUrl.getPath(), headerFullValue);
     }
 
@@ -36,12 +38,13 @@ public class HttpCookie {
      *
      * @param headerFullValue the value of a Set-Cookie header, ie:
      *    "PREF=ID=e51:TM=686:LM=86:S=BL-w0; domain=.google.com; path=/; expires=Sun, 17-Jan-2038 19:14:07 GMT; secure".
-     * @throws IllegalArgumentException if the header is invalid
+     * @throws HttpCookie.IllegalFormatException if the header cannot be parsed
      */
-    public HttpCookie(String requestDomain, String requestPath, String headerFullValue) {//throws IOException {
+    public HttpCookie(String requestDomain, String requestPath, String headerFullValue)
+            throws HttpCookie.IllegalFormatException {
         // Parse cookie
         if (headerFullValue == null || "".equals(headerFullValue)) {
-            throw new IllegalArgumentException("Cookie value is empty");
+            throw new HttpCookie.IllegalFormatException("Cookie value is empty");
         }
         fullValue = headerFullValue;
 
@@ -53,13 +56,13 @@ public class HttpCookie {
         //      secure
         String[] fields = WHITESPACE.split(fullValue);
         if (fields == null || fields.length ==0) {
-            throw new IllegalArgumentException("Cookie value is an invalid format: '" + headerFullValue + "'");
+            throw new HttpCookie.IllegalFormatException("Cookie value is an invalid format: '" + headerFullValue + "'");
         }
 
         //need to split the name=value pair in fields[0]
         String[] nameValue = EQUALS.split(fields[0], 2);
         if(nameValue.length!=2) {
-            throw new IllegalArgumentException("Cookie value is an invalid format: '" + headerFullValue + "'");
+            throw new HttpCookie.IllegalFormatException("Cookie value is an invalid format: '" + headerFullValue + "'");
         }
         cookieName = nameValue[0];
         cookieValue = trimQuotes(nameValue[1],1);
@@ -124,7 +127,7 @@ public class HttpCookie {
                     parsedMaxAge = 0;
                 }
             } catch (ParseException e) {
-                throw new IllegalArgumentException("Invalid expires attribute: " + e.getMessage());
+                throw new HttpCookie.IllegalFormatException("Invalid expires attribute: " + e.getMessage());
             }
         }
 
@@ -397,6 +400,27 @@ public class HttpCookie {
      */
     public String toExternalForm() {
         return fullValue;
+    }
+
+    /**
+     * Exception for format errors
+     */
+    public static class IllegalFormatException extends Exception {
+        public IllegalFormatException() {
+            super();
+        }
+
+        public IllegalFormatException(Throwable cause) {
+            super(cause);
+        }
+
+        public IllegalFormatException(String message) {
+            super(message);
+        }
+
+        public IllegalFormatException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
     //- PRIVATE
