@@ -2,15 +2,13 @@ package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.KeyStoreConstants;
-import com.l7tech.server.config.PasswordValidator;
+import com.l7tech.server.config.WizardInputValidator;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 
 import java.io.*;
 import java.util.*;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * User: megery
@@ -48,7 +46,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     }
 
     void doUserInterview(boolean validated) throws WizardNavigationException {
-        printText(STEP_INFO + "\n");
+        printText("\n" + STEP_INFO + "\n");
 
         boolean doKeystoreConfig = false;
         try {
@@ -56,6 +54,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
             if (doKeystoreConfig) {
                 doKeystoreTypePrompts();
             }
+            keystoreBean.setHostname(getParentWizard().getHostname());
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -69,19 +68,19 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         prompts[0] = KEYSTORE_TYPE_HEADER;
         int index = 1;
         for (Iterator iterator = entries.iterator(); iterator.hasNext();) {
-        Map.Entry entry = (Map.Entry) iterator.next();
+            Map.Entry entry = (Map.Entry) iterator.next();
             prompts[index++] = entry.getKey() + ") " + entry.getValue() + "\n";
         }
         prompts[prompts.length -1] = "Please select the keystore type you wish to use: [1]";
 
-        String input = getData(prompts, "1", true);
+        String input = getData(prompts, "1");
         String ksType = (String) ksTypeMap.get(input);
         if (ksType == null) {
             ksType = KeyStoreConstants.NO_KEYSTORE;
         }
 
         keystoreBean.setKeyStoreType(ksType);
-        getParent().setKeystoreType(ksType);
+        getParentWizard().setKeystoreType(ksType);
 
         if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
             askDefaultKeystoreQuestions();
@@ -94,18 +93,53 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     }
 
     private void askLunaKeystoreQuestions() throws IOException, WizardNavigationException {
-        String defaultValue = osFunctions.getLunaInstallDir();
-        String[] prompts = new String[] {
-            "Enter the Luna installation path: [" + defaultValue +"]",
-        };
-        keystoreBean.setLunaInstallationPath(getData(prompts, defaultValue, true));
+        doLunaPrompts();
+    }
 
-        defaultValue = osFunctions.getLunaJSPDir();
-        prompts = new String[] {
-                "Enter the path to the luna java service provider: [" + defaultValue +"]",
-        };
+    private Map getValidLunaPaths(final String installPathPrompt, final String defaultInstallPath, final String jspPathPrompt, final String defaultJspPath) throws IOException, WizardNavigationException {
+       return consoleWizardUtils.getValidatedDataWithConfirm(
+               new String[]{installPathPrompt, jspPathPrompt},
+               new String[]{defaultInstallPath, defaultJspPath},
+               -1,
+                new WizardInputValidator() {
+                    public String[] validate(Map inputs) {
+                        List errorMessages = new ArrayList();
+                        String installPath = (String) inputs.get(installPathPrompt);
+                        String jspPath = (String) inputs.get(jspPathPrompt);
 
-        keystoreBean.setLunaJspPath(getData(prompts, defaultValue, true));
+                        boolean lunaInstallDirExists = new File(installPath).exists();
+                        boolean lunaJspInstallDirExists = new File(jspPath).exists();
+
+                        if (!lunaInstallDirExists) {
+                            //makes sure that the validator returns false;
+                            errorMessages.add("**** The specified Luna installation directory does not exist. ****\n");
+                        }
+
+                        if (!lunaJspInstallDirExists) {
+                            errorMessages.add("**** The specified Luna Java Service Provider directory does not exist ****\n");
+                        }
+                        if (errorMessages.size() > 0) {
+                            return (String[]) errorMessages.toArray(new String[errorMessages.size()]);
+                        }
+                        return null;
+                    }
+                }
+        );
+    }
+
+
+    private void doLunaPrompts() throws IOException, WizardNavigationException {
+        printText("\n-- Luna Install Paths --\n");
+        String defaultInstallPath = osFunctions.getLunaInstallDir();
+        String defaultJspPath = osFunctions.getLunaJSPDir();
+
+        String installPathPrompt = "Enter the Luna installation path: [" + defaultInstallPath +"]";
+        String jspPathPrompt = "Enter the path to the luna java service provider: [" + defaultJspPath +"]";
+
+        Map installPaths = getValidLunaPaths(installPathPrompt, defaultInstallPath, jspPathPrompt, defaultJspPath);
+
+        keystoreBean.setLunaInstallationPath((String) installPaths.get(installPathPrompt));
+        keystoreBean.setLunaJspPath((String) installPaths.get(jspPathPrompt));
     }
 
     private void askDefaultKeystoreQuestions() throws IOException, WizardNavigationException {
@@ -116,38 +150,17 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
             "2) Create SSL keys only\n",
             "Please make a selection: [" + defaultValue + "] ",
         };
-        String input = getData(prompts, defaultValue, true);
+        String input = getData(prompts, defaultValue);
         keystoreBean.setDoBothKeys( (input != null && "1".equals(input)));
         doKeystorePasswordPrompts();
     }
 
     private void doKeystorePasswordPrompts() throws IOException, WizardNavigationException {
-        printText("-- Keystore Password --\n");
-
+        printText("\n-- Keystore Password --\n");
         String password = getMatchingPasswords(
-            "Enter the keystore password (must be a minimum of 6 characters): ",
-            "Enter the keystore password again (must match the first password): ",
-            new PasswordValidator() {
-                public String[] validate(String password1, String password2) {
-                    String theError = null;
-                    if (password1 == null || password1.equals("")) {
-                        theError = "**** The password cannot be empty ****\n";
-                    } else if (password1.length() < 6) {
-                        theError = "**** The password must be at least 6 characters long. Please try again ****\n";
-                    } else if (!StringUtils.equals(password1, password2)) {
-                        theError = "**** The passwords do not match ****\n";
-                    }
-                    else {
-                        //the the passwords match
-                    }
-
-                    if (theError != null) {
-                        return new String[]  {theError};
-                    }
-
-                    return null;
-                }
-            }
+                "Enter the keystore password (must be a minimum of 6 characters): ",
+                "Enter the keystore password again (must match the first password): ",
+                KeyStoreConstants.PASSWORD_LENGTH
         );
 
         keystoreBean.setKsPassword(password.toCharArray());
@@ -162,15 +175,16 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
             "please make a selection: [" + defaultValue + "]",
         };
 
-        String input = getData(prompts, defaultValue, true);
+        String input = getData(prompts, defaultValue);
 
         shouldConfigure = input != null && input.trim().equals("2");
         keystoreBean.doKeystoreConfig(shouldConfigure);
-        getParent().setKeystoreType(KeyStoreConstants.NO_KEYSTORE);
+        getParentWizard().setKeystoreType(KeyStoreConstants.NO_KEYSTORE);
         return shouldConfigure;
     }
 
-    protected boolean validateStep() {
+    boolean validateStep() {
         return true;
     }
+
 }

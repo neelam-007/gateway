@@ -4,6 +4,8 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.*;
+import java.util.List;
+import java.util.Iterator;
 
 /**
  * User: megery
@@ -16,9 +18,24 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
     }
 
     void doUserInterview(boolean validated) throws WizardNavigationException {
-        printText("Press <Enter> to continue\n");
 
         try {
+            printText("The following configuration changes will be made:\n");
+
+            List commandSummary = getParentWizard().getCommandDescription();
+            for (Iterator iterator = commandSummary.iterator(); iterator.hasNext();) {
+                String[] s = (String[]) iterator.next();
+                for (int i = 0; i < s.length; i++) {
+                    String s1 = s[i];
+                    printText(s1 + "\n");
+                }
+                printText("\n");
+
+            }
+            printText(new String[] {
+                    "\n",
+                    "Press <Enter> to continue\n"
+            });
             handleInput(reader.readLine());
         } catch (IOException e) {
             e.printStackTrace();

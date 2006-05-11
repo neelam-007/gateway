@@ -1,7 +1,7 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.OSSpecificFunctions;
-import com.l7tech.server.config.PasswordValidator;
+import com.l7tech.server.config.WizardInputValidator;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
@@ -10,6 +10,9 @@ import org.apache.commons.lang.StringUtils;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: megery
@@ -18,7 +21,7 @@ import java.io.InputStreamReader;
  */
 public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
-    private ConsoleWizardUtils consoleWizardUtils;
+    protected ConsoleWizardUtils consoleWizardUtils;
     ConfigurationWizard parent;
 
     protected ConfigurationBean configBean = null;
@@ -60,7 +63,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         return showNavigation;
     }
 
-    protected ConfigurationWizard getParent() {
+    protected ConfigurationWizard getParentWizard() {
         return parent;
     }
 
@@ -76,16 +79,46 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         });
     }
 
-    protected String getMatchingPasswords(String prompt1, String prompt2, PasswordValidator validator) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getMatchingDataWithConfirm(prompt1, prompt2, -1, validator);
+    protected String getMatchingPasswords(final String firstPrompt, final String secondPrompt, final int minPasswordLength) throws IOException, WizardNavigationException {
+        Map passwords = consoleWizardUtils.getValidatedDataWithConfirm(
+            new String[]{firstPrompt, secondPrompt},
+            null,
+            -1,
+            new WizardInputValidator() {
+                public String[] validate(Map inputs) {
+                    int passwordLength = minPasswordLength;
+                    if (minPasswordLength < 0) {
+                        passwordLength = 0;
+                    }
+                    List errorMessages = new ArrayList();
+
+                    String password1 = (String) inputs.get(firstPrompt);
+                    String password2 = (String) inputs.get(secondPrompt);
+
+                    if (StringUtils.isEmpty(password1)) {
+                        errorMessages.add("**** The password cannot be empty ****\n");
+                    } else if (password1.length() < passwordLength) {
+                        errorMessages.add("**** The password must be at least " + passwordLength +" characters long. Please try again ****\n");
+                    } else if (!StringUtils.equals(password1, password2)) {
+                        errorMessages.add("**** The passwords do not match ****\n");
+                    }
+
+                    if (errorMessages.size() > 0) {
+                        return (String[]) errorMessages.toArray(new String[errorMessages.size()]);
+                    }
+                    return null;
+                }
+            });
+
+        return (String) passwords.get(firstPrompt);
     }
 
     protected void handleInput(String input) throws WizardNavigationException {
-        consoleWizardUtils.handleInput(input);
+        consoleWizardUtils.handleInput(input, isShowNavigation());
     }
 
-    protected String getData(String[] promptLines, String defaultValue, boolean isNavAware) throws IOException, WizardNavigationException {
-        return consoleWizardUtils.getData(promptLines, defaultValue, isNavAware);
+    protected String getData(String[] promptLines, String defaultValue) throws IOException, WizardNavigationException {
+        return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation());
     }
 
     protected void printText(String[] textToPrint) {
@@ -98,7 +131,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     protected void storeInput() {
         if (configCommand != null) {
-            getParent().storeCommand(configCommand);
+            getParentWizard().storeCommand(configCommand);
         }
     }
 

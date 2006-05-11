@@ -5,7 +5,8 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 
-import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -40,16 +41,14 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {
-        HashMap settingsMap = (HashMap) settings;
-        updateView(settingsMap);
+        Set theSettings = (Set) settings;
+        updateView(theSettings);
     }
 
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        HashMap settingsMap = (HashMap) settings;
-        updateModel(settingsMap);
-        if (configCommand != null) {
-            settingsMap.put(configCommand.getClass().getName(), configCommand);
-        }
+        Set settingsList = (Set) settings;
+        updateModel(settingsList);
+        getParentWizard().storeCommand(configCommand);
     }
 
     public boolean canFinish() {
@@ -57,8 +56,7 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
     }
 
 
+    protected abstract void updateModel(Set settings);
 
-    protected abstract void updateModel(HashMap settings);
-
-    protected abstract void updateView(HashMap settings);
+    protected abstract void updateView(Set settings);
 }

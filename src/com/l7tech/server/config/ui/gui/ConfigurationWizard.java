@@ -1,25 +1,26 @@
 package com.l7tech.server.config.ui.gui;
 
+import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.BuildInfo;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
-import com.l7tech.server.config.commands.AppServerConfigCommand;
-import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -59,6 +60,7 @@ public class ConfigurationWizard extends Wizard {
     private int clusteringType;
     private String keystoreType;
     private static String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+    private Set additionalCommands;
 
     /**
      * Creates new wizard
@@ -81,15 +83,15 @@ public class ConfigurationWizard extends Wizard {
         setTitle("SSG Configuration Wizard for " + osFunctions.getOSName());
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
-        wizardInput = new HashMap();
+        wizardInput = new HashSet();
 
+        setupAdditionalCommands();
 
         addWizardListener(new WizardAdapter() {
             public void wizardSelectionChanged(WizardEvent e) {
                 // dont care
             }
             public void wizardFinished(WizardEvent e) {
-                //applyConfiguration();
                 System.exit(0);
             }
             public void wizardCanceled(WizardEvent e) {
@@ -108,6 +110,16 @@ public class ConfigurationWizard extends Wizard {
         pack();
     }
 
+    private void setupAdditionalCommands() {
+        additionalCommands = new HashSet();
+        //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
+        additionalCommands.add(new AppServerConfigCommand(osFunctions));
+
+        //we need to add these to make sure that non clustering/db/etc. specific actions occur
+        additionalCommands.add(new LoggingConfigCommand(null, osFunctions));
+        additionalCommands.add(new RmiConfigCommand(null, osFunctions));
+    }
+
     /**
      * Iterates over the list of ConfigurationCommand objects created in response to user input.
      * Calls ConfigurationCommand.execute() on each of the commands to perform the relevant actions.
@@ -119,32 +131,31 @@ public class ConfigurationWizard extends Wizard {
      */
     public void applyConfiguration() {
         log.info("Applying the configuration changes");
-        HashMap commands = (HashMap) wizardInput;
+        HashSet commands = (HashSet) wizardInput;
 
-        //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
-        AppServerConfigCommand appserverCommand = new AppServerConfigCommand(osFunctions);
-        commands.put(appserverCommand.getClass().getName(), appserverCommand);
+        commands.addAll(additionalCommands);
 
-        //we need to add this to make sure that non clustering/db/etc. specific actions occur
-        LoggingConfigCommand loggingCommand = new LoggingConfigCommand(null, osFunctions);
-        commands.put(loggingCommand.getClass().getName(), loggingCommand);
-
-        RmiConfigCommand rmiCommand = new RmiConfigCommand(null, osFunctions);
-        commands.put(rmiCommand.getClass().getName(), rmiCommand);
-
-        Set keys = commands.keySet();
-        java.util.Iterator iterator = keys.iterator();
+        java.util.Iterator iterator = commands.iterator();
 
             hadFailures = false;
             while (iterator.hasNext()) {
                 boolean successful = true;
-                String key = (String) iterator.next();
-                ConfigurationCommand cmd = (ConfigurationCommand) commands.get(key);
+                ConfigurationCommand cmd = (ConfigurationCommand) iterator.next();
                 successful = cmd.execute();
                 if (!successful) {
                     hadFailures = true;
                 }
             }
+    }
+
+    public void storeCommand(ConfigurationCommand configCommand) {
+        if (configCommand != null) {
+            Set commands = (Set) wizardInput;
+            if (commands.contains(configCommand)) {
+                commands.remove(configCommand);
+            }
+            commands.add(configCommand);
+        }
     }
 
     /**
@@ -285,6 +296,4 @@ public class ConfigurationWizard extends Wizard {
     public static String getCurrentVersion() {
         return currentVersion;
     }
-
-
 }

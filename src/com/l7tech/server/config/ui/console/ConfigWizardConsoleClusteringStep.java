@@ -65,9 +65,11 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             "-- Specify Hostname -- \n",
             "The hostname will be used to identify the SSG and generate its certificates\n",
             "What hostname would you like to use? [" + defaultClusterHostname + "] : ",
-        }, defaultClusterHostname, true);
+        }, defaultClusterHostname);
 
         clusterBean.setClusterHostname(input.trim());
+
+        getParentWizard().setHostname(input.trim());
     }
 
     private void doClusterTypePrompt(boolean invalidInput) throws IOException, WizardNavigationException {
@@ -94,7 +96,9 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         clusterTypePrompts.add("Please make a selection: [1]");
 
 
-        String input = getData((String[])clusterTypePrompts.toArray(new String[clusterTypePrompts.size()]), "1", true);
+        String input = getData(
+                (String[])clusterTypePrompts.toArray(new String[clusterTypePrompts.size()]),
+                "1");
         int clusterType = ClusteringConfigBean.CLUSTER_NONE;
         try {
             int selectedIndex = Integer.parseInt(input) - 1;
@@ -107,6 +111,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
             doClusterTypePrompt(true);
         }
         clusterBean.setDoClusterType(clusterType);
+        getParentWizard().setClusteringType(clusterBean.getClusterType());
     }
 
     public String getTitle() {

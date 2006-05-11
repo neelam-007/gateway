@@ -37,14 +37,13 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    protected void updateView(HashMap settings) {
+    protected void updateView(Set settings) {
         if (settings != null) {
             StringBuffer buffer = new StringBuffer();
-            Set keys = settings.keySet();
-            Iterator iterator = keys.iterator();
+
+            Iterator iterator = settings.iterator();
             while (iterator.hasNext()) {
-                String key = (String) iterator.next();
-                ConfigurationCommand command = (ConfigurationCommand) settings.get(key);
+                ConfigurationCommand command = (ConfigurationCommand) iterator.next();
                 String[] affectedObjects = command.getActionSummary();
                 if (affectedObjects != null) {
                     for (int i = 0; i < affectedObjects.length; i++) {
@@ -59,6 +58,6 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
         }
     }
 
-    protected void updateModel(HashMap settings) {
+    protected void updateModel(Set settings) {
     }
 }

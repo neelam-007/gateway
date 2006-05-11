@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
+import java.util.Set;
 import java.net.InetAddress;
 
 import org.apache.commons.lang.StringUtils;
@@ -99,17 +100,9 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    protected void updateView(HashMap settings) {
+    protected void updateView(Set settings) {
 
         emptyHostnameLabel.setVisible(false);
-        //get the local host name text for the label
-//        try
-//        {
-//            InetAddress localMachine = InetAddress.getLocalHost();
-//            clusteringConfigBean.setLocalHostName(localMachine.getCanonicalHostName());
-//        } catch(java.net.UnknownHostException uhe) {
-//            System.out.println(uhe.getMessage());
-//        }
 
         //now get the cluster host name for the text box
         String clusterHostname = osFunctions.getClusterHostName();
@@ -132,9 +125,9 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         newHostname.setText(clusteringConfigBean.getClusterHostname());
     }
 
-    protected void updateModel(HashMap settingsMap) {
+    protected void updateModel(Set settings) {
         String hostnameForWizard; //this is the hostname that will be used to
-//        boolean isClusteringConfigured = false;
+
         if (useNewHostnameOption.isSelected()) {
             clusteringConfigBean.setNewHostName(true);
             clusteringConfigBean.setClusterHostname(newHostname.getText());
@@ -148,20 +141,16 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
         if (noClusterOption.isSelected()) {
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
-//            isClusteringConfigured = false;
-
         }
 
         else if (newClusterOption.isSelected()) {
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NEW);
-//            isClusteringConfigured = true;
         }
         else if (joinClusterOption.isSelected()) {
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_JOIN);
             clusteringConfigBean.setCloneHostname(cloneHostname.getText());
             clusteringConfigBean.setCloneUsername(cloneUsername.getText());
             clusteringConfigBean.setClonePassword(clonePassword.getPassword());
-//            isClusteringConfigured = true;
         }
         else { //somehow none of these is selected so it's best not to do anything with the cluster
             clusteringConfigBean.setDoClusterType(ClusteringConfigBean.CLUSTER_NONE);
@@ -186,7 +175,6 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
     public boolean onNextButton() {
         boolean validInput = true;
-//        boolean showMsg = false;
         if (useNewHostnameOption.isSelected()) {
             if (StringUtils.isEmpty(newHostname.getText())) {
                 validInput = false;

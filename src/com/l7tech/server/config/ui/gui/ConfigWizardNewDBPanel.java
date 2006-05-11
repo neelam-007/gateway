@@ -1,22 +1,22 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.db.DBActions;
-import com.l7tech.server.config.db.DBActionsListener;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
+import com.l7tech.server.config.db.DBActions;
+import com.l7tech.server.config.db.DBActionsListener;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
@@ -136,7 +136,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    protected void updateModel(HashMap settings) {
+    protected void updateModel(Set settings) {
         SsgDatabaseConfigBean dbConfigBean = (SsgDatabaseConfigBean)configBean;
 
         boolean isNew = createNewDb.isSelected();
@@ -151,7 +151,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         dbConfigBean.setDbName(dbName.getText());
     }
 
-    protected void updateView(HashMap settings) {
+    protected void updateView(Set settings) {
         SsgDatabaseConfigBean dbBean = null;
         String existingDbUsername = null;
         String existingDBUrl = null;

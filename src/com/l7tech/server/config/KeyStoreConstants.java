@@ -14,4 +14,5 @@ public class KeyStoreConstants {
 
     public static final String LUNA_WINDOWS_REGKEY = "\\HKEY_LOCAL_MACHINE\\SOFTWARE\\SafeNet-Inc";
     public static final String LUNA_LINUX_INSTALL_FILE = "/usr/lunasa/bin/salogin";
+    public static final int PASSWORD_LENGTH = 6;
 }

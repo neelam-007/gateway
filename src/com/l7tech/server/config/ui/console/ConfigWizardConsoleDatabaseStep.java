@@ -66,7 +66,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 message + " : [n]",
         };
 
-        String input = getData(prompts, "n", true);
+        String input = getData(prompts, "n");
         if (input != null) {
             return (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y"));
         }
@@ -104,7 +104,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
             success = dbActions.doCreateDb(privUsername, privPassword, dbHostname, dbName, dbUsername, dbPassword, false, this);
         }
         else {
-            success = dbActions.doExistingDb(dbName, dbHostname, dbUsername, dbPassword, privUsername, privPassword, getParent().getCurrentVersion(), this);
+            success = dbActions.doExistingDb(dbName, dbHostname, dbUsername, dbPassword, privUsername, privPassword, getParentWizard().getCurrentVersion(), this);
         }
 
         return success;
@@ -162,7 +162,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String[] prompts = new String[] {
             "Please enter the root database users' password (needed to create a new database): [" + defaultPassword + "] ",
         };
-        String passwd = getData(prompts, defaultPassword, true);
+        String passwd = getData(prompts, defaultPassword);
         databaseBean.setPrivPassword(passwd);
         return passwd;
     }
@@ -171,7 +171,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String[] prompts = new String[] {
              "Please enter the root database username (needed to create a new database): [" + defaultUsername + "] ",
         };
-        String username = getData(prompts, defaultUsername, true);
+        String username = getData(prompts, defaultUsername);
         databaseBean.setPrivUserName(username);
         return username;
     }
@@ -180,28 +180,28 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String[] prompts = new String[] {
             PROMPT_DB_PASSWORD + "[" + defaultDbPassword + "]",
         };
-        databaseBean.setDbPassword(getData(prompts, defaultDbPassword, true));
+        databaseBean.setDbPassword(getData(prompts, defaultDbPassword));
     }
 
     private void doDBUsernamePrompts(String defaultDbUsername) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
             PROMPT_DB_USERNAME + "[" + defaultDbUsername + "]",
         };
-        databaseBean.setDbUsername(getData(prompts, defaultDbUsername, true));
+        databaseBean.setDbUsername(getData(prompts, defaultDbUsername));
     }
 
     private void doDBNamePrompt(String defaultDbName) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
                 PROMPT_DB_NAME + "[" + defaultDbName + "]",
         };
-        databaseBean.setDbName(getData(prompts, defaultDbName, true).trim());
+        databaseBean.setDbName(getData(prompts, defaultDbName).trim());
     }
 
     private void doDbHostnamePrompt(String defaultHostname) throws IOException, WizardNavigationException {
         String[] prompts = new String[] {
                 PROMPT_DB_HOSTNAME + "[" + defaultHostname + "]",
         };
-        databaseBean.setDbHostname(getData(prompts, defaultHostname, true).trim());
+        databaseBean.setDbHostname(getData(prompts, defaultHostname).trim());
     }
 
     private boolean doDbConnectionTypePrompts(boolean isCurrentDbExists) throws WizardNavigationException, IOException {
@@ -214,7 +214,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 PROMPT_USE_EXISTING_DB,
                 "please make a selection: [" + defaultValue + "]",
         };
-        String input = getData(prompts, "2", true);
+        String input = getData(prompts, "2");
         boolean isNewDb = input != null && input.trim().equals("1");
         databaseBean.setCreateDb(isNewDb);
         return isNewDb;
@@ -294,7 +294,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
         String input = null;
         try {
-            input = getData(prompts, "n", true);
+            input = getData(prompts, "n");
             return (input != null && (input.equalsIgnoreCase("yes") || input.equalsIgnoreCase("y")));
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,6 +1,13 @@
 package com.l7tech.server.config;
 
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
+import com.l7tech.server.config.ui.console.*;
+
+import java.util.List;
+import java.io.PrintWriter;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
 /**
  * User: megery
@@ -17,7 +24,6 @@ public class ConfigurationWizardLauncher {
                         "\t-graphical\t\trun the configuration wizard in graphical mode\n";
 
     public static void main(String[] args) {
-        boolean isConsole = false;
         String[] newArgs;
         String launchType;
 
@@ -31,36 +37,15 @@ public class ConfigurationWizardLauncher {
         }
 
         if (CONSOLE_MODE.equalsIgnoreCase(launchType)) {
-            isConsole = true;
+            ConsoleConfigWizardLauncher.launch(newArgs);
         } else if (GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
-            isConsole = false;
+            GuiConfigWizardLauncher.launch(newArgs);
         }
         else {
             System.out.println("invalid argument: " + launchType);
             System.out.println(usage());
             System.exit(1);
         }
-
-        launch(newArgs, isConsole);
-    }
-
-    private static void launch(String[] newArgs, boolean isConsole) {
-        if (isConsole) {
-            launchWithConsole(newArgs);
-        } else {
-            launchWithGui(newArgs);
-        }
-    }
-
-    private static void launchWithConsole(String[] args) {
-        System.out.println("Starting Configuration Wizard in Console Mode");
-        com.l7tech.server.config.ui.console.ConfigurationWizard.startWizard(args);
-    }
-
-    private static void launchWithGui(String[] args) {
-        System.out.println("Starting Configuration Wizard in Graphical Mode");
-        ConfigurationWizard.startWizard(args);
-
     }
 
     private static String usage() {

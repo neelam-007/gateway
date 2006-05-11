@@ -22,7 +22,7 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
     
     private static final String DO_BOTH_KEYS_INFO = "Creating CA and SSL keys";
     private static final String SKIP_CA_KEY_INFO = "Skipping CA leys creation";
-    private static final String USING_HOSTNAME_INFO = "Using hostname: ";
+    private static final String USING_HOSTNAME_INFO = "Generating keys using hostname: ";
     private static final String SKIPPING_KEYSTORE_CONFIG_INFO = "Skipping keystore configuration";
 
     private String lunaJspPath;

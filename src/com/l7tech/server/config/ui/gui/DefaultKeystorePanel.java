@@ -1,9 +1,14 @@
 package com.l7tech.server.config.ui.gui;
 
-import com.l7tech.server.config.PasswordValidator;
+import com.l7tech.server.config.WizardInputValidator;
+import com.l7tech.server.config.KeyStoreConstants;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
+import java.util.HashMap;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,6 +37,7 @@ public class DefaultKeystorePanel extends KeystorePanel{
         whichKeysGroup.add(bothKeys);
         whichKeysGroup.add(sslKeysOnly);
 
+        passwordMsg.setText("Must have a miniumum of " + KeyStoreConstants.PASSWORD_LENGTH + " characters");
         bothKeys.setSelected(true);
         setLabelDefaults();
 
@@ -50,24 +56,25 @@ public class DefaultKeystorePanel extends KeystorePanel{
 
     public boolean validateInput() {
         setLabelDefaults();
-        PasswordValidator validator = new PasswordValidator() {
-            public String[] validate(String password1, String password2) {
-                boolean isValid = true;
-                if (password1.length() < 6) {
+        final String password1 = new String(ksPassword.getPassword());
+        final String password2 = new String(ksPasswordAgain.getPassword());
+
+        WizardInputValidator validatorWizard = new WizardInputValidator() {
+            public String[] validate(Map inputs) {
+                boolean badInput = false;
+                if (StringUtils.isEmpty(password1) || password1.length() < KeyStoreConstants.PASSWORD_LENGTH) {
                     passwordMsg.setForeground(Color.RED);
-                    isValid = false;
+                    badInput = true;
+                } else if (!password1.equals(password2)) {
+                    passwordAgainMsg.setForeground(Color.RED);
+                    badInput = true;
                 }
 
-                if(!(new String(ksPassword.getPassword()).equals(new String(ksPasswordAgain.getPassword())))) {
-                    passwordAgainMsg.setForeground(Color.RED);
-                    isValid = false;
-                }
-                if (!isValid) return new String[1];
-                return null;
+                return (badInput? new String[0]: null);
             }
         };
-        String[] validationErrors = validator.validate(String.valueOf(ksPassword.getPassword()), String.valueOf(ksPasswordAgain.getPassword()));
-        return validationErrors == null;
+
+        return (validatorWizard.validate(new HashMap()) == null);
     }
 
     private void setLabelDefaults() {

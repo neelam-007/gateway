@@ -90,7 +90,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     public boolean execute() {
         boolean success = true;
-       // System.out.println("java.library.path = " + System.getProperty("java.library.path"));
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         if (ksBean.isDoKeystoreConfig()) {
 
@@ -118,7 +117,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
 
         if (ksType.equalsIgnoreCase(KeyStoreConstants.DEFAULT_KEYSTORE_NAME)) {
-
             if (isJava15()) {
                 Security.addProvider(new sun.security.provider.Sun());
                 Security.addProvider(new sun.security.rsa.SunRsaSign());
@@ -127,11 +125,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
                 Security.addProvider(new sun.security.jgss.SunProvider());
                 Security.addProvider(new com.sun.security.sasl.Provider());
             }
-//            else {
-//                System.out.println("******** TODO ***********");
-//                System.out.println("do security provider runtime setup for java14");
-//            }
-
         } else if (ksType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
             File classDir = new File(osFunctions.getPathToJreLibExt());
             if (!classDir.exists()) {
@@ -383,8 +376,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             logger.info("Updating the system.properties file");
             renameFile(newFile, systemPropertiesFile);
 
-//            newFile.renameTo(systemPropertiesFile);
-
         } catch (FileNotFoundException e) {
             logger.severe("Error while updating the file: " + systemPropertiesFile.getAbsolutePath());
             logger.severe(e.getMessage());
@@ -486,29 +477,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-//    private void renameJavaSecFile(File newJavaSecFile, File javaSecFile) throws IOException {
-//        String backupName = javaSecFile.getAbsoluteFile() + ".bak";
-//
-//        logger.info("Renaming: " + javaSecFile + " to: " + backupName);
-//        File javaSecBackup = new File(backupName);
-//        if (javaSecBackup.exists()) {
-//            javaSecBackup.delete();
-//        }
-//
-//
-//        //copy the old java sec file to the backup location
-//
-//        FileUtils.copyFile(javaSecFile, javaSecBackup);
-//        try {
-//            javaSecFile.delete();
-//            FileUtils.copyFile(newJavaSecFile, javaSecFile);
-//            newJavaSecFile.delete();
-//            logger.info("Successfully updated the java.security file");
-//        } catch (IOException e) {
-//            throw new IOException("You may need to restore the java.security file from: " + javaSecBackup.getAbsolutePath() + "reason: " + e.getMessage());
-//        }
-//    }
-
     private void copyLunaJars(KeystoreConfigBean ksBean) {
         String lunaJarSourcePath = ksBean.getLunaJspPath() + "/lib/";
         String jreLibExtdestination = osFunctions.getPathToJreLibExt();
@@ -605,12 +573,10 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         if (doBothKeys) {
             logger.info("Generating both keys");
-            //System.out.println("Generating both keys");
             SetKeys.NewCa.main(args);
             keysDone = true;
         } else {
             logger.info("Generating only SSL key");
-            //System.out.println("Generating only SSL key");
             SetKeys.ExistingCa.main(args);
             keysDone = true;
         }
@@ -725,7 +691,6 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
     private boolean isJava15() {
         String version = System.getProperty("java.version");
-        boolean java15 = version.startsWith("1.5");
-        return java15;
+        return version.startsWith("1.5");
     }
 }

@@ -19,6 +19,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -40,7 +41,6 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private JPanel manualStepsPanel;
     private JLabel manualStepsMessage;
 
-//    private ArrayList steps;
     private StringBuffer stepsBuffer;
     private String eol;
 
@@ -50,7 +50,6 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     }
 
     private void init() {
-//        steps = new ArrayList();
         stepsBuffer = new StringBuffer();
         eol = osFunctions.isWindows()?"\r\n":"\n";
 
@@ -173,9 +172,8 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         return getUserSelectedFile(s, null, null);
     }
 
-    protected void updateModel(HashMap settings) {
+    protected void updateModel(Set settings) {
     }
-
 
     private void doApplyConfig() {
         getParentWizard().applyConfiguration();
@@ -226,7 +224,7 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
         });
      }
 
-    protected void updateView(final HashMap settings) {
+    protected void updateView(Set settings) {
         SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {

@@ -1,10 +1,16 @@
 package com.l7tech.server.config.ui.gui;
 
+import com.l7tech.server.config.WizardInputValidator;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Map;
+import java.util.HashMap;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,26 +59,20 @@ final class LunaKeystorePanel extends KeystorePanel {
     }
 
     public final boolean validateInput() {
-        boolean isLunaPathValid = true;
-        File lunaInstallDir = new File(lunaInstallPath.getText());
-        if (!lunaInstallDir.exists()) {
-            isLunaPathValid = false;
-        } else {
-            isLunaPathValid = true;
-        }
+        WizardInputValidator validator = new WizardInputValidator() {
+            public String[] validate(Map inputs) {
+                boolean lunaInstallDirExists = new File(lunaInstallPath.getText()).exists();
+                boolean lunaJspInstallDirExists = new File(lunaJSPPath.getText()).exists();
 
-        boolean isJSPPathValid = true;
-        File lunaJspInstallDir = new File(lunaJSPPath.getText());
-        if (!lunaJspInstallDir.exists()) {
-            isJSPPathValid = false;
-        } else {
-            isJSPPathValid = true;
-        }
+                lunaPathError.setVisible(!lunaInstallDirExists);
+                lunaJSPError.setVisible(!lunaJspInstallDirExists);
 
-        lunaPathError.setVisible(!isLunaPathValid);
-        lunaJSPError.setVisible(!isJSPPathValid);
+                return (lunaInstallDirExists && lunaJspInstallDirExists)?null:new String[0];
+            }
+        };
 
-        return isLunaPathValid && isJSPPathValid;
+        String[] validationErrors = validator.validate(new HashMap());
+        return validationErrors == null;
     }
 
     public final void setDefaultLunaInstallPath(String path) {

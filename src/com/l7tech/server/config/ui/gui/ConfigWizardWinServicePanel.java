@@ -7,6 +7,7 @@ import com.l7tech.server.config.beans.WindowsServiceBean;
 
 import javax.swing.*;
 import java.util.HashMap;
+import java.util.Set;
 import java.awt.*;
 
 /**
@@ -42,10 +43,10 @@ public class ConfigWizardWinServicePanel extends ConfigWizardStepPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    protected void updateModel(HashMap settings) {
+    protected void updateModel(Set settings) {
         ((WindowsServiceBean)configBean).setDoService(yesService.isSelected());
     }
 
-    protected void updateView(HashMap settings) {
+    protected void updateView(Set settings) {
     }
 }

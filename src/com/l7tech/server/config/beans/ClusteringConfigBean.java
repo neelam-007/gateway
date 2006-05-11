@@ -32,7 +32,7 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     private final static String NAME = "Clustering Configuration";
     private final static String DESCRIPTION = "Configures the cluster properties for an SSG";
 
-    private final static String NOTHING_TO_DO_INFO = "Nothing to do";
+    private final static String NOTHING_TO_DO_INFO = "Cluster configuration will be skipped";
     private final static String CLUSTER_HOSTFILE_UPDATE_INFO = "Update cluster hostname: ";
 //    private final static String CLUSTER_HOSTFILE_DELETE_INFO = "Delete cluster hostname file";
 

@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,7 +53,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         init();
     }
 
-    protected void updateModel(HashMap settings) {
+    protected void updateModel(Set settings) {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         ksBean.setClusterType(getParentWizard().getClusteringType());
         if (dontDoKsConfig.isSelected()) {
@@ -76,7 +77,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         }
     }
 
-    protected void updateView(HashMap settings) {
+    protected void updateView(Set settings) {
         boolean isLunaOk = true;
         String[] keystores = getKeystores(isLunaOk);
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;

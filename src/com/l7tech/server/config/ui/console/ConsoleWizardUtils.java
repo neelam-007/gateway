@@ -1,9 +1,11 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.exceptions.WizardNavigationException;
-import com.l7tech.server.config.PasswordValidator;
+import com.l7tech.server.config.WizardInputValidator;
 
 import java.io.*;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -33,9 +35,7 @@ public class ConsoleWizardUtils {
     public String getData(String[] promptLines, String defaultValue, boolean isNavAware) throws IOException, WizardNavigationException {
         doPromptLines(promptLines);
         String input = reader.readLine();
-        if (isNavAware) {
-            handleInput(input);
-        }
+        handleInput(input, isNavAware);
 
         if (defaultValue != null) {
             if (StringUtils.isEmpty(input)) {
@@ -47,71 +47,84 @@ public class ConsoleWizardUtils {
 
     /**
      * prompts the user for input according to the prompts in firstPrompt and secondPrompt.
-     * The input collected from these prompts is compared for equality (using string comparison).
-     * If the inputs do not match, then the method retries "numAttempts" times.
+     * The input collected from these prompts is validated using the supplied WizardValidator.
+     * If the inputs do not validate, then the method retries "numAttempts" times.
      *
-     * @param firstPrompt
-     * @param secondPrompt
+     * @param prompts
      * @param validator
      * @param numAttempts the number of times to retry if the data could not be confirmed
      * @return the confirmed data, or null if the data could not be confirmed in "numAttempts" attempts
      */
-    public String getMatchingDataWithConfirm(String firstPrompt, String secondPrompt, int numAttempts, PasswordValidator validator) throws IOException, WizardNavigationException {
+    public Map getValidatedDataWithConfirm(String[] prompts, String[] defaultValues, int numAttempts, WizardInputValidator validator) throws IOException, WizardNavigationException {
 
-        String[] inputs = internalGetMatchingData(firstPrompt, secondPrompt);
+        Map inputs = internalGetInputs(prompts, defaultValues);
+        String[] validationErrors = validator.validate(inputs);
 
-        String[] validationErrors = validator.validate(inputs[0], inputs[1]);
-
-        if (validationErrors != null && validationErrors.length > 0) {
-            if (numAttempts < 0) {
-                printText(validationErrors);
-                return getMatchingDataWithConfirm(firstPrompt, secondPrompt, numAttempts,  validator);
+        if (validationErrors != null) {
+            //then there were some errors
+            if (numAttempts >= 0) {
+                --numAttempts;
             }
+            printText(validationErrors);
+            return getValidatedDataWithConfirm(prompts, defaultValues, numAttempts,  validator);
 
-            --numAttempts;
-            if (numAttempts > 0) {
-                printText(validationErrors);
-                return getMatchingDataWithConfirm(firstPrompt, secondPrompt, numAttempts, validator);
-            }
         }
 
-        return inputs[0];
-    }
-
-    private boolean doTheyMatch(String first, String second, boolean isCaseSensitive) {
-        if (isCaseSensitive) {
-            return StringUtils.equals(first, second);
-        } else {
-            return StringUtils.equalsIgnoreCase(first, second);
-        }
-    }
-
-    private String[] internalGetMatchingData(String firstPrompt, String secondPrompt) throws IOException, WizardNavigationException {
-        String[] inputs = new String[2];
-        inputs[0] = getData(new String[]{firstPrompt}, null, false);
-        inputs[1] = getData(new String[]{secondPrompt}, null, false);
         return inputs;
     }
 
-    public void handleInput(String input) throws WizardNavigationException {
+    private Map internalGetInputs(String[] prompts, String[] defaultValues) throws IOException, WizardNavigationException {
+        boolean isNoDefaults = false;
+        if (prompts == null) {
+            throw new IllegalArgumentException("Prompts cannot be null");
+        }
+
+        if (defaultValues == null || defaultValues.length != prompts.length) {
+            isNoDefaults = true;
+        }
+
+        Map gotData = new HashMap();
+
+        for (int i = 0; i < prompts.length; i++) {
+            String prompt = prompts[i];
+            if (isNoDefaults) {
+                gotData.put(prompt, getData(new String[]{prompt}, null, false));
+            } else {
+                String defaultValue = defaultValues[i];
+                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, false));
+            }
+        }
+
+        return gotData;
+    }
+
+    public void handleInput(String input, boolean canNavigate) throws WizardNavigationException {
         if (input != null) {
-            if (PREV_COMMAND.equalsIgnoreCase(input)) {
-                throw new WizardNavigationException(WizardNavigationException.NAVIGATE_PREV);
+            if (canNavigate) {
+                if (PREV_COMMAND.equalsIgnoreCase(input)) {
+                    throw new WizardNavigationException(WizardNavigationException.NAVIGATE_PREV);
+                }
             }
         };
     }
 
     public void printText(String[] textToPrint) {
-        for (int i = 0; i < textToPrint.length; i++) {
-            String s = textToPrint[i];
-            out.print(s);
+        if (textToPrint != null) {
+            for (int i = 0; i < textToPrint.length; i++) {
+                String s = textToPrint[i];
+                if (s != null) {
+                    out.print(s);
+                }
+            }
+            out.flush();
         }
-        out.flush();
     }
 
     public void printText(String textToPrint) {
-        out.print(textToPrint);
-        out.flush();
+        if (textToPrint != null) {
+            out.print(textToPrint);
+            out.flush();
+        }
     }
 
     private void doPromptLines(String[] promptLines) {
