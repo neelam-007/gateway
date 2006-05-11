@@ -31,10 +31,11 @@ public class ServerExactlyOneAssertion extends ServerCompositeAssertion implemen
         ServerAssertion child;
         AssertionStatus result = null;
         int numSucceeded = 0;
-        for (int i = 0; i < kids.length; i++) {
-            child = kids[i];
+        for (ServerAssertion kid : kids) {
+            child = kid;
             result = child.checkRequest(context);
-            if ( result == AssertionStatus.NONE )
+            context.assertionFinished(child, result);
+            if (result == AssertionStatus.NONE)
                 ++numSucceeded;
         }
 

@@ -30,11 +30,12 @@ public class ServerAllAssertion extends ServerCompositeAssertion implements Serv
         ServerAssertion[] kids = getChildren();
         ServerAssertion child;
         AssertionStatus result = AssertionStatus.FALSIFIED;
-        for (int i = 0; i < kids.length; i++) {
-            child = kids[i];
+        for (ServerAssertion kid : kids) {
+            child = kid;
             result = child.checkRequest(context);
+            context.assertionFinished(child, result);
             if (result != AssertionStatus.NONE) {
-                seenAssertionStatus(context,result);
+                seenAssertionStatus(context, result);
                 rollbackDeferredAssertions(context);
                 return result;
             }

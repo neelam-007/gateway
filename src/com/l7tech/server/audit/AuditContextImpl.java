@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
+ * Copyright (C) 2004-2006 Layer 7 Technologies Inc.
  */
 
 package com.l7tech.server.audit;
@@ -9,23 +8,22 @@ import com.l7tech.common.audit.*;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Holds the transient state of the audit system for the current thread.
  *
- * Not thread-safe in the slightest!
+ * Must be thread-local; not thread-safe in the slightest!  Note that AuditContext instances
+ * are likely to be reused for many different messages through time on the same thread,
+ * so users must always call {@link #flush()} when finished processing each message.
  * <p>
  * Call {@link #setCurrentRecord} to attach a single {@link AuditRecord} describing the SSG's current
- * operation to the context, and {@link #addDetail} to add zero or more {@link AuditDetail} records.
+ * operation to the context, and {@link com.l7tech.common.audit.AuditContext#addDetail} to add zero or more {@link AuditDetail} records.
  * <p>
  * {@link MessageSummaryAuditRecord}s, {@link AdminAuditRecord}s and {@link AuditDetail}s that are
- * added to the context may or may not be persisted to the database later, when {@link #flush} is called,
+ * added to the context will only be persisted to the database later, when {@link #flush} is called,
  * if their level meets or exceeds the corresponding threshold.  {@link SystemAuditRecord}s have no
  * minimum threshold; they are always persisted.
  *
@@ -36,8 +34,6 @@ import java.util.logging.Logger;
  * @see MessageSummaryAuditRecord
  * @see AdminAuditRecord
  * @see SystemAuditRecord
- *
- * @author alex
  */
 public class AuditContextImpl implements AuditContext {
 
@@ -68,7 +64,7 @@ public class AuditContextImpl implements AuditContext {
         currentRecord = record;
     }
 
-    public void addDetail(AuditDetail detail) {
+    public void addDetail(AuditDetail detail, Object source) {
         if (detail == null) throw new NullPointerException();
 
         Level severity = Messages.getSeverityLevelById(detail.getMessageId());
@@ -76,11 +72,20 @@ public class AuditContextImpl implements AuditContext {
         if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
             // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
             detail.setOrdinal(ordinal++);
-            details.add(detail);
+            getDetailList(source).add(detail);
             if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
                 highestLevelYetSeen = severity;
             }
         }
+    }
+
+    private List<AuditDetail> getDetailList(Object source) {
+        List<AuditDetail> details = this.details.get(source);
+        if (details == null) {
+            details = new LinkedList<AuditDetail>();
+            this.details.put(source, details);
+        }
+        return details;
     }
 
     /**
@@ -89,12 +94,13 @@ public class AuditContextImpl implements AuditContext {
      * @return the Set of AuditDetailMessage.Hint's
      */
     public Set getHints() {
-        Set hints = new HashSet();
-        for(Iterator i=details.iterator(); i.hasNext(); ) {
-            AuditDetail ad = (AuditDetail) i.next();
-            Set dHints = Messages.getHintsById(ad.getMessageId());
-            if(dHints!=null) {
-                hints.addAll(dHints);
+        Set<AuditDetailMessage.Hint> hints = new HashSet<AuditDetailMessage.Hint>();
+        for (List<AuditDetail> list : details.values()) {
+            for (AuditDetail detail : list) {
+                Set<AuditDetailMessage.Hint> dHints = Messages.getHintsById(detail.getMessageId());
+                if (dHints != null) {
+                    hints.addAll(dHints);
+                }
             }
         }
         return Collections.unmodifiableSet(hints);
@@ -132,12 +138,15 @@ public class AuditContextImpl implements AuditContext {
                 // System audit records are always saved
             }
 
-            for (Iterator i = details.iterator(); i.hasNext();) {
-                AuditDetail detail = (AuditDetail)i.next();
-                detail.setAuditRecord(currentRecord);
+            Set<AuditDetail> allDetails = new HashSet<AuditDetail>();
+            for (List<AuditDetail> list : details.values()) {
+                for (AuditDetail detail : list) {
+                    detail.setAuditRecord(currentRecord);
+                    allDetails.add(detail);
+                }
             }
 
-            currentRecord.setDetails(details);
+            currentRecord.setDetails(allDetails);
             currentRecord.setLevel(highestLevelYetSeen);
             auditRecordManager.save(currentRecord);
         } catch (SaveException e) {
@@ -153,6 +162,10 @@ public class AuditContextImpl implements AuditContext {
             highestLevelYetSeen = Level.ALL;
             ordinal = 0;
         }
+    }
+
+    public Map<Object, List<AuditDetail>> getDetails() {
+        return Collections.unmodifiableMap(details);
     }
 
     protected void finalize() throws Throwable {
@@ -248,6 +261,11 @@ public class AuditContextImpl implements AuditContext {
     private final AuditRecordManager auditRecordManager;
 
     private AuditRecord currentRecord;
-    private Set details = new HashSet();
     private Level highestLevelYetSeen = Level.ALL;
+
+    /**
+     * The source might be null, but HashMap allows the null key, so all the details
+     * created by unknown objects will end up in the same List, which is fine.
+     */
+    private final Map<Object, List<AuditDetail>> details = new LinkedHashMap<Object, List<AuditDetail>>();
 }

@@ -74,11 +74,11 @@ public abstract class AuditRecord extends SSGLogRecord {
      * Gets the list of {@link AuditDetail} records associated with this audit record.
      * @return the list of {@link AuditDetail} records associated with this audit record.
      */
-    public Set getDetails() {
+    public Set<AuditDetail> getDetails() {
         return details;
     }
 
-    public void setDetails(Set details) {
+    public void setDetails(Set<AuditDetail> details) {
         this.details = details;
     }
 
@@ -99,7 +99,7 @@ public abstract class AuditRecord extends SSGLogRecord {
     protected String name;
 
     /** the list of {@link com.l7tech.common.audit.AuditDetail}s associated with this AuditRecord */
-    private Set details = new HashSet();
+    private Set<AuditDetail> details = new HashSet<AuditDetail>();
 
     /**
      * Gets the OID of the {@link com.l7tech.identity.IdentityProviderConfig IdentityProvider} against which the user authenticated, or {@link com.l7tech.identity.IdentityProviderConfig#DEFAULT_OID} if the request was not authenticated.

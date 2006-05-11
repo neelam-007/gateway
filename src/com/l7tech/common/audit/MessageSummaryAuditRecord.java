@@ -166,9 +166,9 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return operationName;
     }
 
-    public void setDetails(Set details) {
+    public void setDetails(Set<AuditDetail> details) {
         if (details != null) {
-            for (Iterator iterator = details.iterator(); iterator.hasNext();) {
+            for (Iterator<AuditDetail> iterator = details.iterator(); iterator.hasNext();) {
                 Object detailObj = iterator.next();
                 if (detailObj instanceof MessageSummaryAuditDetail) {
                     MessageSummaryAuditDetail msad = (MessageSummaryAuditDetail) detailObj;

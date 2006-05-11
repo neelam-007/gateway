@@ -29,16 +29,17 @@ public class MessageProcessingAuditListener implements ApplicationListener {
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
+        Object source = event.getSource();
         if (event instanceof AuditDetailEvent) {
             AuditDetailEvent auditDetailEvent = (AuditDetailEvent)event;
-            auditContext.addDetail(auditDetailEvent.getDetail());
+            auditContext.addDetail(auditDetailEvent.getDetail(), source);
         } else if (event instanceof MessageProcessed) {
             MessageProcessed mp = (MessageProcessed)event;
             auditContext.setCurrentRecord(messageSummaryAuditFactory.makeEvent(mp.getContext(), mp.getStatus()));
         } else if (event instanceof FaultProcessed) {
             FaultProcessed fp = (FaultProcessed)event;
             AuditDetail detail = messageSummaryAuditFactory.makeEvent(fp.getContext(), fp.getFaultMessage());
-            if (detail!=null) auditContext.addDetail(detail);
+            if (detail!=null) auditContext.addDetail(detail, source);
         }
     }
 }

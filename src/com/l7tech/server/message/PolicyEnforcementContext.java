@@ -7,6 +7,7 @@ package com.l7tech.server.message;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.message.Message;
@@ -14,10 +15,9 @@ import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.BuiltinVariables;
@@ -27,9 +27,9 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
@@ -37,9 +37,9 @@ import org.xml.sax.SAXException;
 import javax.wsdl.Operation;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
-import java.net.URL;
 
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
@@ -49,23 +49,22 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private final long startTime = System.currentTimeMillis();
     private long endTime;
     private final RequestId requestId;
-    private ArrayList incrementedCounters = new ArrayList();
-    private final Map deferredAssertions = new LinkedHashMap();
+    private ArrayList<String> incrementedCounters = new ArrayList<String>();
+    private final Map<ServerAssertion,ServerAssertion> deferredAssertions = new LinkedHashMap<ServerAssertion, ServerAssertion>();
     private boolean replyExpected;
     private AuthenticationResult authenticationResult = null;
     private Level auditLevel;
     private boolean auditSaveRequest;
     private boolean auditSaveResponse;
-    private List assertionResults = Collections.EMPTY_LIST;
     private SoapFaultDetail faultDetail = null;
     private SoapFaultLevel faultlevel = null;
     private boolean isAuthenticationMissing = false;
     private boolean isRequestPolicyViolated = false;
     private PublishedService service;
-    private Set cookies = new LinkedHashSet();
-    private Set seenAssertionStatus = new HashSet();
+    private Set<HttpCookie> cookies = new LinkedHashSet<HttpCookie>();
+    private Set<AssertionStatus> seenAssertionStatus = new HashSet<AssertionStatus>();
     private AuditContext auditContext = null;
-    private final Map variables = new HashMap();
+    private final Map<String,Object> variables = new HashMap<String, Object>();
     private boolean isStealthResponseMode = false;
     private int authSuccessCacheTime = AuthCache.SUCCESS_CACHE_TIME;
     private int authFailureCacheTime = AuthCache.FAILURE_CACHE_TIME;
@@ -141,7 +140,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         seenAssertionStatus.add(assertionStatus);
     }
 
-    public Set getSeenAssertionStatus() {
+    public Set<AssertionStatus> getSeenAssertionStatus() {
         return Collections.unmodifiableSet(seenAssertionStatus);
     }
 
@@ -161,7 +160,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         this.auditSaveResponse = auditSaveResponse;
     }
 
-    public Collection getDeferredAssertions() {
+    public Collection<ServerAssertion> getDeferredAssertions() {
         return deferredAssertions.values();
     }
 
@@ -185,16 +184,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
         routingResultListener.removeListener(listener);
     }
 
-    public void addResult(AssertionResult result) {
-        if (assertionResults == Collections.EMPTY_LIST)
-            assertionResults = new ArrayList();
-        assertionResults.add(result);
-    }
-
-    public Iterator results() {
-        return assertionResults.iterator();
-    }
-
     public SoapFaultDetail getFaultDetail() {
         return faultDetail;
     }
@@ -206,14 +195,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
      */
     public void setFaultDetail(SoapFaultDetail faultDetail) {
         this.faultDetail = faultDetail;
-    }
-
-    public List getAssertionResults() {
-        return assertionResults;
-    }
-
-    public void setAssertionResults(List assertionResults) {
-        this.assertionResults = assertionResults;
     }
 
     /**
@@ -274,10 +255,9 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public void addCookie(HttpCookie cookie) {
-        Set toRemove = new HashSet();
-        for(Iterator ci=cookies.iterator(); ci.hasNext(); ) {
-            HttpCookie currentCookie = (HttpCookie) ci.next();
-            if(currentCookie.getCookieName().equals(cookie.getCookieName())) {
+        Set<HttpCookie> toRemove = new HashSet<HttpCookie>();
+        for (HttpCookie currentCookie : cookies) {
+            if (currentCookie.getCookieName().equals(cookie.getCookieName())) {
                 toRemove.add(currentCookie);
             }
         }
@@ -285,7 +265,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         cookies.add(cookie);
     }
 
-    public ArrayList getIncrementedCounters() {
+    public ArrayList<String> getIncrementedCounters() {
         return incrementedCounters;
     }
 
@@ -320,12 +300,12 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public VariableMap getVariableMap(String[] names, Auditor auditor) {
         VariableMap vars = new VariableMap();
-        for (int i = 0; i < names.length; i++) {
+        for (String name : names) {
             try {
-                vars.put(names[i], getVariable(names[i].toLowerCase()));
+                vars.put(name, getVariable(name.toLowerCase()));
             } catch (NoSuchVariableException e) {
-                vars.addBadName(names[i]);
-                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[] {names[i]});
+                vars.addBadName(name);
+                auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, new String[]{name});
             }
         }
         return vars;
@@ -433,4 +413,61 @@ public class PolicyEnforcementContext extends ProcessingContext {
     public void setFaultlevel(SoapFaultLevel faultlevel) {
         this.faultlevel = faultlevel;
     }
+
+    private final Map<ServerAssertion, AssertionStatus> assertionStatuses = new LinkedHashMap<ServerAssertion, AssertionStatus>();
+    private LinkedList<AssertionResult> assertionResultList;
+
+    /**
+     * @param assertion the ServerAssertion that just finished. Must not be null.
+     * @param status the AssertionStatus that was returned from the ServerAssertion's checkRequest() method. Must not be null.
+     */
+    public void assertionFinished(ServerAssertion assertion, AssertionStatus status) {
+        if (assertion == null || status == null) throw new NullPointerException();
+        assertionStatuses.put(assertion, status);
+    }
+
+    /**
+     * A linear log of the results of processing each assertion that was run in the policy.
+     * @param auditContext
+     * @return
+     */
+    public List<AssertionResult> getAssertionResults(AuditContext auditContext) {
+        Map<Object, List<AuditDetail>> detailMap = auditContext.getDetails();
+        if (assertionResultList == null) {
+            assertionResultList = new LinkedList<AssertionResult>();
+            for (Map.Entry<ServerAssertion, AssertionStatus> entry : assertionStatuses.entrySet()) {
+                ServerAssertion assertion = entry.getKey();
+                AssertionStatus status = entry.getValue();
+                List<AuditDetail> assertionDetails = detailMap.get(assertion);
+                AssertionResult trace = new AssertionResult(assertion, status, assertionDetails);
+                assertionResultList.add(trace);
+            }
+        }
+        return assertionResultList;
+    }
+
+    private static class AssertionResult {
+        private final ServerAssertion assertion;
+        private final AssertionStatus status;
+        private final List<AuditDetail> details;
+
+        public AssertionResult(ServerAssertion assertion, AssertionStatus status, List<AuditDetail> details) {
+            this.assertion = assertion;
+            this.status = status;
+            this.details = details;
+        }
+
+        public ServerAssertion getAssertion() {
+            return assertion;
+        }
+
+        public AssertionStatus getStatus() {
+            return status;
+        }
+
+        public List<AuditDetail> getDetails() {
+            return details;
+        }
+    }
+
 }

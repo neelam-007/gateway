@@ -11,7 +11,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -70,7 +69,6 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             }
 
             // Authentication is required for any IdentityAssertion
-            context.addResult(new AssertionResult(identityAssertion, AssertionStatus.AUTH_REQUIRED));
             // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
             context.setAuthenticationMissing();
             auditor.logAndAudit(AssertionMessages.CREDENTIALS_NOT_FOUND);
@@ -97,12 +95,12 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             // set some response header so that the CP is made aware of this situation
             context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
                                                                   SecureSpanConstants.CERT_INVALID);
-            return authFailed(context, pc, icce);
+            return authFailed(pc, icce);
         } catch (MissingCredentialsException mce) {
             context.setAuthenticationMissing();
-            return authFailed(context, pc, mce);
+            return authFailed(pc, mce);
         } catch (AuthenticationException ae) {
-            return authFailed(context, pc, ae);
+            return authFailed(pc, ae);
         } catch (FindException fe) {
             auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_FOUND, new String[0], fe);
             // fla fix, allow the policy to continue in case the credentials be valid for
@@ -125,7 +123,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             context.getAuthSuccessCacheTime(),
             context.getAuthFailureCacheTime()
         );
-        if (authResult == null) return authFailed(context, pc, null);
+        if (authResult == null) return authFailed(pc, null);
 
         if (authResult.isCertSignedByStaleCA()) {
             HttpResponseKnob hrk = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
@@ -147,10 +145,9 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         return checkUser(authResult, context);
     }
 
-    private AssertionStatus authFailed(PolicyEnforcementContext context, LoginCredentials pc, Exception e) {
+    private AssertionStatus authFailed(LoginCredentials pc, Exception e) {
         // we were losing the details of this authentication failure. important for debugging saml stuff
         logger.log(Level.FINE, "ServerIdentityAssertion failed", e);
-        context.addResult(new AssertionResult(identityAssertion, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e));
         String name = pc.getLogin();
         if (name == null || name.length() == 0) {
             X509Certificate cert = pc.getClientCert();

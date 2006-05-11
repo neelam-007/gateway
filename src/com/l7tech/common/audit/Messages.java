@@ -28,7 +28,7 @@ public class Messages {
      *
      */
 
-    private static final Map messagesById = new HashMap();
+    private static final Map<Integer, AuditDetailMessage> messagesById = new HashMap<Integer, AuditDetailMessage>();
 
     // must appear after the instantiation of messageById HaspMap.
     // NOTE: *_SEVERE is the same as *_WARNING since you should never log at SEVERE anything except "audits flushed"
@@ -57,7 +57,7 @@ public class Messages {
 
     protected static M m(int id, Level level, boolean saveRequest, boolean saveResponse, String msg) {
         M adm = new M(id, level, msg, saveRequest, saveResponse);
-        Object o = messagesById.put(new Integer(id), adm);
+        Object o = messagesById.put(id, adm);
         if (o != null) throw new IllegalArgumentException("A message with id #" + id + " already exists!");
         return adm;
     }
@@ -73,25 +73,25 @@ public class Messages {
     }
 
     public static String getMessageById(int id) {
-        M message = (M) messagesById.get(new Integer(id));
+        M message = (M) messagesById.get(id);
         if(message != null) return message.getMessage();
         return null;
     }
 
     public static Level getSeverityLevelById(int id) {
-        M message = (M) messagesById.get(new Integer(id));
+        M message = (M) messagesById.get(id);
         if(message != null) return message.getLevel();
         return null;
     }
 
     public static String getSeverityLevelNameById(int id) {
-        M message = (M) messagesById.get(new Integer(id));
+        M message = (M) messagesById.get(id);
         if(message != null) return message.getLevel().getName();
         return null;
     }
 
-    public static Set getHintsById(int id) {
-        M message = (M) messagesById.get(new Integer(id));
+    public static Set<AuditDetailMessage.Hint> getHintsById(int id) {
+        M message = (M) messagesById.get(id);
         if(message != null) return message.getHints();
         return null;
     }

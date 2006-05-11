@@ -7,6 +7,8 @@ package com.l7tech.common.audit;
 
 import java.util.logging.Level;
 import java.util.Set;
+import java.util.Map;
+import java.util.List;
 
 /**
  * Implementations hold the transient state of the audit system for the current
@@ -83,8 +85,9 @@ public interface AuditContext {
      * </p>
      *
      * @param detail the {@link AuditDetail} record to add. Must not be null.
+     * @param source the source of the {@link com.l7tech.common.audit.AuditDetailEvent}.
      */
-    void addDetail(AuditDetail detail);
+    void addDetail(AuditDetail detail, Object source);
 
     /**
      * Get the currently acumulated hints.
@@ -101,4 +104,11 @@ public interface AuditContext {
      * </p>
      */
     void flush();
+
+    /**
+     * Returns an unmodifiable Map&lt;Object, List&lt;AuditDetail&gt;&gt; of this AuditContext's details.
+     * The Object is the source of the event, often a {@link com.l7tech.server.policy.assertion.ServerAssertion}.
+     * @return an unmodifiable Map&lt;Object, List&lt;AuditDetail&gt;&gt; of this AuditContext's details.
+     */
+    Map<Object, List<AuditDetail>> getDetails();
 }

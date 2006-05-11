@@ -14,11 +14,11 @@ import java.util.HashSet;
  * A record pertaining to the string table for AuditDetail records
  */
 public class AuditDetailMessage {
-
+    private static final Set<Hint> NO_HINTS = Collections.emptySet();
     //- PUBLIC
 
     public AuditDetailMessage(int id, Level level, String message) {
-        this(id, level, message, Collections.EMPTY_SET);
+        this(id, level, message, NO_HINTS);
     }
 
     public AuditDetailMessage(int id, Level level, String message, boolean saveRequest, boolean saveResponse) {
@@ -41,7 +41,7 @@ public class AuditDetailMessage {
         return message;
     }
 
-    public Set getHints() {
+    public Set<Hint> getHints() {
         return hints;
     }
 
@@ -65,7 +65,7 @@ public class AuditDetailMessage {
             }
             else if(obj instanceof Hint) {
                 Hint other = (Hint) obj;
-                equal = this.hintId == other.hintId;
+                equal = this.hintId.equals(other.hintId);
             }
 
             return equal;
@@ -81,20 +81,20 @@ public class AuditDetailMessage {
     private final int id;
     private final Level level;
     private final String message;
-    private final Set hints;
+    private final Set<Hint> hints;
 
-    private AuditDetailMessage(int id, Level level, String message, Set hints) {
+    private AuditDetailMessage(int id, Level level, String message, Set<Hint> hints) {
         this.id = id;
         this.level = level;
         this.message = message;
         this.hints = hints;
     }
 
-    private static Set buildHints(boolean saveRequest, boolean saveResponse) {
-        Set hints = Collections.EMPTY_SET;
+    private static Set<Hint> buildHints(boolean saveRequest, boolean saveResponse) {
+        Set<Hint> hints = NO_HINTS;
 
         if(saveRequest || saveResponse) {
-            hints = new HashSet(2);
+            hints = new HashSet<Hint>(2);
             if(saveRequest) hints.add(Hint.getHint("MessageProcessor.saveRequest"));
             if(saveResponse) hints.add(Hint.getHint("MessageProcessor.saveResponse"));
             hints = Collections.unmodifiableSet(hints);

@@ -10,7 +10,6 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
@@ -79,7 +78,6 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO, null, cfe);
                 throw new PolicyAssertionException(_data, cfe.getMessage(), cfe);
             } else {
-                context.addResult( new AssertionResult( _data, status, cfe.getMessage() ) );
                 challenge( context, authParams );
                 // Suppress exception trace by omitting exception argument
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO, null, cfe);

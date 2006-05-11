@@ -30,9 +30,10 @@ public class ServerOneOrMoreAssertion extends ServerCompositeAssertion implement
         ServerAssertion[] kids = getChildren();
         ServerAssertion child;
         AssertionStatus result = AssertionStatus.FALSIFIED;
-        for (int i = 0; i < kids.length; i++) {
-            child = kids[i];
+        for (ServerAssertion kid : kids) {
+            child = kid;
             result = child.checkRequest(context);
+            context.assertionFinished(child, result);
             if (result == AssertionStatus.NONE) return result;
             else {
                 seenAssertionStatus(context, result);
