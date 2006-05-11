@@ -79,9 +79,14 @@ public class SoapFaultManager implements ApplicationContextAware {
                 try {
                     Document tmp = XmlUtil.stringToDocument(GENERIC_FAULT);
                     NodeList res = tmp.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy/fault", "policyResult");
+                    // populate @status element
                     Element policyResultEl = (Element)res.item(0);
-                    //Element policyResultEl = XmlUtil.findOnlyOneChildElementByName(tmp.getDocumentElement(), "http://www.layer7tech.com/ws/policy/fault", "policyResult");
                     policyResultEl.setAttribute("status", globalstatus.getMessage());
+                    // populate the faultactor value
+                    String actor = pec.getVariable("request.url").toString();
+                    res = tmp.getElementsByTagName("faultactor");
+                    Element faultactor = (Element)res.item(0);
+                    faultactor.setTextContent(actor);
                     output = XmlUtil.nodeToFormattedString(tmp);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "could not construct generic fault", e);
@@ -103,7 +108,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "        <soapenv:Fault>\n" +
                         "            <faultcode>Server</faultcode>\n" +
                         "            <faultstring>Assertion Falsified</faultstring>\n" +
-                        "            <faultactor>http://soong:8080/xml/blub</faultactor>\n" +
+                        "            <faultactor/>\n" +
                         "            <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
