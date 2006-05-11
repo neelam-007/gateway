@@ -19,7 +19,7 @@ import java.io.IOException;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 16, 2004<br/>
- * $Id$
+ * @deprecated this should be phased out and the parts that are still necessary be integrated into com.l7tech.server.util.SoapFaultManager
  */
 public class SoapFaultUtils {
     private static final String FAULTCODE = "faultcode";

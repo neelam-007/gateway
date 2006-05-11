@@ -24,6 +24,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -62,6 +63,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private MessageProcessor messageProcessor;
     private AuditContext auditContext;
     private ServerConfig serverConfig;
+    private SoapFaultManager soapFaultManager;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -72,6 +74,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
         auditContext = (AuditContext)applicationContext.getBean("auditContext");
         serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
+        soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
     }
 
     /**

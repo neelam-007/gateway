@@ -74,4 +74,10 @@ public class SoapFaultLevel implements Serializable {
     public void setIncludePolicyDownloadURL(boolean includePolicyDownloadURL) {
         this.includePolicyDownloadURL = includePolicyDownloadURL;
     }
+
+    public String toString() {
+        return getClass().getName() + ". Level: " + level +
+                                      ", Include URL: " + includePolicyDownloadURL +
+                                      ", Template: " + faultTemplate;
+    }
 }

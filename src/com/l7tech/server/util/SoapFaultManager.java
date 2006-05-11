@@ -2,7 +2,10 @@ package com.l7tech.server.util;
 
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.variable.ExpandVariables;
+
+import java.util.logging.Logger;
 
 /**
  * Server side SoapFaultLevel utils.
@@ -13,15 +16,35 @@ import com.l7tech.policy.variable.ExpandVariables;
  * User: flascell<br/>
  * Date: May 8, 2006<br/>
  */
-public class SoapFaultUtils {
+public class SoapFaultManager {
+    private final ServerConfig serverConfig;
+    private final Logger logger = Logger.getLogger(SoapFaultManager.class.getName());
+    private long lastParsedFromSettings;
+    private SoapFaultLevel fromSettings;
+
+    public SoapFaultManager(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
+    }
 
     /**
      * Read settings from server configuration and assemble a SoapFaultLevel based on the default values.
      */
     public SoapFaultLevel getDefaultBehaviorSettings() {
-        SoapFaultLevel output = null;
-        // todo, read and assemble a SoapFaultLevel using the ServerConfig
-        return output;
+        // cache at least one minute. todo, review
+        if (fromSettings == null || (System.currentTimeMillis() - lastParsedFromSettings) > 60000) {
+            return constructFaultLevelFromServerConfig();
+        }
+        return fromSettings;
+    }
+
+    private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {
+        // parse default settings from system settings
+        fromSettings = new SoapFaultLevel();
+        fromSettings.setLevel(Integer.parseInt(serverConfig.getProperty("defaultfaultlevel")));
+        fromSettings.setIncludePolicyDownloadURL(Boolean.parseBoolean(serverConfig.getProperty("defaultfaultpolicyurl")));
+        fromSettings.setFaultTemplate(serverConfig.getProperty("defaultfaulttemplate"));
+        lastParsedFromSettings = System.currentTimeMillis();
+        return fromSettings;
     }
 
     /**
