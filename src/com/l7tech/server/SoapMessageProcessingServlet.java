@@ -18,6 +18,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -129,11 +130,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
                                       ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                 return;
-            } else if (status == AssertionStatus.SERVICE_NOT_FOUND && isGlobalSettingStealthPolicyNotFound()) {
-                logger.info("No policy found and global setting is to go stealth in this case. " +
-                            "Instructing valve to drop connection completly.");
-                hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
-                                      ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+            } else if (status == AssertionStatus.SERVICE_NOT_FOUND) {
+                SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+                if (faultLevelInfo == null) {
+                    faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
+                }
+                if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
+                    logger.info("No policy found and global setting is to go stealth in this case. " +
+                                "Instructing valve to drop connection completly.");
+                    hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
+                                          ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                }
                 return;
             }
 
@@ -151,19 +158,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 }
             }
 
-            SoapFaultDetail faultDetail = context.getFaultDetail();
-
             if (status == AssertionStatus.NONE) {
 
                 if (response.getKnob(MimeKnob.class) == null) {
-                    // check if there's something in the faultDetail for us that may have been set by one of the
-                    // assertions even though the policy succeeded (thanks you Continue Processing Assertion)
-                     if (faultDetail != null) {
-                        logger.fine("policy succeeded, but a soap fault is present. Returning this soap fault");
-                        sendFault(context, faultDetail, hrequest, hresponse);
-                        return;
-                    }
-
                     // Routing successful, but no actual response received, probably due to a one-way JMS send.
                     hresponse.setStatus(200);
                     hresponse.setContentType(null);
@@ -182,17 +179,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.fine("servlet transport returned status " + routeStat +
                             ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
 
-            } else if (faultDetail != null) {
-                logger.fine("returning special soap fault");
-                sendFault(context, faultDetail, hrequest, hresponse);
             } else if (respKnob.hasChallenge()) {
                 logger.fine("servlet transport returning challenge");
                 respKnob.beginChallenge();
                 sendChallenge(context, hrequest, hresponse);
             } else {
                 logger.fine("servlet transport returning 500");
-                sendFault(context, hrequest, hresponse,
-                  status.getSoapFaultCode(), status.getMessage());
+                returnFault(context, hrequest, hresponse);
             }
         } catch (Throwable e) {
             // if the policy throws AND the stealth flag is set, drop connection
@@ -205,6 +198,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 return;
             }
             try {
+                // todo, these special faults should probably get standardized too
                 if (e instanceof PolicyAssertionException) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     sendFault(context, hrequest, hresponse,
@@ -273,6 +267,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
+    /**
+     * @deprecated
+     */
     private void sendFault(PolicyEnforcementContext context,
                            SoapFaultDetail faultDetail, HttpServletRequest req,
                            HttpServletResponse res) throws IOException, SAXException {
@@ -320,6 +317,42 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         return policyUrl.toString();
     }
 
+    /**
+     * the new way to return soap faults
+     */
+    private void returnFault(PolicyEnforcementContext context,
+                           HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
+        OutputStream responseStream = null;
+        String faultXml = null;
+        try {
+            responseStream = hresp.getOutputStream();
+            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+
+            SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+            if (faultLevelInfo == null) {
+                faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
+            }
+            if (faultLevelInfo.isIncludePolicyDownloadURL()) {
+                PublishedService pserv = context.getService();
+                if (pserv != null) {
+                    String purl = makePolicyUrl(hreq, pserv.getOid());
+                    hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+                }
+            }
+            faultXml = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            responseStream.write(faultXml.getBytes());
+        } finally {
+            if (responseStream != null) responseStream.close();
+        }
+
+        if (faultXml != null)
+            applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+    }
+
+    /**
+     * @deprecated
+     */
     private void sendFault(PolicyEnforcementContext context,
                            HttpServletRequest hreq, HttpServletResponse hresp,
                            String faultCode, String faultString) throws IOException, SAXException {
@@ -376,14 +409,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             if (sos != null) sos.close();
         }
-    }
-
-    private boolean isGlobalSettingStealthPolicyNotFound() {
-        // todo, use cluster property instead in 3.4
-        // serverConfig properties are already cached so no need to cache here
-        String property = serverConfig.getProperty("noServiceResolvedStealthResponse");
-        logger.finest("noServiceResolvedStealthResponse has value " + property);
-        return property != null && Boolean.parseBoolean(property);
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
