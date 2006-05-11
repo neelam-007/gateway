@@ -77,6 +77,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private URL routedServiceUrl;
     private long routingStartTime;
     private long routingEndTime;
+    private AssertionStatus policyoutcome;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -446,7 +447,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return assertionResultList;
     }
 
-    private static class AssertionResult {
+    public static class AssertionResult {
         private final ServerAssertion assertion;
         private final AssertionStatus status;
         private final List<AuditDetail> details;
@@ -470,4 +471,11 @@ public class PolicyEnforcementContext extends ProcessingContext {
         }
     }
 
+    public AssertionStatus getPolicyResult() {
+        return policyoutcome;
+    }
+
+    public void setPolicyResult(AssertionStatus policyoutcome) {
+        this.policyoutcome = policyoutcome;
+    }
 }

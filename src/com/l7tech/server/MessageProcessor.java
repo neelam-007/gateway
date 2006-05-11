@@ -274,6 +274,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             attemptedRequest = true;
 
             status = serverPolicy.checkRequest(context);
+            context.setPolicyResult(status);
 
             // Execute deferred actions for request, then response
             if (status == AssertionStatus.NONE)
@@ -333,9 +334,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             return status;
         } catch (ServiceResolutionException sre) {
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{sre.getMessage()}, sre);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{e.getMessage()}, e);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
             return AssertionStatus.SERVER_ERROR;
         } finally {
             context.setEndTime();

@@ -1,5 +1,7 @@
 package com.l7tech.common.xml;
 
+import com.l7tech.policy.variable.ExpandVariables;
+
 import java.io.Serializable;
 
 /**
@@ -25,6 +27,8 @@ public class SoapFaultLevel implements Serializable {
     private int level = GENERIC_FAULT;
     private String faultTemplate;
     private boolean includePolicyDownloadURL = true;
+    private String[] variablesUsed;
+
 
     /**
      * @return the level of the fault that should be returned to requestor in case of a policy evaluation failure
@@ -57,6 +61,11 @@ public class SoapFaultLevel implements Serializable {
      */
     public void setFaultTemplate(String faultTemplate) {
         this.faultTemplate = faultTemplate;
+        if (faultTemplate != null) {
+            variablesUsed = ExpandVariables.getReferencedNames(faultTemplate);
+        } else {
+            variablesUsed = new String[0];
+        }
     }
 
     /**
@@ -79,5 +88,9 @@ public class SoapFaultLevel implements Serializable {
         return getClass().getName() + ". Level: " + level +
                                       ", Include URL: " + includePolicyDownloadURL +
                                       ", Template: " + faultTemplate;
+    }
+
+    public String[] getVariablesUsed() {
+        return variablesUsed;
     }
 }

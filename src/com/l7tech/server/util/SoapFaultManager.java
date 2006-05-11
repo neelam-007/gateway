@@ -1,11 +1,22 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.xml.SoapFaultLevel;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.assertion.AssertionStatus;
 
 import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
 
 /**
  * Server side SoapFaultLevel utils.
@@ -16,11 +27,12 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: May 8, 2006<br/>
  */
-public class SoapFaultManager {
+public class SoapFaultManager implements ApplicationContextAware {
     private final ServerConfig serverConfig;
     private final Logger logger = Logger.getLogger(SoapFaultManager.class.getName());
     private long lastParsedFromSettings;
     private SoapFaultLevel fromSettings;
+    private Auditor auditor;
 
     public SoapFaultManager(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -53,16 +65,27 @@ public class SoapFaultManager {
      */
     public String constructReturningFault(SoapFaultLevel faultLevelInfo, PolicyEnforcementContext pec) {
         String output = null;
+        AssertionStatus globalstatus = pec.getPolicyResult();
+        if (globalstatus == null) {
+            logger.severe("PolicyEnforcementContext.policyResult not set");
+        }
         switch (faultLevelInfo.getLevel()) {
             case SoapFaultLevel.DROP_CONNECTION:
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
-                // todo
-                //output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(varsUsed, auditor));
+                output = ExpandVariables.process(faultLevelInfo.getFaultTemplate(), pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor));
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
-                output = GENERIC_FAULT;
-                // todo, insert attribute s:Fault/l7:policyResult@status
+                try {
+                    Document tmp = XmlUtil.stringToDocument(GENERIC_FAULT);
+                    NodeList res = tmp.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy/fault", "policyResult");
+                    Element policyResultEl = (Element)res.item(0);
+                    //Element policyResultEl = XmlUtil.findOnlyOneChildElementByName(tmp.getDocumentElement(), "http://www.layer7tech.com/ws/policy/fault", "policyResult");
+                    policyResultEl.setAttribute("status", globalstatus.getMessage());
+                    output = XmlUtil.nodeToFormattedString(tmp);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "could not construct generic fault", e);
+                }
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
                 // todo, construct entire soap fault based on what the pec tells us what happened
@@ -71,7 +94,6 @@ public class SoapFaultManager {
                 // todo, construct entire soap fault based on what the pec tells us what happened
                 break;
         }
-        // todo
         return output;
     }
 
@@ -86,4 +108,8 @@ public class SoapFaultManager {
                         "        </soapenv:Fault>\n" +
                         "    </soapenv:Body>\n" +
                         "</soapenv:Envelope>";
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        auditor = new Auditor(this, applicationContext, logger);
+    }
 }
