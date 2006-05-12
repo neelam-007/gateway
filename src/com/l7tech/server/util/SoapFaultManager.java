@@ -166,10 +166,11 @@ public class SoapFaultManager implements ApplicationContextAware {
             policyResultEl.setAttribute("xmlns:l7p", WspConstants.L7_POLICY_NS);
 
             // populate the faultactor value
-            String actor = pec.getVariable("request.url").toString();
-            res = tmp.getElementsByTagName("faultactor");
-            Element faultactor = (Element)res.item(0);
-            faultactor.setTextContent(actor);
+            // todo, fix this
+            //String actor = pec.getVariable("request.url").toString();
+            //res = tmp.getElementsByTagName("faultactor");
+            //Element faultactor = (Element)res.item(0);
+            //faultactor.setTextContent(actor);
 
             List<PolicyEnforcementContext.AssertionResult> results = pec.getAssertionResults(pec.getAuditContext());
             for (PolicyEnforcementContext.AssertionResult result : results) {

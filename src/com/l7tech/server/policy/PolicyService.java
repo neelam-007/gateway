@@ -17,6 +17,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.AssertionPath;
@@ -278,6 +279,7 @@ public class PolicyService extends ApplicationObjectSupport {
             try {
                 ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
                 status = policyPolicy.checkRequest(context);
+                context.setPolicyResult(status);
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));
                 return;
@@ -288,7 +290,6 @@ public class PolicyService extends ApplicationObjectSupport {
         }
 
         Document policyDoc = null;
-        context.setPolicyResult(status);
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
                 User user = context.getAuthenticatedUser();
@@ -312,6 +313,21 @@ public class PolicyService extends ApplicationObjectSupport {
         }
 
         if (policyDoc == null) {
+            SoapFaultLevel fault = new SoapFaultLevel();
+            fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+            fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                    "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
+                    "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                    "    <soapenv:Body>\n" +
+                    "        <soapenv:Fault>\n" +
+                    "            <faultcode>Server</faultcode>\n" +
+                    "            <faultstring>unauthorized policy download</faultstring>\n" +
+                    "        </soapenv:Fault>\n" +
+                    "    </soapenv:Body>\n" +
+                    "</soapenv:Envelope>");
+            context.setFaultlevel(fault);
+            context.setPolicyResult(AssertionStatus.AUTH_FAILED);
+            logger.fine("resulting policy is empty");
             return;
         }
 

@@ -17,6 +17,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
@@ -133,17 +134,20 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(), pre32PolicyCompat);
                 }
                 catch (IllegalStateException ise) { // throw by policy getter on policy not found
-                    sendExceptionFault(context, ise, servletResponse);
+                    sendExceptionFault(context, ise, servletResponse, servletRequest);
                 }
 
-                if (response == null) {
+                if (context.getPolicyResult() != AssertionStatus.NONE) {
                     returnFault(context, servletResponse);
                 } else {
                     Document responseDoc = null;
                     try {
                         responseDoc = response.getXmlKnob().getDocumentReadOnly();
                     } catch (SAXException e) {
-                        sendExceptionFault(context, e, servletResponse);
+                        sendExceptionFault(context, e, servletResponse, servletRequest);
+                        return;
+                    }  catch (IllegalStateException e) {
+                        sendExceptionFault(context, e, servletResponse, servletRequest);
                         return;
                     }
                     outputPolicyDoc(servletResponse, responseDoc);
@@ -165,7 +169,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
-            sendExceptionFault(context, e, servletResponse);
+            sendExceptionFault(context, e, servletResponse, servletRequest);
         }
     }
 
@@ -467,13 +471,15 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void sendExceptionFault(PolicyEnforcementContext context, Throwable e, HttpServletResponse hresp) throws IOException {
+    private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
+                                    HttpServletResponse hresp, HttpServletRequest hreq) throws IOException {
         OutputStream responseStream = null;
         String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+            //context.setVariable("request.url", hreq.getRequestURL().toString());
             faultXml = soapFaultManager.constructExceptionFault(e, context);
             responseStream.write(faultXml.getBytes());
         } finally {
