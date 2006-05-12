@@ -10,9 +10,9 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
-import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -25,7 +25,6 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.beans.BeansException;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
@@ -112,22 +111,22 @@ public class TokenServiceServlet extends HttpServlet {
             } catch (TokenServiceImpl.TokenServiceException e) {
                 String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
-                sendBackSoapFault(req, res, msg, e);
+                sendExceptionFault(context, e, res);
                 return;
             } catch (ProcessorException e) {
                 String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
-                sendBackSoapFault(req, res, msg, e);
+                sendExceptionFault(context, e, res);
                 return;
             } catch (BadSecurityContextException e) {
                 String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
-                sendBackSoapFault(req, res, msg, e);
+                sendExceptionFault(context, e, res);
                 return;
             } catch (GeneralSecurityException e) {
                 String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
-                sendBackSoapFault(req, res, msg, e);
+                sendExceptionFault(context, e, res);
                 return;
             } catch (AuthenticationException e) {
                 sendBackNonSoapError(res, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
@@ -135,13 +134,13 @@ public class TokenServiceServlet extends HttpServlet {
             } catch (NoSuchPartException e) {
                 String msg = "Cannot initialize request context. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
-                sendBackSoapFault(req, res, msg, e);
+                sendExceptionFault(context, e, res);
                 return;
             }
 
             // in case of failure, return soap fault
             if (status != AssertionStatus.NONE) {
-                sendBackSoapFault(req, res, context.getFaultDetail().getFaultString(), null);
+                returnFault(context, res);
                 return;
             }
 
@@ -152,7 +151,7 @@ public class TokenServiceServlet extends HttpServlet {
             } catch (SAXException e) {
                 String msg = "Cannot retrieve response document. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
-                sendBackSoapFault(req, res, msg, e);
+                sendExceptionFault(context, e, res);
                 return;
             }
 
@@ -164,13 +163,13 @@ public class TokenServiceServlet extends HttpServlet {
             } catch (IOException e) {
                 String msg = "Error printing result. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);
-                sendBackSoapFault(req, res, msg, e);
+                sendExceptionFault(context, e, res);
                 return;
             }
         } catch (Throwable e) {
             String msg = "UNHANDLED EXCEPTION: " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
-            sendBackSoapFault(req, res, msg, e);
+            sendExceptionFault(context, e, res);
             return;
         }
         finally {
@@ -248,24 +247,32 @@ public class TokenServiceServlet extends HttpServlet {
         }
     }
 
-    private void sendBackSoapFault(HttpServletRequest req, HttpServletResponse resp, String msg, Throwable e) throws IOException {
+    private void returnFault(PolicyEnforcementContext context, HttpServletResponse hresp) throws IOException {
         OutputStream responseStream = null;
+        String faultXml = null;
         try {
-            responseStream = resp.getOutputStream();
-            resp.setContentType(DEFAULT_CONTENT_TYPE);
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            Element exceptiondetails = null;
-            try {
-                if (e != null && e.getMessage() != null && e.getMessage().length() > 0) {
-                    exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("exception", e.getMessage());
-                }
-                responseStream.write(SoapFaultUtils.generateSoapFaultXml(SoapFaultUtils.FC_SERVER,
-                                                                         msg,
-                                                                         exceptiondetails,
-                                                                         req.getRequestURL().toString()).getBytes());
-            } catch (SAXException e1) {
-                logger.log(Level.SEVERE, "exception sending back soapfault", e);
-            }
+            responseStream = hresp.getOutputStream();
+            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+
+            SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+            faultXml = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            responseStream.write(faultXml.getBytes());
+        } finally {
+            if (responseStream != null) responseStream.close();
+        }
+    }
+
+    private void sendExceptionFault(PolicyEnforcementContext context, Throwable e, HttpServletResponse hresp) throws IOException {
+        OutputStream responseStream = null;
+        String faultXml = null;
+        try {
+            responseStream = hresp.getOutputStream();
+            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+
+            faultXml = soapFaultManager.constructExceptionFault(e, context);
+            responseStream.write(faultXml.getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }

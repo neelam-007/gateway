@@ -18,7 +18,7 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.SoapFaultDetailImpl;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
@@ -123,7 +123,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      *
      * @param context contains the request at entry and contains a response document if everything goes well.
      * @return AssertionStatus.NONE if all is good, other return values indicate an error in which case
-     * context.getFaultDetail() is to contain an error to return to the requestor.
+     * context.getFaultLevel() is to contain a template for an error to return to the requestor.
      */
     public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context,
                                                          CredentialsAuthenticator authenticator,
@@ -174,9 +174,21 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
 
             if (authenticatedUser == null) {
                 status = AssertionStatus.AUTH_FAILED;
-                String msg = "The request for a token was not authenticated";
-                logger.info(msg);
-                context.setFaultDetail(new SoapFaultDetailImpl("l7:noauthentication", msg, null));
+                logger.info("The request for a token was not authenticated");
+                SoapFaultLevel fault = new SoapFaultLevel();
+                fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+                fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
+                        "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>l7:noauthentication</faultcode>\n" +
+                        "            <faultstring>The request for a token was not authenticated</faultstring>\n" +
+                        "            <faultactor>${request.url}</faultactor>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>");
+                context.setFaultlevel(fault);
                 return status;
             }
 
@@ -185,9 +197,6 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             if (status != AssertionStatus.NONE) {
                 String msg = "The internal policy was not respected " + status;
                 logger.info(msg);
-                if (context.getFaultDetail() == null) {
-                    context.setFaultDetail(new SoapFaultDetailImpl("l7:" + status.getMessage(), msg, null));
-                }
                 return status;
             }
             Map rstTypes = getTrustTokenTypeAndRequestTypeValues(context);
@@ -195,10 +204,22 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             if (isRequestForSecureConversationContext(rstTypes) || isRequestForSecureConversationContext0502(rstTypes)) {
                 response = handleSecureConversationContextRequest(rstTypes, context, authenticatedUser);
             } else if (isRequestForSAML20Token(rstTypes)) {
-                // todo, implement this
-                String msg = "SAML 2.0 token requested but not yet supported.";
-                logger.info(msg);
-                context.setFaultDetail(new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER, msg, null));
+                // todo, implement saml 2.0
+                logger.info("SAML 2.0 token requested but not yet supported.");
+                SoapFaultLevel fault = new SoapFaultLevel();
+                fault.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+                fault.setFaultTemplate("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
+                        "                  xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultstring>SAML 2.0 token requested but not yet supported</faultstring>\n" +
+                        "            <faultactor>${request.url}</faultactor>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>");
+                context.setFaultlevel(fault);
                 return AssertionStatus.NOT_YET_IMPLEMENTED;
             } else if (isRequestForSAMLToken(rstTypes)) {
                 response = handleSamlRequest(rstTypes, context, useThumbprintForSamlSignature, useThumbprintForSamlSubject);

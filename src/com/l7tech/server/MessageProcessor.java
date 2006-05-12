@@ -179,7 +179,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 } catch (BadSecurityContextException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.SEVERE);
-                    context.setFaultDetail(e);
                     return AssertionStatus.FAILED;
                 }
                 auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
