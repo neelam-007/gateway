@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.event.system.AdminWebServiceEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -60,6 +61,7 @@ import java.util.logging.Logger;
 public class AdminWebServiceFilter implements Filter {
     private WebApplicationContext applicationContext;
     private AuditContext auditContext;
+    private SoapFaultManager soapFaultManager;
     private ServerAssertion adminPolicy;
     private X509Certificate serverCertificate;
     private PrivateKey serverPrivateKey;
@@ -87,6 +89,7 @@ public class AdminWebServiceFilter implements Filter {
         }
 
         auditContext = (AuditContext)getBean(applicationContext, "auditContext", "audit context", AuditContext.class);
+        soapFaultManager = (SoapFaultManager)getBean(applicationContext, "soapFaultManager", "soapFaultManager", SoapFaultManager.class);
         serverPrivateKey = (PrivateKey)getBean(applicationContext, "sslKeystorePrivateKey", "server private key", PrivateKey.class);
         serverCertificate = (X509Certificate)getBean(applicationContext, "sslKeystoreCertificate", "server certificate", X509Certificate.class);
         securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
@@ -178,6 +181,7 @@ public class AdminWebServiceFilter implements Filter {
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setReplyExpected(true); // HTTP always expects to receive a reply
         context.setAuditContext(auditContext);
+        context.setSoapFaultManager(soapFaultManager);
 
         AssertionStatus polStatus = null;
         try {

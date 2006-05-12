@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.util.SoapFaultManager;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.beans.BeansException;
@@ -55,6 +56,7 @@ public class TokenServiceServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
     private TokenService tokenService;
     private AuditContext auditContext;
+    private SoapFaultManager soapFaultManager;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -65,6 +67,7 @@ public class TokenServiceServlet extends HttpServlet {
         try {
             tokenService = (TokenService)applicationContext.getBean("tokenService", TokenService.class);
             auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+            soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
         }
         catch(BeansException be) {
             throw new ServletException("Configuration error; could not get required beans.", be);
@@ -94,6 +97,7 @@ public class TokenServiceServlet extends HttpServlet {
 
         try {
             context.setAuditContext(auditContext);
+            context.setSoapFaultManager(soapFaultManager);
 
             AssertionStatus status;
             try {

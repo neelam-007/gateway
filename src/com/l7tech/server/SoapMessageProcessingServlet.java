@@ -117,6 +117,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         try {
             context.setAuditContext(auditContext);
+            context.setSoapFaultManager(soapFaultManager);
 
             // Process message
             request.initialize(stashManager, ctype, hrequest.getInputStream());
@@ -127,10 +128,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (status != AssertionStatus.NONE) {
                 SoapFaultLevel faultLevelInfo = context.getFaultlevel();
                 logger.finest("checking for potential connection drop because status is " + status.getMessage());
-                if (faultLevelInfo == null) {
-                    logger.finest("getting system default faultLevelInfo");
-                    faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
-                }
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
                                 "Instructing valve to drop connection completly." + faultLevelInfo.toString());
@@ -326,9 +323,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
-            if (faultLevelInfo == null) {
-                faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
-            }
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
                 PublishedService pserv = context.getService();
                 if (pserv != null) {

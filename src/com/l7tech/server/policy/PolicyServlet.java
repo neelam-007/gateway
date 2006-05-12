@@ -23,6 +23,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.event.system.PolicyServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -67,6 +68,7 @@ import java.util.logging.Level;
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
     private AuditContext auditContext;
+    private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
 
@@ -78,6 +80,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             ApplicationContext applicationContext = getApplicationContext();
             auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+            soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
             KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
             serverCertificate = ku.readSSLCert();
             serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
@@ -120,6 +123,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
             context.setAuditContext(auditContext);
+            context.setSoapFaultManager(soapFaultManager);
             boolean success = false;
 
             try {

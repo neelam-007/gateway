@@ -26,6 +26,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMap;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.identity.AuthCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
@@ -65,6 +66,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private Set<HttpCookie> cookies = new LinkedHashSet<HttpCookie>();
     private Set<AssertionStatus> seenAssertionStatus = new HashSet<AssertionStatus>();
     private AuditContext auditContext = null;
+    private SoapFaultManager soapFaultManager = null;
     private final Map<String,Object> variables = new HashMap<String, Object>();
     private boolean isStealthResponseMode = false;
     private int authSuccessCacheTime = AuthCache.SUCCESS_CACHE_TIME;
@@ -103,6 +105,10 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public AuditContext getAuditContext() {
         return auditContext;
+    }
+
+    public void setSoapFaultManager(SoapFaultManager soapFaultManager) {
+        this.soapFaultManager = soapFaultManager;
     }
 
     public void setAuditContext(AuditContext auditContext) {
@@ -401,10 +407,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     /**
      * tells the SSG what the soap fault returned to a requestor should look like
-     * when a policy evaluation fails
-     * @return if null, the system wide default value takes effect
+     * when a policy evaluation fails. If not set by the policy, will return the system
+     * defaults.
+     * @return should never return null
      */
     public SoapFaultLevel getFaultlevel() {
+        if (faultlevel == null) {
+            faultlevel = soapFaultManager.getDefaultBehaviorSettings();
+        }
         return faultlevel;
     }
 
@@ -430,8 +440,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     /**
      * A linear log of the results of processing each assertion that was run in the policy.
-     * @param auditContext
-     * @return
      */
     public List<AssertionResult> getAssertionResults(AuditContext auditContext) {
         Map<Object, List<AuditDetail>> detailMap = auditContext.getDetails();
