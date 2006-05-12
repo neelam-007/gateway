@@ -15,9 +15,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -29,7 +27,6 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.service.PublishedService;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
@@ -191,32 +188,23 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 return;
             }
             try {
-                // todo, these special faults should probably get standardized too
                 if (e instanceof PolicyAssertionException) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
-                    sendFault(context, hrequest, hresponse,
-                              SoapFaultUtils.FC_SERVER, e.toString());
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (e instanceof PolicyVersionException) {
                     String msg = "Request referred to an outdated version of policy";
                     logger.log(Level.INFO, msg);
-                    sendFault(context, hrequest, hresponse,
-                              SoapFaultUtils.FC_CLIENT, msg);
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (e instanceof NoSuchPartException) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
-                    sendFault(context, hrequest, hresponse,
-                              SoapFaultUtils.FC_CLIENT, e.toString());
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 } else if (e instanceof MethodNotAllowedException) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
-                    sendFault(context, hrequest, hresponse,
-                              SoapFaultUtils.FC_CLIENT, "Method not supported");
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 } else {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     //? if (e instanceof Error) throw (Error)e;
-                    sendFault(context,
-                              hrequest,
-                              hresponse,
-                              SoapFaultUtils.FC_SERVER,
-                              e.getMessage());
+                    sendExceptionFault(context, e, hrequest, hresponse);
                 }
             } catch (SAXException e1) {
                 throw new ServletException(e1);
@@ -258,39 +246,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 resKnob.addCookie(CookieUtils.ensureValidForDomainAndPath(cookie, url.getHost(), url.getPath()));
             }
         }
-    }
-
-    /**
-     * @deprecated
-     */
-    private void sendFault(PolicyEnforcementContext context,
-                           SoapFaultDetail faultDetail, HttpServletRequest req,
-                           HttpServletResponse res) throws IOException, SAXException {
-        OutputStream responseStream = null;
-        String faultXml = null;
-        try {
-            responseStream = res.getOutputStream();
-            String actor = req.getRequestURL().toString();
-            res.setContentType(DEFAULT_CONTENT_TYPE);
-            res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
-            PublishedService pserv = context.getService();
-            if (pserv != null && shouldSendBackPolicyUrl(context)) {
-                String purl = makePolicyUrl(req, pserv.getOid());
-                res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
-            }
-
-            faultXml = SoapFaultUtils.generateSoapFaultXml(faultDetail.getFaultCode(),
-              faultDetail.getFaultString(),
-              faultDetail.getFaultDetail(),
-              actor);
-            responseStream.write(faultXml.getBytes());
-        } finally {
-            if (responseStream != null) responseStream.close();
-        }
-
-        if (faultXml != null)
-            applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
     private String makePolicyUrl(HttpServletRequest hreq, long oid) {
@@ -340,29 +295,24 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
-    /**
-     * @deprecated
-     */
-    private void sendFault(PolicyEnforcementContext context,
-                           HttpServletRequest hreq, HttpServletResponse hresp,
-                           String faultCode, String faultString) throws IOException, SAXException {
+    private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
+                                    HttpServletRequest hreq, HttpServletResponse hresp) throws IOException, SAXException {
         OutputStream responseStream = null;
         String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
-            String actor = hreq.getRequestURL().toString();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);
             hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
-            PublishedService pserv = context.getService();
-            String purl = "";
-            if (pserv != null && shouldSendBackPolicyUrl(context)) {
-                purl = makePolicyUrl(hreq, pserv.getOid());
-                hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+            SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+            if (faultLevelInfo.isIncludePolicyDownloadURL()) {
+                PublishedService pserv = context.getService();
+                if (pserv != null) {
+                    String purl = makePolicyUrl(hreq, pserv.getOid());
+                    hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+                }
             }
-            Element exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("policyURL", purl);
-            faultXml = SoapFaultUtils.generateSoapFaultXml(faultCode, faultString,
-              exceptiondetails, actor);
+            faultXml = soapFaultManager.constructExceptionFault(e, context);
             responseStream.write(faultXml.getBytes());
         } finally {
             if (responseStream != null) responseStream.close();

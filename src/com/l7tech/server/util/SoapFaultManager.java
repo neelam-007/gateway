@@ -97,6 +97,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                     faultactor.setTextContent(actor);
                     output = XmlUtil.nodeToFormattedString(tmp);
                 } catch (Exception e) {
+                    // should not happen
                     logger.log(Level.WARNING, "could not construct generic fault", e);
                 }
                 break;
@@ -106,6 +107,31 @@ public class SoapFaultManager implements ApplicationContextAware {
             case SoapFaultLevel.FULL_TRACE_FAULT:
                 output = buildDetailedFault(pec, globalstatus, true);
                 break;
+        }
+        return output;
+    }
+
+    /**
+     * SOAP faults resulting from an exception that occurs in the processing of the policy.
+     * Receiving such a fault sould be considered a bug.
+     */
+    public String constructExceptionFault(Throwable e, PolicyEnforcementContext pec) {
+        String output = null;
+        try {
+            Document tmp = XmlUtil.stringToDocument(EXCEPTION_FAULT);
+            NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
+            // populate @status element
+            Element policyResultEl = (Element)res.item(0);
+            policyResultEl.setAttribute("status", e.getMessage());
+            // populate the faultactor value
+            String actor = pec.getVariable("request.url").toString();
+            res = tmp.getElementsByTagName("faultactor");
+            Element faultactor = (Element)res.item(0);
+            faultactor.setTextContent(actor);
+            output = XmlUtil.nodeToFormattedString(tmp);
+        } catch (Exception el) {
+            // should not happen
+            logger.log(Level.WARNING, "Unexpected exception", el);
         }
         return output;
     }
@@ -181,7 +207,19 @@ public class SoapFaultManager implements ApplicationContextAware {
                         "    <soapenv:Body>\n" +
                         "        <soapenv:Fault>\n" +
                         "            <faultcode>Server</faultcode>\n" +
-                        "            <faultstring>Assertion Falsified</faultstring>\n" +
+                        "            <faultstring>Policy Falsified</faultstring>\n" +
+                        "            <faultactor/>\n" +
+                        "            <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
+                        "        </soapenv:Fault>\n" +
+                        "    </soapenv:Body>\n" +
+                        "</soapenv:Envelope>";
+
+    private static final String EXCEPTION_FAULT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                        "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                        "    <soapenv:Body>\n" +
+                        "        <soapenv:Fault>\n" +
+                        "            <faultcode>Server</faultcode>\n" +
+                        "            <faultstring>Error in assertion processing</faultstring>\n" +
                         "            <faultactor/>\n" +
                         "            <l7:policyResult xmlns:l7=\"http://www.layer7tech.com/ws/policy/fault\"/>\n" +
                         "        </soapenv:Fault>\n" +
