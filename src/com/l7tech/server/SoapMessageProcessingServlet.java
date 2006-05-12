@@ -126,12 +126,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // if the policy is not successful AND the stealth flag is on, drop connection
             if (status != AssertionStatus.NONE) {
                 SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+                logger.finest("checking for potential connection drop because status is " + status.getMessage());
                 if (faultLevelInfo == null) {
+                    logger.finest("getting system default faultLevelInfo");
                     faultLevelInfo = soapFaultManager.getDefaultBehaviorSettings();
                 }
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
-                                "Instructing valve to drop connection completly.");
+                                "Instructing valve to drop connection completly." + faultLevelInfo.toString());
                     hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
                                           ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                     return;
