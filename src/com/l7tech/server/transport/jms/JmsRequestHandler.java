@@ -117,6 +117,7 @@ class JmsRequestHandler {
                 InputStream responseStream = null;
                 try {
                     status = messageProcessor.processMessage(context);
+                    context.setPolicyResult(status);
                     _logger.finest("Policy resulted in status " + status);
                     if (context.getResponse().getKnob(XmlKnob.class) != null ||
                         context.getResponse().getKnob(MimeKnob.class) != null) {

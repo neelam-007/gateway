@@ -190,6 +190,7 @@ public class AdminWebServiceFilter implements Filter {
             trogdor(context, request);
 
             final AssertionStatus status = polStatus = adminPolicy.checkRequest(context);
+            context.setPolicyResult(status);
             if (status == AssertionStatus.NONE) {
                 // TODO support admin services that requre Gateway Administrators membership
                 // Pass it along to XFire

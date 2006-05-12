@@ -14,7 +14,6 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
@@ -58,7 +57,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private Level auditLevel;
     private boolean auditSaveRequest;
     private boolean auditSaveResponse;
-    private SoapFaultDetail faultDetail = null;
     private SoapFaultLevel faultlevel = null;
     private boolean isAuthenticationMissing = false;
     private boolean isRequestPolicyViolated = false;
@@ -190,19 +188,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void removeRoutingResultListener(RoutingResultListener listener) {
         routingResultListener.removeListener(listener);
-    }
-
-    public SoapFaultDetail getFaultDetail() {
-        return faultDetail;
-    }
-
-    /**
-     * This should no longer be called by the runtime assertions. SOAP Faults are
-     * now generated based on information recorded in auditor.
-     * @deprecated
-     */
-    public void setFaultDetail(SoapFaultDetail faultDetail) {
-        this.faultDetail = faultDetail;
     }
 
     /**

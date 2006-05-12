@@ -10,8 +10,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
@@ -31,7 +30,6 @@ import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -71,6 +69,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
+    public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
 
     /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
     private static final String PRE32_DISCO_URI = "disco.modulator";
@@ -98,11 +97,11 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      */
     protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
       throws ServletException, IOException {
+        PolicyEnforcementContext context = null;
         try {
             // check content type
             if (!servletRequest.getContentType().startsWith("text/xml")) {
                 logger.warning("Bad content type " + servletRequest.getContentType());
-                generateFaultAndSendAsResponse(servletResponse, "content type not supported", servletRequest.getContentType());
                 return;
             }
 
@@ -121,7 +120,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             Message response = new Message();
             response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
 
-            PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+            context = new PolicyEnforcementContext(request, response);
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
             boolean success = false;
@@ -133,33 +132,22 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 try {
                     service.respondToPolicyDownloadRequest(context, true, normalPolicyGetter(), pre32PolicyCompat);
                 }
-                catch(IllegalStateException ise) { // throw by policy getter on policy not found
-                    generateFaultAndSendAsResponse(servletResponse, "Service not found", ise.getMessage());
-                }
-
-                Document responseDoc = null;
-                try {
-                    responseDoc = response.getXmlKnob().getDocumentReadOnly();
-                } catch (SAXException e) {
-                    generateFaultAndSendAsResponse(servletResponse, "No response available", e.getMessage());
-                    return;
+                catch (IllegalStateException ise) { // throw by policy getter on policy not found
+                    sendExceptionFault(context, ise, servletResponse);
                 }
 
                 if (response == null) {
-                    if (context.getFaultDetail() != null) {
-                        generateFaultAndSendAsResponse(servletResponse, context.getFaultDetail());
-                    } else {
-                        generateFaultAndSendAsResponse(servletResponse, "No response available", "");
+                    returnFault(context, servletResponse);
+                } else {
+                    Document responseDoc = null;
+                    try {
+                        responseDoc = response.getXmlKnob().getDocumentReadOnly();
+                    } catch (SAXException e) {
+                        sendExceptionFault(context, e, servletResponse);
+                        return;
                     }
-                }
-                else {
-                    // check if the response is already a soap fault
-                    if (isDocFault(responseDoc)) {
-                        outputSoapFault(servletResponse, responseDoc);
-                    } else {
-                        outputPolicyDoc(servletResponse, responseDoc);
-                        success = true;
-                    }
+                    outputPolicyDoc(servletResponse, responseDoc);
+                    success = true;
                 }
             }
             finally {
@@ -177,7 +165,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
-            generateFaultAndSendAsResponse(servletResponse, "Internal error", e.getMessage());
+            sendExceptionFault(context, e, servletResponse);
         }
     }
 
@@ -252,7 +240,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             results = new AuthenticationResult[0];
         } catch (LicenseException e) {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
-            generateFaultAndSendAsResponse(res, "Gateway policy discovery service not enabled by license", e.getMessage());
+            returnError(res, "Gateway policy discovery service not enabled by license");
             return;
         }
 
@@ -289,17 +277,17 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
         } catch (FilteringException e) {
             logger.log(Level.WARNING, "Error in PolicyService", e);
-            generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
+            returnError(res, "internal error" + e.getMessage());
             return;
         } catch (SAXException e) {
             logger.log(Level.WARNING, "Error in PolicyService", e);
-            generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
+            returnError(res, "internal error" + e.getMessage());
             return;
         } catch(IllegalStateException ise) { // invalid service
-            generateFaultAndSendAsResponse(res, "Service not found.", ise.getMessage());
+            returnError(res, "internal error" + ise.getMessage());
             return;
         } catch(UnsupportedOperationException uoe) {
-            generateFaultAndSendAsResponse(res, "internal error", "");
+            returnError(res, "internal error" + uoe.getMessage());
             return;
         }
 
@@ -308,7 +296,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             sendAuthChallenge(req, res);
         } else if (response == null) {
             logger.info("this policy download is refused.");
-            generateFaultAndSendAsResponse(res, "Policy not found or download unauthorized", "");
+            returnError(res, "Policy not found or download unauthorized");
         } else {
             logger.finest("returning policy");
             outputPolicyDoc(res, response);
@@ -330,21 +318,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
         logger.finest("remote ip " + remote + " was not authorized by any passthrough in " + allPassthroughs);
         return false;
-    }
-
-    private boolean isDocFault(Document doc) {
-        if (doc == null) return false;
-        Element bodyChild = null;
-        try {
-            Element body = SoapUtil.getBodyElement(doc);
-            if(body!=null) {
-                bodyChild = XmlUtil.findFirstChildElement(body);
-            }
-        } catch (InvalidDocumentFormatException e) {
-            logger.log(Level.WARNING, "cannot inspect document for fault", e);
-            return false;
-        }
-        return bodyChild!=null && "Fault".equals(bodyChild.getLocalName());
     }
 
     /**
@@ -380,45 +353,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         response.setContentLength(pemEncodedServerCertificate.length);
         response.getOutputStream().write(pemEncodedServerCertificate);
         response.flushBuffer();
-    }
-
-
-    private void generateFaultAndSendAsResponse(HttpServletResponse res, String msg, String details) throws IOException {
-        Document fault;
-        try {
-            Element exceptiondetails = null;
-            if (details != null && details.length() > 0) {
-                exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", details);
-            }
-            fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
-                                                             msg,
-                                                             exceptiondetails,
-                                                             "");
-        } catch (SAXException e) {
-            throw new RuntimeException(e); // should not happen
-        }
-        outputSoapFault(res, fault);
-    }
-
-    private void generateFaultAndSendAsResponse(HttpServletResponse res, SoapFaultDetail sfd) throws IOException {
-        Document fault;
-        try {
-            fault = SoapFaultUtils.generateSoapFaultDocument(sfd, "");
-        } catch (SAXException e) {
-            throw new RuntimeException(e); // should not happen
-        }
-        outputSoapFault(res, fault);
-    }
-
-    private void outputSoapFault(HttpServletResponse res, Document fault) throws IOException {
-        logger.fine("Returning soap fault\n" + XmlUtil.nodeToFormattedString(fault));
-        res.setContentType(XmlUtil.TEXT_XML);
-        // fla changed this so that soap faults are always 500 to comply to WSI 1305
-        res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        res.setContentType(ContentTypeHeader.XML_DEFAULT.getFullValue());
-        OutputStream os = res.getOutputStream();
-        XmlUtil.nodeToOutputStream(fault, os);
-        os.close();
     }
 
     private void outputPolicyDoc(HttpServletResponse res, Document doc) throws IOException {
@@ -503,6 +437,48 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     private String getName(User user) {
         return user.getName()!=null ? user.getName() : user.getLogin();
+    }
+
+    private void returnFault(PolicyEnforcementContext context, HttpServletResponse hresp) throws IOException {
+        OutputStream responseStream = null;
+        String faultXml = null;
+        try {
+            responseStream = hresp.getOutputStream();
+            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+
+            SoapFaultLevel faultLevelInfo = context.getFaultlevel();
+            faultXml = soapFaultManager.constructReturningFault(faultLevelInfo, context);
+            responseStream.write(faultXml.getBytes());
+        } finally {
+            if (responseStream != null) responseStream.close();
+        }
+    }
+
+    private void returnError(HttpServletResponse hresp, String error) throws IOException {
+        OutputStream responseStream = null;
+        try {
+            responseStream = hresp.getOutputStream();
+            hresp.setContentType("text/plain");
+            hresp.setStatus(500);
+            responseStream.write(error.getBytes());
+        } finally {
+            if (responseStream != null) responseStream.close();
+        }
+    }
+
+    private void sendExceptionFault(PolicyEnforcementContext context, Throwable e, HttpServletResponse hresp) throws IOException {
+        OutputStream responseStream = null;
+        String faultXml = null;
+        try {
+            responseStream = hresp.getOutputStream();
+            hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
+            faultXml = soapFaultManager.constructExceptionFault(e, context);
+            responseStream.write(faultXml.getBytes());
+        } finally {
+            if (responseStream != null) responseStream.close();
+        }
     }
 }
 

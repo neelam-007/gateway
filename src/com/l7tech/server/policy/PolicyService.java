@@ -287,7 +287,8 @@ public class PolicyService extends ApplicationObjectSupport {
             }
         }
 
-        Document policyDoc;
+        Document policyDoc = null;
+        context.setPolicyResult(status);
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
                 User user = context.getAuthenticatedUser();
@@ -308,13 +309,9 @@ public class PolicyService extends ApplicationObjectSupport {
                 response.initialize(exceptionToFault(e));
                 return;
             }
-        } else {
-            response.initialize(makeUnauthorizedPolicyDownloadFault(status.getMessage(), context.getFaultDetail()));
-            return;
         }
 
         if (policyDoc == null) {
-            response.initialize(makeUnauthorizedPolicyDownloadFault("No such policy available to you.", context.getFaultDetail()));
             return;
         }
 
@@ -325,50 +322,6 @@ public class PolicyService extends ApplicationObjectSupport {
             response.initialize(exceptionToFault(e));
         } catch (DecoratorException e) {
             response.initialize(exceptionToFault(e));
-        }
-    }
-
-    private Document makeUnauthorizedPolicyDownloadFault(String msg, SoapFaultDetail faultDetail) {
-        Document fault;
-        try {
-            Element detailEl = null;
-            if (msg != null) {
-                detailEl = SoapFaultUtils.makeFaultDetailsSubElement("more", msg);
-            }
-            if (faultDetail != null) {
-                final Document factory;
-                final Element holder;
-                if (detailEl != null) {
-                    factory = detailEl.getOwnerDocument();
-                    holder = factory.createElement("details");
-                } else {
-                    factory = XmlUtil.stringToDocument("<holder/>");
-                    holder = factory.getDocumentElement();
-                }
-                if (detailEl != null)
-                    holder.appendChild(detailEl);
-
-                final String faultString = faultDetail.getFaultString();
-                if (faultString != null) {
-                    Element mess = factory.createElement("message");
-                    mess.appendChild(XmlUtil.createTextNode(factory, faultString));
-                    holder.appendChild(mess);
-                }
-
-                final Element fd = faultDetail.getFaultDetail();
-                if (fd != null)
-                    holder.appendChild(fd);
-            }
-
-            fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
-                                                             "unauthorized policy download",
-                                                             detailEl,
-                                                             "");
-            return fault;
-        } catch (IOException e) {
-            return exceptionToFault(e);
-        } catch (SAXException e) {
-            return exceptionToFault(e);
         }
     }
 
