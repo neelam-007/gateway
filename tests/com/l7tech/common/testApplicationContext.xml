@@ -206,4 +206,11 @@
 
     <bean id="licenseManager" class="com.l7tech.common.TestLicenseManager">
     </bean>
+    
+    <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager">
+        <constructor-arg>
+            <ref bean="serverConfig"/>
+        </constructor-arg>
+    </bean>
+
 </beans>
