@@ -76,7 +76,6 @@
                 <L7p:EmailAlert/>
                 <L7p:CommentAssertion/>
                 <L7p:ComparisonAssertion/>
-                <L7p:StealthFault/>
                 <L7p:SqlAttackProtection/>
                 <L7p:OversizedText/>
                 <L7p:RequestSizeLimit/>
