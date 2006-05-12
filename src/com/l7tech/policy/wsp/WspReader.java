@@ -40,7 +40,7 @@ public class WspReader {
             Element n = XmlUtil.findOnlyOneChildElementByName(rootElement, "http://schemas.xmlsoap.org/ws/2002/12/policy", "Policy");
             if (n != null)
                 return n;
-            n = XmlUtil.findOnlyOneChildElementByName(rootElement, "http://www.layer7tech.com/ws/policy", "Policy");
+            n = XmlUtil.findOnlyOneChildElementByName(rootElement, WspConstants.L7_POLICY_NS, "Policy");
             if (n != null)
                 return n;
         } catch (TooManyChildElementsException e1) {

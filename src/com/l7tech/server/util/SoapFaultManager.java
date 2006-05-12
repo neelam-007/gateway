@@ -10,6 +10,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.TypeMappingUtils;
+import com.l7tech.policy.wsp.WspConstants;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -39,6 +40,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     private long lastParsedFromSettings;
     private SoapFaultLevel fromSettings;
     private Auditor auditor;
+    public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
 
     public SoapFaultManager(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -84,7 +86,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             case SoapFaultLevel.GENERIC_FAULT:
                 try {
                     Document tmp = XmlUtil.stringToDocument(GENERIC_FAULT);
-                    NodeList res = tmp.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy/fault", "policyResult");
+                    NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
                     // populate @status element
                     Element policyResultEl = (Element)res.item(0);
                     policyResultEl.setAttribute("status", globalstatus.getMessage());
@@ -131,11 +133,11 @@ public class SoapFaultManager implements ApplicationContextAware {
         String output = null;
         try {
             Document tmp = XmlUtil.stringToDocument(GENERIC_FAULT);
-            NodeList res = tmp.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy/fault", "policyResult");
+            NodeList res = tmp.getElementsByTagNameNS(FAULT_NS, "policyResult");
             // populate @status element
             Element policyResultEl = (Element)res.item(0);
             policyResultEl.setAttribute("status", globalstatus.getMessage());
-            policyResultEl.setAttribute("xmlns:l7p", "http://www.layer7tech.com/ws/policy");
+            policyResultEl.setAttribute("xmlns:l7p", WspConstants.L7_POLICY_NS);
 
             // populate the faultactor value
             String actor = pec.getVariable("request.url").toString();
@@ -148,14 +150,14 @@ public class SoapFaultManager implements ApplicationContextAware {
                 if (result.getStatus() == AssertionStatus.NONE && !includeSuccesses) {
                     continue;
                 }
-                Element assertionResultEl = tmp.createElementNS("http://www.layer7tech.com/ws/policy/fault", "l7:assertionResult");
+                Element assertionResultEl = tmp.createElementNS(FAULT_NS, "l7:assertionResult");
                 assertionResultEl.setAttribute("status", result.getStatus().getMessage());
                 String assertionattr = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass()).getExternalName();
                 assertionResultEl.setAttribute("assertion", assertionattr);
                 List<AuditDetail> details = result.getDetails();
                 if (details != null) {
                     for (AuditDetail detail : details) {
-                        Element detailMsgEl = tmp.createElementNS("http://www.layer7tech.com/ws/policy/fault", "l7:detailMessage");
+                        Element detailMsgEl = tmp.createElementNS(FAULT_NS, "l7:detailMessage");
                         detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
                         // add text node with actual message. see below for logpanel sample:
                         StringBuffer msgbuf = new StringBuffer();
