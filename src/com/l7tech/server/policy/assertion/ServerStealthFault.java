@@ -20,13 +20,13 @@ import org.springframework.context.ApplicationContext;
  * the transport does not return an error but drops the client connection instead.
  *
  * @author flascelles@layer7-tech.com
+ * @deprecated todo, remove this completly and add a compatibilty wsp thingy
  */
-public class ServerStealthFault implements ServerAssertion {
+public class ServerStealthFault extends AbstractServerAssertion implements ServerAssertion {
 
-    public ServerStealthFault(StealthFault assertion, ApplicationContext context) {}
+    public ServerStealthFault(StealthFault assertion, ApplicationContext context) {super(assertion);}
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        // todo, log this
         context.setStealthResponseMode(true);
         //throw new PolicyInterruptedException("Interrupting policy execution.");
         return AssertionStatus.NONE;

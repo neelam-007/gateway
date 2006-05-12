@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.UptimeMonitor;
 import org.snmp4j.MessageDispatcher;
 import org.snmp4j.MessageDispatcherImpl;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
 /**
  * Server side implementation of assertion that sends an SNMP trap.
  */
-public class ServerSnmpTrapAssertion implements ServerAssertion {
+public class ServerSnmpTrapAssertion extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerSnmpTrapAssertion.class.getName());
     public static final int[] OID_BASE = new int[] {1,3,6,1,4,1,17304,7,3};
 
@@ -53,6 +54,7 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
     private final String[] varsUsed;
 
     public ServerSnmpTrapAssertion(SnmpTrapAssertion ass, ApplicationContext applicationContext) {
+        super(ass);
         this.applicationContext = applicationContext;
         auditor = new Auditor(this, applicationContext, logger);
 

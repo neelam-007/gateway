@@ -17,11 +17,12 @@ import java.util.logging.Level;
 /**
  * This assertion sets the audit level and parameters for the current request.
  */
-public class ServerAuditAssertion implements ServerAssertion {
+public class ServerAuditAssertion extends AbstractServerAssertion implements ServerAssertion {
     private AuditAssertion data;
     private Level level;
 
     public ServerAuditAssertion(AuditAssertion data) {
+        super(data);
         this.data = data;
         this.level = Level.parse(data.getLevel());
     }

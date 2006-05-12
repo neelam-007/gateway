@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -28,11 +29,12 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class ServerWssBasic implements ServerAssertion {
+public class ServerWssBasic extends AbstractServerAssertion implements ServerAssertion {
     final private WssBasic data;
     private final Auditor auditor;
 
     public ServerWssBasic(WssBasic data, ApplicationContext springContext) {
+        super(data);
         this.data = data;
         this.auditor = new Auditor(this, springContext, logger);
     }

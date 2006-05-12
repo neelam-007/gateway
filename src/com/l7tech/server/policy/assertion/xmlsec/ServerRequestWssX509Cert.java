@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
@@ -33,10 +34,11 @@ import java.util.logging.Logger;
  * Date: Jul 14, 2004<br/>
  * $Id$<br/>
  */
-public class ServerRequestWssX509Cert implements ServerAssertion {
+public class ServerRequestWssX509Cert extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
 
     public ServerRequestWssX509Cert(RequestWssX509Cert subject, ApplicationContext springContext) {
+        super(subject);
         this.subject = subject;
         auditor = new Auditor(this, springContext, logger);
     }

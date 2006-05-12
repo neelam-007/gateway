@@ -27,7 +27,7 @@ public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion {
      * @param springContext the application context to use
      */
     public ServerWsiSamlAssertion(WsiSamlAssertion wsiSamlAssertion, ApplicationContext springContext) {
-        super(logger);
+        super(wsiSamlAssertion, logger);
         this.auditor = (springContext!=null) ? new Auditor(this, springContext, ServerWsiSamlAssertion.logger) : null;
         this.wsiSamlAssertion = wsiSamlAssertion;
     }
@@ -94,7 +94,7 @@ public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion {
      * Used by test code only (tests rule loading).
      */
     ServerWsiSamlAssertion() {
-        super(logger);
+        super(null, logger);
         this.auditor = null;
         this.wsiSamlAssertion = null;
     }

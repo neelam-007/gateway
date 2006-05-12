@@ -23,10 +23,11 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class ServerRemoteIpRange implements ServerAssertion {
+public class ServerRemoteIpRange extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
 
     public ServerRemoteIpRange(RemoteIpRange rule, ApplicationContext context) {
+        super(rule);
         this.rule = rule;
         this.auditor = new Auditor(this, context, logger);
 

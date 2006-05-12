@@ -51,8 +51,8 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     /**
      *
      */
-    protected AbstractServerWsFederationPassiveRequestProfile(String samlCacheKey, ApplicationContext springContext) {
-        super(samlCacheKey);
+    protected AbstractServerWsFederationPassiveRequestProfile(Assertion assertion, String samlCacheKey, ApplicationContext springContext) {
+        super(assertion, samlCacheKey);
 
         this.authCookieSet = new CopyOnWriteArraySet();
         this.auditor = new Auditor(this, springContext, logger);

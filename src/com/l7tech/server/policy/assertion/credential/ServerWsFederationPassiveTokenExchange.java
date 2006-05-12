@@ -44,7 +44,7 @@ public class ServerWsFederationPassiveTokenExchange extends AbstractServerWsFede
      *
      */
     public ServerWsFederationPassiveTokenExchange(WsFederationPassiveTokenExchange assertion, ApplicationContext springContext) {
-        super(CACHE_SAML_KEY, springContext);
+        super(assertion, CACHE_SAML_KEY, springContext);
 
         this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);

@@ -38,6 +38,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.springframework.context.ApplicationContext;
@@ -75,7 +76,7 @@ import java.util.regex.PatternSyntaxException;
 /**
  * Server-side implementation of {@link XslTransformation}.
  */
-public class ServerXslTransformation implements ServerAssertion {
+public class ServerXslTransformation extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
     private static final SAXParserFactory piParser = SAXParserFactory.newInstance();
     static {
@@ -137,6 +138,7 @@ public class ServerXslTransformation implements ServerAssertion {
     private final ApplicationContext springContext;
 
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) throws ServerPolicyException {
+        super(assertion);
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
 
         this.springContext = springContext;

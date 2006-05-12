@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.xmlsec.AuthenticationProperties;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpState;
@@ -48,7 +49,7 @@ import java.util.logging.Logger;
  * @author alex, $Author$
  * @version $Revision$
  */
-public class ServerSamlBrowserArtifact implements ServerAssertion {
+public class ServerSamlBrowserArtifact extends AbstractServerAssertion implements ServerAssertion {
 
     //- PUBLIC
 
@@ -56,6 +57,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
      *
      */
     public ServerSamlBrowserArtifact(SamlBrowserArtifact assertion, ApplicationContext springContext) {
+        super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
         this.assertion = assertion;
         try {

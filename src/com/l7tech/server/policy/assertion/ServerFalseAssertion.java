@@ -17,13 +17,13 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public class ServerFalseAssertion implements ServerAssertion {
+public class ServerFalseAssertion extends AbstractServerAssertion implements ServerAssertion {
     public ServerFalseAssertion( FalseAssertion ass ) {
-        // meaningless
+        super(ass);
     }
 
     public ServerFalseAssertion() {
-        // meaningless
+        super(null);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

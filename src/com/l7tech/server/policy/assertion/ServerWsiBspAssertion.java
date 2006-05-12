@@ -27,7 +27,7 @@ public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
      * @param springContext the application context to use
      */
     public ServerWsiBspAssertion(WsiBspAssertion wsiBspAssertion, ApplicationContext springContext) {
-        super(logger);
+        super(wsiBspAssertion, logger);
         this.auditor = (springContext!=null) ? new Auditor(this, springContext, logger) : null;
         this.wsiBspAssertion = wsiBspAssertion;
     }
@@ -94,7 +94,7 @@ public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
      * Used by test code only (tests rule loading).
      */
     ServerWsiBspAssertion() {
-        super(logger);
+        super(null, logger);
         this.auditor = null;
         this.wsiBspAssertion = null;
     }

@@ -63,7 +63,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
     private final SecurityTokenResolver securityTokenResolver;
 
     public ServerWsTrustCredentialExchange(WsTrustCredentialExchange assertion, ApplicationContext springContext) {
-        super(CACHE_SEC_TOKEN_KEY);
+        super(assertion, CACHE_SEC_TOKEN_KEY);
         this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
         try {

@@ -17,12 +17,13 @@ import java.util.logging.Logger;
  * Abstract superclass for server assertions whose operation centers around running a single xpath against
  * a message.
  */
-public abstract class ServerXpathBasedAssertion implements ServerAssertion {
+public abstract class ServerXpathBasedAssertion extends AbstractServerAssertion implements ServerAssertion {
     protected final Auditor auditor;
     private final String xpath;
     private final CompiledXpath compiledXpath;
 
     public ServerXpathBasedAssertion(XpathBasedAssertion assertion, ApplicationContext springContext) {
+        super(assertion);
         auditor = new Auditor(this, springContext, Logger.getLogger(getClass().getName()));
         CompiledXpath compiledXpath;
         try {

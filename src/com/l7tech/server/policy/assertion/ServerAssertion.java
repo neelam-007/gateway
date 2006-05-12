@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
@@ -24,4 +25,9 @@ public interface ServerAssertion {
      * @throws PolicyAssertionException something is wrong in the policy dont throw this if there is an issue with the request or the response
      */
     AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException;
+
+    /**
+     * @return the assertion associated with this server assertion
+     */
+    Assertion asAssertion();
 }

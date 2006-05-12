@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 /**
  * The Server side Regex Assertion
  */
-public class ServerRegex implements ServerAssertion {
+public class ServerRegex extends AbstractServerAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
@@ -37,6 +37,7 @@ public class ServerRegex implements ServerAssertion {
     public static final String ENCODING = "UTF-8";
 
     public ServerRegex(Regex ass, ApplicationContext springContext) {
+        super(ass);
         regexAssertion = ass;
         auditor = new Auditor(this, springContext, logger);
         String regExExpression = ass.getRegex();

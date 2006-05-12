@@ -12,18 +12,20 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public abstract class ServerCompositeAssertion implements ServerAssertion {
+public abstract class ServerCompositeAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final CompositeAssertion bean;
     protected ServerAssertion[] children;
     private ApplicationContext applicationContext;
 
     public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext context ) throws PolicyAssertionException {
+        super(composite);
         this.applicationContext = context;
         this.bean = composite;
         if (applicationContext == null) {

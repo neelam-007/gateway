@@ -33,13 +33,14 @@ import java.util.logging.Logger;
  * been examined by Tarari, and works by scanning the token buffer in one pass (two if nesting depth
  * is being checked).
  */
-public class ServerAcceleratedOversizedTextAssertion implements ServerAssertion {
+public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerAcceleratedOversizedTextAssertion.class.getName());
     private final Auditor auditor;
     private final ServerOversizedTextAssertion delegate;  // Non-Tarari-specific impl to handle the stuff that can just use XPath
     private final OversizedTextAssertion ota;
 
     public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
+        super(data);
         auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
         // The delegate will do all the checking except for oversized text and attr nodes, which we can do
         // specially by just scanning the token buffer in one pass.

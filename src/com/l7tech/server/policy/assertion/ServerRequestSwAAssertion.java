@@ -34,12 +34,13 @@ import java.util.logging.Logger;
  * <p> @author fpang </p>
  * $Id$
  */
-public class ServerRequestSwAAssertion implements ServerAssertion {
+public class ServerRequestSwAAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final RequestSwAAssertion _data;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
     public ServerRequestSwAAssertion(RequestSwAAssertion data, ApplicationContext springContext) {
+       super(data);
         if (data == null) throw new IllegalArgumentException("must provide assertion");
         _data = data;
         auditor = new Auditor(this, springContext, logger);

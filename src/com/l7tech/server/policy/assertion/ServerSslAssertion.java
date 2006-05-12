@@ -26,11 +26,12 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class ServerSslAssertion implements ServerAssertion {
+public class ServerSslAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
     private ApplicationContext springContext;
 
     public ServerSslAssertion(SslAssertion data, ApplicationContext springContext) {
+        super(data);
         _data = data;
         this.springContext = springContext;
         auditor = new Auditor(this, springContext, logger);

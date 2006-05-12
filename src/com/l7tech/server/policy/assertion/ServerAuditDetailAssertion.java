@@ -21,13 +21,14 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jan 19, 2006<br/>
  */
-public class ServerAuditDetailAssertion implements ServerAssertion {
+public class ServerAuditDetailAssertion extends AbstractServerAssertion implements ServerAssertion {
     private AuditDetailAssertion subject;
     private final Auditor auditor;
     private final String[] varsUsed;
     private Logger logger = Logger.getLogger(ServerAuditDetailAssertion.class.getName());
 
     public ServerAuditDetailAssertion(AuditDetailAssertion subject, ApplicationContext springContext) {
+        super(subject);
         this.subject = subject;
         auditor = new Auditor(this, springContext, logger);
         varsUsed = subject.getVariablesUsed();

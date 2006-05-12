@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import org.springframework.context.ApplicationContext;
@@ -30,7 +31,7 @@ import java.util.logging.Logger;
  * This assertion asserts that this message had a signed timestamp, and that no message with this timestamp signed
  * by one of the same signing tokens has been seen recently.
  */
-public class ServerRequestWssReplayProtection implements ServerAssertion {
+public class ServerRequestWssReplayProtection extends AbstractServerAssertion implements ServerAssertion {
     private static final long EXPIRY_GRACE_TIME_MILLIS = 1000L * 60 * 1; // allow messages expired up to 1 minute ago
     private static final long MAXIMUM_MESSAGE_AGE_MILLIS = 1000L * 60 * 60 * 24 * 30; // hard cap of 30 days old
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
@@ -40,6 +41,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
     private final Auditor auditor;
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext ctx) {
+        super(subject);
         this.applicationContext = ctx;
         this.auditor = new Auditor(this, applicationContext, logger);
     }

@@ -17,12 +17,14 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public class ServerTrueAssertion implements ServerAssertion {
+public class ServerTrueAssertion extends AbstractServerAssertion implements ServerAssertion {
     public ServerTrueAssertion( TrueAssertion ass ) {
+        super(ass);
         // meaningless
     }
 
     public ServerTrueAssertion() {
+        super(null);
         // meaningless
     }
 

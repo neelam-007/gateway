@@ -27,12 +27,13 @@ import java.util.logging.Logger;
  * <b>NOTE</b>: This assertion destroys the current request and replaces it
  * with new content!
  */
-public class ServerHttpFormPost implements ServerAssertion {
+public class ServerHttpFormPost extends AbstractServerAssertion implements ServerAssertion {
     private static Logger logger = Logger.getLogger(ServerHttpFormPost.class.getName());
     private final Auditor auditor;
     private final HttpFormPost assertion;
 
     public ServerHttpFormPost(HttpFormPost assertion, ApplicationContext springContext) {
+        super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
         this.assertion = assertion;
     }

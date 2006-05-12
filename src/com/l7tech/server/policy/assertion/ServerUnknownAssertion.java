@@ -30,12 +30,13 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ServerUnknownAssertion implements ServerAssertion {
+public class ServerUnknownAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final UnknownAssertion unknownAssertion;
     private final Auditor auditor;
 
     public ServerUnknownAssertion(UnknownAssertion a, ApplicationContext springContext) {
+        super(a);
         auditor = new Auditor(this, springContext, logger);
         unknownAssertion = a;
     }

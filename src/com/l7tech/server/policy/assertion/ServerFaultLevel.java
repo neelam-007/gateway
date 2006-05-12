@@ -19,9 +19,10 @@ import java.io.IOException;
  *
  * @see com.l7tech.policy.assertion.FaultLevel
  */
-public class ServerFaultLevel implements ServerAssertion {
+public class ServerFaultLevel extends AbstractServerAssertion implements ServerAssertion {
     private FaultLevel assertion;
     public ServerFaultLevel(FaultLevel assertion, ApplicationContext context) {
+        super(assertion);
         this.assertion = assertion;
     }
 

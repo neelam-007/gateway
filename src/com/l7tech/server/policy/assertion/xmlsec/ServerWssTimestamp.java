@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.springframework.context.ApplicationContext;
 
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -18,11 +19,12 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssTimestamp;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class ServerWssTimestamp  implements ServerAssertion {
+public class ServerWssTimestamp extends AbstractServerAssertion  implements ServerAssertion {
 
     //- PUBLIC
 
     public ServerWssTimestamp(WssTimestamp assertion, ApplicationContext applicationContext) {
+        super(assertion);
         this.wssTimestamp = assertion;
         this.requestAssertion = buildRequestAssertion(applicationContext);
         this.responseAssertion = buildResponseAssertion(applicationContext);

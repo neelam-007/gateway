@@ -18,8 +18,9 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public class ServerHttpTransportAssertion implements ServerAssertion {
+public class ServerHttpTransportAssertion extends AbstractServerAssertion implements ServerAssertion {
     public ServerHttpTransportAssertion( HttpTransportAssertion data ) {
+        super(data);
         this.data = data;
     }
 

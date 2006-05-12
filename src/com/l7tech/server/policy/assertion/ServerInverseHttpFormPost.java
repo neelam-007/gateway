@@ -30,13 +30,14 @@ import java.util.logging.Logger;
  * <b>NOTE</b>: This assertion destroys the current request and replaces it
  * with new content!
  */
-public class ServerInverseHttpFormPost implements ServerAssertion {
+public class ServerInverseHttpFormPost extends AbstractServerAssertion implements ServerAssertion {
     private static Logger logger = Logger.getLogger(ServerInverseHttpFormPost.class.getName());
     private final Auditor auditor;
     private final InverseHttpFormPost assertion;
     private static final String ENCODING = "UTF-8";
 
     public ServerInverseHttpFormPost(InverseHttpFormPost assertion, ApplicationContext springContext) {
+        super(assertion);
         this.auditor = new Auditor(this, springContext, logger);
         this.assertion = assertion;
     }

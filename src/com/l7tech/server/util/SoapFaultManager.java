@@ -3,6 +3,8 @@ package com.l7tech.server.util;
 import com.l7tech.common.xml.SoapFaultLevel;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.Messages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.variable.ExpandVariables;
@@ -10,6 +12,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.List;
+import java.text.MessageFormat;
+import java.text.FieldPosition;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -93,11 +98,75 @@ public class SoapFaultManager implements ApplicationContextAware {
                 }
                 break;
             case SoapFaultLevel.MEDIUM_DETAIL_FAULT:
-                // todo, construct entire soap fault based on what the pec tells us what happened
+                output = buildDetailedFault(pec, globalstatus, false);
                 break;
             case SoapFaultLevel.FULL_TRACE_FAULT:
-                // todo, construct entire soap fault based on what the pec tells us what happened
+                output = buildDetailedFault(pec, globalstatus, true);
                 break;
+        }
+        return output;
+    }
+
+    /**
+     * returns soap faults in the form of:
+     * <?xml version="1.0" encoding="UTF-8"?>
+     *   <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+     *      <soapenv:Body>
+     *          <soapenv:Fault>
+     *              <faultcode>Server</faultcode>
+     *              <faultstring>Policy Falsified</faultstring>
+     *              <faultactor>http://soong:8080/xml/blub</faultactor>
+     *              <l7:policyResult status="Falsified" xmlns:l7="http://www.layer7tech.com/ws/policy/fault" xmlns:l7p="http://www.layer7tech.com/ws/policy">
+     *                  <l7:assertionResult status="BAD" assertion="l7p:WssUsernameToken">
+     *                      <l7:detailMessage id="4302">This request did not contain any WSS level security.</l7:detailMessage>
+     *                      <l7:detailMessage id="5204">Request did not include an encrypted UsernameToken.</l7:detailMessage>
+     *                  </l7:assertionResult>
+     *              </l7:policyResult>
+     *          </soapenv:Fault>
+     *      </soapenv:Body>
+     *  </soapenv:Envelope>
+     */
+    private String buildDetailedFault(PolicyEnforcementContext pec, AssertionStatus globalstatus, boolean includeSuccesses) {
+        String output = null;
+        try {
+            Document tmp = XmlUtil.stringToDocument(GENERIC_FAULT);
+            NodeList res = tmp.getElementsByTagNameNS("http://www.layer7tech.com/ws/policy/fault", "policyResult");
+            // populate @status element
+            Element policyResultEl = (Element)res.item(0);
+            policyResultEl.setAttribute("status", globalstatus.getMessage());
+            // populate the faultactor value
+            String actor = pec.getVariable("request.url").toString();
+            res = tmp.getElementsByTagName("faultactor");
+            Element faultactor = (Element)res.item(0);
+            faultactor.setTextContent(actor);
+
+            List<PolicyEnforcementContext.AssertionResult> results = pec.getAssertionResults(pec.getAuditContext());
+            for (PolicyEnforcementContext.AssertionResult result : results) {
+                if (result.getStatus() == AssertionStatus.NONE && !includeSuccesses) {
+                    continue;
+                }
+                Element assertionResultEl = tmp.createElementNS("http://www.layer7tech.com/ws/policy/fault", "l7:assertionResult");
+                assertionResultEl.setAttribute("status", result.getStatus().getMessage());
+                // todo, translate this into friendly assertion name see TypeMappingUtils.findTypeMappingByClass
+                assertionResultEl.setAttribute("assertion", result.getAssertion().getClass().getName());
+                List<AuditDetail> details = result.getDetails();
+                if (details != null) {
+                    for (AuditDetail detail : details) {
+                        Element detailMsgEl = tmp.createElementNS("http://www.layer7tech.com/ws/policy/fault", "l7:detailMessage");
+                        detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
+                        // add text node with actual message. see below for logpanel sample:
+                        StringBuffer msgbuf = new StringBuffer();
+                        MessageFormat mf = new MessageFormat(Messages.getMessageById(detail.getMessageId()));
+                        mf.format(detail.getParams(), msgbuf, new FieldPosition(0));
+                        detailMsgEl.setTextContent(msgbuf.toString());
+                        assertionResultEl.appendChild(tmp.importNode(detailMsgEl, true));
+                    }
+                }
+                policyResultEl.appendChild(tmp.importNode(assertionResultEl, true));
+            }
+            output = XmlUtil.nodeToFormattedString(tmp);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "could not construct generic fault", e);
         }
         return output;
     }

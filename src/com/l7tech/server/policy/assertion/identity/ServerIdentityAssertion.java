@@ -21,6 +21,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.security.cert.X509Certificate;
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public abstract class ServerIdentityAssertion implements ServerAssertion {
+public abstract class ServerIdentityAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
 
     private final Auditor auditor;
@@ -42,6 +43,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     protected IdentityAssertion identityAssertion;
 
     public ServerIdentityAssertion(IdentityAssertion data, ApplicationContext ctx) {
+        super(data);
         identityAssertion = data;
         if (ctx == null) {
             throw new IllegalArgumentException("Application Context is required");

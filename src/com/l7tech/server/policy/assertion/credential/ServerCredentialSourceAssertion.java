@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -27,10 +28,11 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public abstract class ServerCredentialSourceAssertion implements ServerAssertion {
+public abstract class ServerCredentialSourceAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
 
     protected ServerCredentialSourceAssertion(Assertion data, ApplicationContext springContext) {
+        super(data);
         if (data == null) {
             throw new IllegalArgumentException();
         }

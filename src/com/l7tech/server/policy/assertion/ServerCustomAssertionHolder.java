@@ -54,7 +54,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ServerCustomAssertionHolder implements ServerAssertion {
+public class ServerCustomAssertionHolder extends AbstractServerAssertion implements ServerAssertion {
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private final CustomAssertionHolder data;
@@ -67,6 +67,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     private ApplicationContext applicationContext;
 
     public ServerCustomAssertionHolder(CustomAssertionHolder ca, ApplicationContext springContext) {
+        super(ca);
         if (ca == null || ca.getCustomAssertion() == null) {
             throw new IllegalArgumentException();
         }

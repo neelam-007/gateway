@@ -24,6 +24,7 @@ import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertio
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -35,11 +36,12 @@ import javax.crypto.SecretKey;
  * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
  * signed the timestamp.
  */
-public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
+public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAssertion implements ServerAssertion {
 
     //- PUBLIC
 
     public ServerEncryptedUsernameTokenAssertion(EncryptedUsernameTokenAssertion data, ApplicationContext springContext) {
+        super(data);
         this.data = data;
         this.auditor = new Auditor(this, springContext, logger);
     }
@@ -128,7 +130,7 @@ public class ServerEncryptedUsernameTokenAssertion implements ServerAssertion {
     private void addDeferredAssertion(PolicyEnforcementContext context,
                                       final String encryptedKeySha1,
                                       final SecretKey secretKey) {
-        context.addDeferredAssertion(this, new ServerAssertion() {
+        context.addDeferredAssertion(this, new AbstractServerAssertion(data) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {

@@ -27,6 +27,7 @@ import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.xpath.CursorXPathFactory;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 /**
@@ -40,8 +41,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public abstract class ServerXpathValidationAssertion implements ServerAssertion {
-
+public abstract class ServerXpathValidationAssertion extends AbstractServerAssertion implements ServerAssertion {
     //- PUBLIC
 
     /**
@@ -82,7 +82,8 @@ public abstract class ServerXpathValidationAssertion implements ServerAssertion 
 
     //- PROTECTED
 
-    protected ServerXpathValidationAssertion(Logger validationLogger) {
+    protected ServerXpathValidationAssertion(Assertion assertion, Logger validationLogger) {
+        super(assertion);
         this.logger = validationLogger;
         nsPreToUriMap = Collections.EMPTY_MAP;
         nsUriToPreMap = Collections.EMPTY_MAP;

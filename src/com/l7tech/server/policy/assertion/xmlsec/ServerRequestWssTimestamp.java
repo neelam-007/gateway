@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ServerRequestWssTimestamp implements ServerAssertion {
+public class ServerRequestWssTimestamp extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerRequestWssTimestamp.class.getName());
     private final RequestWssTimestamp assertion;
     private final Auditor auditor;
@@ -36,6 +37,7 @@ public class ServerRequestWssTimestamp implements ServerAssertion {
     private final int expiresPastFuzz = Integer.getInteger(this.getClass().getName() + ".expiresPastGrace", DEFAULT_EXPIRES_PAST_FUZZ).intValue();
 
     public ServerRequestWssTimestamp(RequestWssTimestamp assertion, ApplicationContext spring) {
+        super(assertion);
         this.assertion = assertion;
         this.auditor = new Auditor(this, spring, logger);
         logger.info("Created future grace period: " + createdFutureFuzz);

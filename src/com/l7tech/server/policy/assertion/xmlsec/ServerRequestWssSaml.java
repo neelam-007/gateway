@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
@@ -37,7 +38,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServerRequestWssSaml implements ServerAssertion {
+public class ServerRequestWssSaml extends AbstractServerAssertion implements ServerAssertion {
     private RequestWssSaml requestWssSaml;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private ApplicationContext applicationContext;
@@ -50,6 +51,7 @@ public class ServerRequestWssSaml implements ServerAssertion {
      * @param sa the saml
      */
     public ServerRequestWssSaml(RequestWssSaml sa, ApplicationContext context) {
+        super(sa);
         if (sa == null) {
             throw new IllegalArgumentException();
         }

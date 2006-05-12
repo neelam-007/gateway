@@ -15,7 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class ServerWsspAssertion implements ServerAssertion {
+public class ServerWsspAssertion extends AbstractServerAssertion implements ServerAssertion {
 
     //- PUBLIC
 
@@ -26,6 +26,7 @@ public class ServerWsspAssertion implements ServerAssertion {
      * @param springContext the application context to use
      */
     public ServerWsspAssertion(WsspAssertion wsspAssertion, ApplicationContext springContext) {
+        super(wsspAssertion);
     }
 
     /**

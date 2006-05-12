@@ -25,12 +25,13 @@ import java.util.logging.Logger;
  * Server side implementation of the SqlAttackAssertion all-in-one convenience assertion.
  * Internally this is implemented, essentially, as just zero or more regexp assertions.
  */
-public class ServerSqlAttackAssertion implements ServerAssertion {
+public class ServerSqlAttackAssertion extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerSqlAttackAssertion.class.getName());
     private final Auditor auditor;
     private final ArrayList children = new ArrayList();
 
     public ServerSqlAttackAssertion(SqlAttackAssertion data, ApplicationContext springContext) {
+        super(data);
         auditor = new Auditor(this, springContext, logger);
         boolean abort = false;
 

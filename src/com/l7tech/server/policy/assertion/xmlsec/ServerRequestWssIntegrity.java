@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -53,7 +54,7 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
 
     // A deferred job that tries to attach a SignatureConfirmation to the response, if the response is SOAP.
     private ServerAssertion deferredSignatureConfirmation(final String signatureConfirmation) {
-        return new ServerAssertion() {
+        return new AbstractServerAssertion(assertion) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 

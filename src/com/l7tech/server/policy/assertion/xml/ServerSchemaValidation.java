@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.spring.util.WeakReferenceApplicationListener;
@@ -62,7 +63,7 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class ServerSchemaValidation implements ServerAssertion, ApplicationListener {
+public class ServerSchemaValidation extends AbstractServerAssertion implements ServerAssertion, ApplicationListener {
     private static final String MSG_PAYLOAD_NS = "Hardware schema validation succeeded but the tns " +
             "did not match the assertion at hand. Returning failure.";
 
@@ -84,6 +85,7 @@ public class ServerSchemaValidation implements ServerAssertion, ApplicationListe
      *
      */
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
+        super(data);
         this.schemaHasDependencies = false;
         this.schemaValidationAssertion = data;
         this.springContext = springContext;

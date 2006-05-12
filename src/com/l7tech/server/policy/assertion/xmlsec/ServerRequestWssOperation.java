@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -27,11 +28,12 @@ import java.util.logging.Logger;
 /**
  * Code shared between ServerRequestWssConfidentiality and ServerRequestWssIntegrity.
  */
-public abstract class ServerRequestWssOperation implements ServerAssertion {
+public abstract class ServerRequestWssOperation extends AbstractServerAssertion implements ServerAssertion {
     private Logger logger;
     protected final Auditor auditor;
 
     protected ServerRequestWssOperation(Logger logger, XpathBasedAssertion data, ApplicationContext springContext) {
+        super(data);
         this.logger = logger;
         this.data = data;
         auditor = new Auditor(this, springContext, logger);

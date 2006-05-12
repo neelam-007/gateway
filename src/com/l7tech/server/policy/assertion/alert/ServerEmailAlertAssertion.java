@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
 import javax.mail.MessagingException;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
 /**
  * Server side implementation of assertion that sends an email alert.
  */
-public class ServerEmailAlertAssertion implements ServerAssertion {
+public class ServerEmailAlertAssertion extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerEmailAlertAssertion.class.getName());
 
     private final Auditor auditor;
@@ -64,6 +65,7 @@ public class ServerEmailAlertAssertion implements ServerAssertion {
     }
 
     public ServerEmailAlertAssertion(EmailAlertAssertion ass, ApplicationContext applicationContext) {
+        super(ass);
         auditor = new Auditor(this, applicationContext, logger);
         this.ass = ass;
 

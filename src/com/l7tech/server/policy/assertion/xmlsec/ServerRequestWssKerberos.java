@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -38,11 +39,12 @@ import java.util.logging.Logger;
  * @author $Author$
  * @version $Version: $
  */
-public class ServerRequestWssKerberos implements ServerAssertion {
+public class ServerRequestWssKerberos extends AbstractServerAssertion implements ServerAssertion {
 
     //- PUBLIC
 
     public ServerRequestWssKerberos(RequestWssKerberos requestWssKerberos, ApplicationContext springContext) {
+        super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
         auditor = new Auditor(this, springContext, logger);
     }
@@ -156,7 +158,7 @@ public class ServerRequestWssKerberos implements ServerAssertion {
     private RequestWssKerberos requestWssKerberos;
 
     private void addDeferredAssertion(PolicyEnforcementContext context, final KerberosServiceTicket kerberosServiceTicket) {
-        context.addDeferredAssertion(this, new ServerAssertion() {
+        context.addDeferredAssertion(this, new AbstractServerAssertion(requestWssKerberos) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {

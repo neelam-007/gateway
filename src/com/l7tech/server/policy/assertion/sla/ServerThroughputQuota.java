@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.sla.CounterManager;
 import org.springframework.context.ApplicationContext;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
  *
  * @author flascelles@layer7-tech.com
  */
-public class ServerThroughputQuota implements ServerAssertion {
+public class ServerThroughputQuota extends AbstractServerAssertion implements ServerAssertion {
     private ThroughputQuota assertion;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
@@ -40,6 +41,7 @@ public class ServerThroughputQuota implements ServerAssertion {
     private final String[] varsUsed;
 
     public ServerThroughputQuota(ThroughputQuota assertion, ApplicationContext ctx) {
+        super(assertion);
         this.assertion = assertion;
         this.applicationContext = ctx;
         auditor = new Auditor(this, applicationContext, logger);

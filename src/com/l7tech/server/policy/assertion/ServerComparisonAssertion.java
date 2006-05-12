@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  *
  * @see com.l7tech.policy.assertion.ComparisonAssertion
  */
-public class ServerComparisonAssertion implements ServerAssertion {
+public class ServerComparisonAssertion extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerComparisonAssertion.class.getName());
 
     private final Auditor auditor;
@@ -26,6 +26,7 @@ public class ServerComparisonAssertion implements ServerAssertion {
     private final String[] variablesUsed;
 
     public ServerComparisonAssertion(ComparisonAssertion assertion, ApplicationContext springContext) {
+        super(assertion);
         this.assertion = assertion;
         auditor = new Auditor(this, springContext, logger);
         variablesUsed = assertion.getVariablesUsed();

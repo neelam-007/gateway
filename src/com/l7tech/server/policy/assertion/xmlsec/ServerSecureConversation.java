@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import org.springframework.context.ApplicationContext;
@@ -31,10 +32,11 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Aug 4, 2004<br/>
  */
-public class ServerSecureConversation implements ServerAssertion {
+public class ServerSecureConversation extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
 
     public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
+        super(assertion);
         // nothing to remember from the passed assertion
         auditor = new Auditor(this, springContext, logger);
     }
@@ -90,7 +92,7 @@ public class ServerSecureConversation implements ServerAssertion {
     }
 
     private ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
-        return new ServerAssertion() {
+        return new AbstractServerAssertion(assertion) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 

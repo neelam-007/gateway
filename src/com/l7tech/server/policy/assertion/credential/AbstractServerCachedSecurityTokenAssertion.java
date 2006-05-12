@@ -9,6 +9,8 @@ import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 import java.net.URL;
 import java.util.logging.Level;
@@ -23,7 +25,7 @@ import java.util.logging.Logger;
  * @author $Author$
  * @version $Revision$
  */
-public abstract class AbstractServerCachedSecurityTokenAssertion implements ServerAssertion {
+public abstract class AbstractServerCachedSecurityTokenAssertion extends AbstractServerAssertion implements ServerAssertion {
 
     //- PROTECTED
 
@@ -33,7 +35,8 @@ public abstract class AbstractServerCachedSecurityTokenAssertion implements Serv
      *
      * @param cacheKey the unique key used to identify the token.
      */
-    protected AbstractServerCachedSecurityTokenAssertion(String cacheKey) {
+    protected AbstractServerCachedSecurityTokenAssertion(Assertion assertion, String cacheKey) {
+        super(assertion);
         this.cacheKey = cacheKey;
     }
 

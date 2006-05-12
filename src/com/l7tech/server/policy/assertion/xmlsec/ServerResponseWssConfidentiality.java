@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -41,11 +42,12 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Aug 26, 2003<br/>
  */
-public class ServerResponseWssConfidentiality implements ServerAssertion {
+public class ServerResponseWssConfidentiality extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
     private final X509Certificate recipientContextCert;
 
     public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
+        super(data);
         responseWssConfidentiality = data;
         this.auditor = new Auditor(this, ctx, logger);
 
@@ -180,7 +182,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                                                final SecurityContextToken secConvTok,
                                                final EncryptedKey encryptedKey,
                                                final XmlSecurityRecipientContext recipient) {
-        return new ServerAssertion() {
+        return new AbstractServerAssertion(assertion) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {

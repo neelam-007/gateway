@@ -18,10 +18,12 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.server.KeystoreUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -32,12 +34,13 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-abstract class ServerResponseWssSignature implements ServerAssertion {
+abstract class ServerResponseWssSignature extends AbstractServerAssertion implements ServerAssertion {
     protected final SignerInfo signerInfo;
     protected final ResponseWssConfig wssConfig;
     protected final Auditor auditor;
 
     protected ServerResponseWssSignature(ResponseWssConfig responseWssAssertion, ApplicationContext spring, Logger logger) {
+        super((Assertion)responseWssAssertion);
         this.auditor = new Auditor(this, spring, logger);
         this.wssConfig = responseWssAssertion;
         KeystoreUtils ku = (KeystoreUtils)spring.getBean("keystore");
@@ -68,7 +71,7 @@ abstract class ServerResponseWssSignature implements ServerAssertion {
 
         final XmlSecurityRecipientContext recipient = wssConfig.getRecipientContext();
 
-        context.addDeferredAssertion(this, new ServerAssertion() {
+        context.addDeferredAssertion(this, new AbstractServerAssertion((Assertion)wssConfig) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {

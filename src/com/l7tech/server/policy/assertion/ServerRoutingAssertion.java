@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public abstract class ServerRoutingAssertion implements ServerAssertion {
+public abstract class ServerRoutingAssertion extends AbstractServerAssertion implements ServerAssertion {
 
     //- PUBLIC
 
@@ -50,6 +50,7 @@ public abstract class ServerRoutingAssertion implements ServerAssertion {
      *
      */
     protected ServerRoutingAssertion(RoutingAssertion data, ApplicationContext applicationContext) {
+        super(data);
         this.applicationContext = applicationContext;
         this.data = data;
         this.auditor = new Auditor(this, applicationContext, logger);

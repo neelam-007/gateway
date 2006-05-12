@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  * The Server side Regex Assertion
  */
-public class ServerRequestSizeLimit implements ServerAssertion {
+public class ServerRequestSizeLimit extends AbstractServerAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
@@ -27,6 +27,7 @@ public class ServerRequestSizeLimit implements ServerAssertion {
     private final long limit;
 
     public ServerRequestSizeLimit(RequestSizeLimit ass, ApplicationContext springContext) {
+        super(ass);
         auditor = new Auditor(this, springContext, logger);
         this.entireMessage = ass.isEntireMessage();
         this.limit = ass.getLimit();

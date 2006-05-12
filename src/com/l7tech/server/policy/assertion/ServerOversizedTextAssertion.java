@@ -29,7 +29,7 @@ import java.util.logging.Level;
  * Server side implementation of the OversizedTextAssertion convenience assertion.
  * Internally this is implemented, essentially, as just a nested xpath assertion.
  */
-public class ServerOversizedTextAssertion implements ServerAssertion {
+public class ServerOversizedTextAssertion extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerOversizedTextAssertion.class.getName());
     private final Auditor auditor;
     private final CompiledXpath matchBigText;
@@ -39,6 +39,7 @@ public class ServerOversizedTextAssertion implements ServerAssertion {
     private final boolean requireValidSoap;
 
     public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
+        super(data);
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
 
         final String textXpath = data.makeTextXpath();

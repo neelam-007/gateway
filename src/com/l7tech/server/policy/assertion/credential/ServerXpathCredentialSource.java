@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.springframework.context.ApplicationContext;
@@ -27,13 +28,14 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ServerXpathCredentialSource implements ServerAssertion {
+public class ServerXpathCredentialSource extends AbstractServerAssertion implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerXpathCredentialSource.class.getName());
     private final Auditor auditor;
     private final DOMXPath loginXpath, passwordXpath;
     private final XpathCredentialSource assertion;
 
     public ServerXpathCredentialSource(XpathCredentialSource assertion, ApplicationContext springContext) {
+        super(assertion);
         this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
 

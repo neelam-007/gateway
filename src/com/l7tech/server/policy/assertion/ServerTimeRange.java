@@ -24,10 +24,11 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class ServerTimeRange implements ServerAssertion {
+public class ServerTimeRange extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
 
     public ServerTimeRange(TimeRange assertion, ApplicationContext springContext) {
+        super(assertion);
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
         subject = assertion;
         this.auditor = new Auditor(this, springContext, logger);

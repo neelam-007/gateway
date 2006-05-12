@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 /**
  * The Server side Hardcoded Response.
  */
-public class ServerHardcodedResponseAssertion implements ServerAssertion {
+public class ServerHardcodedResponseAssertion extends AbstractServerAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
@@ -39,6 +39,7 @@ public class ServerHardcodedResponseAssertion implements ServerAssertion {
     private final String[] variablesUsed;
 
     public ServerHardcodedResponseAssertion(HardcodedResponseAssertion ass, ApplicationContext springContext) {
+        super(ass);
         auditor = new Auditor(this, springContext, logger);
         ContentTypeHeader ctype;
         variablesUsed = ass.getVariablesUsed();
