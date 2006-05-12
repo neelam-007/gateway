@@ -20,6 +20,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMap;
@@ -437,28 +438,28 @@ public class PolicyEnforcementContext extends ProcessingContext {
         if (assertionResultList == null) {
             assertionResultList = new LinkedList<AssertionResult>();
             for (Map.Entry<ServerAssertion, AssertionStatus> entry : assertionStatuses.entrySet()) {
-                ServerAssertion assertion = entry.getKey();
+                ServerAssertion serverAssertion = entry.getKey();
                 AssertionStatus status = entry.getValue();
-                List<AuditDetail> assertionDetails = detailMap.get(assertion);
-                AssertionResult trace = new AssertionResult(assertion, status, assertionDetails);
+                List<AuditDetail> assertionDetails = detailMap.get(serverAssertion);
+                AssertionResult trace = new AssertionResult(serverAssertion.getAssertion(), status, assertionDetails);
                 assertionResultList.add(trace);
             }
         }
         return assertionResultList;
     }
 
-    public static class AssertionResult {
-        private final ServerAssertion assertion;
+    public final static class AssertionResult {
+        private final Assertion assertion;
         private final AssertionStatus status;
         private final List<AuditDetail> details;
 
-        public AssertionResult(ServerAssertion assertion, AssertionStatus status, List<AuditDetail> details) {
+        private AssertionResult(Assertion assertion, AssertionStatus status, List<AuditDetail> details) {
             this.assertion = assertion;
             this.status = status;
             this.details = details;
         }
 
-        public ServerAssertion getAssertion() {
+        public Assertion getAssertion() {
             return assertion;
         }
 

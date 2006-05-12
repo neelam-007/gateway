@@ -11,7 +11,7 @@ import org.w3c.dom.Element;
 /**
  * Interface for something that knows how to convert an object of a given type into an XML element and vice versa.
  */
-interface TypeMapping {
+public interface TypeMapping {
     /**
      * Get the concrete class that this TypeMapping recognizes.  A {@link TypedReference} passed to {@link #freeze}
      * must be of this type, and TypeReferences returned by {@link #thaw} will be of this type.

@@ -45,9 +45,11 @@ import java.util.logging.Logger;
 public class ServerResponseWssConfidentiality extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
     private final X509Certificate recipientContextCert;
+    private final ResponseWssConfidentiality data;
 
     public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
         super(data);
+        this.data = data;
         responseWssConfidentiality = data;
         this.auditor = new Auditor(this, ctx, logger);
 
@@ -182,7 +184,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion im
                                                final SecurityContextToken secConvTok,
                                                final EncryptedKey encryptedKey,
                                                final XmlSecurityRecipientContext recipient) {
-        return new AbstractServerAssertion(assertion) {
+        return new AbstractServerAssertion(data) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {

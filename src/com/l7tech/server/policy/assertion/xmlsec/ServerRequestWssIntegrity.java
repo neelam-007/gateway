@@ -32,9 +32,10 @@ import java.util.HashSet;
  */
 public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
     private static final Logger logger = Logger.getLogger(ServerRequestWssIntegrity.class.getName());
-
+    private final RequestWssIntegrity data;
     public ServerRequestWssIntegrity(RequestWssIntegrity data, ApplicationContext springContext) {
         super(logger, data, springContext);
+        this.data = data;
     }
 
     protected String getPastTenseOperationName() {
@@ -54,7 +55,7 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
 
     // A deferred job that tries to attach a SignatureConfirmation to the response, if the response is SOAP.
     private ServerAssertion deferredSignatureConfirmation(final String signatureConfirmation) {
-        return new AbstractServerAssertion(assertion) {
+        return new AbstractServerAssertion(data) {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 

@@ -3,7 +3,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.policy.assertion.Assertion;
 
 /**
- * [class desc]
+ * Abstract implementation for the getAssertion
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -12,12 +12,12 @@ import com.l7tech.policy.assertion.Assertion;
  * $Id$
  */
 public abstract class AbstractServerAssertion implements ServerAssertion {
-    protected Assertion assertion;
+    final private Assertion assertion;
     public AbstractServerAssertion(Assertion assertion) {
         this.assertion = assertion;
     }
 
-    public Assertion asAssertion() {
+    public Assertion getAssertion() {
         return assertion;
     }
 }

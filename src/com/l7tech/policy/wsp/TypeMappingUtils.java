@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * Utility code used by some TypeMappings.
  */
-class TypeMappingUtils {
+public class TypeMappingUtils {
     static boolean isNullableType(Class type) {
         return !(int.class.equals(type) ||
           long.class.equals(type) ||
@@ -44,7 +44,7 @@ class TypeMappingUtils {
      * @param clazz The class to look up
      * @return The TypeMapping for this class, or null if not found.
      */
-    static TypeMapping findTypeMappingByClass(Class clazz) {
+    public static TypeMapping findTypeMappingByClass(Class clazz) {
         final TypeMapping[] tms = WspConstants.typeMappings;
         for (int i = 0; i < tms.length; i++) {
             TypeMapping typeMapping = tms[i];

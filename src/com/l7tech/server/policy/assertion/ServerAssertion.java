@@ -29,5 +29,5 @@ public interface ServerAssertion {
     /**
      * @return the assertion associated with this server assertion
      */
-    Assertion asAssertion();
+    Assertion getAssertion();
 }

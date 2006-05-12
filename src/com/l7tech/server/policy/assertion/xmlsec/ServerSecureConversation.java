@@ -34,9 +34,11 @@ import java.util.logging.Logger;
  */
 public class ServerSecureConversation extends AbstractServerAssertion implements ServerAssertion {
     private final Auditor auditor;
+    private final SecureConversation assertion;
 
     public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
         super(assertion);
+        this.assertion = assertion;
         // nothing to remember from the passed assertion
         auditor = new Auditor(this, springContext, logger);
     }

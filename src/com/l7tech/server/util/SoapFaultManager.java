@@ -9,6 +9,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.variable.ExpandVariables;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.wsp.TypeMappingUtils;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -134,6 +135,8 @@ public class SoapFaultManager implements ApplicationContextAware {
             // populate @status element
             Element policyResultEl = (Element)res.item(0);
             policyResultEl.setAttribute("status", globalstatus.getMessage());
+            policyResultEl.setAttribute("xmlns:l7p", "http://www.layer7tech.com/ws/policy");
+
             // populate the faultactor value
             String actor = pec.getVariable("request.url").toString();
             res = tmp.getElementsByTagName("faultactor");
@@ -147,8 +150,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                 }
                 Element assertionResultEl = tmp.createElementNS("http://www.layer7tech.com/ws/policy/fault", "l7:assertionResult");
                 assertionResultEl.setAttribute("status", result.getStatus().getMessage());
-                // todo, translate this into friendly assertion name see TypeMappingUtils.findTypeMappingByClass
-                assertionResultEl.setAttribute("assertion", result.getAssertion().getClass().getName());
+                String assertionattr = "l7p:" + TypeMappingUtils.findTypeMappingByClass(result.getAssertion().getClass()).getExternalName();
+                assertionResultEl.setAttribute("assertion", assertionattr);
                 List<AuditDetail> details = result.getDetails();
                 if (details != null) {
                     for (AuditDetail detail : details) {
