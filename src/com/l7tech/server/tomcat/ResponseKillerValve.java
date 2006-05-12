@@ -10,6 +10,7 @@ import org.apache.catalina.valves.ValveBase;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 import org.apache.coyote.http11.InternalOutputBuffer;
+import org.apache.coyote.OutputBuffer;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -37,7 +38,9 @@ public class ResponseKillerValve extends ValveBase {
     public void invoke(Request req, Response res) throws IOException, ServletException {
         InternalOutputBuffer iob = null;
         try {
-            iob = (InternalOutputBuffer)res.getCoyoteResponse().getOutputBuffer();
+            OutputBuffer ob = res.getCoyoteResponse().getOutputBuffer();
+            if (ob instanceof InternalOutputBuffer)
+                iob = (InternalOutputBuffer)ob;
         } catch (Exception e) {
             logger.log(Level.SEVERE,
                        "Unexpected type returned by res.getCoyoteResponse().getOutputBuffer()",
