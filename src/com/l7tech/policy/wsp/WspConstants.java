@@ -8,7 +8,6 @@ package com.l7tech.policy.wsp;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.ComparisonOperator;
 import com.l7tech.common.util.TimeUnit;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
@@ -281,7 +280,6 @@ public class WspConstants {
         new AssertionMapping(new InverseHttpFormPost(), "InverseHttpFormPost"),
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new ComparisonAssertion(), "ComparisonAssertion"),
-        new AssertionMapping(new StealthFault(), "StealthFault"),
         new AssertionMapping(new FaultLevel(), "FaultLevel"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
         new AssertionMapping(new OversizedTextAssertion(), "OversizedText"),
@@ -349,5 +347,6 @@ public class WspConstants {
         WspUpgradeUtilFrom30.wssDigestCompatibilityMapping,
 
         EqualityRenamedToComparison.equalityCompatibilityMapping,
+        StealthReplacedByFaultLevel.faultDropCompatibilityMapping
     };
 }
