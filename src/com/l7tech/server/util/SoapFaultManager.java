@@ -8,6 +8,7 @@ import com.l7tech.common.audit.Messages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.policy.variable.ExpandVariables;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;
@@ -124,7 +125,14 @@ public class SoapFaultManager implements ApplicationContextAware {
             Element policyResultEl = (Element)res.item(0);
             policyResultEl.setAttribute("status", e.getMessage());
             // populate the faultactor value
-            String actor = pec.getVariable("request.url").toString();
+            String actor = null;
+            try {
+                actor = pec.getVariable("request.url").toString();
+                // todo, catch cases when this throws and just fix it
+            } catch (NoSuchVariableException notfound) {
+                logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
+                actor = "ssg";
+            }
             res = tmp.getElementsByTagName("faultactor");
             Element faultactor = (Element)res.item(0);
             faultactor.setTextContent(actor);
@@ -166,11 +174,17 @@ public class SoapFaultManager implements ApplicationContextAware {
             policyResultEl.setAttribute("xmlns:l7p", WspConstants.L7_POLICY_NS);
 
             // populate the faultactor value
-            // todo, fix this
-            //String actor = pec.getVariable("request.url").toString();
-            //res = tmp.getElementsByTagName("faultactor");
-            //Element faultactor = (Element)res.item(0);
-            //faultactor.setTextContent(actor);
+            String actor = null;
+            try {
+                actor = pec.getVariable("request.url").toString();
+                // todo, catch cases when this throws and just fix it
+            } catch (NoSuchVariableException notfound) {
+                logger.log(Level.WARNING, "this variable is not found but should always be set", notfound);
+                actor = "ssg";
+            }
+            res = tmp.getElementsByTagName("faultactor");
+            Element faultactor = (Element)res.item(0);
+            faultactor.setTextContent(actor);
 
             List<PolicyEnforcementContext.AssertionResult> results = pec.getAssertionResults(pec.getAuditContext());
             for (PolicyEnforcementContext.AssertionResult result : results) {
