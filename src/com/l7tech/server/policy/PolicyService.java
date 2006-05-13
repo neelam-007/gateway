@@ -327,6 +327,17 @@ public class PolicyService extends ApplicationObjectSupport {
                     "</soapenv:Envelope>");
             context.setFaultlevel(fault);
             context.setPolicyResult(AssertionStatus.AUTH_FAILED);
+
+            // TODO
+            // TODO Fix the policy service to return a fault (or fix the JUnit test)
+            // TODO
+            // TODO - START
+            // TODO
+            response.initialize(exceptionToFault(new GeneralSecurityException("TEST unauthorized policy download")));
+            // TODO
+            // TODO - END
+            // TODO
+
             logger.fine("resulting policy is empty");
             return;
         }
