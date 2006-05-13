@@ -3,9 +3,12 @@ package com.l7tech.console.table;
 import com.l7tech.common.wsdl.MimePartInfo;
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
-import java.util.Vector;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -21,7 +24,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(MimePartsTableSorter.class.getName());
     private boolean ascending = true;
     private int columnToSort = 1;
-    private Vector rawdata = new Vector();
+    private List rawdata = new ArrayList();
     private Object[] sortedData = new Object[0];
 
     /**
@@ -37,8 +40,8 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
      * Return all data in the model
      * @return  The data in the model
      */
-    public Vector getAllData() {
-        return rawdata;
+    public List getData() {
+        return Collections.unmodifiableList(rawdata);
     }
 
     /**
@@ -46,8 +49,8 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
      *
      * @param data  The list of the node status of every gateways in the cluster (unsorted).
      */
-    public void setData(Vector data) {
-        this.rawdata = data;
+    public void setData(Collection data) {
+        this.rawdata = new ArrayList(data);
         sortData(columnToSort, false);
     }
 
@@ -86,7 +89,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
                String mimePartName = (String) o;
 
                for (int i = 0; i < rawdata.size(); i++) {
-                   MimePartInfo mimePart = (MimePartInfo) rawdata.elementAt(i);
+                   MimePartInfo mimePart = (MimePartInfo) rawdata.get(i);
                    if (mimePart != null && mimePart.getName() == mimePartName) {
                        // replace the old one
                        if(aValue instanceof Integer) {

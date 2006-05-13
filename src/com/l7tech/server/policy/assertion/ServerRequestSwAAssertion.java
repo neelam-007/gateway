@@ -5,10 +5,14 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
@@ -20,6 +24,7 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -27,6 +32,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -35,6 +43,9 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class ServerRequestSwAAssertion extends AbstractServerAssertion implements ServerAssertion {
+
+    private static final long KB_TO_B_MULT = 1024;
+
     private final RequestSwAAssertion _data;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
@@ -46,7 +57,7 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
         auditor = new Auditor(this, springContext, logger);
     }
 
-    private synchronized DOMXPath getDOMXpath(String pattern) throws JaxenException {
+    private DOMXPath getDOMXpath(String pattern) throws JaxenException {
         DOMXPath domXpath = null;
 
         Map namespaceMap = _data.getNamespaceMap();
@@ -75,10 +86,11 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.SWA_NOT_SOAP);
-                return AssertionStatus.FAILED;
+                return AssertionStatus.BAD_REQUEST;
             }
         } catch (SAXException e) {
-            throw new CausedIOException("Request is declared as XML but is not well-formed", e);
+            auditor.logAndAudit(AssertionMessages.SWA_INVALID_XML, new String[]{ExceptionUtils.getMessage(e)});
+            return AssertionStatus.BAD_REQUEST;
         }
 
         if (!context.getRequest().getMimeKnob().isMultipart()) {
@@ -86,10 +98,10 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
             return AssertionStatus.FALSIFIED;
         }
 
-
         try {
             Document doc = context.getRequest().getXmlKnob().getDocumentReadOnly();
 
+            int extraAttachmentPolicy = _data.getUnboundAttachmentPolicy();
             Iterator bindingItr = _data.getBindings().keySet().iterator();
 
             // while next binding found in assertion
@@ -132,9 +144,20 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
 
                     auditor.logAndAudit(AssertionMessages.SWA_OPERATION_FOUND, new String[] {bo.getName()});
 
-                    Iterator parameterItr = bo.getMultipart().keySet().iterator();
+                    Map permittedExtras = new HashMap();
+                    Map xtraMPI = bo.getExtraMultipart();
+                    for(Iterator iterator = xtraMPI.entrySet().iterator(); iterator.hasNext(); ) {
+                        Map.Entry entry = (Map.Entry) iterator.next();
+                        String contentTypePattern = (String) entry.getKey();
+                        MimePartInfo mpi = (MimePartInfo) entry.getValue();
+                        long maxLength = mpi.getMaxLength() * KB_TO_B_MULT;
+                        // constraints are long (maxLength)
+                        // repeated since we change the 1st value
+                        permittedExtras.put(contentTypePattern, new long[]{maxLength, maxLength});
+                    }
 
                     // for each input parameter of the operation of the binding in WSDL
+                    Iterator parameterItr = bo.getMultipart().keySet().iterator();
                     while (assertionStatusOK && parameterItr.hasNext()) {
                         String parameterName = (String)parameterItr.next();
                         MimePartInfo part = (MimePartInfo)bo.getMultipart().get(parameterName);
@@ -166,25 +189,7 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
 
                         auditor.logAndAudit(AssertionMessages.SWA_PARAMETER_FOUND, new String[] {part.getName()});
                         Element parameterElementRequest = (Element)parameterNodeRequest;
-                        Attr href = parameterElementRequest.getAttributeNode("href");
-
-                        List hrefs = new ArrayList();
-                        if (href == null) {
-                            // maybe it is an array
-                            Node currentNode = parameterElementRequest.getFirstChild();
-
-                            do {
-                                if (currentNode instanceof Element) {
-                                    href = ((Element)currentNode).getAttributeNode("href");
-                                    if (href != null) {
-                                        hrefs.add(href);
-                                    }
-                                }
-                            } while ((currentNode = currentNode.getNextSibling()) != null);
-
-                        } else {
-                            hrefs.add(href);
-                        }
+                        List hrefs = getAttachmentHrefs(parameterElementRequest);
 
                         // for each attachment (href)
                         if (hrefs.size() == 0) {
@@ -196,7 +201,7 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
 
                         // each attachment must fulfill the requirement of the input parameter specified in the SwA Request Assertion
                         for (int i = 0; i < hrefs.size(); i++) {
-                            href = (Attr)hrefs.get(i);
+                            Attr href = (Attr)hrefs.get(i);
 
                             String mimePartCIDUrl = href.getValue();
                             auditor.logAndAudit(AssertionMessages.SWA_REFERENCE_FOUND, new String[] {part.getName(), mimePartCIDUrl});
@@ -229,7 +234,7 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
                                 totalLen += mimepartRequest.getActualContentLength();
 
                                 // check the max. length allowed
-                                if (totalLen > part.getMaxLength() * 1000) {
+                                if (totalLen > part.getMaxLength() * KB_TO_B_MULT) {
                                     if (hrefs.size() > 1) {
                                         auditor.logAndAudit(AssertionMessages.SWA_TOTAL_LENGTH_LIMIT_EXCEEDED, new String[] {part.getName(), String.valueOf(hrefs.size()), String.valueOf(part.getMaxLength())});
                                     } else {
@@ -249,17 +254,65 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
                     } // for each input parameter
 
                     // also check if there is any unexpected attachments in the request
+                    Set dropAttachments = new HashSet();
                     PartIterator pi = context.getRequest().getMimeKnob().getParts();
                     while (pi.hasNext()) {
                         PartInfo attachment =  pi.next();
                         if (attachment.getPosition() == 0)
                             continue; // skip over SOAP part
                         String attachmentName = attachment.getContentId(true);
+
                         if (attachmentName == null || attachmentName.length() < 1)
                             attachmentName = "in position #" + attachment.getPosition();
+
                         if (!attachment.isValidated()) {
-                            auditor.logAndAudit(AssertionMessages.SWA_UNEXPECTED_ATTACHMENT, new String[] {attachmentName});
-                            return AssertionStatus.FALSIFIED;
+                            long[] constraints = getExtraAttachmentConstraints(attachment, permittedExtras);
+
+                            if (constraints != null) {
+                                if (validExtraAttachment(attachment, constraints)) {
+                                    auditor.logAndAudit(AssertionMessages.SWA_EXTRA_ATTACHMENT, new String[]{attachmentName});
+                                    attachment.setValidated(true);
+                                }
+                                else {
+                                    // reason already audited, just exit
+                                    return AssertionStatus.FALSIFIED;
+                                }
+                            }
+                            else if (extraAttachmentPolicy == RequestSwAAssertion.UNBOUND_ATTACHMENT_POLICY_PASS){
+                                auditor.logAndAudit(AssertionMessages.SWA_EXTRA_ATTACHMENT, new String[]{attachmentName});
+                                attachment.setValidated(true);
+                            }
+                            else if (extraAttachmentPolicy == RequestSwAAssertion.UNBOUND_ATTACHMENT_POLICY_DROP){
+                                auditor.logAndAudit(AssertionMessages.SWA_EXTRA_ATTACHMENT_DROPPED, new String[]{attachmentName});
+                                dropAttachments.add(attachment);
+                            }
+                            else {
+                                auditor.logAndAudit(AssertionMessages.SWA_UNEXPECTED_ATTACHMENT, new String[] {attachmentName});
+                                return AssertionStatus.FALSIFIED;
+                            }
+                        }
+                    }
+
+                    if (!dropAttachments.isEmpty()) {
+                        // flag to return only validated mime parts
+                        context.getRequest().getMimeKnob().setStreamValidatedPartsOnly();
+
+                        // clean up any dangling hrefs
+                        Document reqDoc = context.getRequest().getXmlKnob().getDocumentWritable();
+                        try {
+                            Element body = SoapUtil.getBodyElement(reqDoc);
+                            if (body == null) throw new SAXException("No SOAP body");
+
+                            for (Iterator iterator = dropAttachments.iterator(); iterator.hasNext();) {
+                                PartInfo partInfo = (PartInfo) iterator.next();
+                                String cid = partInfo.getContentId(true);
+                                if (cid != null) {
+                                    removeAttachmentHrefs(body, "cid:" + cid);
+                                }
+                            }
+                        }
+                        catch(InvalidDocumentFormatException idfe) {
+                            throw (SAXException) new SAXException("Invalid request").initCause(idfe);
                         }
                     }
 
@@ -287,4 +340,131 @@ public class ServerRequestSwAAssertion extends AbstractServerAssertion implement
         return AssertionStatus.FALSIFIED;
     }
 
+    /**
+     * Remove any descendant elements that reference the given id.
+     */
+    private void removeAttachmentHrefs(Element element, String id) {
+        // find hrefs to remove
+        NodeList children = element.getChildNodes();
+        List removeList = new ArrayList();
+        for (int n=0; n<children.getLength(); n++) {
+            Node child = children.item(n);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                Element childEle = (Element) child;
+                if (id.equals(childEle.getAttribute("href"))) {
+                    removeList.add(childEle);
+                }
+            }
+        }
+
+        // remove elements
+        if (!removeList.isEmpty()) {
+            for (Iterator eleIter=removeList.iterator(); eleIter.hasNext(); ) {
+                Element toRemove = (Element) eleIter.next();
+                Element parent = (Element) toRemove.getParentNode();
+                parent.removeChild(toRemove);
+            }
+        }
+
+        // process remaining children
+        children = element.getChildNodes();
+        for (int n=0; n<children.getLength(); n++) {
+            Node child = children.item(n);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                removeAttachmentHrefs((Element)child, id);
+            }
+        }
+    }
+
+    /**
+     * Find all the hrefs, return a List of Attrs
+     */
+    private List getAttachmentHrefs(Element parameterElementRequest) {
+        List hrefs = new ArrayList();
+
+        Attr href = parameterElementRequest.getAttributeNode("href");
+        if (href == null) {
+            // maybe it is an array
+            Node currentNode = parameterElementRequest.getFirstChild();
+
+            do {
+                if (currentNode instanceof Element) {
+                    href = ((Element)currentNode).getAttributeNode("href");
+                    if (href != null) {
+                        hrefs.add(href);
+                    }
+                }
+            } while ((currentNode = currentNode.getNextSibling()) != null);
+
+        } else {
+            hrefs.add(href);
+        }
+
+        return hrefs;
+    }
+
+    /**
+     * Get the constraints that appy to the given attachment (if any)
+     */
+    private long[] getExtraAttachmentConstraints(PartInfo attachment, Map permittedExtras) {
+        long[] constraints = null; // constraints are long (count), long (maxLength - for all X)
+        ContentTypeHeader partType = attachment.getContentType();
+
+        logger.info("Checking for permitted extras with type "+partType.getType()+"/"+partType.getSubtype()+" " + permittedExtras);
+
+        // look for an exact match
+        for(Iterator iterator = permittedExtras.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry entry = (Map.Entry) iterator.next();
+            String contentType = (String)entry.getKey();
+            try {
+                ContentTypeHeader cth = ContentTypeHeader.parseValue(contentType);
+                if (cth.matches(partType)) { // "backwards" match to see if there is an exact match
+                    constraints = (long[]) entry.getValue();
+                }
+            }
+            catch(IOException ioe) {
+                logger.warning("Ignoring invalid content type header (extra), value is '"+contentType+"'.");
+            }
+        }
+
+        // look for a pattern match (e.g. text/*)
+        if (constraints == null) {
+            for(Iterator iterator = permittedExtras.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                String contentType = (String)entry.getKey();
+                try {
+                    ContentTypeHeader cth = ContentTypeHeader.parseValue(contentType);
+                    if (partType.matches(cth)) {
+                        constraints = (long[]) entry.getValue();
+                    }
+                }
+                catch(IOException ioe) {
+                    logger.warning("Ignoring invalid content type header (extra), value is '"+contentType+"'.");
+                }
+            }
+        }
+
+        logger.info("Found?" + (constraints!=null));
+
+        return constraints;
+    }
+
+    /**
+     * Check if the given attachment is permitted according to given constraints.
+     */
+    private boolean validExtraAttachment(PartInfo attachment, long[] constraints) throws NoSuchPartException, IOException {
+        boolean valid = false;
+
+        long configuredMaxLn = constraints[1];
+
+        constraints[0] -= attachment.getActualContentLength();
+        if (constraints[0] >= 0) {
+            valid = true;
+        }
+        else {
+           auditor.logAndAudit(AssertionMessages.SWA_EXTRA_LENGTH_EXCEEDED, new String[]{Long.toString(configuredMaxLn)});
+        }
+
+        return valid;
+    }
 }

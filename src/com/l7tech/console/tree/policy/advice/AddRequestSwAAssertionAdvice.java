@@ -181,27 +181,14 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 String operationQName = ((SOAPElement) operation).getElementName().getQualifiedName();
 
                 Map bindings = swaAssertion.getBindings();
-                Iterator bindingsItr = bindings.keySet().iterator();
 
                 BindingInfo binding = null;
-                while (bindingsItr.hasNext()) {
-                    String bindingName = (String)bindingsItr.next();
-                    if (bindingName.equals(soapRequest.getBinding())) {
-                        binding = (BindingInfo)bindings.get(bindingName);
-                        break;
-                    }
-                }
+                if (soapRequest.getBinding() != null)
+                    binding = (BindingInfo) bindings.get(soapRequest.getBinding());
 
                 BindingOperationInfo bo = null;
-                if (binding != null) {
-                    Iterator boItr = binding.getBindingOperations().keySet().iterator();
-                    while (boItr.hasNext()) {
-                        String boName = (String)boItr.next();
-                        if (boName.equals(soapRequest.getOperation())) {
-                            bo = (BindingOperationInfo)binding.getBindingOperations().get(boName);
-                            break;
-                        }
-                    }
+                if (binding != null && soapRequest.getOperation() != null) {
+                    bo = (BindingOperationInfo) binding.getBindingOperations().get(soapRequest.getOperation());
                 }
 
                 String xpathExpression = "/" + soapEnvNamePrefix +

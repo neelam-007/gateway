@@ -8,6 +8,8 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.table.ButtonCellEditor;
 import com.l7tech.console.table.MimePartsTable;
+import com.l7tech.console.table.ExtraMimePartsTable;
+import com.l7tech.console.table.ExtraMimePartsTableModel;
 import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
@@ -22,6 +24,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 
@@ -31,25 +34,34 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class RequestSwAAssertionDialog extends JDialog {
-    static final Logger log = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
-    private RequestSwAAssertion assertion;
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
+    private static final Logger logger = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
+
     private JButton cancelButton;
     private JButton okButton;
     private JPanel mainPanel;
     private JComboBox bindingsListComboxBox;
     private JScrollPane operationsScrollPane;
     private JScrollPane multipartScrollPane;
+    private JScrollPane extraAttachmentsScrollPane;
+    private JComboBox unmatchedAttachmentComboBox;
+
+    private RequestSwAAssertion assertion;
+    private RequestSwAAssertion originalAssertion;
     private EventListenerList listenerList = new EventListenerList();
     private SortedSingleColumnTableModel bindingOperationsTableModel = null;
     private JTable bindingOperationsTable = null;
     private MimePartsTable mimePartsTable = null;
+    private ExtraMimePartsTable extraMimePartsTable = null;
+    private int selectedOperationForBinding = -1;
 
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
-    private static Logger logger = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
-
+    /**
+     *
+     */
     public RequestSwAAssertionDialog(JFrame parent, RequestSwAAssertion assertion) {
         super(parent, resources.getString("window.title"), true);
-        this.assertion = assertion;
+        this.originalAssertion = assertion;
+        this.assertion = (RequestSwAAssertion) originalAssertion.clone();
 
         initialize();
         populateData();
@@ -79,26 +91,37 @@ public class RequestSwAAssertionDialog extends JDialog {
              */
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
+                    selectedOperationForBinding = -1;
                     populateBindingOperationsData((BindingInfo) e.getItem());
                 }
             }
         });
 
+        unmatchedAttachmentComboBox.setModel(new DefaultComboBoxModel(new String[]{"Invalid request", "Drop unmatched attachments", "Pass unmatched attachments"}));
+        unmatchedAttachmentComboBox.setSelectedIndex(assertion.getUnboundAttachmentPolicy());
+
         multipartScrollPane.setViewportView(getMimePartsTable());
         multipartScrollPane.getViewport().setBackground(Color.white);
+
+        extraAttachmentsScrollPane.setViewportView(getExtraMimePartsTable());
+        extraAttachmentsScrollPane.getViewport().setBackground(Color.white);
 
         okButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
+                // update from controls
+                if (selectedOperationForBinding >= 0) {
+                    saveData((BindingOperationInfo) bindingOperationsTable.getModel().getValueAt(selectedOperationForBinding, 0));
+                    saveExtraData((BindingOperationInfo) bindingOperationsTable.getModel().getValueAt(selectedOperationForBinding, 0));
+                }
+                assertion.setUnboundAttachmentPolicy(unmatchedAttachmentComboBox.getSelectedIndex());
 
-               /* TableCellEditor  cellEditor = getMimePartsTable().getDefaultEditor(Integer.class);
+                // update original assertion data
+                originalAssertion.setUnboundAttachmentPolicy(assertion.getUnboundAttachmentPolicy());
+                originalAssertion.setNamespaceMap(assertion.getNamespaceMap());
+                originalAssertion.setBindings(assertion.getBindings());
 
-                if(!cellEditor.stopCellEditing()) {
-                    JOptionPane.showMessageDialog(RequestSwAAssertionDialog.this, "The max. length must be an integer. Please re-enter an integer.", "Error!", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }*/
-
-                fireEventAssertionChanged(assertion);
+                fireEventAssertionChanged(originalAssertion);
                 dispose();
             }
         });
@@ -117,7 +140,6 @@ public class RequestSwAAssertionDialog extends JDialog {
         });
 
         Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton});
-
     }
 
     private void populateData() {
@@ -147,13 +169,27 @@ public class RequestSwAAssertionDialog extends JDialog {
     private void saveData(BindingOperationInfo bo) {
         if(bo == null) throw new RuntimeException("bindingOperation is NULL");
 
-        Vector dataSet = getMimePartsTable().getTableSorter().getAllData();
+        List dataSet = getMimePartsTable().getTableSorter().getData();
         for (int i = 0; i < dataSet.size(); i++) {
-            MimePartInfo mimePart = (MimePartInfo) dataSet.elementAt(i);
+            MimePartInfo mimePart = (MimePartInfo) dataSet.get(i);
             MimePartInfo mimePartFound = (MimePartInfo) bo.getMultipart().get(mimePart.getName());
             if(mimePartFound != null) {
                 mimePartFound.setMaxLength(mimePart.getMaxLength());
             }            
+        }
+    }
+
+    private void saveExtraData(BindingOperationInfo bo) {
+        if(bo == null) throw new RuntimeException("bindingOperation is NULL");
+
+        Map extras = bo.getExtraMultipart();
+        extras.clear();
+        List extraDataSet = ((ExtraMimePartsTableModel)getExtraMimePartsTable().getModel()).getData();
+        for (int i = 0; i < extraDataSet.size(); i++) {
+            MimePartInfo mimePart = (MimePartInfo) extraDataSet.get(i);
+            if (mimePart.retrieveAllContentTypes().length() > 0) {
+                extras.put(mimePart.retrieveAllContentTypes(), mimePart);
+            }
         }
     }
 
@@ -165,6 +201,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         if(selectedOperation >= 0) {
             BindingOperationInfo bo = (BindingOperationInfo) getBindingOperationsTableModel().getValueAt(selectedOperation, 0);
             saveData(bo);
+            saveExtraData(bo);
         }
 
         // clear the operation table
@@ -184,24 +221,27 @@ public class RequestSwAAssertionDialog extends JDialog {
         if(getBindingOperationsTableModel().getRowCount() > 0) {
             getBindingOperationsTable().setRowSelectionInterval(0,0);
             getBindingOperationsTableModel().fireTableCellUpdated(0,0);
-            populateMimePartsData(((BindingOperationInfo) getBindingOperationsTableModel().getDataSet()[0]).getMultipart());
+            populateMimePartsData(((BindingOperationInfo) getBindingOperationsTableModel().getDataSet()[0]).getMultipart().values());
+            populateExtraMimePartsData(((BindingOperationInfo) getBindingOperationsTableModel().getDataSet()[0]).getExtraMultipart().values());
         }
+
+        selectedOperationForBinding = 0;
     }
 
-    private void populateMimePartsData(Map mimeParts) {
-        if(mimeParts == null) throw new RuntimeException("mimeParts is NULL");
+    private void populateMimePartsData(Collection mimeParts) {
+        if(mimeParts == null) throw new IllegalArgumentException("mimeParts is NULL");
 
         // clear the MIME part table
         getMimePartsTable().clear();
+        getMimePartsTable().getTableSorter().setData(mimeParts);
+    }
 
-        Iterator parts = mimeParts.keySet().iterator();
-        Vector pv = new Vector();
-        while (parts.hasNext()) {
-            String partName = (String) parts.next();
-            pv.add(mimeParts.get(partName));
+    private void populateExtraMimePartsData(Collection mimeParts) {
+        if(mimeParts == null) throw new IllegalArgumentException("mimeParts is NULL");
 
-        }
-        getMimePartsTable().getTableSorter().setData(pv);
+        // clear the MIME part table
+        getExtraMimePartsTable().clear();
+        ((ExtraMimePartsTableModel)getExtraMimePartsTable().getModel()).setData(mimeParts);
     }
 
     /**
@@ -242,21 +282,27 @@ public class RequestSwAAssertionDialog extends JDialog {
     }
 
     private MimePartsTable getMimePartsTable() {
-
-        if(mimePartsTable != null) return mimePartsTable;
-
-        mimePartsTable = new MimePartsTable();
-        final ButtonCellEditor editor = ButtonCellEditor.attach(mimePartsTable, 1);
-        editor.getButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                // put some nicer dialog
-                JOptionPane.showMessageDialog(RequestSwAAssertionDialog.this,
-                                              editor.getCellEditorValue(), "Content Types",
-                                              JOptionPane.PLAIN_MESSAGE);
-                editor.stopCellEditing();
-            }
-        });
+        if(mimePartsTable == null) {
+            mimePartsTable = new MimePartsTable();
+            final ButtonCellEditor editor = ButtonCellEditor.attach(mimePartsTable, 1);
+            editor.getButton().addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    // put some nicer dialog
+                    JOptionPane.showMessageDialog(RequestSwAAssertionDialog.this,
+                                                  editor.getCellEditorValue(), "Content Types",
+                                                  JOptionPane.PLAIN_MESSAGE);
+                    editor.stopCellEditing();
+                }
+            });
+        }
         return mimePartsTable;
+    }
+
+    private ExtraMimePartsTable getExtraMimePartsTable() {
+        if(extraMimePartsTable == null) {
+            extraMimePartsTable = new ExtraMimePartsTable();
+        }
+        return extraMimePartsTable;
     }
 
     private JTable getBindingOperationsTable() {
@@ -279,7 +325,16 @@ public class RequestSwAAssertionDialog extends JDialog {
                                 mimePartsTable.getCellEditor().stopCellEditing();
                             }
                             BindingOperationInfo boInfo = (BindingOperationInfo) bindingOperationsTable.getModel().getValueAt(row, 0);
-                            populateMimePartsData(boInfo.getMultipart());
+                            populateMimePartsData(new Vector(boInfo.getMultipart().values()));
+
+                            if (selectedOperationForBinding != row) {
+                                if (selectedOperationForBinding >= 0) {
+                                    saveExtraData((BindingOperationInfo) bindingOperationsTable.getModel().getValueAt(selectedOperationForBinding, 0));
+                                }
+
+                                selectedOperationForBinding = row;
+                                populateExtraMimePartsData(new Vector(boInfo.getExtraMultipart().values()));
+                            }
                         }
                     }
                 });
@@ -329,7 +384,7 @@ public class RequestSwAAssertionDialog extends JDialog {
             }
 
             BindingInfo p = (BindingInfo)value;
-            setText(p.getBindingName());
+            if (p!=null) setText(p.getBindingName());
             setToolTipText(null);
 
             return this;
@@ -363,9 +418,10 @@ public class RequestSwAAssertionDialog extends JDialog {
     };
 
     private final TableCellRenderer inputParametersTableRenderer = new DefaultTableCellRenderer() {
-        /* This is the only method defined by ListCellRenderer.  We just
-        * reconfigure the Jlabel each time we're called.
-        */
+        /*
+         * This is the only method defined by ListCellRenderer.  We just
+         * reconfigure the Jlabel each time we're called.
+         */
         public Component
                 getTableCellRendererComponent(JTable table,
                                               Object value,

@@ -80,10 +80,6 @@ public class HttpRoutingAssertion
         this.copyCookies = copyCookies;
     }
 
-    public Object clone() throws CloneNotSupportedException {
-        return (RoutingAssertion)super.clone();
-    }
-
     public int getMaxConnections() {
         return maxConnections;
     }

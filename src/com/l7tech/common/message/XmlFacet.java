@@ -97,6 +97,10 @@ public class XmlFacet extends MessageFacet {
             return mk.getContentLength();
         }
 
+        public void setStreamValidatedPartsOnly() {
+            mk.setStreamValidatedPartsOnly();
+        }
+
         public InputStream getEntireMessageBodyAsInputStream() throws IOException, NoSuchPartException {
             ensureFirstPartValid();
             return mk.getEntireMessageBodyAsInputStream();

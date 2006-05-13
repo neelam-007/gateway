@@ -55,6 +55,14 @@ public interface MimeKnob extends MessageKnob {
      */
     long getContentLength() throws IOException;
 
+
+    /**
+     * When streaming mime parts, only include those that are marked as valid.
+     *
+     * <p>This does not effect the first part (which is always included).</p>
+     */
+    void setStreamValidatedPartsOnly();
+
     /**
      * @return an InputStream that will produce the entire message body, including attachments, if any.
      * @throws IOException if there was a problem reading from the message stream

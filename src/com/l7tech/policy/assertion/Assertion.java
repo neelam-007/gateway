@@ -102,20 +102,21 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /** Properly clone this Assertion.  The clone will have its parent set to null. */
-    public Object clone() throws CloneNotSupportedException {
-        Assertion clone = (Assertion)super.clone();
-        clone.setParent(null);
+    public Object clone() {
+        Assertion clone = null;
+        try {
+            clone = (Assertion) super.clone();
+            clone.setParent(null);
+        } catch (CloneNotSupportedException e) {
+            // can't happen
+            throw new RuntimeException(e);
+        }
         return clone;
     }
 
     /** More user friendly version of clone. */
     public Assertion getCopy() {
-        try {
-            return (Assertion) clone();
-        } catch (CloneNotSupportedException e) {
-            // can't happen
-            throw new RuntimeException(e);
-        }
+        return (Assertion) clone();
     }
 
     /**

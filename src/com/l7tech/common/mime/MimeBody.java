@@ -20,16 +20,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Encapsulates the body of a message that might be multipart/related.  Can be used even for messages that are not
- * multipart -- in such cases, it pretends that there was a multipart message with only a single part.
- * <p>
- * The general contract of this class is that you give it ownership of an InputStream that may or may not contain
- * multipart parts, and it gives you a view of one or more PartInfo instances, each of which can be used to retrieve
- * metadata and an InputStream.  The first PartInfo can be completely changed, but subsequent PartInfos are read-only.
- * <p>
- * None of the methods in this class are guaranteed to be reentrant.  Care should be taken when providing a custom
- * InputStream implementation not to call MimeBody methods from inside it, when it is itself being called
- * from MimeBody.
+ * Encapsulates the body of a message that might be multipart/related.
+ *
+ * <p>Can be used even for messages that are not multipart; in such cases, it
+ * pretends that there was a multipart message with only a single part.</p>
+ *
+ * <p>The general contract of this class is that you give it ownership of an
+ * InputStream that may or may not contain multipart parts, and it gives you
+ * a view of one or more PartInfo instances, each of which can be used to
+ * retrieve metadata and an InputStream.</p>
+ *
+ * <p>The first PartInfo can be completely changed, but subsequent PartInfos
+ * are read-only.</p>
+ *
+ * <p>None of the methods in this class are guaranteed to be reentrant. Care
+ * should be taken when providing a custom InputStream implementation not to
+ * call MimeBody methods from inside it, when it is itself being called from
+ * MimeBody.</p>
  */
 public class MimeBody {
     private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
@@ -48,6 +55,7 @@ public class MimeBody {
     private final String boundaryStr; // multpart boundary not including initial dashses or any CRLFs; or null if singlepart
     private final byte[] boundary; // multipart crlfBoundary bytes including initial dashes but not including trailing CRLF; or null if singlepart.
 
+    private boolean streamValidatedOnly = false; // flag for filtering parts based on validation flag
     private boolean moreParts = true; // assume there are more parts until we find the end of the stream
 
     private Exception errorCondition = null;  // If non-null, the specified error condition will be reported by public methods
@@ -284,25 +292,49 @@ public class MimeBody {
     }
 
     /**
+     * Set this MimeBody to respect part validation.
+     *
+     * <p>This will effect the output of the getEntireMessageBodyLength and
+     * getEntireMessageBodyAsInputStream methods.</p>
+     *
+     * <p>Calling this will force all parts to be stashed when the
+     * getEntireMessageBodyAsInputStream method is called (if this has not
+     * already occurred)</p>
+     *
+     * <p>Note that validation does NOT apply to the first part.</p>
+     */
+    public void setEntireMessageBodyAsInputStreamIsValidatedOnly() {
+        this.streamValidatedOnly = true;
+    }
+
+    /**
      * Produce an InputStream that, when read, will essentially reconstruct the original multipart message body
-     * that was passed to the createMultipartMessage() factory method.  The reconstructed InputStream will start
+     * that was passed to the createMultipartMessage() factory method.
+     * <p>
+     * The reconstructed InputStream will start
      * with the "--" of the first part's initial multipart boundary (unless this is a singlepart message,
      * destroyAsRead is true, and the first part's body has not been read; in which case the caller will receive
      * whatever comes in from the original InputStream).
-     * <p>
+     * </p><p>
      * If destroyAsRead is false, or if the final part needs to be reconstructed, it will end with the "--\r\n" at
      * the end of the last multipart boundary.  Otherwise, if destroyAsRead is true and the final part has not yet
      * been read, the caller will receive whatever comes in from the original InputStream.
-     * <p>
+     * </p><p>
+     * If destroyAsRead is true and setEntireMessageBodyAsInputStreamIsValidatedOnly has been called then
+     * the body will only be read distructively if it is a single part.
+     * </p><p>
      * If any parts have been touched, the preamble will already have been thrown away.
-     * <p>
+     * </p><p>
      * If any parts have already been destructively read, this method will throw immediately.
-     * <p>
+     * </p><p>
      * If destroyAsRead is true, as-yet unexamined Parts in this MimeBody will no longer be available after
-     * this call.  Parts will be read directly from the source stream where possible and will not be stashed;
-     * in fact, Parts whose headers have not yet been parsed will never become available.
-     * <p>
-     * If destroyAsRead is false, all parts will be examined and stashed as the returned InputStream is read.
+     * this call (unless setEntireMessageBodyAsInputStreamIsValidatedOnly has been called).  Parts will be read
+     * directly from the source stream where possible and will not be stashed; in fact, Parts whose headers have
+     * not yet been parsed will never become available.
+     * </p><p>
+     * If destroyAsRead is false (or setEntireMessageBodyAsInputStreamIsValidatedOnly has been called), all parts
+     * will be examined and stashed as the returned InputStream is read.
+     * </p>
      *
      * @param destroyAsRead  if true, the parts will be read destructively.
      * @return an InputStream that, when read, will endeavor to reproduce the original multipart message body.
@@ -312,7 +344,7 @@ public class MimeBody {
     public InputStream getEntireMessageBodyAsInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
         checkErrorBoth();
 
-        if (!destroyAsRead)
+        if (!destroyAsRead || (streamValidatedOnly && boundary != null))
             readAndStashEntireMessage();
 
         assertNoPartBodiesDestroyed();
@@ -373,15 +405,29 @@ public class MimeBody {
                                     throw new CausedIllegalStateException("Peek succeeds but recall fails", e); // StashManager contract violation
                                 }
                                 nextPart++;
-                                if (nextPart >= partInfos.size()) {
-                                    sentAllStashedParts = true;
-                                    if (moreParts)
-                                        return new SequenceInputStream(ret,
-                                                                       new ByteArrayInputStream(("\r\n--" + boundaryStr + "\r\n").getBytes()));
-                                    else
-                                        return ret;
+                                boolean followingPartValidated = false;
+                                while (!followingPartValidated) {
+                                    if (nextPart >= partInfos.size()) {
+                                        sentAllStashedParts = true;
+                                        if (moreParts)
+                                            return new SequenceInputStream(ret,
+                                                                           new ByteArrayInputStream(("\r\n--" + boundaryStr + "\r\n").getBytes()));
+                                        else
+                                            return ret;
+                                    }
+                                    else if (streamValidatedOnly) {
+                                        PartInfo followingPartInfo = (PartInfo) partInfos.get(nextPart);
+                                        if (!followingPartInfo.isValidated()) {
+                                            nextPart++; // skip
+                                        }
+                                        else {
+                                            followingPartValidated = true;
+                                        }
+                                    }
+                                    else {
+                                        followingPartValidated = true;
+                                    }
                                 }
-
                                 sentNextPartOpeningBoundary = false;
                                 sentNextPartHeaders = false;
                                 sentNextPartBody = false;
@@ -459,6 +505,9 @@ public class MimeBody {
      * Compute the length of the entire message body, were it to be reserialized right now.  Calling this method
      * will force any still-unread part bodies to be read and stashed.
      *
+     * <p>If setEntireMessageBodyAsInputStreamIsValidatedOnly has been called then this will return the length
+     * of the parts flagged as valid (the first part is always counted).</p>
+     *
      * @return the number of bytes that would be produced by the InputStream returned by
      *         getEntireMessageBodyAsInputStream() if it were to be called right now; or, a number less than zero
      *         if the total length could not be determined.
@@ -480,13 +529,17 @@ public class MimeBody {
         long len = 0;
         for (Iterator i = partInfos.iterator(); i.hasNext();) {
             PartInfo partInfo = (PartInfo) i.next();
-            // Opening delimiter: CRLF + boundary (which includes initial 2 dashes) + CRLF
-            len += 2 + boundary.length + 2;
-            len += partInfo.getHeaders().getSerializedLength();
-            long bodylen = partInfo.getActualContentLength();
-            if (bodylen < 0)
-                return bodylen;
-            len += bodylen;
+
+            // if only streaming validated parts then count only those lengths (and the first part)
+            if (len==0 || !streamValidatedOnly || partInfo.isValidated()) {
+                // Opening delimiter: CRLF + boundary (which includes initial 2 dashes) + CRLF
+                len += 2 + boundary.length + 2;
+                len += partInfo.getHeaders().getSerializedLength();
+                long bodylen = partInfo.getActualContentLength();
+                if (bodylen < 0)
+                    return bodylen;
+                len += bodylen;
+            }
         }
         // Closing delimiter: CRLF + boundary (which includes initial 2 dashes) + two dashses + CRLF
         len += 2 + boundary.length + 2 + 2;
@@ -678,9 +731,11 @@ public class MimeBody {
 
     /**
      * Set the maximum size of the MIME body that this MimeBody should be prepared to process.
-     * This may have no effect if the parts have already all been read and stashed.
-     * If the limit has already been reached when this method is called, the stream will be closed immediately
-     * and an IOException thrown.
+     *
+     * <p>This may have no effect if the parts have already all been read and stashed.</p>
+     *
+     * <p>If the limit has already been reached when this method is called, the stream will be closed immediately
+     * and an IOException thrown.</p>
      *
      * @param sizeLimit  the new size limit, or 0 for no limit.  Must be nonnegative.
      * @throws IOException if the limit has already been reached.
@@ -695,7 +750,7 @@ public class MimeBody {
         protected final MimeHeaders headers;
         private boolean bodyRead = false;   // if true, body has been read from main input stream.
                                             // body may still be available if it was stashed
-        private boolean validated = false;  // slightly painful design here
+        private boolean validated = false;
 
         private PartInfoImpl(int ordinal, MimeHeaders headers) {
             this.ordinal = ordinal;
@@ -880,10 +935,25 @@ public class MimeBody {
             return headers.getContentId(stripAngleBrackets);
         }
 
+        /**
+         * Is this part marked as validated (default is false).
+         *
+         * <p>For the first part the validation status has no special meaning
+         * within the MimeBody class.</p>
+         *
+         * @return The validation status.
+         */
         public boolean isValidated() {
             return validated;
         }
 
+        /**
+         * Set the validation status for this part.
+         *
+         * <p>This can be used to filter out parts when re-serializing.</p>
+         *
+         * @param validated True if this part is validated.
+         */
         public void setValidated(boolean validated) {
             this.validated = validated;
         }

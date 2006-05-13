@@ -71,6 +71,10 @@ class MimeFacet extends MessageFacet {
             }
         }
 
+        public void setStreamValidatedPartsOnly() {
+            getMimeBody().setEntireMessageBodyAsInputStreamIsValidatedOnly();
+        }
+
         public InputStream getEntireMessageBodyAsInputStream() throws IOException, NoSuchPartException {
             return getMimeBody().getEntireMessageBodyAsInputStream(false);
         }

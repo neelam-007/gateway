@@ -743,9 +743,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     } catch (IOException ioe) {
                         log.log(Level.WARNING, "Internal error", ioe);
                         dropComplete = false;
-                    } catch (CloneNotSupportedException e1) {
-                        log.log(Level.SEVERE, "Assertion faile", e1);
-                        dropComplete = false;
                     }
                 }
             }

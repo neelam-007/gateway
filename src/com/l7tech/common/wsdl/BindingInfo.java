@@ -3,16 +3,17 @@ package com.l7tech.common.wsdl;
 import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Iterator;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
  */
-public class BindingInfo implements Serializable {
+public class BindingInfo implements Cloneable, Serializable {
 
     protected String bindingName = "";
-    protected Map bindingOperations = new LinkedHashMap();   // a list of BindingOperationInfo
+    protected Map bindingOperations = new LinkedHashMap();   // Map of operation names (String) to BindingOperationInfos
 
     public BindingInfo() {
     }
@@ -63,5 +64,21 @@ public class BindingInfo implements Serializable {
         result = (bindingName != null ? bindingName.hashCode() : 0);
         result = 29 * result + (bindingOperations != null ? bindingOperations.hashCode() : 0);
         return result;
+    }
+
+    public Object clone() {
+        try {
+            BindingInfo clone = (BindingInfo) super.clone();
+            clone.bindingOperations = (Map) ((LinkedHashMap)bindingOperations).clone();
+
+            for(Iterator iterator = clone.bindingOperations.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                entry.setValue(((BindingOperationInfo)entry.getValue()).clone());
+            }
+            return clone;
+        }
+        catch(CloneNotSupportedException cnse) {
+            throw new RuntimeException("Clone not supported", cnse);
+        }
     }
 }

@@ -341,6 +341,22 @@ public class MimeBodyTest extends TestCase {
         makeMessage(BUG_2180, MESS_BUG_2180_CTYPE);
     }
 
+    public void testStreamValidatedParts() throws Exception {
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
+        mm.setEntireMessageBodyAsInputStreamIsValidatedOnly();
+        mm.readAndStashEntireMessage();
+        assertTrue(mm.getNumPartsKnown()!=1); // Not a valid test if the message only has one part to start with
+
+        // Serialize
+        byte[] output = HexUtils.slurpStream(mm.getEntireMessageBodyAsInputStream(false));
+
+        // Check only one part
+        MimeBody rebuilt = new MimeBody(output, ContentTypeHeader.parseValue(MESS2_CONTENT_TYPE));
+        rebuilt.readAndStashEntireMessage();
+
+        assertEquals(1,rebuilt.getNumPartsKnown());
+    }
+
     public final String MESS_SOAPCID = "-76394136.15558";
     public final String MESS_RUBYCID = "-76392836.15558";
     public static final String MESS_BOUNDARY = "----=Part_-763936460.407197826076299";

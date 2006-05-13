@@ -16,22 +16,35 @@ import java.util.Arrays;
  * <p> @author fpang </p>
  * $Id$
  */
-public class MimePartInfo implements Serializable {
-    protected String name;
-    protected String[] contentTypes;
-    private int maxLength;
+public class MimePartInfo implements Cloneable, Serializable {
 
-    private transient ContentTypeHeader[] contentTypeHeaders = null;
+    //- PUBLIC
 
+    /**
+     * Create an uninitialized mime part info.
+     */
     public MimePartInfo() {
         contentTypes = new String[0];
     }
 
+    /**
+     * Create a named mime part info.
+     *
+     * @param name the name of the part
+     * @param contentType the type for the part
+     */
     public MimePartInfo(String name, String contentType) {
         this.name = name;
-        contentTypes = new String[1];
-        contentTypes[0] = contentType;
-        contentTypeHeaders = null; // invalidate list of parsed patterns
+        this.contentTypes = new String[]{contentType};
+    }
+
+    /**
+     * Create a template mime part info.
+     *
+     * @param contentType the type for the part(s)
+     */
+    public MimePartInfo(String contentType) {
+        this.contentTypes = new String[]{contentType};
     }
 
     public String getName() {
@@ -42,13 +55,40 @@ public class MimePartInfo implements Serializable {
         this.name = name;
     }
 
+    /**
+     * Get the maximum length in kilobytes that this attachment is permitted to be.
+     *
+     * <p>Note that for templated parts this is the size limit for EACH occurance.</p>
+     *
+     * @return the maximum size
+     */
+    public int getMaxLength() {
+        return maxLength;
+    }
+
+    /**
+     * Set the maximum length in kilobytes that this attachment is permitted to be.
+     *
+     * @param maxLength the maximum size.
+     */
+    public void setMaxLength(int maxLength) {
+        this.maxLength = maxLength;
+    }
+
+    /**
+     *
+     */
     public String[] getContentTypes() {
         return contentTypes;
     }
 
+    /**
+     *
+     */
     public void setContentTypes(String[] contentTypes) {
         if (contentTypes == null)
             contentTypes = new String[0];
+
         this.contentTypes = (String[]) new LinkedHashSet(Arrays.asList(contentTypes)).toArray(new String[0]);
         try {
             contentTypeHeaders(); // detect invalid patterns early
@@ -57,37 +97,36 @@ public class MimePartInfo implements Serializable {
         }
     }
 
+    /**
+     *
+     */
     public void addContentType(String contentType) {
         if (contentType == null) throw new NullPointerException();
+
         Set newContentTypes = new LinkedHashSet(Arrays.asList(contentTypes));
         newContentTypes.add(contentType);
         contentTypes = (String[]) newContentTypes.toArray(new String[0]);
         contentTypeHeaders = null;  // invalidate list of parsed patterns
     }
 
-    private ContentTypeHeader[] contentTypeHeaders() throws IOException {
-        if (contentTypeHeaders == null) {
-            contentTypeHeaders = new ContentTypeHeader[contentTypes.length];
-            for (int i = 0; i < contentTypes.length; i++) {
-                String val = (String)contentTypes[i];
-                contentTypeHeaders[i] = ContentTypeHeader.parseValue(val);
-            }
-        }
-        return contentTypeHeaders;
-    }
-
+    /**
+     *
+     */
     public String retrieveAllContentTypes() {
+        String[] cTypes = contentTypes;
+
         StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < contentTypes.length; i++) {
-            sb.append((String) contentTypes[i]).append(", ");
+        for (int i = 0; i < cTypes.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append(cTypes[i]);
         }
 
-        String resultString = sb.toString();
-
-        // don't show the last 2 characters
-        return resultString.substring(0, resultString.length()-2);
+        return sb.toString();
     }
 
+    /**
+     *
+     */
     public boolean validateContentType(ContentTypeHeader contentType) throws IOException {
         if(contentType == null) return false;
 
@@ -102,15 +141,38 @@ public class MimePartInfo implements Serializable {
         return false;
     }
 
-    // TODO should we consider using long here instead of int
-    /** @return the maximum size in bytes that this attachment is permitted to be. */
-    public int getMaxLength() {
-        return maxLength;
+    public Object clone() {
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException cnse) {
+            throw new RuntimeException("Clone error", cnse);
+        }
     }
 
-    // TODO should we consider using long here instead of int
-    /** @param maxLength the maximum size in bytes for this attachment. */
-    public void setMaxLength(int maxLength) {
-        this.maxLength = maxLength;
+    //- PRIVATE
+
+    private String name;
+    private String[] contentTypes;
+    private int maxLength;
+
+    private transient ContentTypeHeader[] contentTypeHeaders;
+
+    /**
+     *
+     */
+    private ContentTypeHeader[] contentTypeHeaders() throws IOException {
+        ContentTypeHeader[] ctHeaders = contentTypeHeaders;
+
+        if (ctHeaders == null) {
+            String[] cTypes = contentTypes;
+            ctHeaders = new ContentTypeHeader[cTypes.length];
+            for (int i = 0; i < cTypes.length; i++) {
+                String val = (String)cTypes[i];
+                ctHeaders[i] = ContentTypeHeader.parseValue(val);
+            }
+            contentTypeHeaders = ctHeaders;
+        }
+
+        return ctHeaders;
     }
 }

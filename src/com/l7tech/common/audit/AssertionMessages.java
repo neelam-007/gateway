@@ -69,7 +69,7 @@ public class AssertionMessages extends Messages {
     public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "This request did not contain any WSS level security.");
 
     // ServerRequestSwAAssertion messages
-    public static final M SWA_NOT_SOAP                    = m(4400, Level.INFO, "Request not SOAP; cannot validate attachments");
+    public static final M SWA_NOT_SOAP                    = m(4400, Level.WARNING, "Request not SOAP; cannot validate attachments");
     public static final M SWA_NOT_MULTIPART               = m(4401, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
     public static final M SWA_OPERATION_NOT_FOUND         = m(4402, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
     public static final M SWA_REPEATED_OPERATION          = m(4403, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
@@ -89,6 +89,10 @@ public class AssertionMessages extends Messages {
     public static final M SWA_NO_ATTACHMENT               = m(4417, Level.INFO, "The required attachment {0} is not found in the request");
     public static final M SWA_UNEXPECTED_ATTACHMENT       = m(4418, Level.INFO, "Unexpected attachment {0} found in the request.");
     public static final M SWA_INVALID_OPERATION           = m(4419, Level.INFO, "The operation specified in the request is invalid.");
+    public static final M SWA_INVALID_XML                 = m(4420, Level.WARNING, "Error parsing request, detail is ''{0}''.");
+    public static final M SWA_EXTRA_ATTACHMENT            = m(4421, Level.INFO, "Passing extra attachment {0}.");
+    public static final M SWA_EXTRA_LENGTH_EXCEEDED       = m(4422, Level.INFO, "Maximum length of extra attachments exceeds the limit {0} K bytes.");
+    public static final M SWA_EXTRA_ATTACHMENT_DROPPED    = m(4423, Level.INFO, "Dropping extra attachment {0}.");
 
     // ServerRemoteIpRange messages
     public static final M IP_NOT_TCP         = m(4500, Level.INFO, "Request was not received via TCP; cannot validate remote IP address");

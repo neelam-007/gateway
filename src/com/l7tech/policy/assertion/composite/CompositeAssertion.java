@@ -34,8 +34,8 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
      * Clone this composite and all it's children.
      * The clone will have copies of the children but no parent.
      */
-    public Object clone() throws CloneNotSupportedException {
-        CompositeAssertion n = (CompositeAssertion)super.clone();
+    public Object clone() {
+        CompositeAssertion n = (CompositeAssertion) super.clone();
         n.setChildren(copyAndReparentChildren(n, children));
         return n;
     }

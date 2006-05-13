@@ -51,6 +51,8 @@ public class MimePartsTable extends JTable {
     }
 
     public void clear() {
+        TableCellEditor editor = getCellEditor();
+        if (editor != null) editor.cancelCellEditing();
         tableSorter.setData(new Vector());
     }
 
