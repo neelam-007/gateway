@@ -18,10 +18,7 @@ import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.identity.TestIdentityProvider;
 import com.l7tech.identity.UserBean;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -147,10 +144,14 @@ public class PolicyServiceTest extends TestCase {
 
         context.setAuditContext(new AuditContextStub());
         ps.respondToPolicyDownloadRequest(context, true, policyGetter, pre32PolicyCompat);
-        Document response = context.getResponse().getXmlKnob().getDocumentReadOnly();
-        assertNotNull(response);
-        log.info("Response (pretty-printed):" + XmlUtil.nodeToFormattedString(response));
-        return response;
+        if (context.getPolicyResult() == AssertionStatus.AUTH_FAILED) {
+            throw new BadCredentialsException(context.getPolicyResult().toString());
+        } else {
+            Document response = context.getResponse().getXmlKnob().getDocumentReadOnly();
+            assertNotNull(response);
+            log.info("Response (pretty-printed):" + XmlUtil.nodeToFormattedString(response));
+            return response;
+        }
     }
 
     private void testPolicy(final Assertion policyToTest, LoginCredentials loginCredentials) throws Exception {
