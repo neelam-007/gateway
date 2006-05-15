@@ -163,22 +163,27 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     // pass through, leaving wssOutput as null
                 } catch (ProcessorException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
+                    status = AssertionStatus.SERVER_ERROR;
                     return AssertionStatus.SERVER_ERROR;
                 } catch (InvalidDocumentFormatException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.SEVERE);
+                    status = AssertionStatus.SERVER_ERROR;
                     return AssertionStatus.SERVER_ERROR;
                 } catch (GeneralSecurityException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.SEVERE);
+                    status = AssertionStatus.SERVER_ERROR;
                     return AssertionStatus.SERVER_ERROR;
                 } catch (SAXException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
                     context.setAuditLevel(Level.SEVERE);
+                    status = AssertionStatus.SERVER_ERROR;
                     return AssertionStatus.SERVER_ERROR;
                 } catch (BadSecurityContextException e) {
                     auditor.logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                     context.setAuditLevel(Level.SEVERE);
+                    status = AssertionStatus.FAILED;
                     return AssertionStatus.FAILED;
                 }
                 auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
@@ -195,6 +200,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (service.isDisabled()) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
+                status = AssertionStatus.SERVICE_NOT_FOUND;
                 return AssertionStatus.SERVICE_NOT_FOUND;
             }
 
@@ -249,6 +255,14 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 } else {
                     auditor.logAndAudit(MessageProcessingMessages.POLICY_ID_NOT_PROVIDED);
                 }
+            }
+
+            // Check request data
+            if (context.getRequest().getMimeKnob().isMultipart() &&
+                !service.isMultipart()) {
+                auditor.logAndAudit(MessageProcessingMessages.MULTIPART_NOT_ALLOWED);
+                status = AssertionStatus.BAD_REQUEST;
+                return AssertionStatus.BAD_REQUEST;
             }
 
             // Get the server policy
@@ -331,13 +345,23 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             return status;
+
+        //TODO why do these audits pass params to a message that does not accept them?
+        //     should this be EXCEPTION_SEVERE_WITH_MORE_INFO?
+        } catch (PublishedService.ServiceException se) {
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{se.getMessage()}, se);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
+            status = AssertionStatus.SERVER_ERROR;
+            return AssertionStatus.SERVER_ERROR;
         } catch (ServiceResolutionException sre) {
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{sre.getMessage()}, sre);
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
+            status = AssertionStatus.SERVER_ERROR;
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
             auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{e.getMessage()}, e);
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
+            status = AssertionStatus.SERVER_ERROR;
             return AssertionStatus.SERVER_ERROR;
         } finally {
             context.setEndTime();
@@ -384,6 +408,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
                 }
             }
+
+            // ensure result is set
+            if (context.getPolicyResult() == null) context.setPolicyResult(status);
 
             boolean authorizedRequest = false;
             boolean completedRequest = false;

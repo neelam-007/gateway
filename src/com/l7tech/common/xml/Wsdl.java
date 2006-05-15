@@ -343,6 +343,38 @@ public class Wsdl {
         return filtered;
     }
 
+    /**
+     * Check if any operations for any bindings of interest use MIME multipart.
+     *
+     * @return true if multipart
+     */
+    public boolean hasMultipartOperations() {
+        boolean multipart = false;
+
+        Collection bindings = getBindings();
+
+        // for each binding in WSDL
+        for (Iterator iterator = bindings.iterator(); iterator.hasNext();) {
+            Binding binding = (Binding) iterator.next();
+
+            Collection operations = binding.getBindingOperations();
+
+            // for each operation in WSDL
+            for (Iterator iterator1 = operations.iterator(); iterator1.hasNext();) {
+                BindingOperation bo = (BindingOperation) iterator1.next();
+                MIMEMultipartRelated mimeMultipart = getMimeMultipartRelatedInput(bo);
+                if (mimeMultipart != null) {
+                    multipart = true;
+                    break;
+                }
+            }
+
+            if (multipart) break;
+        }
+
+        return multipart;
+    }
+
     /** @return true if the specified ExtensibilityElement is a wsp:Policy element. */
     public boolean isPolicy(ExtensibilityElement ee) {
         return getPolicyUue(ee) != null;

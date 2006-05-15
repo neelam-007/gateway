@@ -10,6 +10,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.policy.assertion.MimeMultipartAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import org.xml.sax.InputSource;
 
@@ -370,6 +371,71 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
+     * Does this service allow / process multipart data.
+     *
+     * <p>Note that calling this method will cause the WSDL and Policy objects to
+     * be constructed.</p>
+     *
+     * @return true if multipart data is allowed
+     * @see #rootAssertion
+     * @see #parsedWsdl
+     */
+    public boolean isMultipart() throws ServiceException {
+        if (multipart == null) {
+            try {
+                Wsdl wsdl = parsedWsdl();
+                Assertion assertion = rootAssertion();
+
+                if (wsdl != null && wsdl.hasMultipartOperations()) {
+                    multipart = Boolean.TRUE;
+                }
+                else if (assertion != null && Assertion.contains(assertion, MimeMultipartAssertion.class)) {
+                    multipart = Boolean.TRUE;
+                }
+                else {
+                    multipart = Boolean.FALSE;
+                }
+            }
+            catch(WSDLException we) {
+                throw new ServiceException("Cannot determine multipart flag, could not process WSDL.", we);
+            }
+            catch(IOException ioe) {
+                throw new ServiceException("Cannot determine multipart flag, could not process Policy.", ioe);
+            }
+        }
+
+        return multipart.booleanValue();
+    }
+
+    /**
+     * 
+     */
+    public static class ServiceException extends Exception {
+        public ServiceException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+
+    private String _policyXml;
+    private String _wsdlUrl;
+    private String _wsdlXml;
+    private boolean _disabled;
+    private boolean soap = true;
+    private String routingUri;
+    private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
+
+    private transient Wsdl _parsedWsdl;
+    private transient Port _wsdlPort;
+    private transient URL _serviceUrl;
+    private transient Assertion _rootAssertion;
+    private transient Set httpMethods; // invariants: never null, always in sync with httpMethodNames
+    private transient Boolean multipart;
+
+    /**
      * Create a new set from the specified comma-delimited list of HTTP method names.
      *
      * @param methods  the methods to include in the set, ie "GET,PUT,POST".  Must not be null but may be empty.
@@ -407,21 +473,4 @@ public class PublishedService extends NamedEntityImp {
         }
         return sb.toString();
     }
-
-    // ************************************************
-    // PRIVATES
-    // ************************************************
-    private String _policyXml;
-    private String _wsdlUrl;
-    private String _wsdlXml;
-    private boolean _disabled;
-    private boolean soap = true;
-    private String routingUri;
-    private String httpMethodNames = METHODNAMES_SOAP; // invariants: never null, always in sync with httpMethods
-
-    private transient Wsdl _parsedWsdl;
-    private transient Port _wsdlPort;
-    private transient URL _serviceUrl;
-    private transient Assertion _rootAssertion;
-    private transient Set httpMethods; // invariants: never null, always in sync with httpMethodNames
 }
