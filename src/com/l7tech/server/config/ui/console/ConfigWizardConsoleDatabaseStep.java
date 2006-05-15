@@ -10,6 +10,7 @@ import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 
 import java.io.*;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
@@ -39,6 +40,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private static final String TITLE = "SSG Database Setup";
     private DBActions dbActions;
+    private boolean createNewDb;
 
     public ConfigWizardConsoleDatabaseStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
         super(parentWiz, osFunctions);
@@ -49,8 +51,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         printText(STEP_INFO + "\n");
 
         try {
-            boolean isNewDb = doDbConnectionTypePrompts(true);
-            doDBInfoPrompts(isNewDb);
+            doDbConnectionTypePrompts(true);
+            doDBInfoPrompts();
             storeInput();
         } catch (IOException e) {
             e.printStackTrace();
@@ -92,7 +94,6 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private boolean doDbTest() {
         boolean success = true;
-        boolean createNewDb = databaseBean.isCreateNewDb();
         String privUsername = databaseBean.getPrivUsername();
         String privPassword = databaseBean.getPrivPassword();
         String dbHostname = databaseBean.getDbHostname();
@@ -110,7 +111,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         return success;
     }
 
-    private void doDBInfoPrompts(boolean isNewDb) throws IOException, WizardNavigationException {
+    private void doDBInfoPrompts() throws IOException, WizardNavigationException {
         //if the bean didn't contain anything useful, get whatever is currently in the config file
         Map defaults = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
                 SsgDatabaseConfigBean.PROP_DB_URL,
@@ -122,8 +123,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String defaultDbName = null;
         String defaultDbUsername = null;
         String defaultDbPassword = null;
-        String defaultRootUsername = null;
-        String defaultRootPasswd = null;
+//        String defaultRootUsername = null;
+//        String defaultRootPasswd = null;
 
         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
 
@@ -140,17 +141,14 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         defaultDbUsername = selectDefault(databaseBean.getDbUsername(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_USERNAME));
         defaultDbPassword = selectDefault(databaseBean.getDbPassword(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD));
 
-        defaultRootUsername = selectDefault(databaseBean.getPrivUsername(), "root");
-        defaultRootPasswd = selectDefault(databaseBean.getPrivPassword(), "");
+//        defaultRootUsername = selectDefault(databaseBean.getPrivUsername(), "root");
+//        defaultRootPasswd = selectDefault(databaseBean.getPrivPassword(), "");
 
-        if (isNewDb) {
-            printText(HEADER_NEW_DB_INFO + "\n");
-            doGetRootUsernamePrompt(defaultRootUsername);
-            doGetRootPasswordPrompt(defaultRootPasswd);
-        }
-        else {
-            printText(HEADER_EXISTING_DB_INFO + "\n");
-        }
+        if (createNewDb) printText(HEADER_NEW_DB_INFO + "\n");
+//            doGetRootUsernamePrompt(defaultRootUsername);
+//            doGetRootPasswordPrompt(defaultRootPasswd);
+
+        else printText(HEADER_EXISTING_DB_INFO + "\n");
 
         doDbHostnamePrompt(defaultHostname);
         doDBNamePrompt(defaultDbName);
@@ -204,7 +202,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         databaseBean.setDbHostname(getData(prompts, defaultHostname).trim());
     }
 
-    private boolean doDbConnectionTypePrompts(boolean isCurrentDbExists) throws WizardNavigationException, IOException {
+    private void doDbConnectionTypePrompts(boolean isCurrentDbExists) throws WizardNavigationException, IOException {
         String defaultValue = isCurrentDbExists?"2":"1";
 
 
@@ -215,9 +213,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                 "please make a selection: [" + defaultValue + "]",
         };
         String input = getData(prompts, "2");
-        boolean isNewDb = input != null && input.trim().equals("1");
-        databaseBean.setCreateDb(isNewDb);
-        return isNewDb;
+        createNewDb = input != null && input.trim().equals("1");
     }
 
     boolean validateStep() {
@@ -256,14 +252,14 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         return confirmed;
     }
 
-    public void confirmCreateSuccess() {
-        printText("Database Successfully Created\n");
+    public void showSuccess(String message) {
+        if (StringUtils.isNotEmpty(message)) printText(message);
     }
 
-    public String getPrivilegedUsername() {
+    public String getPrivilegedUsername(String defaultUsername) {
         String username = null;
         try {
-            username = doGetRootUsernamePrompt("root");
+            username = doGetRootUsernamePrompt(defaultUsername == null?"root":defaultUsername);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (WizardNavigationException e) {
@@ -302,5 +298,37 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
             return false;
         }
         return false;
+    }
+
+    public Map getPrivelegedCredentials(String description, String usernamePrompt, String passwordPrompt, String defaultUsername) {
+        if (StringUtils.isEmpty(defaultUsername)) defaultUsername = "root";
+        if (StringUtils.isEmpty(usernamePrompt)) usernamePrompt = "Please enter the username of the root database user: [" + defaultUsername + "] ";
+        if (StringUtils.isEmpty(passwordPrompt)) passwordPrompt = "Please enter the password of the root database user: ";
+
+        try {
+            String username = getData(
+                    new String[] {
+                        usernamePrompt,
+                    }, defaultUsername);
+
+            String password = getData(
+                    new String[] {
+                        passwordPrompt,
+                    }, "");
+            Map creds = new HashMap();
+            creds.put(DBActions.USERNAME_KEY, username);
+            databaseBean.setPrivUserName(username);
+
+            creds.put(DBActions.PASSWORD_KEY, password);
+            databaseBean.setPrivPassword(password);
+
+            return creds;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (WizardNavigationException e) {
+            return null;
+        }
+        return null;
     }
 }

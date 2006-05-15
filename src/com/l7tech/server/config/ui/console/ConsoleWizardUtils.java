@@ -15,8 +15,8 @@ import org.apache.commons.lang.StringUtils;
  * Time: 3:29:19 PM
  */
 public class ConsoleWizardUtils {
-    private static final String PREV_COMMAND = "B";
-    public static final String GENERAL_NAV_HEADER = "At any time press " + PREV_COMMAND + " to go to the previous step";
+    private static final String PREV_COMMAND = "<";
+    public static final String GENERAL_NAV_HEADER = "At any time press \"" + PREV_COMMAND + "\" to go to the previous step";
 
     static ConsoleWizardUtils instance_ = null;
 

@@ -1,5 +1,7 @@
 package com.l7tech.server.config.db;
 
+import java.util.Map;
+
 /**
  * User: megery
  * Date: Apr 4, 2006
@@ -7,15 +9,18 @@ package com.l7tech.server.config.db;
  */
 public interface DBActionsListener {
     void showErrorMessage(String errorMsg);
+
     void hideErrorMessage();
 
     boolean getOverwriteConfirmationFromUser(String dbName);
 
-    void confirmCreateSuccess();
+    void showSuccess(String message);
+
+    boolean getGenericUserConfirmation(String msg);
 
     char[] getPrivilegedPassword();
 
-    String getPrivilegedUsername();
+    String getPrivilegedUsername(String defaultUsername);
 
-    boolean getGenericUserConfirmation(String msg);
+    Map getPrivelegedCredentials(String message, String usernamePrompt, String passwordPrompt, String defaultUsername);
 }

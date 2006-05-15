@@ -16,7 +16,6 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     private final static String NAME = "Database Configuration";
     private final static String DESCRIPTION = "Configures the database properties for an SSG";
 
-    private boolean isCreateNewDb;
     private String privUsername;
     private String privPassword;
     private String dbHostname;
@@ -36,7 +35,6 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     }
 
     private void init() {
-        isCreateNewDb = true;
     }
 
     void reset() {
@@ -50,14 +48,6 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
         explanations.add(insertTab + "    USERNAME = " + getDbUsername());
         explanations.add(insertTab + "    DATABASE = " + getDbName());
         return (String[]) explanations.toArray(new String[explanations.size()]);
-    }
-
-    public void setCreateDb(boolean selected) {
-        isCreateNewDb = selected;
-    }
-
-    public boolean isCreateNewDb() {
-        return isCreateNewDb;
     }
 
     public void setPrivUserName(String username) {

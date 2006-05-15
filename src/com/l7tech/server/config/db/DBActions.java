@@ -11,6 +11,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * Various DB manipulaton and checking methods used by the configuration wizard. Can probably be made more generic to be
  * usefult others as well.
@@ -45,11 +47,15 @@ public class DBActions {
     private static final String SQL_GRANT_ALL = "grant all on ";
     private static final String SQL_DROP_DB = "drop database ";
 
+    private static final String GENERIC_DBCONNECT_ERROR_MSG = "There was an error while attempting to connect to the database. Please try again";
+
     public static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
     public static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
     public static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
     public static final String CONNECTION_UNSUCCESSFUL_MSG = "Connection to the database was unsuccessful - see warning/errors for details";
-    private static final String GENERIC_DBCONNECT_ERROR_MSG = "There was an error while attempting to connect to the database. Please try again";
+    public static final Object USERNAME_KEY = "Username";
+    public static final Object PASSWORD_KEY = "Password";
+
 
     private CheckSSGDatabase ssgDbChecker;
 
@@ -60,7 +66,7 @@ public class DBActions {
         new DbVersion33Checker(),
         new DbVersion3132Checker(),
     };
-
+    private static final String UPGRADE_SQL_PATTERN = "^upgrade_(.*)-(.*).sql$";
 
     public static class DBActionsResult {
         private int status = 0;
@@ -176,7 +182,7 @@ public class DBActions {
     }
 
     public DBActionsResult createDb(String privUsername, String privPassword, String dbHostname, String dbName, String dbUsername,
-                        String dbPassword, String dbCreateScript, boolean isWindows, boolean overwriteDb) throws IOException {
+                                    String dbPassword, String dbCreateScript, boolean isWindows, boolean overwriteDb) throws IOException {
         DBActionsResult result = new DBActionsResult();
 
         Connection conn = null;
@@ -518,7 +524,7 @@ public class DBActions {
                 }
         });
 
-        Pattern upgradePattern = Pattern.compile("^upgrade_(.*)-(.*).sql$");
+        Pattern upgradePattern = Pattern.compile(UPGRADE_SQL_PATTERN);
         HashMap upgradeMap = new HashMap();
 
         for (int i = 0; i < upgradeScripts.length; i++) {
@@ -535,70 +541,90 @@ public class DBActions {
     }
 
     public boolean doCreateDb(String pUsername, String pPassword, String hostname, String name, String username, String password, boolean overwriteDb, DBActionsListener ui) {
-            String errorMsg;
-            boolean isOk = false;
+        if (StringUtils.isEmpty(pUsername) || StringUtils.isEmpty(pPassword)) {
+            if (ui != null) {
+                String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
+                Map creds = ui.getPrivelegedCredentials(
+                            "Please enter the credentials for the root database user (needed to create a database)",
+                            "",
+                            defaultUserName,
+                            "");
 
-            OSSpecificFunctions osFunctions = OSDetector.getOSSpecificActions();
-            DBActionsResult result = null;
-            logger.info("Attempting to create a new database (" + hostname + "/" + name + ") using privileged user \"" + pUsername + "\"");
-            String dbCreateScriptFile = osFunctions.getPathToDBCreateFile();
-            boolean isWindows = osFunctions.isWindows();
-            try {
-                result = createDb(pUsername, pPassword, hostname, name, username, password, dbCreateScriptFile, isWindows, overwriteDb);
-                int status = result.getStatus();
-                if ( status == DBActions.DB_SUCCESS) {
-                    isOk = true;
-                    if (ui != null) {
-                        ui.confirmCreateSuccess();
-                    }
+                if (creds != null) {
+                    pUsername = (String) creds.get(USERNAME_KEY);
+                    pPassword = (String) creds.get(PASSWORD_KEY);
                 } else {
-                    switch (status) {
-                        case DBActions.DB_UNKNOWNHOST_FAILURE:
-                            errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
-                            logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                            logger.warning(errorMsg);
-                            if (ui != null) ui.showErrorMessage(errorMsg);
-                            isOk = false;
-                            break;
-                        case DBActions.DB_AUTHORIZATION_FAILURE:
-                            errorMsg = "There was an authentication error when attempting to create the new database using the username \"" +
-                                    pUsername + "\". Perhaps the password is wrong. Please retry.";
-                            logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
-                            logger.warning(errorMsg);
-                            if (ui != null) ui.showErrorMessage(errorMsg);
-                            isOk = false;
-                            break;
-                        case DBActions.DB_ALREADY_EXISTS:
-                            logger.warning("The database named \"" + name + "\" already exists");
-                            if (ui != null) {
-                                if (ui.getOverwriteConfirmationFromUser(name)) {
-                                    logger.info("creating new database (overwriting existing one)");
-                                    logger.warning("The database will be overwritten");
-                                    isOk = doCreateDb(pUsername, pPassword, hostname, name, username, password, true, ui);
-                                }
-                            } else {
-                                isOk = false;
-                            }
-                            break;
-                        case DBActions.DB_UNKNOWN_FAILURE:
-                        default:
-                            errorMsg = GENERIC_DBCREATE_ERROR_MSG;
-                            logger.warning(errorMsg);
-                            if (ui != null) ui.showErrorMessage(errorMsg);
-                            isOk = false;
-                            break;
-                    }
+                    return false;
                 }
-            } catch (IOException e) {
-                errorMsg = "Could not create the database because there was an error while reading the file \"" + dbCreateScriptFile + "\"." +
-                        " The error was: " + e.getMessage();
-                logger.warning(errorMsg);
-                if (ui != null) ui.showErrorMessage(errorMsg);
-                isOk = false;
             }
-
-            return isOk;
         }
+
+        String errorMsg;
+        boolean isOk = false;
+
+        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificActions();
+        String dbCreateScriptFile = osFunctions.getPathToDBCreateFile();
+        boolean isWindows = osFunctions.isWindows();
+
+        DBActionsResult result = null;
+        try {
+            logger.info("Attempting to create a new database (" + hostname + "/" + name + ") using privileged user \"" + pUsername + "\"");
+
+            result = createDb(pUsername, pPassword, hostname, name, username, password, dbCreateScriptFile, isWindows, overwriteDb);
+            int status = result.getStatus();
+            if ( status == DBActions.DB_SUCCESS) {
+                isOk = true;
+                if (ui != null) {
+                    ui.showSuccess("Database Successfully Created\n");
+                }
+            } else {
+                switch (status) {
+                    case DBActions.DB_UNKNOWNHOST_FAILURE:
+                        errorMsg = "Could not connect to the host: \"" + hostname + "\". Please check the hostname and try again.";
+                        logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
+                        logger.warning(errorMsg);
+                        if (ui != null) ui.showErrorMessage(errorMsg);
+                        isOk = false;
+                        break;
+                    case DBActions.DB_AUTHORIZATION_FAILURE:
+                        errorMsg = "There was an authentication error when attempting to create the new database using the username \"" +
+                                pUsername + "\". Perhaps the password is wrong. Please retry.";
+                        logger.info("Connection to the database for creating was unsuccessful - see warning/errors for details");
+                        logger.warning(errorMsg);
+                        if (ui != null) ui.showErrorMessage(errorMsg);
+                        isOk = false;
+                        break;
+                    case DBActions.DB_ALREADY_EXISTS:
+                        logger.warning("The database named \"" + name + "\" already exists");
+                        if (ui != null) {
+                            if (ui.getOverwriteConfirmationFromUser(name)) {
+                                logger.info("creating new database (overwriting existing one)");
+                                logger.warning("The database will be overwritten");
+                                isOk = doCreateDb(pUsername, pPassword, hostname, name, username, password, true, ui);
+                            }
+                        } else {
+                            isOk = false;
+                        }
+                        break;
+                    case DBActions.DB_UNKNOWN_FAILURE:
+                    default:
+                        errorMsg = GENERIC_DBCREATE_ERROR_MSG;
+                        logger.warning(errorMsg);
+                        if (ui != null) ui.showErrorMessage(errorMsg);
+                        isOk = false;
+                        break;
+                }
+            }
+        } catch (IOException e) {
+            errorMsg = "Could not create the database because there was an error while reading the file \"" + dbCreateScriptFile + "\"." +
+                    " The error was: " + e.getMessage();
+            logger.warning(errorMsg);
+            if (ui != null) ui.showErrorMessage(errorMsg);
+            isOk = false;
+        }
+
+        return isOk;
+    }
 
     public boolean doExistingDb(String dbName, String hostname, String username, String password, String privUsername, String privPassword, String currentVersion, DBActionsListener ui) {
         String errorMsg;
@@ -633,23 +659,21 @@ public class DBActions {
                     }
                     if (shouldUpgrade) {
                         try {
-                            if (privUsername == null || privUsername.length() == 0) {
-                                if (ui != null) {
-                                    privUsername = ui.getPrivilegedUsername();
-                                }
+                            Map creds = null;
+                            if (StringUtils.isEmpty(privUsername) || StringUtils.isEmpty(privPassword)) {
+                                if (ui != null) creds = ui.getPrivelegedCredentials(
+                                        "Please enter the credentials for the root database user (needed to upgrade the database)",
+                                        "Please enter the username for the root database user (needed to upgrade the database): [root]",
+                                        "Please enter the password for root database user (needed to upgrade the database): ", "root");
+
+                                else return false;
                             }
-                            if (privPassword == null || privPassword.length() == 0) {
-                                if (ui != null) {
-                                    char [] temppwd = ui.getPrivilegedPassword();
-                                    if (temppwd == null) {
-                                        return false;
-                                    }
-                                    privPassword = String.valueOf(temppwd);
-                                } else {
-                                    return false;
-                                }
-                            }
+                            if (creds == null) return false;
+                            privUsername = (String) creds.get(DBActions.USERNAME_KEY);
+                            privPassword = (String) creds.get(DBActions.PASSWORD_KEY);
+
                             isOk = doDbUpgrade(hostname, dbName, currentVersion, dbVersion, privUsername, privPassword, ui);
+                            if (isOk && ui != null) ui.showSuccess("Database Successfully Upgraded\n");
                         } catch (IOException e) {
                             errorMsg = "There was an error while attempting to upgrade the database";
                             logger.severe(errorMsg);
@@ -704,17 +728,8 @@ public class DBActions {
     private boolean doDbUpgrade(String hostname, String dbName, String currentVersion, String dbVersion, String privUsername, String privPassword, DBActionsListener ui) throws IOException {
         boolean isOk = false;
 
-        char[]  passwd = privPassword.toCharArray();
-        if (passwd == null || passwd.length == 0) {
-            if (ui != null) {
-                passwd = ui.getPrivilegedPassword();
-            }
-            if (null == passwd) {
-                return false;
-            }
-        }
         logger.info("Attempting to upgrade the existing database \"" + dbName+ "\"");
-        DBActions.DBActionsResult upgradeResult = upgradeDbSchema(hostname, privUsername, new String(passwd), dbName, dbVersion, currentVersion, OSDetector.getOSSpecificActions());
+        DBActions.DBActionsResult upgradeResult = upgradeDbSchema(hostname, privUsername, privPassword, dbName, dbVersion, currentVersion, OSDetector.getOSSpecificActions());
         String msg;
         switch (upgradeResult.getStatus()) {
             case DBActions.DB_SUCCESS:

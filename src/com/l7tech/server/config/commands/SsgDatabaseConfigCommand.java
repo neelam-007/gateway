@@ -40,6 +40,8 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private static final String HIBERNATE_CXN_PROVIDER_PROP_VALUE = "org.hibernate.connection.C3P0ConnectionProvider";
 
 
+    private static final String DB_URL_PLACEHOLDER = "DB_URL";
+
     private Pattern urlPattern = Pattern.compile("(^.*//).*(/).*(\\?.*$)");
 
     public SsgDatabaseConfigCommand(ConfigurationBean bean) {
@@ -95,7 +97,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             fis = null;
 
             String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);
-            if (StringUtils.isEmpty(origUrl)) {
+            if (StringUtils.isEmpty(origUrl) || origUrl.equals(DB_URL_PLACEHOLDER)) {
                 origUrl = HIBERNATE_DEFAULT_CONNECTION_URL;
             }
             origUrl = origUrl.replaceAll(HIBERNATE_URL_AUTORECONNECTPOOLS_PATTERN, "");

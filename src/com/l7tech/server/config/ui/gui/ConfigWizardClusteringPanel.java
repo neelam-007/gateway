@@ -110,19 +110,24 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         if (StringUtils.isEmpty(getParentWizard().getHostname())) {
             if (clusterHostname != null) {
                 clusteringConfigBean.setClusterHostname(clusterHostname);
-                clusteringConfigBean.setNewHostName(true);
+                if (!StringUtils.equals(clusterHostname, clusteringConfigBean.getLocalHostName())) {
+                    clusteringConfigBean.setNewHostName(true);
+                } else {
+                    clusteringConfigBean.setNewHostName(false);
+                }
             }
             else {
                 clusteringConfigBean.setNewHostName(false);
             }
         }
+
+        ssgHostnameLabel.setText(clusteringConfigBean.getLocalHostName());
+        newHostname.setText(clusteringConfigBean.getClusterHostname());
+
         //now enable the controls appropriately
         if (clusteringConfigBean.isNewHostName()) {
             useNewHostnameOption.setSelected(true);
         }
-
-        ssgHostnameLabel.setText(clusteringConfigBean.getLocalHostName());
-        newHostname.setText(clusteringConfigBean.getClusterHostname());
     }
 
     protected void updateModel(Set settings) {
