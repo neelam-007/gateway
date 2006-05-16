@@ -86,7 +86,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         IdentityBindingHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
         connectionManager.setMaxConnectionsPerHost(hmax);
         connectionManager.setMaxTotalConnections(tmax);
-        connectionManager.setPerHostStaleCleanupCount(CommonsHttpClient.getDefaultStaleCheckCount());
+        connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
         this.connectionManager = connectionManager;
 
         auditor = new Auditor(this, applicationContext, logger);

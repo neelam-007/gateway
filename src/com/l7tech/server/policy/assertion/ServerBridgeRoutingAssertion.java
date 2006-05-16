@@ -420,7 +420,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         StaleCheckingHttpConnectionManager connectionManager = new StaleCheckingHttpConnectionManager();
         connectionManager.setMaxConnectionsPerHost(hmax);
         connectionManager.setMaxTotalConnections(tmax);
-        connectionManager.setPerHostStaleCleanupCount(CommonsHttpClient.getDefaultStaleCheckCount());
+        connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
         GenericHttpClient client = new CommonsHttpClient(connectionManager);
 
         // Attach SSL support

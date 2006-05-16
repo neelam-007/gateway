@@ -175,7 +175,7 @@ public abstract class ServerRoutingAssertion extends AbstractServerAssertion imp
     }
 
     /**
-     * Get the connection timeout to use (set using a system property)
+     * Get the connection timeout to use (set using a cluster/system property)
      *
      * @return the configured or default timeout.
      */
@@ -184,12 +184,21 @@ public abstract class ServerRoutingAssertion extends AbstractServerAssertion imp
     }
 
     /**
-     * Get the timeout to use (set using a system property)
+     * Get the timeout to use (set using a cluster/system property)
      *
      * @return the configured or default timeout.
      */
     protected int getTimeout() {
         return getIntProperty(ServerConfig.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
+    }
+
+    /**
+     * Get the stale check count to use (set using a cluster/system property)
+     *
+     * @return
+     */
+    protected int getStaleCheckCount() {
+        return getIntProperty(ServerConfig.PARAM_IO_STALE_CHECK_PER_INTERVAL,0,1000,1);        
     }
 
     //- PRIVATE
