@@ -173,15 +173,21 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             return AssertionStatus.NONE;
         } catch (PrivilegedActionException e) {
             if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authentication (login)"}, e);
+                auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                        customAssertion.getName(),
+                        "Authentication (login); detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
                 return AssertionStatus.AUTH_FAILED;
             } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
                 if (isAuthAssertion) {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
+                    auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                            customAssertion.getName(),
+                            "Authorization (access control) failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
                     return AssertionStatus.UNAUTHORIZED;
                 }
                 else {
-                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Assertion failed."}, e);
+                    auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                            customAssertion.getName(),
+                            "Assertion failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
                     return AssertionStatus.FALSIFIED;
                 }
             }
