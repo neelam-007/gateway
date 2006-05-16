@@ -91,6 +91,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         try {
             serviceInvocation = (ServiceInvocation)sa.newInstance();
             serviceInvocation.setCustomAssertion(customAssertion);
+            new CustomAuditorImpl(auditor).register(serviceInvocation);
         } catch (InstantiationException e) {
             throw new PolicyAssertionException(data, "Custom assertion is misconfigured", e);
         } catch (IllegalAccessException e) {
@@ -175,8 +176,14 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authentication (login)"}, e);
                 return AssertionStatus.AUTH_FAILED;
             } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
-                return AssertionStatus.UNAUTHORIZED;
+                if (isAuthAssertion) {
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
+                    return AssertionStatus.UNAUTHORIZED;
+                }
+                else {
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Assertion failed."}, e);
+                    return AssertionStatus.FALSIFIED;
+                }
             }
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Failed to invoke the custom assertion"}, e);
             return AssertionStatus.FAILED;

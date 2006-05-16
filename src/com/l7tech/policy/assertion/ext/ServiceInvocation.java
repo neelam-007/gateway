@@ -4,26 +4,31 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 /**
- * Superclass for the server-side runtime code that implements the behavior for a custom assertion.
- * <p/>
+ * Superclass for the server-side runtime code that implements the behaviour for a custom assertion.
+ * <p>
  * Every custom assertion has two major parts: the CustomAssertion bean used to hold its policy configuration,
  * and the {@link ServiceInvocation} instance that performs the actual runtime work inside the SecureSpan Gateway.
- * <p/>
+ * </p><p>
  * The abstract class <code>ServiceInvocation</code> is extended by custom
  * policy elements that are loaded in the Gateway runtime.  Its methods
  * {@link ServiceInvocation#onRequest} and {@link ServiceInvocation#onResponse}
  * are invoked by the gateway during the service request and/or response processing,
  * depending on it's position in the policy tree.
+ * </p><p>
  * Those methods may throw <code>IOException</code> on error during processing the
- * requiest or <code>GeneralSecurityException</code> or its subclass for security
- * related error.
- * <p/>
- * The methods in this class are empty.
+ * request or <code>GeneralSecurityException</code> or its subclass for security
+ * related errors.
+ * </p><p>
+ * The auditing methods can be used to record related to processing of a request or response.
+ * </p>
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * @version 1.1
  */
 public abstract class ServiceInvocation {
+
+    //- PUBLIC
+
     /**
      * Create the <code>ServiceInvocation</code> instance
      */
@@ -38,6 +43,7 @@ public abstract class ServiceInvocation {
      * @throws NullPointerException if customAssertion is null
      */
     public void setCustomAssertion(CustomAssertion customAssertion) {
+        if (customAssertion == null) throw new NullPointerException("customAssertion must not be null");
         this.customAssertion = customAssertion;
     }
 
@@ -65,5 +71,42 @@ public abstract class ServiceInvocation {
     public void onResponse(ServiceResponse response)
       throws IOException, GeneralSecurityException {}
 
+    //- PROTECTED
+
+    /**
+     * Audit an information message.
+     *
+     * <p>This is for recording occurances that effect the outcome of
+     * this assertions processing.</p>
+     *
+     * @param message The text of the audit
+     */
+    protected void auditInfo(String message) {
+        if (auditor != null) auditor.auditInfo(customAssertion, message);
+    }
+
+    /**
+     * Audit a warning message.
+     *
+     * <p>This is for recording occurances that negatively effect the outcome
+     * of this assertions processing. This would typically be used to record
+     * the reason for any failure of this assertion.</p>
+     *
+     * @param message The text of the audit
+     */
+    protected void auditWarn(String message) {
+        if (auditor != null) auditor.auditWarning(customAssertion, message);
+    }
+
     protected CustomAssertion customAssertion;
+
+    //- PACKAGE
+
+    void setCustomAuditor(CustomAuditor auditor)  {
+        this.auditor = auditor;
+    }
+
+    //- PRIVATE
+
+    private CustomAuditor auditor;
 }
