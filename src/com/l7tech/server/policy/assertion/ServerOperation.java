@@ -18,13 +18,19 @@ import org.springframework.context.ApplicationContext;
 import javax.wsdl.WSDLException;
 
 /**
- * [desc here]
+ * Runtime execution of the WSDL Operation assertion. Gets operation from the context and tries to match it against
+ * an operation name recorded in the WSDL Operation assertion. Returns AssertionStatus.FALSIFIED if the message matched
+ * an operation described in the WSDL but not the one wanted by the assertion, AssertionStatus.FAILED if the message
+ * could not match any operation described in the WSDL, and AssertionStatus.NONE if there is a match.
+ *
  * <p/>
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: May 17, 2006<br/>
+ *
+ * @see Operation
  */
 public class ServerOperation extends AbstractServerAssertion {
     private final Operation subject;
@@ -36,6 +42,11 @@ public class ServerOperation extends AbstractServerAssertion {
         auditor = new Auditor(this, context, logger);
     }
 
+    /**
+     * @return AssertionStatus.FALSIFIED if the message matched
+     * an operation described in the WSDL but not the one wanted by the assertion, AssertionStatus.FAILED if the message
+     * could not match any operation described in the WSDL, and AssertionStatus.NONE if there is a match
+     */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             javax.wsdl.Operation cntxop = context.getOperation();
