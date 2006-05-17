@@ -104,6 +104,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
         assertionMap.put(WsspAssertion.class, WsspAssertionPolicyNode.class);
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);
+        assertionMap.put(Operation.class, OperationTreeNode.class);
     }
 
     /**

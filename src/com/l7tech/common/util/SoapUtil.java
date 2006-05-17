@@ -1450,6 +1450,44 @@ public class SoapUtil {
         Wsdl getWsdl();
     }
 
+    public static Collection getOperationNames(final Wsdl wsdl) {
+        ArrayList output = new ArrayList();
+
+        Map bindings = wsdl.getDefinition().getBindings();
+        if (bindings.isEmpty()) {
+            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
+            return output;
+        }
+        boolean foundSoapBinding = false;
+        for (Iterator h = bindings.keySet().iterator(); h.hasNext();) {
+            QName bindingName = (QName)h.next();
+            Binding binding = (Binding)bindings.get(bindingName);
+            SOAPBinding soapBinding = null;
+            List bindingEels = binding.getExtensibilityElements();
+            for (Iterator bindit = bindingEels.iterator(); bindit.hasNext();) {
+                ExtensibilityElement element = (ExtensibilityElement)bindit.next();
+                if (element instanceof SOAPBinding) {
+                    foundSoapBinding = true;
+                    soapBinding = (SOAPBinding)element;
+                }
+            }
+
+            if (soapBinding == null)
+                continue; // This isn't a SOAP binding; we don't care
+            List bindingOperations = binding.getBindingOperations();
+            for (Iterator iterator = bindingOperations.iterator(); iterator.hasNext();) {
+                BindingOperation bindingOperation = (BindingOperation) iterator.next();
+                String tmp = bindingOperation.getOperation().getName();
+                if (!output.contains(tmp)) output.add(tmp);
+            }
+
+        }
+        if (!foundSoapBinding) {
+            log.info("Can't get operation; WSDL " + wsdl.getDefinition().getDocumentBaseURI() + " has no SOAP port");
+        }
+        return output;
+    }
+
     public static Operation getOperation(final Wsdl wsdl, final Message request)
             throws IOException, SAXException, InvalidDocumentFormatException,
                    MessageNotSoapException
