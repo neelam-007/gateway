@@ -22,6 +22,7 @@ import java.awt.event.ActionEvent;
 public class WSDLOperationPropertiesDialog extends JDialog {
     private static final String TITLE = "WSDL Operation Assertion Properties";
     private Operation assertion;
+    public boolean oked = false;
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -83,10 +84,12 @@ public class WSDLOperationPropertiesDialog extends JDialog {
                 }
             }
         }
+        oked = false;
     }
 
     private void ok() {
-        // todo, validate ?, save assertion, remember oked
+        assertion.setOperationName(operationCombo.getSelectedItem().toString());
+        oked = true;
         cancel();
     }
 

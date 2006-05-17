@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.OperationTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.WSDLOperationPropertiesDialog;
 import com.l7tech.policy.assertion.Operation;
@@ -10,8 +11,10 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 
 import javax.wsdl.WSDLException;
+import javax.swing.*;
 import java.awt.*;
 import java.rmi.RemoteException;
+import java.util.logging.Level;
 
 /**
  * Action for editing the properties of the Operaion assertion.
@@ -42,33 +45,50 @@ public class OperationPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
+        Frame f = TopComponents.getInstance().getMainWindow();
+
         PublishedService svc = null;
         try {
             svc = subject.getService();
         } catch (RemoteException e) {
-            // todo
-            svc = null;
+            String msg = "error retrieving service";
+            log.log(Level.WARNING, msg, e);
+            JOptionPane.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         } catch (FindException e) {
-            // todo
-            svc = null;
+            String msg = "error retrieving service";
+            log.log(Level.WARNING, msg, e);
+            JOptionPane.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        if (svc == null || !svc.isSoap()) {
-            // todo, show error
+        if (!svc.isSoap()) {
+            String msg = "This assertion is not applicable to non-SOAP services.";
+            JOptionPane.showMessageDialog(f, msg, "Not applicable", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        String[] operations = new String[0];
+        String[] operations;
         try {
             operations = (String[])SoapUtil.getOperationNames(svc.parsedWsdl()).toArray(new String[0]);
         } catch (WSDLException e) {
-            // todo, show error
+            String msg = "Error retrieving wsdl details";
+            log.log(Level.WARNING, msg, e);
+            JOptionPane.showMessageDialog(f, msg, "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        Frame f = TopComponents.getInstance().getMainWindow();
+
         WSDLOperationPropertiesDialog dlg = new WSDLOperationPropertiesDialog(f, (Operation)subject.asAssertion(), operations);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
-        // todo check oked and tell policy
+        if (dlg.oked) {
+            JTree tree = TopComponents.getInstance().getPolicyTree();
+            if (tree != null) {
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged(subject);
+            } else {
+                log.log(Level.WARNING, "Unable to reach the policy tree.");
+            }
+        }
     }
 }

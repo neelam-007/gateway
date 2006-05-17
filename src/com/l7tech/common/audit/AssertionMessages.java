@@ -428,8 +428,11 @@ public class AssertionMessages extends Messages {
     public static final M RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE = m(7900, Level.WARNING, "Unsupported Security Token Type: {0}");
     public static final M RESPONSE_WSS_TOKEN_NO_CREDS         = m(7901, Level.WARNING, true, false, "No credentials were available from the request");
     public static final M RESPONSE_WSS_TOKEN_NO_USERNAME      = m(7902, Level.WARNING, true, false, "Credentials were available, but no username could be found");
-    public static final M RESPONSE_WSS_TOKEN_NO_PASSWORD     = m(7903, Level.WARNING, true, false, "Password inclusion was requested, but no password could be found");
+    public static final M RESPONSE_WSS_TOKEN_NO_PASSWORD      = m(7903, Level.WARNING, true, false, "Password inclusion was requested, but no password could be found");
 
-    public static final M CUSTOM_ASSERTION_INFO = m(8000, Level.INFO, "Assertion ''{0}''; {1}");
-    public static final M CUSTOM_ASSERTION_WARN = m(8001, Level.WARNING, "Assertion ''{0}''; {1}");
+    public static final M CUSTOM_ASSERTION_INFO               = m(8000, Level.INFO, "Assertion ''{0}''; {1}");
+    public static final M CUSTOM_ASSERTION_WARN               = m(8001, Level.WARNING, "Assertion ''{0}''; {1}");
+
+    public static final M WSDLOPERATION_NOMATCH               = m(8100, Level.INFO, "Could not match WSDL operation ({0} instead of {1}).");
+    public static final M WSDLOPERATION_CANNOTIDENTIFY        = m(8101, Level.INFO, "Cannot identify any WSDL operation from request.");
 }

@@ -281,6 +281,7 @@ public class WspConstants {
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new ComparisonAssertion(), "ComparisonAssertion"),
         new AssertionMapping(new FaultLevel(), "FaultLevel"),
+        new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
         new AssertionMapping(new OversizedTextAssertion(), "OversizedText"),
         new AssertionMapping(new RequestSizeLimit(), "RequestSizeLimit"),

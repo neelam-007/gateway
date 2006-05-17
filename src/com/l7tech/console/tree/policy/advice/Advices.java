@@ -115,5 +115,6 @@ public class Advices {
         advicesMap.put(HardcodedResponseAssertion.class, new Class[]{HardcodedResponseAssertionAdvice.class});
         advicesMap.put(MappingAssertion.class, new Class[] {MappingAssertionAdvice.class});
         advicesMap.put(AuditDetailAssertion.class, new Class[] {AddAuditAdviceAssertion.class});
+        advicesMap.put(Operation.class, new Class[]{AddWSDLOperationAssertionAdvice.class});
     }
 }
