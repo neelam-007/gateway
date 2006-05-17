@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * The utility class, custom assertions holdrr that keeps track of the registered
+ * The utility class, custom assertions holder that keeps track of the registered
  * custom assertions.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -46,10 +46,10 @@ class CustomAssertions {
    * @param a the assertion class
    * @return the custom assertion UI class or <b>null</b>
    */
-  static CustomAssertionUI getUI(Class a) {
+  static CustomAssertionUI getUI(String assertionClassName) {
       for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
           CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
-          if (a.equals(cd.getAssertion())) {
+          if (assertionClassName.equals(cd.getAssertion().getName())) {
               try {
                   Class uiClass = cd.getUiClass();
                   if (uiClass == null) {

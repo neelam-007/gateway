@@ -19,7 +19,8 @@ import java.util.List;
  * @version 16-Feb-2004
  */
 class SerializedJavaClassMapping extends BeanTypeMapping {
-    static final String ELEMENT_NAME = "base64SerializedValue";
+    private static final String ELEMENT_NAME = "base64SerializedValue";
+    private static ClassLoader classLoader = null;
 
     public SerializedJavaClassMapping(Class clazz, String externalName) {
         super(clazz, externalName);
@@ -81,6 +82,14 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
         }
     }
 
+    /**
+     * Set the ClassLoader to use when loading classes.
+     *
+     * @param classLoader The classloader to use
+     */
+    static void setClassloader(ClassLoader classLoader) {
+        SerializedJavaClassMapping.classLoader = classLoader;
+    }
 
     /**
      * convert a serializable object to a base64 String
@@ -103,11 +112,44 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
      */
     private Object base64ToObject(String str) throws IOException, ClassNotFoundException {
         ByteArrayInputStream bis = new ByteArrayInputStream(Base64.decode(str));
-        ObjectInputStream ois = new ObjectInputStream(bis);
+        ObjectInputStream ois = new ClassLoaderObjectInputStream(bis);
 
         Object obj = (Object)ois.readObject();
         ois.close();
         bis.close();
         return obj;
+    }
+
+    private static final class ClassLoaderObjectInputStream extends ObjectInputStream {
+        protected Class resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+            Class clazz = null;
+            ClassNotFoundException recnfe = null;
+            try {
+                //Note that the classes version is checked later so no need to do so here
+                clazz = classLoader!=null ? classLoader.loadClass(desc.getName()) : null;
+            }
+            catch(ClassNotFoundException cnfe) {
+                recnfe = cnfe;
+            }
+
+            if (clazz == null) {
+                try {
+                    clazz = super.resolveClass(desc);
+                }
+                catch(ClassNotFoundException cnfe) {
+                    // ignore
+                }
+            }
+
+            if (clazz == null) {
+                throw recnfe;
+            }
+
+            return clazz;
+        }
+
+        public ClassLoaderObjectInputStream(InputStream in) throws IOException {
+            super(in);
+        }
     }
 }

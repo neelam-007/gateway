@@ -62,7 +62,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @param a the assertion class
      * @return the custom assertion UI class or <b>null</b>
      */
-    public CustomAssertionUI getUI(Class a) {
+    public CustomAssertionUI getUI(String a) {
         return CustomAssertions.getUI(a);
     }
 

@@ -123,7 +123,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
             return null;
         }
         try {
-            customAssertionUI = registrar.getUI(cah.getCustomAssertion().getClass());
+            customAssertionUI = registrar.getUI(cah.getCustomAssertion().getClass().getName());
             registrarCalled = true;
             return getCustomEditor();
         } catch (Exception e) {

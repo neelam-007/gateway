@@ -104,7 +104,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
             return defaultImageIcon;
         }
         CustomAssertion customAssertion = ((CustomAssertionHolder)asAssertion()).getCustomAssertion();
-        CustomAssertionUI ui = registrar.getUI(customAssertion.getClass());
+        CustomAssertionUI ui = registrar.getUI(customAssertion.getClass().getName());
         if (ui == null) {
             defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
         } else {

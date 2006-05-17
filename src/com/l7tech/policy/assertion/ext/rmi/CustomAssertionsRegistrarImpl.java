@@ -78,10 +78,10 @@ public class CustomAssertionsRegistrarImpl
      * Return the <code>CustomAssertionUI</code> class for a given assertion or
      * <b>null<b>
      *
-     * @param a the assertion class
+     * @param a the assertion class name
      * @return the custom assertion UI class or <b>null</b>
      */
-    public CustomAssertionUI getUI(Class a) {
+    public CustomAssertionUI getUI(String a) {
         return delegate.getUI(a);
     }
 

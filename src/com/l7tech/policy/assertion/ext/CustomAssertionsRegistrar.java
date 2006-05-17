@@ -52,8 +52,8 @@ public interface CustomAssertionsRegistrar {
      * Return the <code>CustomAssertionUI</code> class for a given assertion or
      * <b>null<b>
      *
-     * @param a the assertion class
+     * @param assertionClassName the assertion class name
      * @return the custom assertion UI class or <b>null</b>
      */
-    CustomAssertionUI getUI(Class a);
+    CustomAssertionUI getUI(String assertionClassName);
 }

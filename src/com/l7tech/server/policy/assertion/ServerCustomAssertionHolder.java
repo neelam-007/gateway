@@ -122,82 +122,93 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
         //logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
 
-        if(serviceInvocation == null) initialize();
-
+        boolean contextClassLoaderReplaced = false;
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        Class customAssertionClass = customAssertion.getClass();
         try {
-            PublishedService service = context.getService();
-            final CustomAssertionDescriptor descriptor = getCustomAssertionRegistrar().getDescriptor(customAssertion.getClass());
-
-            if (!checkDescriptor(descriptor)) {
-                auditor.logAndAudit(AssertionMessages.CA_INVALID_CA_DESCRIPTOR, new String[] {customAssertion.getClass().getName()});
-                throw new PolicyAssertionException(data, "Custom assertion is misconfigured, service '" + service.getName() + "'");
+            if (contextClassLoader != null && !customAssertionClass.getClassLoader().equals(contextClassLoader)) {
+                contextClassLoaderReplaced = true;
+                Thread.currentThread().setContextClassLoader(customAssertionClass.getClassLoader());
             }
-            Subject subject = new Subject();
-            LoginCredentials principalCredentials = context.getCredentials();
-            if (principalCredentials != null) {
-                String principalName = principalCredentials.getLogin();
-                auditor.logAndAudit(AssertionMessages.CA_CREDENTIAL_INFO,
-                        new String[] {service.getName(), descriptor.getServerAssertion().getName(), principalName});
 
-                if (principalName != null) {
-                    subject.getPrincipals().add(new CustomAssertionPrincipal(principalName));
+            if(serviceInvocation == null) initialize();
+
+            try {
+                PublishedService service = context.getService();
+
+                final CustomAssertionDescriptor descriptor = getCustomAssertionRegistrar().getDescriptor(customAssertionClass);
+
+                if (!checkDescriptor(descriptor)) {
+                    auditor.logAndAudit(AssertionMessages.CA_INVALID_CA_DESCRIPTOR, new String[] {customAssertion.getClass().getName()});
+                    throw new PolicyAssertionException(data, "Custom assertion is misconfigured, service '" + service.getName() + "'");
                 }
-                final char[] credentials = principalCredentials.getCredentials();
-                if (credentials != null) {
-                    subject.getPrivateCredentials().add(new String(credentials));
+                Subject subject = new Subject();
+                LoginCredentials principalCredentials = context.getCredentials();
+                if (principalCredentials != null) {
+                    String principalName = principalCredentials.getLogin();
+                    auditor.logAndAudit(AssertionMessages.CA_CREDENTIAL_INFO,
+                            new String[] {service.getName(), descriptor.getServerAssertion().getName(), principalName});
+
+                    if (principalName != null) {
+                        subject.getPrincipals().add(new CustomAssertionPrincipal(principalName));
+                    }
+                    final char[] credentials = principalCredentials.getCredentials();
+                    if (credentials != null) {
+                        subject.getPrivateCredentials().add(new String(credentials));
+                    }
                 }
-            }
-            subject.setReadOnly();
-            Subject.doAs(subject, new PrivilegedExceptionAction() {
-                public Object run() throws Exception {
-                    CustomService customService = null;
-                    try {
-                        if (isPostRouting(context)) {
-                            CustomServiceResponse customServiceResponse = new CustomServiceResponse(context);
-                            customService = customServiceResponse;
-                            serviceInvocation.onResponse(customServiceResponse);
-                        } else {
-                            CustomServiceRequest customServiceRequest = new CustomServiceRequest(context);
-                            customService = customServiceRequest;
-                            serviceInvocation.onRequest(customServiceRequest);
+                subject.setReadOnly();
+                Subject.doAs(subject, new PrivilegedExceptionAction() {
+                    public Object run() throws Exception {
+                        CustomService customService = null;
+                        try {
+                            if (isPostRouting(context)) {
+                                CustomServiceResponse customServiceResponse = new CustomServiceResponse(context);
+                                customService = customServiceResponse;
+                                serviceInvocation.onResponse(customServiceResponse);
+                            } else {
+                                CustomServiceRequest customServiceRequest = new CustomServiceRequest(context);
+                                customService = customServiceRequest;
+                                serviceInvocation.onRequest(customServiceRequest);
+                            }
                         }
+                        finally {
+                            if(customService!=null) customService.onCompletion();
+                        }
+                        return null;
                     }
-                    finally {
-                        if(customService!=null) customService.onCompletion();
-                    }
-                    return null;
-                }
-            });
-            if (isAuthAssertion)
-                context.setAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
-            return AssertionStatus.NONE;
-        } catch (PrivilegedActionException e) {
-            if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
-                auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
-                        customAssertion.getName(),
-                        "Authentication (login); detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
-                return AssertionStatus.AUTH_FAILED;
-            } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
-                if (isAuthAssertion) {
+                });
+                if (isAuthAssertion)
+                    context.setAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
+                return AssertionStatus.NONE;
+            } catch (PrivilegedActionException e) {
+                if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
                     auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
                             customAssertion.getName(),
-                            "Authorization (access control) failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
-                    return AssertionStatus.UNAUTHORIZED;
+                            "Authentication (login); detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
+                    return AssertionStatus.AUTH_FAILED;
+                } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
+                    if (isAuthAssertion) {
+                        auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                                customAssertion.getName(),
+                                "Authorization (access control) failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
+                        return AssertionStatus.UNAUTHORIZED;
+                    }
+                    else {
+                        auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
+                                customAssertion.getName(),
+                                "Assertion failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
+                        return AssertionStatus.FALSIFIED;
+                    }
                 }
-                else {
-                    auditor.logAndAudit(AssertionMessages.CUSTOM_ASSERTION_WARN, new String[] {
-                            customAssertion.getName(),
-                            "Assertion failed; detail '"+ExceptionUtils.getMessage(e.getException())+"'"});
-                    return AssertionStatus.FALSIFIED;
-                }
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Failed to invoke the custom assertion"}, e);
+                return AssertionStatus.FAILED;
+            } catch (AccessControlException e) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
+                return AssertionStatus.UNAUTHORIZED;
             }
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Failed to invoke the custom assertion"}, e);
-            return AssertionStatus.FAILED;
-        } catch (AccessControlException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Authorization (access control) failed"}, e);
-            return AssertionStatus.UNAUTHORIZED;
         } finally {
-            //logger.exiting(ServerCustomAssertionHolder.class.getName(), "checkRequest");
+            if (contextClassLoaderReplaced) Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
     }
 

@@ -163,7 +163,7 @@
         </property>
     </bean>
     <!-- server side service manager -->
-    <bean id="serviceManagerTarget" class="com.l7tech.server.service.ServiceManagerImp">
+    <bean id="serviceManagerTarget" class="com.l7tech.server.service.ServiceManagerImp" depends-on="customAssertionRegistrar">
         <property name="serviceCache">
             <ref bean='serviceCache'/>
         </property>
@@ -200,8 +200,8 @@
     </bean>
     <!-- server side custom assertions registrar -->
     <bean id="customAssertionRegistrar" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarImpl">
-        <property name="serviceManager">
-            <ref bean="serviceManager"/>
+        <property name="serverConfig">
+            <ref bean="serverConfig"/>
         </property>
     </bean>
     <!-- jms connection manager -->

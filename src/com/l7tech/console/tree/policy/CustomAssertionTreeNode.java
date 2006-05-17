@@ -135,7 +135,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
 
         CustomAssertion customAssertion = ((CustomAssertionHolder)asAssertion()).getCustomAssertion();
         try {
-            CustomAssertionUI ui = registrar.getUI(customAssertion.getClass());
+            CustomAssertionUI ui = registrar.getUI(customAssertion.getClass().getName());
             if(ui!=null) {
                 ImageIcon icon = ui.getSmallIcon();
                 if (icon != null) {

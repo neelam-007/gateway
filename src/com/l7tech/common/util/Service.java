@@ -40,15 +40,28 @@ public final class Service {
      * @return an Iterator of objects castable to serviceClass
      */
     public static Iterator providers(final Class serviceClass) {
+        return providers(serviceClass, Service.class.getClassLoader());
+    }
+
+    /**
+     * Get the provider implementations for the given service.
+     *
+     * <p>Locate and instantiate providers of the given type.</p>
+     *
+     * @param serviceClass the service interface
+     * @param classLoader the class loader to use
+     * @return an Iterator of objects castable to serviceClass
+     */
+    public static Iterator providers(final Class serviceClass, final ClassLoader classLoader) {
         Iterator iter = Collections.EMPTY_LIST.iterator();
-        Collection classNameUrlPairs = lookupProviderClassNames(SERVICE_PREFIX + serviceClass.getName());
+        Collection classNameUrlPairs = lookupProviderClassNames(SERVICE_PREFIX + serviceClass.getName(), classLoader);
         if(!classNameUrlPairs.isEmpty()) {
             HashSet providers = new LinkedHashSet();
             for (Iterator classNameIter=classNameUrlPairs.iterator(); classNameIter.hasNext();) {
                 String[] pair = (String[]) classNameIter.next();
                 String className = pair[0];
                 String urlStr = pair[1];
-                Object instance = instantiateProvider(serviceClass, className, urlStr);
+                Object instance = instantiateProvider(serviceClass, classLoader, className, urlStr);
                 if(instance!=null) providers.add(instance);
             }
             iter = Collections.unmodifiableCollection(providers).iterator();
@@ -65,8 +78,21 @@ public final class Service {
      * @return an Iterator of String class names
      */
     public static Iterator providerClassNames(final Class serviceClass) {
+        return providerClassNames(serviceClass, Service.class.getClassLoader());
+    }
+
+    /**
+     * Get the provider implementation names for the given service.
+     *
+     * <p>Locate providers of the given type.</p>
+     *
+     * @param serviceClass the service interface
+     * @param classLoader the class loader to use
+     * @return an Iterator of String class names
+     */
+    public static Iterator providerClassNames(final Class serviceClass, final ClassLoader classLoader) {
         Iterator iter = Collections.EMPTY_LIST.iterator();
-        Collection classNameUrlPairs = lookupProviderClassNames(SERVICE_PREFIX + serviceClass.getName());
+        Collection classNameUrlPairs = lookupProviderClassNames(SERVICE_PREFIX + serviceClass.getName(), classLoader);
         if(!classNameUrlPairs.isEmpty()) {
             HashSet providers = new LinkedHashSet();
             for (Iterator classNameIter=classNameUrlPairs.iterator(); classNameIter.hasNext();) {
@@ -96,8 +122,7 @@ public final class Service {
      *
      * @return a set of provider class name / url pairs (String[])
      */
-    private static Collection lookupProviderClassNames(String resourcePath) {
-        ClassLoader cl = Service.class.getClassLoader(); // or threads?
+    private static Collection lookupProviderClassNames(String resourcePath, ClassLoader cl) {
         Map classes = new LinkedHashMap();
         try {
             Iterator resUrlIter = new EnumerationIterator(cl.getResources(resourcePath));
@@ -142,10 +167,10 @@ public final class Service {
      *
      * @return the instance or null.
      */
-    private static Object instantiateProvider(Class desiredType, String className, String sourceUrl) {
+    private static Object instantiateProvider(Class desiredType, ClassLoader classLoader, String className, String sourceUrl) {
         Object instance = null;
         try {
-            Class clazz = Class.forName(className);
+            Class clazz = Class.forName(className, true, classLoader);
             if(desiredType.isAssignableFrom(clazz)) {
                 instance = clazz.newInstance();
             }

@@ -3,8 +3,11 @@ package com.l7tech.policy.assertion.ext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.service.ServiceManager;
+import com.l7tech.server.util.ModuleClassLoader;
+import com.l7tech.common.util.ResourceUtils;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -12,10 +15,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
 
 /**
  * The server side CustomAssertionsRegistrar implementation.
@@ -25,9 +30,8 @@ import java.util.logging.Logger;
  */
 public class CustomAssertionsRegistrarImpl
   extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
-    static Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
-    protected static boolean initialized = false;
-    private ServiceManager serviceManager;
+
+    //- PUBLIC
 
     /**
      * @return the list of all assertions known to the runtime
@@ -66,11 +70,11 @@ public class CustomAssertionsRegistrarImpl
      * Return the <code>CustomAssertionUI</code> class for a given assertion or
      * <b>null<b>
      *
-     * @param a the assertion class
+     * @param assertionClassName the assertion class name
      * @return the custom assertion UI class or <b>null</b>
      */
-    public CustomAssertionUI getUI(Class a) {
-        return CustomAssertions.getUI(a);
+    public CustomAssertionUI getUI(String assertionClassName) {
+        return CustomAssertions.getUI(assertionClassName);
     }
 
 
@@ -86,6 +90,34 @@ public class CustomAssertionsRegistrarImpl
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
         return WspReader.parsePermissively(xml);
     }
+
+    /**
+     *
+     */
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
+    }
+
+    /**
+     * Perform bean initialization after properties are set.
+     */
+    public void afterPropertiesSet() throws Exception {
+        if (serverConfig == null) {
+            throw new IllegalArgumentException("Server Config is required");
+        }
+
+        init();
+    }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
+    private static final String KEY_CONFIG_FILE = "custom.assertions.file";
+    private static final String KEY_CUSTOM_MODULES = "custom.assertions.modules";
+    private static final String KEY_CUSTOM_MODULES_TEMP = "custom.assertions.temp";
+
+    private boolean initialized = false;
+    private ServerConfig serverConfig;
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
         Collection result = new ArrayList();
@@ -107,57 +139,100 @@ public class CustomAssertionsRegistrarImpl
         return result;
     }
 
-    public void setServiceManager(ServiceManager serviceManager) {
-        this.serviceManager = serviceManager;
-    }
-
-    //-------------- custom assertion loading stuff -------------------------
-      private synchronized void init(ServerConfig config) {
+    /**
+     * Custom assertion loading stuff
+     */
+    private void init() {
         if (initialized) return;
-        fileName = config.getProperty(KEY_CONFIG_FILE);
+
+        String fileName = serverConfig.getProperty(KEY_CONFIG_FILE);
         if (fileName == null) {
-            logger.info("'" + KEY_CONFIG_FILE + "' not specified");
+            logger.config("'" + KEY_CONFIG_FILE + "' not specified");
             return;
         }
-        if (fileName == null) return;
-        InputStream in = null;
+
+        String moduleDirectory = serverConfig.getProperty(KEY_CUSTOM_MODULES);
+        String moduleWorkDirectory = serverConfig.getProperty(KEY_CUSTOM_MODULES_TEMP);
+        ClassLoader caClassLoader = getClass().getClassLoader();
+        if (moduleDirectory == null) {
+            logger.config("'" + KEY_CUSTOM_MODULES + "' not specified");
+        }
+        else {
+            caClassLoader = new ModuleClassLoader(
+                ModuleClassLoader.class.getClassLoader().getParent(),
+                "customassertion",
+                new File(moduleDirectory),
+                new File(moduleWorkDirectory),
+                caClassLoader);
+
+            ClassLoaderUtil.setClassloader(caClassLoader);
+        }
 
         try {
-            in = getClass().getResourceAsStream(fileName);
-            if (in == null) {
-                in = new FileInputStream(fileName);
-            }
-            loadCustomAssertions(in);
-            initialized = true;
-        } catch (FileNotFoundException e) {
-            logger.info("Custom assertions config file '" + fileName + "'not present\n Custom assertions not loaded");
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "I/O error reading config file '" + fileName + "'", e);
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    // swallow
+            // Support multiple config files, so there can be one per CA Jar
+            Enumeration propfileUrls = caClassLoader.getResources(fileName);
+            if (propfileUrls.hasMoreElements()) {
+                while(propfileUrls.hasMoreElements()) {
+                    URL resourceUrl = (URL) propfileUrls.nextElement();
+                    if (initFromUrl(resourceUrl, caClassLoader))
+                        initialized = true;
                 }
             }
+            else {
+                File configFile = new File(fileName);
+                URL fileUrl = configFile.toURL();
+                if (initFromUrl(fileUrl, caClassLoader))
+                    initialized = true;
+            }
+        }
+        catch(IOException ioe) {
+            logger.log(Level.WARNING, "I/O error locating config file '" + fileName + "'", ioe);
         }
     }
 
-    private void loadCustomAssertions(InputStream in) throws IOException {
+    private boolean initFromUrl(URL customAssertionConfigUrl, ClassLoader classLoader) {
+        boolean loaded = false;
+        InputStream in = null;
+        try {
+            in = customAssertionConfigUrl.openStream();
+            loadCustomAssertions(in, classLoader);
+            loaded = true;
+        }
+        catch (FileNotFoundException e) {
+            logger.info("Custom assertions config file '" + customAssertionConfigUrl + "'not present\n Custom assertions not loaded");
+        }
+        catch (IOException e) {
+            logger.log(Level.WARNING, "I/O error reading config file '" + customAssertionConfigUrl + "'", e);
+        }
+        finally {
+            ResourceUtils.closeQuietly(in);
+        }
+
+        return loaded;
+    }
+
+    private void loadCustomAssertions(InputStream in, ClassLoader classLoader) throws IOException {
         Properties props = new Properties();
         props.load(in);
         props.keys();
-        for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();) {
-            Object o = (Object)iterator.next();
-            String key = o.toString();
-            if (key.endsWith(".class")) {
-                loadSingleCustomAssertion(key.substring(0, key.indexOf(".class")), props);
+
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            if (contextClassLoader != null) Thread.currentThread().setContextClassLoader(null);
+            for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();) {
+                Object o = (Object)iterator.next();
+                String key = o.toString();
+                if (key.endsWith(".class")) {
+                    loadSingleCustomAssertion(key.substring(0, key.indexOf(".class")), props, classLoader);
+                }
             }
+        }
+        finally {
+            if (contextClassLoader != null) Thread.currentThread().setContextClassLoader(contextClassLoader);            
         }
     }
 
-    private void loadSingleCustomAssertion(String baseKey, Properties properties) {
+    private void loadSingleCustomAssertion(String baseKey, Properties properties, ClassLoader classLoader) {
         String clientClass = null;
         String serverClass = null;
         String assertionClass = null;
@@ -198,21 +273,22 @@ public class CustomAssertionsRegistrarImpl
             logger.warning(sb.toString());
             return;
         }
+
         try {
-            Class a = Class.forName(assertionClass);
+            Class a = Class.forName(assertionClass, true, classLoader);
             Class ca = null;
             if (clientClass != null && !"".equals(clientClass)) {
-                ca = Class.forName(clientClass);
+                ca = Class.forName(clientClass, true, classLoader);
             }
             Class eClass = null;
             if (editorClass != null && !"".equals(editorClass)) {
-                eClass = Class.forName(editorClass);
+                eClass = Class.forName(editorClass, true, classLoader);
             }
 
-            Class sa = Class.forName(serverClass);
+            Class sa = Class.forName(serverClass, true, classLoader);
             SecurityManager sm = null;
             if (securityManagerClass != null) {
-                sm = (SecurityManager)Class.forName(securityManagerClass).newInstance();
+                sm = (SecurityManager)Class.forName(securityManagerClass, true, classLoader).newInstance();
             }
             CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, eClass, sa, category, optionalDescription, sm);
             CustomAssertions.register(eh);
@@ -232,14 +308,4 @@ public class CustomAssertionsRegistrarImpl
         }
     }
 
-    private String fileName;
-    final static String KEY_CONFIG_FILE = "custom.assertions.file";
-
-    public void afterPropertiesSet() throws Exception {
-        init((ServerConfig)getApplicationContext().getBean("serverConfig"));
-
-        if (serviceManager == null) {
-            throw new IllegalArgumentException("Service Manager is required");
-        }
-    }
 }
