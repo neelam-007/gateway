@@ -217,7 +217,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     String[] args = new String[]{requestMethod, service.getName()};
                     auditor.logAndAudit(MessageProcessingMessages.METHOD_NOT_ALLOWED, args);
                     throw new MethodNotAllowedException(
-                            MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED.getMessage(), args));
+                            MessageFormat.format(MessageProcessingMessages.METHOD_NOT_ALLOWED.getMessage(), (Object[])args));
                 }
 
                 // initialize cache

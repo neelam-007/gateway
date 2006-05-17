@@ -98,7 +98,7 @@ public class ErrorServlet extends HttpServlet {
     /**
      *
      */
-    private String[] getFormatArgs(String title, String message) {
+    private Object[] getFormatArgs(String title, String message) {
         return new String[]{title, message, BuildInfo.getLongBuildString()};
     }
 

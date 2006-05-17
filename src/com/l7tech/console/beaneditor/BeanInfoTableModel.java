@@ -126,7 +126,7 @@ public class BeanInfoTableModel extends AbstractTableModel {
         Method mRead = prop.getReadMethod();
         if (mRead != null &&
           mRead.getParameterTypes().length == 0) {
-            Object value = mRead.invoke(bean, null);
+            Object value = mRead.invoke(bean, (Object[]) null);
             return value != null ? value.toString() : "";
         } else
             return "error";
