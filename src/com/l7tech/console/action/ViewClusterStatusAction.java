@@ -28,7 +28,7 @@ public class ViewClusterStatusAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "Cluster Status";
+        return "Gateway (Cluster) Status";
     }
 
     /**
@@ -54,6 +54,7 @@ public class ViewClusterStatusAction extends SecureAction {
     protected void performAction() {
         ClusterStatusWindow csw = getClusterStatusWindow();
         csw.setVisible(true);
+        csw.setState(Frame.NORMAL);
         csw.toFront();
     }
 

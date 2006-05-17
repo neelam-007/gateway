@@ -56,8 +56,10 @@ public class ViewGatewayAuditsAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        getGatewayAuditWindow().setVisible(true);
-        getGatewayAuditWindow().setState(Frame.NORMAL);
+        GatewayAuditWindow gaw = getGatewayAuditWindow();
+        gaw.setVisible(true);
+        gaw.setState(Frame.NORMAL);
+        gaw.toFront();
     }
 
      /**
