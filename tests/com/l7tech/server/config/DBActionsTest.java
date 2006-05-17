@@ -113,7 +113,7 @@ public class DBActionsTest extends TestCase {
             new DbVersion35Checker(),
             new DbVersion3132Checker(),
             new DbVersion34Checker(),
-            new DbVersion40Checker(),
+            new DbVersion36Checker(),
             new DbVersion33Checker()
         };
 

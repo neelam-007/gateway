@@ -4,14 +4,9 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.commands.ConfigurationCommand;
-import com.l7tech.server.config.commands.LoggingConfigCommand;
-import com.l7tech.server.config.commands.RmiConfigCommand;
-import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.BuildInfo;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.*;
@@ -75,9 +70,6 @@ public class ConfigurationWizard {
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
         JdkLoggerConfigurator.configure("com.l7tech", "configlogging.properties");
         osFunctions = OSDetector.getOSSpecificActions();
-        setupAdditionalCommands();
-        commands = new HashSet();
-        commands.addAll(additionalCommands);
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
     }
 
@@ -90,13 +82,11 @@ public class ConfigurationWizard {
         }
     }
 
-    private void setupAdditionalCommands() {
-        if (additionalCommands == null) {
-            additionalCommands = new HashSet();
-            //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
-            additionalCommands.add(new AppServerConfigCommand(osFunctions));
-            additionalCommands.add(new LoggingConfigCommand(null, osFunctions));
-            additionalCommands.add(new RmiConfigCommand(null, osFunctions));
+    public void setAdditionalCommands(Set moreCommands) {
+        if (moreCommands != null) {
+            additionalCommands = moreCommands;
+            if (commands == null) commands = new HashSet();
+            commands.addAll(additionalCommands);
         }
     }
 
@@ -204,12 +194,12 @@ public class ConfigurationWizard {
     }
 
     public String[] initialize(boolean isSilent, String[] args) {
-        if (isSilent) {
-            return initializeSilentMode(args);
-
-        } else {
+//        if (isSilent) {
+//            return initializeSilentMode(args);
+//
+//        } else {
             return initializeInteractiveMode();
-        }
+//        }
     }
 
     public String[] initializeInteractiveMode() {
@@ -219,22 +209,22 @@ public class ConfigurationWizard {
         return null;
     }
 
-    public String[] initializeSilentMode(String[] args) {
-        checkSilentMode(args);
-
-        String silentFileName = args[SILENT_INDEX];
-        try {
-            in = new FileInputStream(silentFileName);
-            pw = new PrintWriter(System.out);
-        } catch (FileNotFoundException e) {
-            return new String[]{
-                    "Could not find file: " + silentFileName,
-                    "A valid filename must be specified when operating in silent mode"
-            };
-        }
-
-        return null;
-    }
+//    public String[] initializeSilentMode(String[] args) {
+//        checkSilentMode(args);
+//
+//        String silentFileName = args[SILENT_INDEX];
+//        try {
+//            in = new FileInputStream(silentFileName);
+//            pw = new PrintWriter(System.out);
+//        } catch (FileNotFoundException e) {
+//            return new String[]{
+//                    "Could not find file: " + silentFileName,
+//                    "A valid filename must be specified when operating in silent mode"
+//            };
+//        }
+//
+//        return null;
+//    }
 
     private static void checkSilentMode(String[] args) {
         if (args.length < 2 || args[FILENAME_INDEX] == null) {

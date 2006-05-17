@@ -1,9 +1,14 @@
 package com.l7tech.server.config;
 
 import com.l7tech.server.config.ui.console.*;
+import com.l7tech.server.config.commands.AppServerConfigCommand;
+import com.l7tech.server.config.commands.LoggingConfigCommand;
+import com.l7tech.server.config.commands.RmiConfigCommand;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: megery
@@ -20,14 +25,11 @@ public class ConsoleConfigWizardLauncher {
 
         //args will be either empty or -silent -filename
         boolean isSilent = false;
-        if (args != null && args.length > 0) {
-            if ("-silent".equals(args[ConfigurationWizard.SILENT_INDEX])) {
-                isSilent = true;
-            }
-        }
-        else {
-            isSilent = false;
-        }
+//        if (args != null && args.length > 0) {
+//            if ("-silent".equals(args[ConfigurationWizard.SILENT_INDEX])) {
+//                isSilent = true;
+//            }
+//        }
 
 
         OSSpecificFunctions osFunctions = OSDetector.getOSSpecificActions();
@@ -53,6 +55,14 @@ public class ConsoleConfigWizardLauncher {
         stepsList.add(new ConfigWizardConsoleResultsStep(consoleWizard, osFunctions));
 
         consoleWizard.setSteps(stepsList);
+
+        Set additionalCommands = new HashSet();
+        //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
+        additionalCommands.add(new AppServerConfigCommand(osFunctions));
+        additionalCommands.add(new LoggingConfigCommand(null, osFunctions));
+        additionalCommands.add(new RmiConfigCommand(null, osFunctions));
+
+        consoleWizard.setAdditionalCommands(additionalCommands);
 
         consoleWizard.startWizard();
     }

@@ -19,7 +19,7 @@ public class ConfigurationWizardLauncher {
     private static final String CONSOLE_MODE = "-console";
 
     private static final String USAGE_STATEMENT = "usage: ConfigurationWizardLauncher [-console | -graphical]\n" +
-                        "If no parameter is spoecified, graphical mode is assumed\n" +
+                        "If no parameter is specified, graphical mode is assumed\n" +
                         "\t-console\t\trun the configuration wizard in console only mode\n" +
                         "\t-graphical\t\trun the configuration wizard in graphical mode\n";
 

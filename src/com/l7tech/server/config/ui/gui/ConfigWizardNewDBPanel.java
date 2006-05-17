@@ -138,6 +138,8 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     }
 
     private boolean checkIsNewDb(Map props) {
+        //if an exising username, password and non default URL are found, then this machine already has a database
+        //configured
         String existingDbUsername = (String) props.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         String existingDbPassword = (String) props.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
 
@@ -145,10 +147,10 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         if (StringUtils.isNotEmpty(existingDBUrl)) {
             Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
             if (matcher.matches() && StringUtils.isNotEmpty(existingDbUsername) && StringUtils.isNotEmpty(existingDbPassword)) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     protected void updateModel(Set settings) {
@@ -186,7 +188,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
                 isOk = dbActions.doExistingDb(theDbName, hostname, username, password, rootUsername, rootPassword, currentVersion, this);
             }
         }
-
+        if (isOk) hideErrorMessage();
         return isOk;
     }
 
@@ -399,7 +401,10 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
 
         Map creds = new HashMap();
         creds.put(DBActions.USERNAME_KEY, dlg.getUsername());
-        creds.put(DBActions.PASSWORD_KEY, new String(dlg.getPassword()));
+        String passwd = new String(dlg.getPassword());
+        if (passwd == null) passwd = "";
+
+        creds.put(DBActions.PASSWORD_KEY, passwd);
         return creds;
     }
 }

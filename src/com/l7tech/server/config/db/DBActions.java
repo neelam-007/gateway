@@ -3,7 +3,6 @@ package com.l7tech.server.config.db;
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
 
-import javax.swing.*;
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -60,7 +59,7 @@ public class DBActions {
     private CheckSSGDatabase ssgDbChecker;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
-        new DbVersion40Checker(),
+        new DbVersion36Checker(),
         new DbVersion35Checker(),
         new DbVersion34Checker(),
         new DbVersion33Checker(),
@@ -176,8 +175,7 @@ public class DBActions {
         try {
             conn = DriverManager.getConnection(makeConnectionString(hostname, dbName), username, password);
             dbVersion = checkDbVersion(conn);
-        } catch (SQLException e) {
-        }
+        } catch (SQLException e) {}
         return dbVersion;
     }
 
@@ -216,6 +214,7 @@ public class DBActions {
                 logger.warning("Could not create database. An exception occurred");
                 logger.warning(e.getMessage());
                 result.setStatus(DB_UNKNOWN_FAILURE);
+                result.setErrorMessage(e.getMessage());
             }
         } finally {
 
@@ -547,8 +546,8 @@ public class DBActions {
                 Map creds = ui.getPrivelegedCredentials(
                             "Please enter the credentials for the root database user (needed to create a database)",
                             "",
-                            defaultUserName,
-                            "");
+                            "",
+                            defaultUserName);
 
                 if (creds != null) {
                     pUsername = (String) creds.get(USERNAME_KEY);
@@ -608,7 +607,7 @@ public class DBActions {
                         break;
                     case DBActions.DB_UNKNOWN_FAILURE:
                     default:
-                        errorMsg = GENERIC_DBCREATE_ERROR_MSG;
+                        errorMsg = GENERIC_DBCREATE_ERROR_MSG + ": " + result.getErrorMessage();
                         logger.warning(errorMsg);
                         if (ui != null) ui.showErrorMessage(errorMsg);
                         isOk = false;
