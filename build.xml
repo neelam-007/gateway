@@ -506,6 +506,7 @@
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/etc">
                 <include name="serverconfig.properties"/>
+                <include name="ehcache.xml"/>
             </fileset>
         </copy>
     </target>

@@ -100,7 +100,19 @@
         </constructor-arg>
     </bean>
 
-    <bean id="rmiRegistry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean">
+    <bean id="rmiRegistryInit" class="com.l7tech.spring.remoting.rmi.RmiRegistryInitializer">
+        <property name="port">
+            <value>2124</value>
+        </property>
+        <property name="clientSocketFactory">
+            <ref bean="rmiClientSocketFactory"/>
+        </property>
+        <property name="serverSocketFactory">
+            <ref bean="rmiServerSocketFactory"/>
+        </property>
+    </bean>
+
+    <bean id="rmiRegistry" class="org.springframework.remoting.rmi.RmiRegistryFactoryBean" depends-on="rmiRegistryInit">
         <property name="port">
             <value>2124</value>
         </property>
