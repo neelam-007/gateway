@@ -303,13 +303,38 @@ class GuiCredentialManager extends CredentialManager {
         return pleaseWaitDialog;
     }
 
+    /**
+     * Display the please wait dialog.
+     *
+     * <p>When this method returns the dialog is being displayed.</p>
+     *
+     * @param ssg the ssg
+     * @param message the message to display
+     */
     public void notifyLengthyOperationStarting(Ssg ssg, final String message) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                getPleaseWaitDialog().setMessage(message);
-                getPleaseWaitDialog().setVisible(true);
+        Runnable task = new Runnable() {
+                public void run() {
+                    PleaseWaitDialog pwd = getPleaseWaitDialog();
+                    pwd.setMessage(message);
+                    Utilities.centerOnScreen(pwd);
+                    pwd.setVisible(true);
+                }
+        };
+
+        if(SwingUtilities.isEventDispatchThread()) {
+            task.run();
+        }
+        else {
+            try {
+                SwingUtilities.invokeAndWait(task);
             }
-        });
+            catch(InterruptedException ie) {
+                throw new RuntimeException(ie);
+            }
+            catch(InvocationTargetException ite) {
+                log.log(Level.WARNING, "Error showing please wait dialog", ite.getCause());
+            }
+        }
     }
 
     public void notifyLengthyOperationFinished(Ssg ssg) {

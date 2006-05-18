@@ -245,6 +245,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         ssgIdentityPane.getClientCertButton().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                new Thread(new Runnable() { public void run() {
                 try {
                     X509Certificate cert = ssg.getClientCertificate();
                     if (cert == null) {
@@ -303,6 +304,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                          e1);
                     return;
                 }
+                }}).start();
             }
         });
 

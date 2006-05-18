@@ -515,7 +515,18 @@ public class Gui {
      * @param msg the error message to display
      */
     public static void errorMessage( final String msg ) {
-        JOptionPane.showMessageDialog( getInstance().getFrame(), msg, "Unable to Proceed", JOptionPane.ERROR_MESSAGE );
+        Object[] message = new Object[]{msg};
+        if(msg!=null && msg.length() > 100 && msg.indexOf('\n')<0) { // then wrap for readability
+            JTextArea jta = new JTextArea(msg);
+            jta.setEditable(false);
+            jta.setBorder(null);
+            jta.setOpaque(false);
+            jta.setLineWrap(true);
+            jta.setWrapStyleWord(true);
+            jta.setSize(600, 1);
+            message[0] = jta;
+        }
+        JOptionPane.showMessageDialog( null, message, "Unable to Proceed", JOptionPane.ERROR_MESSAGE );
     }
 
     /**
