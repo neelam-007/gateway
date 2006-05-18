@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.CertUtil;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -45,19 +46,22 @@ public class CertPropertiesWindow extends JDialog {
     private JTextField certIssuedToTextField;
     private JTextField certIssuedByTextField;
     private JTextField certNameTextField;
+    private JLabel certNameLabel;
     private JCheckBox signingServerCertCheckBox;
     private JCheckBox signingSAMLTokenCheckBox;
     private JCheckBox signingClientCertCheckBox;
     private JCheckBox outboundSSLConnCheckBox;
     private JCheckBox samlAttestingEntityCheckBox;
-
+    private JScrollPane descriptionPane;
+    private JTabbedPane tabPane;
     private JButton saveButton;
     private JButton cancelButton;
+    private JButton exportButton;
+
     private TrustedCert trustedCert = null;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
-    private JScrollPane descriptionPane;
 
 
     /**
@@ -68,6 +72,18 @@ public class CertPropertiesWindow extends JDialog {
      * @param editable TRUE if the properties are editable
      */
     public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable) {
+        this(owner, tc, editable, true);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param owner    The parent component.
+     * @param tc       The trusted certificate.
+     * @param editable TRUE if the properties are editable
+     * @param options  TRUE to display the options tab
+     */
+    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, boolean options) {
         super(owner, resources.getString("cert.properties.dialog.title"), true);
 
         final Authorizer authorizer = Registry.getDefault().getSecurityProvider();
@@ -79,7 +95,7 @@ public class CertPropertiesWindow extends JDialog {
 
 
         trustedCert = tc;
-        initialize(editable);
+        initialize(editable, options);
         pack();
         Utilities.centerOnScreen(this);
     }
@@ -88,8 +104,9 @@ public class CertPropertiesWindow extends JDialog {
      * Initialization of the window
      *
      * @param editable TRUE if the properties are editable
+     * @param options  TRUE to display the options tab
      */
-    private void initialize(boolean editable) {
+    private void initialize(boolean editable, boolean options) {
 
         JRootPane rp = this.getRootPane();
         rp.setPreferredSize(new Dimension(550, 350));
@@ -104,6 +121,12 @@ public class CertPropertiesWindow extends JDialog {
         // disable the fields if the properties should not be modified
         if (!editable) {
             disableAll();
+        }
+
+        // disable the options tab if not required
+        if (!options) {
+            tabPane.setEnabledAt(2, false);
+            saveButton.setVisible(false);
         }
 
         populateData();
@@ -164,6 +187,25 @@ public class CertPropertiesWindow extends JDialog {
             }
         });
 
+        exportButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                try {
+                    CertUtil.exportCertificate(CertPropertiesWindow.this, trustedCert.getCertificate());
+                } catch (CertificateException e) {
+                    logger.warning(resources.getString("cert.decode.error"));
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                                  resources.getString("save.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
+                } catch (IOException e) {
+                    logger.warning(resources.getString("cert.decode.error"));
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                                  resources.getString("save.error.title"),
+                                                  JOptionPane.ERROR_MESSAGE);
+                }
+
+            }
+        });
+
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 //hide();
@@ -188,8 +230,10 @@ public class CertPropertiesWindow extends JDialog {
         signingClientCertCheckBox.setEnabled(false);
         outboundSSLConnCheckBox.setEnabled(false);
         samlAttestingEntityCheckBox.setEnabled(false);
-        // all buttons except the Cancel button
+        // all buttons except the Export/Cancel button
         saveButton.setEnabled(false);
+        cancelButton.setText(resources.getString("closeButton.label"));
+        cancelButton.setToolTipText(resources.getString("closeButton.tooltip"));
     }
 
     /**
@@ -224,6 +268,14 @@ public class CertPropertiesWindow extends JDialog {
         certIssuedToTextField.setText(CertUtils.extractCommonNameFromClientCertificate(cert));
         certIssuedByTextField.setText(CertUtils.extractIssuerNameFromClientCertificate(cert));
         certNameTextField.setText(trustedCert.getName());
+
+        if (!certNameTextField.isEnabled()) {
+            certNameTextField.setOpaque(false);
+            if (trustedCert.getName()==null || trustedCert.getName().trim().length()==0) {
+                certNameTextField.setVisible(false);
+                certNameLabel.setVisible(false);
+            }
+        }
 
         // diasble the cert options that are not allowed based on the key usage specified in the cert
 /*        boolean [] keyUsageArray = cert.getKeyUsage();

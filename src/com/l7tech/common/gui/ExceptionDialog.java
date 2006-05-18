@@ -56,48 +56,47 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private boolean neverDisplay = false;
 
     /** Create a neverDisplay exception dialog that never displays anything. */
-    private ExceptionDialog(Frame parent, boolean fake) {
+    private ExceptionDialog(Frame parent) {
         super(parent, false);
-        this.setAlwaysOnTop(true);
+        this.neverDisplay = true;
+    }
+
+    /** Create a neverDisplay exception dialog that never displays anything. */
+    private ExceptionDialog(Dialog parent) {
+        super(parent, false);
         this.neverDisplay = true;
     }
 
     /**
      * Constructor ExceptionDialog
-     *
-     * @param parent
-     * @param title
-     * @param message
-     * @param throwable
      */
     private ExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
         super(parent, true);
-        this.setAlwaysOnTop(true);
-        initialize(title, message, throwable, level);
-    }
-
-    /** Create a real exception dialog. */
-    private ExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
-        super(parent, true);
-        this.setAlwaysOnTop(true);
-        if (labelMessage != null) {
-            internalErrorLabelText = labelMessage;
-            allowShutdown = false;
-        }
-        initialize(title, message, throwable, level);
+        initialize(title, null, message, throwable, level);
     }
 
     /**
      * Constructor ExceptionDialog
-     *
-     * @param parent
-     * @param message
-     * @param throwable
+     */
+    private ExceptionDialog(Frame parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
+        super(parent, true);
+        initialize(title, labelMessage, message, throwable, level);
+    }
+
+    /**
+     * Constructor ExceptionDialog
      */
     private ExceptionDialog(Frame parent, String message, Throwable throwable, Level level) {
         super(parent, true);
-        this.setAlwaysOnTop(true);
-        initialize(getDialogTitle(level), message, throwable, level);
+        initialize(getDialogTitle(level), null, message, throwable, level);
+    }
+
+    /**
+     * Constructor ExceptionDialog
+     */
+    private ExceptionDialog(Dialog parent, String title, String labelMessage, String message, Throwable throwable, Level level) {
+        super(parent, true);
+        initialize(title, labelMessage, message, throwable, level);
     }
 
     public synchronized static ExceptionDialog createExceptionDialog(Frame parent, String title, String message, Throwable throwable, Level level) {
@@ -119,9 +118,21 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         return currentlyDisplayed = new ExceptionDialog(parent, title, labelMessage, message, throwable, level);
     }
 
+    public synchronized static ExceptionDialog createExceptionDialog(Dialog parent, String title, String labelMessage, String message, Throwable throwable, Level level)
+    {
+        // Suppress all but the very first critical error dialog, to prevent dialog blizzard during cascading failures (such as during repaint)
+        if (currentlyDisplayed != null) return createFakeExceptionDialog(parent);
+        return currentlyDisplayed = new ExceptionDialog(parent, title, labelMessage, message, throwable, level);
+    }
+
     private static ExceptionDialog createFakeExceptionDialog(Frame parent) {
         // We will silently prevent a second exception dialog
-        return new ExceptionDialog(parent, true);
+        return new ExceptionDialog(parent);
+    }
+
+    private static ExceptionDialog createFakeExceptionDialog(Dialog parent) {
+        // We will silently prevent a second exception dialog
+        return new ExceptionDialog(parent);
     }
 
     public void setVisible(boolean b) {
@@ -146,7 +157,14 @@ public class ExceptionDialog extends JDialog implements ActionListener {
      * @param message .
      * @param throwable .
      */
-    private void initialize(String title, String message, Throwable throwable, Level level) {
+    private void initialize(String title, String labelMessage, String message, Throwable throwable, Level level) {
+        setAlwaysOnTop(true);
+
+        if (labelMessage != null) {
+            internalErrorLabelText = labelMessage;
+            allowShutdown = false;
+        }
+
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         Container pane = getContentPane();
         setTitle(title);

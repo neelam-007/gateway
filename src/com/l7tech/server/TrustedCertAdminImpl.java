@@ -36,10 +36,12 @@ import java.util.logging.Logger;
 public class TrustedCertAdminImpl implements TrustedCertAdmin {
     private final AccessManager accessManager;
     private final X509Certificate rootCertificate;
+    private final X509Certificate sslCertificate;
     private final LicenseManager licenseManager;
 
     public TrustedCertAdminImpl(TrustedCertManager trustedCertManager,
                                 X509Certificate rootCertificate,
+                                X509Certificate sslCertificate,
                                 AccessManager accessManager,
                                 LicenseManager licenseManager)
     {
@@ -54,6 +56,10 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
         this.rootCertificate = rootCertificate;
         if (rootCertificate == null) {
             throw new IllegalArgumentException("Root Certificate is required");
+        }
+        this.sslCertificate = sslCertificate;
+        if (sslCertificate == null) {
+            throw new IllegalArgumentException("Ssl Certificate is required");
         }
         this.licenseManager = licenseManager;
         if (licenseManager == null)
@@ -188,6 +194,11 @@ public class TrustedCertAdminImpl implements TrustedCertAdmin {
     public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException {
         checkLicense();
         return rootCertificate;
+    }
+
+    public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException {
+        checkLicense();
+        return sslCertificate;
     }
 
     private TrustedCertManager getManager() {

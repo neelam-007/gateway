@@ -101,4 +101,13 @@ public interface TrustedCertAdmin  {
      * @throws RemoteException on remote communication error
      */
     public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException;
+
+    /**
+     * Get the gateway's SSL cert.
+     * @return the gateway's SSL cert
+     * @throws IOException if the certificate cannot be retrieved
+     * @throws CertificateException if the certificate cannot be retrieved
+     * @throws RemoteException on remote communication error
+     */
+    public X509Certificate getSSGSslCert() throws IOException, CertificateException, RemoteException;
 }

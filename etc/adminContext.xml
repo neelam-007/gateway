@@ -440,6 +440,9 @@
             <ref bean="rootCertificate"/>
         </constructor-arg>
         <constructor-arg>
+            <ref bean="sslKeystoreCertificate"/>
+        </constructor-arg>
+        <constructor-arg>
             <ref bean="accessManager"/>
         </constructor-arg>
         <constructor-arg>

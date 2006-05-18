@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.CertUtil;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
@@ -15,6 +16,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,17 +40,14 @@ public abstract class UserCertPanel extends JPanel {
 
     protected JButton removeCertButton;
     protected JButton importCertButton;
+    protected JButton exportCertButton;
     protected User user;
     protected X509Certificate cert;
     protected UserPanel userPanel;
     private JLabel certStatusLabel;
-    private JComponent certificateView = new JLabel();
+    private JPanel certificateViewPanel;
     protected X509Certificate ssgcert = null;
     IdentityAdmin identityAdmin = null;
-    public static final GridBagConstraints CERTIFICATE_VIEW_CONSTRAINTS = new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
-            GridBagConstraints.NORTHWEST,
-            GridBagConstraints.BOTH,
-            new Insets(15, 15, 0, 15), 0, 0);
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     protected final EntityListener parentListener;
 
@@ -78,30 +77,37 @@ public abstract class UserCertPanel extends JPanel {
      * initialize the dialog.
      */
     private void initComponents() {
-        setLayout(new GridBagLayout());
 
         certStatusLabel = new JLabel();
         Font f = certStatusLabel.getFont();
         certStatusLabel.setFont(new Font(f.getName(), Font.PLAIN, f.getSize()));
-        add(certStatusLabel,
-                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(15, 15, 0, 15), 0, 0));
 
-        add(certificateView, CERTIFICATE_VIEW_CONSTRAINTS);
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBorder(new EmptyBorder(12,12,12,12));
 
-        // Buttons
-        add(getImportCertButton(),
-                new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.EAST,
-                        GridBagConstraints.NONE,
-                        new Insets(17, 0, 11, 10), 0, 0));
-        add(getRemoveCertButton(),
-                new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(17, 0, 11, 5), 0, 0));
+        JPanel labelPanel = new JPanel();
+        labelPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        labelPanel.setBorder(new EmptyBorder(8,0,8,0));
+        labelPanel.add(certStatusLabel);
+        mainPanel.add(labelPanel);
+
+        certificateViewPanel = new JPanel();
+        certificateViewPanel.setLayout(new BorderLayout());
+        mainPanel.add(certificateViewPanel);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setBorder(new EmptyBorder(8,0,0,0));
+        buttonPanel.add(Box.createGlue());
+        buttonPanel.add(getImportCertButton());
+        buttonPanel.add(getExportCertButton());
+        buttonPanel.add(getRemoveCertButton());
+
+        mainPanel.add(buttonPanel);
+
+        setLayout(new BorderLayout());
+        add(mainPanel);
     }
 
     /**
@@ -153,6 +159,25 @@ public abstract class UserCertPanel extends JPanel {
         return importCertButton;
     }
 
+   protected JButton getExportCertButton() {
+        if (exportCertButton == null) {
+            exportCertButton = new JButton();
+            exportCertButton.setText("Export");
+            exportCertButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent event) {
+                    if (cert != null) {
+                        CertUtil.exportCertificate(SwingUtilities.getWindowAncestor(UserCertPanel.this), cert);
+                    }
+                    else {
+                        // something is wrong, the button should not have been enabled
+                        exportCertButton.setEnabled(false);
+                    }
+                }
+            });
+        }
+        return exportCertButton;
+    }
+
     /**
      * load certificate info and updates the data and status of the
      * form elements
@@ -161,18 +186,19 @@ public abstract class UserCertPanel extends JPanel {
         try {
             boolean enabled = cert != null;
             getRemoveCertButton().setEnabled(enabled);
+            getExportCertButton().setEnabled(enabled);
             getImportCertButton().setEnabled(!enabled);
             if (enabled) {
                 certStatusLabel.setText("Certificate Status: Imported");
             } else {
                 certStatusLabel.setText("Certificate Status: Not Imported");
             }
-            this.remove(certificateView);
             try {
                 JComponent view = getCertView();
                 if (view == null)
                     view = new JLabel();
-                certificateView = new JScrollPane(view);
+                certificateViewPanel.removeAll();
+                certificateViewPanel.add(new JScrollPane(view));
             } catch (CertificateEncodingException e) {
                 log.log(Level.WARNING, "Unable to decode this user's certificate", e);
                 JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.decode.error"),
@@ -184,7 +210,6 @@ public abstract class UserCertPanel extends JPanel {
                         resources.getString("load.error.title"),
                         JOptionPane.ERROR_MESSAGE);
             }
-            add(certificateView, CERTIFICATE_VIEW_CONSTRAINTS);
             getRootPane().getContentPane().invalidate();
         } catch (Exception e) {
             log.log(Level.SEVERE, "There was an error loading the certificate", e);
