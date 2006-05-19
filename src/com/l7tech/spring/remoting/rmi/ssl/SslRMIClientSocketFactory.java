@@ -58,7 +58,7 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
      * @param lazy True for lazy initialization.
      */
     public static void setLazyTrustFailureHandler(boolean lazy) {
-        lazyInitTrustFailureHandler = lazy;   
+        lazyInitTrustFailureHandler = lazy;
     }
 
     /**
@@ -70,6 +70,15 @@ public final class SslRMIClientSocketFactory implements RMIClientSocketFactory, 
      */
     public static void setTrustFailureHandler(SSLTrustFailureHandler trustFailureHandler) {
         SslRMIClientSocketFactory.currentTrustFailureHandler = trustFailureHandler;
+    }
+
+    /**
+     * Check if a trust failure handler is currently installed.
+     *
+     * @return true if there is a trust failure handler
+     */
+    public static boolean hasTrustFailureHandler() {
+        return SslRMIClientSocketFactory.currentTrustFailureHandler != null;
     }
 
     /**

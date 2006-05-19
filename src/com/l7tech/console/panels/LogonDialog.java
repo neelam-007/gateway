@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class LogonDialog extends JDialog {
-    static final Logger log = Logger.getLogger(LogonDialog.class.getName());
+    private static final Logger log = Logger.getLogger(LogonDialog.class.getName());
 
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authenticationCredentials = null;
@@ -461,10 +461,10 @@ public class LogonDialog extends JDialog {
             // fla change: remember this url even if the login wont be successfull (requirement #729)
             serverUrlHistory.add(sHost);
 
+            final LogonInProgressDialog progressDialog = buildLogonInProgressDialog((Frame)getOwner(), sHost);
             final SwingWorker sw =
               new SwingWorker() {
                   private Throwable memoException = null;
-                  private LogonInProgressDialog progressDialog = showLogonInProgressDialog(this, LogonDialog.this, sHost);
 
                   public Object construct() {
                       try {
@@ -474,6 +474,9 @@ public class LogonDialog extends JDialog {
                               memoException = e;
                           }
                       }
+                      finally {
+                        progressDialog.setVisible(false);
+                      }
                       if (!Thread.currentThread().isInterrupted() && memoException == null) {
                           return new Boolean(true);
                       }
@@ -481,7 +484,6 @@ public class LogonDialog extends JDialog {
                   }
 
                   public void finished() {
-                      progressDialog.dispose();
                       if (memoException != null) {
                           handleLogonThrowable(memoException, sHost);
                       }
@@ -498,10 +500,10 @@ public class LogonDialog extends JDialog {
                               logonListener.onAuthSuccess(authenticationCredentials.getUserName(), sHost);
                           }
                       } else {
-                          if (logonListener != null) {
-                              logonListener.onAuthFailure();
-                          }
                           if (!progressDialog.isCancelled()) {
+                              if (logonListener != null) {
+                                  logonListener.onAuthFailure();
+                              }
                               setVisible(true);
                           }
                       }
@@ -509,6 +511,8 @@ public class LogonDialog extends JDialog {
               };
 
             sw.start();
+            progressDialog.setSwingWorker(sw);
+            progressDialog.setVisible(true);
         } catch (Exception e) {
             handleLogonThrowable(e, sHost);
         } finally {
@@ -531,11 +535,10 @@ public class LogonDialog extends JDialog {
         dialog.setVisible(true);
     }
 
-    private static LogonInProgressDialog showLogonInProgressDialog(SwingWorker sw, JDialog parent, String url) {
-        LogonInProgressDialog ld = new LogonInProgressDialog(parent, sw, url);
+    private static LogonInProgressDialog buildLogonInProgressDialog(Frame parent, String url) {
+        LogonInProgressDialog ld = new LogonInProgressDialog(parent, url);
         ld.pack();
         Utilities.centerOnScreen(ld);
-        ld.setVisible(true);
         return ld;
     }
 
@@ -572,13 +575,15 @@ public class LogonDialog extends JDialog {
     private static class LogonInProgressDialog extends JDialog {
         private SwingWorker worker;
         private String serviceUrl;
-        private boolean cancelled = false;
+        private volatile boolean cancelled = false;
 
-        public LogonInProgressDialog(JDialog owner, SwingWorker sw, String url)
+        public LogonInProgressDialog(Frame owner, String url)
           throws HeadlessException {
-            super(owner, false);
+            super(owner, true);
             setTitle("Logon in progress");
-            worker = sw;
+            setAlwaysOnTop(true);
+            setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+            setResizable(false);
             serviceUrl = url;
             layoutComponents();
         }
@@ -587,13 +592,21 @@ public class LogonDialog extends JDialog {
             return cancelled;
         }
 
+        public void setSwingWorker(SwingWorker sw) {
+            worker = sw;
+        }
+
         private void layoutComponents() {
             Container contentPane = getContentPane();
             JPanel panel = new JPanel();
             panel.setBorder(BorderFactory.createEmptyBorder(20, 5, 20, 5));
             panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
             contentPane.setLayout(new BorderLayout());
-            JLabel label = new JLabel("Gateway " + serviceUrl);
+            String labelText = "Gateway " + serviceUrl;
+            if (labelText.length() > 64) {
+                labelText = labelText.substring(0, 60) + "...";
+            }
+            JLabel label = new JLabel(labelText);
             panel.add(label);
             panel.add(Box.createHorizontalStrut(100));
             JButton cancelButton = new JButton("Cancel");

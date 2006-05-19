@@ -58,21 +58,23 @@ public class SecurityProviderImpl extends SecurityProvider
      * Determines if the passed credentials will grant access to the admin service.
      * If successful, those credentials will be cached for future admin ws calls.
      */
-    public synchronized void login(PasswordAuthentication creds, String host, boolean validate)
+    public void login(PasswordAuthentication creds, String host, boolean validate)
       throws LoginException, VersionException, RemoteException {
 
         boolean authenticated = false;
         serverCertificateChain = null;
         resetCredentials();
         setCredentials(creds.getUserName(), creds.getPassword());
-        setPermissiveSslTrustHandler(host, validate);
 
         try {
+            setPermissiveSslTrustHandler(host, validate);
+
             NamingURL adminServiceNamingURL = NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + host + "/AdminLogin");
             AdminLogin adminLogin = getAdminLoginRemoteReference(adminServiceNamingURL.toString());
 
             // dummy call, just to establish SSL connection (if none)
             adminLogin.getServerCertificate("admin");
+            if (Thread.currentThread().isInterrupted()) throw new LoginException("Login interrupted.");
 
             // check cert if new
             if(serverCertificateChain!=null) {
@@ -111,9 +113,11 @@ public class SecurityProviderImpl extends SecurityProvider
             throw (LoginException) new LoginException("Invalid host '"+host+"'.").initCause(murle);
         }
         finally {
-            resetSslTrustHandler();
-            if (!authenticated) {
-                resetCredentials();
+            if (SslRMIClientSocketFactory.hasTrustFailureHandler()) {
+                resetSslTrustHandler();
+                if (!authenticated) {
+                    resetCredentials();
+                }
             }
         }
     }

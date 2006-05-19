@@ -62,7 +62,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
     /**
      * Reset the stub
      */
-    public synchronized void resetStub() {
+    public void resetStub() {
         cachedStub = null;
     }
 
@@ -184,14 +184,15 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
      */
     protected Remote getStub() throws Exception {
         if (!this.cacheStub || (this.lookupStubOnStartup && !this.refreshStubOnConnectFailure)) {
-            return (this.cachedStub != null ? this.cachedStub : lookupStub());
+            Remote stub = this.cachedStub;
+            return (stub != null ? stub : lookupStub());
         } else {
-            synchronized (this) {
-                if (this.cachedStub == null) {
-                    this.cachedStub = lookupStub();
-                }
-                return this.cachedStub;
+            Remote stub = this.cachedStub;
+            if (stub == null) {
+                stub = lookupStub();
+                if (this.cachedStub == null) this.cachedStub = stub;
             }
+            return stub;
         }
     }
 
@@ -262,15 +263,14 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
      */
     protected Object refreshAndRetry(MethodInvocation invocation) throws Throwable {
         Remote freshStub = null;
-        synchronized (this) {
-            try {
-                freshStub = lookupStub();
-                if (this.cacheStub) {
-                    this.cachedStub = freshStub;
-                }
-            } catch (Throwable ex) {
-                throw new RemoteLookupFailureException("RMI lookup for service [" + getServiceUrl() + "] failed", ex);
+        try {
+            resetStub();
+            freshStub = lookupStub();
+            if (this.cacheStub && this.cachedStub==null) {
+                this.cachedStub = freshStub;
             }
+        } catch (Throwable ex) {
+            throw new RemoteLookupFailureException("RMI lookup for service [" + getServiceUrl() + "] failed", ex);
         }
         return doInvoke(invocation, freshStub);
     }
