@@ -38,24 +38,49 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion implem
     private final CompiledXpath matchExtraPayload;
     private final boolean requireValidSoap;
 
-    public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
+    /**
+     * Create assertion instance which might be a subassertion handling only the non-Tarari-specific constraints.
+     *
+     * @param data             assertion bean instance configuring the constraints to check.  Must not be null.
+     * @param springContext    spring context for getting access to server beans.  Must not be null.
+     * @param omitTarariTests  true if this assertion instance should not bother initializing xpaths for the Tarari-specific tests;
+     *                         this will only be the case if a ServerAcceleratedOversizedTextAssertion is invoking this
+     *                         constructor and intends to do those tests itself.
+     * @throws ServerPolicyException if the provided assertion bean produced an invalid XPath.  Normally not possible.
+     */
+    ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext, boolean omitTarariTests) throws ServerPolicyException {
         super(data);
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
 
-        final String textXpath = data.makeTextXpath();
-        final String attrXpath = data.makeAttrXpath();
+        // These three tests might be taken over by ServerAcceleratedOversizedTextAssertion
+        final String textXpath = omitTarariTests ? null : data.makeTextXpath();
+        final String attrXpath = omitTarariTests ? null : data.makeAttrXpath();
+        final String nestingXpath = omitTarariTests ? null : data.makeNestingXpath();
+
         final String payloadXpath = data.makePayloadLimitXpath();
-        final String nestingXpath = data.makeNestingXpath();
         try {
+            // These three tests might be taken over by ServerAcceleratedOversizedTextAssertion
             matchBigText = textXpath == null ? null : new XpathExpression(textXpath).compile();
             matchBigAttr = attrXpath == null ? null : new XpathExpression(attrXpath).compile();
-            matchExtraPayload = payloadXpath == null ? null : new XpathExpression(payloadXpath).compile();
             matchOverdeepNesting = nestingXpath == null ? null : new XpathExpression(nestingXpath).compile();
+
+            matchExtraPayload = payloadXpath == null ? null : new XpathExpression(payloadXpath).compile();
             requireValidSoap = data.isRequireValidSoapEnvelope();
         } catch (InvalidXpathException e) {
             // Can't happen
             throw new ServerPolicyException(data, "Invalid protection xpath: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    /**
+     * Create normal assertion instance.  This is invoked reflectively by the ServerPolicyFactory.
+     *
+     * @param data             assertion bean instance configuring the constraints to check.  Must not be null.
+     * @param springContext    spring context for getting access to server beans.  Must not be null.
+     * @throws ServerPolicyException if the provided assertion bean produced an invalid XPath.  Normally not possible.
+     */
+    public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
+        this(data, springContext, false);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -81,7 +106,12 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion implem
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            return checkAllButBigTextAndBigAttr(request, cursor, auditor);
+            if (matchOverdeepNesting != null && cursor.matches(matchOverdeepNesting)) {
+                auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
+                return AssertionStatus.BAD_REQUEST;
+            }
+
+            return checkAllNonTarariSpecific(request, cursor, auditor);
 
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
@@ -93,8 +123,9 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion implem
     }
 
     /**
-     * Check all constraints except matchBigText and matchBigAttr, which can be done more efficiently if Tarari
-     * support is known to be available by scanning the token buffer.  (See ServerAcceleratedOversizedTextAssertion.)
+     * Check all constraints except matchBigText, matchBigAttr, and matchOverdeepNesting,
+     * which can be done more efficiently if Tarari support is known to be available
+     * by scanning the token buffer or getting the RaxStatistics.  (See ServerAcceleratedOversizedTextAssertion.)
      *
      * @param request  the request to examine.  Must not be null.
      * @param cursor   an ElementCursor positioned anywhere on the request to examine.  Must not be null.
@@ -106,7 +137,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion implem
      * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
      * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
-    AssertionStatus checkAllButBigTextAndBigAttr(Message request, ElementCursor cursor, Auditor auditor)
+    AssertionStatus checkAllNonTarariSpecific(Message request, ElementCursor cursor, Auditor auditor)
             throws XPathExpressionException, IOException, SAXException
     {
         if (requireValidSoap) {
@@ -127,11 +158,6 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion implem
 
         if (matchExtraPayload != null && cursor.matches(matchExtraPayload)) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_EXTRA_PAYLOAD);
-            return AssertionStatus.BAD_REQUEST;
-        }
-
-        if (matchOverdeepNesting != null && cursor.matches(matchOverdeepNesting)) {
-            auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
             return AssertionStatus.BAD_REQUEST;
         }
 

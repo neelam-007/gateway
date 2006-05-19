@@ -38,14 +38,18 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
     private final Auditor auditor;
     private final ServerOversizedTextAssertion delegate;  // Non-Tarari-specific impl to handle the stuff that can just use XPath
     private final OversizedTextAssertion ota;
+    private final boolean lengthLimitTestsPresent;  // true if limiting lengths: that is, if LimitAttrChars or LimitTextChars
+    private final boolean accelTestsPresent;        // true if doing any accelerated tets: that is, if lengthLimitTestsPresent or LimitNestingDepth
 
     public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
         auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
         // The delegate will do all the checking except for oversized text and attr nodes, which we can do
         // specially by just scanning the token buffer in one pass.
-        delegate = new ServerOversizedTextAssertion(data, springContext);
+        delegate = new ServerOversizedTextAssertion(data, springContext, true);
         this.ota = data;
+        this.lengthLimitTestsPresent = ota.isLimitAttrChars() || ota.isLimitTextChars();
+        this.accelTestsPresent = lengthLimitTestsPresent || ota.isLimitNestingDepth();
     }
 
     private static final int TEXT = 0;
@@ -109,7 +113,8 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
             // Force Tarari evaluation to have occurred
             mess.isSoap();
 
-            if (ota.isLimitAttrChars() || ota.isLimitTextChars()) {
+            if (accelTestsPresent) {
+                // At least one accelerated test is enabled.  We'll neeed a RaxDocument.
                 TarariKnob tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
                 if (tknob == null) {
                     auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
@@ -123,22 +128,32 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
                     return fallbackToDelegate(context);
                 }
 
-                ChunkState chunkState = findLongestChunks(tmContext.getRaxDocument());
+                final RaxDocument raxDocument = tmContext.getRaxDocument();
 
-                int longestText = chunkState.getLongestText();
-                int longestAttrValue = chunkState.getLongestAttr();
-                int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
+                if (lengthLimitTestsPresent) {
+                    // At least one node length limit test is enabled.  We'll need a ChunkState.
+                    ChunkState chunkState = findLongestChunks(raxDocument);
 
-                if ((ota.isLimitAttrChars() && longestAttrValue > ota.getMaxAttrChars()) ||
-                    (ota.isLimitTextChars() && longestText > ota.getMaxTextChars()) ||
-                    (longestOther > ota.getMaxAttrChars()*2 && longestOther > ota.getMaxTextChars()*2))
-                {
-                    auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
+                    int longestText = chunkState.getLongestText();
+                    int longestAttrValue = chunkState.getLongestAttr();
+                    int longestOther = Math.max(chunkState.getLongestOther(), chunkState.getLongestElem());
+
+                    if ((ota.isLimitAttrChars() && longestAttrValue > ota.getMaxAttrChars()) ||
+                            (ota.isLimitTextChars() && longestText > ota.getMaxTextChars()) ||
+                            (longestOther > ota.getMaxAttrChars()*2 && longestOther > ota.getMaxTextChars()*2))
+                    {
+                        auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+                }
+
+                if (ota.isLimitNestingDepth() && raxDocument.getStatistics().getMaxElementDepth() > ota.getMaxNestingDepth()) {
+                    auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
                     return AssertionStatus.BAD_REQUEST;
                 }
             }
 
-            return delegate.checkAllButBigTextAndBigAttr(mess, mess.getXmlKnob().getElementCursor(), auditor);
+            return delegate.checkAllNonTarariSpecific(mess, mess.getXmlKnob().getElementCursor(), auditor);
 
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
