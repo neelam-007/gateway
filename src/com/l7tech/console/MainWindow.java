@@ -617,7 +617,9 @@ public class MainWindow extends JFrame {
                * @param event the event that occured
                */
               public void actionPerformed(ActionEvent event) {
-                  activateLogonDialog();
+                  SwingUtilities.invokeLater(new Runnable() { public void run() {
+                      LogonDialog.logon(MainWindow.this, logonListenr);
+                  }});
               }
           };
         connectAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
@@ -938,15 +940,14 @@ public class MainWindow extends JFrame {
         String aDesc = resapplication.getString("PreferencesMenuItem.desc");
         prefsAction =
           new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               */
               public void actionPerformed(ActionEvent event) {
-                  PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, false, isConnected());
-                  dialog.pack();
-                  Utilities.centerOnScreen(dialog);
-                  dialog.setResizable(false);
-                  dialog.setVisible(true);
+                  SwingUtilities.invokeLater(new Runnable() { public void run() {
+                      PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, true, isConnected());
+                      dialog.pack();
+                      Utilities.centerOnScreen(dialog);
+                      dialog.setResizable(false);
+                      dialog.setVisible(true);
+                  }});
               }
           };
         prefsAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
@@ -2061,7 +2062,7 @@ public class MainWindow extends JFrame {
      * invoke logon dialog
      */
     void activateLogonDialog() {
-        LogonDialog.logon(this, logonListenr);
+        getConnectAction().actionPerformed(null);
     }
 
     /**
