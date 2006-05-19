@@ -177,6 +177,7 @@ public class MainWindow extends JFrame {
 
     /* child windows */
     private Window helpWindow;
+    private Window modalHelpWindow;
 
     /**
      * MainWindow constructor comment.
@@ -1895,10 +1896,17 @@ public class MainWindow extends JFrame {
      * This procedure adds the JavaHelp to PMC application.
      */
     public void showHelpTopics(ActionEvent e) {
-        Window window = helpWindow;
+        Object source = e.getSource();
+
+        boolean modalHelp = false;
+        if (source instanceof Dialog && ((Dialog)source).isModal()) {
+            modalHelp = true;
+        }
+        Window window = modalHelp ? modalHelpWindow : helpWindow;
+
         if (window != null) {
-            if(window instanceof JFrame) {
-                ((JFrame)window).setState(Frame.NORMAL);
+            if(window instanceof Frame) {
+                ((Frame)window).setState(Frame.NORMAL);
             }
             window.toFront();
         }
@@ -1913,28 +1921,39 @@ public class MainWindow extends JFrame {
                 url = cl.getResource(HELP_PATH);
                 hs = new HelpSet(cl, url);
                 javaHelpBroker = hs.createHelpBroker();
-                Object source = e.getSource();
-
                 if (source instanceof Window) {
+                    // ensure help can work when invoked from a modal dialog
                     ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
                 }
                 javaHelpBroker.setDisplayed(true);
 
                 // Have to set the icon after setDisplayed (else window is null)
                 window = ((DefaultHelpBroker)javaHelpBroker).getWindowPresentation().getHelpWindow();
-                if(window instanceof JFrame) {
-                    ((JFrame)window).setIconImage(getIconImage());
+                if(window instanceof Frame) {
+                    ((Frame)window).setIconImage(getIconImage());
                 }
-                window.addWindowListener(new WindowAdapter() {
-                    public void windowClosed(final WindowEvent e) {
-                        helpWindow = null;
-                    }
-
-                    public void windowClosing(final WindowEvent e) {
-                        helpWindow = null;
-                    }
-                });
-                helpWindow = window;
+                if (modalHelp) {
+                    window.addWindowListener(new WindowAdapter() {
+                        public void windowClosed(final WindowEvent e) {
+                            modalHelpWindow = null;
+                        }
+                        public void windowClosing(final WindowEvent e) {
+                            modalHelpWindow = null;
+                        }
+                    });
+                    modalHelpWindow = window;
+                }
+                else {
+                    window.addWindowListener(new WindowAdapter() {
+                        public void windowClosed(final WindowEvent e) {
+                            helpWindow = null;
+                        }
+                        public void windowClosing(final WindowEvent e) {
+                            helpWindow = null;
+                        }
+                    });
+                    helpWindow = window;
+                }
             } catch (MissingResourceException ex) {
                 //Make sure the URL exists.
                 if (url == null) {
