@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.l7tech.common.xml.XmlSchemaConstants;
+
 /**
  * Class <code>WsdlMessagePartsTableModel</code> is an implementation
  * of <code>TableModel</code> that holds the wsdl message parts.
@@ -76,28 +78,35 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @param columnIndex column of cell
      */
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        if (aValue == null) {
-            throw new IllegalArgumentException("value is null");
+        if (rowIndex == partsList.size()) {
+            if (aValue == null) return;
+            if (columnIndex == 0) {
+                String partName = (String) aValue;
+                if (partName.length() > 0) {
+                    addPart(partName);
+                }
+            }
+            else if (columnIndex == 1) {
+                Part newPart = addPart();
+                newPart.setTypeName((QName)aValue);
+            }
         }
-        Part p = getPartAt(rowIndex);
-        if (columnIndex == 0) {
-            final String partName = p.getName();
-            final String newName = aValue.toString();
-            if (partName.equals(newName)) {
-                return;
-            }
-            p.setName(newName);
-            message.replacePart(partName, p);
-        } else if (columnIndex == 1) {
-            if (aValue instanceof QName) {
+        else {
+            Part p = getPartAt(rowIndex);
+            if (columnIndex == 0) {
+                if (aValue == null) {
+                    throw new IllegalArgumentException("value is null");
+                }
+                final String partName = p.getName();
+                final String newName = aValue.toString();
+                if (partName.equals(newName)) {
+                    return;
+                }
+                p.setName(newName);
+                message.replacePart(partName, p);
+            } else if (columnIndex == 1) {
                 p.setTypeName((QName)aValue);
-            } else {
-                throw new IllegalArgumentException(
-                  "Expected " + QName.class.getName() +
-                  "Received " + aValue.getClass());
             }
-        } else {
-            throw new IndexOutOfBoundsException("" + columnIndex + " >= " + getColumnCount());
         }
     }
 
@@ -110,7 +119,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @see #getColumnCount
      */
     public int getRowCount() {
-        return partsList.size();
+        return partsList.size() + 1;
     }
 
     /**
@@ -124,6 +133,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
+        if (rowIndex == partsList.size()) return null;
         Part p = getPartAt(rowIndex);
         if (columnIndex == 0) {
             return p.getName();
@@ -143,8 +153,13 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
     public Part addPart(String name) {
         Part p = definition.createPart();
         p.setName(name);
+        p.setTypeName(XmlSchemaConstants.QNAME_TYPE_STRING);
         addPart(p);
         return p;
+    }
+
+    public Part addPart() {
+        return addPart(getNewMessagePartArgumentName());
     }
 
     /**
@@ -241,4 +256,27 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
         throw new IndexOutOfBoundsException("" + rowIndex + " > " + partsList.size());
     }
 
+    private String getNewMessagePartArgumentName() {
+        String newMessagePartName = null;
+        boolean found = false;
+        int suffixAdd = 0;
+        while (!found) {
+            int partNameSuffix = getRowCount() + suffixAdd;
+            newMessagePartName = "arg" + partNameSuffix;
+            found = true;
+            int rows = getRowCount();
+            for (int i = 0; i < rows; i++) {
+                String name = (String) getValueAt(i, 0);
+                if (newMessagePartName.equals(name)) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) {
+                break;
+            }
+            suffixAdd++;
+        }
+        return newMessagePartName;
+    }
 }

@@ -1,8 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.console.table.WsdlOperationsTableModel;
 
 import javax.swing.*;
@@ -47,6 +44,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         operationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         operationsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+        operationsTable.setSurrendersFocusOnKeystroke(true);
 
         operationsTableScrollPane.getViewport().setBackground(operationsTable.getBackground());
         operationsTable.setDefaultRenderer(Object.class, operationsTableCellRenderer);
@@ -56,7 +54,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
           addListSelectionListener(new ListSelectionListener() {
               public void valueChanged(ListSelectionEvent e) {
                   final int selectedRow = operationsTable.getSelectedRow();
-                  removeOperatonButton.setEnabled(selectedRow != -1);
+                  removeOperatonButton.setEnabled(selectedRow != -1 && selectedRow<operationsTable.getRowCount()-1);
               }
           });
 
@@ -145,24 +143,20 @@ public class WsdlPortTypePanel extends WizardStepPanel {
                                            int index,
                                            boolean isSelected,
                                            boolean cellHasFocus) {
-                if (isSelected) {
-                    setBackground(list.getSelectionBackground());
-                    setForeground(list.getSelectionForeground());
-                } else {
-                    setBackground(list.getBackground());
-                    setForeground(list.getForeground());
-                }
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
                 if (value != null) {
                     QName qName = ((Message)value).getQName();
                     setText(WsdlCreateWizard.prefixedName(qName, definition));
                 } else {
                     setText("             ");
                 }
+
                 return this;
             }
         });
 
-        DefaultCellEditor outputMessageEditor = new DefaultCellEditor(messagesComboBox) {
+        DefaultCellEditor messageEditor = new DefaultCellEditor(messagesComboBox) {
             boolean canEdit = messages.length > 0;
 
             public boolean stopCellEditing() {
@@ -178,23 +172,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
             }
         };
 
-        DefaultCellEditor inputMessageEditor = new DefaultCellEditor(messagesComboBox) {
-            boolean canEdit = messages.length > 0;
-
-            public boolean stopCellEditing() {
-                if (canEdit) {
-                    return super.stopCellEditing();
-                }
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-                        cancelCellEditing();
-                    }
-                });
-                return false;
-            }
-        };
-        operationsTable.setDefaultEditor(Output.class, outputMessageEditor);
-        operationsTable.setDefaultEditor(Input.class, inputMessageEditor);
+        operationsTable.setDefaultEditor(Output.class, messageEditor);
+        operationsTable.setDefaultEditor(Input.class, messageEditor);
         removeOperatonButton.setEnabled(operationsModel.getRowCount() > 0);
     }
 
@@ -222,32 +201,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
     private ActionListener
       addOperationActionListener = new ActionListener() {
-          /**
-           * Invoked when an action occurs.
-           */
           public void actionPerformed(ActionEvent e) {
-              String newOperationName = null;
-              boolean found = false;
-              int suffixAdd = 0;
-
-              while (!found) {
-                  newOperationName = "NewOperation" + (operationsModel.getRowCount() + suffixAdd);
-                  found = true;
-                  int rows = operationsModel.getRowCount();
-                  for (int i = 0; i < rows; i++) {
-                      String name =
-                        (String)operationsModel.getValueAt(i, 0);
-                      if (name.equals(newOperationName)) {
-                          found = false;
-                          break;
-                      }
-                  }
-                  if (found) {
-                      operationsModel.addOperation(newOperationName);
-                      break;
-                  }
-                  suffixAdd++;
-              }
+              operationsModel.addOperation();
           }
       };
 
@@ -256,9 +211,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      */
     private ActionListener
       removeOperationActionListener = new ActionListener() {
-          /**
-           * Invoked when an action occurs.
-           */
           public void actionPerformed(ActionEvent e) {
               int selectedRow = operationsTable.getSelectedRow();
               if (selectedRow != -1) {
@@ -290,6 +242,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
                                           boolean isSelected,
                                           boolean hasFocus,
                                           int row, int column) {
+              super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
               if (value instanceof Input) {
                   Input in = (Input)value;
                   renderMessage(table, in.getMessage(), isSelected);
@@ -297,28 +251,16 @@ public class WsdlPortTypePanel extends WizardStepPanel {
                   Output out = (Output)value;
                   renderMessage(table, out.getMessage(), isSelected);
               } else {
-                  if (isSelected) {
-                      setBackground(table.getSelectionBackground());
-                      setForeground(table.getSelectionForeground());
-                  } else {
-                      setBackground(table.getBackground());
-                      setForeground(table.getForeground());
-                  }
-                  setText(value.toString());
+                  setText(value == null ? "" : value.toString());
               }
               return this;
           }
 
           private void renderMessage(JTable table, Message msg, boolean isSelected) {
-              String text = msg == null ? "" :
-                WsdlCreateWizard.prefixedName(msg.getQName(), definition);
-              if (isSelected) {
-                  setBackground(table.getSelectionBackground());
-                  setForeground(table.getSelectionForeground());
-              } else {
-                  setBackground(table.getBackground());
-                  setForeground(table.getForeground());
-              }
+              String text = msg == null ?
+                      "" :
+                      WsdlCreateWizard.prefixedName(msg.getQName(), definition);
+
               setText(text);
           }
       };

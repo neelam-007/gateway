@@ -4,6 +4,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.wsdl.*;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class <code>WsdlOperationsTableModel</code> represents the port
@@ -49,7 +50,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @see #getColumnCount
      */
     public int getRowCount() {
-        return portType.getOperations().size();
+        return portType.getOperations().size() + 1;
     }
 
     /**
@@ -99,6 +100,8 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
+        if (rowIndex == portType.getOperations().size()) return null;
+
         Operation op = getOperationAt(rowIndex);
         if (columnIndex == 0) {
             return op.getName();
@@ -112,10 +115,37 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
     }
 
     /**
-     * create and add an empty message by name 
-     * to the message table 
-     * @param name the message name local part
-     * @return the newly created message
+     *
+     */
+    public Operation addOperation() {
+        Operation operation = null;
+        String newOperationName = null;
+        boolean found = false;
+        int suffixAdd = 0;
+
+        while (!found) {
+            newOperationName = "NewOperation" + (getRowCount() + suffixAdd);
+            found = true;
+            int rows = getRowCount();
+            for (int i = 0; i < rows; i++) {
+                String name = (String) getValueAt(i, 0);
+                if (newOperationName.equals(name)) {
+                    found = false;
+                    break;
+                }
+            }
+            if (found) {
+                operation = addOperation(newOperationName);
+                break;
+            }
+            suffixAdd++;
+        }
+
+        return operation;
+    }
+
+    /**
+     *
      */
     public Operation addOperation(String name) {
         Operation op = definition.createOperation();
@@ -185,36 +215,45 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      *  @param  columnIndex  column of cell
      */
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        Operation op = getOperationAt(rowIndex);
-        if (columnIndex == 0) {
-            if (aValue == null) {
-                throw new IllegalArgumentException(" value == null ");
+        if (rowIndex == portType.getOperations().size()) {
+            if (aValue != null) {
+                Operation operation = null;
+                if (columnIndex == 0) {
+                    String name = (String) aValue;
+                    if (name.length() > 0) operation = addOperation(name);
+                } else if (columnIndex == 1) {
+                    operation = addOperation();
+                    operation.getInput().setMessage((Message)aValue);
+                } else if (columnIndex == 2) {
+                    operation = addOperation();
+                    operation.getOutput().setMessage((Message)aValue);
+                }
+                if (operation != null) ensureInputOutputMessages(operation);
             }
+        }
+        else {
+            Operation op = getOperationAt(rowIndex);
 
-            if (!(aValue instanceof String)) {
-                throw new IllegalArgumentException("Unsupported type "+aValue.getClass());
+            if (columnIndex == 0) {
+                if (aValue == null) {
+                    throw new IllegalArgumentException(" value == null ");
+                }
+                op.setName((String)aValue);
+            } else if (columnIndex == 1) {
+                if (aValue == null) {
+                    op.getInput().setMessage(null);
+                    return;
+                }
+                op.getInput().setMessage((Message)aValue);
+            } else if (columnIndex == 2) {
+                if (aValue == null) {
+                    op.getOutput().setMessage(null);
+                    return;
+                }
+                op.getOutput().setMessage((Message)aValue);
+            } else {
+                throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
             }
-            op.setName((String)aValue);
-        } else if (columnIndex == 1) {
-            if (aValue == null) {
-                op.getInput().setMessage(null);
-                return;
-            }
-            if (!(aValue instanceof Message)) {
-                throw new IllegalArgumentException("Unsupported type "+aValue.getClass()+ " expected "+Message.class);
-            }
-            op.getInput().setMessage((Message)aValue);
-        } else if (columnIndex == 2) {
-            if (aValue == null) {
-                op.getOutput().setMessage(null);
-                return;
-            }
-            if (!(aValue instanceof Message)) {
-                throw new IllegalArgumentException("Unsupported type "+aValue.getClass() +" expected "+Message.class);
-            }
-            op.getOutput().setMessage((Message)aValue);
-        } else {
-            throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
         }
     }
 
@@ -238,4 +277,22 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
         throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
     }
 
+    /**
+     * Ensure that the input and output messages are set for the
+     * operation.
+     *
+     * @param operation The operation to check
+     */
+    private void ensureInputOutputMessages(Operation operation) {
+        Map messages = definition.getMessages();
+        if(messages != null && !messages.isEmpty()) {
+            Message defaultMessage = (Message) messages.values().iterator().next();
+
+            if (operation.getInput().getMessage() == null)
+                operation.getInput().setMessage(defaultMessage);
+
+            if (operation.getOutput().getMessage() == null)
+                operation.getOutput().setMessage(defaultMessage);
+        }
+    }
 }

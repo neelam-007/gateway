@@ -36,7 +36,6 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
             throw new IllegalArgumentException();
         }
         messageList.addAll(definition.getMessages().values());
-
     }
 
     /**
@@ -58,7 +57,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @see #getColumnCount
      */
     public int getRowCount() {
-        return messageList.size();
+        return messageList.size() + 1;
     }
 
     /**
@@ -68,7 +67,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * 
      * @return the list of rows in the model
      */
-    public List getRows() {
+    public List getMessages() {
         return messageList;
     }
 
@@ -83,7 +82,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
-        return messageList.get(rowIndex);
+        return rowIndex==messageList.size() ? null : messageList.get(rowIndex);
     }
 
     /**
@@ -190,11 +189,11 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * Returns false.  This is the default implementation for all cells.
+     * Returns true.  This is the default implementation for all cells.
      * 
      * @param rowIndex    the row being queried
      * @param columnIndex the column being queried
-     * @return false
+     * @return true
      */
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return true;
@@ -205,11 +204,18 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
             throw new IllegalArgumentException("value is null");
         }
         if (!(aValue instanceof Message)) {
-            throw new IllegalArgumentException("value is not a Message. Received " + aValue.getClass());
+            if (aValue instanceof String && rowIndex==messageList.size()) {
+                String value = (String) aValue;
+                if (value.length() > 0) addMessage(value);
+            }
+            else {
+                throw new IllegalArgumentException("value is not a Message. Received " + aValue.getClass());
+            }
         }
-        if (columnIndex == 0) {
+        else if (columnIndex == 0) {
             replaceMessage(rowIndex, (Message)aValue);
-        } else {
+        }
+        else {
             throw new IndexOutOfBoundsException("" + columnIndex + " >= " + getColumnCount());
         }
     }
@@ -254,6 +260,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * 		  &lt; 0 || index &gt;= getRowCount()).
      */
     private Message getMessageAt(int rowIndex) {
+        if (rowIndex==messageList.size()) return addMessage("");
         return (Message)messageList.get(rowIndex);
     }
 
