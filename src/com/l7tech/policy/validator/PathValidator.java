@@ -323,8 +323,7 @@ class PathValidator {
             }
         } else if (a instanceof RequestWssIntegrity ||
                     a instanceof ResponseWssConfidentiality ||
-                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired())
-                  ) {
+                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired())) {
             // REASONS FOR THIS RULE
             //
             // 1. For RequestWssIntegrity:
@@ -399,10 +398,13 @@ class PathValidator {
                   "This assertion should be preceeded by a SAML Security assertion.", null));
             }
         }
-        else if(a instanceof WssBasic) {
-            if(!haveSeen(SslAssertion.class)) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by a TLS/SSL assertion.", null));
+        else if (a instanceof WssBasic) {
+            // bugzilla 2518
+            if (!(a instanceof EncryptedUsernameTokenAssertion)) {
+                if (!haveSeen(SslAssertion.class)) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                      "This assertion should be preceeded by a TLS/SSL assertion.", null));
+                }
             }
         }
 
