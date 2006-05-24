@@ -229,6 +229,7 @@ public class PolicyService extends ApplicationObjectSupport {
             reqSec.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));
+            context.setPolicyResult(AssertionStatus.BAD_REQUEST);
             return;
         }
 
@@ -240,6 +241,7 @@ public class PolicyService extends ApplicationObjectSupport {
             relatesTo = SoapUtil.getL7aMessageId(requestDoc);
         } catch (InvalidDocumentFormatException e) {
             response.initialize(exceptionToFault(e));
+            context.setPolicyResult(AssertionStatus.BAD_REQUEST);
             return;
         }
         logger.finest("Policy requested is " + policyId);
@@ -261,6 +263,7 @@ public class PolicyService extends ApplicationObjectSupport {
                 fault = exceptionToFault(e);
             }
             response.initialize(fault);
+            context.setPolicyResult(AssertionStatus.BAD_REQUEST);
             return;
         }
 
@@ -282,9 +285,13 @@ public class PolicyService extends ApplicationObjectSupport {
                 context.setPolicyResult(status);
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));
+                logger.log(Level.WARNING, "problem running policy download policy", e);
+                context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             } catch (PolicyAssertionException e) {
                 response.initialize(exceptionToFault(e));
+                logger.log(Level.WARNING, "problem running policy download policy", e);
+                context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             }
         }
@@ -302,12 +309,18 @@ public class PolicyService extends ApplicationObjectSupport {
                 policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, pre32PolicyCompat, false);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(e));
+                logger.log(Level.WARNING, "problem preparing response", e);
+                context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));
+                logger.log(Level.WARNING, "problem preparing response", e);
+                context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             } catch (SAXException e) {
                 response.initialize(exceptionToFault(e));
+                logger.log(Level.WARNING, "problem preparing response", e);
+                context.setPolicyResult(AssertionStatus.SERVER_ERROR);
                 return;
             }
         }
@@ -335,10 +348,15 @@ public class PolicyService extends ApplicationObjectSupport {
         try {
             String policyVersion = policyId + "|" + si.getVersion();
             response.initialize(wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, signResponse));
+            context.setPolicyResult(AssertionStatus.NONE);
         } catch (GeneralSecurityException e) {
             response.initialize(exceptionToFault(e));
+            logger.log(Level.WARNING, "problem preparing response", e);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
         } catch (DecoratorException e) {
             response.initialize(exceptionToFault(e));
+            logger.log(Level.WARNING, "problem preparing response", e);
+            context.setPolicyResult(AssertionStatus.SERVER_ERROR);
         }
     }
 
