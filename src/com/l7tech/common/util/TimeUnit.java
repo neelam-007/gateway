@@ -3,10 +3,10 @@
  */
 package com.l7tech.common.util;
 
-import java.io.Serializable;
 import java.io.ObjectStreamException;
-import java.util.Map;
+import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author alex
@@ -71,5 +71,20 @@ public final class TimeUnit implements Serializable, Comparable {
 
     public static TimeUnit fromAbbreviation(String value) {
         return (TimeUnit)valuesByAbbrev.get(value);
+    }
+
+    // This method is invoked reflectively by WspEnumTypeMapping
+    public static EnumTranslator getEnumTranslator() {
+        return new EnumTranslator() {
+            public String objectToString(Object target) {
+                return ((TimeUnit)target).getAbbreviation();
+            }
+
+            public Object stringToObject(String value) throws IllegalArgumentException {
+                TimeUnit tu = TimeUnit.fromAbbreviation(value);
+                if (tu == null) throw new IllegalArgumentException("Unknown TimeUnit abbreviation: '" + value + "'");
+                return tu;
+            }
+        };
     }
 }

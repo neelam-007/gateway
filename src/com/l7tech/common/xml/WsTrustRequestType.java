@@ -1,5 +1,7 @@
 package com.l7tech.common.xml;
 
+import com.l7tech.common.util.EnumTranslator;
+
 import java.io.Serializable;
 import java.util.*;
 
@@ -71,5 +73,18 @@ public final class WsTrustRequestType implements Serializable {
 
     public List getUris() {
         return cachedUriList;
+    }
+
+    // This method is invoked reflectively by WspEnumTypeMapping
+    public static EnumTranslator getEnumTranslator() {
+        return new EnumTranslator() {
+            public Object stringToObject(String value) {
+                return WsTrustRequestType.fromString(value);
+            }
+
+            public String objectToString(Object target) {
+                return ((WsTrustRequestType)target).getUri();
+            }
+        };
     }
 }

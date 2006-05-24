@@ -213,6 +213,14 @@ public class WspWriterTest extends TestCase {
         log.info("Serialized: " + got);
     }
 
+    public void testSslAssertionOptionChange() throws Exception {
+        SslAssertion sa = new SslAssertion(SslAssertion.OPTIONAL);
+        String got = WspWriter.getPolicyXml(sa);
+        assertNotNull(got);
+        assertTrue(got.contains("SslAssertion"));
+        assertTrue(got.contains("Optional"));
+    }
+
     public static Assertion createSoapWithAttachmentsPolicy() {
         Map getQuoteAttachments = new HashMap();
         getQuoteAttachments.put("portfolioData", new MimePartInfo("portfolioData", "application/x-zip-compressed"));

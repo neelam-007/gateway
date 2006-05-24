@@ -1,9 +1,11 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import java.util.Map;
+import com.l7tech.common.util.EnumTranslator;
+
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
-import java.io.Serializable;
+import java.util.Map;
 
 /**
  * User: steve
@@ -151,6 +153,19 @@ public class AuthenticationProperties implements Cloneable, Serializable {
 
         public String toString() {
             return "Method(id='"+id+"')";
+        }
+
+        // This method is invoked reflectively by WspEnumTypeMapping
+        public static EnumTranslator getEnumTranslator() {
+            return new EnumTranslator() {
+                public String objectToString(Object in) {
+                    return ((AuthenticationProperties.Method)in).getId();
+                }
+
+                public Object stringToObject(String in) {
+                    return AuthenticationProperties.forKeyName(in);
+                }
+            };
         }
 
         //- PRIVATE

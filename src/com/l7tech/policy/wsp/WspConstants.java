@@ -127,60 +127,11 @@ public class WspConstants {
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
 
         // Typesafe enumerations
-        new BasicTypeMapping(SslAssertion.Option.class, "optionValue") {
-            protected String objectToString(Object in) {
-                return ((SslAssertion.Option)in).getKeyName();
-            }
-
-            protected Object stringToObject(String in) {
-                return SslAssertion.Option.forKeyName(in);
-            }
-        },
-
-        new BasicTypeMapping(WsTrustRequestType.class, "requestType") {
-            protected Object stringToObject(String value) {
-                return WsTrustRequestType.fromString(value);
-            }
-
-            protected String objectToString(Object target) {
-                return ((WsTrustRequestType)target).getUri();
-            }
-        },
-
-        new BasicTypeMapping(AuthenticationProperties.Method.class, "authenticationMethod") {
-            protected String objectToString(Object in) {
-                return ((AuthenticationProperties.Method)in).getId();
-            }
-
-            protected Object stringToObject(String in) {
-                return AuthenticationProperties.forKeyName(in);
-            }
-        },
-
-        new BasicTypeMapping(ComparisonOperator.class, "operator") {
-            protected String objectToString(Object target) {
-                ComparisonOperator op = (ComparisonOperator)target;
-                return op.getShortName();
-            }
-
-            protected Object stringToObject(String value) throws InvalidPolicyStreamException {
-                ComparisonOperator op = ComparisonOperator.getByShortName(value);
-                if (op == null) throw new InvalidPolicyStreamException("Unknown Operator short name: '" + value + "'");
-                return op;
-            }
-        },
-
-        new BasicTypeMapping(TimeUnit.class, "abbreviation") {
-            protected String objectToString(Object target) {
-                return ((TimeUnit)target).getAbbreviation();
-            }
-
-            protected Object stringToObject(String value) throws InvalidPolicyStreamException {
-                TimeUnit tu = TimeUnit.fromAbbreviation(value);
-                if (tu == null) throw new InvalidPolicyStreamException("Unknown TimeUnit abbreviation: '" + value + "'");
-                return tu;
-            }
-        },
+        new WspEnumTypeMapping(SslAssertion.Option.class, "optionValue"),
+        new WspEnumTypeMapping(WsTrustRequestType.class, "requestType"),
+        new WspEnumTypeMapping(AuthenticationProperties.Method.class, "authenticationMethod"),
+        new WspEnumTypeMapping(ComparisonOperator.class, "operator"),
+        new WspEnumTypeMapping(TimeUnit.class, "abbreviation"),
 
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
@@ -350,4 +301,5 @@ public class WspConstants {
         EqualityRenamedToComparison.equalityCompatibilityMapping,
         StealthReplacedByFaultLevel.faultDropCompatibilityMapping
     };
+
 }

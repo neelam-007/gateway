@@ -61,6 +61,22 @@ public class ComparisonOperator implements Serializable {
         return (ComparisonOperator)byShortName.get(shortName);
     }
 
+    // This method is invoked reflectively by WspEnumTypeMapping
+    public static EnumTranslator getEnumTranslator() {
+        return new EnumTranslator() {
+            public String objectToString(Object target) {
+                ComparisonOperator op = (ComparisonOperator)target;
+                return op.getShortName();
+            }
+
+            public Object stringToObject(String value) throws IllegalArgumentException {
+                ComparisonOperator op = ComparisonOperator.getByShortName(value);
+                if (op == null) throw new IllegalArgumentException("Unknown Operator short name: '" + value + "'");
+                return op;
+            }
+        };
+    }
+
     public int getNum() {
         return num;
     }

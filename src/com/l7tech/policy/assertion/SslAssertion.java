@@ -5,6 +5,8 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.common.util.EnumTranslator;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,6 +72,19 @@ public class SslAssertion extends ConfidentialityAssertion {
 
         public String toString() {
             return _keyName;
+        }
+
+        // WspEnumTypeMapping finds this method by reflection
+        public static EnumTranslator getEnumTranslator() {
+            return new EnumTranslator() {
+                public Object stringToObject(String s) throws IllegalArgumentException {
+                    return SslAssertion.Option.forKeyName(s);
+                }
+
+                public String objectToString(Object o) throws ClassCastException {
+                    return ((SslAssertion.Option)o).getKeyName();
+                }
+            };
         }
     }
 

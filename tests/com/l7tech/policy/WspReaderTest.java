@@ -343,7 +343,7 @@ public class WspReaderTest extends TestCase {
     }
 
     // TODO reenable this test as soon as we are ready to fix it
-    public void DISABLED_testReproBug2214TabsInEmail() throws Exception {
+    public void testReproBug2214TabsInEmail() throws Exception {
         final String body = "foo\r\nbar baz blah\tbleet blot";
 
         EmailAlertAssertion ema = new EmailAlertAssertion();
@@ -357,6 +357,16 @@ public class WspReaderTest extends TestCase {
         assertEquals(got.messageString(), body);
     }
 
+    public void testSslAssertionOptionChange() throws Exception {
+        SslAssertion sa = new SslAssertion(SslAssertion.OPTIONAL);
+        String got = WspWriter.getPolicyXml(sa);
+        assertNotNull(got);
+        assertTrue(got.contains("SslAssertion"));
+        assertTrue(got.contains("Optional"));
+
+        SslAssertion sa2 = (SslAssertion)WspReader.parseStrictly(got);
+        assertEquals(sa2.getOption(), SslAssertion.OPTIONAL);
+    }
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
