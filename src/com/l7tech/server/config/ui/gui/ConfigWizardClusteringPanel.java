@@ -55,22 +55,14 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         }
     }
 
-    /**
-     * Creates new form WizardPanel
-     */
-    public ConfigWizardClusteringPanel(OSSpecificFunctions functions) {
-        super(null, functions);
-        init();
-    }
-
-    public ConfigWizardClusteringPanel(WizardStepPanel next, OSSpecificFunctions functions) {
-        super(next, functions);
+    public ConfigWizardClusteringPanel(WizardStepPanel next) {
+        super(next);
         init();
     }
 
     private void init() {
         setShowDescriptionPanel(false);
-        configBean = new ClusteringConfigBean(osFunctions);
+        configBean = new ClusteringConfigBean();
         configCommand = new ClusteringConfigCommand(configBean);
 
         clusteringConfigBean = (ClusteringConfigBean) configBean;

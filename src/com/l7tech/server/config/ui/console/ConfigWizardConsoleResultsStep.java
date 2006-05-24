@@ -17,12 +17,12 @@ import java.util.ArrayList;
  * Time: 10:00:57 AM
  */
 public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
-    public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
-        super(parentWiz, osFunctions);
+    public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz) {
+        super(parentWiz);
         showNavigation = false;
     }
 
-    void doUserInterview(boolean validated) throws WizardNavigationException {
+    public void doUserInterview(boolean validated) throws WizardNavigationException {
         ConfigurationWizard wizard = getParentWizard();
 
         if (wizard.isHadFailures()) {
@@ -56,7 +56,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         printText("Press <Enter> to finish the wizard\n");
 
         try {
-            handleInput(reader.readLine());
+            handleInput(readLine());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -200,7 +200,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         return "SSG Configuration Results";
     }
 
-    boolean validateStep() {
+    public boolean validateStep() {
         return true;
     }
 }

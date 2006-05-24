@@ -8,6 +8,6 @@ package com.l7tech.server.config.commands;
  * To change this template use File | Settings | File Templates.
  */
 public interface ConfigurationCommand {
-    public String[] getActionSummary();
     public boolean execute();
+    String[] getActions();
 }

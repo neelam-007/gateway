@@ -27,8 +27,8 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
 
     private Map ksTypeMap;
 
-    public ConfigWizardConsoleKeystoreStep(ConfigurationWizard parentWiz, OSSpecificFunctions osf) {
-        super(parentWiz, osf);
+    public ConfigWizardConsoleKeystoreStep(ConfigurationWizard parentWiz) {
+        super(parentWiz);
         init();
     }
 
@@ -37,7 +37,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
     }
 
     private void init() {
-        configBean = new KeystoreConfigBean(osFunctions);
+        configBean = new KeystoreConfigBean();
         keystoreBean = (KeystoreConfigBean) configBean;
         configCommand = new KeystoreConfigCommand(configBean);
         ksTypeMap = new TreeMap();
@@ -45,7 +45,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         ksTypeMap.put("2", KeyStoreConstants.LUNA_KEYSTORE_NAME);
     }
 
-    void doUserInterview(boolean validated) throws WizardNavigationException {
+    public void doUserInterview(boolean validated) throws WizardNavigationException {
         printText("\n" + STEP_INFO + "\n");
 
         boolean doKeystoreConfig = false;
@@ -183,7 +183,7 @@ public class ConfigWizardConsoleKeystoreStep extends BaseConsoleStep{
         return shouldConfigure;
     }
 
-    boolean validateStep() {
+    public boolean validateStep() {
         return true;
     }
 

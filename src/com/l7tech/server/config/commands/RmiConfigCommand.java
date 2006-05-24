@@ -20,8 +20,8 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
     public static final String PROP_RMI_USECODEBASEONLY = "java.rmi.server.useCodebaseOnly";
 
 
-    public RmiConfigCommand(ConfigurationBean configBean, OSSpecificFunctions osFunctions) {
-        super(configBean, osFunctions);
+    public RmiConfigCommand(ConfigurationBean configBean) {
+        super(configBean);
     }
 
     public boolean execute() {

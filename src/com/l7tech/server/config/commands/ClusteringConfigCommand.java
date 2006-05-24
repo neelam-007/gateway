@@ -26,7 +26,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
     private static final String PROP_RMI_HOSTNAME = "java.rmi.server.hostname";
 
     public ClusteringConfigCommand(ConfigurationBean bean) {
-        super(bean, bean.getOSFunctions());
+        super(bean);
     }
 
     public String getHostname() {

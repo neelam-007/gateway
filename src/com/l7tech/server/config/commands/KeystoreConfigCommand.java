@@ -85,7 +85,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
 
     public KeystoreConfigCommand(ConfigurationBean bean) {
-        super(bean, bean.getOSFunctions());
+        super(bean);
     }
 
     public boolean execute() {

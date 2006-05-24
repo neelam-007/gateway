@@ -92,19 +92,14 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         return dbProps;
     }
 
-    public ConfigWizardNewDBPanel(OSSpecificFunctions functions) {
-        super(null, functions);
-        init();
-    }
-
-    public ConfigWizardNewDBPanel(WizardStepPanel next, OSSpecificFunctions functions) {
-        super(next, functions);
+    public ConfigWizardNewDBPanel(WizardStepPanel next) {
+        super(next);
         init();
     }
 
     private void init() {
         setShowDescriptionPanel(false);
-        configBean = new SsgDatabaseConfigBean(osFunctions);
+        configBean = new SsgDatabaseConfigBean();
         configCommand = new SsgDatabaseConfigCommand(configBean);
         try {
             dbActions = new DBActions();

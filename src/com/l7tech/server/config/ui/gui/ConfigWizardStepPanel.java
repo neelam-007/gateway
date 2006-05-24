@@ -2,6 +2,7 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 
@@ -23,9 +24,9 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
     protected ConfigurationBean configBean;
     protected ConfigurationCommand configCommand;
 
-    public ConfigWizardStepPanel(WizardStepPanel next, OSSpecificFunctions functions) {
+    public ConfigWizardStepPanel(WizardStepPanel next) {
         super(next);
-        osFunctions = functions;
+        osFunctions = OSDetector.getOSSpecificFunctions();
     }
 
     public void setParentWizard(ConfigurationWizard parent) {

@@ -12,12 +12,12 @@ import java.io.*;
  */
 public class ConfigWizardConsoleStartStep extends BaseConsoleStep {
 
-    public ConfigWizardConsoleStartStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
-        super(parentWiz, osFunctions);
+    public ConfigWizardConsoleStartStep(ConfigurationWizard parentWiz) {
+        super(parentWiz);
         showNavigation = false;
     }
 
-    boolean validateStep() {
+    public boolean validateStep() {
         return true;
     }
 
@@ -25,15 +25,15 @@ public class ConfigWizardConsoleStartStep extends BaseConsoleStep {
         return "Welcome to the Secure Span Gateway Configuration Wizard";
     }
 
-    void doUserInterview(boolean validated) throws WizardNavigationException {
+    public void doUserInterview(boolean validated) throws WizardNavigationException {
         printText(new String[] {
-                "This wizard will configure a newly installed Secure Span Gateway (SSG)\n",
-                "Press <Enter> to continue\n",
+                "This wizard will configure a newly installed Secure Span Gateway (SSG)" + getEolChar(),
+                "Press <Enter> to continue" + getEolChar(),
         });
         
 
         try {
-            handleInput(reader.readLine());
+            handleInput(consoleWizardUtils.readLine());
         } catch (IOException e) {
             e.printStackTrace();
         }

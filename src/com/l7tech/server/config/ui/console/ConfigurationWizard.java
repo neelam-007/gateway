@@ -9,6 +9,7 @@ import com.l7tech.common.BuildInfo;
 
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.PrintStream;
 import java.util.*;
 
 /**
@@ -24,34 +25,22 @@ public class ConfigurationWizard {
 
     protected OSSpecificFunctions osFunctions;
 
-    private List steps = new ArrayList();
-    private Set commands;
+    private List<ConfigWizardConsoleStep> steps = new ArrayList<ConfigWizardConsoleStep>();
+    private Set<ConfigurationCommand> commands;
     private boolean hadFailures;
-    private PrintWriter pw;
-    private InputStream in;
     String currentVersion;
     private String keystoreType;
     private int clusteringType;
     private String hostname;
-    private Set additionalCommands;
+    private static final String COMMONS_LOGGING_PROP = "org.apache.commons.logging.Log";
+    private static final String COMMONS_LOGGING_JDK14_LOGGER = "org.apache.commons.logging.impl.Jdk14Logger";
+    private static final String L7TECH_CLASSNAME = "com.l7tech";
+    private static final String LOGCONFIG_NAME = "configlogging.properties";
 
-    public ConfigurationWizard() {
-        init();
-    }
+    ConsoleWizardUtils wizardUtils = null;
 
-    public ConfigurationWizard(InputStream in, PrintWriter out, List stepsList) {
-        this.in = in;
-        this.pw = out;
-        addSteps(stepsList);
-        init();
-    }
-
-    public PrintWriter getWriter() {
-        return pw;
-    }
-
-    public InputStream getInputSteam() {
-        return in;
+    public ConfigurationWizard(InputStream in, PrintStream out) {
+        init(in, out);
     }
 
     public void startWizard() {
@@ -66,27 +55,27 @@ public class ConfigurationWizard {
         return hadFailures;
     }
 
-    private void init() {
-        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-        JdkLoggerConfigurator.configure("com.l7tech", "configlogging.properties");
-        osFunctions = OSDetector.getOSSpecificActions();
+    private void init(InputStream in, PrintStream out) {
+        System.setProperty(COMMONS_LOGGING_PROP, COMMONS_LOGGING_JDK14_LOGGER);
+        JdkLoggerConfigurator.configure(L7TECH_CLASSNAME, LOGCONFIG_NAME);
+        osFunctions = OSDetector.getOSSpecificFunctions();
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
+        wizardUtils = ConsoleWizardUtils.getInstance(in, out);
+        commands = new HashSet<ConfigurationCommand>();
     }
 
-    private void addSteps(List steps) {
+    private void addSteps(List<ConfigWizardConsoleStep> steps) {
         if (steps != null) {
-            for (Iterator iterator = steps.iterator(); iterator.hasNext();) {
-                ConfigWizardConsoleStep step = (ConfigWizardConsoleStep) iterator.next();
+            for (ConfigWizardConsoleStep step : steps) {
                 addStep(step);
             }
         }
     }
 
-    public void setAdditionalCommands(Set moreCommands) {
+    public void addAdditionalCommands(Set<ConfigurationCommand> moreCommands) {
         if (moreCommands != null) {
-            additionalCommands = moreCommands;
-            if (commands == null) commands = new HashSet();
-            commands.addAll(additionalCommands);
+            if (commands == null) commands = new HashSet<ConfigurationCommand>();
+            commands.addAll(moreCommands);
         }
     }
 
@@ -95,15 +84,17 @@ public class ConfigurationWizard {
     }
 
     private void doWizard() {
-        ListIterator stepsIterator = steps.listIterator();
+        ListIterator<ConfigWizardConsoleStep> stepsIterator = steps.listIterator();
         ConfigWizardConsoleStep step;
         while (stepsIterator.hasNext()) {
-            step = (ConfigWizardConsoleStep) stepsIterator.next();
+            step = stepsIterator.next();
             step.showTitle();
+            wizardUtils.printText(ConsoleWizardUtils.GENERAL_HEADER + ConsoleWizardUtils.EOL_CHAR);
             if (step.isShowNavigation()) {
-                pw.println(ConsoleWizardUtils.GENERAL_NAV_HEADER);
-                pw.println();
+                wizardUtils.printText(ConsoleWizardUtils.NAV_HEADER + ConsoleWizardUtils.EOL_CHAR);
             }
+            wizardUtils.printText(ConsoleWizardUtils.EOL_CHAR);
+
             try {
                 step.showStep(true);
                 if (step.shouldApplyConfiguration()) applyConfiguration();
@@ -112,7 +103,7 @@ public class ConfigurationWizard {
                 } else if (e.getMessage().equals(WizardNavigationException.NAVIGATE_PREV)) {
                     //since the iterator has already advanced with next(), we need to make two calls to previous().
                     stepsIterator.previous();
-                    step = (ConfigWizardConsoleStep) stepsIterator.previous();
+                    step = stepsIterator.previous();
                 } else {}
             }
         }
@@ -123,14 +114,13 @@ public class ConfigurationWizard {
     }
 
     private void applyConfiguration() {
-        Iterator iterator = commands.iterator();
+        Iterator<ConfigurationCommand> iterator = commands.iterator();
         hadFailures = false;
 
-        pw.println("Please wait while the configuration is applied ...");
-        pw.flush();
+        wizardUtils.printText("Please wait while the configuration is applied ..." + ConsoleWizardUtils.EOL_CHAR);
 
         while (iterator.hasNext()) {
-            ConfigurationCommand command = (ConfigurationCommand) iterator.next();
+            ConfigurationCommand command = iterator.next();
             boolean successful = command.execute();
             if (!successful) {
                 hadFailures = true;
@@ -166,70 +156,30 @@ public class ConfigurationWizard {
         return hostname;
     }
 
-    public List getCommandDescription() {
-        ArrayList list = new ArrayList();
-        Iterator iter = commands.iterator();
-        while(iter.hasNext()) {
-            ConfigurationCommand command = (ConfigurationCommand) iter.next();
-            String[] summary = command.getActionSummary();
-            if (summary != null) {
-                list.add(summary);
+    public List<String[]> getCommandDescriptions() {
+        ArrayList<String[]> list = new ArrayList<String[]>();
+        for (ConfigurationCommand command : commands) {
+            String[] actions = command.getActions();
+            if (actions != null) {
+                list.add(actions);
             }
         }
         return list;
     }
 
-    private static ConfigurationWizard getWizard(InputStream is, PrintWriter pw, List stepsList) {
-        initLogging();
-        return new ConfigurationWizard(is, pw, stepsList);
-    }
-
-    private static void initLogging() {
-        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-        JdkLoggerConfigurator.configure("com.l7tech", "configlogging.properties");
-    }
-
-    public void setSteps(List stepsList) {
+    public void setSteps(List<ConfigWizardConsoleStep> stepsList) {
         addSteps(stepsList);
     }
 
-    public String[] initialize(boolean isSilent, String[] args) {
-//        if (isSilent) {
-//            return initializeSilentMode(args);
-//
-//        } else {
-            return initializeInteractiveMode();
+
+//    private static void checkSilentMode(String[] args) {
+//        if (args.length < 2 || args[FILENAME_INDEX] == null) {
+//            System.err.println("A filename must be specified when operating in silent mode");
+//            System.exit(1);
 //        }
-    }
-
-    public String[] initializeInteractiveMode() {
-        in = System.in;
-        pw = new PrintWriter(System.out);
-
-        return null;
-    }
-
-//    public String[] initializeSilentMode(String[] args) {
-//        checkSilentMode(args);
-//
-//        String silentFileName = args[SILENT_INDEX];
-//        try {
-//            in = new FileInputStream(silentFileName);
-//            pw = new PrintWriter(System.out);
-//        } catch (FileNotFoundException e) {
-//            return new String[]{
-//                    "Could not find file: " + silentFileName,
-//                    "A valid filename must be specified when operating in silent mode"
-//            };
-//        }
-//
-//        return null;
 //    }
 
-    private static void checkSilentMode(String[] args) {
-        if (args.length < 2 || args[FILENAME_INDEX] == null) {
-            System.err.println("A filename must be specified when operating in silent mode");
-            System.exit(1);
-        }
+    public ConsoleWizardUtils getWizardUtils() {
+        return wizardUtils;
     }
 }

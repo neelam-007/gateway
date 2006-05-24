@@ -48,8 +48,8 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     private JRadioButton doKsConfig;
     private JRadioButton dontDoKsConfig;
 
-    public ConfigWizardKeystorePanel(WizardStepPanel next, OSSpecificFunctions functions) {
-        super(next, functions);
+    public ConfigWizardKeystorePanel(WizardStepPanel next) {
+        super(next);
         init();
     }
 
@@ -92,14 +92,14 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         }
         else {
             String[] fullList = getKeystores();
-            ArrayList newKeystoreList = new ArrayList();
+            ArrayList<String> newKeystoreList = new ArrayList<String>();
             for (int i = 0; i < fullList.length; i++) {
                 String s = new String(fullList[i]);
                 if (!s.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
                     newKeystoreList.add(s);
                 }
             }
-            return (String[]) newKeystoreList.toArray(new String[newKeystoreList.size()]);
+            return newKeystoreList.toArray(new String[newKeystoreList.size()]);
         }
 
     }
@@ -107,7 +107,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
     private void init() {
         setShowDescriptionPanel(false);
         stepLabel = "Setup SSG Keystore";
-        configBean = new KeystoreConfigBean(osFunctions);
+        configBean = new KeystoreConfigBean();
         configCommand = new KeystoreConfigCommand(configBean);
 
         ButtonGroup doKsChoices = new ButtonGroup();

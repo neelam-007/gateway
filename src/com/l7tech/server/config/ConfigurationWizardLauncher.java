@@ -15,13 +15,14 @@ import java.io.FileNotFoundException;
  * Time: 3:30:33 PM
  */
 public class ConfigurationWizardLauncher {
+    private static final String EOL_CHAR = System.getProperty("line.separator");
     private static final String GRAPHICAL_MODE = "-graphical";
     private static final String CONSOLE_MODE = "-console";
 
-    private static final String USAGE_STATEMENT = "usage: ConfigurationWizardLauncher [-console | -graphical]\n" +
-                        "If no parameter is specified, graphical mode is assumed\n" +
-                        "\t-console\t\trun the configuration wizard in console only mode\n" +
-                        "\t-graphical\t\trun the configuration wizard in graphical mode\n";
+    private static final String USAGE_STATEMENT = "usage: ConfigurationWizardLauncher [-console | -graphical]" + EOL_CHAR +
+                        "If no parameter is specified, graphical mode is assumed" + EOL_CHAR +
+                        "\t-console\t\trun the configuration wizard in console only mode" + EOL_CHAR +
+                        "\t-graphical\t\trun the configuration wizard in graphical mode" + EOL_CHAR;
 
     public static void main(String[] args) {
         String[] newArgs;

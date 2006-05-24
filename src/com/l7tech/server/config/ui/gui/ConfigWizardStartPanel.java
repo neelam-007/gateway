@@ -18,17 +18,8 @@ import java.util.Set;
 public class ConfigWizardStartPanel extends ConfigWizardStepPanel {
     private JPanel mainPanel;
 
-    /**
-     * Creates new form WizardPanel
-     */
-
-    public ConfigWizardStartPanel(OSSpecificFunctions functions) {
-        super(null, functions);
-        init();
-    }
-
-    public ConfigWizardStartPanel(WizardStepPanel next, OSSpecificFunctions functions) {
-        super(next, functions);
+    public ConfigWizardStartPanel(WizardStepPanel next) {
+        super(next);
         init();
     }
 

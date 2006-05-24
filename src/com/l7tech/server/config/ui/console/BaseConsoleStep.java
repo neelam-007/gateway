@@ -2,6 +2,7 @@ package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.WizardInputValidator;
+import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
@@ -22,24 +23,28 @@ import java.util.List;
 public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     protected ConsoleWizardUtils consoleWizardUtils;
-    ConfigurationWizard parent;
+    protected ConfigurationWizard parent;
 
     protected ConfigurationBean configBean = null;
 
     protected OSSpecificFunctions osFunctions = null;
-    protected BufferedReader reader;
-    protected ConfigurationCommand configCommand;
 
-    protected boolean readyToAdvance;
+    protected ConfigurationCommand configCommand;
 
     protected boolean showNavigation = true;
 
-    public BaseConsoleStep(ConfigurationWizard parent_, OSSpecificFunctions osFunctions) {
+    private static final String eolChar = System.getProperty("line.separator");
+
+    public static String getEolChar() {
+        return eolChar;
+    }
+
+
+
+    public BaseConsoleStep(ConfigurationWizard parent_) {
         this.parent = parent_;
-        this.osFunctions = osFunctions;
-        reader = new BufferedReader(new InputStreamReader(parent.getInputSteam()));
-        consoleWizardUtils = ConsoleWizardUtils.getInstance(parent.getInputSteam(), parent.getWriter());
-        readyToAdvance = false;
+        osFunctions = OSDetector.getOSSpecificFunctions();
+        consoleWizardUtils = parent.getWizardUtils();
     }
 
     public void showStep(boolean validated) throws WizardNavigationException {
@@ -55,10 +60,6 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         return false;
     }
 
-    public void setReadyToAdvance(boolean readyToAdvance) {
-        this.readyToAdvance = readyToAdvance;
-    }
-
     public boolean isShowNavigation() {
         return showNavigation;
     }
@@ -72,12 +73,17 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         String banner = StringUtils.repeat("-", title.length());
 
         consoleWizardUtils.printText(new String[] {
-                "\n",
-                banner + "\n",
-                title + "\n",
-                banner + "\n",
+                eolChar,
+                banner + eolChar,
+                title + eolChar,
+                banner + eolChar,
         });
     }
+
+    public String readLine() throws IOException {
+        return consoleWizardUtils.readLine();
+    }
+
 
     protected String getMatchingPasswords(final String firstPrompt, final String secondPrompt, final int minPasswordLength) throws IOException, WizardNavigationException {
         Map passwords = consoleWizardUtils.getValidatedDataWithConfirm(
@@ -90,21 +96,21 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
                     if (minPasswordLength < 0) {
                         passwordLength = 0;
                     }
-                    List errorMessages = new ArrayList();
+                    List<String> errorMessages = new ArrayList<String>();
 
                     String password1 = (String) inputs.get(firstPrompt);
                     String password2 = (String) inputs.get(secondPrompt);
 
                     if (StringUtils.isEmpty(password1)) {
-                        errorMessages.add("**** The password cannot be empty ****\n");
+                        errorMessages.add("**** The password cannot be empty ****" + eolChar);
                     } else if (password1.length() < passwordLength) {
-                        errorMessages.add("**** The password must be at least " + passwordLength +" characters long. Please try again ****\n");
+                        errorMessages.add("**** The password must be at least " + passwordLength +" characters long. Please try again ****" + eolChar);
                     } else if (!StringUtils.equals(password1, password2)) {
-                        errorMessages.add("**** The passwords do not match ****\n");
+                        errorMessages.add("**** The passwords do not match ****" + eolChar);
                     }
 
                     if (errorMessages.size() > 0) {
-                        return (String[]) errorMessages.toArray(new String[errorMessages.size()]);
+                        return errorMessages.toArray(new String[errorMessages.size()]);
                     }
                     return null;
                 }
@@ -121,6 +127,10 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         return consoleWizardUtils.getData(promptLines, defaultValue, isShowNavigation());
     }
 
+    protected void printText(List<String> textToPrint) {
+        if (textToPrint != null) consoleWizardUtils.printText(textToPrint.toArray(new String[textToPrint.size()]));
+    }
+    
     protected void printText(String[] textToPrint) {
         consoleWizardUtils.printText(textToPrint);
     }
@@ -135,9 +145,10 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
         }
     }
 
-    abstract boolean validateStep();
+    //each step must implement these.
+    public abstract boolean validateStep();
 
-    abstract void doUserInterview(boolean validated) throws WizardNavigationException;
+    public abstract void doUserInterview(boolean validated) throws WizardNavigationException;
 
-    abstract String getTitle();
+    public abstract String getTitle();
 }

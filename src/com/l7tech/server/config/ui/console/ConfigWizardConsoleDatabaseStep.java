@@ -26,12 +26,12 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private SsgDatabaseConfigBean databaseBean;
     private static final String STEP_INFO = "This step lets you create or setup a connection to the SSG database";
-    private static final String HEADER_DB_CONN_TYPE = "-- Select Database Connection Type --\n";
+    private static final String HEADER_DB_CONN_TYPE = "-- Select Database Connection Type --" + getEolChar();
     private static final String HEADER_NEW_DB_INFO = "-- Information for new database --";
     private static final String HEADER_EXISTING_DB_INFO = "-- Information for existing database --";
 
-    private static final String PROMPT_MAKE_NEW_DB = "1) Create a new SSG database\n";
-    private static final String PROMPT_USE_EXISTING_DB = "2) Connect to an existing SSG database\n";
+    private static final String PROMPT_MAKE_NEW_DB = "1) Create a new SSG database" + getEolChar();
+    private static final String PROMPT_USE_EXISTING_DB = "2) Connect to an existing SSG database" + getEolChar();
     private static final String PROMPT_DB_PASSWORD = "SSG Database user password: ";
     private static final String PROMPT_DB_USERNAME = "SSG Database username: ";
     private static final String PROMPT_DB_NAME = "Name of the SSG database: ";
@@ -42,13 +42,13 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
     private DBActions dbActions;
     private boolean createNewDb;
 
-    public ConfigWizardConsoleDatabaseStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
-        super(parentWiz, osFunctions);
+    public ConfigWizardConsoleDatabaseStep(ConfigurationWizard parentWiz) {
+        super(parentWiz);
         init();
     }
 
-    void doUserInterview(boolean validated) throws WizardNavigationException {
-        printText(STEP_INFO + "\n");
+    public void doUserInterview(boolean validated) throws WizardNavigationException {
+        printText(STEP_INFO + getEolChar());
 
         try {
             doDbConnectionTypePrompts(true);
@@ -87,7 +87,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(DBActions.MYSQL_CLASS_NOT_FOUND_MSG);
         }
-        configBean = new SsgDatabaseConfigBean(osFunctions);
+        configBean = new SsgDatabaseConfigBean();
         databaseBean = (SsgDatabaseConfigBean)configBean;
         configCommand = new SsgDatabaseConfigCommand(configBean);
     }
@@ -123,8 +123,6 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         String defaultDbName = null;
         String defaultDbUsername = null;
         String defaultDbPassword = null;
-//        String defaultRootUsername = null;
-//        String defaultRootPasswd = null;
 
         String existingDBUrl = (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_URL);
 
@@ -141,14 +139,10 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         defaultDbUsername = selectDefault(databaseBean.getDbUsername(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_USERNAME));
         defaultDbPassword = selectDefault(databaseBean.getDbPassword(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD));
 
-//        defaultRootUsername = selectDefault(databaseBean.getPrivUsername(), "root");
-//        defaultRootPasswd = selectDefault(databaseBean.getPrivPassword(), "");
 
-        if (createNewDb) printText(HEADER_NEW_DB_INFO + "\n");
-//            doGetRootUsernamePrompt(defaultRootUsername);
-//            doGetRootPasswordPrompt(defaultRootPasswd);
+        if (createNewDb) printText(HEADER_NEW_DB_INFO + getEolChar());
 
-        else printText(HEADER_EXISTING_DB_INFO + "\n");
+        else printText(HEADER_EXISTING_DB_INFO + getEolChar());
 
         doDbHostnamePrompt(defaultHostname);
         doDBNamePrompt(defaultDbName);
@@ -216,7 +210,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         createNewDb = input != null && input.trim().equals("1");
     }
 
-    boolean validateStep() {
+    public boolean validateStep() {
         boolean invalidFields =
                 StringUtils.isEmpty(databaseBean.getDbHostname()) ||
                 StringUtils.isEmpty(databaseBean.getDbName()) ||

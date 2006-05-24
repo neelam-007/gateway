@@ -3,6 +3,7 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.OSSpecificFunctions;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,23 +21,21 @@ public class WindowsServiceBean extends BaseConfigurationBean {
     private static final String DONT_DO_SERVICE_INFO = "Will not configure the SSG to start as a service";
 
 
-    public WindowsServiceBean(OSSpecificFunctions osFunctions) {
-        super(NAME, DESCRIPTION, osFunctions);
+    public WindowsServiceBean() {
+        super(NAME, DESCRIPTION);
     }
 
-    void reset() {
+    public void reset() {
 
     }
 
-    public String[] explain() {
-        ArrayList explanations = new ArrayList();
+    protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
         if (isDoService()) {
            explanations.add(insertTab + DO_SERVICE_INFO);
         } else {
            explanations.add(insertTab + DONT_DO_SERVICE_INFO);
         }
-        return (String[]) explanations.toArray(new String[explanations.size()]);
     }
 
     public boolean isDoService() {

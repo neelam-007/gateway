@@ -44,8 +44,8 @@ public class ConfigWizardResultsPanel extends ConfigWizardStepPanel {
     private StringBuffer stepsBuffer;
     private String eol;
 
-    public ConfigWizardResultsPanel(WizardStepPanel next, OSSpecificFunctions functions) {
-        super(next, functions);
+    public ConfigWizardResultsPanel(WizardStepPanel next) {
+        super(next);
         init();
     }
 

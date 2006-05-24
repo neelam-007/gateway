@@ -1,6 +1,7 @@
 package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.beans.ConfigurationBean;
 
 import java.io.*;
@@ -22,24 +23,17 @@ import java.util.zip.ZipOutputStream;
 public abstract class BaseConfigurationCommand implements ConfigurationCommand {
     private static final Logger logger = Logger.getLogger(BaseConfigurationCommand.class.getName());
 
-    OSSpecificFunctions osFunctions;
-    ConfigurationBean configBean;
+    protected OSSpecificFunctions osFunctions;
+    protected ConfigurationBean configBean;
     DateFormat formatter;
 
     private Date currentTime;
 
-    protected BaseConfigurationCommand(ConfigurationBean bean, OSSpecificFunctions osFunctions) {
+    protected BaseConfigurationCommand(ConfigurationBean bean) {
         this.configBean = bean;
-        this.osFunctions = osFunctions;
+        osFunctions = OSDetector.getOSSpecificFunctions();
         formatter = new SimpleDateFormat("E_MMM_d_yyyy_HH_mm");
 
-    }
-
-    public String[] getActionSummary() {
-        if (configBean == null) {
-            return null;
-        }
-        return configBean.getAffectedObjects();
     }
 
     protected void backupFiles(File[] files, String backupName) throws IOException {
@@ -87,4 +81,10 @@ public abstract class BaseConfigurationCommand implements ConfigurationCommand {
             }
         }
     }
+
+    public String[] getActions() {
+        if (configBean != null) return configBean.explain();
+        return null;
+    }
+
 }

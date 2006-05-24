@@ -27,9 +27,6 @@ public class DBActions {
     public static final int DB_CREATEFILE_MISSING = 3;
     public static final int DB_INCORRECT_VERSION = 4;
 
-    private static final String ERROR_CODE_AUTH_FAILURE = "28000";
-    private static final String ERROR_CODE_UNKNOWNDB = "42000";
-
     public static final int DB_AUTHORIZATION_FAILURE = 28000;
     public static final int DB_UNKNOWNDB_FAILURE = 42000;
 
@@ -37,6 +34,16 @@ public class DBActions {
     public static final int DB_CHECK_INTERNAL_ERROR = -2;
     public static final int DB_UNKNOWNHOST_FAILURE = -3;
     public static final int DB_CANNOT_UPGRADE = -4;
+
+    public static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
+    public static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
+    public static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
+    public static final String CONNECTION_UNSUCCESSFUL_MSG = "Connection to the database was unsuccessful - see warning/errors for details";
+    public static final Object USERNAME_KEY = "Username";
+    public static final Object PASSWORD_KEY = "Password";
+
+    private static final String ERROR_CODE_AUTH_FAILURE = "28000";
+    private static final String ERROR_CODE_UNKNOWNDB = "42000";
 
     private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
     private static final String ADMIN_DB_NAME = "mysql";
@@ -48,15 +55,8 @@ public class DBActions {
 
     private static final String GENERIC_DBCONNECT_ERROR_MSG = "There was an error while attempting to connect to the database. Please try again";
 
-    public static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
-    public static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
-    public static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
-    public static final String CONNECTION_UNSUCCESSFUL_MSG = "Connection to the database was unsuccessful - see warning/errors for details";
-    public static final Object USERNAME_KEY = "Username";
-    public static final Object PASSWORD_KEY = "Password";
-
-
     private CheckSSGDatabase ssgDbChecker;
+    private OSSpecificFunctions osFunctions;
 
     private DbVersionChecker[] dbCheckers = new DbVersionChecker[] {
         new DbVersion36Checker(),
@@ -274,7 +274,7 @@ public class DBActions {
     }
 
     public DBActionsResult upgradeDbSchema(String hostname, String username, String password, String databaseName, String oldVersion,
-                                           String newVersion, OSSpecificFunctions osFunctions) throws IOException {
+                                           String newVersion) throws IOException {
         DBActionsResult result = new DBActionsResult();
         File f = new File(osFunctions.getPathToDBCreateFile());
         File parentDir = f.getParentFile();
@@ -356,7 +356,7 @@ public class DBActions {
     private void init() throws ClassNotFoundException {
         Class.forName(JDBC_DRIVER_NAME);
         ssgDbChecker = new CheckSSGDatabase();
-
+        osFunctions = OSDetector.getOSSpecificFunctions();
         //always sort the dbCheckers in reverse in case someone has added one out of sequence so things still work properly
         Arrays.sort(dbCheckers, Collections.reverseOrder());
     }
@@ -561,7 +561,6 @@ public class DBActions {
         String errorMsg;
         boolean isOk = false;
 
-        OSSpecificFunctions osFunctions = OSDetector.getOSSpecificActions();
         String dbCreateScriptFile = osFunctions.getPathToDBCreateFile();
         boolean isWindows = osFunctions.isWindows();
 
@@ -728,7 +727,7 @@ public class DBActions {
         boolean isOk = false;
 
         logger.info("Attempting to upgrade the existing database \"" + dbName+ "\"");
-        DBActions.DBActionsResult upgradeResult = upgradeDbSchema(hostname, privUsername, privPassword, dbName, dbVersion, currentVersion, OSDetector.getOSSpecificActions());
+        DBActions.DBActionsResult upgradeResult = upgradeDbSchema(hostname, privUsername, privPassword, dbName, dbVersion, currentVersion);
         String msg;
         switch (upgradeResult.getStatus()) {
             case DBActions.DB_SUCCESS:

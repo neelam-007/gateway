@@ -1,10 +1,13 @@
 package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,53 +23,38 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
 
     protected String elementName;
     protected String elementDescription;
-    OSSpecificFunctions osFunctions;
+    protected OSSpecificFunctions osFunctions;
 
     protected String insertTab = "\t";
+    protected List<String> explanations;
 
 
-    public BaseConfigurationBean(String name, String description, OSSpecificFunctions osFunctions) {
+    public BaseConfigurationBean(String name, String description) {
         affectedObjects = new HashMap();
         elementName = name;
         elementDescription = description;
-        this.osFunctions = osFunctions;
+        osFunctions = OSDetector.getOSSpecificFunctions();
+        explanations = new ArrayList<String>();
     }
 
-    abstract void reset();
-    
-    public boolean apply() {
-        return (backup() && doApply());
-    }
+    public abstract void reset();
 
     public String getElementKey() {
         return ELEMENT_KEY;
-    }
-
-    private boolean doApply() {
-        System.out.println("Applying settings");
-        return true;
-    }
-
-    private boolean backup() {
-        System.out.println("Backup up files");
-        return true;
     }
 
     public String getName() {
         return elementName;
     }
 
-    public String[] getAffectedObjects() {
-        return explain();
-    }
-
     public String getDescription() {
         return elementDescription;
     }
 
-    public OSSpecificFunctions getOSFunctions() {
-        return osFunctions;
+    public String[] explain() {
+        populateExplanations();
+        return explanations.toArray(new String[explanations.size()]);
     }
 
-    public abstract String[] explain();
+    protected abstract void populateExplanations();
 }

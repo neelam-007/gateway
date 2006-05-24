@@ -43,8 +43,8 @@ public class AppServerConfigCommand extends BaseConfigurationCommand {
 
     private static final String VALVE_NODE_NAME = "Valve";
 
-    public AppServerConfigCommand(OSSpecificFunctions osFunctions) {
-        super(null, osFunctions);
+    public AppServerConfigCommand() {
+        super(null);
     }
 
     public boolean execute() {

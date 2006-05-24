@@ -6,6 +6,7 @@ import com.l7tech.server.config.commands.ClusteringConfigCommand;
 
 import java.util.ArrayList;
 import java.util.TreeMap;
+import java.util.Map;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -40,16 +41,16 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     public static final int CLUSTER_NEW = 1;
     public static final int CLUSTER_JOIN = 2;
 
-    public static TreeMap clusterTypes;
+    public static Map<String, Integer> clusterTypes;
     static {
-        clusterTypes = new TreeMap();
+        clusterTypes = new TreeMap<String, Integer>();
         clusterTypes.put("I don't want to set up a cluster (or this SSG already belongs to one", new Integer(CLUSTER_NONE));
         clusterTypes.put("I want to create a new cluster", new Integer(CLUSTER_NEW));
         clusterTypes.put("I would like this SSG to join an existing cluster", new Integer(CLUSTER_JOIN));
     }
 
-    public ClusteringConfigBean(OSSpecificFunctions osFunctions) {
-        super(NAME, DESCRIPTION, osFunctions);
+    public ClusteringConfigBean() {
+        super(NAME, DESCRIPTION);
         ELEMENT_KEY = this.getClass().getName();
         init();
     }
@@ -66,9 +67,7 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
         setNewHostName(false);
     }
 
-    public String[] explain() {
-        ArrayList explanations = new ArrayList();
-
+    protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
 
         if (clusterType == CLUSTER_NONE )  {
@@ -76,9 +75,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
         } else {
             explanations.add(insertTab + CLUSTER_HOSTFILE_UPDATE_INFO + getClusterHostname());
         }
-
-
-        return (String[]) explanations.toArray(new String[explanations.size()]);
     }
 
     public void reset() {
@@ -89,10 +85,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
         cloneHostname = "";
         cloneUsername = "";
         clonePassword = new char[0];
-    }
-
-    public boolean apply() {
-        return false;
     }
 
     public void setClusterHostname(String hostName) {
@@ -117,14 +109,6 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
 
     public void setLocalHostName(String localHostName) {
         this.localHostName = localHostName;
-    }
-
-    public void putAffectedObject(String key, Object affectedObject) {
-        affectedObjects.put(key, affectedObject);
-    }
-
-    public void removeAffectedObject(String key) {
-        affectedObjects.remove(key);
     }
 
     public void setDoClusterType(int clusterType) {

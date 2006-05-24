@@ -41,8 +41,8 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
 
     private String keyStoreType;
 
-    public KeystoreConfigBean(OSSpecificFunctions osFunctions) {
-        super(NAME, DESCRIPTION, osFunctions);
+    public KeystoreConfigBean() {
+        super(NAME, DESCRIPTION);
         init();
     }
 
@@ -50,12 +50,10 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         ELEMENT_KEY = this.getClass().getName();
     }
 
-    void reset() {
-
+    public void reset() {
     }
 
-    public String[] explain() {
-        ArrayList explanations = new ArrayList();
+    protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
         if (isDoKeystoreConfig()) {
             explanations.add(insertTab + "Create " + getKeyStoreType());
@@ -71,7 +69,6 @@ public class KeystoreConfigBean extends BaseConfigurationBean {
         else {
             explanations.add(insertTab + SKIPPING_KEYSTORE_CONFIG_INFO);
         }
-        return (String[]) explanations.toArray(new String[explanations.size()]);
     }
 
     public char[] getKsPassword() {

@@ -3,6 +3,7 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.OSSpecificFunctions;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -28,8 +29,8 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     public final static String PROP_DB_PASSWORD = "hibernate.connection.password" ;
     public final static Pattern dbUrlPattern = Pattern.compile("^.*//(.*)/(.*)\\?.*$");
 
-    public SsgDatabaseConfigBean(OSSpecificFunctions osFunctions) {
-        super(NAME, DESCRIPTION, osFunctions);
+    public SsgDatabaseConfigBean() {
+        super(NAME, DESCRIPTION);
         ELEMENT_KEY = this.getClass().getName();
         init();
     }
@@ -37,17 +38,14 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
     private void init() {
     }
 
-    void reset() {
-    }
+    public void reset() {}
 
-    public String[] explain() {
-        ArrayList explanations = new ArrayList();
+    protected void populateExplanations() {
         explanations.add(getName() + " - " + getDescription());
         explanations.add(insertTab + "Setup connection to a database:");
         explanations.add(insertTab + "    HOSTNAME = " + getDbHostname());
         explanations.add(insertTab + "    USERNAME = " + getDbUsername());
         explanations.add(insertTab + "    DATABASE = " + getDbName());
-        return (String[]) explanations.toArray(new String[explanations.size()]);
     }
 
     public void setPrivUserName(String username) {

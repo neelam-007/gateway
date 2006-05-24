@@ -10,15 +10,14 @@ import com.l7tech.server.config.OSSpecificFunctions;
  * To change this template use File | Settings | File Templates.
  */
 public class LoggingConfigBean extends BaseConfigurationBean {
-    public LoggingConfigBean(String name, String description, OSSpecificFunctions osFunctions) {
-        super(name, description, osFunctions);
+    public LoggingConfigBean(String name, String description) {
+        super(name, description);
     }
 
-    void reset() {
+    public void reset() {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public String[] explain() {
-        return new String[0];  //To change body of implemented methods use File | Settings | File Templates.
+    protected void populateExplanations() {
     }
 }

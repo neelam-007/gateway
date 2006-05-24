@@ -20,7 +20,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -60,7 +59,7 @@ public class ConfigurationWizard extends Wizard {
     private int clusteringType;
     private String keystoreType;
     private static String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
-    private Set additionalCommands;
+    private Set<ConfigurationCommand> additionalCommands;
 
     /**
      * Creates new wizard
@@ -83,7 +82,7 @@ public class ConfigurationWizard extends Wizard {
         setTitle("SSG Configuration Wizard for " + osFunctions.getOSName());
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
-        wizardInput = new HashSet();
+        wizardInput = new HashSet<ConfigurationCommand>();
 
         setupAdditionalCommands();
 
@@ -111,13 +110,13 @@ public class ConfigurationWizard extends Wizard {
     }
 
     private void setupAdditionalCommands() {
-        additionalCommands = new HashSet();
+        additionalCommands = new HashSet<ConfigurationCommand>();
         //make sure that the server.xml gets appropriately upgraded to include the new ConnectionId Management stuff
-        additionalCommands.add(new AppServerConfigCommand(osFunctions));
+        additionalCommands.add(new AppServerConfigCommand());
 
         //we need to add these to make sure that non clustering/db/etc. specific actions occur
-        additionalCommands.add(new LoggingConfigCommand(null, osFunctions));
-        additionalCommands.add(new RmiConfigCommand(null, osFunctions));
+        additionalCommands.add(new LoggingConfigCommand(null));
+        additionalCommands.add(new RmiConfigCommand(null));
     }
 
     /**
@@ -131,7 +130,7 @@ public class ConfigurationWizard extends Wizard {
      */
     public void applyConfiguration() {
         log.info("Applying the configuration changes");
-        HashSet commands = (HashSet) wizardInput;
+        Set<ConfigurationCommand>commands = (HashSet<ConfigurationCommand>) wizardInput;
 
         commands.addAll(additionalCommands);
 
@@ -150,7 +149,7 @@ public class ConfigurationWizard extends Wizard {
 
     public void storeCommand(ConfigurationCommand configCommand) {
         if (configCommand != null) {
-            Set commands = (Set) wizardInput;
+            Set<ConfigurationCommand> commands = (Set<ConfigurationCommand>) wizardInput;
             if (commands.contains(configCommand)) {
                 commands.remove(configCommand);
             }
@@ -163,14 +162,14 @@ public class ConfigurationWizard extends Wizard {
      * @return the first panel in the list, linked to the next ... and so on
      */
     private static ConfigWizardStepPanel getStartPanel() {
-        ConfigWizardResultsPanel lastPanel = new ConfigWizardResultsPanel(null, osFunctions);
-        ConfigWizardSummaryPanel summaryPanel = new ConfigWizardSummaryPanel(lastPanel, osFunctions);
-        ConfigWizardKeystorePanel keystorePanel = new ConfigWizardKeystorePanel(summaryPanel, osFunctions);
-        ConfigWizardNewDBPanel configWizardDatabasePanelPanel = new ConfigWizardNewDBPanel(keystorePanel, osFunctions);
-        ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel, osFunctions);
+        ConfigWizardResultsPanel lastPanel = new ConfigWizardResultsPanel(null);
+        ConfigWizardSummaryPanel summaryPanel = new ConfigWizardSummaryPanel(lastPanel);
+        ConfigWizardKeystorePanel keystorePanel = new ConfigWizardKeystorePanel(summaryPanel);
+        ConfigWizardNewDBPanel configWizardDatabasePanelPanel = new ConfigWizardNewDBPanel(keystorePanel);
+        ConfigWizardClusteringPanel clusteringPanel = new ConfigWizardClusteringPanel(configWizardDatabasePanelPanel);
 
         ConfigWizardStepPanel startPanel;
-        startPanel = new ConfigWizardStartPanel(clusteringPanel,osFunctions);
+        startPanel = new ConfigWizardStartPanel(clusteringPanel);
 
         return startPanel;
     }
@@ -259,7 +258,7 @@ public class ConfigurationWizard extends Wizard {
         ImageIcon imageIcon = new ImageIcon(icon);
         mainFrame.setIconImage(imageIcon.getImage());
         try {
-            osFunctions = OSDetector.getOSSpecificActions();
+            osFunctions = OSDetector.getOSSpecificFunctions();
             ConfigurationWizard wizard = ConfigurationWizard.getInstance(mainFrame);
             wizard.setSize(780, 560);
             Utilities.centerOnScreen(wizard);

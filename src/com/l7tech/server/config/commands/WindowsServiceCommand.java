@@ -12,7 +12,7 @@ import com.l7tech.server.config.beans.WindowsServiceBean;
  */
 public class WindowsServiceCommand extends BaseConfigurationCommand {
     public WindowsServiceCommand(ConfigurationBean bean) {
-        super(bean, bean.getOSFunctions());
+        super(bean);
     }
 
     public boolean execute() {

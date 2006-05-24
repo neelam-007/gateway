@@ -23,8 +23,8 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
     private static final String LOG_PATTERN_PROPERTY = "java.util.logging.FileHandler.pattern";
     private static final String PROPERTY_COMMENT = "this file was updated by the SSG configuration utility";
 
-    public LoggingConfigCommand(ConfigurationBean bean, OSSpecificFunctions osFunctions) {
-        super(bean, osFunctions);
+    public LoggingConfigCommand(ConfigurationBean bean) {
+        super(bean);
     }
 
     public boolean execute() {

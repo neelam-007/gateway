@@ -20,25 +20,26 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private static final Logger logger = Logger.getLogger(ConfigWizardConsoleClusteringStep.class.getName());
 
     ClusteringConfigBean clusterBean;
+    private static final String TITLE = "SSG Clustering Setup";
 
-    public ConfigWizardConsoleClusteringStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
-        super(parentWiz, osFunctions);
+    public ConfigWizardConsoleClusteringStep(ConfigurationWizard parentWiz) {
+        super(parentWiz);
         init();
     }
 
     private void init() {
-        configBean = new ClusteringConfigBean(osFunctions);
+        configBean = new ClusteringConfigBean();
         clusterBean = (ClusteringConfigBean) configBean;
         configCommand = new ClusteringConfigCommand(configBean);
         showNavigation = false;
     }
 
-    void doUserInterview(boolean validated) throws WizardNavigationException {
+    public void doUserInterview(boolean validated) throws WizardNavigationException {
 
         String defaultClusterHostname = getDefaultHostName();
 
         if (!validated) {
-            printText("*** There were errors in your input, please try again. ***\n");
+            printText("*** There were errors in your input, please try again. ***" + getEolChar());
         }
 
         try {
@@ -61,9 +62,11 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
 
     private void doHostnamePrompt(String defaultClusterHostname) throws IOException, WizardNavigationException {
         //get cluster host name
+        printText(new String[]{});
+
         String input = getData(new String[] {
-            "-- Specify Hostname -- \n",
-            "The hostname will be used to identify the SSG and generate its certificates\n",
+            "-- Specify Hostname -- " + getEolChar(),
+            "The hostname will be used to identify the SSG and generate its certificates" + getEolChar(),
             "What hostname would you like to use? [" + defaultClusterHostname + "] : ",
         }, defaultClusterHostname);
 
@@ -75,7 +78,7 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     private void doClusterTypePrompt(boolean invalidInput) throws IOException, WizardNavigationException {
 
         if (invalidInput) {
-            printText("Please select one of the options shown\n");
+            printText("Please select one of the options shown" + getEolChar());
         }
 
         //get clustering type preference
@@ -83,21 +86,21 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
         Map.Entry[] clusterPromptMapper = new Map.Entry[entries.size()];
 
         Iterator iter = entries.iterator();
-        ArrayList clusterTypePrompts = new ArrayList();
+        List<String> clusterTypePrompts = new ArrayList<String>();
 
-        clusterTypePrompts.add("-- Creating or joining a cluster --\n");
+        clusterTypePrompts.add("-- Creating or joining a cluster --" + getEolChar());
         int i = 0;
         while (iter.hasNext() && i < clusterPromptMapper.length) {
             Map.Entry entry = (Map.Entry) iter.next();
             clusterPromptMapper[i] = entry;
-            clusterTypePrompts.add(new String(i+1 + ") " + (String) entry.getKey() + "\n"));
+            clusterTypePrompts.add(new String(i+1 + ") " + (String) entry.getKey() + getEolChar()));
             i++;
         }
         clusterTypePrompts.add("Please make a selection: [1]");
 
 
         String input = getData(
-                (String[])clusterTypePrompts.toArray(new String[clusterTypePrompts.size()]),
+                clusterTypePrompts.toArray(new String[clusterTypePrompts.size()]),
                 "1");
         int clusterType = ClusteringConfigBean.CLUSTER_NONE;
         try {
@@ -115,10 +118,10 @@ public class ConfigWizardConsoleClusteringStep extends BaseConsoleStep{
     }
 
     public String getTitle() {
-        return "SSG Clustering Setup";
+        return TITLE;
     }
 
-    protected boolean validateStep() {
+    public boolean validateStep() {
         boolean validatedHostname = false;
         String clusterHostName = clusterBean.getClusterHostname();
         if (StringUtils.isNotEmpty(clusterHostName)) {

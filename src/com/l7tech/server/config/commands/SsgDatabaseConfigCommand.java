@@ -45,7 +45,7 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
     private Pattern urlPattern = Pattern.compile("(^.*//).*(/).*(\\?.*$)");
 
     public SsgDatabaseConfigCommand(ConfigurationBean bean) {
-        super(bean, bean.getOSFunctions());
+        super(bean);
         init();
     }
 

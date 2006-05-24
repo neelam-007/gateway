@@ -19,7 +19,7 @@ public class OSDetector {
 
     private static OSSpecificFunctions osf_;
 
-    public static OSSpecificFunctions getOSSpecificActions() throws UnsupportedOsException {
+    public static OSSpecificFunctions getOSSpecificFunctions() throws UnsupportedOsException {
         if (osf_ == null) {
             OSName = System.getProperty("os.name");
             if (isWindows()) {

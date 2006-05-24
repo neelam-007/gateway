@@ -14,9 +14,6 @@ import java.util.Map;
 public interface ConfigurationBean {
     public String getName();
     public String getDescription();
-    public String[] getAffectedObjects();
-    public OSSpecificFunctions getOSFunctions();
+    public String[] explain();
     public String getElementKey();
-    
-    public boolean apply();
 }

@@ -179,7 +179,7 @@ public abstract class OSSpecificFunctions {
         System.setProperty("SSG_ROOT", "/tmp/testing");
         OSSpecificFunctions functions = null;
         try {
-            functions = OSDetector.getOSSpecificActions();
+            functions = OSDetector.getOSSpecificFunctions();
         } catch (UnsupportedOsException e) {
             System.out.println(e.getMessage());
         }

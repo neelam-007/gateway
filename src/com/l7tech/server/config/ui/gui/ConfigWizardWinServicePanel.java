@@ -22,14 +22,14 @@ public class ConfigWizardWinServicePanel extends ConfigWizardStepPanel {
     private JRadioButton yesService;
     private JRadioButton noService;
 
-    public ConfigWizardWinServicePanel(WizardStepPanel next, OSSpecificFunctions functions) {
-        super(next, functions);
+    public ConfigWizardWinServicePanel(WizardStepPanel next) {
+        super(next);
         init();
     }
 
     private void init() {
         setShowDescriptionPanel(false);
-        configBean = new WindowsServiceBean(osFunctions);
+        configBean = new WindowsServiceBean();
         configCommand = new WindowsServiceCommand(configBean);
 
         stepLabel = "Configure the SSG as a service";

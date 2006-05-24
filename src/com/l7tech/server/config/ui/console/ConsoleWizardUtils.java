@@ -15,26 +15,30 @@ import org.apache.commons.lang.StringUtils;
  * Time: 3:29:19 PM
  */
 public class ConsoleWizardUtils {
-    private static final String PREV_COMMAND = "<";
-    public static final String GENERAL_NAV_HEADER = "At any time press \"" + PREV_COMMAND + "\" to go to the previous step";
+    public static String PREV_COMMAND = "<";
+    public static String QUIT_COMMAND = "quit";
+    public static final String GENERAL_HEADER = "At any time type \"" + QUIT_COMMAND + "\" to quit";
+    public static final String NAV_HEADER = "Press \"" + PREV_COMMAND + "\" to go to the previous step";
 
-    static ConsoleWizardUtils instance_ = null;
+    private static ConsoleWizardUtils instance_ = null;
+    public static final String EOL_CHAR = System.getProperty("line.separator");
 
-    public ConsoleWizardUtils(InputStream in, PrintWriter out) {
-        reader = new BufferedReader(new InputStreamReader(in));
-        this.out = out;
-    }
-
-    public static ConsoleWizardUtils getInstance(InputStream in, PrintWriter out) {
+    public static ConsoleWizardUtils getInstance(InputStream in, PrintStream out) {
         if (instance_ == null) {
             instance_ = new ConsoleWizardUtils(in, out);
         }
         return instance_;
     }
 
+    //private constructor - only allow singleton creation via getInstance()
+    private ConsoleWizardUtils(InputStream in, PrintStream out) {
+        reader = new BufferedReader(new InputStreamReader(in));
+        this.out = out;
+    }
+
     public String getData(String[] promptLines, String defaultValue, boolean isNavAware) throws IOException, WizardNavigationException {
-        doPromptLines(promptLines);
-        String input = reader.readLine();
+        printText(promptLines);
+        String input = readLine();
         handleInput(input, isNavAware);
 
         if (defaultValue != null) {
@@ -43,6 +47,14 @@ public class ConsoleWizardUtils {
             }
         }
         return input;
+    }
+
+    public String readLine() throws IOException {
+        return reader.readLine();
+    }
+
+    private String getValidatedData(String prompt, WizardInputValidator validator) {
+        return null;
     }
 
     /**
@@ -73,41 +85,6 @@ public class ConsoleWizardUtils {
         return inputs;
     }
 
-    private Map internalGetInputs(String[] prompts, String[] defaultValues) throws IOException, WizardNavigationException {
-        boolean isNoDefaults = false;
-        if (prompts == null) {
-            throw new IllegalArgumentException("Prompts cannot be null");
-        }
-
-        if (defaultValues == null || defaultValues.length != prompts.length) {
-            isNoDefaults = true;
-        }
-
-        Map gotData = new HashMap();
-
-        for (int i = 0; i < prompts.length; i++) {
-            String prompt = prompts[i];
-            if (isNoDefaults) {
-                gotData.put(prompt, getData(new String[]{prompt}, null, false));
-            } else {
-                String defaultValue = defaultValues[i];
-                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, false));
-            }
-        }
-
-        return gotData;
-    }
-
-    public void handleInput(String input, boolean canNavigate) throws WizardNavigationException {
-        if (input != null) {
-            if (canNavigate) {
-                if (PREV_COMMAND.equalsIgnoreCase(input)) {
-                    throw new WizardNavigationException(WizardNavigationException.NAVIGATE_PREV);
-                }
-            }
-        };
-    }
-
     public void printText(String[] textToPrint) {
         if (textToPrint != null) {
             for (int i = 0; i < textToPrint.length; i++) {
@@ -127,16 +104,50 @@ public class ConsoleWizardUtils {
         }
     }
 
-    private void doPromptLines(String[] promptLines) {
-        if (promptLines != null) {
-            for (int i = 0; i < promptLines.length; i++) {
-                String promptLine = promptLines[i];
-                out.print(promptLine);
+    public void handleInput(String input, boolean canNavigate) throws WizardNavigationException {
+        if (input != null) {
+            if (QUIT_COMMAND.equalsIgnoreCase(input)) {
+                out.print("Wizard cancelled at users request. Changes will not be applied. \n" +
+                        "Exiting\n");
+                out.flush();
+                System.exit(1);
             }
-            out.flush();
+            else {
+                if (canNavigate) {
+                    if (PREV_COMMAND.equalsIgnoreCase(input)) {
+                        throw new WizardNavigationException(WizardNavigationException.NAVIGATE_PREV);
+                    }
+                }
+            }
+        };
+    }
+
+    private Map internalGetInputs(String[] prompts, String[] defaultValues) throws IOException, WizardNavigationException {
+        boolean isNoDefaults = false;
+        if (prompts == null) {
+            throw new IllegalArgumentException("Prompts cannot be null");
         }
+
+        if (defaultValues == null || defaultValues.length != prompts.length) {
+            isNoDefaults = true;
+        }
+
+        Map<String, String> gotData = new HashMap<String, String>();
+
+        for (int i = 0; i < prompts.length; i++) {
+            String prompt = prompts[i];
+            if (isNoDefaults) {
+                gotData.put(prompt, getData(new String[]{prompt}, null, false));
+            } else {
+                String defaultValue = defaultValues[i];
+                gotData.put(prompt, getData(new String[]{prompt}, defaultValue, false));
+            }
+        }
+
+        return gotData;
     }
 
     private final BufferedReader reader;
-    private final PrintWriter out;
+    private final PrintStream out;
+
 }

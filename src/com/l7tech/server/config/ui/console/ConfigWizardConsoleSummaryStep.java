@@ -13,16 +13,23 @@ import java.util.Iterator;
  * Time: 10:00:47 AM
  */
 public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
-    public ConfigWizardConsoleSummaryStep(ConfigurationWizard parentWiz, OSSpecificFunctions osFunctions) {
-        super(parentWiz, osFunctions);
+    private String title = "SSG Configuration Summary";
+
+    public ConfigWizardConsoleSummaryStep(ConfigurationWizard parentWiz) {
+        super(parentWiz);
     }
 
-    void doUserInterview(boolean validated) throws WizardNavigationException {
+    public ConfigWizardConsoleSummaryStep(ConfigurationWizard parentWiz, String title) {
+        super(parentWiz);
+        this.title = title;
+    }
+
+    public void doUserInterview(boolean validated) throws WizardNavigationException {
 
         try {
             printText("The following configuration changes will be made:\n");
 
-            List commandSummary = getParentWizard().getCommandDescription();
+            List commandSummary = getParentWizard().getCommandDescriptions();
             for (Iterator iterator = commandSummary.iterator(); iterator.hasNext();) {
                 String[] s = (String[]) iterator.next();
                 for (int i = 0; i < s.length; i++) {
@@ -36,21 +43,21 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
                     "\n",
                     "Press <Enter> to continue\n"
             });
-            handleInput(reader.readLine());
+            handleInput(readLine());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public String getTitle() {
-        return "SSG Configuration Summary";
+        return title;
     }
 
     public boolean shouldApplyConfiguration() {
         return true;
     }
 
-    boolean validateStep() {
+    public boolean validateStep() {
         return true;
     }
 }
