@@ -96,7 +96,6 @@
              <idref bean="identityAdmin"/>
              <idref bean="jmsAdmin"/>
              <idref bean="clusterStatusAdmin"/>
-             <idref bean="tokenService"/>
          </list>
      </property>
  </bean>
