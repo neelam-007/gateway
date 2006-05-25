@@ -64,8 +64,8 @@ public class TokenServiceServlet extends HttpServlet {
             throw new ServletException("Configuration error; could not get application context");
         }
         try {
-            tokenService = (TokenService)applicationContext.getBean("tokenService", TokenService.class);
-            auditContext = (AuditContext)applicationContext.getBean("auditContext", AuditContext.class);
+            tokenService = (TokenService)applicationContext.getBean("tokenService");
+            auditContext = (AuditContext)applicationContext.getBean("auditContext");
             soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
         }
         catch(BeansException be) {
@@ -186,7 +186,7 @@ public class TokenServiceServlet extends HttpServlet {
         }
     }
 
-    private final TokenServiceImpl.CredentialsAuthenticator authenticator() {
+    private TokenServiceImpl.CredentialsAuthenticator authenticator() {
         return new TokenServiceImpl.CredentialsAuthenticator() {
             public User authenticate(LoginCredentials creds) {
                 IdentityProviderConfigManager idpcm =
@@ -212,8 +212,7 @@ public class TokenServiceServlet extends HttpServlet {
                                 }
                             }
                         } catch (AuthenticationException e) {
-                            logger.log(Level.INFO, "exception trying to authenticate credentials against " +
-                                                   provider.getConfig().getName(), e);
+                            logger.log(Level.INFO, "AuthenticationException trying to authenticate credentials " + e.getMessage());
                         }
                     }
                 } catch (FindException e) {
@@ -222,6 +221,8 @@ public class TokenServiceServlet extends HttpServlet {
                 }
                 if (authenticatedUser == null) {
                     logger.fine("Credentials did not authenticate against any provider.");
+                } else {
+                    logger.finer("authenticated: " + authenticatedUser);
                 }
                 return authenticatedUser;
             }
