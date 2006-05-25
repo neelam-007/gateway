@@ -113,7 +113,8 @@ public class UddiAgentFactory {
             if (file.exists()) {
                 propStream = new FileInputStream(file);
                 props.load(propStream);
-                logger.info("Loaded UDDI Registry properties from " + uddiConfigFileName);
+                if (logger.isLoggable(Level.FINE))
+                    logger.fine("Loaded UDDI Registry properties from '" + uddiConfigFileName + "'.");
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Couldn't load file '" + uddiConfigFileName + "'.", ioe);
@@ -142,6 +143,7 @@ public class UddiAgentFactory {
             while (strtok.hasMoreTokens()) {
                 props.setProperty(UddiAgent.PROP_INQUIRY_URLS + "." + index,
                         strtok.nextToken());
+                index++;
             }
         }
 
