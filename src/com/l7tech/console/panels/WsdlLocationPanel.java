@@ -177,6 +177,7 @@ public class WsdlLocationPanel extends JPanel {
         wsdlUrlTextField.getDocument().addDocumentListener(createWsdlUrlDocumentListener());
 
         // buttons
+        if (!SearchWsdlDialog.uddiEnabled()) wsdlUrlBrowseButton.setVisible(false);
         wsdlUrlBrowseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 selectUddi();

@@ -15,8 +15,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.systinet.RegistryPublicationManager;
-import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.service.uddi.UddiAgentV3;
+import com.l7tech.server.service.uddi.UddiAgentFactory;
+import com.l7tech.server.service.uddi.UddiAgent;
+import com.l7tech.server.service.uddi.UddiAgentException;
 import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -26,14 +27,9 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.*;
 import java.rmi.RemoteException;
@@ -53,33 +49,39 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
+public class ServiceAdminImpl implements ServiceAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
-    private final String UDDI_CONFIG_FILENAME = "uddi.properties";
-    private static final String UDDI_PROP_MAX_ROWS = "uddi.result.max_rows";
-    private static final String UDDI_PROP_BATCH_SIZE = "uddi.result.batch_size";
 
-    private ApplicationContext applicationContext;
-    private ServiceManager serviceManager;
-    private SampleMessageManager sampleMessageManager;
-    private PolicyValidator policyValidator;
-    private Properties uddiProps = null;
-    private ServerConfig serverConfig;
     private SSLContext sslContext;
-    private RegistryPublicationManager registryPublicationManager;
 
     private final AccessManager accessManager;
     private final LicenseManager licenseManager;
+    private final RegistryPublicationManager registryPublicationManager;
+    private final UddiAgentFactory uddiAgentFactory;
+    private final ServiceManager serviceManager;
+    private final PolicyValidator policyValidator;
+    private final SampleMessageManager sampleMessageManager;
+    private final CounterIDManager counterIDManager;
+    private final SslClientTrustManager trustManager;
 
-    public ServiceAdminImpl(AccessManager accessManager, LicenseManager licenseManager) {
+    public ServiceAdminImpl(AccessManager accessManager,
+                            LicenseManager licenseManager,
+                            RegistryPublicationManager registryPublicationManager,
+                            UddiAgentFactory uddiAgentFactory,
+                            ServiceManager serviceManager,
+                            PolicyValidator policyValidator,
+                            SampleMessageManager sampleMessageManager,
+                            CounterIDManager counterIDManager,
+                            SslClientTrustManager trustManager) {
         this.accessManager = accessManager;
         this.licenseManager = licenseManager;
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        if(this.applicationContext != null) throw new IllegalStateException("applicationContext is already initialized.");
-        this.applicationContext = applicationContext;
-        registryPublicationManager = (RegistryPublicationManager)applicationContext.getBean("registryPublicationManager");
+        this.registryPublicationManager = registryPublicationManager;
+        this.uddiAgentFactory = uddiAgentFactory;
+        this.serviceManager = serviceManager;
+        this.policyValidator = policyValidator;
+        this.sampleMessageManager = sampleMessageManager;
+        this.counterIDManager = counterIDManager;
+        this.trustManager = trustManager;
     }
 
     private void checkLicense() throws RemoteException {
@@ -236,22 +238,6 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
         }
     }
 
-    public void setServiceManager(ServiceManager serviceManager) {
-        this.serviceManager = serviceManager;
-    }
-
-    public void setPolicyValidator(PolicyValidator policyValidator) {
-        this.policyValidator = policyValidator;
-    }
-
-    public void setServerConfig(ServerConfig serverConfig) {
-        this.serverConfig = serverConfig;
-    }
-
-    public void setSampleMessageManager(SampleMessageManager sampleMessageManager) {
-        this.sampleMessageManager = sampleMessageManager;
-    }
-
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -274,10 +260,11 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
     }
 
     public String[] findUDDIRegistryURLs() throws RemoteException, FindException {
+        Properties uddiProps;
         try {
-            uddiProps = readUDDIConfig();
-        } catch (IOException ioe) {
-            throw new FindException(ioe.getMessage());
+            uddiProps = uddiAgentFactory.getUddiProperties();
+        } catch (UddiAgentException uae) {
+            throw new FindException(uae.getMessage());
         }
 
         // get all UDDI Registry URLs
@@ -285,8 +272,7 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
         String url;
         Vector urlList = new Vector();
         do {
-
-            url = uddiProps.getProperty(UddiAgentV3.INQUIRY_URL_PROP_NAME + "." + uddiNumber++);
+            url = uddiProps.getProperty(UddiAgent.PROP_INQUIRY_URLS + "." + uddiNumber++);
             if(url != null) {
                 urlList.add(url);
             }
@@ -299,10 +285,7 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
                 String s = (String) urlList.elementAt(i);
                 urls[i] = s;
             }
-        } else {
-            throw new FindException("No UDDI Registry location (URL) is specified in the uddi.properties configuration file.\n" +
-                    "Please ensure at least one UDDI Registry URL is specified in the configuration file");
-        }
+        } 
         return urls;
     }
 
@@ -318,32 +301,17 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
      */
     public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException {
         checkLicense();
-
-        // note: we only support V3 agent
         try {
-            uddiProps = readUDDIConfig();
-        } catch (IOException ioe) {
-            logger.severe("IOException caught. Could not load UDDI Registry properties");
-            throw new FindException("Could not load UDDI Registry properties");
+            UddiAgent uddiAgent = uddiAgentFactory.getUddiAgent();
+            return uddiAgent.getWsdlByServiceName(uddiURL, namePattern, caseSensitive);
         }
-
-        int maxRows = getInt(uddiProps.get(UDDI_PROP_MAX_ROWS));
-        int batchSize = getInt(uddiProps.get(UDDI_PROP_BATCH_SIZE));
-        if (batchSize == 0) batchSize = 100;
-        if (batchSize < 50) batchSize = 50;
-        if (maxRows < batchSize) maxRows = batchSize;
-        uddiProps.put(UDDI_PROP_MAX_ROWS, Integer.toString(maxRows));
-        uddiProps.put(UDDI_PROP_BATCH_SIZE, Integer.toString(batchSize));
-        logger.finer("Using UDDI batchSize=" + batchSize + ", maxRows=" + maxRows);
-
-        UddiAgentV3 uddiAgent = new UddiAgentV3(uddiURL, uddiProps);
-
-        return uddiAgent.getWsdlByServiceName(namePattern, caseSensitive);
+        catch(UddiAgentException uae) {
+            throw new FindException("Error searching UDDI registry '"+uae.getMessage()+"'.");
+        }
     }
 
     public String[] listExistingCounterNames() throws RemoteException, FindException {
         // get all the names for the counters
-        CounterIDManager counterIDManager = (CounterIDManager)applicationContext.getBean("counterIDManager");
         return counterIDManager.getDistinctCounterNames();
     }
 
@@ -394,39 +362,6 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
         return 0;
     }
 
-    private Properties readUDDIConfig() throws IOException {
-        String ssgConfigPath = serverConfig.getProperty("ssg.conf");
-        String uddiConfigFileName = ssgConfigPath + "/" + UDDI_CONFIG_FILENAME;
-        Properties props = new Properties();
-
-        FileInputStream propStream = null;
-        try {
-            propStream = null;
-
-            File file = new File(uddiConfigFileName);
-            if (file.exists()) {
-                propStream = new FileInputStream(file);
-                props.load(propStream);
-                logger.info("Loading UDDI Registry properties from " + uddiConfigFileName);
-                return props;
-            } else {
-                logger.severe(uddiConfigFileName + " not found");
-                throw new FileNotFoundException("Couldn't load " + uddiConfigFileName + ", File not found!");
-            }
-
-        } catch (IOException ioe) {
-            logger.severe("Couldn't load " + uddiConfigFileName);
-            throw new IOException("Couldn't load " + uddiConfigFileName);
-        } finally {
-            if (propStream != null) {
-                try {
-                    propStream.close();
-                } catch (IOException e) {
-                    logger.warning("io exception");
-                }
-            }
-        }
-    }
 
     /**
      * Parse the String service ID to long (database format). Throws runtime exc
@@ -459,7 +394,6 @@ public class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware {
         if (sslContext == null) {
             try {
                 sslContext = SSLContext.getInstance("SSL");
-                final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
                 sslContext.init(null, new TrustManager[]{trustManager}, null);
             } catch (NoSuchAlgorithmException e) {
                 logger.log(Level.SEVERE, "Unable to get sslcontext", e);

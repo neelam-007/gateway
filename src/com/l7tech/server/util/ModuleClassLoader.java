@@ -52,11 +52,12 @@ public class ModuleClassLoader extends ClassLoader {
      *
      * @param parent          The parent classloader for all module ClassLoaders
      * @param id              The identifier for this module loader
+     * @param resource        Only load modules which contain this resource (may be null)
      * @param moduleDirectory The readable directory with modules to load
      * @param workDirectory   The working directory for expanded modules
      */
-    public ModuleClassLoader(ClassLoader parent, String id, File moduleDirectory, File workDirectory) {
-        this(parent, id, moduleDirectory, workDirectory, null);
+    public ModuleClassLoader(ClassLoader parent, String id, String resource, File moduleDirectory, File workDirectory) {
+        this(parent, id, resource, moduleDirectory, workDirectory, null);
     }
 
     /**
@@ -67,11 +68,12 @@ public class ModuleClassLoader extends ClassLoader {
      *
      * @param parent          The parent classloader for all module ClassLoaders
      * @param id              The identifier for this module loader
+     * @param resource        Only load modules which contain this resource (may be null)
      * @param moduleDirectory The readable directory with modules to load
      * @param workDirectory   The working directory for expanded modules
      * @param finalLoader     This loader will be treated as the "final" module in the chain (may be null)
      */
-    public ModuleClassLoader(ClassLoader parent, String id, File moduleDirectory, File workDirectory, ClassLoader finalLoader) {
+    public ModuleClassLoader(ClassLoader parent, String id, String resource, File moduleDirectory, File workDirectory, ClassLoader finalLoader) {
         super(parent);
 
         if (moduleDirectory == null) throw new IllegalArgumentException("moduleDirectory must not be null");
@@ -79,7 +81,7 @@ public class ModuleClassLoader extends ClassLoader {
 
         cleanExisting(workDirectory, id);
 
-        delegateLoaders = buildModuleLoaders(parent, finalLoader, moduleDirectory, workDirectory, id);
+        delegateLoaders = buildModuleLoaders(parent, finalLoader, moduleDirectory, workDirectory, id, resource);
     }
 
     //- PROTECTED
@@ -203,14 +205,15 @@ public class ModuleClassLoader extends ClassLoader {
                                                  ClassLoader finalLoader,
                                                  File moduleDirectory,
                                                  File workDirectory,
-                                                 String id) {
+                                                 String id,
+                                                 String resource) {
         List<ClassLoader> loaders = new ArrayList<ClassLoader>();
         File[] possibleModules = moduleDirectory.listFiles();
 
         if (possibleModules != null) {
             for (File module : possibleModules) {
                 if (module.getName().endsWith(JAR_EXTENSION)) {
-                    ClassLoader mloader = buildModuleLoader(module, parent, workDirectory, id);
+                    ClassLoader mloader = buildModuleLoader(module, parent, workDirectory, id, resource);
                     if (mloader != null)
                         loaders.add(mloader);
                 }
@@ -226,61 +229,85 @@ public class ModuleClassLoader extends ClassLoader {
     /**
      *
      */
-    private ClassLoader buildModuleLoader(File moduleJar, ClassLoader parent, File workDirectory, String id) {
+    private ClassLoader buildModuleLoader(File moduleJar, ClassLoader parent, File workDirectory, String id, String resource) {
         ClassLoader loader = null;
 
         File moduleLibDirectory = new File(workDirectory, EXPANDED_MODULE_DIR_PREFIX + id + "-" + moduleJar.getName());
         moduleLibDirectory.deleteOnExit();
         boolean error = false;
+        boolean resourceFound = resource==null;
 
         List<File> moduleJarFiles = new ArrayList<File>();
         moduleJarFiles.add(moduleJar);
 
+        String resourceNS = resource;
+        String resourceS = resource;
+        if (resource != null) {
+            if (resource.startsWith("/")) {
+                resourceNS = resource.substring(1);
+            }
+            else {
+                resourceS = "/" + resource;
+            }
+        }
+
         JarFile jarFile = null;
         try {
             jarFile = new JarFile(moduleJar);
-            for(JarEntry entry : Collections.list(jarFile.entries())) {
-                if (!entry.isDirectory() &&
-                    entry.getName().startsWith(LIB_PREFIX) &&
-                    (entry.getName().endsWith(JAR_EXTENSION) || entry.getName().endsWith(ZIP_EXTENSION))) {
-                    if (!moduleLibDirectory.exists()) {
-                        if(!moduleLibDirectory.mkdirs()) {
-                            error = true;
-                            logger.warning("Could not create module temp directory '"+moduleLibDirectory.getAbsolutePath()+"'.");
-                            break;
-                        }
-                    }
-
-                    File moduleLib = new File(moduleLibDirectory, entry.getName().substring(LIB_PREFIX.length()));
-                    if (!moduleLib.getParentFile().equals(moduleLibDirectory)) {
-                        logger.info("Skipping lib in subdirectory '"+entry.getName()+"'.");
-                        continue;
-                    }
-
-                    moduleLib.deleteOnExit();
-                    moduleJarFiles.add(moduleLib);
-
-                    InputStream entryIn = null;
-                    OutputStream entryOut = null;
-                    try {
-                        entryIn = jarFile.getInputStream(entry);
-                        entryOut = new BufferedOutputStream(new FileOutputStream(moduleLib));
-                        HexUtils.copyStream(entryIn, entryOut);
-                        entryOut.flush();
-                    }
-                    catch(IOException ioe) {
-                        error = true;
-                        logger.log(Level.WARNING, "Could not expand module lib '"+entry.getName()+
-                                "' to temp directory '"+moduleLibDirectory.getAbsolutePath()+"'.", ioe);
+            if (!resourceFound) {
+                // check if we should use this module
+                for(JarEntry entry : Collections.list(jarFile.entries())) {
+                    if (entry.getName().startsWith(resourceNS) ||
+                        entry.getName().startsWith(resourceS)) {
+                        resourceFound = true;
                         break;
-                    }
-                    finally {
-                        ResourceUtils.closeQuietly(entryIn);
-                        ResourceUtils.closeQuietly(entryOut);
                     }
                 }
             }
 
+            if (resourceFound) {
+                for(JarEntry entry : Collections.list(jarFile.entries())) {
+                    if (!entry.isDirectory() &&
+                        entry.getName().startsWith(LIB_PREFIX) &&
+                        (entry.getName().endsWith(JAR_EXTENSION) || entry.getName().endsWith(ZIP_EXTENSION))) {
+                        if (!moduleLibDirectory.exists()) {
+                            if(!moduleLibDirectory.mkdirs()) {
+                                error = true;
+                                logger.warning("Could not create module temp directory '"+moduleLibDirectory.getAbsolutePath()+"'.");
+                                break;
+                            }
+                        }
+
+                        File moduleLib = new File(moduleLibDirectory, entry.getName().substring(LIB_PREFIX.length()));
+                        if (!moduleLib.getParentFile().equals(moduleLibDirectory)) {
+                            logger.info("Skipping lib in subdirectory '"+entry.getName()+"'.");
+                            continue;
+                        }
+
+                        moduleLib.deleteOnExit();
+                        moduleJarFiles.add(moduleLib);
+
+                        InputStream entryIn = null;
+                        OutputStream entryOut = null;
+                        try {
+                            entryIn = jarFile.getInputStream(entry);
+                            entryOut = new BufferedOutputStream(new FileOutputStream(moduleLib));
+                            HexUtils.copyStream(entryIn, entryOut);
+                            entryOut.flush();
+                        }
+                        catch(IOException ioe) {
+                            error = true;
+                            logger.log(Level.WARNING, "Could not expand module lib '"+entry.getName()+
+                                    "' to temp directory '"+moduleLibDirectory.getAbsolutePath()+"'.", ioe);
+                            break;
+                        }
+                        finally {
+                            ResourceUtils.closeQuietly(entryIn);
+                            ResourceUtils.closeQuietly(entryOut);
+                        }
+                    }
+                }
+            }
         }
         catch (IOException ioe) {
             logger.log(Level.WARNING, "Could not load module jar '"+moduleJar.getAbsolutePath()+"'.", ioe);
@@ -290,7 +317,7 @@ public class ModuleClassLoader extends ClassLoader {
                 logger.log(Level.FINE, "Error closing JarFile '"+moduleJar.getAbsolutePath()+"'.", ioe); };
         }
 
-        return error ? null : createLoader(parent, moduleJarFiles);
+        return error || !resourceFound ? null : createLoader(parent, moduleJarFiles);
     }
 
     /**

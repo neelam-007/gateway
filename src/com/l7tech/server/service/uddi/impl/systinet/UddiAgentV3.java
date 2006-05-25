@@ -1,47 +1,147 @@
-package com.l7tech.server.service.uddi;
+package com.l7tech.server.service.uddi.impl.systinet;
 
-import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.objectmodel.FindException;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Map;
+import java.util.logging.Logger;
+import javax.xml.soap.SOAPException;
+
 import org.systinet.uddi.InvalidParameterException;
 import org.systinet.uddi.client.UDDIException;
 import org.systinet.uddi.client.base.StringArrayList;
 import org.systinet.uddi.client.v3.UDDIInquiryStub;
 import org.systinet.uddi.client.v3.UDDI_Inquiry_PortType;
-import org.systinet.uddi.client.v3.struct.*;
+import org.systinet.uddi.client.v3.struct.BindingDetail;
+import org.systinet.uddi.client.v3.struct.BindingTemplate;
+import org.systinet.uddi.client.v3.struct.BindingTemplateArrayList;
+import org.systinet.uddi.client.v3.struct.Find_binding;
+import org.systinet.uddi.client.v3.struct.Find_service;
+import org.systinet.uddi.client.v3.struct.Get_tModelDetail;
+import org.systinet.uddi.client.v3.struct.ListDescription;
+import org.systinet.uddi.client.v3.struct.Name;
+import org.systinet.uddi.client.v3.struct.NameArrayList;
+import org.systinet.uddi.client.v3.struct.OverviewDoc;
+import org.systinet.uddi.client.v3.struct.OverviewDocArrayList;
+import org.systinet.uddi.client.v3.struct.ServiceInfo;
+import org.systinet.uddi.client.v3.struct.ServiceInfoArrayList;
+import org.systinet.uddi.client.v3.struct.ServiceList;
+import org.systinet.uddi.client.v3.struct.TModel;
+import org.systinet.uddi.client.v3.struct.TModelArrayList;
+import org.systinet.uddi.client.v3.struct.TModelDetail;
+import org.systinet.uddi.client.v3.struct.TModelInstanceInfo;
+import org.systinet.uddi.client.v3.struct.TModelInstanceInfoArrayList;
 
-import javax.xml.soap.SOAPException;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.logging.Logger;
+import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.server.service.uddi.UddiAgent;
+import com.l7tech.server.service.uddi.UddiAgentException;
 
 /**
+ * UDDI agent implementation that uses Systinet v3 client.
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
- * <p> @author fpang </p>
+ *
+ * @author fpang
  */
-public class UddiAgentV3 {
+public class UddiAgentV3 implements UddiAgent {
 
-    public static final String INQUIRY_URL_PROP_NAME = "uddi.url.inquiry";
-    private static final String RESULT_ROWS_MAX = "uddi.result.max_rows";
-    private static final String RESULT_BATCH_SIZE = "uddi.result.batch_size";
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private String inquiryURL;
     private int resultRowsMax;
     private int resultBatchSize;
 
     /**
      * Constructor
+     */
+    public UddiAgentV3() {
+        resultRowsMax = -1;
+        resultBatchSize = -1;
+    }
+
+    /**
+     *
      * @param props The properties of the UDDI Agent.
      */
-    public UddiAgentV3(String uddiURL, Properties props) {
-   //     inquiryURL = props.getProperty(INQUIRY_URL_PROP_NAME);
-   //     if (inquiryURL == null) throw new FindException("UDDI inquiry URL is not specified.\n Please ensure the property INQUIRY_URL_PROP_NAME is specified in the uddi.properties.");
-        inquiryURL = uddiURL;
-        String rowsMax = props.getProperty(RESULT_ROWS_MAX, "100");     // default 100 rows max
+    public void init(Properties props) {
+        if (resultRowsMax != -1) throw new IllegalStateException("already initialized");
+
+        String rowsMax = props.getProperty(PROP_RESULT_ROWS_MAX, "100");     // default 100 rows max
         resultRowsMax = Integer.parseInt(rowsMax);
-        String batchSize = props.getProperty(RESULT_BATCH_SIZE, "100");
+        String batchSize = props.getProperty(PROP_RESULT_BATCH_SIZE, "100");
         resultBatchSize = Integer.parseInt(batchSize);
+    }
+
+    /**
+     * Get the WSDL info given the service name pattern.
+     *
+     * @param namePattern   the exact name or part of the name
+     * @param caseSensitive  true if case sensitive, false otherwise.
+     * @return WsdlInfo[] an array of WSDL info.
+     * @throws FindException   if there was a problem accessing the requested information.
+     */
+    public WsdlInfo[] getWsdlByServiceName(String inquiryUrl, String namePattern, boolean caseSensitive) throws UddiAgentException {
+        checkInit();
+        // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
+
+        int listHead = 1;
+
+        int actualCount = 0;
+        HashMap wsdlUrls = new HashMap();
+        boolean maxedOutSearch = false;
+
+        do {
+            Map wsdlUrlsChunk;
+
+            ServiceList services = retrieveServiceByName(inquiryUrl, namePattern, caseSensitive, listHead);
+
+            ListDescription listDescription = services.getListDescription();
+
+            if (listDescription != null) {
+                actualCount = listDescription.getActualCount();
+                listHead = listDescription.getListHead() + listDescription.getIncludeCount();
+
+                wsdlUrlsChunk = retrieveWsdlUrl(inquiryUrl, services);
+                int chunkSize = wsdlUrlsChunk.size();
+                if (wsdlUrls.size() + chunkSize <= resultRowsMax) {
+                    wsdlUrls.putAll(wsdlUrlsChunk);
+                } else {
+                    Iterator it = wsdlUrlsChunk.keySet().iterator();
+                    for ( int wc = 0; wc < wsdlUrlsChunk.size() && wsdlUrls.size() < resultRowsMax && it.hasNext(); wc++) {
+                        String key = (String) it.next();
+                        Object value = wsdlUrlsChunk.get(key);
+                        wsdlUrls.put(key, value);
+                    }
+                    maxedOutSearch = true;
+                    break;
+                }
+            } else {
+                break;
+            }
+
+        } while (actualCount >= listHead);
+
+        WsdlInfo[] siList = new WsdlInfo[wsdlUrls.size() + (maxedOutSearch ? 1 : 0)];
+        Iterator itr = wsdlUrls.entrySet().iterator();
+
+        int i = 0;
+        while (itr.hasNext()) {
+            Map.Entry entry = (Map.Entry) itr.next();
+            siList[i++] = new WsdlInfo((String) entry.getKey(), (String) entry.getValue());
+        }
+
+        if (maxedOutSearch)
+            siList[i] = WsdlInfo.MAXED_OUT_SEARCH_RESULT;
+
+        return siList;
+    }
+
+    /**
+     * Check if initialized.
+     *
+     * @throws UddiAgentException if not initialized.
+     */
+    private void checkInit() throws UddiAgentException  {
+        if (resultRowsMax == -1) throw new UddiAgentException("Not initialized.");
     }
 
     /**
@@ -52,8 +152,8 @@ public class UddiAgentV3 {
      * @throws SOAPException SOAP related problems.
      * @throws UDDIException If the UDDI call fails.
      */
-    private TModelDetail getTModels(Get_tModelDetail get) throws UDDIException, SOAPException {
-        UDDI_Inquiry_PortType inquiry = getInquiryStub();
+    private TModelDetail getTModels(Get_tModelDetail get, String inquiryURL) throws UDDIException, SOAPException {
+        UDDI_Inquiry_PortType inquiry = getInquiryStub(inquiryURL);
         TModelDetail tModelDetail = inquiry.get_tModelDetail(get);
         return tModelDetail;
     }
@@ -67,26 +167,26 @@ public class UddiAgentV3 {
      * @return ServiceList the list of services.
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    private ServiceList retrieveServiceByName(String serviceName, boolean caseSensitive, int listHead) throws FindException {
+    private ServiceList retrieveServiceByName(String inquiryURL, String serviceName, boolean caseSensitive, int listHead) throws UddiAgentException {
 
         Find_service find_service = createFindServiceByName(serviceName, caseSensitive, listHead);
         ServiceList services = null;
         try {
-            services = findService(find_service);
+            services = findService(find_service, inquiryURL);
         } catch (UDDIException e) {
             logger.warning("Exception caught: " + e.getMessage());
-            throw new FindException(e.getMessage());
+            throw new UddiAgentException(e.getMessage());
         } catch (SOAPException e) {
             logger.warning("Exception caught: " + e.getMessage());
-            throw new FindException(e.getMessage());
+            throw new UddiAgentException(e.getMessage());
         } catch (UndeclaredThrowableException e) {
             String possibleCauses = "\nPossible causes: the UDDI Registry is not running properly, or \n the host/port settings in uddi.properties file is not correct.";
             if(e.getCause() != null) {
                 logger.warning(e.getCause().getMessage() + ", " + possibleCauses);
-                throw new FindException(e.getCause().getMessage() + possibleCauses);
+                throw new UddiAgentException(e.getCause().getMessage() + possibleCauses);
             } else {
                 logger.warning(e.getMessage() + ", " + possibleCauses);
-                throw new FindException(e.getMessage() + possibleCauses);
+                throw new UddiAgentException(e.getMessage() + possibleCauses);
             }
         }
         return services;
@@ -101,8 +201,8 @@ public class UddiAgentV3 {
      * @throws org.systinet.uddi.client.v3.UDDIException
      *                                      If the UDDI call fails.
      */
-    private ServiceList findService(Find_service find_service) throws UDDIException, SOAPException {
-        UDDI_Inquiry_PortType inquiry = getInquiryStub();
+    private ServiceList findService(Find_service find_service, String inquiryURL) throws UDDIException, SOAPException {
+        UDDI_Inquiry_PortType inquiry = getInquiryStub(inquiryURL);
         ServiceList serviceList = inquiry.find_service(find_service);
         return serviceList;
     }
@@ -115,8 +215,8 @@ public class UddiAgentV3 {
      * @throws SOAPException SOAP related problems.
      * @throws UDDIException If the UDDI call fails.
      */
-    private BindingDetail findBinding(Find_binding find_binding) throws UDDIException, SOAPException {
-        UDDI_Inquiry_PortType inquiry = getInquiryStub();
+    private BindingDetail findBinding(Find_binding find_binding, String inquiryURL) throws UDDIException, SOAPException {
+        UDDI_Inquiry_PortType inquiry = getInquiryStub(inquiryURL);
         BindingDetail bindingDetail = inquiry.find_binding(find_binding);
         return bindingDetail;
     }
@@ -127,7 +227,7 @@ public class UddiAgentV3 {
      * @return Inquiry API stub
      * @throws SOAPException If SOAP call fails.
      */
-    private UDDI_Inquiry_PortType getInquiryStub() throws SOAPException {
+    private UDDI_Inquiry_PortType getInquiryStub(String inquiryURL) throws SOAPException {
         UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(inquiryURL);
         return inquiry;
     }
@@ -140,7 +240,7 @@ public class UddiAgentV3 {
      * @return Object, which represents find_service UDDI call.
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    private Find_service createFindServiceByName(String serviceName, boolean caseSensitive, int listHead) throws FindException {
+    private Find_service createFindServiceByName(String serviceName, boolean caseSensitive, int listHead) throws UddiAgentException {
         Find_service find_service = new Find_service();
         try {
             NameArrayList businessKey = new NameArrayList(new Name(serviceName));
@@ -155,7 +255,7 @@ public class UddiAgentV3 {
 
         } catch (InvalidParameterException e) {
             logger.warning("Exception caught: " + e.getMessage());
-            throw new FindException(e.getMessage());
+            throw new UddiAgentException(e.getMessage());
         }
         find_service.setMaxRows(new Integer(resultBatchSize));
         find_service.setListHead(new Integer(listHead));
@@ -183,7 +283,7 @@ public class UddiAgentV3 {
      * @return  HashMap contains list of the serivceName/serviceURL retrieved.
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    private HashMap retrieveWsdlUrl(ServiceList services) throws FindException {
+    private HashMap retrieveWsdlUrl(String inquiryURL, ServiceList services) throws UddiAgentException {
         HashMap wsdlList = new HashMap();
 
         ServiceInfoArrayList serviceInfoList = services.getServiceInfoArrayList();
@@ -195,16 +295,16 @@ public class UddiAgentV3 {
             BindingDetail bindingDetail = null;
             try {
                 Find_binding find_binding = createFindBindingByServiceKey(si.getServiceKey());
-                bindingDetail = findBinding(find_binding);
+                bindingDetail = findBinding(find_binding, inquiryURL);
             }catch (UDDIException e) {
                 logger.warning("Exception caught: " + e.getMessage());
-                throw new FindException(e.getMessage());
+                throw new UddiAgentException(e.getMessage());
             } catch (SOAPException e) {
                 logger.warning("Exception caught: " + e.getMessage());
-                throw new FindException(e.getMessage());
+                throw new UddiAgentException(e.getMessage());
             } catch (InvalidParameterException e) {
                 logger.warning("Exception caught: " + e.getMessage());
-                throw new FindException(e.getMessage());
+                throw new UddiAgentException(e.getMessage());
             }
             BindingTemplateArrayList btal = bindingDetail.getBindingTemplateArrayList();
 
@@ -224,16 +324,16 @@ public class UddiAgentV3 {
 
                     try {
                         Get_tModelDetail get_tModelDetail = createGetTModelDetail(tModelKey);
-                        tModelDetail = getTModels(get_tModelDetail);
+                        tModelDetail = getTModels(get_tModelDetail, inquiryURL);
                     } catch (UDDIException e) {
                         logger.warning("Exception caught: " + e.getMessage());
-                        throw new FindException(e.getMessage());
+                        throw new UddiAgentException(e.getMessage());
                     } catch (SOAPException e) {
                         logger.warning("Exception caught: " + e.getMessage());
-                        throw new FindException(e.getMessage());
+                        throw new UddiAgentException(e.getMessage());
                     } catch (InvalidParameterException e) {
                         logger.warning("Exception caught: " + e.getMessage());
-                        throw new FindException(e.getMessage());
+                        throw new UddiAgentException(e.getMessage());
                     }
                     //                   printTModelDetail(tModelDetail);
                     TModelArrayList tmal = tModelDetail.getTModelArrayList();
@@ -282,74 +382,9 @@ public class UddiAgentV3 {
      * @return Object, which represents Get_tModelDetail UDDI call.
      * @throws InvalidParameterException If the value is invalid.
      */
-    public static Get_tModelDetail createGetTModelDetail(String tModelKey) throws InvalidParameterException {
+    private static Get_tModelDetail createGetTModelDetail(String tModelKey) throws InvalidParameterException {
         Get_tModelDetail get = new Get_tModelDetail();
         get.setTModelKeyArrayList(new StringArrayList(tModelKey));
         return get;
     }
-
-    /**
-     * Get the WSDL info given the service name pattern.
-     *
-     * @param namePattern   the exact name or part of the name
-     * @param caseSensitive  true if case sensitive, false otherwise.
-     * @return WsdlInfo[] an array of WSDL info.
-     * @throws FindException   if there was a problem accessing the requested information.
-     */
-    public WsdlInfo[] getWsdlByServiceName(String namePattern, boolean caseSensitive) throws FindException {
-        // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
-
-        int listHead = 1;
-
-        int actualCount = 0;
-        HashMap wsdlUrls = new HashMap();
-        boolean maxedOutSearch = false;
-
-        do {
-            HashMap wsdlUrlsChunk;
-
-            ServiceList services = retrieveServiceByName(namePattern, caseSensitive, listHead);
-
-            ListDescription listDescription = services.getListDescription();
-
-            if (listDescription != null) {
-                actualCount = listDescription.getActualCount();
-                listHead = listDescription.getListHead() + listDescription.getIncludeCount();
-
-                wsdlUrlsChunk = retrieveWsdlUrl(services);
-                int chunkSize = wsdlUrlsChunk.size();
-                if (wsdlUrls.size() + chunkSize <= resultRowsMax) {
-                    wsdlUrls.putAll(wsdlUrlsChunk);
-                } else {
-                    Iterator it = wsdlUrlsChunk.keySet().iterator();
-                    for ( int wc = 0; wc < wsdlUrlsChunk.size() && wsdlUrls.size() < resultRowsMax && it.hasNext(); wc++) {
-                        String key = (String) it.next();
-                        Object value = wsdlUrlsChunk.get(key);
-                        wsdlUrls.put(key, value);
-                    }
-                    maxedOutSearch = true;
-                    break;
-                }
-            } else {
-                break;
-            }
-
-        } while (actualCount >= listHead);
-
-        WsdlInfo[] siList = new WsdlInfo[wsdlUrls.size() + (maxedOutSearch ? 1 : 0)];
-        Iterator itr = wsdlUrls.keySet().iterator();
-
-        int i = 0;
-        while (itr.hasNext()) {
-            Object key = (Object)itr.next();
-
-            siList[i++] = new WsdlInfo((String) key, (String) wsdlUrls.get(key));
-        }
-
-        if (maxedOutSearch)
-            siList[i] = WsdlInfo.MAXED_OUT_SEARCH_RESULT;
-
-        return siList;
-    }
-
 }

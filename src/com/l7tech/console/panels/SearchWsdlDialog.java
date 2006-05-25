@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Vector;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -45,23 +46,35 @@ public class SearchWsdlDialog extends JDialog {
     private JCheckBox caseSensitiveCheckBox;
     private JLabel retrievedRows;
     private JComboBox uddiURLcomboBox;
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private static final Logger logger = Logger.getLogger(SearchWsdlDialog.class.getName());
 
     public SearchWsdlDialog(JDialog parent) throws RemoteException, FindException {
         super(parent, resources.getString("window.title"), true);
         initialize();
-        pack();
-        Utilities.centerOnScreen(this);
     }
 
     public SearchWsdlDialog(JFrame parent) throws RemoteException, FindException {
         super(parent, resources.getString("window.title"), true);
         initialize();
-        pack();
-        Utilities.centerOnScreen(this);
+    }
+
+    public static boolean uddiEnabled() {
+        boolean enabled = false;
+
+        try {
+            ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
+            enabled = serviceAdmin.findUDDIRegistryURLs().length > 0;
+        }
+        catch(Exception e) {
+            logger.log(Level.WARNING, "Could not check if UDDI is enabled. '"+e.getMessage()+"'.");
+        }
+
+        return enabled;
     }
 
     private void initialize() throws RemoteException, FindException {
+        setAlwaysOnTop(true);
+
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -128,10 +141,9 @@ public class SearchWsdlDialog extends JDialog {
                 ((WsdlTableSorter) wsdlTable.getModel()).clearData();
                 retrievedRows.setText("Result: 0");
 
-                Dialog rootDialog = (Dialog) SwingUtilities.getWindowAncestor(SearchWsdlDialog.this);
-                final CancelableOperationDialog dlg = new CancelableOperationDialog(rootDialog,
-                                                                                "Searching WSDL",
-                                                                                "Please wait, Searching WSDL...");
+                final CancelableOperationDialog dlg =
+                        new CancelableOperationDialog(SearchWsdlDialog.this, "Searching WSDL", "Please wait, Searching WSDL...");
+
                 SwingWorker worker = new SwingWorker() {
 
                     public Object construct() {
@@ -194,6 +206,9 @@ public class SearchWsdlDialog extends JDialog {
 
             };
         });
+
+        pack();
+        Utilities.centerOnScreen(this);
     }
 
     /**

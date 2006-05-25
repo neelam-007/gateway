@@ -358,18 +358,27 @@
         <constructor-arg>
             <ref bean="licenseManager"/>
         </constructor-arg>
-        <property name="serviceManager">
+        <constructor-arg>
+            <ref bean="registryPublicationManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="uddiAgentFactory"/>
+        </constructor-arg>
+        <constructor-arg>
             <ref bean="serviceManager"/>
-        </property>
-        <property name="policyValidator">
+        </constructor-arg>
+        <constructor-arg>
             <ref bean="policyValidator"/>
-        </property>
-        <property name="serverConfig">
-            <ref bean="serverConfig"/>
-        </property>
-        <property name="sampleMessageManager">
+        </constructor-arg>
+        <constructor-arg>
             <ref bean="sampleMessageManager"/>
-        </property>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="counterIDManager"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="httpRoutingAssertionTrustManager"/>
+        </constructor-arg>
     </bean>
 
     <bean id="schemaAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"

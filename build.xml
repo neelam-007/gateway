@@ -651,14 +651,21 @@
             </lib>
 
             <classes dir="${build.classes}">
+                <!-- Tool, Manager, Bridge, Config Wizard and Test classes -->
                 <exclude name="com/l7tech/internal/**/*"/>
                 <exclude name="com/l7tech/console/**/*"/>
                 <exclude name="com/l7tech/test/**/*"/>
                 <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
                 <exclude name="com/l7tech/proxy/gui/**"/>
                 <exclude name="com/l7tech/server/config/**"/>
+
+                <!-- Tomcat classes -->
                 <exclude name="com/l7tech/server/tomcat/**"/>
 
+                <!-- UDDI implementations (these should be packaged as modules) -->
+                <exclude name="com/l7tech/server/service/uddi/impl/**"/>
+
+                <!-- Classes that make up the Layer 7 API -->
                 <exclude name="com/l7tech/policy/assertion/Assertion.class"/>
                 <exclude name="com/l7tech/policy/assertion/PolicyAssertionException.class"/>
                 <exclude name="com/l7tech/policy/assertion/composite/**"/>
@@ -695,6 +702,17 @@
         <jar jarfile="${build.dir}/l7valve.jar">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/server/tomcat/*.class"/>
+            </fileset>
+        </jar>
+
+        <jar jarfile="${build.dir}/ssg-uddi-module-systinetv3.jar">
+            <zipfileset dir="${src.root}/lib/gateway/uddi/systinet" includes="*.jar" prefix="lib"/>
+            <zipfileset dir="${src.root}/lib" prefix="lib">
+                <include name="activation.jar"/>
+            </zipfileset>
+            <zipfileset dir="${src.root}/etc/services/uddi-systinet" prefix="META-INF/services"/>
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/server/service/uddi/impl/systinet/**"/>
             </fileset>
         </jar>
     </target>
@@ -1729,6 +1747,7 @@
         <property name="install.src.base" value="${build.dir}/install/ssg"/>
         <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
         <property name="install.src.lib" value="${install.src.base}/lib"/>
+        <property name="install.src.mods" value="${install.src.lib}/modules"/>
         <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
         <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
         <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
@@ -1767,6 +1786,7 @@
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
         <mkdir dir="${install.src.lib}"/>
+        <mkdir dir="${install.src.mods}"/>
         <mkdir dir="${install.src.dist}"/>
         <mkdir dir="${install.src.doc}"/>
         <mkdir dir="${install.src.etc}"/>
@@ -1811,6 +1831,9 @@
 
         <!-- Copy WAR file into position -->
         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
+
+        <!-- Copy modules -->
+        <copy file="${build.dir}/ssg-uddi-module-systinetv3.jar" todir="${install.src.mods}"/>
 
         <!-- Copy LDAP templates -->
         <copy todir="${install.src.ldap}">

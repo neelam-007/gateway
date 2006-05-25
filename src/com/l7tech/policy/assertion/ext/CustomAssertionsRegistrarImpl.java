@@ -161,6 +161,7 @@ public class CustomAssertionsRegistrarImpl
             caClassLoader = new ModuleClassLoader(
                 ModuleClassLoader.class.getClassLoader().getParent(),
                 "customassertion",
+                fileName,
                 new File(moduleDirectory),
                 new File(moduleWorkDirectory),
                 caClassLoader);

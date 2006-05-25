@@ -29,7 +29,15 @@ public class CancelableOperationDialog extends JDialog {
         doInit(message, null);
     }
 
+    public CancelableOperationDialog(Frame parent, String title, String message) {
+        super(parent, title, true);
+        doInit(message, null);
+    }
+
     private void doInit(String message, JProgressBar progressBar) {
+        setResizable(false);
+        setAlwaysOnTop(true);
+
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
         p.add(new JLabel(message),

@@ -690,4 +690,10 @@
         </constructor-arg>
     </bean>
 
+    <bean id="uddiAgentFactory" class="com.l7tech.server.service.uddi.UddiAgentFactory">
+        <property name="serverConfig">
+            <ref bean="serverConfig"/>
+        </property>
+    </bean>
+
 </beans>
