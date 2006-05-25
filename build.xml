@@ -968,6 +968,7 @@
                 <include name="com/l7tech/common/util/ResourceUtils.class"/>
                 <include name="com/l7tech/common/util/XmlUtil*.class"/>
                 <include name="com/l7tech/common/util/HexUtils*.class"/>
+                <include name="com/l7tech/common/util/EnumTranslator*.class"/>
                 <include name="com/l7tech/common/io/BufferPoolByteArrayOutputStream.class"/>
 
                 <include name="com/l7tech/common/util/CertUtils*.class"/>
