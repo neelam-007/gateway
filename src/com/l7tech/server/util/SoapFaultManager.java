@@ -61,11 +61,28 @@ public class SoapFaultManager implements ApplicationContextAware {
     private synchronized SoapFaultLevel constructFaultLevelFromServerConfig() {
         // parse default settings from system settings
         fromSettings = new SoapFaultLevel();
-        fromSettings.setLevel(Integer.parseInt(serverConfig.getProperty("defaultfaultlevel")));
-        fromSettings.setIncludePolicyDownloadURL(Boolean.parseBoolean(serverConfig.getProperty("defaultfaultpolicyurl")));
-        fromSettings.setFaultTemplate(serverConfig.getProperty("defaultfaulttemplate"));
+        String tmp = serverConfig.getProperty("defaultfaultlevel");
+        // default setting not available through config ?
+        if (tmp == null) {
+            logger.warning("Cannot retrieve defaultfaultlevel server properties falling back on hardcoded defaults");
+            populateUltimateDefaults(fromSettings);
+        } else {
+            try {
+                fromSettings.setLevel(Integer.parseInt(tmp));
+                fromSettings.setIncludePolicyDownloadURL(Boolean.parseBoolean(serverConfig.getProperty("defaultfaultpolicyurl")));
+                fromSettings.setFaultTemplate(serverConfig.getProperty("defaultfaulttemplate"));
+            } catch (NumberFormatException e) {
+                logger.log(Level.WARNING, "user setting " + tmp + " for defaultfaultlevel is invalid", e);
+                populateUltimateDefaults(fromSettings);
+            }
+        }
         lastParsedFromSettings = System.currentTimeMillis();
         return fromSettings;
+    }
+
+    private void populateUltimateDefaults(SoapFaultLevel input) {
+        input.setLevel(SoapFaultLevel.GENERIC_FAULT);
+        input.setIncludePolicyDownloadURL(true);
     }
 
     /**
@@ -76,7 +93,9 @@ public class SoapFaultManager implements ApplicationContextAware {
         String output = null;
         AssertionStatus globalstatus = pec.getPolicyResult();
         if (globalstatus == null) {
-            logger.severe("PolicyEnforcementContext.policyResult not set");
+            // if this happens, it means a bug needs fixing where a path fails to set a value on the policy result
+            logger.severe("PolicyEnforcementContext.policyResult not set. Fallback on SERVER_ERROR");
+            globalstatus = AssertionStatus.SERVER_ERROR;
         }
         switch (faultLevelInfo.getLevel()) {
             case SoapFaultLevel.DROP_CONNECTION:
@@ -125,7 +144,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             Element policyResultEl = (Element)res.item(0);
             policyResultEl.setAttribute("status", e.getMessage());
             // populate the faultactor value
-            String actor = null;
+            String actor;
             try {
                 actor = pec.getVariable("request.url").toString();
                 // todo, catch cases when this throws and just fix it
@@ -174,7 +193,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             policyResultEl.setAttribute("xmlns:l7p", WspConstants.L7_POLICY_NS);
 
             // populate the faultactor value
-            String actor = null;
+            String actor;
             try {
                 actor = pec.getVariable("request.url").toString();
                 // todo, catch cases when this throws and just fix it
