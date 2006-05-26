@@ -13,10 +13,10 @@ public class AssertionMessages extends Messages {
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Couldn't initialize SSL Context");
     public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Processing HTTP routing assertion");
-    public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.WARNING, true, false, "This option is not supported for non-soap messages. This message is supposed to be soap but does not appear to be.");
-    public static final M HTTPROUTE_NON_SOAP_WRONG_POLICY   = m(4003, Level.WARNING, "This option is not supported for non-soap messages. Something is wrong with this policy.");
+    public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.WARNING, true, false, "This option is not supported for non-SOAP messages. This message is supposed to be SOAP but does not appear to be.");
+    public static final M HTTPROUTE_NON_SOAP_WRONG_POLICY   = m(4003, Level.WARNING, "This option is not supported for non-SOAP messages. Something is wrong with this policy.");
     public static final M HTTPROUTE_PROMOTING_ACTOR         = m(4004, Level.FINE, "promoting actor {0}");
-    public static final M HTTPROUTE_NO_SECURITY_HEADER      = m(4005, Level.INFO, "Routing assertion asked for security header with actor {0} be promoted but there was no such security header present in the message.");
+    public static final M HTTPROUTE_NO_SECURITY_HEADER      = m(4005, Level.INFO, "Routing assertion requested that the security header with actor {0} be promoted, but no such security header was present in the message.");
     public static final M HTTPROUTE_ERROR_READING_RESPONSE  = m(4006, Level.WARNING, true, false, "Error reading response");
     public static final M HTTPROUTE_CANT_RESOLVE_IP         = m(4007, Level.WARNING, "Couldn't resolve client IP address");
     public static final M HTTPROUTE_TAI_NOT_AUTHENTICATED   = m(4008, Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
@@ -46,7 +46,7 @@ public class AssertionMessages extends Messages {
     public static final M HTTPROUTE_PASSTHROUGH_RESPONSE    = m(4032, Level.INFO, "Passthrough selected; adding challenge to SSG response");
     public static final M HTTPROUTE_PASSTHROUGH_RESPONSE_NC = m(4033, Level.FINE, "Passthrough selected but no challenge in routed response");
     public static final M HTTPROUTE_RESPONSE_NOCONTENTTYPE  = m(4034, Level.WARNING, "Downstream service returned status ({0}) but is missing a content type header.");
-    public static final M HTTPROUTE_RESPONSE_NOXML          = m(4035, Level.WARNING, "Downstream service returned status ({0}) with non-xml payload.");
+    public static final M HTTPROUTE_RESPONSE_NOXML          = m(4035, Level.WARNING, "Downstream service returned status ({0}) with non-XML payload.");
     public static final M HTTPROUTE_INVALIDCOOKIE           = m(4036, Level.INFO, "Ignoring invalid cookie header ''{0}''");
 
     // ServerCredentialSourceAssertion messages
@@ -70,14 +70,14 @@ public class AssertionMessages extends Messages {
 
     // ServerRequestSwAAssertion messages
     public static final M SWA_NOT_SOAP                    = m(4400, Level.WARNING, "Request not SOAP; cannot validate attachments");
-    public static final M SWA_NOT_MULTIPART               = m(4401, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
-    public static final M SWA_OPERATION_NOT_FOUND         = m(4402, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
-    public static final M SWA_REPEATED_OPERATION          = m(4403, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
+    public static final M SWA_NOT_MULTIPART               = m(4401, Level.INFO, "The request does not contain attachment or is not a multipart message");
+    public static final M SWA_OPERATION_NOT_FOUND         = m(4402, Level.FINEST, "Operation not found in the request. XPath expression is: {0}");
+    public static final M SWA_REPEATED_OPERATION          = m(4403, Level.INFO, "Same operation appears more than once in the request. XPath expression is: {0}");
     public static final M SWA_OPERATION_NOT_ELEMENT_NODE  = m(4404, Level.INFO, "XPath pattern {0} found non-element node ''{1}''");
     public static final M SWA_PARAMETER_NOT_ELEMENT_NODE  = m(4405, Level.INFO, "XPath pattern {0}/{1} found non-element node ''{2}''");
     public static final M SWA_OPERATION_FOUND             = m(4406, Level.FINEST, "The operation {0} is found in the request");
-    public static final M SWA_PART_NOT_FOUND              = m(4407, Level.FINE, "MIME Part not found in the request. Xpath expression is: {0}/{1})");
-    public static final M SWA_REPEATED_MIME_PART          = m(4408, Level.FINE, "Same MIME Part appears more than once in the request. Xpath expression is: {0}/{1}");
+    public static final M SWA_PART_NOT_FOUND              = m(4407, Level.FINE, "MIME Part not found in the request. XPath expression is: {0}/{1})");
+    public static final M SWA_REPEATED_MIME_PART          = m(4408, Level.FINE, "Same MIME Part appears more than once in the request. XPath expression is: {0}/{1}");
     public static final M SWA_PARAMETER_FOUND             = m(4409, Level.FINEST, "Parameter {0} is found in the request");
     public static final M SWA_REFERENCE_NOT_FOUND         = m(4410, Level.INFO, "The reference (href) of the {0} is found in the request");
     public static final M SWA_REFERENCE_FOUND             = m(4411, Level.FINEST, "The href of the parameter {0} is found in the request, value={1}");
@@ -119,7 +119,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_RESULT_FALSE                      = m(4706, Level.INFO, "XPath pattern returned false");
     public static final M XPATH_TEXT_NODE_FOUND                   = m(4707, Level.FINE, "XPath pattern found a text node");
     public static final M XPATH_ELEMENT_FOUND                     = m(4708, Level.FINE, "XPath pattern found an element");
-    public static final M XPATH_OTHER_NODE_FOUND                  = m(4709, Level.FINE,  "XPath pattern found some other node");
+    public static final M XPATH_OTHER_NODE_FOUND                  = m(4709, Level.FINE, "XPath pattern found some other node");
     public static final M XPATH_SUCCEED_REQUEST                   = m(4710, Level.FINE, "XPath pattern matched request; assertion therefore succeeds.");
     public static final M XPATH_SUCCEED_RESPONSE                  = m(4711, Level.FINE, "XPath pattern matched response; assertion therefore succeeds.");
     public static final M XPATH_MULTIPLE_RESULTS                  = m(4712, Level.FINE, "XPath pattern found {0} results; .result variable will contain first value");
@@ -129,9 +129,9 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI   = m(4716, Level.INFO, "XPath pattern didn''t match response; assertion therefore fails; XPath is ''{0}''." );
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
-    public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software xpath processing.");
-    public static final M ACCEL_XPATH_UNSUPPORTED_PATTERN         = m(4751, Level.INFO, "Hardware acceleration not available for this xpath expression; falling back to software xpath processing.");
-    public static final M ACCEL_XPATH_NO_CONTEXT                  = m(4752, Level.WARNING, "This message has no hardware acceleration context; falling back to software xpath processing.");
+    public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software XPath processing.");
+    public static final M ACCEL_XPATH_UNSUPPORTED_PATTERN         = m(4751, Level.INFO, "Hardware acceleration not available for this XPath expression; falling back to software XPath processing.");
+    public static final M ACCEL_XPATH_NO_CONTEXT                  = m(4752, Level.WARNING, "This message has no hardware acceleration context; falling back to software XPath processing.");
 
     // ServerRequestWssX509Cert messages
     public static final M REQUEST_WSS_X509_FOR_ANOTHER_USER       = m(4800, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
@@ -223,7 +223,7 @@ public class AssertionMessages extends Messages {
     public static final M XSLT_REQUEST       = m(5901, Level.FINEST, "Transforming request");
     public static final M XSLT_RESP_NOT_XML  = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
     public static final M XSLT_RESPONSE      = m(5903, Level.FINEST, "Transforming response");
-    public static final M XSLT_CONFIG_ISSUE  = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
+    public static final M XSLT_CONFIG_ISSUE  = m(5904, Level.WARNING, "Assestion is not configured properly. Need to specify whether transformation should apply to the request or the response; returning failure.");
     public static final M XSLT_NO_SUCH_PART  = m(5905, Level.WARNING, "Assertion specifies MIME part {0}, but it does not exist");
     public static final M XSLT_MULTIPLE_PIS  = m(5906, Level.WARNING, "Document contained multiple <?xml-stylesheet?> processing instructions; not currently supported");
     public static final M XSLT_CANT_READ_XSL = m(5907, Level.WARNING, "Couldn''t retrieve linked XSL stylesheet at {0}: {1}");
@@ -256,7 +256,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT           = m(6019, Level.WARNING, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
 
     // ServerRequestWssSaml
-    public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate Saml Statement");
+    public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML Statement");
     public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
     public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.WARNING, true, false, "Request contained more than one SAML assertion");
     public static final M SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION         = m(6103, Level.INFO, "This assertion did not find an acceptable SAML assertion to use as credentials.");
@@ -275,7 +275,7 @@ public class AssertionMessages extends Messages {
     //ServerRegex
     public static final M REGEX_PATTERN_INVALID   = m(6300, Level.WARNING, "Regex pattern ''{0}'' compile error: {1}; assertion therefore fails.");
     public static final M REGEX_TOO_BIG           = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + 1024 * 512 + " bytes)");
-    public static final M REGEX_NO_REPLACEMENT    = m(6302, Level.WARNING, "Replace requested, and no replace string specified (null).");
+    public static final M REGEX_NO_REPLACEMENT    = m(6302, Level.WARNING, "Replace requested, but no replace string was specified (null).");
     public static final M REGEX_NO_SUCH_PART      = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");
     public static final M REGEX_NO_ENCODING       = m(6304, Level.INFO, "Character encoding not specified; will use default {0}");
     public static final M REGEX_ENCODING_OVERRIDE = m(6305, Level.FINE, "Using overridden character encoding {0}");
