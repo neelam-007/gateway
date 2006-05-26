@@ -6,6 +6,7 @@ import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.common.security.xml.processor.SecurityContextFinder;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
@@ -95,8 +96,14 @@ public class SecureConversationContextManager implements SecurityContextFinder {
      * @param credentials
      * @return the newly created session
      */
-    public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials) throws DuplicateSessionException {
-        final byte[] sharedSecret = generateNewSecret();
+    public SecureConversationSession createContextForUser(User sessionOwner, LoginCredentials credentials, String namespace) throws DuplicateSessionException {
+        byte[] tmp = null;
+        if (namespace != null && namespace.equals(SoapUtil.WSSC_NAMESPACE2)) {
+            tmp = generateNewSecret(32);
+        } else {
+            tmp = generateNewSecret(16);
+        }
+        final byte[] sharedSecret = tmp;
         String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomuuid();
         // make up a new session identifier and shared secret (using some random generator)
         SecureConversationSession session = new SecureConversationSession();
@@ -104,6 +111,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         session.setExpiration(System.currentTimeMillis() + DEFAULT_SESSION_DURATION);
         session.setIdentifier(newSessionIdentifier);
         session.setCredentials(credentials);
+        session.setSecConvNamespaceUsed(namespace);
         session.setSharedSecret(new SecretKey() {
             public byte[] getEncoded() {
                 return sharedSecret;
@@ -172,9 +180,9 @@ public class SecureConversationContextManager implements SecurityContextFinder {
         }
     }
 
-    private byte[] generateNewSecret() {
+    private byte[] generateNewSecret(int length) {
         // return some random secret
-        byte[] output = new byte[32];
+        byte[] output = new byte[length];
         random.nextBytes(output);
         return output;
     }

@@ -160,6 +160,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                                                           securityChildToProcess,
                                                                                           identifier);
                         cntx.securityTokens.add(secConTok);
+                        logger.finest("SecurityContextToken (SecureConversation) added");
                     }
                 } else {
                     logger.fine("Encountered SecurityContextToken element but not of expected namespace (" +

@@ -180,6 +180,9 @@ public class WssDecoratorImpl implements WssDecorator {
         if (session != null) {
             if (session.getId() == null)
                 throw new DecoratorException("If SecureConversation Session is specified, but it has no session ID");
+            if (session.getSCNamespace() != null && session.getSCNamespace().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                c.nsf.setWsscNs(SoapUtil.WSSC_NAMESPACE2);
+            }
             sct = addSecurityContextToken(c, securityHeader, session.getId());
         }
 
@@ -193,10 +196,14 @@ public class WssDecoratorImpl implements WssDecorator {
                 // No BST; must be WS-SecureConversation
                 if (session == null)
                     throw new IllegalArgumentException("Signing is requested with SecureConversationSession, but session is null");
-                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, null, session);
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, null, session, sct);
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
-                signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
+                if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                    signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
+                } else {
+                    signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
+                }
             } else if (dreq.getEncryptedKey() != null &&
                        dreq.getEncryptedKeySha1() != null)
             {
@@ -211,7 +218,11 @@ public class WssDecoratorImpl implements WssDecorator {
                                                "DerivedKey");
                     senderSigningKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                     String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
-                    signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
+                    if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                        signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
+                    } else {
+                        signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
+                    }
                 } else {
                     // Use a reference to an implicit EncryptedKey that the recipient is assumed to already possess
                     // (possibly because we got it from them originally)
@@ -296,7 +307,11 @@ public class WssDecoratorImpl implements WssDecorator {
                                                "DerivedKey");
                     senderSigningKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
                     String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
-                    signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
+                    if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                        signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2);
+                    } else {
+                        signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY);
+                    }
                 } else {
                     // No derived key -- use the raw EncryptedKey directly
                     senderSigningKey = addedEncKeyXmlEncKey.getSecretKey();
@@ -319,15 +334,24 @@ public class WssDecoratorImpl implements WssDecorator {
                 // Encrypt using Secure Conversation session
                 if (session == null)
                     throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
-                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session);
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session, sct);
                 XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, null);
-                addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          xencDesiredNextSibling,
-                                          (Element[])(cryptList.toArray(new Element[0])),
-                                          encKey,
-                                          KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+                if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                    addEncryptedReferenceList(c,
+                                              securityHeader,
+                                              xencDesiredNextSibling,
+                                              (Element[])(cryptList.toArray(new Element[0])),
+                                              encKey,
+                                              KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2));
+                } else {
+                    addEncryptedReferenceList(c,
+                                              securityHeader,
+                                              xencDesiredNextSibling,
+                                              (Element[])(cryptList.toArray(new Element[0])),
+                                              encKey,
+                                              KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+                }
             } else if (addedEncKey != null && addedEncKeyXmlEncKey != null) {
                 if (dreq.isUseDerivedKeys()) {
                     // Derive a new key and use for encryption
@@ -341,12 +365,21 @@ public class WssDecoratorImpl implements WssDecorator {
                     String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
                     XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(addedEncKeyXmlEncKey.getAlgorithm(),
                                                                      dkt.derivedKey);
-                    addEncryptedReferenceList(c,
-                                              securityHeader,
-                                              xencDesiredNextSibling,
-                                              (Element[])(cryptList.toArray(new Element[0])),
-                                              dktEncKey,
-                                              KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+                    if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                        addEncryptedReferenceList(c,
+                                                  securityHeader,
+                                                  xencDesiredNextSibling,
+                                                  (Element[])(cryptList.toArray(new Element[0])),
+                                                  dktEncKey,
+                                                  KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2));
+                    } else {
+                        addEncryptedReferenceList(c,
+                                                  securityHeader,
+                                                  xencDesiredNextSibling,
+                                                  (Element[])(cryptList.toArray(new Element[0])),
+                                                  dktEncKey,
+                                                  KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+                    }
                 } else {
                     // Encrypt using the EncryptedKey we already added
                     String encKeyId = getOrCreateWsuId(c, addedEncKey, null);
@@ -373,12 +406,21 @@ public class WssDecoratorImpl implements WssDecorator {
                                                              "DerivedKey");
                     String dktId = getOrCreateWsuId(c, dkt.dkt, "DerivedKey-Enc");
                     XencUtil.XmlEncKey dktEncKey = generateXmlEncKey(dreq.getEncryptionAlgorithm(), dkt.derivedKey);
-                    addEncryptedReferenceList(c,
-                                              securityHeader,
-                                              xencDesiredNextSibling,
-                                              (Element[])(cryptList.toArray(new Element[0])),
-                                              dktEncKey,
-                                              KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+                    if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                        addEncryptedReferenceList(c,
+                                                  securityHeader,
+                                                  xencDesiredNextSibling,
+                                                  (Element[])(cryptList.toArray(new Element[0])),
+                                                  dktEncKey,
+                                                  KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY2));
+                    } else {
+                        addEncryptedReferenceList(c,
+                                                  securityHeader,
+                                                  xencDesiredNextSibling,
+                                                  (Element[])(cryptList.toArray(new Element[0])),
+                                                  dktEncKey,
+                                                  KeyInfoDetails.makeUriReference(dktId, SoapUtil.VALUETYPE_DERIVEDKEY));
+                    }
                 } else {
                     // Reference the EncryptedKey directly
                     final String eksha1 = dreq.getEncryptedKeySha1();
@@ -528,7 +570,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param c                     decoration context.  Must not be null.
      * @param securityHeader        security header being created.  Must not be null.
      * @param desiredNextSibling    next sibling, or null to append new element to securityHeader
-     * @param session               WS-WS session to use.  Must not be null.
+     * @param session               WS-SC session to use.  Must not be null.
      * @return the newly-added DerivedKeyToken.  Never null.
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeyException
@@ -536,7 +578,8 @@ public class WssDecoratorImpl implements WssDecorator {
     private DerivedKeyToken addDerivedKeyToken(Context c,
                                                Element securityHeader,
                                                Element desiredNextSibling,
-                                               DecorationRequirements.SecureConversationSession session)
+                                               DecorationRequirements.SecureConversationSession session,
+                                               Element securityContextToken)
       throws NoSuchAlgorithmException, InvalidKeyException
     {
         // fla 18 Aug, 2004
@@ -545,18 +588,32 @@ public class WssDecoratorImpl implements WssDecorator {
         // We do this for better interop with .net clients (WSE 2.0)
         // we may want to support different methods based on the user agent
         // the alternative would be : ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
-        final String derivationSourceUri = session.getId();
+
         // TODO [WS-I BSP] SecurityTokenReference must have a valueType [ref: section 5.2.13], is this SC token type valid?
-        final String derivationSourceValueType = SoapUtil.VALUETYPE_SECURECONV;
+
         final byte[] derivationSourceSecretKey = session.getSecretKey();
 
-        return addDerivedKeyToken(c,
+        if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+            final String derivationSourceUri = getOrCreateWsuId(c, securityContextToken, "SecurityContextToken");
+            final String derivationSourceValueType = SoapUtil.VALUETYPE_SECURECONV2;
+            return addDerivedKeyToken(c,
+                                  securityHeader,
+                                  desiredNextSibling,
+                                  KeyInfoDetails.makeUriReference(derivationSourceUri, derivationSourceValueType),
+                                  DERIVED_KEY_LENGTH,
+                                  derivationSourceSecretKey,
+                                  "WS-SecureConversation");
+        } else {
+            final String derivationSourceUri = session.getId();
+            final String derivationSourceValueType = SoapUtil.VALUETYPE_SECURECONV;
+            return addDerivedKeyToken(c,
                                   securityHeader,
                                   desiredNextSibling,
                                   KeyInfoDetails.makeUriReferenceRaw(derivationSourceUri, derivationSourceValueType),
                                   DERIVED_KEY_LENGTH,
                                   derivationSourceSecretKey,
                                   "WS-SecureConversation");
+        }
     }
 
     /**

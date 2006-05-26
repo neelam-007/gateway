@@ -231,6 +231,9 @@ public class WssRoundTripTest extends TestCase {
             reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }
                 public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
+                public String getSCNamespace() {
+                        return SoapUtil.WSSC_NAMESPACE;
+                    }
             });
         }
         if (td.elementsToEncrypt != null) {

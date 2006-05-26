@@ -115,6 +115,9 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                     public byte[] getSecretKey() {
                         return session.getSharedSecret().getEncoded();
                     }
+                    public String getSCNamespace() {
+                        return session.getSecConvNamespaceUsed();
+                    }
                 });
                 return AssertionStatus.NONE;
             }

@@ -5,6 +5,7 @@ import com.l7tech.common.security.token.XmlSecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
@@ -56,6 +57,9 @@ public class ClientSecureConversation extends ClientAssertion {
 
                     public byte[] getSecretKey() {
                         return sessionKey;
+                    }
+                    public String getSCNamespace() {
+                        return SoapUtil.WSSC_NAMESPACE;
                     }
                 });
                 return AssertionStatus.NONE;

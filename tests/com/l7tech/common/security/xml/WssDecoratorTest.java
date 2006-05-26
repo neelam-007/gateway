@@ -222,6 +222,9 @@ public class WssDecoratorTest extends TestCase {
                     public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
 
                     public byte[] getSecretKey() { return d.secureConversationKey.getEncoded(); }
+                    public String getSCNamespace() {
+                        return SoapUtil.WSSC_NAMESPACE;
+                    }
                 });
             } else {
                 // Use KeyInfo #EncryptedKeySHA1, referencing implicit EncryptedKey which recipient is expected

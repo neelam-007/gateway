@@ -280,6 +280,7 @@ public class DecorationRequirements {
         String getId();
 
         byte[] getSecretKey();
+        String getSCNamespace();
     }
 
     /**

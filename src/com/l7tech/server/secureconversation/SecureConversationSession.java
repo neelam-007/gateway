@@ -76,10 +76,19 @@ public class SecureConversationSession implements SecurityContext {
         this.credentials = credentials;
     }
 
+    public String getSecConvNamespaceUsed() {
+        return secConvNamespaceUsed;
+    }
+
+    public void setSecConvNamespaceUsed(String secConvNamespaceUsed) {
+        this.secConvNamespaceUsed = secConvNamespaceUsed;
+    }
+
     private String identifier;
     private SecretKey sharedSecret;
     private long expiration;
     private long creation;
     private User usedBy;
     private LoginCredentials credentials;
+    private String secConvNamespaceUsed;
 }

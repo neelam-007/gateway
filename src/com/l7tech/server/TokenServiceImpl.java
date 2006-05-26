@@ -201,8 +201,10 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             }
             Map rstTypes = getTrustTokenTypeAndRequestTypeValues(context);
             Document response;
-            if (isRequestForSecureConversationContext(rstTypes) || isRequestForSecureConversationContext0502(rstTypes)) {
-                response = handleSecureConversationContextRequest(rstTypes, context, authenticatedUser);
+            if (isRequestForSecureConversationContext(rstTypes)) {
+                response = handleSecureConversationContextRequest(rstTypes, context, authenticatedUser, SoapUtil.WSSC_NAMESPACE);
+            } else if (isRequestForSecureConversationContext0502(rstTypes)) {
+                response = handleSecureConversationContextRequest(rstTypes, context, authenticatedUser, SoapUtil.WSSC_NAMESPACE2);
             } else if (isRequestForSAML20Token(rstTypes)) {
                 // todo, implement saml 2.0
                 logger.info("SAML 2.0 token requested but not yet supported.");
@@ -344,10 +346,13 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     }
 
     private Document handleSecureConversationContextRequest(Map rstTypes, PolicyEnforcementContext context,
-                                                            User requestor) throws TokenServiceException, GeneralSecurityException {
+                                                            User requestor,
+                                                            String scns) throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession;
         try {
-            newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor, context.getCredentials());
+            newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor,
+                                                                                             context.getCredentials(),
+                                                                                             scns);
         } catch (DuplicateSessionException e) {
             throw new TokenServiceException(e);
         }
@@ -506,8 +511,9 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         if (val == null || !"http://schemas.xmlsoap.org/ws/2005/02/sc/sct".equals(val)) {
             return false;
         }
-        if (!val.endsWith("/trust/Issue")) {
-            logger.warning("RequestType not supported." + val);
+        String requestType = (String)rstTypes.get(SoapUtil.WST_REQUESTTYPE);
+        if (!requestType.endsWith("/trust/Issue")) {
+            logger.warning("RequestType not supported." + requestType);
             return false;
         }
         // will be set to WSSC_NAMESPACE if caught by isRequestForSecureConversationContext
