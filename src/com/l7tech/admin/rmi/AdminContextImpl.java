@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.common.BuildInfo;
@@ -30,18 +31,25 @@ import java.rmi.RemoteException;
  */
 public class AdminContextImpl
   extends ApplicationObjectSupport implements AdminContext, InitializingBean {
-    private IdentityAdmin identityAdmin;
-    private AuditAdmin auditAdmin;
-    private ServiceAdmin serviceAdmin;
-    private JmsAdmin jmsAdmin;
-    private TrustedCertAdmin trustedCertAdmin;
-    private SchemaAdmin schemaAdmin;
-    private CustomAssertionsRegistrar customAssertionsRegistrar;
-    private ClusterStatusAdmin clusterStatusAdmin;
+    private final IdentityAdmin identityAdmin;
+    private final AuditAdmin auditAdmin;
+    private final ServiceAdmin serviceAdmin;
+    private final JmsAdmin jmsAdmin;
+    private final TrustedCertAdmin trustedCertAdmin;
+    private final SchemaAdmin schemaAdmin;
+    private final CustomAssertionsRegistrar customAssertionsRegistrar;
+    private final ClusterStatusAdmin clusterStatusAdmin;
+    private final KerberosAdmin kerberosAdmin;
 
-    public AdminContextImpl(IdentityAdmin identityAdmin, AuditAdmin auditAdmin, ServiceAdmin serviceAdmin,
-                            JmsAdmin jmsAdmin, TrustedCertAdmin trustedCertAdmin, CustomAssertionsRegistrar customAssertionsRegistrar,
-                            ClusterStatusAdmin clusterStatusAdmin, SchemaAdmin schemaAdmin) {
+    public AdminContextImpl(IdentityAdmin identityAdmin,
+                            AuditAdmin auditAdmin,
+                            ServiceAdmin serviceAdmin,
+                            JmsAdmin jmsAdmin,
+                            TrustedCertAdmin trustedCertAdmin,
+                            CustomAssertionsRegistrar customAssertionsRegistrar,
+                            ClusterStatusAdmin clusterStatusAdmin,
+                            SchemaAdmin schemaAdmin,
+                            KerberosAdmin kerberosAdmin) {
         this.identityAdmin = identityAdmin;
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
@@ -50,6 +58,7 @@ public class AdminContextImpl
         this.customAssertionsRegistrar = customAssertionsRegistrar;
         this.clusterStatusAdmin = clusterStatusAdmin;
         this.schemaAdmin = schemaAdmin;
+        this.kerberosAdmin = kerberosAdmin;
     }
 
     public String getVersion() {
@@ -100,6 +109,10 @@ public class AdminContextImpl
         return clusterStatusAdmin;
     }
 
+    public KerberosAdmin getKerberosAdmin() throws RemoteException, SecurityException {
+        return kerberosAdmin;
+    }
+
     public void afterPropertiesSet() throws Exception {
         checkServices();
     }
@@ -126,6 +139,10 @@ public class AdminContextImpl
 
         if (trustedCertAdmin == null) {
             throw new IllegalArgumentException("Trusted Cert Admin is required");
+        }
+
+        if (kerberosAdmin == null) {
+            throw new IllegalArgumentException("Kerberos Admin is required");
         }
     }
 }

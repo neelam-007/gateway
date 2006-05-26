@@ -1,5 +1,7 @@
 package com.l7tech.common.security.kerberos;
 
+import java.io.File;
+
 import com.l7tech.common.util.HexUtils;
 
 /**
@@ -17,12 +19,12 @@ public class KerberosUtils {
     /**
      * Check if Kerberos is enabled.
      *
-     * <p>This just checks if there is a JAAS login configuration defined.</p>
+     * <p>This just checks if there is Kerberos configuration defined.</p>
      *
      * @return true if enabled.
      */
     public static boolean isEnabled() {
-        return System.getProperty("java.security.auth.login.config")!=null;
+        return System.getProperty("java.security.krb5.conf")!=null;
     }
 
     /**
@@ -53,6 +55,36 @@ public class KerberosUtils {
      */
     public static String getBase64Sha1(KerberosGSSAPReqTicket ticket) {
         return HexUtils.encodeBase64(HexUtils.getSha1Digest(ticket.toByteArray()));
+    }
+
+    /**
+     * Generate a kerberos configuration file with the given kdc and realm.
+     *
+     * @param file  The configuration file to be created
+     * @param kdc   The Kerberos Key Distribution Center
+     * @param realm The Kerberos REALM
+     * @throws KerberosException if an error occurs
+     */
+    public static void configureKerberos(File file, String kdc, String realm) throws KerberosException {
+        KerberosConfig.generateKerberosConfig(file, kdc, realm);
+    }
+
+    /**
+     * If the kerberos configuration has been generated this will return the KDC host/ip.
+     *
+     * @return the KDC or null.
+     */
+    public static String getKerberosKdc() {
+        return KerberosConfig.getConfigKdc();
+    }
+
+    /**
+     * If the kerberos configuration has been generated this will return the REALM.
+     *
+     * @return the REALM or null.
+     */
+    public static String getKerberosRealm() {
+        return KerberosConfig.getConfigRealm();
     }
 
     //- PRIVATE

@@ -94,6 +94,7 @@ public class MainWindow extends JFrame {
     private JMenuItem fromFileMenuItem = null;
     private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
+    private JMenuItem manageKerberosMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
     private JMenuItem manageGlobalSchemasMenuItem = null;
     private JMenuItem manageClusterPropertiesMenuItem = null;
@@ -122,6 +123,7 @@ public class MainWindow extends JFrame {
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
     private ViewAuditsOrLogsFromFileAction auditOrLogFromFileAction;
     private ManageJmsEndpointsAction manageJmsEndpointsAction = null;
+    private ManageKerberosAction manageKerberosAction = null;
     private HomeAction homeAction = new HomeAction();
     private NewGroupAction newInernalGroupAction;
     private NewLdapProviderAction newLDAPProviderAction;
@@ -513,6 +515,7 @@ public class MainWindow extends JFrame {
             // ("license" is managed with a seperate GUI of its own, and is hidden in the cluster property list.)
             menu.add(getManageClusterPropertiesActionMenuItem());
             menu.add(getManageJmsEndpointsMenuItem());
+            menu.add(getManageKerberosMenuItem());
 
             int mnemonic = menu.getText().toCharArray()[0];
             menu.setMnemonic(mnemonic);
@@ -1238,6 +1241,17 @@ public class MainWindow extends JFrame {
         manageJmsEndpointsAction.setEnabled(false);
         this.addLogonListener(manageJmsEndpointsAction);
         return manageJmsEndpointsAction;
+    }
+
+    private Action getManageKerberosAction() {
+        if (manageKerberosAction != null)
+            return manageKerberosAction;
+
+
+        manageKerberosAction = new ManageKerberosAction();
+        manageKerberosAction.setEnabled(false);
+        this.addLogonListener(manageKerberosAction);
+        return manageKerberosAction;
     }
 
     private Action getManageCertificatesAction() {
@@ -2114,6 +2128,14 @@ public class MainWindow extends JFrame {
         manageJmsEndpointsMenuItem = new JMenuItem(getManageJmsEndpointsAction());
 
         return manageJmsEndpointsMenuItem;
+    }
+
+    public JMenuItem getManageKerberosMenuItem() {
+        if (manageKerberosMenuItem != null)
+            return manageKerberosMenuItem;
+        manageKerberosMenuItem = new JMenuItem(getManageKerberosAction());
+
+        return manageKerberosMenuItem;
     }
 
     public JMenuItem getManageCertificatesMenuItem() {

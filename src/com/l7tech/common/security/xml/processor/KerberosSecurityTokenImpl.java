@@ -36,7 +36,13 @@ public class KerberosSecurityTokenImpl extends SigningSecurityTokenImpl implemen
         if(element!=null && ticket.getServiceTicket()==null) { // check element since we don't do auth for virtual token
             try {
                 KerberosClient client = new KerberosClient();
-                String spn = KerberosClient.getGSSServiceName();
+                String spn;
+                try {
+                    spn = KerberosClient.getKerberosAcceptPrincipal();
+                }
+                catch(KerberosException ke) { // fallback to system property name
+                    spn = KerberosClient.getGSSServiceName();
+                }
                 KerberosServiceTicket kerberosServiceTicket = client.getKerberosServiceTicket(spn, ticket);
                 ticket.setServiceTicket(kerberosServiceTicket);
             }

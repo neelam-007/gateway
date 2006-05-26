@@ -6,6 +6,7 @@ import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.security.kerberos.KerberosUtils;
+import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.TextUtils;
@@ -235,6 +236,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             TrustedSsgIdentityPanel tp = new TrustedSsgIdentityPanel(ssg);
             ssgIdentityPane = tp;
             tp.getUseKerberosCredentialCheckbox().setEnabled(KerberosUtils.isEnabled());
+            tp.getUseKerberosCredentialCheckbox().addActionListener(new ActionListener(){
+                public void actionPerformed(ActionEvent e) {
+                    updateIdentityEnableState();
+                }
+            });
+
             tp.getUseClientCredentialCheckBox().addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     updateIdentityEnableState();
@@ -290,8 +297,18 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             return;
                         /* FALLTHROUGH and display newly-acquired client certificate */
                     }
-                    if (cert != null)
+                    if (cert != null) {
+                        if (ssgIdentityPane instanceof TrustedSsgIdentityPanel) {
+                            JCheckBox kcb = ((TrustedSsgIdentityPanel)ssgIdentityPane).getUseKerberosCredentialCheckbox();
+                            kcb.setSelected(false);
+                            kcb.setEnabled(false);
+
+                            JTextField utf = ((TrustedSsgIdentityPanel)ssgIdentityPane).getUsernameTextField();
+                            utf.setText(ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername());
+                            utf.setEditable(false);
+                        }
                         new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).setVisible(true);
+                    }
                 } catch (OperationCanceledException e1) {
                     return;
                 } catch (Exception e1) {
@@ -456,11 +473,45 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel))
             return;
         TrustedSsgIdentityPanel tp = (TrustedSsgIdentityPanel)ssgIdentityPane;
-        if (tp.getUseClientCredentialCheckBox().isSelected()) {
-            tp.getUserPasswordField().setEnabled(false);
+
+        boolean kerbPrincFromCache = false;
+        try {
+            String kprinc = new KerberosClient().getKerberosInitPrincipal();
+            if (kprinc != null) {
+                tp.getUsernameTextField().setText(kprinc);
+                kerbPrincFromCache = true;
+            }
+        }
+        catch(Exception e) {
+            // ignore
+        }
+
+        if (tp.getUseKerberosCredentialCheckbox().isSelected() &&
+                kerbPrincFromCache) {
+            // When using kerberos creds from ticket cache (SSO) it is not valid to use
+            // client creds or to save the password
+            tp.getUseClientCredentialCheckBox().setEnabled(false);
+            tp.getSavePasswordCheckBox().setEnabled(false);
             tp.getUsernameTextField().setEditable(false);
+            tp.getUserPasswordField().setEnabled(false);
             tp.getUserPasswordField().setEditable(false);
-        } else {
+        }
+        else if(tp.getUseKerberosCredentialCheckbox().isSelected()) {
+            // Kerberos creds gained from usename / password, client creds not allowed
+            tp.getUseClientCredentialCheckBox().setEnabled(false);
+            tp.getSavePasswordCheckBox().setEnabled(true);
+            tp.getUserPasswordField().setEnabled(true);
+            tp.getUserPasswordField().setEditable(true);
+        }
+        else if (tp.getUseClientCredentialCheckBox().isSelected()) {
+            tp.getUseClientCredentialCheckBox().setEnabled(true);
+            tp.getSavePasswordCheckBox().setEnabled(false);
+            tp.getUserPasswordField().setEnabled(false);
+            tp.getUserPasswordField().setEditable(false);
+            tp.getUsernameTextField().setEditable(false);
+        }
+        else {
+            tp.getUseClientCredentialCheckBox().setEnabled(true);
             tp.getSavePasswordCheckBox().setEnabled(true);
             tp.getUserPasswordField().setEnabled(true);
             tp.getUserPasswordField().setEditable(true);
@@ -694,6 +745,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 if (clientCertUsername != null) {
                     tp.getUsernameTextField().setText(clientCertUsername);
                     tp.getUsernameTextField().setEditable(false);
+                    tp.getUseKerberosCredentialCheckbox().setEnabled(false);
+                    ssg.setEnableKerberosCredentials(false);
                 }
                 tp.getUseKerberosCredentialCheckbox().setSelected(ssg.isEnableKerberosCredentials());
             }
@@ -751,9 +804,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     TrustedSsgIdentityPanel tp = (TrustedSsgIdentityPanel)ssgIdentityPane;
                     ssg.setKerberosName(getFieldKerberosName().getText());
                     ssg.setUsername(tp.getUsernameTextField().getText().trim());
-                    ssg.setSavePasswordToDisk(tp.getSavePasswordCheckBox().isSelected());
-                    ssg.setChainCredentialsFromClient(tp.getUseClientCredentialCheckBox().isSelected());
-                    ssg.setEnableKerberosCredentials(tp.getUseKerberosCredentialCheckbox().isSelected());
+                    ssg.setSavePasswordToDisk(tp.getSavePasswordCheckBox().isEnabled() &&
+                                              tp.getSavePasswordCheckBox().isSelected());
+                    ssg.setChainCredentialsFromClient(tp.getUseClientCredentialCheckBox().isEnabled() &&
+                                                      tp.getUseClientCredentialCheckBox().isSelected());
+                    ssg.setEnableKerberosCredentials(tp.getUseKerberosCredentialCheckbox().isEnabled() &&
+                                                     tp.getUseKerberosCredentialCheckbox().isSelected());
 
                     // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
                     // a blank password to access a service, he can leave the password field blank in the logon

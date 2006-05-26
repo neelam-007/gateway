@@ -276,6 +276,9 @@
         <constructor-arg>
             <ref bean="schemaAdminRemote"/>
         </constructor-arg>
+        <constructor-arg>
+            <ref bean="kerberosAdminRemote"/>
+        </constructor-arg>
     </bean>
 
     <!--    identity admin exporter -->
@@ -478,6 +481,19 @@
             <ref bean="customAssertionRegistrar"/>
         </property>
     </bean>
+
+    <!--    kerberos admin remote -->
+    <bean id="kerberosAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
+          parent="sharedExportProperties">
+        <property name="service">
+            <ref local="kerberosAdmin"/>
+        </property>
+        <property name="serviceInterface">
+            <value>com.l7tech.common.security.kerberos.KerberosAdmin</value>
+        </property>
+    </bean>
+    <!--    kerberos admin servant -->
+    <bean id="kerberosAdmin" class="com.l7tech.common.security.kerberos.KerberosAdminImpl"/>
 
     <!--    cluster status cert admin exporter -->
     <bean id="clusterStatusAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"

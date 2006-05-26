@@ -767,6 +767,9 @@
                 <include name="com/l7tech/policy/**/*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
             </fileset>
+            <fileset dir="${src.root}/etc">
+                <include name="login.config"/>
+            </fileset>
         </jar>
     </target>
 

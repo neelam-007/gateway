@@ -21,6 +21,7 @@ class Commands extends Words {
             new SetCommand(),
             new CreateCommand(),
             new DeleteCommand(),
+            new KerberosCommand(),
             new QuitCommand(),
     };
 

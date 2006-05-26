@@ -2,6 +2,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.kerberos.KerberosClient;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.Background;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -71,12 +72,11 @@ public class Main {
     protected static void initConfig() {
         File configDir = new File(Ssg.PROXY_CONFIG);
         File loginConfig = new File(configDir, "login.config");
-        File kerberosConfig = new File(configDir, "krb5.conf");
 
-        if(loginConfig.isFile()) {
-            System.setProperty("java.security.auth.login.config", loginConfig.getAbsolutePath());
-            if(kerberosConfig.isFile()) System.setProperty("java.security.krb5.conf", kerberosConfig.getAbsolutePath());
-        }
+        System.setProperty("java.security.auth.login.config", loginConfig.getAbsolutePath());
+
+        // ensures any missing configuration is initialized.
+        new KerberosClient();
     }
 
     private static void deleteOldAttachments(File attachmentDir) {

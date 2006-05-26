@@ -4,6 +4,7 @@ import com.l7tech.admin.AdminContext;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.common.audit.LogonEvent;
@@ -47,6 +48,7 @@ public final class RegistryImpl extends Registry
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AuditAdmin auditAdmin;
     private ClusterStatusAdmin clusterStatusAdmin;
+    private KerberosAdmin kerberosAdmin;
 
     /**
      * @return the {@link IdentityAdmin} implementation
@@ -183,6 +185,19 @@ public final class RegistryImpl extends Registry
         }
     }
 
+    public KerberosAdmin getKerberosAdmin() {
+        checkAdminContext();
+        if (kerberosAdmin != null) {
+            return kerberosAdmin;
+        }
+        try {
+            kerberosAdmin = adminContext.getKerberosAdmin();
+            return kerberosAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public SecurityProvider getSecurityProvider() {
         return (SecurityProvider)applicationContext.getBean("securityProvider");
     }
@@ -242,6 +257,7 @@ public final class RegistryImpl extends Registry
         customAssertionsRegistrar = null;
         auditAdmin = null;
         clusterStatusAdmin = null;
+        kerberosAdmin = null;
     }
 
 

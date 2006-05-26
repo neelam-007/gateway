@@ -3,6 +3,7 @@ package com.l7tech.common.security.kerberos;
 import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.security.Principal;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
@@ -15,6 +16,7 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
@@ -127,8 +129,16 @@ public class KerberosClient {
     public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName) throws KerberosException {
         KerberosServiceTicket ticket = null;
         try {
-            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject, callbackHandler);
-            loginContext.login();
+            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject);
+            try {
+                loginContext.login();
+            }
+            catch(LoginException le) {
+                // if there is no available ticket cache try the other module
+                loginContext = new LoginContext(LOGIN_CONTEXT_INIT_CREDS, kerberosSubject, callbackHandler);
+                loginContext.login();
+            }
+
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                 public Object run() throws Exception {
                     Oid kerberos5Oid = getKerberos5Oid();
@@ -219,7 +229,11 @@ public class KerberosClient {
     public KerberosServiceTicket getKerberosServiceTicket(final String servicePrincipalName, final KerberosGSSAPReqTicket gssAPReqTicket) throws KerberosException {
         KerberosServiceTicket ticket = null;
         try {
-            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(servicePrincipalName));
+            if (!KerberosConfig.hasKeytab()) {
+                throw new KerberosException("No Keytab (Kerberos not configured)");
+            }
+
+            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(trimRealm(servicePrincipalName)));
             loginContext.login();
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                 public Object run() throws Exception {
@@ -228,7 +242,8 @@ public class KerberosClient {
                     GSSCredential scred = null;
                     GSSContext scontext = null;
                     try {
-                        GSSName serviceName = manager.createName(servicePrincipalName, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
+                        String gssPrincipal = trimRealm(servicePrincipalName).replace('/', '@');
+                        GSSName serviceName = manager.createName(gssPrincipal, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
                         scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerb5Oid, GSSCredential.ACCEPT_ONLY);
                         scontext = manager.createContext(scred);
 
@@ -241,7 +256,7 @@ public class KerberosClient {
                         byte[] keyBytes = (subKey==null ? sessionKey : subKey).getBytes();
 
                         return new KerberosServiceTicket(apReq.getCreds().getClient().getName(),
-                                                         servicePrincipalName,
+                                                         gssPrincipal,
                                                          keyBytes,
                                                          apReq.getCreds().getEndTime().getTime(),
                                                          gssAPReqTicket);
@@ -272,6 +287,146 @@ public class KerberosClient {
         return ticket;
     }
 
+    /**
+     * Check if the current client login configuration is valid.
+     *
+     * @return the client principal name (e.g test01@QAWIN2003.COM)
+     * @throws KerberosException on error
+     */
+    public String getKerberosInitPrincipal() throws KerberosException {
+        String name = null;
+        try {
+            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_INIT, kerberosSubject);
+            try {
+                loginContext.login();
+            }
+            catch(LoginException le) {
+                // if there is no available ticket cache try the other module
+                loginContext = new LoginContext(LOGIN_CONTEXT_INIT_CREDS, kerberosSubject, callbackHandler);
+                loginContext.login();
+            }
+
+            name = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
+                public Object run() throws Exception {
+                    String name = null;
+                    for (Iterator princIter=kerberosSubject.getPrincipals().iterator(); princIter.hasNext();) {
+                        Principal principal = (Principal) princIter.next();
+                        if (principal instanceof KerberosPrincipal) {
+                            name = principal.getName();
+                            break;
+                        }
+                    }
+                    return name;
+                }
+            });
+            try{
+                loginContext.logout();
+            }
+            catch(LoginException le) {
+                //whatever.
+            }
+        }
+        catch(SecurityException se) {
+            throw new KerberosConfigException("Kerberos configuration error.", se);
+        }
+        catch(LoginException le) {
+            throw new KerberosException("Could not login", le);
+        }
+        catch(PrivilegedActionException pae) {
+            throw new KerberosException("Error getting principal.", pae.getCause());
+        }
+
+        if (name == null) {
+            throw new KerberosException("Error getting principal.");
+        }
+
+        return name;
+    }
+
+    /**
+     * Get the Keytab file used on the server.
+     *
+     * <p>If there is no configured Keytab this will return null.</p>
+     *
+     * @return The Keytab or null
+     * @throws KerberosException if the Keytab is invalid.
+     */
+    public static Keytab getKerberosAcceptPrincipalKeytab() throws KerberosException {
+        return KerberosConfig.getKeytab(true);
+    }
+
+    /**
+     * Check if the current server login configuration is valid.
+     *
+     * @return the service principal name (e.g http/gateway.l7tech.com@QAWIN2003.COM)
+     * @throws KerberosException on error
+     */
+    public static String getKerberosAcceptPrincipal() throws KerberosException {
+        if (acceptPrincipal != null) {
+            if(acceptPrincipal.length()==0) {
+                throw new KerberosException("Principal detection failed.");
+            }
+            else {
+                return acceptPrincipal;
+            }
+        }
+
+        try {
+            if (KerberosConfig.hasKeytab()) {
+                String spn = KerberosConfig.getKeytabPrincipal();
+
+                final Subject kerberosSubject = new Subject();
+                LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(spn));
+                loginContext.login();
+                acceptPrincipal = (String) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
+                    public Object run() throws Exception {
+                        String name = null;
+
+                        try {
+                            getKey(kerberosSubject.getPrivateCredentials());
+                        }
+                        catch(IllegalStateException ise) {
+                            throw new KerberosException("No kerberos key in private credentials.");
+                        }
+
+                        for (Iterator princIter=kerberosSubject.getPrincipals().iterator(); princIter.hasNext();) {
+                            Principal principal = (Principal) princIter.next();
+                            if (principal instanceof KerberosPrincipal) {
+                                name = principal.getName();
+                                break;
+                            }
+                        }
+
+                        return name;
+                    }
+                });
+                try{
+                    loginContext.logout();
+                }
+                catch(LoginException le) {
+                    //whatever.
+                }
+            }
+        }
+        catch(SecurityException se) {
+            throw new KerberosConfigException("Kerberos configuration error.", se);
+        }
+        catch(LoginException le) {
+            throw new KerberosException("Could not login", le);
+        }
+        catch(PrivilegedActionException pae) {
+            throw new KerberosException("Error getting principal.", pae.getCause());
+        }
+
+        if (acceptPrincipal == null) {
+            acceptPrincipal = ""; // cache failure
+            throw new KerberosException("Error getting principal.");
+        }
+
+        return acceptPrincipal;
+    }
+
+
     //- PACKAGE
 
     static Oid getKerberos5Oid() throws KerberosException {
@@ -300,6 +455,7 @@ public class KerberosClient {
 
     private static final String KERBEROS_5_OID = "1.2.840.113554.1.2.2";
     private static final String LOGIN_CONTEXT_INIT = "com.l7tech.common.security.kerberos.initiate";
+    private static final String LOGIN_CONTEXT_INIT_CREDS = "com.l7tech.common.security.kerberos.initiate.callback";
     private static final String LOGIN_CONTEXT_ACCEPT = "com.l7tech.common.security.kerberos.accept";
 
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
@@ -307,9 +463,14 @@ public class KerberosClient {
     private static final Integer KERBEROS_LIFETIME = Integer.getInteger(KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT);
 
     private static Oid kerb5Oid;
+    private static String acceptPrincipal;
 
     private final Subject kerberosSubject;
     private CallbackHandler callbackHandler;
+
+    static {
+        KerberosConfig.checkConfig();
+    }
 
     /**
      * Get a ticket from the given set of Objects that is for the given service.
@@ -346,7 +507,7 @@ public class KerberosClient {
     /**
      *
      */
-    private KerberosKey getKey(Set creds) throws IllegalStateException {
+    private static KerberosKey getKey(Set creds) throws IllegalStateException {
         KerberosKey privateKey = null;
 
         for (Iterator iterator = creds.iterator(); iterator.hasNext();) {
@@ -360,9 +521,26 @@ public class KerberosClient {
     }
 
     /**
+     * Remove the realm component from the given name (if any)
+     */
+    private static String trimRealm(String spn) {
+        String name = spn;
+
+        if (name != null) {
+            int realmStart = name.indexOf('@');
+            if (name.indexOf('/') > 0 && realmStart > 0) {
+                // only trim the realm if this is a kerberos name (e.g service/host@REALM)
+                name = name.substring(0, realmStart);
+            }
+        }
+
+        return name;
+    }
+
+    /**
      *
      */
-    private CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
+    private static CallbackHandler getServerCallbackHandler(final String servicePrincipalName) {
         return new CallbackHandler() {
             public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
                 for (int i = 0; i < callbacks.length; i++) {

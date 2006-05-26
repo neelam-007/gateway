@@ -3,6 +3,7 @@ package com.l7tech.console.util.registry;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.util.Registry;
@@ -77,6 +78,10 @@ public class RegistryStub extends Registry {
 
     public ClusterStatusAdmin getClusterStatusAdmin() {
         return clusterStatusAdmin;
+    }
+
+    public KerberosAdmin getKerberosAdmin() {
+        return null;
     }
 
     public SecurityProvider getSecurityProvider() {

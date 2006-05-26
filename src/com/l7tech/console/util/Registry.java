@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.xml.schema.SchemaAdmin;
 import com.l7tech.console.security.SecurityProvider;
@@ -94,6 +95,11 @@ public abstract class Registry {
     abstract public ClusterStatusAdmin getClusterStatusAdmin();
 
     /**
+     * @return the kerberos admin interface implementation.
+     */
+    abstract public KerberosAdmin getKerberosAdmin();
+
+    /**
       * @return the security provider implementation.
       */
      abstract public SecurityProvider getSecurityProvider();
@@ -144,6 +150,10 @@ public abstract class Registry {
         }
 
         public ClusterStatusAdmin getClusterStatusAdmin() {
+            return null;
+        }
+
+        public KerberosAdmin getKerberosAdmin() {
             return null;
         }
 
