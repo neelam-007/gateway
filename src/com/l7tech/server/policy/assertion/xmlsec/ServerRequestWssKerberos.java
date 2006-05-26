@@ -5,6 +5,8 @@ import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.security.kerberos.KerberosUtils;
+import com.l7tech.common.security.kerberos.KerberosClient;
+import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.common.security.token.KerberosSecurityToken;
 import com.l7tech.common.security.token.SecurityContextToken;
 import com.l7tech.common.security.token.XmlSecurityToken;
@@ -99,7 +101,20 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
             }
             else {
                 KerberosServiceTicket kerberosServiceTicket = (KerberosServiceTicket) creds.getPayload();
-                if(!requestWssKerberos.getServicePrincipalName().equals(kerberosServiceTicket.getServicePrincipalName())) {
+                String configSpn = requestWssKerberos.getServicePrincipalName();
+                if (configSpn == null) {
+                    try {
+                        configSpn = KerberosUtils.toGssName(KerberosClient.getKerberosAcceptPrincipal());
+                    }
+                    catch(KerberosException ke) {
+                        // fallback to system property name
+                    }
+                    if (configSpn == null) {
+                        configSpn = KerberosClient.getGSSServiceName();
+                    }
+                }
+
+                if(!configSpn.equals(kerberosServiceTicket.getServicePrincipalName())) {
                     logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+kerberosServiceTicket.getServicePrincipalName()+"').");
                 }
                 else {

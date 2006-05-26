@@ -87,6 +87,30 @@ public class KerberosUtils {
         return KerberosConfig.getConfigRealm();
     }
 
+    /**
+     * Convert a kerberos principal to a gss principal.
+     *
+     * e.g.
+     *      in : http/myserver.myrealm.com@MYREALM.COM
+     *      out: http@myserver.myrealm.com
+     *
+     * @param kerberosName The kerberos name
+     * @return The GSS name
+     */
+    public static String toGssName(String kerberosName) {
+        String name = kerberosName;
+
+        if (name != null && name.indexOf('/') > 0) {
+            int realmStart = name.indexOf('@');
+            if( realmStart > 0) {
+                name = name.substring(0, realmStart);
+            }
+            name = name.replace('/', '@');
+        }
+
+        return name;
+    }
+
     //- PRIVATE
 
     /**

@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.common.security.kerberos.KerberosClient;
 
 /**
  * Specifies that a kerberos ticket is required.
@@ -27,7 +26,7 @@ public class RequestWssKerberos extends Assertion {
      * @return the name
      */
     public String getServicePrincipalName() {
-        return KerberosClient.getGSSServiceName();
+        return null;
     }
 
     /**

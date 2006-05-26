@@ -189,7 +189,7 @@ public class KerberosClient {
             throw new KerberosException("Could not login", le);
         }
         catch(PrivilegedActionException pae) {
-            throw new KerberosException("Error creating Kerberos Service Ticket", pae.getCause());
+            throw new KerberosException("Error creating Kerberos Service Ticket for service '"+servicePrincipalName+"'", pae.getCause());
         }
 
         return ticket;
@@ -233,7 +233,7 @@ public class KerberosClient {
                 throw new KerberosException("No Keytab (Kerberos not configured)");
             }
 
-            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(trimRealm(servicePrincipalName)));
+            LoginContext loginContext = new LoginContext(LOGIN_CONTEXT_ACCEPT, kerberosSubject, getServerCallbackHandler(KerberosUtils.toGssName(servicePrincipalName)));
             loginContext.login();
             ticket = (KerberosServiceTicket) Subject.doAs(kerberosSubject, new PrivilegedExceptionAction(){
                 public Object run() throws Exception {
@@ -242,7 +242,7 @@ public class KerberosClient {
                     GSSCredential scred = null;
                     GSSContext scontext = null;
                     try {
-                        String gssPrincipal = trimRealm(servicePrincipalName).replace('/', '@');
+                        String gssPrincipal = KerberosUtils.toGssName(servicePrincipalName);
                         GSSName serviceName = manager.createName(gssPrincipal, GSSName.NT_HOSTBASED_SERVICE, kerb5Oid);
                         scred = manager.createCredential(serviceName, GSSCredential.INDEFINITE_LIFETIME, kerb5Oid, GSSCredential.ACCEPT_ONLY);
                         scontext = manager.createContext(scred);
@@ -518,23 +518,6 @@ public class KerberosClient {
         if(privateKey==null) throw new IllegalStateException("Private Kerberos key not found!");
 
         return privateKey;
-    }
-
-    /**
-     * Remove the realm component from the given name (if any)
-     */
-    private static String trimRealm(String spn) {
-        String name = spn;
-
-        if (name != null) {
-            int realmStart = name.indexOf('@');
-            if (name.indexOf('/') > 0 && realmStart > 0) {
-                // only trim the realm if this is a kerberos name (e.g service/host@REALM)
-                name = name.substring(0, realmStart);
-            }
-        }
-
-        return name;
     }
 
     /**
