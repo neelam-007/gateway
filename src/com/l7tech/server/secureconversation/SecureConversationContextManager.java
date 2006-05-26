@@ -174,7 +174,7 @@ public class SecureConversationContextManager implements SecurityContextFinder {
 
     private byte[] generateNewSecret() {
         // return some random secret
-        byte[] output = new byte[16];
+        byte[] output = new byte[32];
         random.nextBytes(output);
         return output;
     }
