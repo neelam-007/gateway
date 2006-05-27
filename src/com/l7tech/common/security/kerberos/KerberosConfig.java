@@ -81,7 +81,10 @@ class KerberosConfig {
         File keytabFile = new File(System.getProperty(SYSPROP_SSG_HOME) + PATH_KEYTAB);
         String principal = null;
         try {
-            if (nullIfMissing && !keytabFile.exists()) return null;
+            if (!keytabFile.exists()) {
+                if (nullIfMissing) return null;
+                else throw new KerberosConfigException("No Keytab");
+            }
             return new Keytab(keytabFile);
         }
         catch(IOException ioe) {
