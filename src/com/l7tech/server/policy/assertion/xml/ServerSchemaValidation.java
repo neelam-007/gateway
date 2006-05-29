@@ -64,6 +64,11 @@ import java.util.logging.Logger;
  *
  */
 public class ServerSchemaValidation extends AbstractServerAssertion implements ServerAssertion, ApplicationListener {
+    public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
+            "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
+    public static final boolean SUPPRESS_FALLBACK_IF_TARARI_FAILS = Boolean.getBoolean(PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS);
+
+
     private static final String MSG_PAYLOAD_NS = "Hardware schema validation succeeded but the tns " +
             "did not match the assertion at hand. Returning failure.";
 
@@ -187,16 +192,16 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
         v.setErrorHandler(reporter);
         v.setResourceResolver(XmlUtil.getSafeLSResourceResolver());
 
-        for (int i = 0; i < elementsToValidate.length; i++) {
+        for (Element element : elementsToValidate) {
             try {
-                v.validate(new DOMSource(elementsToValidate[i]));
+                v.validate(new DOMSource(element));
             } catch (SAXException e) {
                 // drop thru, get the error from the handler
             }
-            Collection errors = reporter.recordedErrors();
+            Collection<SAXParseException> errors = reporter.recordedErrors();
             if (!errors.isEmpty()) {
-                for (Iterator it = errors.iterator(); it.hasNext();) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {it.next().toString()});
+                for (Object error : errors) {
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{error.toString()});
                 }
                 return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
             }
@@ -262,7 +267,7 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
     /**
      * Validate the given message (using hardware if available).
      */
-    private AssertionStatus validateMessage(Message msg) throws IOException, PolicyAssertionException {
+    private AssertionStatus validateMessage(Message msg) throws IOException {
         try {
             if (tarariNamespaceUri == null)
                 return softwareFallback(msg); // no hardware
@@ -291,6 +296,13 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
             }
 
             if (Boolean.FALSE.equals(result)) {
+                if (SUPPRESS_FALLBACK_IF_TARARI_FAILS) {
+                    // Don't recheck with software -- just record the failure and be done
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{"Hardware reports invalid XML"});
+                    return AssertionStatus.FALSIFIED;
+                }
+
+                // Recheck failed validations with software, in case the Tarari failure was spurious
                 logger.info("Hardware schema validation failed. The assertion will " +
                         "fallback on software schema validation");
                 // TODO do we still need to do this? does Tarari schema val still have spurious failures?
@@ -320,8 +332,7 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
         }
 
         // They must all match up
-        for (int i = 0; i < payloadUris.length; i++) {
-            String payloadUri = payloadUris[i];
+        for (String payloadUri : payloadUris) {
             if (!tarariNamespaceUri.equals(payloadUri)) {
                 logger.info(MSG_PAYLOAD_NS);
                 return AssertionStatus.FAILED;
@@ -391,11 +402,11 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
         }
         // construct a return output for each element under the body first child
         NodeList maybearguments = bodyFirstElement.getChildNodes();
-        ArrayList argumentList = new ArrayList();
+        ArrayList<Element> argumentList = new ArrayList<Element>();
         for (int i = 0; i < maybearguments.getLength(); i++) {
             Node child = maybearguments.item(i);
             if (child instanceof Element) {
-                argumentList.add(child);
+                argumentList.add((Element)child);
             }
         }
         Element[] output = new Element[argumentList.size()];
@@ -412,11 +423,11 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
     private Element[] getRequestBodyChild(Document soapenvelope) throws InvalidDocumentFormatException {
         Element bodyel = SoapUtil.getBodyElement(soapenvelope);
         NodeList bodychildren = bodyel.getChildNodes();
-        ArrayList children = new ArrayList();
+        ArrayList<Element> children = new ArrayList<Element>();
         for (int i = 0; i < bodychildren.getLength(); i++) {
             Node child = bodychildren.item(i);
             if (child instanceof Element) {
-                children.add(child);
+                children.add((Element)child);
             }
         }
         Element[] output = new Element[children.size()];
@@ -451,9 +462,9 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
          * get the errors recorded during parse operation
          * @return a collection of SAXParseException objects
          */
-        public Collection recordedErrors() {
+        public Collection<SAXParseException> recordedErrors() {
             return errors;
         }
-        private final ArrayList errors = new ArrayList();
+        private final ArrayList<SAXParseException> errors = new ArrayList<SAXParseException>();
     }
 }
