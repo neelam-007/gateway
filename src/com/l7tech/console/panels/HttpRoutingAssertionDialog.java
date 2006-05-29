@@ -226,6 +226,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
             new URL(url);
         } catch (MalformedURLException e1) {
             bad = true;
+            // check if the url has context variables
+            if (url.indexOf("${") > -1) {
+                // a url may appear to be malformed simply because it relies
+                // on the runtime resolution of a context variable
+                bad = false;
+            }
         }
         if (bad) {
             JOptionPane.showMessageDialog(okButton, "URL value " + url + " is not valid.");

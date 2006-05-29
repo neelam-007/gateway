@@ -71,6 +71,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     private final HttpConnectionManager connectionManager;
     private final SSLContext sslContext;
     private static final String IV_USER = "IV_USER";
+    private final boolean urlUsesVariables;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(assertion, ctx);
@@ -81,6 +82,19 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         if (hmax <= 0) {
             hmax = CommonsHttpClient.getDefaultMaxConnectionsPerHost();
             tmax = CommonsHttpClient.getDefaultMaxTotalConnections();
+        }
+
+        // remember if we need to resolve the url at runtime
+        String tmp = httpRoutingAssertion.getProtectedServiceUrl();
+        if (tmp != null) {
+            if (tmp.indexOf("${") > -1) {
+                urlUsesVariables = true;
+            } else {
+                urlUsesVariables = false;
+            }
+        } else {
+            logger.info("this http routing assertion has null url");
+            urlUsesVariables = false;
         }
 
         IdentityBindingHttpConnectionManager connectionManager = new IdentityBindingHttpConnectionManager();
@@ -156,7 +170,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             PublishedService service = context.getService();
             context.routingStarted();
             try {
-                u = getProtectedServiceUrl(service);
+                u = getProtectedServiceUrl(service, context);
             } catch (WSDLException we) {
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
                 return AssertionStatus.FAILED;
@@ -525,13 +539,14 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         return responseOk;
     }
 
-    /**
-     *
-     */
-    private URL getProtectedServiceUrl(PublishedService service) throws WSDLException, MalformedURLException {
-        URL url;
+    private URL getProtectedServiceUrl(PublishedService service, PolicyEnforcementContext context) throws WSDLException, MalformedURLException {
         String psurl = httpRoutingAssertion.getProtectedServiceUrl();
+        if (urlUsesVariables) {
+           psurl = ExpandVariables.process(psurl, context.getVariableMap(varNames, auditor));
+        }
+        URL url;
         if (psurl == null) {
+            logger.info("assertion's url was null, falling back on service's url value");
             url = service.serviceUrl();
         } else {
             url = new URL(psurl);
