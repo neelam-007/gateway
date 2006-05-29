@@ -13,7 +13,7 @@ import java.util.Set;
 public class CheckSSGDatabase extends DbVersionChecker {
     private static final String PUBLISHEDSERVICE_TABLE = "published_service";
 
-    public boolean doCheck(Hashtable tableData){
+    public boolean doCheck(Hashtable<String, Set> tableData){
         boolean passed = false;
         Set columns = tableData.keySet();
         passed = columns.contains(PUBLISHEDSERVICE_TABLE);

@@ -1,11 +1,11 @@
 package com.l7tech.server.config.commands;
 
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
-import com.l7tech.server.config.OSSpecificFunctions;
 
+import java.io.*;
 import java.util.Properties;
 import java.util.logging.Logger;
-import java.io.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,20 +52,16 @@ public class LoggingConfigCommand extends BaseConfigurationCommand {
         boolean success = true;
         FileInputStream fis = null;
         FileOutputStream fos = null;
-        Properties props = new Properties();
+        Properties props = null;
         try {
             File loggingPropertiesFile = new File(ssgLogPropsPath);
-            if (!loggingPropertiesFile.exists()) {
-                loggingPropertiesFile.createNewFile();
-            }
-            fis = new FileInputStream(loggingPropertiesFile);
-            props.load(fis);
-            fis.close();
-            fis = null;
+            props = PropertyHelper.mergeProperties(
+                    loggingPropertiesFile,
+                    new File(ssgLogPropsPath + "." + osFunctions.getUpgradedFileExtension()), 
+                    true);
 
             String fullLogPattern = osFunctions.getSsgInstallRoot() + SSG_LOG_PATTERN;
             props.setProperty(LOG_PATTERN_PROPERTY, fullLogPattern);
-
 
             fos = new FileOutputStream(loggingPropertiesFile);
             props.store(fos, PROPERTY_COMMENT);

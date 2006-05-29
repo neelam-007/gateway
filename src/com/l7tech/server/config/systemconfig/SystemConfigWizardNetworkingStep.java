@@ -132,7 +132,7 @@ public class SystemConfigWizardNetworkingStep extends BaseConsoleStep {
             promptList.add(String.valueOf(x++) + ") " + networkConfig.getInterfaceName() + " (" + infoLine + ")" + getEolChar());
         }
         promptList.add("Please make a selection [1] : ");
-        String[] prompts = promptList.toArray(new String[promptList.size()]);
+        String[] prompts = promptList.toArray(new String[]{});
         String whichChoice = getData(prompts, "1");
 
         int choiceIndex = 0;

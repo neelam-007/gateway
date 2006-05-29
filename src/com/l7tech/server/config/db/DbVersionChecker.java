@@ -1,6 +1,7 @@
 package com.l7tech.server.config.db;
 
 import java.util.Hashtable;
+import java.util.Set;
 
 /**
  *
@@ -8,7 +9,7 @@ import java.util.Hashtable;
  * Time: 12:56:07 PM
  */
 public abstract class DbVersionChecker implements Comparable{
-    public abstract boolean doCheck(Hashtable tableData);
+    public abstract boolean doCheck(Hashtable<String, Set> tableData);
     public abstract String getVersion();
 
     public int compareTo(Object o) {

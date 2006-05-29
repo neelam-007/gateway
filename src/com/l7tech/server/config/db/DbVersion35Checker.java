@@ -13,14 +13,14 @@ public class DbVersion35Checker extends DbVersionChecker {
     public static final String SERVICE_RESOLUTION_TABLE = "service_resolution";
     public static final String DIGESTED_COLUMN = "digested";
 
-    public boolean doCheck(Hashtable tableData) {
+    public boolean doCheck(Hashtable<String, Set> tableData) {
         boolean passed = false;
 
         if (tableData == null) {
             return passed;
         }
 
-        Set serviceResTable = (Set) tableData.get(SERVICE_RESOLUTION_TABLE);
+        Set serviceResTable = tableData.get(SERVICE_RESOLUTION_TABLE);
         if (serviceResTable == null) {
             return passed;
         }

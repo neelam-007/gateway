@@ -4,6 +4,7 @@ import com.l7tech.common.security.prov.luna.LunaCmu;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.config.KeyStoreConstants;
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
@@ -337,7 +338,7 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
 
         BufferedReader reader = null;
         PrintWriter writer = null;
-        File newFile = new File(osFunctions.getSsgSystemPropertiesFile() + ".new");
+        File newFile = new File(osFunctions.getSsgSystemPropertiesFile() + ".confignew");
 
         //Properties props = new Properties();
         try {
@@ -634,21 +635,19 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
         }
     }
 
-    private void updateKeystoreProperties(File keystorePropertiesFile, char[] ksPassword) {
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
+    private void updateKeystoreProperties(File keystorePropertiesFile, char[] ksPassword) throws IOException {
 
-        Properties keystoreProps = new Properties();
+        FileOutputStream fos = null;
         try {
-            fis = new FileInputStream(keystorePropertiesFile);
-            keystoreProps.load(fis);
+            Properties keystoreProps = PropertyHelper.mergeProperties(
+                    keystorePropertiesFile,
+                    new File(keystorePropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()), 
+                    true);
+
             keystoreProps.setProperty(PROP_KS_TYPE, getKsType());
             keystoreProps.setProperty(PROP_KEYSTORE_DIR, osFunctions.getKeystoreDir());
             keystoreProps.setProperty(PROP_CA_KS_PASS, new String(ksPassword));
             keystoreProps.setProperty(PROP_SSL_KS_PASS, new String(ksPassword));
-
-            fis.close();
-            fis = null;
 
             fos = new FileOutputStream(keystorePropertiesFile);
             keystoreProps.store(fos, PROPERTY_COMMENT);
@@ -656,16 +655,15 @@ public class KeystoreConfigCommand extends BaseConfigurationCommand {
             fos.close();
             fos = null;
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (FileNotFoundException fnf) {
+            logger.severe("error while updating the keystore properties file");
+            logger.severe(fnf.getMessage());
+            throw fnf;
+        } catch (IOException ioex) {
+            logger.severe("error while updating the keystore properties file");
+            logger.severe(ioex.getMessage());
+            throw ioex;
         } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {}
-            }
             if (fos != null) {
                 try {
                     fos.close();

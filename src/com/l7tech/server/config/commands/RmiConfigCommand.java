@@ -1,6 +1,7 @@
 package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.OSSpecificFunctions;
+import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.ConfigurationBean;
 
 import java.io.*;
@@ -39,24 +40,22 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
 
     private void updateSystemPropertiesFile(File systemPropertiesFile) throws IOException {
 
-        InputStream fis = null;
         OutputStream fos = null;
-
         try {
             if (!systemPropertiesFile.exists()) {
                 systemPropertiesFile.createNewFile();
             }
 
-            fis = new FileInputStream(systemPropertiesFile);
-            Properties props = new Properties();
-            props.load(fis);
+
+            Properties props = PropertyHelper.mergeProperties(
+                    systemPropertiesFile,
+                    new File(systemPropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()),
+                    true);
+            
             props.setProperty(PROP_RMI_RANDOMIZE, "true");
             props.setProperty(PROP_RMI_USECODEBASEONLY, "true");
 
-            fis.close();
-            fis = null;
-
-            fos =   new FileOutputStream(systemPropertiesFile);
+            fos = new FileOutputStream(systemPropertiesFile);
             props.store(fos, "Updated by the SSG Configuration Tool");
             logger.info("Setting " + PROP_RMI_RANDOMIZE + "=true" + " in system.properties file");
             logger.info("Setting " + PROP_RMI_USECODEBASEONLY + "=true" + " in system.properties file");
@@ -69,12 +68,6 @@ public class RmiConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                }
-            }
             if (fos != null) {
                 try {
                     fos.close();

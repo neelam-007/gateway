@@ -39,8 +39,8 @@ public class DBActions {
     public static final String GENERIC_DBCREATE_ERROR_MSG = "There was an error while attempting to create the database. Please try again";
     public static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
     public static final String CONNECTION_UNSUCCESSFUL_MSG = "Connection to the database was unsuccessful - see warning/errors for details";
-    public static final Object USERNAME_KEY = "Username";
-    public static final Object PASSWORD_KEY = "Password";
+    public static final String USERNAME_KEY = "Username";
+    public static final String PASSWORD_KEY = "Password";
 
     private static final String ERROR_CODE_AUTH_FAILURE = "28000";
     private static final String ERROR_CODE_UNKNOWNDB = "42000";
@@ -361,11 +361,11 @@ public class DBActions {
         Arrays.sort(dbCheckers, Collections.reverseOrder());
     }
 
-    private Set getTableColumns(String tableName, DatabaseMetaData metadata) throws SQLException {
-        Set columns = null;
+    private Set<String> getTableColumns(String tableName, DatabaseMetaData metadata) throws SQLException {
+        Set<String> columns = null;
         ResultSet rs = null;
         rs = metadata.getColumns(null, "%", tableName, "%");
-        columns = new HashSet();
+        columns = new HashSet<String>();
         while(rs.next()) {
             String columnName = rs.getString("COLUMN_NAME");
             columns.add(columnName.toLowerCase());
@@ -401,7 +401,7 @@ public class DBActions {
     }
 
     private Hashtable collectMetaInfo(Connection conn) throws SQLException {
-        Hashtable tableData = new Hashtable();
+        Hashtable<String, Set> tableData = new Hashtable<String, Set>();
 
         DatabaseMetaData metadata = conn.getMetaData();
         String[] tableTypes = {
@@ -412,7 +412,7 @@ public class DBActions {
         while (tableNames.next()) {
             String tableName = tableNames.getString("TABLE_NAME");
             try {
-                Set columns = getTableColumns(tableName, metadata);
+                Set<String> columns = getTableColumns(tableName, metadata);
                 if (columns != null) {
                     tableData.put(tableName.toLowerCase(), columns);
                 }
@@ -543,15 +543,15 @@ public class DBActions {
         if (StringUtils.isEmpty(pUsername) || StringUtils.isEmpty(pPassword)) {
             if (ui != null) {
                 String defaultUserName = StringUtils.isEmpty(pUsername)?"root":pUsername;
-                Map creds = ui.getPrivelegedCredentials(
+                Map<String, String> creds = ui.getPrivelegedCredentials(
                             "Please enter the credentials for the root database user (needed to create a database)",
                             "",
                             "",
                             defaultUserName);
 
                 if (creds != null) {
-                    pUsername = (String) creds.get(USERNAME_KEY);
-                    pPassword = (String) creds.get(PASSWORD_KEY);
+                    pUsername = creds.get(USERNAME_KEY);
+                    pPassword = creds.get(PASSWORD_KEY);
                 } else {
                     return false;
                 }
@@ -657,7 +657,7 @@ public class DBActions {
                     }
                     if (shouldUpgrade) {
                         try {
-                            Map creds = null;
+                            Map<String, String> creds = null;
                             if (StringUtils.isEmpty(privUsername) || StringUtils.isEmpty(privPassword)) {
                                 if (ui != null) creds = ui.getPrivelegedCredentials(
                                         "Please enter the credentials for the root database user (needed to upgrade the database)",
@@ -667,8 +667,8 @@ public class DBActions {
                                 else return false;
                             }
                             if (creds == null) return false;
-                            privUsername = (String) creds.get(DBActions.USERNAME_KEY);
-                            privPassword = (String) creds.get(DBActions.PASSWORD_KEY);
+                            privUsername = creds.get(DBActions.USERNAME_KEY);
+                            privPassword = creds.get(DBActions.PASSWORD_KEY);
 
                             isOk = doDbUpgrade(hostname, dbName, currentVersion, dbVersion, privUsername, privPassword, ui);
                             if (isOk && ui != null) ui.showSuccess("Database Successfully Upgraded\n");

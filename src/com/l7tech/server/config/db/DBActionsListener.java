@@ -22,5 +22,5 @@ public interface DBActionsListener {
 
     String getPrivilegedUsername(String defaultUsername);
 
-    Map getPrivelegedCredentials(String message, String usernamePrompt, String passwordPrompt, String defaultUsername);
+    Map<String, String> getPrivelegedCredentials(String message, String usernamePrompt, String passwordPrompt, String defaultUsername);
 }

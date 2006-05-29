@@ -13,14 +13,14 @@ public class DbVersion34Checker extends DbVersionChecker {
 
     public static final String SKI_COLUMN ="ski";
 
-    public boolean doCheck(Hashtable tableData) {
+    public boolean doCheck(Hashtable<String, Set> tableData) {
         boolean passed = false;
         if (tableData == null) {
             return passed;
         }
 
-        Set clientCertColumns = (Set) tableData.get(CLIENT_CERT_TABLE);
-        Set trustedCertColumns= (Set) tableData.get(TRUSTED_CERT_TABLE);
+        Set clientCertColumns = tableData.get(CLIENT_CERT_TABLE);
+        Set trustedCertColumns= tableData.get(TRUSTED_CERT_TABLE);
 
         if (clientCertColumns != null && trustedCertColumns != null) {
             passed = clientCertColumns.contains(SKI_COLUMN) && trustedCertColumns.contains(SKI_COLUMN);

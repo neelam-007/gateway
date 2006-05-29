@@ -17,14 +17,14 @@ public class DbVersion33Checker extends DbVersionChecker {
     public static final String CLUSTER_PROP_TABLE = "cluster_properties";
     public static final String SAMPLE_MSG_TABLE = "sample_messages";
 
-    public boolean doCheck(Hashtable tableData) {
+    public boolean doCheck(Hashtable<String, Set> tableData) {
         boolean passed = false;
         if (tableData != null) {
-            Set trustedCertColumns = (Set) tableData.get(TRUSTED_CERT_TABLE);
-            Set clientCertColumns = (Set) tableData.get(CLIENT_CERT_TABLE);
-            Set commSchemaColumns = (Set) tableData.get(COMM_SCHEMAS_TABLE);
-            Set clusterPropColumns = (Set) tableData.get(CLUSTER_PROP_TABLE);
-            Set sampleMsgColumns = (Set) tableData.get(SAMPLE_MSG_TABLE);
+            Set trustedCertColumns = tableData.get(TRUSTED_CERT_TABLE);
+            Set clientCertColumns = tableData.get(CLIENT_CERT_TABLE);
+            Set commSchemaColumns = tableData.get(COMM_SCHEMAS_TABLE);
+            Set clusterPropColumns = tableData.get(CLUSTER_PROP_TABLE);
+            Set sampleMsgColumns = tableData.get(SAMPLE_MSG_TABLE);
 
             passed =  (trustedCertColumns != null) &&
                                 (clientCertColumns != null) &&

@@ -133,18 +133,26 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     }
 
     private boolean checkIsNewDb(Map props) {
+        if (props == null || props.isEmpty()) return true;
+
+        String existingDBUrl = (String) props.get(SsgDatabaseConfigBean.PROP_DB_URL);
+
+        if (StringUtils.isEmpty(existingDBUrl)) {
+            return true;
+        }
+
         //if an exising username, password and non default URL are found, then this machine already has a database
         //configured
         String existingDbUsername = (String) props.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         String existingDbPassword = (String) props.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
 
-        String existingDBUrl = (String) props.get(SsgDatabaseConfigBean.PROP_DB_URL);
-        if (StringUtils.isNotEmpty(existingDBUrl)) {
-            Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
-            if (matcher.matches() && StringUtils.isNotEmpty(existingDbUsername) && StringUtils.isNotEmpty(existingDbPassword)) {
-                return false;
-            }
+        Matcher matcher = SsgDatabaseConfigBean.dbUrlPattern.matcher(existingDBUrl);
+        if (matcher.matches()
+                && StringUtils.isNotEmpty(existingDbUsername)
+                && StringUtils.isNotEmpty(existingDbPassword)) {
+            return false;
         }
+
         return true;
     }
 
@@ -188,9 +196,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
     }
 
     protected void updateView(Set settings) {
-        if (createNewDb.isSelected()) {
-
-        } else {
+        if (!createNewDb.isSelected()) {
             populateExistingDbFields();
         }
     }
@@ -381,7 +387,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         return (result == JOptionPane.OK_OPTION);
     }
 
-    public Map getPrivelegedCredentials(String description, String usernamePrompt, String passwordPrompt, String defaultUsername) {
+    public Map<String, String> getPrivelegedCredentials(String description, String usernamePrompt, String passwordPrompt, String defaultUsername) {
         CredentialsDialog dlg = new CredentialsDialog(getParentWizard(), "Enter Credentials for Priveleged user", true);
 
         if (StringUtils.isNotEmpty(description)) dlg.setDescription(description);
@@ -394,7 +400,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         if (dlg.wasCancelled()) return null;
 
 
-        Map creds = new HashMap();
+        Map<String, String> creds = new HashMap<String, String>();
         creds.put(DBActions.USERNAME_KEY, dlg.getUsername());
         String passwd = new String(dlg.getPassword());
         if (passwd == null) passwd = "";

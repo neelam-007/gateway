@@ -17,14 +17,14 @@ public class DbVersion3132Checker extends DbVersionChecker {
 
     private String realVersion = "3.2";
 
-    public boolean doCheck(Hashtable tableData) {
+    public boolean doCheck(Hashtable<String, Set> tableData) {
         boolean passed = false;
         if (tableData == null) {
             return passed;
         }
 
-        Set counterTable = (Set) tableData.get(COUNTERS_TABLE);
-        Set auditTable = (Set) tableData.get(AUDIT_MESSAGE_TABLE);
+        Set counterTable = tableData.get(COUNTERS_TABLE);
+        Set auditTable = tableData.get(AUDIT_MESSAGE_TABLE);
 
         if (auditTable == null) {
             passed = false;

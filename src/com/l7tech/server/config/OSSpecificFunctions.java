@@ -175,20 +175,6 @@ public abstract class OSSpecificFunctions {
         return getPathToJdk() + pathToJreLibExt;
     }
 
-    public static void main(String[] args) {
-        System.setProperty("SSG_ROOT", "/tmp/testing");
-        OSSpecificFunctions functions = null;
-        try {
-            functions = OSDetector.getOSSpecificFunctions();
-        } catch (UnsupportedOsException e) {
-            System.out.println(e.getMessage());
-        }
-        System.out.println("OS Name = " + functions.getOSName());
-        System.out.println("Install root = " + functions.getSsgInstallRoot());
-        System.out.println("Cluster Hostname File = " + functions.getClusterHostFile());
-        System.out.println("Cluster Hostname = " + functions.getClusterHostName());
-    }
-
     public String getLunaCmuPath() {
         return lunaCmuPath;
     }
@@ -198,13 +184,14 @@ public abstract class OSSpecificFunctions {
     }
 
     public String getPathToJavaLibPath() {
-//        return getPathToJdk() + pathToJavaLibPath;
         return getSsgInstallRoot() + pathToJavaLibPath;
     }
 
     public String getPathToDBCreateFile() {
         return installRoot + pathToDBCreateFile;
     }
+
+    public abstract String getUpgradedFileExtension();
 
     public static class MissingPropertyException extends RuntimeException
     {

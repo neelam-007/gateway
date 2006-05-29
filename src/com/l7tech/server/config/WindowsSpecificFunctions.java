@@ -36,6 +36,10 @@ public class WindowsSpecificFunctions extends OSSpecificFunctions {
         };
     }
 
+    public String getUpgradedFileExtension() {
+        return "new";
+    }
+
     public boolean isWindows() {
         return true;
     }

@@ -3,6 +3,7 @@ package com.l7tech.server.config.commands;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.ui.gui.ConfigurationWizard;
+import com.l7tech.server.config.PropertyHelper;
 
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -87,14 +88,13 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
         String dbUsername = dbConfigBean.getDbUsername();
         String dbPassword = dbConfigBean.getDbPassword();
 
-        FileInputStream fis = null;
         FileOutputStream fos = null;
-        Properties dbProps = new Properties();
+
         try {
-            fis = new FileInputStream(dbConfigFile);
-            dbProps.load(fis);
-            fis.close();
-            fis = null;
+            Properties dbProps = PropertyHelper.mergeProperties(
+                    dbConfigFile,
+                    new File(dbConfigFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()), 
+                    true);
 
             String origUrl = (String) dbProps.get(HIBERNATE_URL_KEY);
             if (StringUtils.isEmpty(origUrl) || origUrl.equals(DB_URL_PLACEHOLDER)) {
@@ -125,13 +125,6 @@ public class SsgDatabaseConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                }
-            }
-
             if (fos != null) {
                 try {
                     fos.close();

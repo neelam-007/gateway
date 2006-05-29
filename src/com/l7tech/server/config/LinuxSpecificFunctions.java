@@ -37,6 +37,10 @@ public class LinuxSpecificFunctions extends OSSpecificFunctions {
         };
     }
 
+    public String getUpgradedFileExtension() {
+        return "rpmnew";
+    }
+
     public boolean isLinux() {
         return true;
     }

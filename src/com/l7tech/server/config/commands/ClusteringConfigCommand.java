@@ -2,12 +2,12 @@ package com.l7tech.server.config.commands;
 
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.beans.ConfigurationBean;
+import com.l7tech.server.config.PropertyHelper;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
-import java.text.DateFormat;
-import java.util.logging.Logger;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,13 +52,11 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         boolean configureCluster = clusterBean.getClusterType() != ClusteringConfigBean.CLUSTER_NONE;
 
         File clusterHostNameFile = configureCluster? new File(osFunctions.getClusterHostFile()):null;
-        //File hostsFile = new File(osFunctions.getHostsFile());
         File systemPropertiesFile = new File(osFunctions.getSsgSystemPropertiesFile());
 
         File[] files = new File[]
         {   clusterHostNameFile,
             systemPropertiesFile,
-            //hostsFile
         };
 
 
@@ -84,28 +82,18 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
         } catch (IOException e) {
             success = false;
         }
-//        updateHostsFile(hostsFile, clusterHostname);
 
         return success;
     }
 
     private void updateSystemPropertiesFile(String hostname, File systemPropertiesFile) throws IOException {
-
-        InputStream fis = null;
         OutputStream fos = null;
-
         try {
-            if (!systemPropertiesFile.exists()) {
-                systemPropertiesFile.createNewFile();
-            }
+            Properties props = PropertyHelper.mergeProperties(systemPropertiesFile,
+                    new File(systemPropertiesFile.getAbsolutePath() + "." + osFunctions.getUpgradedFileExtension()),
+                    true);
 
-            fis = new FileInputStream(systemPropertiesFile);
-            Properties props = new Properties();
-            props.load(fis);
             props.setProperty(PROP_RMI_HOSTNAME, hostname);
-
-            fis.close();
-            fis = null;
 
             fos =   new FileOutputStream(systemPropertiesFile);
             props.store(fos, "Updated by the SSG Configuration Tool");
@@ -119,12 +107,6 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             logger.severe(e.getMessage());
             throw e;
         } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                }
-            }
             if (fos != null) {
                 try {
                     fos.close();
@@ -132,15 +114,7 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
                 }
             }
         }
-
-
     }
-
-//    private void updateHostsFile(File hostsFile, String clusterHostname) {
-//        if (hostsFile == null || StringUtils.isEmpty(clusterHostname)) {
-//            throw new IllegalArgumentException("hosts file and cluster hostname need to be provided");
-//        }
-//    }
 
     private void writeClusterHostname(File clusterHostNameFile, String clusterHostname) throws IOException {
         if (clusterHostNameFile == null) {
@@ -171,37 +145,4 @@ public class ClusteringConfigCommand extends BaseConfigurationCommand {
             }
         }
     }
-
-    private void printPlans() {
-        ClusteringConfigBean clusterBean = (ClusteringConfigBean) configBean;
-
-        System.out.println("editing the following files");
-        System.out.println(osFunctions.getHostsFile());
-        System.out.println(osFunctions.getClusterHostFile());
-
-        System.out.println("update clustering configuration as follows:");
-
-        StringBuffer buffer = new StringBuffer();
-        if (clusterBean.isNewHostName()) {
-            buffer.append("Configure a new hostname - ").append(clusterBean.getClusterHostname()).append("\n");
-        } else {
-            buffer.append("Use the existing hostname - ").append(clusterBean.getClusterHostname()).append("\n");
-        }
-
-        switch (clusterBean.getClusterType()) {
-            case ClusteringConfigBean.CLUSTER_NONE:
-                buffer.append("Don't configure a cluster\n");
-                break;
-            case ClusteringConfigBean.CLUSTER_NEW:
-                buffer.append("Create a new cluster using the above name: ").append(clusterBean.getClusterHostname()).append("\n");
-                break;
-            case ClusteringConfigBean.CLUSTER_JOIN:
-                buffer.append("Join a cluster using the above name: ").append(clusterBean.getClusterHostname()).append("\n");
-                buffer.append("the master of the cluster is: \n");
-                buffer.append(clusterBean.getCloneUsername()).append(":").append(clusterBean.getClonePassword()).append("@").append(clusterBean.getCloneHostname()).append("\n");
-                break;
-        }
-        System.out.println(buffer.toString());
-    }
-
 }

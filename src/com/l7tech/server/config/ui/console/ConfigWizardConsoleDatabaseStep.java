@@ -78,7 +78,10 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
 
     private String selectDefault(String fromBean, String fromProps) {
-        return StringUtils.isEmpty(fromBean)?fromProps:fromBean;
+        if (StringUtils.isEmpty(fromBean))
+            return StringUtils.isEmpty(fromProps)?"":fromProps;
+
+        return fromBean;
     }
 
     private void init() {
@@ -113,7 +116,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
     private void doDBInfoPrompts() throws IOException, WizardNavigationException {
         //if the bean didn't contain anything useful, get whatever is currently in the config file
-        Map defaults = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
+        Map<String, String> defaults = PropertyHelper.getProperties(osFunctions.getDatabaseConfig(), new String[] {
                 SsgDatabaseConfigBean.PROP_DB_URL,
                 SsgDatabaseConfigBean.PROP_DB_USERNAME,
                 SsgDatabaseConfigBean.PROP_DB_PASSWORD,
@@ -136,8 +139,12 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
 
         defaultHostname = selectDefault(databaseBean.getDbHostname(), defaultHostname);
         defaultDbName = selectDefault(databaseBean.getDbName(), defaultDbName);
-        defaultDbUsername = selectDefault(databaseBean.getDbUsername(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_USERNAME));
-        defaultDbPassword = selectDefault(databaseBean.getDbPassword(), (String) defaults.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD));
+
+        defaultDbUsername = defaults.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
+        defaultDbUsername = selectDefault(databaseBean.getDbUsername(), defaultDbUsername );
+
+        defaultDbPassword = defaults.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
+        defaultDbPassword = selectDefault(databaseBean.getDbPassword(), defaultDbPassword);
 
 
         if (createNewDb) printText(HEADER_NEW_DB_INFO + getEolChar());
@@ -294,7 +301,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         return false;
     }
 
-    public Map getPrivelegedCredentials(String description, String usernamePrompt, String passwordPrompt, String defaultUsername) {
+    public Map<String, String> getPrivelegedCredentials(String description, String usernamePrompt, String passwordPrompt, String defaultUsername) {
         if (StringUtils.isEmpty(defaultUsername)) defaultUsername = "root";
         if (StringUtils.isEmpty(usernamePrompt)) usernamePrompt = "Please enter the username of the root database user: [" + defaultUsername + "] ";
         if (StringUtils.isEmpty(passwordPrompt)) passwordPrompt = "Please enter the password of the root database user: ";
@@ -309,7 +316,7 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
                     new String[] {
                         passwordPrompt,
                     }, "");
-            Map creds = new HashMap();
+            Map<String, String> creds = new HashMap<String, String>();
             creds.put(DBActions.USERNAME_KEY, username);
             databaseBean.setPrivUserName(username);
 
