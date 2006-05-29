@@ -23,6 +23,7 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.cluster.ClusterPropertyManager;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -42,6 +43,7 @@ class JmsRequestHandler {
     final private MessageProcessor messageProcessor;
     final private AuditContext auditContext;
     final private SoapFaultManager soapFaultManager;
+    final private ClusterPropertyManager clusterPropertyManager;
 
     public JmsRequestHandler(ApplicationContext ctx) {
         this.springContext = ctx;
@@ -51,6 +53,7 @@ class JmsRequestHandler {
         messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
+        clusterPropertyManager = (ClusterPropertyManager)ctx.getBean("clusterPropertyManager", ClusterPropertyManager.class);
     }
 
     /**
@@ -103,6 +106,7 @@ class JmsRequestHandler {
             try {
                 context.setAuditContext(auditContext);
                 context.setSoapFaultManager(soapFaultManager);
+                context.setClusterPropertyManager(clusterPropertyManager);
 
                 // WebSphere MQ doesn't like this with AUTO_ACKNOWLEDGE
                 // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?

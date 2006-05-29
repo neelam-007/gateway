@@ -33,6 +33,7 @@ import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.service.PublishedService;
+import com.l7tech.cluster.ClusterPropertyManager;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
@@ -73,6 +74,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private CompositeRoutingResultListener routingResultListener = new CompositeRoutingResultListener();
     private boolean operationAttempted = false;
     private Operation cachedOperation = null;
+    private ClusterPropertyManager clusterPropertyManager = null;
 
     private RoutingStatus routingStatus = RoutingStatus.NONE;
     private URL routedServiceUrl;
@@ -107,6 +109,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setSoapFaultManager(SoapFaultManager soapFaultManager) {
         this.soapFaultManager = soapFaultManager;
+    }
+
+    public ClusterPropertyManager getClusterPropertyManager() {
+        return clusterPropertyManager;
+    }
+
+    public void setClusterPropertyManager(ClusterPropertyManager clusterPropertyManager) {
+        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     public void setAuditContext(AuditContext auditContext) {

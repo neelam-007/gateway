@@ -25,6 +25,7 @@ import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.service.PublishedService;
+import com.l7tech.cluster.ClusterPropertyManager;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.xml.sax.SAXException;
@@ -62,6 +63,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private AuditContext auditContext;
     private ServerConfig serverConfig;
     private SoapFaultManager soapFaultManager;
+    private ClusterPropertyManager clusterPropertyManager;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -73,6 +75,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         auditContext = (AuditContext)applicationContext.getBean("auditContext");
         serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
         soapFaultManager = (SoapFaultManager)applicationContext.getBean("soapFaultManager");
+        clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
     }
 
     /**
@@ -115,6 +118,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         try {
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
+            context.setClusterPropertyManager(clusterPropertyManager);
 
             // Process message
             request.initialize(stashManager, ctype, hrequest.getInputStream());

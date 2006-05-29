@@ -14,6 +14,7 @@ import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 
 import javax.wsdl.Operation;
 import java.util.HashMap;
@@ -232,6 +233,26 @@ public class ServerVariables {
                 return hrk == null ? null : Integer.toString(hrk.getStatus());
             }
         }),
+        new Variable(BuiltinVariables.PREFIX_CLUSTER_PROPERTY, new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                if (context.getClusterPropertyManager() != null) {
+                    try {
+                        if (name.length() < (BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 2)) {
+                            logger.warning("variable name " + name + " cannot be resolved to a cluster property");
+                            return null;
+                        }
+                        name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
+                        return context.getClusterPropertyManager().getProperty(name);
+                    } catch (FindException e) {
+                        logger.log(Level.WARNING, "exception querying for cluster property", e);
+                        return null;
+                    }
+                } else {
+                    logger.severe("cannot get ClusterPropertyManager through context");
+                    return null;
+                }
+            }
+        })
     };
 
     private static Object getUrlValue(String prefix, String name, Object u) {

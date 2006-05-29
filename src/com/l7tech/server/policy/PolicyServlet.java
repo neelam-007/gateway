@@ -30,6 +30,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.service.PublishedService;
+import com.l7tech.cluster.ClusterPropertyManager;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.springframework.beans.BeansException;
@@ -70,6 +71,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private SoapFaultManager soapFaultManager;
     private byte[] serverCertificate;
     private ServerConfig serverConfig;
+    private ClusterPropertyManager clusterPropertyManager;
     public static final String DEFAULT_CONTENT_TYPE = XmlUtil.TEXT_XML + "; charset=utf-8";
 
     /** A serviceoid request that comes in via this URI should be served a compatibility-mode policy. */
@@ -84,6 +86,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore", KeystoreUtils.class);
             serverCertificate = ku.readSSLCert();
             serverConfig = (ServerConfig)applicationContext.getBean("serverConfig");
+            clusterPropertyManager = (ClusterPropertyManager)applicationContext.getBean("clusterPropertyManager");
         }
         catch (BeansException be) {
             throw new ServletException(be);
@@ -124,6 +127,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             context = new PolicyEnforcementContext(request, response);
             context.setAuditContext(auditContext);
             context.setSoapFaultManager(soapFaultManager);
+            context.setClusterPropertyManager(clusterPropertyManager);
             boolean success = false;
 
             try {
