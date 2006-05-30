@@ -13,7 +13,7 @@ public class LdapGroup implements Group, Serializable, LdapIdentity {
     private String dn;
     private GroupBean groupBean;
     private long providerId;
-    private Attributes attributes;
+    private transient Attributes attributes;
 
     public LdapGroup( GroupBean bean ) {
         groupBean = bean;

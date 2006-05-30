@@ -322,8 +322,8 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     private Collection doSearch(String filter) {
         Collection output = new TreeSet(new EntityHeaderComparator());
         DirContext context = null;
+        NamingEnumeration answer = null;
         try {
-            NamingEnumeration answer;
             // search string for users and or groups based on passed types wanted
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -340,15 +340,15 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                 if (header != null)
                     output.add(header);
                 else
-                    logger.warning("entry not valid or objectclass not supported for dn=" + dn + ". this " +
+                    logger.info("entry not valid or objectclass not supported for dn=" + dn + ". this " +
                       "entry will not be presented as part of the search results.");
             }
-            answer.close();
         } catch (SizeLimitExceededException e) {
             // add something to the result that indicates the fact that the search criteria is too wide
             logger.log(Level.FINE, "the search results exceede the maximum. adding a " +
-                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
-                                   e);
+                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results '" +
+                                   e.getMessage() + "'");
+
             EntityHeader maxExceeded = new EntityHeader("noid",
                                                         EntityType.MAXED_OUT_SEARCH_RESULT,
                                                         "Search criterion too wide",
@@ -360,6 +360,14 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             logger.log(Level.WARNING, "error searching with filter: " + filter, e);
         } finally {
             if (context != null) {
+                if (answer != null) {
+                    try {
+                        answer.close();
+                    }
+                    catch(NamingException ne) {
+                        logger.log(Level.WARNING, "Caught NamingException while closing LDAP answer", ne);
+                    }
+                }
                 try {
                     context.close();
                 } catch (NamingException e) {
