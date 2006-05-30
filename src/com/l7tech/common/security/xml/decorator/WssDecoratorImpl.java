@@ -588,9 +588,6 @@ public class WssDecoratorImpl implements WssDecorator {
         // We do this for better interop with .net clients (WSE 2.0)
         // we may want to support different methods based on the user agent
         // the alternative would be : ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
-
-        // TODO [WS-I BSP] SecurityTokenReference must have a valueType [ref: section 5.2.13], is this SC token type valid?
-
         final byte[] derivationSourceSecretKey = session.getSecretKey();
 
         if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {

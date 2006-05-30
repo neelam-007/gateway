@@ -132,7 +132,8 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
         else if (kerberosTicket != null) { // process ticket
             KerberosServiceTicket kerberosServiceTicket = kerberosTicket.getServiceTicket();
             assert kerberosServiceTicket!=null;
-            LoginCredentials loginCreds = new LoginCredentials(kerberosServiceTicket.getClientPrincipalName(),
+            LoginCredentials loginCreds = new LoginCredentials(
+                                                        null,
                                                         null,
                                                         CredentialFormat.KERBEROSTICKET,
                                                         KerberosSecurityToken.class,

@@ -300,12 +300,6 @@ public class PolicyService extends ApplicationObjectSupport {
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
                 User user = context.getAuthenticatedUser();
-                //TODO fix Kerberos hackery
-                if(user==null && context.isAuthenticated() && context.getCredentials().getLogin()!=null) {
-                    UserBean ub = new UserBean();
-                    ub.setLogin(context.getCredentials().getLogin());
-                    user = ub;
-                }
                 policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, pre32PolicyCompat, false);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(e));
@@ -482,7 +476,6 @@ public class PolicyService extends ApplicationObjectSupport {
         }
     }
 
-    //TODO fix Kerberos hackery (add Kerberos ID provider?)
     private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) {
         PolicyPathResult paths = PolicyPathBuilder.getDefault().generate(rootAssertion);
         for (Iterator iterator = paths.paths().iterator(); iterator.hasNext();) {
@@ -491,7 +484,7 @@ public class PolicyService extends ApplicationObjectSupport {
             boolean pathContainsIdAssertion = false;
             for (int i = 0; i < path.length; i++) {
                 Assertion a = path[i];
-                if (a instanceof IdentityAssertion || a instanceof RequestWssKerberos) {
+                if (a instanceof IdentityAssertion) {
                     pathContainsIdAssertion = true;
                 }
             }

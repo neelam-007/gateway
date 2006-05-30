@@ -192,22 +192,20 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             String upn = ticket.getClientPrincipalName();
             try {
                 headers = search(true, false, getKerberosLdapAttributeMapping(), upn);
+                if (headers.size() > 1) {
+                    throw new AuthenticationException("Found multiple LDAP users with userPrincipalName '" + upn + "'.");
+                }
+                else if (!headers.isEmpty()){
+                    for (Iterator i = headers.iterator(); i.hasNext();) {
+                        EntityHeader header = (EntityHeader) i.next();
+                        if (header.getType() == EntityType.USER) {
+                            realUser = (LdapUser) userManager.findByPrimaryKey(header.getStrId());
+                        }
+                    }
+                    return new AuthenticationResult(realUser);
+                }
             } catch (FindException e) {
                 throw new AuthenticationException("Couldn't find LDAP user with userPrincipalName '" + upn + "'.", e);
-            }
-
-            if (headers.size() > 1) {
-                throw new AuthenticationException("Found multiple LDAP users with userPrincipalName '" + upn + "'.");
-            }
-            else if (!headers.isEmpty()){
-                for (Iterator i = headers.iterator(); i.hasNext();) {
-                    EntityHeader header = (EntityHeader) i.next();
-                    if (header.getType() == EntityType.USER) {
-                        realUser = (LdapUser) userManager.headerToUser(header);
-                        realUser.setLogin(upn.substring(0, upn.indexOf('@'))); //TODO fetch attributes and set user data
-                    }
-                }
-                return new AuthenticationResult(realUser);
             }
         } else {
             try {

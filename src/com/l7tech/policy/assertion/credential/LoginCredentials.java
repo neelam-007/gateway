@@ -7,6 +7,7 @@ package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -143,6 +144,10 @@ public class LoginCredentials implements SecurityToken {
                 SamlAssertion samlAssertion = (SamlAssertion)payload;
                 sb.append("nameIdentifier=\"");
                 sb.append(samlAssertion.getNameIdentifierValue());
+            } else if (payload instanceof KerberosServiceTicket) {
+                KerberosServiceTicket kerberosServiceTicket = (KerberosServiceTicket)payload;
+                sb.append("kerberosPrincipal=\"");
+                sb.append(kerberosServiceTicket.getClientPrincipalName());
             }
             sb.append("\"/>");
             cachedToString = sb.toString();
