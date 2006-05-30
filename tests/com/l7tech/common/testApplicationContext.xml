@@ -213,4 +213,6 @@
         </constructor-arg>
     </bean>
 
+    <bean id="clusterPropertyManager" class="com.l7tech.cluster.MockClusterPropertyManager"/>
+
 </beans>
