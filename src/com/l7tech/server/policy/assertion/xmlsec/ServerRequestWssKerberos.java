@@ -119,7 +119,6 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                 }
                 else {
                     context.setCredentials(creds);
-                    context.setAuthenticationResult(new AuthenticationResult(new UserBean(kerberosServiceTicket.getClientPrincipalName()), null, false));
 
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 
@@ -140,7 +139,6 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                                                         null,
                                                         kerberosServiceTicket);
             context.setCredentials(loginCreds);
-            context.setAuthenticationResult(new AuthenticationResult(new UserBean(kerberosServiceTicket.getClientPrincipalName()), null, false));
 
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
 

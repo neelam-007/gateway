@@ -23,6 +23,8 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
+import com.l7tech.common.security.kerberos.KerberosServiceTicket;
+
 import org.springframework.beans.factory.InitializingBean;
 
 import javax.naming.*;
@@ -182,12 +184,39 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     }
 
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
-        LdapUser realUser;
-        try {
-            realUser = (LdapUser)userManager.findByLogin(pc.getLogin());
-        } catch (FindException e) {
-            throw new AuthenticationException("Couldn't authenticate credentials", e);
+        LdapUser realUser = null;
+        if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
+            KerberosServiceTicket ticket = (KerberosServiceTicket) pc.getPayload();
+
+            Collection headers = null;
+            String upn = ticket.getClientPrincipalName();
+            try {
+                headers = search(true, false, getKerberosLdapAttributeMapping(), upn);
+            } catch (FindException e) {
+                throw new AuthenticationException("Couldn't find LDAP user with userPrincipalName '" + upn + "'.", e);
+            }
+
+            if (headers.size() > 1) {
+                throw new AuthenticationException("Found multiple LDAP users with userPrincipalName '" + upn + "'.");
+            }
+            else if (!headers.isEmpty()){
+                for (Iterator i = headers.iterator(); i.hasNext();) {
+                    EntityHeader header = (EntityHeader) i.next();
+                    if (header.getType() == EntityType.USER) {
+                        realUser = (LdapUser) userManager.headerToUser(header);
+                        realUser.setLogin(upn.substring(0, upn.indexOf('@'))); //TODO fetch attributes and set user data
+                    }
+                }
+                return new AuthenticationResult(realUser);
+            }
+        } else {
+            try {
+                realUser = (LdapUser) userManager.findByLogin(pc.getLogin());
+            } catch (FindException e) {
+                throw new AuthenticationException("Couldn't authenticate credentials", e);
+            }
         }
+
         if (realUser == null) return null;
 
         final CredentialFormat format = pc.getFormat();
@@ -869,9 +898,22 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         return null;
     }
 
+    private LdapAttributeMapping getKerberosLdapAttributeMapping(){
+        LdapAttributeMapping lmap = kerberosLdapAttributeMapping;
+
+        if (lmap == null) {
+            lmap = new LdapAttributeMapping();
+            lmap.setAttributeName("userPrincipalName"); // TODO make this configurable in LdapIdentityProviderConfig
+            kerberosLdapAttributeMapping = lmap;
+        }
+
+        return lmap;
+    }
+
     public static final String DESCRIPTION_ATTRIBUTE_NAME = "description";
 
     private LdapIdentityProviderConfig config;
+    private LdapAttributeMapping kerberosLdapAttributeMapping;
     private ClientCertManager clientCertManager;
     private LdapUserManager userManager;
     private LdapGroupManager groupManager;
