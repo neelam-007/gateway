@@ -14,6 +14,8 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     public static final String DYNAMIC_BOOT_PROTO = "dhcp";
     public static final String STATIC_BOOT_PROTO = "static";
 
+    private static final String INTERFACE_CFG_FILE = "/etc/sysconfig/network-scripts/ifcfg-";
+
     public static class NetworkConfig {
         String interfaceName;
         String bootProto;
@@ -89,6 +91,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
 
     protected void populateExplanations() {
         for (NetworkConfig networkConfig : networkingConfigs) {
+            explanations.add("Edit file: " + INTERFACE_CFG_FILE + networkConfig.getInterfaceName());
             explanations.add("Configure \"" + networkConfig.getInterfaceName() + "\" interface");
             explanations.add("\tBOOTPROTO=" + networkConfig.getBootProto());
             if (networkConfig.getBootProto().equals(STATIC_BOOT_PROTO)) {
@@ -98,6 +101,10 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
             }
             explanations.add("");
         }
+    }
+
+    public List<String> getManualSteps() {
+        return null;
     }
 
     public List<NetworkConfig> getNetworkingConfigurations() {

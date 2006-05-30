@@ -1,7 +1,6 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.PropertyHelper;
 import com.l7tech.server.config.beans.SsgDatabaseConfigBean;
 import com.l7tech.server.config.commands.SsgDatabaseConfigCommand;
@@ -17,7 +16,6 @@ import java.awt.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -156,7 +154,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         return true;
     }
 
-    protected void updateModel(Set settings) {
+    protected void updateModel() {
         SsgDatabaseConfigBean dbConfigBean = (SsgDatabaseConfigBean)configBean;
 
         dbConfigBean.setDbHostname(dbHostname.getText());
@@ -165,7 +163,7 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
         dbConfigBean.setDbName(dbName.getText());
     }
 
-    public boolean onNextButton() {
+    public boolean isValidated() {
         resetLabelColours();
         boolean isOk = true;
         //enforce that all the required fields are present.
@@ -191,11 +189,12 @@ public class ConfigWizardNewDBPanel extends ConfigWizardStepPanel implements DBA
                 isOk = dbActions.doExistingDb(theDbName, hostname, username, password, rootUsername, rootPassword, currentVersion, this);
             }
         }
+
         if (isOk) hideErrorMessage();
         return isOk;
     }
 
-    protected void updateView(Set settings) {
+    protected void updateView() {
         if (!createNewDb.isSelected()) {
             populateExistingDbFields();
         }

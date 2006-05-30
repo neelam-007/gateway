@@ -1,13 +1,10 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.commands.WindowsServiceCommand;
 import com.l7tech.server.config.beans.WindowsServiceBean;
 
 import javax.swing.*;
-import java.util.HashMap;
-import java.util.Set;
 import java.awt.*;
 
 /**
@@ -43,10 +40,10 @@ public class ConfigWizardWinServicePanel extends ConfigWizardStepPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    protected void updateModel(Set settings) {
+    protected void updateModel() {
         ((WindowsServiceBean)configBean).setDoService(yesService.isSelected());
     }
 
-    protected void updateView(Set settings) {
+    protected void updateView() {
     }
 }

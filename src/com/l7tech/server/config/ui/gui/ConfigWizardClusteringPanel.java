@@ -1,7 +1,6 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.commands.ClusteringConfigCommand;
 
@@ -9,9 +8,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Set;
-import java.net.InetAddress;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -47,7 +43,6 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
 
     private ClusterChangeListener clusterChangeListener = new ClusterChangeListener();
     private JLabel emptyHostnameLabel;
-
 
     private final class ClusterChangeListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
@@ -92,7 +87,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    protected void updateView(Set settings) {
+    protected void updateView() {
 
         emptyHostnameLabel.setVisible(false);
 
@@ -122,7 +117,7 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         }
     }
 
-    protected void updateModel(Set settings) {
+    protected void updateModel() {
         String hostnameForWizard; //this is the hostname that will be used to
 
         if (useNewHostnameOption.isSelected()) {
@@ -170,14 +165,13 @@ public class ConfigWizardClusteringPanel extends ConfigWizardStepPanel {
         clonePassword.setEnabled(enableCloneControls);
     }
 
-    public boolean onNextButton() {
-        boolean validInput = true;
+    public boolean isValidated() {
         if (useNewHostnameOption.isSelected()) {
             if (StringUtils.isEmpty(newHostname.getText())) {
-                validInput = false;
                 emptyHostnameLabel.setVisible(true);
+                return false;
             }
         }
-        return validInput;
+        return true;
     }
 }

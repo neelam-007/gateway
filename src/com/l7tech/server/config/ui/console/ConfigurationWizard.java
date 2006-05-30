@@ -12,6 +12,8 @@ import java.io.PrintWriter;
 import java.io.PrintStream;
 import java.util.*;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * User: megery
  * Date: Feb 22, 2006
@@ -38,6 +40,7 @@ public class ConfigurationWizard {
     private static final String LOGCONFIG_NAME = "configlogging.properties";
 
     ConsoleWizardUtils wizardUtils = null;
+    private Map<String, List<String>> manualSteps;
 
     public ConfigurationWizard(InputStream in, PrintStream out) {
         init(in, out);
@@ -62,6 +65,7 @@ public class ConfigurationWizard {
         currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
         commands = new HashSet<ConfigurationCommand>();
+        manualSteps = new HashMap<String, List<String>>();
     }
 
     private void addSteps(List<ConfigWizardConsoleStep> steps) {
@@ -181,5 +185,16 @@ public class ConfigurationWizard {
 
     public ConsoleWizardUtils getWizardUtils() {
         return wizardUtils;
+    }
+
+    public void addManualSteps(String stepKey, java.util.List<String> steps) {
+        if (StringUtils.isEmpty(stepKey)) throw new IllegalArgumentException("key cannot be empty or null");
+        if (steps == null) throw new IllegalArgumentException("steps cannot be null");
+
+        manualSteps.put(stepKey, steps);
+    }
+
+    public Map<String, List<String>> getManualSteps() {
+        return manualSteps;
     }
 }

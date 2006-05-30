@@ -12,6 +12,7 @@ import java.util.List;
  */
 public class NetworkingConfigurationCommand extends BaseConfigurationCommand {
     NetworkingConfigurationBean netBean;
+
     protected NetworkingConfigurationCommand(ConfigurationBean bean) {
         super(bean);
         netBean = (NetworkingConfigurationBean) configBean;

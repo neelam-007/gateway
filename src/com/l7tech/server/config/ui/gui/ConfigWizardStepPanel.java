@@ -1,13 +1,12 @@
 package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.ConfigurationBean;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,13 +41,11 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {
-        Set theSettings = (Set) settings;
-        updateView(theSettings);
+        updateView();
     }
 
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        Set settingsList = (Set) settings;
-        updateModel(settingsList);
+        updateModel();
         getParentWizard().storeCommand(configCommand);
     }
 
@@ -56,8 +53,29 @@ public abstract class ConfigWizardStepPanel extends WizardStepPanel {
         return false;
     }
 
+    protected void setupManualSteps() {
+        if (configBean != null) {
+            updateModel();
+            List<String> steps = configBean.getManualSteps();
+            if (steps == null || steps.isEmpty()) {
+                return;
+            }
 
-    protected abstract void updateModel(Set settings);
+            getParentWizard().addManualSteps(this.getClass().getName(), steps);
+        }
+    }
 
-    protected abstract void updateView(Set settings);
+    public boolean onNextButton() {
+        boolean isValid = isValidated();
+        if (isValid) setupManualSteps();
+        return isValid;
+    }
+
+    protected boolean isValidated() {
+        return true;
+    }
+
+    protected abstract void updateModel();
+
+    protected abstract void updateView();
 }

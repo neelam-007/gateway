@@ -2,7 +2,6 @@ package com.l7tech.server.config.ui.gui;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.server.config.KeyStoreConstants;
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.beans.KeystoreConfigBean;
 import com.l7tech.server.config.commands.KeystoreConfigCommand;
 
@@ -11,8 +10,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,7 +50,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         init();
     }
 
-    protected void updateModel(Set settings) {
+    protected void updateModel() {
         KeystoreConfigBean ksBean = (KeystoreConfigBean) configBean;
         ksBean.setClusterType(getParentWizard().getClusteringType());
         if (dontDoKsConfig.isSelected()) {
@@ -77,7 +74,7 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         }
     }
 
-    protected void updateView(Set settings) {
+    protected void updateView() {
         boolean isLunaOk = true;
         String[] keystores = getKeystores(isLunaOk);
         KeystoreConfigBean ksConfigBean = (KeystoreConfigBean) configBean;
@@ -182,13 +179,12 @@ public class ConfigWizardKeystorePanel extends ConfigWizardStepPanel {
         ksDataPanel.revalidate();
     }
 
-    public boolean onNextButton() {
-        boolean allIsWell = true;
+    public boolean isValidated() {
         if (!dontDoKsConfig.isSelected()) {
             KeystorePanel ksPanel = (KeystorePanel) whichKeystorePanel;
-            allIsWell = ksPanel.validateInput();
+            return ksPanel.validateInput();
         }
-        return allIsWell;
+        return true;
     }
 
 

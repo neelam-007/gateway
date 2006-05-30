@@ -1,15 +1,12 @@
 package com.l7tech.server.config.ui.console;
 
-import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.ListHandler;
 import com.l7tech.server.config.KeyStoreConstants;
 import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.*;
-import java.util.List;
-import java.util.Iterator;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * User: megery
@@ -17,6 +14,8 @@ import java.util.ArrayList;
  * Time: 10:00:57 AM
  */
 public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
+    private static final String MANUAL_STEPS_FILENAME = "ssg_config_manual_steps.txt";
+
     public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
         showNavigation = false;
@@ -25,35 +24,31 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
     public void doUserInterview(boolean validated) throws WizardNavigationException {
         ConfigurationWizard wizard = getParentWizard();
 
-        if (wizard.isHadFailures()) {
-            printText("There were errors during configuration, see below for details\n");
-        } else {
-            printText("The configuration was successfully applied.\n");
-            printText("You must restart the SSG in order for the configuration to take effect.\n");
+        if (wizard.isHadFailures()) printText("There were errors during configuration, see below for details" + getEolChar());
+        else {
+            printText("The configuration was successfully applied." + getEolChar());
+            printText("You must restart the SSG in order for the configuration to take effect." + getEolChar());
         }
 
         if (needsManualSteps(wizard.getClusteringType(), wizard.getKeystoreType())) {
-            printText("\n**** Some manual steps are required to complete the configuration of the SSG ****\n");
-            printText("\tThese manual steps have been saved to a the file: ssg_config_manual_steps.txt\n");
-            saveManualSteps(wizard.getClusteringType(), wizard.getKeystoreType());
+            printText(getEolChar() + "**** Some manual steps are required to complete the configuration of the SSG ****" + getEolChar());
+            printText("\tThese manual steps have been saved to a the file: " + MANUAL_STEPS_FILENAME + getEolChar());
+            saveManualSteps();
         }
 
-        printText("\nThe following is a summary of the actions taken by the wizard\n");
-        printText("\tThese logs have been saved to the file: ssgconfig0.log\n");
+        printText(getEolChar() + "The following is a summary of the actions taken by the wizard" + getEolChar());
+        printText("\tThese logs have been saved to the file: ssgconfig0.log" + getEolChar());
 
-        printText("\n");
+        printText(getEolChar());
 
-        List logs = ListHandler.getLogList();
+        List<String> logs = ListHandler.getLogList();
         if (logs != null) {
-            for (Iterator iterator = logs.iterator(); iterator.hasNext();) {
-                String s = (String) iterator.next();
-                if (s!= null) {
-                    printText(s + "\n");
-                }
+            for (String log : logs) {
+                if (log != null) printText(log + getEolChar());
             }
         }
 
-        printText("Press <Enter> to finish the wizard\n");
+        printText("Press <Enter> to finish the wizard" + getEolChar());
 
         try {
             handleInput(readLine());
@@ -66,134 +61,56 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         return (clusteringType != ClusteringConfigBean.CLUSTER_NONE || keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME));
     }
 
-    private boolean saveManualSteps(int clusteringType, String keystoreType) {
+    private boolean saveManualSteps() {
         boolean success = true;
-        String eol = osFunctions.isWindows()?"\r\n":"\n";
-        boolean lunaMentioned = false;
+
         StringBuilder stepsBuffer = new StringBuilder();
+        StringBuilder allSteps = new StringBuilder();
 
-        String infoLine = "The following manual steps are required to complete the configuration of the SSG" + eol;
-        String linuxLunaConfigCopy =    eol +
-                                            "\tLUNA CONFIGURATION: Copy the etc/Chrystoki.conf file from the primary node to each SSG in the cluster" + eol +
-                                            eol;
+        Map<String, List<String>> manualSteps = getParentWizard().getManualSteps();
 
-        String windowsLunaConfigCopy =  eol +
-                                            "\tLUNA CONFIGURATION: Copy the LUNA_INSTALL_DIR/crystoki.ini file from the primary node to each SSG in the cluster" +
-                                            eol;
-
-        String windowsLunaString =  eol +
-                                        "\t[Misc]" + eol +
-                                            "\t\tApplicationInstance=HTTP_SERVER<br>" + eol +
-                                            "\t\tAppIdMajor=1" + eol +
-                                            "\t\tAppIdMinor=1" + eol +
-                                            eol +
-                                        "\twhere AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol;
-
-        String windowsUpdateCrystokiLine =  "\tLUNA CONFIGURATION: Append the following to the LUNA_INSTALL_DIR/crystoki.ini file:" + eol +
-                                                "\t\t" + windowsLunaString + eol +
-                                            eol;
-
-        String linuxLunaString =    eol +
-                                        "\tMisc = {" + eol +
-                                            "\t\tApplicationInstance=HTTP_SERVER;" + eol +
-                                            "\t\tAppIdMajor=1;" + eol +
-                                            "\t\tAppIdMinor=1;" + eol +
-                                        "\t}" + eol +
-                                    eol +
-                                    "\twhere AppIdMajor and AppIdMinor correspond to your Luna configuration" + eol;
-
-        String linuxUpdateCrystokiLine =    "\tLUNA CONFIGURATION: Append the following to the etc/Chrystoki.conf file:" + eol +
-                                                 "\t\t" + linuxLunaString + eol +
-                                            eol;
-
-        String updateHostsFileLine =    "\tUPDATE HOSTS FILE: add a line which contains the IP address for this SSG node, then the " + eol +
-                                        "\tcluster host name, then this SSG node's hostname" + eol +
-                                        eol +
-                                            "\t\tex:" + eol +
-                                                "\t\t\t192.168.1.186      ssgcluster.domain.com ssgnode1.domain.com" + eol +
-                                        eol;
-
-        String timeSyncLine =   eol +
-                                    "\tTIME SYNCHRONIZATION: Please ensure time is synchronized among all SSG nodes " + eol +
-                                    "\twithin the cluster" + eol +
-                                eol;
-
-        String runSSgConfigLine =   "\tRUN THE SSG CONFIGURATION WIZARD: run the wizard on each of the " + eol +
-                                    "\tmembers of the cluster to generate the keystores" + eol +
-                                    eol +
-                                        "\t\tNote:" + eol +
-                                            "\t\t\tUse the same password for the keystore on each of the members of the cluster" + eol +
-                                    eol;
-
-        String copykeysLine =   "\tCOPY THE KEYS: copy the contents of the keystore directory on the first node" + eol +
-                                "\tof the cluster to the keystore directory on the other SSGs in the cluster" + eol +
-                                eol +
-                                    "\t\tNote:" + eol +
-                                        "\t\t\tThe SSG keystore directory is: \"" + osFunctions.getKeystoreDir() + "\"" + eol +
-                                eol;
-
-        if (clusteringType != ClusteringConfigBean.CLUSTER_NONE || keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
-            stepsBuffer.append(infoLine);
-
-            if (clusteringType != ClusteringConfigBean.CLUSTER_NONE) {
-                stepsBuffer.append(eol).append(
-                                    updateHostsFileLine).append(
-                                    timeSyncLine);
-
-
-                if (clusteringType == ClusteringConfigBean.CLUSTER_JOIN) {
-
-                    if (keystoreType == KeyStoreConstants.LUNA_KEYSTORE_NAME) {
-                        lunaMentioned = true;
-                        if (osFunctions.isLinux()) {
-                            stepsBuffer.append(linuxLunaConfigCopy);
-                        } else {
-                            stepsBuffer.append(windowsLunaConfigCopy);
-                        }
-                    }
-                    else {
-                        stepsBuffer.append(runSSgConfigLine).append(
-                            copykeysLine);
-                    }
-                }
-
-                if (clusteringType == ClusteringConfigBean.CLUSTER_NEW) {
-                    if (keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME)) {
-                        lunaMentioned = true;
-                        //instructions for luna in a clustered environment
-                        if (osFunctions.isLinux()) {
-                            stepsBuffer.append(linuxUpdateCrystokiLine);
-                        } else {
-                            stepsBuffer.append(windowsUpdateCrystokiLine);
-                        }
-                    }
-                }
-                stepsBuffer.append(eol);
-            } else {
-                stepsBuffer.append(eol);
-                if (keystoreType == KeyStoreConstants.LUNA_KEYSTORE_NAME && !lunaMentioned) {
-                    if (osFunctions.isLinux()) {
-                        stepsBuffer.append(linuxUpdateCrystokiLine);
-                    } else {
-                        stepsBuffer.append(windowsUpdateCrystokiLine);
-                    }
-                    stepsBuffer.append(eol);
+        boolean hasManualSteps = manualSteps != null && !manualSteps.isEmpty();
+        if (hasManualSteps) {
+            Set<String> keys = manualSteps.keySet();
+            for (String key : keys) {
+                List<String> steps = manualSteps.get(key);
+                for (String step : steps) {
+                    allSteps.append(step);
                 }
             }
-            stepsBuffer.append(eol);
-            stepsBuffer.append(eol);
-            File manualStepsFile = new File("ssg_config_manual_steps.txt");
+
+            stepsBuffer.append("The following manual steps are required to complete the configuration of the SSG");
+            stepsBuffer.append(getEolChar()).append(getEolChar());
+            stepsBuffer.append(allSteps).append(getEolChar());
+            stepsBuffer.append(getEolChar());
+            stepsBuffer.append(getEolChar());
+
+            PrintWriter saveWriter = null;
             try {
-                PrintWriter saveWriter = new PrintWriter(new FileOutputStream(manualStepsFile));
-                saveWriter.print(stepsBuffer.toString());
-                saveWriter.close();
+                saveWriter = new PrintWriter(MANUAL_STEPS_FILENAME);
+                saveWriter.print(convertStepsForConsole(stepsBuffer.toString()));
             } catch (FileNotFoundException e) {
-                printText("Could not create file: " + manualStepsFile.getName() + "\n");
-                printText(e.getMessage() + "\n");
+                printText("Could not create file: " + MANUAL_STEPS_FILENAME + getEolChar());
+                printText(e.getMessage() + getEolChar());
                 success = false;
+            } finally {
+                if (saveWriter != null) saveWriter.close();
             }
         }
         return success;
+    }
+
+    private String convertStepsForConsole(String originalSteps) {
+        String convertedSteps = null;
+        //convert UL and LI to an equivalent form
+        convertedSteps = originalSteps.replaceAll("<[Bb][Rr]>", getEolChar());
+        convertedSteps = convertedSteps.replaceAll("<[Uu][Ll]>|<[Dd][Ll]>|</.*>", "");
+        convertedSteps = convertedSteps.replaceAll("<[Pp]>", getEolChar() + "\t ");
+        convertedSteps = convertedSteps.replaceAll("<[Ll][Ii]>", "\t* ");
+        convertedSteps = convertedSteps.replaceAll("<[Dd][Tt]>", "\t\t- ");
+        convertedSteps = convertedSteps.replaceAll("<[Dd][Dd]>", "\t\t\t- ");
+        //strip out any html tags other than those that have been converted
+        return convertedSteps;
     }
 
     public String getTitle() {

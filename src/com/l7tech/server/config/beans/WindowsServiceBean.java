@@ -38,6 +38,10 @@ public class WindowsServiceBean extends BaseConfigurationBean {
         }
     }
 
+    public List<String> getManualSteps() {
+        return null;
+    }
+
     public boolean isDoService() {
         return doService;
     }

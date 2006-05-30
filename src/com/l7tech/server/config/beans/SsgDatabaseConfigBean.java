@@ -48,6 +48,10 @@ public class SsgDatabaseConfigBean extends BaseConfigurationBean {
         explanations.add(insertTab + "    DATABASE = " + getDbName());
     }
 
+    public List<String> getManualSteps() {
+        return null;
+    }
+
     public void setPrivUserName(String username) {
         privUsername = username;
     }

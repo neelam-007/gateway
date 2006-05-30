@@ -25,9 +25,10 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     protected String elementDescription;
     protected OSSpecificFunctions osFunctions;
 
-    protected String insertTab = "\t";
     protected List<String> explanations;
 
+    protected String insertTab = "\t";
+    protected static String eol = System.getProperty("line.separator");
 
     public BaseConfigurationBean(String name, String description) {
         affectedObjects = new HashMap();
@@ -57,4 +58,6 @@ public abstract class BaseConfigurationBean implements ConfigurationBean {
     }
 
     protected abstract void populateExplanations();
+
+    public abstract List<String> getManualSteps();
 }

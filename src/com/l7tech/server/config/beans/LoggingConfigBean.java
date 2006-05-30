@@ -2,6 +2,8 @@ package com.l7tech.server.config.beans;
 
 import com.l7tech.server.config.OSSpecificFunctions;
 
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * User: megery
@@ -19,5 +21,9 @@ public class LoggingConfigBean extends BaseConfigurationBean {
     }
 
     protected void populateExplanations() {
+    }
+
+    public List<String> getManualSteps() {
+        return null;
     }
 }

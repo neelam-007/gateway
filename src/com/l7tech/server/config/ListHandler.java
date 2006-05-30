@@ -4,6 +4,7 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Level;
 import java.util.ArrayList;
+import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
@@ -15,7 +16,7 @@ import java.io.PrintStream;
  * To change this template use File | Settings | File Templates.
  */
 public class ListHandler extends Handler {
-    private static ArrayList logList = new ArrayList();
+    private static List<String> logList = new ArrayList<String>();
 
     public synchronized void publish(LogRecord logRecord) {
         if (logRecord != null) {
@@ -47,7 +48,7 @@ public class ListHandler extends Handler {
     public void close() throws SecurityException {
     }
 
-    public static ArrayList getLogList() {
+    public static List<String> getLogList() {
         return logList;
     }
 }

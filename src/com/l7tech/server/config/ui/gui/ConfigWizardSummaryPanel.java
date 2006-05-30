@@ -34,12 +34,14 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
         add(mainPanel, BorderLayout.CENTER);
     }
 
-    protected void updateView(Set settings) {
-        if (settings != null) {
+    protected void updateView() {
+        Object input = getParentWizard().getWizardInput();
+        if (input instanceof Set) {
+            Set<ConfigurationCommand> commands = (Set<ConfigurationCommand>) input;
+
             StringBuffer buffer = new StringBuffer();
 
-            for (Object setting : settings) {
-                ConfigurationCommand command = (ConfigurationCommand) setting;
+            for (ConfigurationCommand command : commands) {
                 String[] actions = command.getActions();
                 if (actions != null) {
                     for (String action : actions) {
@@ -53,6 +55,6 @@ public class ConfigWizardSummaryPanel extends ConfigWizardStepPanel {
         }
     }
 
-    protected void updateModel(Set settings) {
+    protected void updateModel() {
     }
 }

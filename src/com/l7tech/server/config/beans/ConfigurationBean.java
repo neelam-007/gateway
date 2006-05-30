@@ -3,6 +3,7 @@ package com.l7tech.server.config.beans;
 import com.l7tech.server.config.OSSpecificFunctions;
 
 import java.util.Map;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,4 +17,5 @@ public interface ConfigurationBean {
     public String getDescription();
     public String[] explain();
     public String getElementKey();
+    public List<String> getManualSteps();
 }

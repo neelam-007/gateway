@@ -7,6 +7,7 @@ import com.l7tech.server.config.commands.ClusteringConfigCommand;
 import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.Map;
+import java.util.List;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -20,6 +21,20 @@ import org.apache.commons.lang.StringUtils;
  * To change this template use File | Settings | File Templates.
  */
 public class ClusteringConfigBean extends BaseConfigurationBean {
+   private static final String updateHostsFileLine =
+        "<li>UPDATE HOSTS FILE:" +
+            "<p>add a line containing the IP address for this SSG node, then the cluster host name, then this SSG node's hostname" + eol +
+            "<dl>" + eol +
+                "<dt>ex:</dt>" + eol +
+                    "<dd>192.168.1.186      ssgcluster.domain.com ssgnode1.domain.com</dd>" + eol +
+            "</dl>" + eol +
+        "</li>" + eol;
+
+    private static final String timeSyncLine =
+        "<li>TIME SYNCHRONIZATION:" +
+            "<p>Please ensure time is synchronized among all SSG nodes within the cluster" + eol +
+        "</li>" + eol;
+
     private boolean isNewHostName;
     private String hostname;
     private String localHostName;
@@ -142,4 +157,15 @@ public class ClusteringConfigBean extends BaseConfigurationBean {
     public int getClusterType() {
         return clusterType;
     }
+
+    public List<String> getManualSteps() {
+        List<String> steps = new ArrayList<String>();
+        if (clusterType != CLUSTER_NONE) {
+            steps.add(updateHostsFileLine);
+            steps.add(timeSyncLine);
+            steps.add("<br>");
+        }
+        return steps;
+    }
+
 }

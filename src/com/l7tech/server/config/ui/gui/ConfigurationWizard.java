@@ -15,10 +15,13 @@ import com.l7tech.server.config.commands.AppServerConfigCommand;
 import com.l7tech.server.config.commands.ConfigurationCommand;
 import com.l7tech.server.config.commands.LoggingConfigCommand;
 import com.l7tech.server.config.commands.RmiConfigCommand;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -61,6 +64,8 @@ public class ConfigurationWizard extends Wizard {
     private static String currentVersion = BuildInfo.getProductVersionMajor() + "." + BuildInfo.getProductVersionMinor();
     private Set<ConfigurationCommand> additionalCommands;
 
+    private Map<String, java.util.List<String>> manualSteps;
+
     /**
      * Creates new wizard
      */
@@ -83,6 +88,7 @@ public class ConfigurationWizard extends Wizard {
         setShowDescription(false);
         setEscKeyStrokeDisposes(this);
         wizardInput = new HashSet<ConfigurationCommand>();
+        manualSteps = new HashMap<String, java.util.List<String>>();
 
         setupAdditionalCommands();
 
@@ -290,6 +296,17 @@ public class ConfigurationWizard extends Wizard {
 
     public void setKeystoreType(String type) {
         keystoreType = type;
+    }
+
+    public void addManualSteps(String stepKey, java.util.List<String> steps) {
+        if (StringUtils.isEmpty(stepKey)) throw new IllegalArgumentException("key cannot be empty or null");
+        if (steps == null) throw new IllegalArgumentException("steps cannot be null");
+
+        manualSteps.put(stepKey, steps);
+    }
+
+    public Map<String,java.util.List<String>> getManualSteps() {
+        return manualSteps;
     }
 
     public static String getCurrentVersion() {
