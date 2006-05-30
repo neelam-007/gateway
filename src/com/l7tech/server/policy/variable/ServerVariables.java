@@ -15,6 +15,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.cluster.ClusterProperty;
 
 import javax.wsdl.Operation;
 import java.util.HashMap;
@@ -34,20 +35,20 @@ public class ServerVariables {
     private static final OperationGetter soapOperationGetter = new OperationGetter();
     private static final SoapNamespaceGetter soapNamespaceGetter = new SoapNamespaceGetter();
 
-    private static final Map varsByName = new HashMap();
-    private static final Map varsByPrefix = new HashMap();
+    private static final Map<String, Variable> varsByName = new HashMap<String, Variable>();
+    private static final Map<String, Variable> varsByPrefix = new HashMap<String, Variable>();
 
     private static Variable getVar(String name) {
         // Try simple name first
         final String lname = name.toLowerCase();
-        Variable var = (Variable)varsByName.get(lname);
+        Variable var = varsByName.get(lname);
         if (var == null) {
             // Try prefixed name
             int pos = -1;
             do {
                 pos = lname.indexOf(".", pos+1);
                 String tryname = pos < 0 ? lname : lname.substring(0,pos);
-                var = (Variable)varsByPrefix.get(tryname);
+                var = varsByPrefix.get(tryname);
                 if (var != null) break;
             } while (pos > 0);
         }
@@ -242,7 +243,10 @@ public class ServerVariables {
                             return null;
                         }
                         name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
-                        return context.getClusterPropertyManager().getProperty(name);
+                        // TODO make this cache timeout configurable
+                        ClusterProperty cp = (ClusterProperty)context.getClusterPropertyManager().getCachedEntityByName(name, 30000);
+                        if (cp == null) return null;
+                        return cp.getValue();
                     } catch (FindException e) {
                         logger.log(Level.WARNING, "exception querying for cluster property", e);
                         return null;
@@ -309,8 +313,7 @@ public class ServerVariables {
     }
 
     static {
-        for (int i = 0; i < VARS.length; i++) {
-            Variable var = VARS[i];
+        for (Variable var : VARS) {
             String name = var.getName();
             VariableMetadata meta = BuiltinVariables.getMetadata(name);
 
