@@ -36,6 +36,10 @@ import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
+import com.l7tech.policy.AssertionResourceInfo;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -132,6 +136,7 @@ public class WspConstants {
         new WspEnumTypeMapping(AuthenticationProperties.Method.class, "authenticationMethod"),
         new WspEnumTypeMapping(ComparisonOperator.class, "operator"),
         new WspEnumTypeMapping(TimeUnit.class, "abbreviation"),
+        new WspEnumTypeMapping(AssertionResourceType.class, "resourceType"),
 
         // Container types
         new ArrayTypeMapping(new Object[0], "arrayValue"),
@@ -190,8 +195,16 @@ public class WspConstants {
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
-        new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
-        new AssertionMapping(new XslTransformation(), "XslTransformation"),
+        new AssertionMapping(new SchemaValidation(), "SchemaValidation") {
+            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                super.populateObject(object, source, new WspUpgradeUtilFrom35.SchemaValidationPropertyVisitor(visitor));
+            }
+        },
+        new AssertionMapping(new XslTransformation(), "XslTransformation") {
+            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                super.populateObject(object, source, new WspUpgradeUtilFrom35.XslTransformationPropertyVisitor(visitor));
+            }
+        },
         new AssertionMapping(new TimeRange(), "TimeRange"),
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
@@ -290,6 +303,11 @@ public class WspConstants {
         new ArrayTypeMapping(new String[0], "fieldNames"),
         new BeanTypeMapping(AuthenticationProperties.class, "authenticationInfo"),
         new BeanTypeMapping(SoapFaultLevel.class, "soapFaultLevel"),
+            
+        new AbstractClassTypeMapping(AssertionResourceInfo.class, "resourceInfo"),
+        new BeanTypeMapping(StaticResourceInfo.class, "staticResourceInfo"),
+        new BeanTypeMapping(SingleUrlResourceInfo.class, "singleUrlResourceInfo"),
+        new BeanTypeMapping(MessageUrlResourceInfo.class, "messageUrlResourceInfo"),
 
         // Backward compatibility with old policy documents
         WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,

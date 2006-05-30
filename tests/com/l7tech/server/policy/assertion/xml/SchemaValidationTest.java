@@ -12,6 +12,7 @@ import com.l7tech.common.xml.WsdlSchemaAnalizer;
 import com.l7tech.common.xml.tarari.GlobalTarariContextImpl;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
@@ -58,7 +59,7 @@ public class SchemaValidationTest extends TestCase {
         SchemaValidation assertion = new SchemaValidation();
         InputStream is = TestDocuments.getInputStream(ECHO3_XSD);
         String xsd = new String(HexUtils.slurpStream(is, 10000));
-        assertion.setSchema(xsd);
+        assertion.setResourceInfo(new StaticResourceInfo(xsd));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
         AssertionStatus res = serverAssertion.checkRequest(getResAsContext(ECHO_REQ));
         System.out.println("result is " + res);
@@ -70,7 +71,7 @@ public class SchemaValidationTest extends TestCase {
         WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(DOCLIT_WSDL_WITH2BODYCHILDREN));
         Element[] schemas = wsn.getFullSchemas();
         assertTrue(schemas.length == 1); // no multiple schema support
-        assertion.setSchema(XmlUtil.elementToXml(schemas[0]));
+        assertion.setResourceInfo(new StaticResourceInfo(XmlUtil.elementToXml(schemas[0])));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
 
         // try to validate a number of different soap messages
@@ -93,7 +94,7 @@ public class SchemaValidationTest extends TestCase {
         SchemaValidation assertion = new SchemaValidation();
         WsdlSchemaAnalizer wsn = new WsdlSchemaAnalizer(TestDocuments.getTestDocument(WAREHOUSE_WSDL_PATH));
         Element[] schemas = wsn.getFullSchemas();
-        assertion.setSchema(XmlUtil.elementToXml(schemas[0]));
+        assertion.setResourceInfo(new StaticResourceInfo(XmlUtil.elementToXml(schemas[0])));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
 
         // try to validate a number of different soap messages
@@ -132,7 +133,7 @@ public class SchemaValidationTest extends TestCase {
                 "</soapenv:Envelope>";
         SchemaValidation assertion = new SchemaValidation();
         assertion.setApplyToArguments(true);
-        assertion.setSchema(schema);
+        assertion.setResourceInfo(new StaticResourceInfo(schema));
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
         AssertionStatus res = serverAssertion.validateDocument(XmlUtil.stringToDocument(request));
         assertTrue(res == AssertionStatus.NONE);

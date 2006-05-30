@@ -3,6 +3,11 @@ package com.l7tech.policy.assertion.xml;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.AssertionResourceType;
+import com.l7tech.policy.assertion.UsesResourceInfo;
+import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
+import com.l7tech.policy.StaticResourceInfo;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
 
@@ -31,38 +36,32 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class XslTransformation extends Assertion implements UsesVariables {
+public class XslTransformation extends Assertion implements UsesVariables, UsesResourceInfo {
     private static final Logger logger = Logger.getLogger(XslTransformation.class.getName());
 
     public static final int APPLY_TO_REQUEST = 1;
     public static final int APPLY_TO_RESPONSE = 2;
 
     private int direction;
-    private String xslSrc;
     private String transformName;
-    private boolean fetchXsltFromMessageUrls;
-    private String[] fetchUrlRegexes = new String[0];
+    private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
     private int whichMimePart = 0;
-    private boolean fetchAllowWithoutStylesheet;
 
     /**
      * the actual transformation xsl
+     * @deprecated use {@link #resourceInfo } directly instead
      */
     public String getXslSrc() {
-        return xslSrc;
-    }
+        if (resourceInfo != null && resourceInfo.getType() == AssertionResourceType.STATIC)
+            return ((StaticResourceInfo) resourceInfo).getDocument();
 
-    /**
-     * the actual transformation xsl
-     */
-    public void setXslSrc(String xslSrc) {
-        this.xslSrc = xslSrc;
+        return null;
     }
 
     /**
      * Whether this assertion applies to requests or responses soap messages.
      * Typed as an int for serialization purposes.
-     * @return APPLY_TO_REQUEST OR APPLY_TO_RESPONSE
+     * @return {@link #APPLY_TO_REQUEST} or {@link #APPLY_TO_RESPONSE}
      */
     public int getDirection() {
         return direction;
@@ -71,7 +70,7 @@ public class XslTransformation extends Assertion implements UsesVariables {
     /**
      * Whether this assertion applies to requests or responses soap messages.
      * Typed as an int for serialization purposes.
-     * @param direction APPLY_TO_REQUEST OR APPLY_TO_RESPONSE
+     * @param direction {@link #APPLY_TO_REQUEST} or {@link #APPLY_TO_RESPONSE}
      */
     public void setDirection(int direction) {
         this.direction = direction;
@@ -99,34 +98,44 @@ public class XslTransformation extends Assertion implements UsesVariables {
         this.whichMimePart = whichMimePart;
     }
 
+    /**
+     * @deprecated use {@link # resourceInfo } directly instead
+     */
     public boolean isFetchXsltFromMessageUrls() {
-        return fetchXsltFromMessageUrls;
+        return resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL;
     }
 
-    public void setFetchXsltFromMessageUrls(boolean fetchXsltFromMessageUrls) {
-        this.fetchXsltFromMessageUrls = fetchXsltFromMessageUrls;
-    }
-
+    /**
+     * @deprecated use {@link # resourceInfo } directly instead
+     */
     public String[] getFetchUrlRegexes() {
-        return fetchUrlRegexes;
+        if (resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL) {
+            return ((MessageUrlResourceInfo) resourceInfo).getUrlRegexes();
+        } else {
+            return new String[0];
+        }
     }
 
-    public void setFetchUrlRegexes(String[] fetchUrlRegexes) {
-        this.fetchUrlRegexes = fetchUrlRegexes;
-    }
-
+    /**
+     * @deprecated use {@link # resourceInfo } directly instead
+     */
     public boolean isFetchAllowWithoutStylesheet() {
-        return fetchAllowWithoutStylesheet;
+        return resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL && ((MessageUrlResourceInfo) resourceInfo).isAllowMessagesWithoutUrl();
     }
 
-    public void setFetchAllowWithoutStylesheet(boolean stylesheetUrlRequired) {
-        this.fetchAllowWithoutStylesheet = stylesheetUrlRequired;
+    public AssertionResourceInfo getResourceInfo() {
+        return resourceInfo;
+    }
+
+    public void setResourceInfo(AssertionResourceInfo resourceInfo) {
+        this.resourceInfo = resourceInfo;
     }
 
     public String[] getVariablesUsed() {
         if (varsUsed != null) return varsUsed;
 
         // Try again later, in case the stylesheet hasn't been set yet
+        String xslSrc = getXslSrc();
         if (xslSrc == null || xslSrc.length() == 0) return new String[0];
 
         try {
@@ -150,6 +159,30 @@ public class XslTransformation extends Assertion implements UsesVariables {
         }
 
         return varsUsed;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        XslTransformation that = (XslTransformation) o;
+
+        if (direction != that.direction) return false;
+        if (whichMimePart != that.whichMimePart) return false;
+        if (resourceInfo != null ? !resourceInfo.equals(that.resourceInfo) : that.resourceInfo != null) return false;
+        if (transformName != null ? !transformName.equals(that.transformName) : that.transformName != null)
+            return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = direction;
+        result = 31 * result + (transformName != null ? transformName.hashCode() : 0);
+        result = 31 * result + (resourceInfo != null ? resourceInfo.hashCode() : 0);
+        result = 31 * result + whichMimePart;
+        return result;
     }
 
     private transient String[] varsUsed;

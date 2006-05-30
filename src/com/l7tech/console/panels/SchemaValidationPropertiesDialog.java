@@ -14,11 +14,12 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.dom4j.DocumentException;
@@ -38,11 +39,11 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.rmi.RemoteException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 
 /**
@@ -195,11 +196,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             } catch (WSDLException e) {
                 log.log(Level.WARNING, "Could not determine soap use", e);
             }
-            return;
         } catch (WSDLException e) {
             log.log(Level.WARNING, "Wsdl parsing error", e);
         }
-        return ;
     }
 
     /**
@@ -280,7 +279,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         }
 
         // save new schema
-        schemaValidationAssertion.setSchema(contents);
+        StaticResourceInfo sri = new StaticResourceInfo();
+        sri.setDocument(contents);
+        schemaValidationAssertion.setResourceInfo(sri);
         schemaValidationAssertion.setApplyToArguments(appliesToMessageArguments.isSelected());
         fireEventAssertionChanged(schemaValidationAssertion);
         // exit
@@ -342,7 +343,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private Document stringToDoc(String str) {
-        Document doc = null;
+        Document doc;
         try {
             doc = XmlUtil.stringToDocument(str);
         } catch (SAXException e) {
@@ -375,7 +376,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             displayError(resources.getString("error.noaccesstowsdl"), null);
             return;
         }
-        String wsdl = null;
+        String wsdl;
         wsdl = service.getWsdlXml();
 
         Document wsdlDoc = stringToDoc(wsdl);
@@ -384,7 +385,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
 
-        SelectWsdlSchemaDialog schemafromwsdlchooser = null;
+        SelectWsdlSchemaDialog schemafromwsdlchooser;
         try {
             schemafromwsdlchooser = new SelectWsdlSchemaDialog(this, wsdlDoc);
         } catch (DocumentException e) {
@@ -430,7 +431,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;
         }
-        FileInputStream fis = null;
+        FileInputStream fis;
         String filename = dlg.getSelectedFile().getAbsolutePath();
         try {
             fis = new FileInputStream(dlg.getSelectedFile());
@@ -440,7 +441,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         }
 
         // try to get document
-        Document doc = null;
+        Document doc;
         try {
             doc = XmlUtil.parse(fis);
         } catch (SAXException e) {
@@ -455,7 +456,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         // check if it's a schema
         if (docIsSchema(doc)) {
             // set the new schema
-            String printedSchema = null;
+            String printedSchema;
             try {
                 printedSchema = doc2String(doc);
             } catch (IOException e) {
@@ -479,7 +480,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
         // compose input source
-        URL url = null;
+        URL url;
         try {
             url = new URL(urlstr);
         } catch (MalformedURLException e) {
@@ -488,7 +489,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
         // try to get document
-        InputStream is = null;
+        InputStream is;
         try {
             is = url.openStream();
         } catch (IOException e) {
@@ -496,7 +497,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
 
-        Document doc = null;
+        Document doc;
         try {
             doc = XmlUtil.parse(is);
         } catch (SAXException e) {
@@ -511,7 +512,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         // check if it's a schema
         if (docIsSchema(doc)) {
             // set the new schema
-            String printedSchema = null;
+            String printedSchema;
             try {
                 printedSchema = doc2String(doc);
             } catch (IOException e) {

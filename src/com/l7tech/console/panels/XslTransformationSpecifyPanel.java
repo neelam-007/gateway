@@ -14,6 +14,7 @@ import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.StaticResourceInfo;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -237,13 +238,7 @@ public class XslTransformationSpecifyPanel extends JPanel {
     }
 
     void updateModel(XslTransformation assertion) {
-        // Null all fetch-mode fields
-        assertion.setFetchXsltFromMessageUrls(false);
-        assertion.setFetchUrlRegexes(new String[0]);
-        assertion.setFetchAllowWithoutStylesheet(false);
-
-        // Set specify-mode fields
-        assertion.setXslSrc(uiAccessibility.getEditor().getText());
+        assertion.setResourceInfo(new StaticResourceInfo(uiAccessibility.getEditor().getText()));
         assertion.setTransformName(nameField.getText());
     }
 

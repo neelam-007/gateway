@@ -135,7 +135,7 @@ class BasicTypeMapping implements TypeMapping {
         return doThawNamed(source, visitor, false);
     }
 
-    private TypedReference doThawNamed(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
+    protected TypedReference doThawNamed(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
         String typeName = TypeMappingUtils.findTypeName(source);
         String value = source.getAttribute(typeName);        
 
@@ -149,6 +149,10 @@ class BasicTypeMapping implements TypeMapping {
             }
         }
 
+        return doThawNamedNotNull(source, visitor, recursing, typeName, value);
+    }
+
+    protected TypedReference doThawNamedNotNull(Element source, WspVisitor visitor, boolean recursing, String typeName, String value) throws InvalidPolicyStreamException {
         if (!externalName.equals(typeName)) {
             final InvalidPolicyStreamException e = new InvalidPolicyStreamException("TypeMapping for " + clazz + ": unrecognized attr " + typeName);
             if (recursing) throw e;

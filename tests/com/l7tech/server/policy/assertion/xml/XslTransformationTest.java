@@ -6,6 +6,7 @@ import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
@@ -67,9 +68,9 @@ public class XslTransformationTest extends TestCase {
 
     public void testServerAssertion() throws Exception {
         XslTransformation ass = new XslTransformation();
-        ass.setXslSrc(getResAsString(XSL_MASK_WSSE));
         ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ass.setWhichMimePart(0);
+        ass.setResourceInfo(new StaticResourceInfo(getResAsString(XSL_MASK_WSSE)));
 
         ServerXslTransformation serverAss = new ServerXslTransformation(ass, ApplicationContexts.getTestApplicationContext());
 
@@ -84,7 +85,7 @@ public class XslTransformationTest extends TestCase {
 
     public void testBenchmark() throws Exception {
         XslTransformation ass = new XslTransformation();
-        ass.setXslSrc(getResAsString(XSL_MASK_WSSE));
+        ass.setResourceInfo(new StaticResourceInfo(getResAsString(XSL_MASK_WSSE)));
         ass.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ass.setWhichMimePart(0);
 

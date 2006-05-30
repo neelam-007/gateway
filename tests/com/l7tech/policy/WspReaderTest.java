@@ -6,6 +6,7 @@ import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
@@ -366,6 +367,69 @@ public class WspReaderTest extends TestCase {
 
         SslAssertion sa2 = (SslAssertion)WspReader.parseStrictly(got);
         assertEquals(sa2.getOption(), SslAssertion.OPTIONAL);
+    }
+
+    public void testXsltFrom35Static() throws Exception {
+        String xsl35 = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">" +
+                "<L7p:XslTransformation>\n" +
+                "            <L7p:Direction intValue=\"1\"/>\n" +
+                "            <L7p:XslSrc stringValue=\"&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
+                "&lt;xsl:transform version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;\n" +
+                "                             xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;\n" +
+                "        &lt;xsl:template match=&quot;/&quot;&gt;\n" +
+                "                &lt;xsl:copy&gt;\n" +
+                "                        &lt;xsl:apply-templates/&gt;\n" +
+                "                &lt;/xsl:copy&gt;\n" +
+                "        &lt;/xsl:template&gt;\n" +
+                "        &lt;xsl:template match=&quot;soapenv:Body&quot;&gt;\n" +
+                "                &lt;xsl:copy&gt;\n" +
+                "                        &lt;xsl:apply-templates select=&quot;node()|@*&quot; /&gt;\n" +
+                "                &lt;/xsl:copy&gt;\n" +
+                "        &lt;xsl:comment&gt;SSG WAS HERE&lt;/xsl:comment&gt;\n" +
+                "        &lt;/xsl:template&gt;\n" +
+                "        &lt;xsl:template match=&quot;node()|@*&quot;&gt;\n" +
+                "                &lt;xsl:copy&gt;\n" +
+                "                        &lt;xsl:apply-templates select=&quot;node()|@*&quot; /&gt;\n" +
+                "                &lt;/xsl:copy&gt;\n" +
+                "        &lt;/xsl:template&gt;\n" +
+                "&lt;/xsl:transform&gt;\"/>\n" +
+                "            <L7p:TransformName stringValue=\"\"/>\n" +
+                "            <L7p:FetchUrlRegexes stringArrayValue=\"included\"/>\n" +
+                "        </L7p:XslTransformation>" +
+                "</wsp:Policy>";
+        XslTransformation xslt = (XslTransformation)WspReader.parseStrictly(xsl35);
+        assertNotNull(xslt);
+        System.out.println(WspWriter.getPolicyXml(xslt));
+    }
+
+    public void testXsltFrom35Fetchingly() throws Exception {
+        String xsl35 = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+                "        <L7p:XslTransformation>\n" +
+                "            <L7p:Direction intValue=\"1\"/>\n" +
+                "            <L7p:FetchAllowWithoutStylesheet booleanValue=\"false\"/>\n" +
+                "            <L7p:FetchXsltFromMessageUrls booleanValue=\"true\"/>\n" +
+                "            <L7p:FetchUrlRegexes stringArrayValue=\"included\">\n" +
+                "                <L7p:item stringValue=\".*\"/>\n" +
+                "            </L7p:FetchUrlRegexes>\n" +
+                "        </L7p:XslTransformation>\n" +
+                "</wsp:Policy>";
+        XslTransformation xslt = (XslTransformation)WspReader.parseStrictly(xsl35);
+        assertNotNull(xslt);
+        System.out.println(WspWriter.getPolicyXml(xslt));
+    }
+
+    public void testResourceInfo() throws Exception {
+        tryIt(WspWriterTest.makeStaticInfo());
+        tryIt(WspWriterTest.makeMessageInfo());
+        tryIt(WspWriterTest.makeSingleInfo());
+    }
+
+    private void tryIt(AssertionResourceInfo rinfo) throws IOException {
+        XslTransformation xslt = new XslTransformation();
+        xslt.setResourceInfo(rinfo);
+        String policy = WspWriter.getPolicyXml(xslt);
+        XslTransformation newXslt = (XslTransformation) WspReader.parseStrictly(policy);
+        assertTrue(newXslt.equals(xslt));
     }
 
     public static void main(String[] args) {

@@ -6,6 +6,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.MessageUrlResourceInfo;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -15,8 +16,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Enumeration;
 import java.util.ArrayList;
+import java.util.Enumeration;
 
 /**
  * Part of {@link XslTransformationPropertiesDialog}.
@@ -129,16 +130,15 @@ public class XslTransformationFetchPanel extends JPanel {
     }
 
     void updateModel(XslTransformation assertion) {
-        assertion.setXslSrc(null);
-        assertion.setTransformName(null);
-        assertion.setFetchXsltFromMessageUrls(true);
-        assertion.setFetchAllowWithoutStylesheet(allowWithoutStylesheetCheckbox.isSelected());
         ArrayList regexes = new ArrayList();
         for (Enumeration e = regexListModel.elements(); e.hasMoreElements();) {
             String regex = (String)e.nextElement();
             regexes.add(regex);
         }
-        assertion.setFetchUrlRegexes((String[])regexes.toArray(new String[0]));
+        MessageUrlResourceInfo rinfo = new MessageUrlResourceInfo();
+        rinfo.setUrlRegexes((String[])regexes.toArray(new String[0]));
+        rinfo.setAllowMessagesWithoutUrl(allowWithoutStylesheetCheckbox.isSelected());
+        assertion.setResourceInfo(rinfo);
     }
 
     public JButton getRemoveButton() {

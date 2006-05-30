@@ -6,6 +6,8 @@ import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -280,6 +282,57 @@ public class WspWriterTest extends TestCase {
         log.info("Old policy reader returned the following: " + out);
         assertNotNull(out);
         assertEquals(policy.getClass(), out.getClass());
+    }
+
+    public void testDisappearingXslt() throws Exception {
+        SchemaValidation sv = new SchemaValidation();
+        sv.setResourceInfo(new StaticResourceInfo("<schema/>"));
+        XslTransformation xsl1 = new XslTransformation();
+        xsl1.setResourceInfo(new MessageUrlResourceInfo(new String[] { ".*" }));
+        XslTransformation xsl2 = new XslTransformation();
+        xsl2.setResourceInfo(new StaticResourceInfo("<static xsl/>"));
+        HttpRoutingAssertion http = new HttpRoutingAssertion();
+        AllAssertion all = new AllAssertion(Arrays.asList(new Assertion[] {
+            sv,
+            xsl2,
+            xsl1,
+            http,
+        }));
+        System.out.println(WspWriter.getPolicyXml(all));
+    }
+
+    public void testResourceInfo() throws Exception {
+        tryIt(new XslTransformation(), makeStaticInfo());
+        tryIt(new XslTransformation(), makeSingleInfo());
+        tryIt(new XslTransformation(), makeMessageInfo());
+        tryIt(new XslTransformation(), null);
+    }
+
+    private void tryIt(XslTransformation xsl, AssertionResourceInfo rinfo) {
+        xsl.setResourceInfo(rinfo);
+        String got = WspWriter.getPolicyXml(xsl);
+        System.out.println(got);
+        assertNotNull(got);
+    }
+
+    static SingleUrlResourceInfo makeSingleInfo() {
+        SingleUrlResourceInfo suri = new SingleUrlResourceInfo();
+        suri.setUrl("http://example.org/");
+        return suri;
+    }
+
+    static MessageUrlResourceInfo makeMessageInfo() {
+        MessageUrlResourceInfo muri = new MessageUrlResourceInfo();
+        muri.setAllowMessagesWithoutUrl(true);
+        muri.setUrlRegexes(new String[] { ".*", "^$"});
+        return muri;
+    }
+
+    static StaticResourceInfo makeStaticInfo() {
+        StaticResourceInfo sri = new StaticResourceInfo();
+        sri.setDocument("<foo/>");
+        sri.setOriginalUrl("http://example.org/foo");
+        return sri;
     }
 }
 

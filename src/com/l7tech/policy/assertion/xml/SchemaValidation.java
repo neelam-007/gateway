@@ -1,6 +1,10 @@
 package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionResourceType;
+import com.l7tech.policy.assertion.UsesResourceInfo;
+import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.AssertionResourceInfo;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
@@ -13,21 +17,18 @@ import com.l7tech.policy.assertion.Assertion;
  * $Id$<br/>
  *
  */
-public class SchemaValidation extends Assertion {
+public class SchemaValidation extends Assertion implements UsesResourceInfo {
 
     /**
      * the actual schema used for validation
      * @return a string containing the xml document
+     * @deprecated use {@link #resourceInfo } directly instead
      */
     public String getSchema() {
-        return schema;
-    }
+        if (resourceInfo.getType() == AssertionResourceType.STATIC)
+            return ((StaticResourceInfo) resourceInfo).getDocument();
 
-    /**
-     * @param schema a string containing the actual xml schema (not a url)
-     */
-    public void setSchema(String schema) {
-        this.schema = schema;
+        return null;
     }
 
     /**
@@ -55,6 +56,13 @@ public class SchemaValidation extends Assertion {
         this.applyToArguments = applyToArguments;
     }
 
+    public AssertionResourceInfo getResourceInfo() {
+        return resourceInfo;
+    }
+
+    public void setResourceInfo(AssertionResourceInfo sri) {
+        this.resourceInfo = sri;
+    }
 
     //todo: this constants should probably find a better home
     public static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
@@ -62,6 +70,6 @@ public class SchemaValidation extends Assertion {
     public static final String JAXP_SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
     public static final String TOP_SCHEMA_ELNAME = "schema";
 
-    private String schema;
     private boolean applyToArguments;
+    private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
 }
