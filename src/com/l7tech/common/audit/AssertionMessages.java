@@ -231,7 +231,9 @@ public class AssertionMessages extends Messages {
     public static final M XSLT_BAD_XSL       = m(5909, Level.WARNING, "Unable to parse XSL: {0}");
     public static final M XSLT_NO_PI         = m(5910, Level.WARNING, "No <?xml-stylesheet?> processing instruction was found in the message");
     public static final M XSLT_BAD_URL       = m(5911, Level.WARNING, "Stylesheet URL {0} did not match any configured regular expression");
-    public static final M XSLT_CANT_READ_XSL2= m(5912, Level.WARNING, "Couldn''t retrieve linked XSL stylesheet at {0}: {1}; continuing using previous version");
+    
+    // TODO move this message and rename it, now that it is shared among multiple assertion (XSLT + schema)
+    public static final M XSLT_CANT_READ_XSL2= m(5912, Level.WARNING, "Couldn''t retrieve remote resource at {0}: {1}; continuing using previous version");
 
     // ServerJmsRoutingAssertion
     public static final M JMS_ROUTING_CONNECT_FAILED                  = m(6000, Level.INFO, "Failed to establish JMS connection on try #{0}. Will retry after {1}ms.");
