@@ -32,6 +32,7 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
     protected ConfigurationCommand configCommand;
 
     protected boolean showNavigation = true;
+    protected boolean showQuitMessage = true;
 
     private static final String eolChar = System.getProperty("line.separator");
 
@@ -75,6 +76,10 @@ public abstract class BaseConsoleStep implements ConfigWizardConsoleStep {
 
     public boolean isShowNavigation() {
         return showNavigation;
+    }
+
+    public boolean isShowQuitMessage() {
+        return showQuitMessage;
     }
 
     protected ConfigurationWizard getParentWizard() {

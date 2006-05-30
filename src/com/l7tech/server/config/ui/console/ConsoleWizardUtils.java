@@ -17,7 +17,7 @@ import org.apache.commons.lang.StringUtils;
 public class ConsoleWizardUtils {
     public static String PREV_COMMAND = "<";
     public static String QUIT_COMMAND = "quit";
-    public static final String GENERAL_HEADER = "At any time type \"" + QUIT_COMMAND + "\" to quit";
+    public static final String QUIT_HEADER = "At any time type \"" + QUIT_COMMAND + "\" to quit";
     public static final String NAV_HEADER = "Press \"" + PREV_COMMAND + "\" to go to the previous step";
 
     private static ConsoleWizardUtils instance_ = null;

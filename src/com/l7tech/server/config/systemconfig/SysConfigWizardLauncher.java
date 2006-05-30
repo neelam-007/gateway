@@ -4,6 +4,7 @@ import com.l7tech.server.config.OSSpecificFunctions;
 import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.config.ui.console.ConfigWizardConsoleStep;
 import com.l7tech.server.config.ui.console.ConfigWizardConsoleSummaryStep;
+import com.l7tech.server.config.ui.console.ConfigWizardConsoleResultsStep;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -37,6 +38,11 @@ public class SysConfigWizardLauncher {
         List<ConfigWizardConsoleStep> stepsList = new ArrayList<ConfigWizardConsoleStep>();
         stepsList.add(new SystemConfigWizardNetworkingStep(sysWizard));
         stepsList.add(new ConfigWizardConsoleSummaryStep(sysWizard, "Networking Configuration Summary"));
+
+        ConfigWizardConsoleResultsStep resultsStep = new ConfigWizardConsoleResultsStep(sysWizard, "Networking Configuration Results");
+        resultsStep.setManualStepsFileName("ssg_networkingconfig_manualsteps.txt");
+        resultsStep.setLogFilename("ssg_networkingconfig_log.txt");
+        stepsList.add(resultsStep);
         return stepsList;
     }
 }

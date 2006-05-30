@@ -20,7 +20,7 @@ public class ConfigWizardConsoleSummaryStep extends BaseConsoleStep{
     }
 
     public ConfigWizardConsoleSummaryStep(ConfigurationWizard parentWiz, String title) {
-        super(parentWiz);
+        this(parentWiz);
         this.title = title;
     }
 

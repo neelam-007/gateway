@@ -8,7 +8,6 @@ import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.BuildInfo;
 
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.io.PrintStream;
 import java.util.*;
 
@@ -93,10 +92,12 @@ public class ConfigurationWizard {
         while (stepsIterator.hasNext()) {
             step = stepsIterator.next();
             step.showTitle();
-            wizardUtils.printText(ConsoleWizardUtils.GENERAL_HEADER + ConsoleWizardUtils.EOL_CHAR);
-            if (step.isShowNavigation()) {
-                wizardUtils.printText(ConsoleWizardUtils.NAV_HEADER + ConsoleWizardUtils.EOL_CHAR);
-            }
+
+
+            if (step.isShowQuitMessage()) wizardUtils.printText(ConsoleWizardUtils.QUIT_HEADER + ConsoleWizardUtils.EOL_CHAR);
+            if (step.isShowNavigation()) wizardUtils.printText(ConsoleWizardUtils.NAV_HEADER + ConsoleWizardUtils.EOL_CHAR);
+
+
             wizardUtils.printText(ConsoleWizardUtils.EOL_CHAR);
 
             try {

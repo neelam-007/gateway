@@ -1,8 +1,6 @@
 package com.l7tech.server.config.ui.console;
 
 import com.l7tech.server.config.ListHandler;
-import com.l7tech.server.config.KeyStoreConstants;
-import com.l7tech.server.config.beans.ClusteringConfigBean;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 
 import java.io.*;
@@ -14,11 +12,20 @@ import java.util.*;
  * Time: 10:00:57 AM
  */
 public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
-    private static final String MANUAL_STEPS_FILENAME = "ssg_config_manual_steps.txt";
+
+    private String manualStepsFileName = "ssg_config_manual_steps.txt";
+    private String title = "SSG Configuration Results";
+    private Map<String, List<String>> manualSteps;
+    private String logFilename = "ssgconfig0.log";
 
     public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz) {
         super(parentWiz);
         showNavigation = false;
+    }
+
+    public ConfigWizardConsoleResultsStep(ConfigurationWizard parentWiz, String title) {
+        this(parentWiz);
+        this.title = title;
     }
 
     public void doUserInterview(boolean validated) throws WizardNavigationException {
@@ -30,14 +37,14 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
             printText("You must restart the SSG in order for the configuration to take effect." + getEolChar());
         }
 
-        if (needsManualSteps(wizard.getClusteringType(), wizard.getKeystoreType())) {
+        if (needsManualSteps()) {
             printText(getEolChar() + "**** Some manual steps are required to complete the configuration of the SSG ****" + getEolChar());
-            printText("\tThese manual steps have been saved to a the file: " + MANUAL_STEPS_FILENAME + getEolChar());
+            printText("\tThese manual steps have been saved to a the file: " + manualStepsFileName + getEolChar());
             saveManualSteps();
         }
 
         printText(getEolChar() + "The following is a summary of the actions taken by the wizard" + getEolChar());
-        printText("\tThese logs have been saved to the file: ssgconfig0.log" + getEolChar());
+        printText("\tThese logs have been saved to the file: "+ logFilename + getEolChar());
 
         printText(getEolChar());
 
@@ -57,8 +64,9 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         }
     }
 
-    private boolean needsManualSteps(int clusteringType, String keystoreType) {
-        return (clusteringType != ClusteringConfigBean.CLUSTER_NONE || keystoreType.equalsIgnoreCase(KeyStoreConstants.LUNA_KEYSTORE_NAME));
+    private boolean needsManualSteps() {
+        if (manualSteps == null) manualSteps = getParentWizard().getManualSteps();
+        return (manualSteps != null && !manualSteps.isEmpty());
     }
 
     private boolean saveManualSteps() {
@@ -67,10 +75,7 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         StringBuilder stepsBuffer = new StringBuilder();
         StringBuilder allSteps = new StringBuilder();
 
-        Map<String, List<String>> manualSteps = getParentWizard().getManualSteps();
-
-        boolean hasManualSteps = manualSteps != null && !manualSteps.isEmpty();
-        if (hasManualSteps) {
+        if (needsManualSteps()) {
             Set<String> keys = manualSteps.keySet();
             for (String key : keys) {
                 List<String> steps = manualSteps.get(key);
@@ -87,10 +92,10 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
 
             PrintWriter saveWriter = null;
             try {
-                saveWriter = new PrintWriter(MANUAL_STEPS_FILENAME);
+                saveWriter = new PrintWriter(manualStepsFileName);
                 saveWriter.print(convertStepsForConsole(stepsBuffer.toString()));
             } catch (FileNotFoundException e) {
-                printText("Could not create file: " + MANUAL_STEPS_FILENAME + getEolChar());
+                printText("Could not create file: " + manualStepsFileName + getEolChar());
                 printText(e.getMessage() + getEolChar());
                 success = false;
             } finally {
@@ -113,11 +118,31 @@ public class ConfigWizardConsoleResultsStep extends BaseConsoleStep{
         return convertedSteps;
     }
 
+    public String getManualStepsFileName() {
+        return manualStepsFileName;
+    }
+
+    public void setManualStepsFileName(String fileName) {
+        this.manualStepsFileName = fileName;
+    }
+
+    public String getLogFilename() {
+        return logFilename;
+    }
+
+    public void setLogFilename(String logFilename) {
+        this.logFilename = logFilename;
+    }
+
     public String getTitle() {
-        return "SSG Configuration Results";
+        return title;
     }
 
     public boolean validateStep() {
         return true;
+    }
+
+    public boolean isShowQuitMessage() {
+        return false;
     }
 }

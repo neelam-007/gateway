@@ -15,4 +15,6 @@ public interface ConfigWizardConsoleStep {
     boolean shouldApplyConfiguration();
 
     boolean isShowNavigation();
+
+    boolean isShowQuitMessage();
 }
