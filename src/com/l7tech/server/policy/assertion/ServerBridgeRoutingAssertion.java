@@ -27,6 +27,7 @@ import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
@@ -42,6 +43,7 @@ import com.l7tech.proxy.ssl.SslPeerLazyDelegateSocketFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.KeystoreUtils;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -61,6 +63,17 @@ import java.util.logging.Logger;
  * SSG implementation of a routing assertion that uses the SSB.
  */
 public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
+
+    private static final Managers.BridgeStashManagerFactory BRIDGE_STASH_MANAGER_FACTORY =
+            new Managers.BridgeStashManagerFactory() {
+                public StashManager createStashManager() {
+                    return StashManagerFactory.createStashManager();
+                }
+            };
+    
+    static {
+        Managers.setBridgeStashManagerFactory(BRIDGE_STASH_MANAGER_FACTORY);
+    }
 
     //- PUBLIC
 
