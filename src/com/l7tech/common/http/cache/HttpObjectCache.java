@@ -76,7 +76,7 @@ public class HttpObjectCache {
          *
          * @param response  a non-null GenericHttpResponse, which might have any result code (not just 200).
          *                  Factory can consume its InputStream.
-         * @return the user Object to enter into the cache.  Should not be null; thorw IOException instead.
+         * @return the user Object to enter into the cache.  Should not be null; throw IOException instead.
          * @throws IOException if this response was not accepted for caching, in which case this request will
          *                     be treated as a failure.
          */

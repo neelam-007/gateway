@@ -5,12 +5,6 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.http.cache.HttpObjectCache;
-import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
@@ -19,8 +13,6 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.server.KeystoreUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
@@ -31,25 +23,18 @@ import com.l7tech.common.xml.xpath.XpathResult;
 import com.l7tech.common.xml.xpath.XpathResultNodeSet;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.transport.http.SslClientTrustManager;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -61,17 +46,11 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * Server-side implementation of {@link XslTransformation}.
@@ -83,39 +62,6 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
         piParser.setNamespaceAware(false);
         piParser.setValidating(false);
     }
-    private static volatile SSLContext sslContext;
-
-    private static final int maxCacheAge;
-    static {
-        String sage = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_XSLT_MAX_CACHE_AGE);
-        int age;
-        try {
-            age = Integer.parseInt(sage);
-        } catch (NumberFormatException e) {
-            logger.warning("Maximum cache age parameter '" + sage + "' not a valid number; using 300000 instead");
-            age = 300000;
-        }
-        maxCacheAge = age;
-    }
-
-    private static final HttpObjectCache httpObjectCache;
-    static {
-        String smax = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_XSLT_MAX_CACHE_ENTRIES);
-        int max;
-        try {
-            max = Integer.parseInt(smax);
-        } catch (NumberFormatException e) {
-            logger.warning("Maximum cache size parameter '" + smax + "' not a valid number; using 100 instead");
-            max = 100;
-        }
-        httpObjectCache = new HttpObjectCache(max, maxCacheAge);
-    }
-
-    private static final ThreadLocal httpRequest = new ThreadLocal() {
-        protected Object initialValue() {
-            return new GenericHttpRequestParams();
-        }
-    };
 
     private static final CompiledXpath findStylesheetPIs;
     static {
@@ -128,109 +74,59 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
 
     private final Auditor auditor;
     private final XslTransformation assertion;
-
-    private final Pattern[] fetchUrlPatterns;
-    private final CachedStylesheet preconfiguredStylesheet;
-    private final String xslParseErrorMessage;
-
+    private final ResourceGetter resourceGetter;
     private final String[] varsUsed;
 
-    private final ApplicationContext springContext;
 
     public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) throws ServerPolicyException {
         super(assertion);
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
 
-        this.springContext = springContext;
         this.assertion = assertion;
         this.auditor = new Auditor(this, springContext, logger);
         this.varsUsed = assertion.getVariablesUsed();
 
-        if (assertion.isFetchXsltFromMessageUrls()) {
-            List patterns = new ArrayList();
-            for (int i = 0; i < assertion.getFetchUrlRegexes().length; i++) {
-                String regex = assertion.getFetchUrlRegexes()[i];
-                Pattern p;
+        // Create ResourceGetter that will produce the XSLT for us, depending on assertion config
+        ResourceGetter.ResourceObjectFactory resourceObjectfactory = new ResourceGetter.ResourceObjectFactory() {
+            public Object createResourceObject(byte[] resourceBytes) throws ParseException {
+                final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
+                TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(resourceBytes);
+                return new CachedStylesheet(compileSoftware(resourceBytes), tarariStylesheet);
+            }
+        };
+
+        ResourceGetter.UrlFinder urlFinder = new ResourceGetter.UrlFinder() {
+            public String findUrl(ElementCursor message) throws ResourceGetter.InvalidMessageException {
                 try {
-                    p = Pattern.compile(regex);
-                    patterns.add(p);
-                } catch (PatternSyntaxException e) {
-                    throw new ServerPolicyException(assertion, "Couldn't compile regular expression '" + regex + "'", e);
+                    return findXslHref(message);
+                } catch (SAXException e) {
+                    throw new ResourceGetter.InvalidMessageException(e);
+                } catch (InvalidDocumentFormatException e) {
+                    throw new ResourceGetter.InvalidMessageException(e);
                 }
             }
-            this.fetchUrlPatterns = (Pattern[])patterns.toArray(new Pattern[0]);
-            this.preconfiguredStylesheet = null;
-            this.xslParseErrorMessage = null;
-        } else {
-            final byte[] xsltBytes = assertion.getXslSrc().getBytes();
-            Templates softwareStylesheet = null;
-            String softwareStylesheetErrorMessage = null;
-            try {
-                softwareStylesheet = compileSoftware(xsltBytes);
-            } catch (ParseException e) {
-                softwareStylesheetErrorMessage = ExceptionUtils.getMessage(e);
-                auditor.logAndAudit(AssertionMessages.XSLT_BAD_XSL, new String[] { softwareStylesheetErrorMessage });
-            }
+        };
 
-            this.xslParseErrorMessage = softwareStylesheetErrorMessage;
-            this.preconfiguredStylesheet =
-                    new CachedStylesheet(softwareStylesheet, compileTarari(xsltBytes), xslParseErrorMessage);
-            this.fetchUrlPatterns = null;
-        }
+        this.resourceGetter = ResourceGetter.createResourceGetter(assertion,
+                                                                  resourceObjectfactory,
+                                                                  urlFinder,
+                                                                  springContext,
+                                                                  auditor);
     }
 
     /**
-     * Get the process-wide shared SSL context, creating it if this thread is the first one
-     * to need it.
-     *
-     * @param springContext the spring context, in case one needs to be created.  Must not be null.
-     * @return the current SSL context.  Never null.
-     * @throws GeneralSecurityException  if an SSL context is needed but can't be created because the current server
-     *                                   configuration is incomplete or invalid (keystores, truststores, and whatnot)
+     * @return successfully compiled stylesheet.  Never null
+     * @throws ParseException if the stylesheet can't be parsed
      */
-    private static SSLContext getSslContext(ApplicationContext springContext) throws GeneralSecurityException
-    {
-        // no harm done if multiple threads try to create it the very first time.  s'all good.
-        if (sslContext != null) return sslContext;
-        synchronized(ServerXslTransformation.class) {
-            if (sslContext != null) return sslContext;
-        }
-        SSLContext sc = SSLContext.getInstance("SSL");
-        KeystoreUtils keystore = (KeystoreUtils)springContext.getBean("keystore");
-        SslClientTrustManager trustManager = (SslClientTrustManager)springContext.getBean("httpRoutingAssertionTrustManager");
-        KeyManager[] keyman = keystore.getSSLKeyManagerFactory().getKeyManagers();
-        sc.init(keyman, new TrustManager[]{trustManager}, null);
-        final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
-        sc.getClientSessionContext().setSessionTimeout(timeout);
-        synchronized(ServerXslTransformation.class) {
-            return sslContext = sc;
-        }
-    }
-
-    private static TarariCompiledStylesheet compileTarari(byte[] bytes) {
-        TarariCompiledStylesheet tarariStylesheet = null;
-        GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
-        if (tarariContext != null) {
-            try {
-                tarariStylesheet = tarariContext.compileStylesheet(bytes);
-            } catch (ParseException e) {
-                logger.log(Level.WARNING, "cannot create tarari stylesheet, will operate in software mode", e);
-            }
-        }
-        return tarariStylesheet;
-    }
-
     private static Templates compileSoftware(byte[] bytes) throws ParseException {
         // Prepare a software template
-        Templates softwareStylesheet;
         try {
             TransformerFactory transfoctory = TransformerFactory.newInstance();
             StreamSource xsltsource = new StreamSource(new ByteArrayInputStream(bytes));
-            softwareStylesheet = transfoctory.newTemplates(xsltsource);
+            return transfoctory.newTemplates(xsltsource);
         } catch (TransformerConfigurationException e) {
             throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
         }
-        return softwareStylesheet;
     }
 
     private abstract class TransformOutput {
@@ -314,65 +210,53 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
             transformOutput = new PartInfoTransformOutput(partInfo);
         }
 
-        try {
-            if (assertion.isFetchXsltFromMessageUrls())
-                return transformFetchingly(transformInput, transformOutput, isrequest);
-
-            return preconfiguredStylesheet.transform(transformInput, transformOutput);
-
-        } catch (SAXException e) {
-            auditor.logAndAudit(isrequest ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
-            return AssertionStatus.BAD_REQUEST;
-        }
+        return transform(transformInput, transformOutput, isrequest);
     }
 
-    private AssertionStatus transformFetchingly(TransformInput input, TransformOutput output, boolean isReq)
-            throws IOException, SAXException, PolicyAssertionException {
-        final ElementCursor ec = input.getElementCursor();
-        String href = null;
+    /** Get a stylesheet from the resourceGetter and transform input into output. */
+    private AssertionStatus transform(TransformInput input, TransformOutput output, boolean isReq)
+            throws IOException, PolicyAssertionException
+    {
         try {
-            href = findXslHref(ec);
-            if (href != null) {
-                boolean anyMatch = false;
-                for (int i = 0; i < fetchUrlPatterns.length; i++) {
-                    Pattern fetchUrlPattern = fetchUrlPatterns[i];
-                    if (fetchUrlPattern.matcher(href).matches()) anyMatch = true;
+            final ElementCursor ec = input.getElementCursor();
+            Object resource = resourceGetter.getResource(ec);
+            if (resource instanceof CachedStylesheet) {
+                return ((CachedStylesheet)resource).transform(input, output);
+            } else {
+                if (resource == null) {
+                    // Can't happen
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Internal server error: null resource"});
+                    return AssertionStatus.SERVER_ERROR;
                 }
 
-                if (!anyMatch) {
-                    auditor.logAndAudit(AssertionMessages.XSLT_BAD_URL, new String[] {href});
-                    return AssertionStatus.BAD_REQUEST;
-                }
-
-                CachedStylesheet entry = getStylesheet(href, springContext);
-                if (entry == null) {
-                    // getStylesheet() already logged the reason
-                    return AssertionStatus.BAD_REQUEST;
-                }
-
-                // Do the transformation
-                return entry.transform(input, output);
+                // XXX This is a design flaw when cache shared with Schema Val.  Not yet fixed.  See Bug #2535
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                    new String[] {"The specified XSL URL has recently been fetched and found to contain something other than XSL"});
+                return AssertionStatus.SERVER_ERROR;
             }
-
-            if (assertion.isFetchAllowWithoutStylesheet())
-                return AssertionStatus.NONE;
-
-            auditor.logAndAudit(AssertionMessages.XSLT_NO_PI);
+        } catch (ResourceGetter.InvalidMessageException e) {
+            auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         } catch (SAXException e) {
             auditor.logAndAudit(isReq ? AssertionMessages.XSLT_REQ_NOT_XML : AssertionMessages.XSLT_RESP_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
-        } catch (ParseException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[] { href, ExceptionUtils.getMessage(e) });
-            return AssertionStatus.FAILED;
+        } catch (ResourceGetter.MalformedResourceUrlException e) {
+            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] {e.getUrl(), "URL is invalid"});
+            return AssertionStatus.BAD_REQUEST;
+        } catch (ResourceGetter.UrlNotPermittedException e) {
+            auditor.logAndAudit(AssertionMessages.XSLT_BAD_URL, new String[] {e.getUrl()});
+            return AssertionStatus.BAD_REQUEST;
+        } catch (ResourceGetter.ResourceIOException e) {
+            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
+            return AssertionStatus.BAD_REQUEST;
+        } catch (ResourceGetter.ResourceParseException e) {
+            auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
+            return AssertionStatus.BAD_REQUEST;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] { href, ExceptionUtils.getMessage(e) });
+            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] { "HTTPS url: unable to create an SSL context", ExceptionUtils.getMessage(e) });
             return AssertionStatus.FAILED;
-        } catch (MalformedURLException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] { href, ExceptionUtils.getMessage(e) });
-            return null;
-        } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.XSLT_MULTIPLE_PIS, new String[] { href, ExceptionUtils.getMessage(e) });
+        } catch (ResourceGetter.UrlNotFoundException e) {
+            auditor.logAndAudit(AssertionMessages.XSLT_NO_PI);
             return AssertionStatus.BAD_REQUEST;
         }
     }
@@ -398,8 +282,10 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
         if (pxr != null) {
             XpathResultNodeSet pis = pxr.getNodeSet();
             if (pis != null && pis.size() > 0) {
-                if (pis.size() != 1)
+                if (pis.size() != 1) {
+                    auditor.logAndAudit(AssertionMessages.XSLT_MULTIPLE_PIS);
                     throw new InvalidDocumentFormatException();
+                }
                 String val = pis.getNodeValue(0);
                 return extractHref(val);
             }
@@ -456,78 +342,15 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
         }
     }
 
-    private CachedStylesheet getStylesheet(String href, ApplicationContext spring)
-            throws ParseException, GeneralSecurityException, MalformedURLException {
-        GenericHttpRequestParams params = (GenericHttpRequestParams)httpRequest.get();
-        final URL url = new URL(href);
-        params.setTargetUrl(url);
-        if (url.getProtocol().equals("https"))
-            params.setSslSocketFactory(getSslContext(spring).getSocketFactory());
-
-        final HttpObjectCache.UserObjectFactory userObjectFactory = new HttpObjectCache.UserObjectFactory() {
-            public Object createUserObject(GenericHttpResponse response) throws IOException {
-                try {
-                    if (response.getStatus() != HttpConstants.STATUS_OK)
-                        throw new IOException("HTTP status was " + response.getStatus());
-                    byte[] bytes = HexUtils.slurpStreamLocalBuffer(response.getInputStream());
-                    logger.fine("Downloaded new XSLT from " + url.toExternalForm());
-                    final GlobalTarariContext gtc = TarariLoader.getGlobalContext();
-                    TarariCompiledStylesheet tarariStylesheet = gtc == null ? null : gtc.compileStylesheet(bytes);
-                    return new CachedStylesheet(compileSoftware(bytes), tarariStylesheet, xslParseErrorMessage);
-                } catch (ParseException e) {
-                    final String msg = ExceptionUtils.getMessage(e);
-                    throw (IOException)new IOException(msg).initCause(e);
-                }
-            }
-        };
-
-        // Get cached, possibly checking if-modified-since against server, possibly downloading a new stylesheet
-        HttpObjectCache.FetchResult result = httpObjectCache.fetchCached(CachedStylesheet.httpClient,
-                                                                         params,
-                                                                         false,
-                                                                         userObjectFactory);
-
-        CachedStylesheet sheet = (CachedStylesheet)result.getUserObject();
-        IOException err = result.getException();
-
-        if (sheet == null) {
-            // Didn't manage to get a stylesheet.  See if we got an error instead.
-            // If it's actually a ParseException, we can just rethrow it and it'll get logged properly.
-            Throwable pe = ExceptionUtils.getCauseIfCausedBy(err, ParseException.class);
-            if (pe != null)
-                throw (ParseException)pe;
-
-            // Other IOExceptions we'll have to log here, as our caller won't be able to tell them apart from
-            // IOExceptions due to reading the request itself.
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] { href, ExceptionUtils.getMessage(err) });
-            return null;
-        }
-
-        // Got a sheet.  See if we need to log any warnings.
-        if (err != null)
-            auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL2, new String[] { href, ExceptionUtils.getMessage(err) });
-
-        return sheet;
-    }
-
     private static class CachedStylesheet {
         private TarariCompiledStylesheet tarariStylesheet;
         private Templates softwareStylesheet;
-        private String softwareStylesheetParseErrorMessage;
 
-        // This is in here so it doesn't get initialized until someone needs to use it
-        private static final GenericHttpClient httpClient;
-        static {
-            MultiThreadedHttpConnectionManager connectionManager = new MultiThreadedHttpConnectionManager();
-            connectionManager.setMaxConnectionsPerHost(100);
-            connectionManager.setMaxTotalConnections(1000);
-            httpClient = new CommonsHttpClient(connectionManager);
-        }
-
-        public CachedStylesheet(Templates softwareStylesheet, TarariCompiledStylesheet tarariStylesheet, String xslParseErrorMessage) {
+        public CachedStylesheet(Templates softwareStylesheet, TarariCompiledStylesheet tarariStylesheet) {
             this.tarariStylesheet = tarariStylesheet;
             this.softwareStylesheet = softwareStylesheet;
-            this.softwareStylesheetParseErrorMessage = xslParseErrorMessage;
+            if (softwareStylesheet == null)
+                throw new IllegalArgumentException("softwareStylesheet must be provided");
         }
 
         public AssertionStatus transform(TransformInput input, TransformOutput output)
@@ -563,12 +386,6 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
                 throws PolicyAssertionException, SAXException, IOException {
             final Document doctotransform = t.asDocument();
             final Document outDoc;
-
-            if (softwareStylesheet == null) {
-                t.getAuditor().logAndAudit(AssertionMessages.XSLT_BAD_XSL,
-                        new String[] { softwareStylesheetParseErrorMessage });
-                return AssertionStatus.FAILED;
-            }
 
             try {
                 outDoc = XmlUtil.softXSLTransform(doctotransform, softwareStylesheet.newTransformer(), t.vars);
@@ -633,6 +450,10 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
         }
     }
 
+    /**
+     * This version of TransformInput has the special case and slower code needed to do Tarari transformation
+     * of a MIME part other than the first part.
+     */
     private class PartInfoTransformInput extends TransformInput {
         TarariMessageContext tmc;
         Document doc;

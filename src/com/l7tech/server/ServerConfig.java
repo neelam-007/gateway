@@ -62,8 +62,11 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_IO_BACK_READ_TIMEOUT = "ioOutReadTimeout";
     public static final String PARAM_IO_STALE_CHECK_PER_INTERVAL = "ioStaleCheckCount";
 
-    public static final String PARAM_XSLT_MAX_CACHE_ENTRIES = "xsltMaxCacheEntries";
-    public static final String PARAM_XSLT_MAX_CACHE_AGE = "xsltMaxCacheAge";
+    public static final String PARAM_MESSAGEURL_MAX_CACHE_ENTRIES = "messageUrlMaxCacheEntries";
+    public static final String PARAM_MESSAGEURL_MAX_CACHE_AGE = "messageUrlMaxCacheAge";
+
+    public static final String PARAM_SINGLEURL_MAX_CACHE_ENTRIES = "singleUrlMaxCacheEntries";
+    public static final String PARAM_SINGLEURL_MAX_CACHE_AGE = "singleUrlMaxCacheAge";
 
     public static final String MAX_LDAP_SEARCH_RESULT_SIZE = "maxLdapSearchResultSize";
 

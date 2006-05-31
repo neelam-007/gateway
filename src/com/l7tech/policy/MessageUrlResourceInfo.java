@@ -6,6 +6,9 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.AssertionResourceType;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * A {@link AssertionResourceInfo} implementation indicating that resources can be fetched from
@@ -32,6 +35,21 @@ public class MessageUrlResourceInfo extends AssertionResourceInfo {
      */
     public String[] getUrlRegexes() {
         return urlRegexes;
+    }
+
+    /**
+     * @return the regular expressions compiled into patterns.  May be empty but never null.
+     * @see #getUrlRegexes()
+     */
+    public Pattern[] makeUrlPatterns() {
+        List patterns = new ArrayList();
+        for (int i = 0; i < urlRegexes.length; i++) {
+            String regex = urlRegexes[i];
+            Pattern p;
+            p = Pattern.compile(regex);
+            patterns.add(p);
+        }
+        return (Pattern[])patterns.toArray(new Pattern[0]);
     }
 
     /**
