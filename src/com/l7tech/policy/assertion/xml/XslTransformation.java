@@ -92,21 +92,21 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
     }
 
     /**
-     * @param whichMimePart the zero-based index of the MIME part to which the transformation should be applied           
+     * @param whichMimePart the zero-based index of the MIME part to which the transformation should be applied
      */
     public void setWhichMimePart(int whichMimePart) {
         this.whichMimePart = whichMimePart;
     }
 
     /**
-     * @deprecated use {@link # resourceInfo } directly instead
+     * @deprecated use {@link #resourceInfo } directly instead
      */
     public boolean isFetchXsltFromMessageUrls() {
         return resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL;
     }
 
     /**
-     * @deprecated use {@link # resourceInfo } directly instead
+     * @deprecated use {@link #resourceInfo } directly instead
      */
     public String[] getFetchUrlRegexes() {
         if (resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL) {
@@ -117,7 +117,7 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
     }
 
     /**
-     * @deprecated use {@link # resourceInfo } directly instead
+     * @deprecated use {@link #resourceInfo } directly instead
      */
     public boolean isFetchAllowWithoutStylesheet() {
         return resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL && ((MessageUrlResourceInfo) resourceInfo).isAllowMessagesWithoutUrl();
