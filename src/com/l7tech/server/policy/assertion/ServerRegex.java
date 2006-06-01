@@ -118,15 +118,13 @@ public class ServerRegex extends AbstractServerAssertion implements ServerAssert
                     logger.fine("Proceeding : Matched " + regexAssertion.getRegex());
                     assertionStatus = AssertionStatus.NONE;
                 } else if (!matched && regexAssertion.isProceedIfPatternMatches()) {
-                    logger.fine("Failing : Not matched " + regexAssertion.getRegex());
-                    // todo, this should produce a logAndAudit
+                    auditor.logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, new String[]{regexAssertion.getRegex()});
                     assertionStatus = AssertionStatus.FAILED;
                 } else if (!matched && !regexAssertion.isProceedIfPatternMatches()) {
                     logger.fine("Proceeding : Not matched and proceed if no match requested " + regexAssertion.getRegex());
                     assertionStatus = AssertionStatus.NONE;
                 } else if (matched && !regexAssertion.isProceedIfPatternMatches()) {
-                    logger.fine("Failing : Matched and proceed if no match requested " + regexAssertion.getRegex());
-                    // todo, this should produce a logAndAudit
+                    auditor.logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, new String[]{regexAssertion.getRegex()});
                     assertionStatus = AssertionStatus.FAILED;
                 }
             }

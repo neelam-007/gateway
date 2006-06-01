@@ -279,8 +279,10 @@ public class AssertionMessages extends Messages {
     public static final M REGEX_TOO_BIG           = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + 1024 * 512 + " bytes)");
     public static final M REGEX_NO_REPLACEMENT    = m(6302, Level.WARNING, "Replace requested, but no replace string was specified (null).");
     public static final M REGEX_NO_SUCH_PART      = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");
-    public static final M REGEX_NO_ENCODING       = m(6304, Level.INFO, "Character encoding not specified; will use default {0}");
-    public static final M REGEX_ENCODING_OVERRIDE = m(6305, Level.FINE, "Using overridden character encoding {0}");
+    public static final M REGEX_NO_ENCODING       = m(6304, Level.INFO,    "Character encoding not specified; will use default {0}");
+    public static final M REGEX_ENCODING_OVERRIDE = m(6305, Level.FINE,    "Using overridden character encoding {0}");
+    public static final M REGEX_NO_MATCH_FAILURE  = m(6306, Level.INFO,    "Failing because expression was not matched {0}");
+    public static final M REGEX_MATCH_FAILURE     = m(6307, Level.INFO,    "Failing because expression was matched {0}");
 
     // SAML Browser General
     public static final M SAMLBROWSER_LOGINFORM_NON_200               = m(6400, Level.WARNING, "HTTP GET for login form resulted in non-200 status");
