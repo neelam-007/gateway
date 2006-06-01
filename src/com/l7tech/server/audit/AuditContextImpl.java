@@ -69,13 +69,11 @@ public class AuditContextImpl implements AuditContext {
 
         Level severity = Messages.getSeverityLevelById(detail.getMessageId());
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
-        if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
-            // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
-            detail.setOrdinal(ordinal++);
-            getDetailList(source).add(detail);
-            if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
-                highestLevelYetSeen = severity;
-            }
+        detail.setOrdinal(ordinal++);
+        // set the ordinal (used to resolve the sequence as the time stamp in ms cannot resolve the order of the messages)
+        getDetailList(source).add(detail);
+        if(getUseAssociatedLogsThreshold() && severity.intValue() > highestLevelYetSeen.intValue()) {
+            highestLevelYetSeen = severity;
         }
     }
 
@@ -138,15 +136,19 @@ public class AuditContextImpl implements AuditContext {
                 // System audit records are always saved
             }
 
-            Set<AuditDetail> allDetails = new HashSet<AuditDetail>();
+            Set<AuditDetail> detailsToSave = new HashSet<AuditDetail>();
             for (List<AuditDetail> list : details.values()) {
                 for (AuditDetail detail : list) {
-                    detail.setAuditRecord(currentRecord);
-                    allDetails.add(detail);
+                    Level severity = Messages.getSeverityLevelById(detail.getMessageId());
+                    if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
+                    if(severity.intValue() >= getAssociatedLogsThreshold().intValue()) {
+                        detail.setAuditRecord(currentRecord);
+                        detailsToSave.add(detail);
+                    }
                 }
             }
 
-            currentRecord.setDetails(allDetails);
+            currentRecord.setDetails(detailsToSave);
             currentRecord.setLevel(highestLevelYetSeen);
             auditRecordManager.save(currentRecord);
         } catch (SaveException e) {
