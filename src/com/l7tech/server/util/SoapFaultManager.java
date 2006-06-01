@@ -217,14 +217,18 @@ public class SoapFaultManager implements ApplicationContextAware {
                 List<AuditDetail> details = result.getDetails();
                 if (details != null) {
                     for (AuditDetail detail : details) {
-                        Element detailMsgEl = tmp.createElementNS(FAULT_NS, "l7:detailMessage");
-                        detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
-                        // add text node with actual message. see below for logpanel sample:
-                        StringBuffer msgbuf = new StringBuffer();
-                        MessageFormat mf = new MessageFormat(Messages.getMessageById(detail.getMessageId()));
-                        mf.format(detail.getParams(), msgbuf, new FieldPosition(0));
-                        detailMsgEl.setTextContent(msgbuf.toString());
-                        assertionResultEl.appendChild(tmp.importNode(detailMsgEl, true));
+                        int msgid = detail.getMessageId();
+                        // only show details FINE and higher for medium details, show all details for full details
+                        if (includeSuccesses || (Messages.getSeverityLevelById(msgid).intValue() >= Level.INFO.intValue())) {       
+                            Element detailMsgEl = tmp.createElementNS(FAULT_NS, "l7:detailMessage");
+                            detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
+                            // add text node with actual message. see below for logpanel sample:
+                            StringBuffer msgbuf = new StringBuffer();
+                            MessageFormat mf = new MessageFormat(Messages.getMessageById(msgid));
+                            mf.format(detail.getParams(), msgbuf, new FieldPosition(0));
+                            detailMsgEl.setTextContent(msgbuf.toString());
+                            assertionResultEl.appendChild(tmp.importNode(detailMsgEl, true));
+                        }
                     }
                 }
                 policyResultEl.appendChild(tmp.importNode(assertionResultEl, true));
