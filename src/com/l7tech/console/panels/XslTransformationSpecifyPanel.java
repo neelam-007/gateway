@@ -11,10 +11,11 @@ import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.OkCancelDialog;
 import com.l7tech.common.gui.widgets.UrlPanel;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ResourceUtils;
-import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -49,6 +50,16 @@ public class XslTransformationSpecifyPanel extends JPanel {
 
     private final XslTransformationPropertiesDialog xslDialog;
     private final UIAccessibility uiAccessibility;
+
+    public static final String XSL_IDENTITY_TRANSFORM = "<?xml version=\"1.0\"?>\n" +
+           "<xsl:stylesheet version=\"1.0\" xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>\n" +
+           "  <!-- Identity transform -->\n" +
+           "  <xsl:template match=\"@*|*|processing-instruction()|comment()\" mode=\"recursive-copy\">\n" +
+           "    <xsl:copy>\n" +
+           "      <xsl:apply-templates select=\"*|@*|text()|processing-instruction()|comment()\" mode=\"recursive-copy\"/>\n" +
+           "    </xsl:copy>\n" +
+           "  </xsl:template>\n" +
+           "</xsl:stylesheet>";
 
     public XslTransformationSpecifyPanel(final XslTransformationPropertiesDialog parent, final XslTransformation assertion) {
         this.xslDialog = parent;
@@ -95,16 +106,25 @@ public class XslTransformationSpecifyPanel extends JPanel {
             }
         });
 
+        // Initialize the XML editor to the XSL from the assertion, if any, else to an identity transform
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                String src = assertion.getXslSrc();
-                if (src != null) {
+                String xsl = XSL_IDENTITY_TRANSFORM;
+
+                AssertionResourceInfo ri = assertion.getResourceInfo();
+                if (ri instanceof StaticResourceInfo) {
+                    StaticResourceInfo sri = (StaticResourceInfo)ri;
+                    xsl = sri.getDocument();
+                }
+
+                assertion.getResourceInfo();
+                if (xsl != null) {
                     XMLEditor editor = uiAccessibility.getEditor();
                     try {
-                        editor.setText(XmlUtil.nodeToFormattedString(XmlUtil.parse(new StringReader(src), false)));
+                        editor.setText(XmlUtil.nodeToFormattedString(XmlUtil.parse(new StringReader(xsl), false)));
                     } catch (Exception e) {
                         log.log(Level.WARNING, "Couldn't parse initial XSLT", e);
-                        editor.setText(src);
+                        editor.setText(xsl);
                     }
                     editor.setLineNumber(1);
                 }

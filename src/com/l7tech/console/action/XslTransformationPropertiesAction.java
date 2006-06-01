@@ -43,7 +43,7 @@ public class XslTransformationPropertiesAction extends SecureAction {
         Frame f = TopComponents.getInstance().getMainWindow();
         XslTransformationPropertiesDialog dlg = new XslTransformationPropertiesDialog(f, false, node.getAssertion());
         dlg.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        dlg.setSize(600, 800);
+        dlg.setSize(600, 580);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
         Assertion ass = dlg.getAssertion();

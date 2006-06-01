@@ -2,8 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.AssertionResourceType;
+import com.l7tech.policy.AssertionResourceInfo;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,8 +27,6 @@ import java.util.logging.Logger;
 public class XslTransformationPropertiesDialog extends JDialog {
     private static final Logger log = Logger.getLogger(XslTransformationPropertiesDialog.class.getName());
 
-    private JRadioButton specifyRadio;
-    private JRadioButton fetchRadio;
     private JButton okButton;
     private JButton cancelButton;
     private JComboBox directionCombo;
@@ -32,13 +34,28 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JSpinner whichMimePartSpinner;
     private JLabel directionLabel;
     private JLabel whichMimePartLabel;
+    private JPanel borderPanel;
     private JPanel innerPanel;
+    private JComboBox cbXslLocation;
 
     private XslTransformation assertion;
     private final XslTransformationSpecifyPanel specifyPanel;
     private final XslTransformationFetchPanel fetchPanel;
+    private final XslTransformationSpecifyUrlPanel specifyUrlPanel;
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XslTransformationPropertiesDialog");
+
+    // Combo box strings that also serve as mode identifiers
+    private final String MODE_SPECITY_XSL = resources.getString("specifyRadio.label");
+    private final String MODE_SPECIFY_URL = resources.getString("fetchUrlRadio.label");
+    private final String MODE_FETCH_PI_URL = resources.getString("fetchRadio.label");
+    private final String[] MODES = new String[] {
+            MODE_SPECITY_XSL,
+            MODE_SPECIFY_URL,
+            MODE_FETCH_PI_URL,
+    };
+
+    private final String BORDER_TITLE_PREFIX = resources.getString("xslLocationPrefix.text");
 
     ResourceBundle getResources() {
         return resources;
@@ -62,24 +79,17 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
         specifyPanel = new XslTransformationSpecifyPanel(this, assertion);
         fetchPanel = new XslTransformationFetchPanel(this, assertion);
+        specifyUrlPanel = new XslTransformationSpecifyUrlPanel(this, assertion);
 
         innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
         innerPanel.add(specifyPanel);
         innerPanel.add(fetchPanel);
+        innerPanel.add(specifyUrlPanel);
 
-        ButtonGroup radioGroup = new ButtonGroup();
-        radioGroup.add(fetchRadio);
-        radioGroup.add(specifyRadio);
-
-        fetchRadio.addActionListener(new ActionListener() {
+        cbXslLocation.setModel(new DefaultComboBoxModel(MODES));
+        cbXslLocation.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
-                setFetchMode();
-            }
-        });
-
-        specifyRadio.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                setSpecifyMode();
+                updateModeComponents();
             }
         });
 
@@ -98,15 +108,25 @@ public class XslTransformationPropertiesDialog extends JDialog {
         }
 
         whichMimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
+        //noinspection UnnecessaryBoxing
         whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
 
-        if (assertion.isFetchXsltFromMessageUrls()) {
-            fetchRadio.setSelected(true);
-            setFetchMode();
+        Utilities.equalizeComponentSizes(new JComponent[] {
+                directionCombo,
+                whichMimePartSpinner,
+        });
+
+        AssertionResourceInfo ri = assertion.getResourceInfo();
+        AssertionResourceType rit = ri.getType();
+        if (AssertionResourceType.MESSAGE_URL.equals(rit)) {
+            cbXslLocation.setSelectedItem(MODE_FETCH_PI_URL);
+        } else if (AssertionResourceType.SINGLE_URL.equals(rit)) {
+            cbXslLocation.setSelectedItem(MODE_SPECIFY_URL);
         } else {
-            specifyRadio.setSelected(true);
-            setSpecifyMode();
+            if (!AssertionResourceType.STATIC.equals(rit)) log.warning("Unknown AssertionResourceType, assuming static: " + rit);
+            cbXslLocation.setSelectedItem(MODE_SPECITY_XSL);
         }
+        updateModeComponents();
 
         // create callbacks
         okButton.addActionListener(new ActionListener() {
@@ -129,28 +149,52 @@ public class XslTransformationPropertiesDialog extends JDialog {
         add(mainPanel);
     }
 
-    private void setSpecifyMode() {
-        fetchPanel.setVisible(false);
-        specifyPanel.setVisible(true);
-        innerPanel.revalidate();
+    private String getCurrentFetchMode() {
+        return (String)cbXslLocation.getSelectedItem();
     }
 
-    private void setFetchMode() {
-        specifyPanel.setVisible(false);
-        fetchPanel.setVisible(true);
+    private void updateModeComponents() {
+        String mode = getCurrentFetchMode();
+        if (MODE_FETCH_PI_URL.equals(mode)) {
+            fetchPanel.setVisible(true);
+            specifyPanel.setVisible(false);
+            specifyUrlPanel.setVisible(false);
+        } else if (MODE_SPECIFY_URL.equals(mode)) {
+            specifyUrlPanel.setVisible(true);
+            specifyPanel.setVisible(false);
+            fetchPanel.setVisible(false);
+        } else {
+            // Assume specify XSL
+            if (!MODE_SPECITY_XSL.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
+            specifyPanel.setVisible(true);
+            fetchPanel.setVisible(false);
+            specifyUrlPanel.setVisible(false);
+        }
+        Border border = borderPanel.getBorder();
+        if (border instanceof TitledBorder) {
+            TitledBorder tb = (TitledBorder)border;
+            tb.setTitle(BORDER_TITLE_PREFIX + " " + mode);
+        }
         innerPanel.revalidate();
     }
 
     private void ok() {
         // validate the contents of the xml control
-        String err;
-        if (specifyRadio.isSelected()) {
-            err = specifyPanel.check();
-            if (err == null) specifyPanel.updateModel(assertion);
-        } else if (fetchRadio.isSelected()) {
+        final String err;
+
+        String mode = getCurrentFetchMode();
+        if (MODE_FETCH_PI_URL.equals(mode)) {
             err = fetchPanel.check();
             if (err == null) fetchPanel.updateModel(assertion);
-        } else throw new IllegalStateException("Neither Specify nor Fetch mode selected");
+        } else if (MODE_SPECIFY_URL.equals(mode)) {
+            err = specifyUrlPanel.check();
+            if (err == null) specifyUrlPanel.updateModel(assertion);
+        } else {
+            // Assume specify XSL
+            if (!MODE_SPECITY_XSL.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
+            err = specifyPanel.check();
+            if (err == null) specifyPanel.updateModel(assertion);
+        }
 
         if (err != null) {
             displayError(err, null);
@@ -193,4 +237,5 @@ public class XslTransformationPropertiesDialog extends JDialog {
     public XslTransformation getAssertion() {
         return assertion;
     }
+
 }

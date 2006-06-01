@@ -248,13 +248,13 @@ public class ServerXslTransformation extends AbstractServerAssertion implements 
             return AssertionStatus.BAD_REQUEST;
         } catch (ResourceGetter.ResourceIOException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
-            return AssertionStatus.BAD_REQUEST;
+            return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.ResourceParseException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_BAD_EXT_XSL, new String[] {e.getUrl(), ExceptionUtils.getMessage(e)}, e);
-            return AssertionStatus.BAD_REQUEST;
+            return AssertionStatus.SERVER_ERROR;
         } catch (GeneralSecurityException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_CANT_READ_XSL, new String[] { "HTTPS url: unable to create an SSL context", ExceptionUtils.getMessage(e) });
-            return AssertionStatus.FAILED;
+            return AssertionStatus.SERVER_ERROR;
         } catch (ResourceGetter.UrlNotFoundException e) {
             auditor.logAndAudit(AssertionMessages.XSLT_NO_PI);
             return AssertionStatus.BAD_REQUEST;
