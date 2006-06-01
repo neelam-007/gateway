@@ -71,4 +71,5 @@ my @jarsgateway = get_jarlist_from_directory("build/ROOT_exploded/WEB-INF/lib/")
 push @jarsgateway, "build/lib/servlet-api.jar";
 push @jarsgateway, "build/lib/catalina.jar";
 push @jarsgateway, "build/lib/org.mortbay.jetty.jar";
+push @jarsgateway, "build/layer7-api.jar";
 zkm_file_replace("etc/obfuscation/ssg.zkm", "etc/obfuscation/ssg_new.zkm", \@jarsgateway, "");
