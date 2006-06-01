@@ -1,4 +1,4 @@
-:: Copyright (C) 2005 Layer 7 Technologies Inc.
+:: Copyright (C) 2006 Layer 7 Technologies Inc.
 ::
 :: Compatibility: Windows XP, Windows Server 2003.
 
@@ -72,7 +72,13 @@ set JVMOPTIONS=^
 -XX:NewSize=%maxnewsize%M;^
 -XX:+DisableExplicitGC
 
+:: WARNING: %DLL_DIR% can contain only one folder. That's because of the
+::          unfortunate choice by PRUNSRV to use ";" as a separator in the
+::          --Environment option. Fortunately, Tomcat doesn't need anything on
+::          the PATH.
+
 "%PRUNSRV%" //IS//%SERVICE_NAME% ^
+--Environment "PATH=%DLL_DIR%" ^
 --JvmOptions "%JVMOPTIONS%" ^
 --JvmMs %java_ram% ^
 --JvmMx %java_ram% ^

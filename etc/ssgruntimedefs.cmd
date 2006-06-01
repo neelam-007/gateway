@@ -1,4 +1,4 @@
-:: Copyright (C) 2005 Layer 7 Technologies Inc.
+:: Copyright (C) 2006 Layer 7 Technologies Inc.
 ::
 :: Compatibility: Windows XP, Windows Server 2003.
 
@@ -75,5 +75,8 @@ REM     for /F "usebackq tokens=1" %%i in ("%SSG_HOME%\etc\conf\cluster_hostname
 REM )
 REM set JAVA_OPTS=%JAVA_OPTS% -Djava.rmi.server.hostname=%rmi_server_full_hostname%
 
-:: Append to the system search path.
-set PATH=%PATH%;%JAVA_HOME%\bin;%SSG_HOME%\bin
+:: If a JNI DLL is dependent on another DLL, that second DLL must be in a folder
+:: on the Windows PATH environment variable.
+:: Our practice is to put all DLLs in %SSG_HOME%\lib.
+set DLL_DIR=%SSG_HOME%\lib
+set PATH=%PATH%;%JAVA_HOME%\bin;%SSG_HOME%\bin;%SSG_HOME%\lib
