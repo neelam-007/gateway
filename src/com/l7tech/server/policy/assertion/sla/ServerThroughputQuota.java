@@ -8,9 +8,6 @@ package com.l7tech.server.policy.assertion.sla;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.util.SoapFaultUtils;
-import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -138,8 +135,6 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
             return AssertionStatus.NONE;
         } else {
             String limit = "max " + assertion.getQuota() + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
-            String msg = "the quota " + assertion.getCounterName() + " [" + limit +
-                         "] was exceeded " + "(current value is " + val + ")";
             auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED,
                                 new String[] {assertion.getCounterName(), limit, Long.toString(val)});
             return AssertionStatus.FALSIFIED;
