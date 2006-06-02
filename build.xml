@@ -148,6 +148,7 @@
         <path id="project.test.classpath">
             <path refid="project.classpath"/>
             <pathelement location="${build.classes}"/>
+            <pathelement location="lib/test/FastInfoset.jar"/>
         </path>
 
     </target>
