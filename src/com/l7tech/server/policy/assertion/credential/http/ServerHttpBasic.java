@@ -8,13 +8,13 @@ package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import org.apache.axis.encoding.Base64;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
             return null;
         }
 
-        String userPassRealm = new String( Base64.decode( base64 ), ENCODING );
+        String userPassRealm = new String( HexUtils.decodeBase64( base64, true ), ENCODING );
         String login = null;
         String pass = null;
 

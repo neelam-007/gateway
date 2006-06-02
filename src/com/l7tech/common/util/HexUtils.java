@@ -84,12 +84,16 @@ public class HexUtils {
     };
 
     public static String encodeBase64(byte[] binaryData) {
-        return encodeBase64(binaryData, false);
+        return encodeBase64(binaryData, false, 0, binaryData.length);
     }
 
     public static String encodeBase64(byte[] binaryData, boolean stripWhitespace) {
+        return encodeBase64(binaryData, stripWhitespace, 0, binaryData.length);
+    }
+
+    public static String encodeBase64(byte[] binaryData, boolean stripWhitespace, int offset, int length) {
         BASE64Encoder encoder = (BASE64Encoder)localEncoder.get();
-        String s = encoder.encode( binaryData );
+        String s = encoder.encode( ByteBuffer.wrap(binaryData, offset, length) );
         if (stripWhitespace) {
             Matcher matcher = whitespacePattern.matcher(s);
             return matcher.replaceAll("");

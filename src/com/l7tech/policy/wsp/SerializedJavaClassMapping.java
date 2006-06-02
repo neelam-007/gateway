@@ -1,9 +1,9 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.policy.assertion.UnknownAssertion;
-import org.apache.axis.encoding.Base64;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -99,7 +99,7 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
         try {
             ObjectOutputStream oos = new ObjectOutputStream(bos);
             oos.writeObject(obj);
-            String encodedString = Base64.encode(bos.getPooledByteArray(), 0, bos.size());
+            String encodedString = HexUtils.encodeBase64(bos.getPooledByteArray(), true, 0, bos.size());
             oos.close();
             return encodedString;
         } finally {
@@ -111,7 +111,7 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
      * Recreates the object from the base64 encoded String
      */
     private Object base64ToObject(String str) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bis = new ByteArrayInputStream(Base64.decode(str));
+        ByteArrayInputStream bis = new ByteArrayInputStream(HexUtils.decodeBase64(str, true));
         ObjectInputStream ois = new ClassLoaderObjectInputStream(bis);
 
         Object obj = (Object)ois.readObject();
