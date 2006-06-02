@@ -83,7 +83,7 @@ public class GClient {
     //- PRIVATE
 
     //
-    private static final String[] CONTENT_TYPES = new String[]{"text/xml", "application/soap+xml", "text/plain", "application/octet-stream", "application/x-www-form-urlencoded"};
+    private static final String[] CONTENT_TYPES = new String[]{"text/xml", "application/soap+xml", "text/plain", "application/fastinfoset", "application/soap+fastinfoset", "application/octet-stream", "application/x-www-form-urlencoded"};
     private static final Color ERROR_COLOR = new Color(255, 192, 192);
 
     // form members
@@ -460,12 +460,25 @@ public class GClient {
         final String soapAction = soapActionTextField.getText();
         final String targetUrl = urlTextField.getText();
         final String message = requestTextArea.getText();
+        final String contentType = (String) contentTypeComboBox.getSelectedItem();
 
         try {
+            boolean isFastInfoset = contentType.indexOf("fastinfoset") > 0;
             byte[] requestBytes = null;
-            if(validateBeforeSend()) {
+            if(validateBeforeSend() || isFastInfoset) {
                 Document requestDocument = XmlUtil.stringToDocument(message);
-                requestBytes = XmlUtil.nodeToFormattedString(requestDocument).getBytes("UTF-8");
+
+                if (!isFastInfoset) {
+                    requestBytes = XmlUtil.nodeToFormattedString(requestDocument).getBytes("UTF-8");
+                }
+                else {
+                    com.sun.xml.fastinfoset.dom.DOMDocumentSerializer ser =
+                            new com.sun.xml.fastinfoset.dom.DOMDocumentSerializer();
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+                    ser.setOutputStream(baos);
+                    ser.serialize(requestDocument);
+                    requestBytes = baos.toByteArray();                    
+                }
             }
             else {
                 requestBytes = message.getBytes("UTF-8");
@@ -599,7 +612,7 @@ public class GClient {
             }
             String contentType = (String) contentTypeComboBox.getSelectedItem();
             if(contentType.length() > 0) {
-                if(contentType.indexOf("charset") < 0) {
+                if(contentType.indexOf("charset") < 0 && contentType.indexOf("fastinfoset") < 0) {
                     contentType += "; charset=\"UTF-8\"";
                 }
                 params.setContentType(ContentTypeHeader.parseValue(contentType));
@@ -623,8 +636,8 @@ public class GClient {
             responseIn = response.getInputStream();
             String responseText = new String(HexUtils.slurpStream(responseIn), type.getEncoding());
 
-            return new String[]{Integer.toString(response.getStatus()),
-                                response.getContentLength().toString(),
+            return new String[]{response==null ? "" : Integer.toString(response.getStatus()),
+                                response==null || response.getContentLength()==null ? "" : response.getContentLength().toString(),
                                 String.valueOf(type == null ? null : type.getFullValue()),
                                 responseText};
         }
