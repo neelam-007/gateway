@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.StaticResourceInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -96,20 +97,23 @@ public class PolicyExporter {
             ref = new CustomAssertionReference(cahAss.getCustomAssertion().getName());
         } else if (assertion instanceof SchemaValidation) {
             SchemaValidation sva = (SchemaValidation)assertion;
-            try {
-                ArrayList listOfImports = ExternalSchemaReference.listImports(XmlUtil.stringToDocument(sva.getSchema()));
-                for (Iterator iterator = listOfImports.iterator(); iterator.hasNext();) {
-                    ExternalSchemaReference.ListedImport unresolvedImport = (ExternalSchemaReference.ListedImport)iterator.next();
-                    ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name,
-                                                                                unresolvedImport.tns);
-                    if (!refs.contains(esref)) {
-                        refs.add(esref);
+            if (sva.getResourceInfo() instanceof StaticResourceInfo) {
+                StaticResourceInfo sri = (StaticResourceInfo)sva.getResourceInfo();
+                try {
+                    ArrayList listOfImports = ExternalSchemaReference.listImports(XmlUtil.stringToDocument(sri.getDocument()));
+                    for (Iterator iterator = listOfImports.iterator(); iterator.hasNext();) {
+                        ExternalSchemaReference.ListedImport unresolvedImport = (ExternalSchemaReference.ListedImport)iterator.next();
+                        ExternalSchemaReference esref = new ExternalSchemaReference(unresolvedImport.name,
+                                                                                    unresolvedImport.tns);
+                        if (!refs.contains(esref)) {
+                            refs.add(esref);
+                        }
                     }
+                } catch (SAXException e) {
+                    logger.log(Level.WARNING, "cannot read schema doc properly");
+                    // fallthrough since it's possible this assertion is just badly configured in which care we wont care
+                    // about external references
                 }
-            } catch (SAXException e) {
-                logger.log(Level.WARNING, "cannot read schema doc properly");
-                // fallthrough since it's possible this assertion is just badly configured in which care we wont care
-                // about external references
             }
         }
         // if an assertion was created and it's not already recorded, add it

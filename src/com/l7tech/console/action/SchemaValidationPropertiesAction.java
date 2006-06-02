@@ -48,7 +48,7 @@ public class SchemaValidationPropertiesAction extends SecureAction {
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(f, node, service);
         dlg.addPolicyListener(listener);
         dlg.pack();
-        dlg.setSize(600, 800);
+        dlg.setSize(600, 590);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
     }

@@ -16,6 +16,7 @@ import com.l7tech.service.ServiceStatistics;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.StaticResourceInfo;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -508,9 +509,12 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
             }
         } else if (toInspect instanceof SchemaValidation) {
             SchemaValidation tq = (SchemaValidation)toInspect;
-            String value = tq.getSchema();
-            if (value != null) {
-                container.add(value);
+            if (tq.getResourceInfo() instanceof StaticResourceInfo) {
+                StaticResourceInfo sri = (StaticResourceInfo)tq.getResourceInfo();
+                String value = sri.getDocument();
+                if (value != null) {
+                    container.add(value);
+                }
             }
         }
     }

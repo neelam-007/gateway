@@ -6,6 +6,8 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.OkCancelDialog;
+import com.l7tech.common.gui.widgets.UrlPanel;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
@@ -17,7 +19,10 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
 import org.apache.xml.serialize.OutputFormat;
@@ -30,6 +35,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.Binding;
 import javax.wsdl.WSDLException;
@@ -56,6 +63,62 @@ import java.util.logging.Logger;
  */
 public class SchemaValidationPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SchemaValidationPropertiesDialog.class.getName());
+    private static final ResourceBundle resources =
+            ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", Locale.getDefault());
+    private final String BORDER_TITLE_PREFIX = resources.getString("modeBorderTitlePrefix.text");
+
+    // Top-level widgets
+    private JComboBox cbSchemaLocation;
+    private JButton helpButton;
+    private JButton okButton;
+    private JButton cancelButton;
+
+    // Cut points where we will be doing surgery on the IDEA form
+    private JPanel rootPanel;
+    private JPanel innerPanel;
+    private JPanel borderPanel;
+    private JTabbedPane innerTabHolder;
+    private JPanel specifyTab;
+    private JPanel specifyUrlTab;
+
+    // Widgets specific to MODE_SPECIFY_SCHEMA
+    private JButton readFromWsdlButton;
+    private JButton readUrlButton;
+    private JButton readFileButton;
+    private JRadioButton rbApplyToBody;
+    private JRadioButton rbApplyToArgs;
+    private JPanel xmldisplayPanel;
+    private XMLContainer xmlContainer;
+
+    // Widgets specific to MODE_SPECIFY_URL
+    private JTextField specifyUrlField;
+
+    // Other fields
+    private UIAccessibility uiAccessibility;
+    private SchemaValidation schemaValidationAssertion;
+    private PublishedService service;
+
+    private final Logger log = Logger.getLogger(getClass().getName());
+    private final EventListenerList listenerList = new EventListenerList();
+
+    // cached values
+    private boolean wsdlBindingStyleIsDocument;
+    private boolean wsdlBindingSoapUseIsLiteral;
+
+    private static int CONTROL_SPACING = 5;
+
+    // Combo box strings that also serve as mode identifiers
+    private final String MODE_SPECIFY = resources.getString("specifyItem.label");
+    private final String MODE_SPECIFY_URL = resources.getString("specifyUrlItem.label");
+    //private final String MODE_FETCH_XSI_URL = resources.getString("messageUrlItem.label");
+    private final String[] MODES = new String[] {
+            MODE_SPECIFY,
+            MODE_SPECIFY_URL,
+            //MODE_FETCH_XSI_URL,  // TODO implement later on
+    };
+
+    /** Set to true if the Ok button completes. */
+    private boolean changesCommitted = false;
 
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service) {
         super(owner, true);
@@ -79,20 +142,36 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private void initialize() {
 
-        initResources();
         setTitle(resources.getString("window.title"));
 
         // create controls
         allocControls();
 
         // do layout stuff
-        Container contents = getContentPane();
-        contents.setLayout(new BorderLayout(0, 0));
-        contents.add(constructCentralPanel(), BorderLayout.CENTER);
-        contents.add(constructBottomButtonsPanel(), BorderLayout.SOUTH);
+        setContentPane(rootPanel);
+
+        // Surgery on IDEA form -- remove tabs, and hook up the drop-down to switch subpanes instead
+        innerTabHolder.remove(specifyTab);
+        innerTabHolder.remove(specifyUrlTab);
+        innerPanel.removeAll();
+        innerPanel.setLayout(new BoxLayout(innerPanel, BoxLayout.Y_AXIS));
+        innerPanel.add(specifyTab);
+        innerPanel.add(specifyUrlTab);
+        specifyUrlTab.setVisible(false);
+
+        // Attach XML editor
+        xmldisplayPanel.removeAll();
+        xmldisplayPanel.setLayout(new BorderLayout(0, CONTROL_SPACING));
+        xmldisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
+
         Utilities.setEscKeyStrokeDisposes(this);
 
         // create callbacks
+        cbSchemaLocation.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                updateModeComponents();
+            }
+        });
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();
@@ -116,17 +195,89 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         readFromWsdlButton.setEnabled(wsdlExtractSupported());
         readFromWsdlButton.setToolTipText("Extract schema from WSDL; available for 'document/literal' style services");
-        resolveButton.addActionListener(new ActionListener() {
+        readUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                readFromUrl();
+                OkCancelDialog dlg = new OkCancelDialog(SchemaValidationPropertiesDialog.this,
+                                                        resources.getString("urlDialog.title"),
+                                                        true,
+                                                        new UrlPanel(resources.getString("urlDialog.prompt"), null));
+                dlg.pack();
+                Utilities.centerOnScreen(dlg);
+                dlg.setVisible(true);
+                String url = (String)dlg.getValue();
+                if (url != null) {
+                    readFromUrl(url);
+                }
             }
         });
 
-        loadFromFile.addActionListener(new ActionListener() {
+        readFileButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 readFromFile();
             }
         });
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                modelToView();
+                updateModeComponents();
+            }
+        });
+    }
+
+    private void modelToView() {
+        if (schemaValidationAssertion.isApplyToArguments()) {
+            rbApplyToArgs.setSelected(true);
+        } else {
+            rbApplyToBody.setSelected(true);
+        }
+
+        AssertionResourceInfo ri = schemaValidationAssertion.getResourceInfo();
+        AssertionResourceType rit = ri.getType();
+        if (AssertionResourceType.SINGLE_URL.equals(rit)) {
+            cbSchemaLocation.setSelectedItem(MODE_SPECIFY_URL);
+
+            if (ri instanceof SingleUrlResourceInfo) {
+                SingleUrlResourceInfo suri = (SingleUrlResourceInfo)ri;
+                specifyUrlField.setText(suri.getUrl());
+            }
+        } else {
+            if (!AssertionResourceType.STATIC.equals(rit)) log.warning("Unknown AssertionResourceType, assuming static: " + rit);
+            cbSchemaLocation.setSelectedItem(MODE_SPECIFY);
+
+            if (ri instanceof StaticResourceInfo) {
+                StaticResourceInfo sri = (StaticResourceInfo)ri;
+                String doc = sri.getDocument();
+                if (doc != null && doc.trim().length() > 0) {
+                    XMLEditor editor = uiAccessibility.getEditor();
+                    editor.setText(reformatxml(doc));
+                    editor.setLineNumber(1);
+                }
+            }
+        }
+    }
+
+    private String getCurrentFetchMode() {
+        return (String)cbSchemaLocation.getSelectedItem();
+    }
+
+    private void updateModeComponents() {
+        String mode = getCurrentFetchMode();
+        if (MODE_SPECIFY_URL.equals(mode)) {
+            specifyUrlTab.setVisible(true);
+            specifyTab.setVisible(false);
+        } else {
+            // Assume specify stylesheet
+            if (!MODE_SPECIFY.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
+            specifyTab.setVisible(true);
+            specifyUrlTab.setVisible(false);
+        }
+        Border border = borderPanel.getBorder();
+        if (border instanceof TitledBorder) {
+            TitledBorder tb = (TitledBorder)border;
+            tb.setTitle(BORDER_TITLE_PREFIX + " " + mode);
+        }
+        innerPanel.revalidate();
     }
 
     /**
@@ -252,7 +403,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         return false;
     }
 
-    private void ok() {
+    /** @return true iff. info was committed successfully */
+    private boolean commitSpecifyTab() {
         // check that whatever is captured is an xml document, a schema and has a tns
         String contents = uiAccessibility.getEditor().getText();
 
@@ -260,31 +412,71 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             String tns = XmlUtil.getSchemaTNS(contents);
             if (tns == null) {
                 displayError("The schema must declare a targetNamespace", null);
-                return;
+                return false;
             }
         } catch (XmlUtil.BadSchemaException e) {
             log.log(Level.WARNING, "issue with schema at hand", e);
             displayError("This does not appear to be a legal schema. Consult log for more information", null);
-            return;
+            return false;
         }
         try {
             Document doc = XmlUtil.stringToDocument(contents);
-            if (checkForUnresolvedImports(doc)) {
-                return;
-            }
+            if (checkForUnresolvedImports(doc))
+                return false;
         } catch (SAXException e) {
             log.log(Level.WARNING, "issue with xml document", e);
             displayError("The schema is not formatted properly. " + e.getMessage(), null);
-            return;
+            return false;
         }
 
-        // save new schema
+        // Checks pass, commit it
         StaticResourceInfo sri = new StaticResourceInfo();
         sri.setDocument(contents);
         schemaValidationAssertion.setResourceInfo(sri);
-        schemaValidationAssertion.setApplyToArguments(appliesToMessageArguments.isSelected());
+        return true;
+    }
+
+    /** @return true iff. info was committed successfully */
+    private boolean commitSpecifyUrlTab() {
+        String url = specifyUrlField.getText();
+
+        if (url == null || url.trim().length() < 1) {
+            displayError(resources.getString("error.nourl"), null);
+            return false;
+        }
+
+        try {
+            new URL(url);
+        } catch (MalformedURLException e) {
+            displayError(resources.getString("error.badurl"), null);
+            return false;
+        }
+
+        // Checks pass, commit it
+        SingleUrlResourceInfo suri = new SingleUrlResourceInfo();
+        suri.setUrl(url);
+        schemaValidationAssertion.setResourceInfo(suri);
+        return true;
+    }
+
+    private void ok() {
+        String mode = getCurrentFetchMode();
+
+        if (MODE_SPECIFY_URL.equals(mode)) {
+            if (!commitSpecifyUrlTab())
+                return;
+        } else {
+            // Assume it's static
+            if (!MODE_SPECIFY.equals(mode)) logger.warning("Unknown fetch mode: " + mode);
+            if (!commitSpecifyTab())
+                return;
+        }
+
+        // save new schema
+        schemaValidationAssertion.setApplyToArguments(rbApplyToArgs.isSelected());
         fireEventAssertionChanged(schemaValidationAssertion);
         // exit
+        changesCommitted = true;
         SchemaValidationPropertiesDialog.this.dispose();
     }
 
@@ -411,7 +603,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void checkSetAppliesToArgs() {
-        if (!appliesToMessageArguments.isSelected()) {
+        if (!rbApplyToArgs.isSelected()) {
         String msg = "The WSDL style seems to indicate that the\n" +
                      "schema validation should be applied to the body\n" +
                      "'arguments' rather than the entire body. Would you\n" +
@@ -420,7 +612,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                                                 "Schema Applies To", JOptionPane.YES_NO_OPTION,
                                                 JOptionPane.QUESTION_MESSAGE);
             if (res == JOptionPane.YES_OPTION) {
-                appliesToMessageArguments.setSelected(true);
+                rbApplyToArgs.setSelected(true);
             }
         }
     }
@@ -472,9 +664,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         }
     }
 
-    private void readFromUrl() {
-        // get url
-        String urlstr = urlTxtFld.getText();
+    private void readFromUrl(String urlstr) {
         if (urlstr == null || urlstr.length() < 1) {
             displayError(resources.getString("error.nourl"), null);
             return;
@@ -544,179 +734,9 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
     }
 
-    /**
-     * the central panel contains the populate from schema button, the load from schema panel
-     * and the schema xml display
-     */
-    private JPanel constructCentralPanel() {
-        // panel that contains the read from wsdl and the read from url
-        JPanel toppanel = new JPanel();
-        toppanel.setLayout(new BoxLayout(toppanel, BoxLayout.Y_AXIS));
-        toppanel.add(constructLoadFromWsdlPanel());
-        toppanel.add(constructLoadFromUrlPanel());
-        toppanel.add(loadFromFilePanel());
-
-        // panel that contains the xml display
-        JPanel centerpanel = new JPanel();
-        centerpanel.setLayout(new BorderLayout());
-        centerpanel.add(constructXmlDisplayPanel(), BorderLayout.CENTER);
-
-        JPanel output = new JPanel();
-        output.setLayout(new BorderLayout());
-
-        output.add(toppanel, BorderLayout.NORTH);
-        output.add(centerpanel, BorderLayout.CENTER);
-
-        return output;
-    }
-
-    private JPanel loadFromFilePanel() {
-
-        // wrap this with border settings
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
-        constraints.anchor = GridBagConstraints.NORTHWEST;
-
-        JPanel bordered = new JPanel();
-        bordered.setLayout(new GridBagLayout());
-        bordered.add(loadFromFile, constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.VERTICAL;
-        constraints.weightx = 1.0;
-        constraints.gridx++;
-        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
-        bordered.add(Box.createGlue(), constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.gridy++;
-        constraints.weighty = 1.0;
-        constraints.gridheight = 2;
-        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
-        JPanel radioPanel = new JPanel();
-        radioPanel.setBorder(BorderFactory.createTitledBorder("Schema Applies To:"));
-        radioPanel.setLayout(new GridLayout(2,1));
-        radioPanel.add(appliesToEntireMessageMessage);
-        radioPanel.add(appliesToMessageArguments);
-        if (schemaValidationAssertion.isApplyToArguments()) {
-            appliesToMessageArguments.setSelected(true);
-        } else {
-            appliesToEntireMessageMessage.setSelected(true);
-        }
-        bordered.add(radioPanel, constraints);
-
-        return bordered;
-    }
-
-    private JPanel constructXmlDisplayPanel() {
-        JPanel xmldisplayPanel = new JPanel();
-        xmldisplayPanel.setLayout(new BorderLayout(0, CONTROL_SPACING));
-        JLabel schemaTitle = new JLabel(resources.getString("xmldisplayPanel.name"));
-        xmldisplayPanel.add(schemaTitle, BorderLayout.NORTH);
-
-        xmldisplayPanel.add(xmlContainer.getView(), BorderLayout.CENTER);
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                if (schemaValidationAssertion.getSchema() != null) {
-                    XMLEditor editor = uiAccessibility.getEditor();
-                    editor.setText(reformatxml(schemaValidationAssertion.getSchema()));
-                    editor.setLineNumber(1);
-                }
-            }
-        });
-
-
-        // wrap this with border settings
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
-        constraints.insets = new Insets(0, BORDER_PADDING, 0, BORDER_PADDING);
-        JPanel bordered = new JPanel();
-        bordered.setLayout(new GridBagLayout());
-        bordered.add(xmldisplayPanel, constraints);
-
-        return bordered;
-    }
-
-    private JPanel constructLoadFromWsdlPanel() {
-        // align to the left
-        JPanel loadfromwsdlpanel = new JPanel();
-        loadfromwsdlpanel.setLayout(new BorderLayout());
-        loadfromwsdlpanel.add(readFromWsdlButton, BorderLayout.WEST);
-
-        // add border
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
-        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, 0, BORDER_PADDING);
-        JPanel bordered = new JPanel();
-        bordered.setLayout(new GridBagLayout());
-        bordered.add(loadfromwsdlpanel, constraints);
-
-        return bordered;
-    }
-
-    private JPanel constructLoadFromUrlPanel() {
-        // make controls
-        JPanel loadFromUrlPanel = new JPanel();
-        loadFromUrlPanel.setLayout(new BorderLayout(CONTROL_SPACING, 0));
-        JLabel loadfromurllabel = new JLabel(resources.getString("loadFromUrlPanel.name"));
-        loadFromUrlPanel.add(loadfromurllabel, BorderLayout.WEST);
-        loadFromUrlPanel.add(urlTxtFld, BorderLayout.CENTER);
-        loadFromUrlPanel.add(resolveButton, BorderLayout.EAST);
-
-        // wrap this with border settings
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.fill = GridBagConstraints.BOTH;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
-        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, 0, BORDER_PADDING);
-        JPanel bordered = new JPanel();
-        bordered.setLayout(new GridBagLayout());
-        bordered.add(loadFromUrlPanel, constraints);
-
-        return bordered;
-    }
-
-    private JPanel constructBottomButtonsPanel() {
-        // construct the bottom panel and wrap it with a border
-        JPanel buttonsPanel = new JPanel();
-        buttonsPanel.setLayout(new FlowLayout(FlowLayout.TRAILING, CONTROL_SPACING, 0));
-        buttonsPanel.add(helpButton);
-        buttonsPanel.add(okButton);
-        buttonsPanel.add(cancelButton);
-
-        //  make this panel align to the right
-        JPanel rightPanel = new JPanel();
-        rightPanel.setLayout(new BorderLayout());
-        rightPanel.add(buttonsPanel, BorderLayout.EAST);
-
-        // wrap this with border settings
-        JPanel output = new JPanel();
-        output.setLayout(new FlowLayout(FlowLayout.TRAILING, BORDER_PADDING, BORDER_PADDING));
-        output.add(rightPanel);
-
-        return output;
-    }
-
     private void allocControls() {
-        // construct buttons
-        helpButton = new JButton();
-        helpButton.setText(resources.getString("helpButton.name"));
-        okButton = new JButton();
-        okButton.setText(resources.getString("okButton.name"));
-        cancelButton = new JButton();
-        cancelButton.setText(resources.getString("cancelButton.name"));
-        readFromWsdlButton = new JButton();
-        readFromWsdlButton.setText(resources.getString("readFromWsdlButton.name"));
-        urlTxtFld = new JTextField();
-        resolveButton = new JButton();
-        resolveButton.setText(resources.getString("resolveButton.name"));
         // configure xml editing widget
+        cbSchemaLocation.setModel(new DefaultComboBoxModel(MODES));
         xmlContainer = new XMLContainer(true);
         uiAccessibility = xmlContainer.getUIAccessibility();
         uiAccessibility.setTreeAvailable(false);
@@ -738,44 +758,13 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_PREVIOUS_ACTION));
         popupModel.removeAction(ActionModel.getActionByName(ActionModel.TREE_NEXT_ACTION));
 
-        loadFromFile = new JButton();
-        loadFromFile.setText(resources.getString("loadFromFile.name"));
-        appliesToEntireMessageMessage = new JRadioButton("Entire Message Body");
-        appliesToMessageArguments = new JRadioButton("Message Arguments");
         ButtonGroup bg = new ButtonGroup();
-        bg.add(appliesToEntireMessageMessage);
-        bg.add(appliesToMessageArguments);
+        bg.add(rbApplyToBody);
+        bg.add(rbApplyToArgs);
     }
 
-    private void initResources() {
-        Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", locale);
+    /** @return true if the Ok button was pressed and the changes committed successfully. */
+    public boolean isChangesCommitted() {
+        return changesCommitted;
     }
-
-    private JButton helpButton;
-    private JButton okButton;
-    private JButton cancelButton;
-    private JButton readFromWsdlButton;
-    private JButton resolveButton;
-    private JButton loadFromFile;
-    private JRadioButton appliesToEntireMessageMessage;
-    private JRadioButton appliesToMessageArguments;
-    private JTextField urlTxtFld;
-
-    private XMLContainer xmlContainer;
-    private UIAccessibility uiAccessibility;
-
-    private ResourceBundle resources;
-
-    private SchemaValidation schemaValidationAssertion;
-    private PublishedService service;
-
-    private final Logger log = Logger.getLogger(getClass().getName());
-    private final EventListenerList listenerList = new EventListenerList();
-    // cached values
-    private boolean wsdlBindingStyleIsDocument;
-    private boolean wsdlBindingSoapUseIsLiteral;
-
-    private static int BORDER_PADDING = 20;
-    private static int CONTROL_SPACING = 5;
 }

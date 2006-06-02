@@ -7,34 +7,35 @@ import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.communityschemas.CommunitySchemaManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyException;
+import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.spring.util.WeakReferenceApplicationListener;
-
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.xb.xsdschema.SchemaDocument;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.ls.LSResourceResolver;
 import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -72,6 +73,9 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
     private static final String MSG_PAYLOAD_NS = "Hardware schema validation succeeded but the tns " +
             "did not match the assertion at hand. Returning failure.";
 
+
+    private final String staticSchemaDocument; // TODO very soon: implement SingleUrlResourceInfo
+
     //- PUBLIC
 
     public void onApplicationEvent(ApplicationEvent event) {
@@ -89,12 +93,17 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
     /**
      *
      */
-    public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
+    public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
         this.schemaHasDependencies = false;
         this.schemaValidationAssertion = data;
         this.springContext = springContext;
         this.auditor = new Auditor(this, springContext, logger);
+
+        if (!(data.getResourceInfo() instanceof StaticResourceInfo))
+            throw new ServerPolicyException(data, "Only StaticResourceInfo is currently implemented");
+        StaticResourceInfo sri = (StaticResourceInfo)data.getResourceInfo();
+        staticSchemaDocument = sri.getDocument();
 
         // Listen for community schema updates
         WeakReferenceApplicationListener.addApplicationListener(springContext, this);
@@ -103,7 +112,7 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
         GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
         if (tarariContext != null) {
             try {
-                SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
+                SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(staticSchemaDocument));
                 tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
             } catch (IOException e) {
                 logger.log(Level.SEVERE, "Error getting tns from schema", e);
@@ -177,7 +186,7 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
                         return delegate.resolveResource(type, namespaceURI, publicId, systemId, baseURI);
                     }
                 });
-                validationSchema = sf.newSchema(new StreamSource(new StringReader(schemaValidationAssertion.getSchema())));
+                validationSchema = sf.newSchema(new StreamSource(new StringReader(staticSchemaDocument)));
                 schema = validationSchema;
             }
             catch(SAXException se) {

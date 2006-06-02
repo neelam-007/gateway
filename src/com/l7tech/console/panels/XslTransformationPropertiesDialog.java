@@ -46,11 +46,11 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.XslTransformationPropertiesDialog");
 
     // Combo box strings that also serve as mode identifiers
-    private final String MODE_SPECITY_XSL = resources.getString("specifyRadio.label");
+    private final String MODE_SPECIFY_XSL = resources.getString("specifyRadio.label");
     private final String MODE_SPECIFY_URL = resources.getString("fetchUrlRadio.label");
     private final String MODE_FETCH_PI_URL = resources.getString("fetchRadio.label");
     private final String[] MODES = new String[] {
-            MODE_SPECITY_XSL,
+            MODE_SPECIFY_XSL,
             MODE_SPECIFY_URL,
             MODE_FETCH_PI_URL,
     };
@@ -124,7 +124,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
             cbXslLocation.setSelectedItem(MODE_SPECIFY_URL);
         } else {
             if (!AssertionResourceType.STATIC.equals(rit)) log.warning("Unknown AssertionResourceType, assuming static: " + rit);
-            cbXslLocation.setSelectedItem(MODE_SPECITY_XSL);
+            cbXslLocation.setSelectedItem(MODE_SPECIFY_XSL);
         }
         updateModeComponents();
 
@@ -165,7 +165,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
             fetchPanel.setVisible(false);
         } else {
             // Assume specify XSL
-            if (!MODE_SPECITY_XSL.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
+            if (!MODE_SPECIFY_XSL.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
             specifyPanel.setVisible(true);
             fetchPanel.setVisible(false);
             specifyUrlPanel.setVisible(false);
@@ -191,7 +191,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
             if (err == null) specifyUrlPanel.updateModel(assertion);
         } else {
             // Assume specify XSL
-            if (!MODE_SPECITY_XSL.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
+            if (!MODE_SPECIFY_XSL.equals(mode)) log.warning("Unexpected fetch mode, assuming specify: " + mode);
             err = specifyPanel.check();
             if (err == null) specifyPanel.updateModel(assertion);
         }

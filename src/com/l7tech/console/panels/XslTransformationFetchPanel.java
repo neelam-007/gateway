@@ -40,7 +40,13 @@ public class XslTransformationFetchPanel extends JPanel {
     XslTransformationFetchPanel(final XslTransformationPropertiesDialog parent, XslTransformation assertion) {
         this.xslDialog = parent;
 
-        String[] regexes = assertion.getFetchUrlRegexes();
+        String[] regexes = null;
+        MessageUrlResourceInfo muri = null;
+        if (assertion.getResourceInfo() instanceof MessageUrlResourceInfo) {
+            muri = (MessageUrlResourceInfo)assertion.getResourceInfo();
+            regexes = muri.getUrlRegexes();
+        }
+
         if (regexes != null) {
             for (int i = 0; i < regexes.length; i++) {
                 regexListModel.addElement(regexes[i]);
@@ -60,7 +66,7 @@ public class XslTransformationFetchPanel extends JPanel {
             }
         });
 
-        allowWithoutStylesheetCheckbox.setSelected(assertion.isFetchAllowWithoutStylesheet());
+        allowWithoutStylesheetCheckbox.setSelected(muri != null && muri.isAllowMessagesWithoutUrl());
 
         regexTitle = parent.getResources().getString("regexDialog.title");
         regexPrompt = parent.getResources().getString("regexDialog.prompt");

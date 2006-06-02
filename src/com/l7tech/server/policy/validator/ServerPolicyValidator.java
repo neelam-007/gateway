@@ -13,9 +13,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -203,51 +201,9 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
             // check for unresolved imports
             SchemaValidation svass = (SchemaValidation)a;
             Document schemaDoc = null;
-            try {
-                schemaDoc = XmlUtil.stringToDocument(svass.getSchema());
-            } catch (SAXException e) {
-                logger.log(Level.INFO, "cannot parse xml from schema validation assertion", e);
-                r.addError(new PolicyValidatorResult.Error(a,
-                                                           ap,
-                                                           "This schema validation assertion does not appear " +
-                                                           "to contain a well-formed xml schema.",
-                                                           null));
-                return;
-            }
-            Element schemael = schemaDoc.getDocumentElement();
-            List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
-            if (listofimports.isEmpty()) return;
-            ArrayList unresolvedImportsList = new ArrayList();
-
-
-            for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
-                Element importEl = (Element) iterator.next();
-                String importns = importEl.getAttribute("namespace");
-                String importloc = importEl.getAttribute("schemaLocation");
-                try {
-                    if (importloc == null || communitySchemaManager.findByName(importloc).isEmpty()) {
-                        if (importns == null || communitySchemaManager.findByTNS(importns).isEmpty()) {
-                            if (importloc != null) {
-                                unresolvedImportsList.add(importloc);
-                            } else {
-                                unresolvedImportsList.add(importns);
-                            }
-                        }
-                    }
-                } catch (ObjectModelException e) {
-                    logger.log(Level.SEVERE, "cannot get schema", e);
-                }
-            }
-            if (!unresolvedImportsList.isEmpty()) {
-                StringBuffer msg = new StringBuffer("The schema validation assertion contains unresolved imported " +
-                                                   "schemas: ");
-                for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
-                    msg.append(iterator.next());
-                    if (iterator.hasNext()) msg.append(", ");
-                }
-                msg.append(".");
-                r.addError(new PolicyValidatorResult.Error(a, ap, msg.toString(), null));
-            }
+            AssertionResourceInfo ri = svass.getResourceInfo();
+            if (ri instanceof StaticResourceInfo)
+                validateSchemaValidation(a, ap, (StaticResourceInfo)ri, r);
         }
         else if (a instanceof UnknownAssertion) {
             UnknownAssertion ua = (UnknownAssertion) a;
@@ -307,6 +263,55 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                   "Gateway Kerberos configuration is invalid.",
                   null));
             }
+        }
+    }
+
+    private void validateSchemaValidation(Assertion a, AssertionPath ap, StaticResourceInfo sri, PolicyValidatorResult r) {
+        Document schemaDoc;
+        try {
+            schemaDoc = XmlUtil.stringToDocument(sri.getDocument());
+            Element schemael = schemaDoc.getDocumentElement();
+            List listofimports = XmlUtil.findChildElementsByName(schemael, schemael.getNamespaceURI(), "import");
+            if (!listofimports.isEmpty()) {
+                ArrayList unresolvedImportsList = new ArrayList();
+
+
+                for (Iterator iterator = listofimports.iterator(); iterator.hasNext();) {
+                    Element importEl = (Element)iterator.next();
+                    String importns = importEl.getAttribute("namespace");
+                    String importloc = importEl.getAttribute("schemaLocation");
+                    try {
+                        if (importloc == null || communitySchemaManager.findByName(importloc).isEmpty()) {
+                            if (importns == null || communitySchemaManager.findByTNS(importns).isEmpty()) {
+                                if (importloc != null) {
+                                    unresolvedImportsList.add(importloc);
+                                } else {
+                                    unresolvedImportsList.add(importns);
+                                }
+                            }
+                        }
+                    } catch (ObjectModelException e) {
+                        logger.log(Level.SEVERE, "cannot get schema", e);
+                    }
+                }
+                if (!unresolvedImportsList.isEmpty()) {
+                    StringBuffer msg = new StringBuffer("The schema validation assertion contains unresolved imported " +
+                            "schemas: ");
+                    for (Iterator iterator = unresolvedImportsList.iterator(); iterator.hasNext();) {
+                        msg.append(iterator.next());
+                        if (iterator.hasNext()) msg.append(", ");
+                    }
+                    msg.append(".");
+                    r.addError(new PolicyValidatorResult.Error(a, ap, msg.toString(), null));
+                }
+            }
+        } catch (SAXException e) {
+            logger.log(Level.INFO, "cannot parse xml from schema validation assertion", e);
+            r.addError(new PolicyValidatorResult.Error(a,
+                                                       ap,
+                                                       "This schema validation assertion does not appear " +
+                                                               "to contain a well-formed xml schema.",
+                                                       null));
         }
     }
 

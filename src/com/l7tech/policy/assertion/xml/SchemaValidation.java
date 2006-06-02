@@ -1,10 +1,9 @@
 package com.l7tech.policy.assertion.xml;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionResourceType;
-import com.l7tech.policy.assertion.UsesResourceInfo;
-import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.AssertionResourceInfo;
+import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesResourceInfo;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
@@ -18,18 +17,6 @@ import com.l7tech.policy.AssertionResourceInfo;
  *
  */
 public class SchemaValidation extends Assertion implements UsesResourceInfo {
-
-    /**
-     * the actual schema used for validation
-     * @return a string containing the xml document
-     * @deprecated use {@link #resourceInfo } directly instead
-     */
-    public String getSchema() {
-        if (resourceInfo.getType() == AssertionResourceType.STATIC)
-            return ((StaticResourceInfo) resourceInfo).getDocument();
-
-        return null;
-    }
 
     /**
      * Return whether the schema validation has been configured for message/operation

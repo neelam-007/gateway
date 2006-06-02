@@ -34,14 +34,15 @@ public class AddSchemaValidationAssertionAdvice implements Advice {
         SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
         // show the dialog
         dlg.pack();
-        dlg.setSize(600, 800);
+        dlg.setSize(600, 590);
         Utilities.centerOnScreen(dlg);
         dlg.setVisible(true);
+
         // make sure a schema was entered
-        if (assertion.getSchema() != null && assertion.getSchema().length() > 0) {
+        if (dlg.isChangesCommitted()) {
             pc.proceed();
         } else {
-            log.info("schema validation must have been canceled " + assertion.getSchema());
+            log.info("Addition of SchemaValidation must have been canceled");
         }
     }
 

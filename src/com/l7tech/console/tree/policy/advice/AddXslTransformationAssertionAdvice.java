@@ -11,9 +11,9 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
-import java.util.logging.Logger;
-import java.util.Iterator;
 import javax.swing.*;
+import java.util.Iterator;
+import java.util.logging.Logger;
 
 /**
  * Invoked when a Xsl Transformation assertion is dropped in the policy tree.
@@ -45,7 +45,7 @@ public class AddXslTransformationAssertionAdvice implements Advice {
         if (ass != null) {
             pc.proceed();
         } else {
-            log.info("Xsl Transformation must have been canceled " + assertion.getXslSrc());
+            log.info("Xsl Transformation must have been canceled");
         }
     }
 

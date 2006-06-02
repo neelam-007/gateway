@@ -1,13 +1,11 @@
 package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
-import com.l7tech.policy.assertion.AssertionResourceType;
-import com.l7tech.policy.assertion.UsesResourceInfo;
 import com.l7tech.policy.AssertionResourceInfo;
-import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UsesResourceInfo;
+import com.l7tech.policy.assertion.UsesVariables;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
 
@@ -46,17 +44,6 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
     private String transformName;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
     private int whichMimePart = 0;
-
-    /**
-     * the actual transformation xsl
-     * @deprecated use {@link #resourceInfo } directly instead
-     */
-    public String getXslSrc() {
-        if (resourceInfo != null && resourceInfo.getType() == AssertionResourceType.STATIC)
-            return ((StaticResourceInfo) resourceInfo).getDocument();
-
-        return null;
-    }
 
     /**
      * Whether this assertion applies to requests or responses soap messages.
@@ -98,31 +85,6 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
         this.whichMimePart = whichMimePart;
     }
 
-    /**
-     * @deprecated use {@link #resourceInfo } directly instead
-     */
-    public boolean isFetchXsltFromMessageUrls() {
-        return resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL;
-    }
-
-    /**
-     * @deprecated use {@link #resourceInfo } directly instead
-     */
-    public String[] getFetchUrlRegexes() {
-        if (resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL) {
-            return ((MessageUrlResourceInfo) resourceInfo).getUrlRegexes();
-        } else {
-            return new String[0];
-        }
-    }
-
-    /**
-     * @deprecated use {@link #resourceInfo } directly instead
-     */
-    public boolean isFetchAllowWithoutStylesheet() {
-        return resourceInfo != null && resourceInfo.getType() == AssertionResourceType.MESSAGE_URL && ((MessageUrlResourceInfo) resourceInfo).isAllowMessagesWithoutUrl();
-    }
-
     public AssertionResourceInfo getResourceInfo() {
         return resourceInfo;
     }
@@ -135,7 +97,11 @@ public class XslTransformation extends Assertion implements UsesVariables, UsesR
         if (varsUsed != null) return varsUsed;
 
         // Try again later, in case the stylesheet hasn't been set yet
-        String xslSrc = getXslSrc();
+        if (!(resourceInfo instanceof StaticResourceInfo))
+            return new String[0];
+
+        StaticResourceInfo sri = (StaticResourceInfo)resourceInfo;
+        String xslSrc = sri.getDocument();
         if (xslSrc == null || xslSrc.length() == 0) return new String[0];
 
         try {

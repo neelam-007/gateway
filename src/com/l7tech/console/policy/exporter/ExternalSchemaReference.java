@@ -5,6 +5,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.Registry;
@@ -99,18 +100,21 @@ public class ExternalSchemaReference extends ExternalReference {
             // check if this assertion indeed refers to this external schema
             if (assertionToLocalize instanceof SchemaValidation) {
                 SchemaValidation ass = (SchemaValidation)assertionToLocalize;
-                ArrayList imports = null;
-                try {
-                    imports = listImports(XmlUtil.stringToDocument(ass.getSchema()));
-                } catch (SAXException e) {
-                    logger.log(Level.SEVERE, "cannot parse schema");
-                    // nothing more to do since assertion has no valid xml, nothing to localize
-                    return true;
-                }
-                for (Iterator iterator = imports.iterator(); iterator.hasNext();) {
-                    ListedImport listedImport = (ListedImport) iterator.next();
-                    if (listedImport.name.equals(name)) return false;
-                    if (listedImport.tns.equals(tns)) return false;
+                if (ass.getResourceInfo() instanceof StaticResourceInfo) {
+                    StaticResourceInfo sri = (StaticResourceInfo)ass.getResourceInfo();
+                    final ArrayList imports;
+                    try {
+                        imports = listImports(XmlUtil.stringToDocument(sri.getDocument()));
+                    } catch (SAXException e) {
+                        logger.log(Level.SEVERE, "cannot parse schema");
+                        // nothing more to do since assertion has no valid xml, nothing to localize
+                        return true;
+                    }
+                    for (Iterator iterator = imports.iterator(); iterator.hasNext();) {
+                        ListedImport listedImport = (ListedImport) iterator.next();
+                        if (listedImport.name.equals(name)) return false;
+                        if (listedImport.tns.equals(tns)) return false;
+                    }
                 }
             }
         }

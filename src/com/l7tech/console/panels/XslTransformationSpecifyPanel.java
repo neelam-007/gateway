@@ -96,8 +96,8 @@ public class XslTransformationSpecifyPanel extends JPanel {
         urlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 OkCancelDialog dlg = new OkCancelDialog(parent, resources.getString("urlDialog.title"), true, new UrlPanel(resources.getString("urlDialog.prompt"), null));
-                Utilities.centerOnScreen(dlg);
                 dlg.pack();
+                Utilities.centerOnScreen(dlg);
                 dlg.setVisible(true);
                 String url = (String)dlg.getValue();
                 if (url != null) {
