@@ -4,9 +4,11 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.ElementCursor;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TarariLoader;
@@ -14,6 +16,7 @@ import com.l7tech.common.xml.schema.SchemaEntry;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.MessageUrlResourceInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -47,11 +50,14 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.ParseException;
+import java.security.GeneralSecurityException;
 
 /**
  * Validates the soap body's contents of a soap request or soap response against
@@ -61,10 +67,9 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 4, 2004<br/>
- * $Id$<br/>
- *
  */
 public class ServerSchemaValidation extends AbstractServerAssertion implements ServerAssertion, ApplicationListener {
+    private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
     public static final String PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS =
             "com.l7tech.server.schema.suppressSoftwareRecheckIfHardwareFlagsInvalidXml";
     public static final boolean SUPPRESS_FALLBACK_IF_TARARI_FAILS = Boolean.getBoolean(PROP_SUPPRESS_FALLBACK_IF_TARARI_FAILS);
@@ -74,17 +79,30 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
             "did not match the assertion at hand. Returning failure.";
 
 
-    private final String staticSchemaDocument; // TODO very soon: implement SingleUrlResourceInfo
+    private final Auditor auditor;
+    private final ApplicationContext springContext;
+    private final ResourceGetter resourceGetter;
+    private final String tarariNamespaceUri;
+    private final SchemaValidation schemaValidationAssertion;
+    private PreparedSchema lastPreparedSchema = null;
 
-    //- PUBLIC
+    private static class PreparedSchema {
+        final private Schema schema;
+        final private boolean schemaHasDependencies;
+
+        public PreparedSchema(Schema schema, boolean schemaHasDependencies) {
+            this.schema = schema;
+            this.schemaHasDependencies = schemaHasDependencies;
+        }
+    }
 
     public void onApplicationEvent(ApplicationEvent event) {
-        if(schemaHasDependencies) {
+        if(lastPreparedSchema != null && lastPreparedSchema.schemaHasDependencies) {
             if(event instanceof EntityInvalidationEvent) {
                 EntityInvalidationEvent eie = (EntityInvalidationEvent) event;
                 if(SchemaEntry.class.isAssignableFrom(eie.getEntityClass())) {
                     logger.info("Invalidating cached validation schema.");
-                    schema = null; // flush cached schema
+                    lastPreparedSchema = null; // flush cached schema
                 }
             }
         }
@@ -95,31 +113,63 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
      */
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
-        this.schemaHasDependencies = false;
-        this.schemaValidationAssertion = data;
         this.springContext = springContext;
         this.auditor = new Auditor(this, springContext, logger);
+        this.schemaValidationAssertion = data;
 
-        if (!(data.getResourceInfo() instanceof StaticResourceInfo))
-            throw new ServerPolicyException(data, "Only StaticResourceInfo is currently implemented");
-        StaticResourceInfo sri = (StaticResourceInfo)data.getResourceInfo();
-        staticSchemaDocument = sri.getDocument();
+        if (data.getResourceInfo() instanceof MessageUrlResourceInfo)
+            throw new ServerPolicyException(data, "MessageUrlResourceInfo is not yet supported.");
 
-        // Listen for community schema updates
-        WeakReferenceApplicationListener.addApplicationListener(springContext, this);
+        ResourceGetter.ResourceObjectFactory rof = new ResourceGetter.ResourceObjectFactory() {
+            public Object createResourceObject(byte[] resourceBytes) throws ParseException {
+                logger.info("Loading schema for message validation.");
+                try {
+                    final boolean[] hasDependencies = new boolean[] { false };
+                    CommunitySchemaManager manager = (CommunitySchemaManager)
+                            ServerSchemaValidation.this.springContext.getBean("communitySchemaManager");
+                    SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
+                    final LSResourceResolver delegate = manager.communityLSResourceResolver();
+                    sf.setResourceResolver(new LSResourceResolver(){
+                        public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
+                            hasDependencies[0] = true;
+                            return delegate.resolveResource(type, namespaceURI, publicId, systemId, baseURI);
+                        }
+                    });
+                    Schema schema = sf.newSchema(new StreamSource(new ByteArrayInputStream(resourceBytes)));
+                    return new PreparedSchema(schema, hasDependencies[0]);
+                }
+                catch(SAXException se) {
+                    String msg = "parsing exception";
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, se);
+                    throw new ParseException(msg + "-" + se.getMessage(), 0);
+                }
+            }
+        };
 
-        // Tarari
-        GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
-        if (tarariContext != null) {
-            try {
-                SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(staticSchemaDocument));
-                tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "Error getting tns from schema", e);
-            } catch (XmlException e) {
-                logger.log(Level.SEVERE, "Error getting tns from schema", e);
+        this.resourceGetter = ResourceGetter.createResourceGetter(data, rof, null, springContext, auditor);
+
+        // Configure tarari only if it's a static schema.  TODO: find a way to accelerate dynamic schemas
+        String tarariNamespaceUri = null;
+        if (data.getResourceInfo() instanceof StaticResourceInfo) {
+            StaticResourceInfo sri = (StaticResourceInfo)data.getResourceInfo();
+
+            // Listen for community schema updates
+            WeakReferenceApplicationListener.addApplicationListener(springContext, this);
+
+            // Tarari
+            GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
+            if (tarariContext != null) {
+                try {
+                    SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(sri.getDocument()));
+                    tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "Error getting tns from schema", e);
+                } catch (XmlException e) {
+                    logger.log(Level.SEVERE, "Error getting tns from schema", e);
+                }
             }
         }
+        this.tarariNamespaceUri = tarariNamespaceUri;
     }
 
     /**
@@ -150,10 +200,17 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
     /**
      * Validates the given document (or parts of it) against schema as directed.
      *
-     * @param soapmsg the full soap envelope.
+     * @param message the message to validate.  Must not be null.
      * @return the AssertionStatus
+     * @throws IOException if there is a problem reading the document to validate
+     * @throws SAXException if the first part's content type is not text/xml.
+     * @throws SAXException if the document to validate is not well-formed
      */
-    AssertionStatus validateDocument(Document soapmsg) throws IOException {
+    AssertionStatus validateMessageInSoftware(Message message) throws IOException, SAXException {
+        final Document soapmsg;
+        XmlKnob xmlKnob = message.getXmlKnob();
+        soapmsg = xmlKnob.getDocumentReadOnly();
+
         final Element[] elementsToValidate;
         try {
             elementsToValidate = getXMLElementsToValidate(soapmsg);
@@ -173,31 +230,51 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
             }
         }
 
-        Schema validationSchema = schema;
-        if(validationSchema==null) {
-            logger.info("Loading schema for message validation.");
-            try {
-                CommunitySchemaManager manager = (CommunitySchemaManager) springContext.getBean("communitySchemaManager");
-                SchemaFactory sf = SchemaFactory.newInstance(XmlUtil.W3C_XML_SCHEMA);
-                final LSResourceResolver delegate = manager.communityLSResourceResolver();
-                sf.setResourceResolver(new LSResourceResolver(){
-                    public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
-                        schemaHasDependencies = true;
-                        return delegate.resolveResource(type, namespaceURI, publicId, systemId, baseURI);
-                    }
-                });
-                validationSchema = sf.newSchema(new StreamSource(new StringReader(staticSchemaDocument)));
-                schema = validationSchema;
+        final PreparedSchema ps;
+        try {
+            Object got = resourceGetter.getResource(xmlKnob.getElementCursor());
+            if (!(got instanceof PreparedSchema)) {
+                // XXX This is a design flaw when cache shared with XSLT assertion.  Not yet fixed.  See Bug #2535
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                                    new String[] {"The specified Schema URL has recently been fetched and found to contain something other than a schema"});
+                return AssertionStatus.SERVER_ERROR;
             }
-            catch(SAXException se) {
-                String msg = "parsing exception";
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, se);
-                throw new IOException(msg + "-" + se.getMessage());
-            }
+
+            ps = (PreparedSchema)got;
+
+        } catch (ResourceGetter.InvalidMessageException e) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
+                                new String[]{"The document to validate was not well-formed XML"});
+            return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
+        } catch (ResourceGetter.UrlNotFoundException e) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
+                                new String[]{"The document to validate made use of namespaces for which we have no schemas registered, " +
+                                             "and did not include schema URLs for these namespaces"});
+            return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
+        } catch (ResourceGetter.MalformedResourceUrlException e) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
+                                new String[]{"The document to validate included a schema declaration pointing at an invalid URL"});
+            return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
+        } catch (ResourceGetter.UrlNotPermittedException e) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
+                                new String[]{"The document to validate included a schema declaration pointing at a URL that is not permitted by the whitelist"});
+            return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
+        } catch (ResourceGetter.ResourceIOException e) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
+                                new String[]{"Unable to retrieve a schema document: " + ExceptionUtils.getMessage(e)});
+            return AssertionStatus.SERVER_ERROR;
+        } catch (ResourceGetter.ResourceParseException e) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
+                                new String[]{"A remote schema document could not be parsed: " + ExceptionUtils.getMessage(e)});
+            return AssertionStatus.SERVER_ERROR;
+        } catch (GeneralSecurityException e) {
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED,
+                                new String[]{"A remote schema document could not be downloaded because an SSL context could not be created: " + ExceptionUtils.getMessage(e)});
+            return AssertionStatus.SERVER_ERROR;
         }
 
         SchemaValidationErrorHandler reporter = new SchemaValidationErrorHandler();
-        Validator v = validationSchema.newValidator();
+        Validator v = ps.schema.newValidator();
         v.setErrorHandler(reporter);
         v.setResourceResolver(XmlUtil.getSafeLSResourceResolver());
 
@@ -221,16 +298,6 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
         return AssertionStatus.NONE;
     }
 
-    //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
-
-    private final Auditor auditor;
-    private final ApplicationContext springContext;
-    private String tarariNamespaceUri;
-    private Schema schema;
-    private boolean schemaHasDependencies;
-    private SchemaValidation schemaValidationAssertion;
 
     /**
      * Get the request or response message depending on routing state
@@ -279,14 +346,14 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
     private AssertionStatus validateMessage(Message msg) throws IOException {
         try {
             if (tarariNamespaceUri == null)
-                return softwareFallback(msg); // no hardware
+                return validateMessageInSoftware(msg); // no hardware
 
             final GlobalTarariContext globalContext = TarariLoader.getGlobalContext();
 
             if (schemaValidationAssertion.isApplyToArguments()) {
                 logger.fine("Falling back to software validation because assertion requests " +
                         "that only arguments be validated");
-                return softwareFallback(msg);
+                return validateMessageInSoftware(msg);
             }
 
             boolean msgisSoap = msg.isSoap(); // Prime the pump
@@ -294,14 +361,14 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
             if (tarariKnob == null) {
                 // No hardware?  Invalidated knob already? weird. shouldn't be possible
                 logger.fine("Falling back to software validation because there is no message hardware context");
-                return softwareFallback(msg);
+                return validateMessageInSoftware(msg);
             }
 
             TarariMessageContext doc = tarariKnob.getContext();
             Boolean result = globalContext.validateDocument(doc, tarariNamespaceUri);
             if (result == null) {
                 logger.fine("Falling back to software validation because the tns is not used by exactly one schema");
-                return softwareFallback(msg);
+                return validateMessageInSoftware(msg);
             }
 
             if (Boolean.FALSE.equals(result)) {
@@ -314,8 +381,8 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
                 // Recheck failed validations with software, in case the Tarari failure was spurious
                 logger.info("Hardware schema validation failed. The assertion will " +
                         "fallback on software schema validation");
-                // TODO do we still need to do this? does Tarari schema val still have spurious failures?
-                return softwareFallback(msg);
+                // TODO do we still need to do this at all? does Tarari schema val still have spurious failures?
+                return validateMessageInSoftware(msg);
             }
 
             // Hardware schema val succeeded.
@@ -367,10 +434,6 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
 
         logger.fine("Non-SOAP message validated and root namespace URI matches.  Returning success.");
         return AssertionStatus.NONE;
-    }
-
-    private AssertionStatus softwareFallback(Message msg) throws IOException, SAXException {
-        return validateDocument(msg.getXmlKnob().getDocumentReadOnly());
     }
 
     /**
