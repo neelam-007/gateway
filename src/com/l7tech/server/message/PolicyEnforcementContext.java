@@ -61,6 +61,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private SoapFaultLevel faultlevel = null;
     private boolean isAuthenticationMissing = false;
     private boolean isRequestPolicyViolated = false;
+    private boolean isRequestClaimingWrongPolicyVersion = false;
     private PublishedService service;
     private Set<HttpCookie> cookies = new LinkedHashSet<HttpCookie>();
     private Set<AssertionStatus> seenAssertionStatus = new HashSet<AssertionStatus>();
@@ -235,6 +236,19 @@ public class PolicyEnforcementContext extends ProcessingContext {
      */
     public void setRequestPolicyViolated() {
         isRequestPolicyViolated = true;
+    }
+
+    /**
+     * This means that the requestor included a policy version in the request header (bridge)
+     * and the version number was wrong. This is slightly different from policy violated because
+     * a policy could be violated even if the client has the right policy.
+     */
+    public void setRequestClaimingWrongPolicyVersion() {
+        isRequestClaimingWrongPolicyVersion = true;
+    }
+
+    public boolean isRequestClaimingWrongPolicyVersion() {
+        return isRequestClaimingWrongPolicyVersion;
     }
 
     public void setService(PublishedService service) {

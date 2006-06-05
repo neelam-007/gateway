@@ -250,6 +250,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     }
                     if (wrongPolicyVersion) {
                         context.setRequestPolicyViolated();
+                        context.setRequestClaimingWrongPolicyVersion();
                         throw new PolicyVersionException();
                     }
                 } else {
