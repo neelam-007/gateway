@@ -283,10 +283,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
-                PublishedService pserv = context.getService();
-                if (pserv != null) {
-                    String purl = makePolicyUrl(hreq, pserv.getOid());
-                    hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+                if (shouldSendBackPolicyUrl(context)) {
+                    PublishedService pserv = context.getService();
+                    if (pserv != null) {
+                        String purl = makePolicyUrl(hreq, pserv.getOid());
+                        hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+                    }
                 }
             }
             faultXml = soapFaultManager.constructReturningFault(faultLevelInfo, context);
@@ -310,10 +312,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
-                PublishedService pserv = context.getService();
-                if (pserv != null) {
-                    String purl = makePolicyUrl(hreq, pserv.getOid());
-                    hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+                if (shouldSendBackPolicyUrl(context)) {
+                    PublishedService pserv = context.getService();
+                    if (pserv != null) {
+                        String purl = makePolicyUrl(hreq, pserv.getOid());
+                        hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
+                    }
                 }
             }
             faultXml = soapFaultManager.constructExceptionFault(e, context);
@@ -326,14 +330,22 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
+    /**
+     * We only return policy url in certain cases because the bridge only returns incoming faults if
+     * there is no such url included.
+     */
     private boolean shouldSendBackPolicyUrl(PolicyEnforcementContext context) throws IOException {
-        if (context.isRequestPolicyViolated()) {
-            return true;
-        }
+        // Did client claim a policy version?
         String requestorVersion = context.getRequest().
                                         getHttpRequestKnob().
                                             getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
-        return requestorVersion == null || requestorVersion.length() < 1;
+
+        // If no version was specified, return policy url only if the policy was violated
+        if (requestorVersion == null || requestorVersion.length() < 1) {
+            return context.isRequestPolicyViolated();
+        } else { // If a policy version was specified only return policy url if it was the wrong version
+            return context.isRequestClaimingWrongPolicyVersion();
+        }
     }
 
     private void sendChallenge(PolicyEnforcementContext context,
