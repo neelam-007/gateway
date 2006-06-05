@@ -4,6 +4,8 @@ import java.rmi.RemoteException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Implementation of the KerberosAdmin interface.
@@ -13,8 +15,16 @@ import java.util.Collections;
  */
 public class KerberosAdminImpl implements KerberosAdmin {
 
+    //- PUBLIC
+
     public Keytab getKeytab() throws KerberosException, RemoteException {
-        return KerberosClient.getKerberosAcceptPrincipalKeytab();
+        try {
+            return KerberosClient.getKerberosAcceptPrincipalKeytab();
+        }
+        catch(KerberosException ke) {
+            logger.log(Level.WARNING, "Kerberos keytab is invalid", ke);
+            throw ke;
+        }
     }
 
     public String getPrincipal() throws KerberosException, RemoteException {
@@ -34,4 +44,8 @@ public class KerberosAdminImpl implements KerberosAdmin {
 
         return Collections.unmodifiableMap(configMap);
     }
+
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(KerberosAdminImpl.class.getName());
 }

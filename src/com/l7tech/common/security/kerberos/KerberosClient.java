@@ -6,6 +6,8 @@ import java.security.PrivilegedExceptionAction;
 import java.security.Principal;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.URL;
@@ -223,8 +225,8 @@ public class KerberosClient {
                         scontext = manager.createContext(scred);
 
                         byte[] apReqBytes = new sun.security.util.DerValue(gssAPReqTicket.getTicketBody()).toByteArray();
-                        KerberosKey key = getKey(kerberosSubject.getPrivateCredentials());
-                        KrbApReq apReq = new KrbApReq(apReqBytes, new EncryptionKey[]{new EncryptionKey(key.getKeyType(),key.getEncoded())});
+                        KerberosKey[] keys = getKeys(kerberosSubject.getPrivateCredentials());
+                        KrbApReq apReq = new KrbApReq(apReqBytes, toEncryptionKey(keys));
                         EncryptionKey sessionKey = (EncryptionKey) apReq.getCreds().getSessionKey();
                         EncryptionKey subKey = apReq.getSubKey();
 
@@ -360,7 +362,7 @@ public class KerberosClient {
                         String name = null;
 
                         try {
-                            getKey(kerberosSubject.getPrivateCredentials());
+                            getKeys(kerberosSubject.getPrivateCredentials());
                         }
                         catch(IllegalStateException ise) {
                             throw new KerberosException("No kerberos key in private credentials.");
@@ -487,17 +489,30 @@ public class KerberosClient {
     /**
      *
      */
-    private static KerberosKey getKey(Set creds) throws IllegalStateException {
-        KerberosKey privateKey = null;
+    private static KerberosKey[] getKeys(Set creds) throws IllegalStateException {
+        List keys = new ArrayList();
 
         for (Iterator iterator = creds.iterator(); iterator.hasNext();) {
             Object o = iterator.next();
-            if(o instanceof KerberosKey) privateKey = (KerberosKey) o;
+            if(o instanceof KerberosKey) keys.add((KerberosKey) o);
         }
 
-        if(privateKey==null) throw new IllegalStateException("Private Kerberos key not found!");
+        if (keys.isEmpty()) throw new IllegalStateException("Private Kerberos key not found!");
 
-        return privateKey;
+        return (KerberosKey[]) keys.toArray(new KerberosKey[keys.size()]);
+    }
+
+    /**
+     *
+     */
+    private static EncryptionKey[] toEncryptionKey(KerberosKey[] keys) {
+        EncryptionKey[] ekeys = new EncryptionKey[keys.length];
+
+        for (int k=0; k<keys.length; k++) {
+            ekeys[k] = new EncryptionKey(keys[k].getKeyType(), keys[k].getEncoded());
+        }
+
+        return ekeys;
     }
 
     /**

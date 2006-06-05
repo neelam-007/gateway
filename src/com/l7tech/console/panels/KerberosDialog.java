@@ -6,11 +6,14 @@ import java.awt.event.ActionEvent;
 import java.util.Date;
 import java.util.Map;
 import java.text.SimpleDateFormat;
+import java.rmi.RemoteException;
 import javax.swing.*;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.kerberos.KerberosAdmin;
 import com.l7tech.common.security.kerberos.Keytab;
+import com.l7tech.common.security.kerberos.KerberosConfigException;
+import com.l7tech.common.security.kerberos.KerberosException;
 import com.l7tech.console.util.Registry;
 
 /**
@@ -23,12 +26,12 @@ public class KerberosDialog extends JDialog {
 
     //- PUBLIC
 
-    public KerberosDialog(Dialog parent) {
+    public KerberosDialog(Dialog parent) throws RemoteException {
         super(parent, true);
         init();
     }
 
-    public KerberosDialog(Frame parent) {
+    public KerberosDialog(Frame parent) throws RemoteException {
         super(parent, true);
         init();
     }
@@ -46,8 +49,9 @@ public class KerberosDialog extends JDialog {
     private JPanel keytabPanel;
     private JLabel validLabel;
     private JLabel summaryLabel;
+    private JLabel encryptionTypesLabel;
 
-    private void init() {
+    private void init() throws RemoteException {
         setTitle("Kerberos Configuration");
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setAlwaysOnTop(true);
@@ -66,7 +70,7 @@ public class KerberosDialog extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
-    private void initData() {
+    private void initData() throws RemoteException {
         KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
 
         if (kerberosAdmin != null) {
@@ -89,16 +93,22 @@ public class KerberosDialog extends JDialog {
             }
 
             Keytab keytab = null;
+            boolean keytabInvalid = false;
             try {
                 keytab = kerberosAdmin.getKeytab();
             }
-            catch(Exception e) {
-                // ignore
+            catch(KerberosException e) {
+                keytabInvalid = true;
             }
 
             if (keytab == null) {
                 validLabel.setText("No");
-                summaryLabel.setText("Keytab file not present.");
+                if (keytabInvalid) {
+                    summaryLabel.setText("Keytab file is invalid.");
+                }
+                else {
+                    summaryLabel.setText("Keytab file not present.");
+                }
                 keytabPanel.setEnabled(false);
             }
             else {
@@ -117,6 +127,14 @@ public class KerberosDialog extends JDialog {
                         new SimpleDateFormat("yyyy/MM/dd").format(new Date(keytab.getKeyTimestamp())));
                 principalNameLabel.setText(formatName(keytab.getKeyName()));
                 realmLabel.setText(keytab.getKeyRealm());
+
+                StringBuffer encTypeStringBuffer = new StringBuffer();
+                String[] keyTypes = keytab.getKeyTypes();
+                for (int e=0; e<keyTypes.length; e++) {
+                    if (e > 0) encTypeStringBuffer.append(", ");
+                    encTypeStringBuffer.append(keyTypes[e]);
+                }
+                encryptionTypesLabel.setText(encTypeStringBuffer.toString());
             }
         }
         else {

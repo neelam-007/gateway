@@ -7,6 +7,9 @@ import java.io.FileInputStream;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.l7tech.common.util.ResourceUtils;
 import com.l7tech.common.util.HexUtils;
@@ -132,6 +135,7 @@ public class Keytab implements Serializable {
      */
     public Keytab(File keytabFile) throws IOException, KerberosException {
         if (keytabFile == null) throw new IllegalArgumentException("keytabFile must not be null");
+        keyData = new ArrayList();
         InputStream in = null;
         try {
             in = new FileInputStream(keytabFile);
@@ -151,6 +155,7 @@ public class Keytab implements Serializable {
      */
     public Keytab(byte[] keytabBytes) throws KerberosException {
         if (keytabBytes == null) throw new IllegalArgumentException("keytabBytes must not be null");
+        keyData = new ArrayList();
         init(keytabBytes);
     }
 
@@ -199,7 +204,13 @@ public class Keytab implements Serializable {
      * @return The entry timestamp
      */
     public long getKeyTimestamp() {
-        return keyTimestamp;
+        long timestamp = 0;
+
+        if (!keyData.isEmpty()) {
+            timestamp = ((KeyData)keyData.get(0)).timestamp;
+        }
+
+        return timestamp;
     }
 
     /**
@@ -208,7 +219,40 @@ public class Keytab implements Serializable {
      * @return The version number.
      */
     public long getKeyVersionNumber() {
-        return keyVersionNumber;
+        long version = 0;
+
+        if (!keyData.isEmpty()) {
+            version = ((KeyData)keyData.get(0)).version;
+        }
+
+        return version;
+    }
+
+    /**
+     * Get the key types present in the Keytab.
+     *
+     * @return The key types
+     */
+    public String[] getKeyTypes() {
+        List types = new ArrayList();
+
+        for (Iterator keyDataIter=keyData.iterator(); keyDataIter.hasNext(); ) {
+            KeyData keyData = (KeyData) keyDataIter.next();
+            try {
+                String typeDesc = KerberosConstants.ETYPE_NAMES[keyData.type];
+                if (typeDesc != null) {
+                    types.add(typeDesc);
+                }
+                else {
+                    types.add("unknown ["+keyData.type+"]");
+                }
+            }
+            catch(ArrayIndexOutOfBoundsException aioobe) {
+                types.add("unknown ["+keyData.type+"]");
+            }
+        }
+
+        return (String[]) types.toArray(new String[types.size()]);
     }
 
     /**
@@ -232,6 +276,7 @@ public class Keytab implements Serializable {
         System.out.println("Name   : " + Arrays.asList(keytab.getKeyName()));
         System.out.println("Date   : " + (keytab.getKeyTimestamp()==0 ? "<none>" : new Date(keytab.getKeyTimestamp()).toString()));
         System.out.println("Version: " + keytab.getKeyVersionNumber());
+        System.out.println("Types  : " + Arrays.asList(keytab.getKeyTypes()));
     }
 
     //- PRIVATE
@@ -243,8 +288,7 @@ public class Keytab implements Serializable {
     private int versionMinor;
     private String keyRealm;
     private String[] keyName;
-    private long keyTimestamp;
-    private long keyVersionNumber;
+    private final List keyData;
 
     /**
      *
@@ -283,8 +327,6 @@ public class Keytab implements Serializable {
                 continue;
             }
 
-            if (validEntry()) throw new KerberosException("Only single-entry Keytabs are supported.");
-
             // components
             if (currentOffset+2 > data.length) break;
             int components = readUnsignedShort(data, currentOffset);
@@ -318,23 +360,32 @@ public class Keytab implements Serializable {
                 currentOffset += nameLength;
                 name[n] = new String(nameChars);
             }
-            keyName = name;
+            if (keyName == null) {
+                keyName = name;
+            }
+            else {
+                checkPrincipal(keyName, name);
+            }
 
             // skip name type (if present)
             if (versionMinor != 1) currentOffset += 4;
 
+            // now the key info
+            KeyData entryKeyData = new KeyData();
+
             // timestamp
             if (currentOffset+4 > data.length) break;
-            keyTimestamp = readUnsignedInt(data, currentOffset) * 1000L; // convert from secs to millis
+            entryKeyData.timestamp = readUnsignedInt(data, currentOffset) * 1000L; // convert from secs to millis
             currentOffset += 4;
 
             // short vno
             if (currentOffset+1 > data.length) break;
-            keyVersionNumber = readUnsignedChar(data, currentOffset);
+            entryKeyData.version = readUnsignedChar(data, currentOffset);
             currentOffset += 1;
 
             // skip keyblock
             if (currentOffset+2 > data.length) break;
+            entryKeyData.type = readUnsignedShort(data, currentOffset);
             currentOffset += 2; // skip key type
 
             if (currentOffset+2 > data.length) break;
@@ -345,8 +396,11 @@ public class Keytab implements Serializable {
             // long vno (if present)
             if (currentOffset+4 <= data.length &&
                 currentOffset+4 <= nextEntryOffset) {
-                keyVersionNumber = readUnsignedInt(data, currentOffset);
+                entryKeyData.version = readUnsignedInt(data, currentOffset);
             }
+
+            checkKey(entryKeyData);
+            keyData.add(entryKeyData);
         }
 
         checkEntry();
@@ -357,6 +411,27 @@ public class Keytab implements Serializable {
      */
     private void checkEntry() throws KerberosException {
         if (!validEntry()) throw new KerberosException("No entry found.");
+    }
+
+    /**
+     *
+     */
+    private void checkPrincipal(String[] name1, String[] name2) throws KerberosException {
+        if (!Arrays.equals(name1, name2))
+            throw new KerberosException("Keytab contains entries for multiple principals (not supported; " +
+                    "principals are "+Arrays.asList(name1)+", "+Arrays.asList(name2)+").");
+    }
+
+    /**
+     *
+     */
+    private void checkKey(KeyData data) throws KerberosException {
+        if (data.version <= 0) throw new KerberosException("Invalid key version '"+data.version+"'.");
+        if (data.type <= 0 || data.type > 23) throw new KerberosException("Invalid key etype '"+data.type+"'.");
+
+        if (!keyData.isEmpty() && data.version != getKeyVersionNumber()) {
+            throw new KerberosException("Mismatched key version numbers ('"+data.version+"', '"+getKeyVersionNumber()+"')");
+        }
     }
 
     /**
@@ -375,8 +450,8 @@ public class Keytab implements Serializable {
                     }
                 }
 
-                if (nameValid) {
-                    if (keyVersionNumber > 0) valid = true;
+                if (nameValid && !keyData.isEmpty()) {
+                    valid = true;
                 }
             }
         }
@@ -423,5 +498,11 @@ public class Keytab implements Serializable {
                 | ((data[offset+1]&0xFFL) <<  8)
                 | ((data[offset+2]&0xFFL) << 16)
                 | ((data[offset+3]&0xFFL) << 24);
+    }
+
+    private static class KeyData implements Serializable {
+        private long timestamp;
+        private long version;
+        private int type;
     }
 }
