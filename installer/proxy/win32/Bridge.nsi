@@ -1,7 +1,7 @@
 ;NSIS Modern User Interface version 1.63
 ;based on Basic Example Script, which was Written by Joost Verburg
 
-!define J2RE "jre1.5.0_02"  ;Name of directory containing JRE
+!define J2RE "jre1.5.0_07"  ;Name of directory containing JRE
 ;Windows mapped drive X:
 !define J2RE_PATH "X:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer 7 Technologies"
@@ -172,7 +172,7 @@ Section "SecureSpan Bridge" SecCopyUI
     StrCpy $2 "$0$1"
     DetailPrint "SecureSpan Bridge service will run using home directory $2"
     ; create service, this is actually using a renamed version of JavaService.exe
-    ExecWait '"$INSTDIR\SSBService.exe" -install "SecureSpan Bridge" "$INSTDIR\jre1.5.0_02\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log" -description "Layer 7 Technologies SecureSpan Bridge"' $0
+    ExecWait '"$INSTDIR\SSBService.exe" -install "SecureSpan Bridge" "$INSTDIR\jre1.5.0_07\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Bridge.jar" -Duser.home="$2" -start com.l7tech.proxy.Main -out "$INSTDIR\ssb_out.log" -err "$INSTDIR\ssb_err.log" -description "Layer 7 Technologies SecureSpan Bridge"' $0
     DetailPrint "creation of service returned with code $0"
     MessageBox MB_YESNO "Would you like to configure the SecureSpan Bridge now?" IDNO endofserviceinstall
         ExecWait '"$INSTDIR\${J2RE}\bin\javaw.exe" -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dcom.l7tech.proxy.listener.maxthreads=300 -jar "$INSTDIR\Bridge.jar" -config -hideMenus -quitLabel Continue' $0
