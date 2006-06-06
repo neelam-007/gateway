@@ -1,31 +1,40 @@
 package com.l7tech.common.security.saml;
 
-import com.ibm.xml.dsig.*;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.KeyInfoDetails;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.common.util.*;
 import com.l7tech.common.xml.MessageNotSoapException;
-import org.apache.xmlbeans.XmlObject;
-import org.apache.xmlbeans.XmlOptions;
-import org.w3.x2000.x09.xmldsig.KeyInfoType;
-import org.w3.x2000.x09.xmldsig.X509DataType;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.NamespaceFactory;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-import x0Assertion.oasisNamesTcSAML1.*;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigInteger;
 import java.net.InetAddress;
-import java.security.*;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.security.SecureRandom;
+import java.security.SignatureException;
+import java.security.PrivateKey;
+import java.util.TimeZone;
+import java.util.Set;
+
+import com.ibm.xml.dsig.TemplateGenerator;
+import com.ibm.xml.dsig.XSignature;
+import com.ibm.xml.dsig.Canonicalizer;
+import com.ibm.xml.dsig.SignatureMethod;
+import com.ibm.xml.dsig.Reference;
+import com.ibm.xml.dsig.Transform;
+import com.ibm.xml.dsig.IDResolver;
+import com.ibm.xml.dsig.SignatureContext;
+import com.ibm.xml.dsig.KeyInfo;
+import com.ibm.xml.dsig.XSignatureException;
 
 /**
  * Class <code>SamlAssertionGenerator</code> is a central entry point
@@ -37,6 +46,8 @@ public class SamlAssertionGenerator {
     static final TimeZone utcTimeZone = TimeZone.getTimeZone("UTC");
     private static final SecureRandom random = new SecureRandom();
     private final SignerInfo assertionSigner;
+    private final SamlAssertionGeneratorSaml1 sag1;
+    private final SamlAssertionGeneratorSaml2 sag2;
 
     /**
      * Instantiate the <code>SamlAssertionGenerator</code> with the assertion
@@ -47,6 +58,8 @@ public class SamlAssertionGenerator {
      */
     public SamlAssertionGenerator(SignerInfo assertionSigner) {
         this.assertionSigner = assertionSigner;
+        this.sag1 = new SamlAssertionGeneratorSaml1();
+        this.sag2 = new SamlAssertionGeneratorSaml2();
     }
 
     /**
@@ -61,9 +74,14 @@ public class SamlAssertionGenerator {
      */
     public Document createAssertion(SubjectStatement subject, Options options)
       throws SignatureException, CertificateException {
+        final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
 
-        Document doc = assertionToDocument(createStatementType(subject, options));
+        Document doc = options.getVersion()==Options.VERSION_1 ?
+                sag1.createStatementDocument(subject, options, caDn) :
+                sag2.createStatementDocument(subject, options, caDn);
+
         if (options.isSignAssertion()) signAssertion(
+                options,
                 doc,
                 assertionSigner.getPrivate(),
                 assertionSigner.getCertificateChain(),
@@ -84,11 +102,17 @@ public class SamlAssertionGenerator {
      */
     public Document attachStatement(Document document, SubjectStatement subject, Options options)
       throws SignatureException, CertificateException {
-        Document doc = assertionToDocument(createStatementType(subject, options));
+        final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
+
+        Document doc = options.getVersion()==Options.VERSION_1 ?
+                sag1.createStatementDocument(subject, options, caDn) :
+                sag2.createStatementDocument(subject, options, caDn);
+
         // sign only if requested and if the confirmation is holder of key.
         // according to WSS SAML interop scenarios the sender vouches is not signed
         if (options.isSignAssertion() && subject.isConfirmationHolderOfKey()) {
-            signAssertion(doc,
+            signAssertion(options,
+                    doc,
                     assertionSigner.getPrivate(),
                     assertionSigner.getCertificateChain(),
                     options.isUseThumbprintForSignature());
@@ -98,113 +122,7 @@ public class SamlAssertionGenerator {
     }
 
     /**
-     * Create the statement depending on the SubjectStatement subclass and populating the subject
      *
-     * @param subjectStatement the subject statament subclass (authenticatiom, authorization, attribute
-     *                         statement
-     * @param options          the options, with expiry minutes
-     * @return the assertion type containing the requested statement
-     * @throws SignatureException
-     * @throws CertificateException
-     */
-    protected AssertionType createStatementType(SubjectStatement subjectStatement, Options options)
-      throws SignatureException, CertificateException {
-        Calendar now = Calendar.getInstance(utcTimeZone);
-        AssertionType assertionType = getGenericAssertion(now, options.getExpiryMinutes(),
-                                                          options.getId() != null ? options.getId() : generateAssertionId(null));
-        final SubjectStatementAbstractType subjectStatementAbstractType;
-
-        if (subjectStatement instanceof AuthenticationStatement) {
-            AuthenticationStatement as = (AuthenticationStatement)subjectStatement;
-            AuthenticationStatementType authStatement = assertionType.addNewAuthenticationStatement();
-            authStatement.setAuthenticationMethod(as.getAuthenticationMethod());
-
-            InetAddress clientAddress = options.getClientAddress();
-            if (clientAddress != null) {
-                final SubjectLocalityType subjectLocality = authStatement.addNewSubjectLocality();
-                subjectLocality.setIPAddress(clientAddress.getHostAddress());
-                subjectLocality.setDNSAddress(clientAddress.getCanonicalHostName());
-            }
-            subjectStatementAbstractType = authStatement;
-        } else if (subjectStatement instanceof AuthorizationStatement) {
-            AuthorizationStatement as = (AuthorizationStatement)subjectStatement;
-            AuthorizationDecisionStatementType atzStatement = assertionType.addNewAuthorizationDecisionStatement();
-            atzStatement.setResource(as.getResource());
-            if (as.getAction() != null) {
-                ActionType actionType = atzStatement.addNewAction();
-                actionType.setStringValue(as.getAction());
-                if (as.getActionNamespace() != null) {
-                    actionType.setNamespace(as.getActionNamespace());
-                }
-            }
-            subjectStatementAbstractType = atzStatement;
-
-        } else if (subjectStatement instanceof AttributeStatement) {
-            AttributeStatement as = (AttributeStatement)subjectStatement;
-            AttributeStatementType attStatement = assertionType.addNewAttributeStatement();
-            AttributeStatement.Attribute[] attributes = as.getAttributes();
-            for (int i = 0; i < attributes.length; i++) {
-                AttributeStatement.Attribute attribute = attributes[i];
-                AttributeType attributeType = attStatement.addNewAttribute();
-                attributeType.setAttributeName(attribute.getName());
-                if (attribute.getNameSpace() != null) {
-                    attributeType.setAttributeNamespace(attribute.getNameSpace());
-                }
-                XmlObject attributeValue = attributeType.addNewAttributeValue();
-                attributeValue.set(XmlObject.Factory.newValue(attribute.getValue()));
-            }
-            subjectStatementAbstractType = attStatement;
-        } else {
-            throw new IllegalArgumentException("Unknown statement class " + subjectStatement.getClass());
-        }
-
-        populateSubjectStatement(subjectStatementAbstractType, subjectStatement);
-        return assertionType;
-    }
-
-    /**
-     * Populate the subject statement assertion properties such as subject name, name qualifier
-     *
-     * @param subjectStatementAbstractType the subject statement abstract type
-     * @param subjectStatement
-     * @throws CertificateEncodingException on certificate error
-     */
-    protected void populateSubjectStatement(SubjectStatementAbstractType subjectStatementAbstractType,
-                                            SubjectStatement subjectStatement) throws CertificateException {
-
-        SubjectType subjectStatementType = subjectStatementAbstractType.addNewSubject();
-        NameIdentifierType nameIdentifierType = subjectStatementType.addNewNameIdentifier();
-        nameIdentifierType.setStringValue(subjectStatement.getName());
-        if (subjectStatement.getNameFormat() != null) {
-            nameIdentifierType.setFormat(subjectStatement.getNameFormat());
-        }
-        if (subjectStatement.getNameQualifier() != null) {
-            nameIdentifierType.setNameQualifier(subjectStatement.getNameQualifier());
-        }
-
-        SubjectConfirmationType subjectConfirmation = subjectStatementType.addNewSubjectConfirmation();
-        subjectConfirmation.addConfirmationMethod(subjectStatement.getConfirmationMethod());
-
-        final Object keyInfo = subjectStatement.getKeyInfo();
-        if (keyInfo == null || !(keyInfo instanceof X509Certificate)) {
-            return;
-        }
-
-        X509Certificate cert = (X509Certificate)keyInfo;
-        if (subjectStatement.isUseThumbprintForSubject()) {
-            Element subjConfEl = (Element)subjectConfirmation.getDomNode();
-            NamespaceFactory nsf = new NamespaceFactory();
-            KeyInfoDetails.makeKeyId(CertUtils.getThumbprintSHA1(cert), true, SoapUtil.VALUETYPE_X509_THUMB_SHA1).
-                    createAndAppendKeyInfoElement(nsf, subjConfEl);
-        } else {
-            KeyInfoType keyInfoType = subjectConfirmation.addNewKeyInfo();
-            X509DataType x509Data = keyInfoType.addNewX509Data();
-            x509Data.addX509Certificate(((X509Certificate)keyInfo).getEncoded());
-        }
-    }
-
-    /**
-     * @param options
      */
     protected void attachAssertion(Document soapMessage, Document assertionDoc, Options options)
       throws SignatureException, CertificateException {
@@ -236,14 +154,21 @@ public class SamlAssertionGenerator {
     }
 
 
-    public static void signAssertion(final Document assertionDoc, PrivateKey signingKey,
-                                     X509Certificate[] signingCertChain,
-                                     boolean useThumbprintForSignature)
+    public static void signAssertion(final Options options,
+                                     final Document assertionDoc,
+                                     final PrivateKey signingKey,
+                                     final X509Certificate[] signingCertChain,
+                                     final boolean useThumbprintForSignature)
             throws SignatureException
     {
         TemplateGenerator template = new TemplateGenerator(assertionDoc, XSignature.SHA1,
                                                            Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
-        final String id = assertionDoc.getDocumentElement().getAttribute(SamlConstants.ATTR_ASSERTION_ID);
+
+        String idAttr = options.getVersion()==Options.VERSION_1 ?
+                SamlConstants.ATTR_ASSERTION_ID:
+                SamlConstants.ATTR_SAML2_ASSERTION_ID;
+
+        final String id = assertionDoc.getDocumentElement().getAttribute(idAttr);
         template.setPrefix("ds");
         template.setIndentation(false);
         Reference ref = template.createReference("#" + id);
@@ -262,7 +187,24 @@ public class SamlAssertionGenerator {
         });
 
         final Element signatureElement = template.getSignatureElement();
-        assertionDoc.getDocumentElement().appendChild(signatureElement);
+        if (options.getVersion()==Options.VERSION_1) {
+            assertionDoc.getDocumentElement().appendChild(signatureElement);
+        }
+        else {
+            try {
+                Element docElement = assertionDoc.getDocumentElement();
+                Element sigSibling = XmlUtil.findOnlyOneChildElementByName(docElement,
+                        SamlConstants.NS_SAML2,
+                        SamlConstants.ELEMENT_ISSUER);
+                if (sigSibling == null)
+                    throw new IllegalArgumentException("Invalid SAML Assertion (no Issuer)");
+
+                docElement.insertBefore(signatureElement, XmlUtil.findNextElementSibling(sigSibling));
+            }
+            catch(TooManyChildElementsException tmcee) {
+                throw new IllegalArgumentException("Invalid SAML Assertion (multiple Issuers)");
+            }
+        }
 
         KeyInfo keyInfo = new KeyInfo();
         Element keyInfoElement;
@@ -301,55 +243,10 @@ public class SamlAssertionGenerator {
         return prefix + "-" + HexUtils.hexDump(disambig);
     }
 
-    protected AssertionType getGenericAssertion(Calendar now, int expiryMinutes, String assertionId) {
-        final String caDn = assertionSigner.getCertificateChain()[0].getSubjectDN().getName();
-        Map caMap = CertUtils.dnToAttributeMap(caDn);
-        String caCn = (String)((List)caMap.get("CN")).get(0);
-
-        AssertionType assertion = AssertionType.Factory.newInstance();
-
-        assertion.setMinorVersion(BigInteger.ONE);
-        assertion.setMajorVersion(BigInteger.ONE);
-        if (assertionId == null)
-            assertion.setAssertionID(generateAssertionId(null));
-        else
-            assertion.setAssertionID(assertionId);
-        assertion.setIssuer(caCn);
-        assertion.setIssueInstant(now);
-
-        ConditionsType ct = ConditionsType.Factory.newInstance();
-        Calendar calendar = Calendar.getInstance(utcTimeZone);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        ct.setNotBefore(calendar);
-        Calendar c2 = (Calendar)calendar.clone();
-        c2.add(Calendar.MINUTE, expiryMinutes);
-        ct.setNotOnOrAfter(c2);
-        assertion.setConditions(ct);
-        return assertion;
-    }
-
-    protected static Document assertionToDocument(AssertionType assertion) {
-        AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance();
-        StringWriter sw = new StringWriter();
-        assertionDocument.setAssertion(assertion);
-
-        XmlOptions xo = new XmlOptions();
-        Map namespaces = new HashMap();
-        namespaces.put(SamlConstants.NS_SAML, SamlConstants.NS_SAML_PREFIX);
-        xo.setSaveSuggestedPrefixes(namespaces);
-        try {
-            assertionDocument.save(sw, xo);
-            return XmlUtil.stringToDocument(sw.toString());
-        } catch (SAXException e) {
-            throw new RuntimeException("Unable to produce assertion XML", e); // can't happen: XMLBeans contract
-        } catch (IOException e) {
-            throw new RuntimeException("Unable to produce assertion XML", e); // can't happen: memory-based StringWriter
-        }
-    }
-
-
     public static class Options {
+        public static int VERSION_1 = 1;
+        public static int VERSION_2 = 2;
+
         public int getExpiryMinutes() {
             return expiryMinutes;
         }
@@ -406,13 +303,22 @@ public class SamlAssertionGenerator {
             this.useThumbprintForSignature = useThumbprintForSignature;
         }
 
-        boolean useThumbprintForSignature = false;
-        boolean proofOfPosessionRequired = true;
-        int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
-        InetAddress clientAddress;
-        boolean signAssertion = true;
-        SignerInfo attestingEntity;
-        String id = null;
+        public int getVersion() {
+            return samlVersion;
+        }
+
+        public void setVersion(int samlVersion) {
+            this.samlVersion = samlVersion;
+        }
+
+        private boolean useThumbprintForSignature = false;
+        private boolean proofOfPosessionRequired = true;
+        private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
+        private InetAddress clientAddress;
+        private boolean signAssertion = true;
+        private SignerInfo attestingEntity;
+        private String id = null;
+        private int samlVersion = VERSION_1;
     }
 
     static final int DEFAULT_EXPIRY_MINUTES = 5;

@@ -244,10 +244,13 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         }
         finally {
             try {
-                String message = toAudit==null && status==AssertionStatus.NONE ? "Security Token Issued" : "Security Token Error";
-                if(toAudit instanceof TokenServiceException) message += ": " + toAudit.getMessage();
-                else if(status!=AssertionStatus.NONE) message += ": " + status.getMessage();
-                else message += ": processing error";
+                boolean success = toAudit==null && status==AssertionStatus.NONE;
+                String message = success ? "Security Token Issued" : "Security Token Error";
+                if (!success) {
+                    if(toAudit instanceof TokenServiceException) message += ": " + toAudit.getMessage();
+                    else if(status!=AssertionStatus.NONE) message += ": " + status.getMessage();
+                    else message += ": processing error";
+                }
                 User user = getUser(context);
                 getApplicationContext().publishEvent(new TokenServiceEvent(this, Level.INFO, getRemoteAddress(context)
                                                     , message, user.getProviderId()

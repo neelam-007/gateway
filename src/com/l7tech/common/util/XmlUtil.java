@@ -487,13 +487,13 @@ public class XmlUtil {
      * The parent must belong to a DOM produced by a namespace-aware parser,
      * and the name must be undecorated.
      *
-     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @param parent the {@link Element} or {@link DocumentFragment} in which to search for children. Must be non-null.
      * @param nsuri the URI of the namespace to which the child must belong, NOT THE PREFIX!  May be null, in which
      *              case namespaces are not considered when checking for a match.
      * @param name the name of the element to find. Must be non-null.
      * @return First matching child {@link Element} or null if the specified parent contains no matching elements
      */
-    public static Element findFirstChildElementByName( Element parent, String nsuri, String name ) {
+    public static Element findFirstChildElementByName( Node parent, String nsuri, String name ) {
         if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
         NodeList children = parent.getChildNodes();
         for ( int i = 0; i < children.getLength(); i++ ) {
@@ -513,12 +513,12 @@ public class XmlUtil {
      * The parent must belong to a DOM produced by a namespace-aware parser,
      * and the name must be undecorated.
      *
-     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @param parent the {@link Element} or {@link DocumentFragment} in which to search for children. Must be non-null.
      * @param nsuris the URIs of the namespaces to which the child must belong, NOT THE PREFIX!  Must be non-null and non-empty.
      * @param name the name of the element to find. Must be non-null.
      * @return First matching child {@link Element} or null if the specified parent contains no matching elements
      */
-    public static Element findFirstChildElementByName( Element parent, String[] nsuris, String name ) {
+    public static Element findFirstChildElementByName( Node parent, String[] nsuris, String name ) {
         if ( nsuris == null || nsuris.length < 1 || name == null )
             throw new IllegalArgumentException( "nsuris and name must be non-null and non-empty" );
         NodeList children = parent.getChildNodes();
@@ -574,6 +574,46 @@ public class XmlUtil {
         return null;
     }
 
+    /**
+     * Find the first sibling Element that is after the given element.
+     *
+     * @return the Element or null if not found.
+     */
+    public static Element findNextElementSibling(final Element element) {
+        Element sibling = null;
+        Node current = element;
+
+        while (current != null) {
+            current = current.getNextSibling();
+            if (current != null && current.getNodeType() == Node.ELEMENT_NODE) {
+                sibling = (Element) current;
+                break;
+            }
+        }
+
+        return sibling;
+    }
+
+    /**
+     * Find the first sibling Element that is before the given element.
+     *
+     * @return the Element or null if not found.
+     */
+    public static Element findPrevElementSibling(final Element element) {
+        Element sibling = null;
+        Node current = element;
+
+        while (current != null) {
+            current = current.getPreviousSibling();
+            if (current != null && current.getNodeType() == Node.ELEMENT_NODE) {
+                sibling = (Element) current;
+                break;
+            }
+        }
+
+        return sibling;
+    }
+    
     /**
      * Returns a list of all child {@link Element}s of a parent {@link Element}
      * with the specified name that are in the specified namespace.
@@ -893,11 +933,11 @@ public class XmlUtil {
      * Creates an element and appends it to the end of Parent.  The element will be in the requested namespace.
      * If the namespace is already declared in parent or a direct ancestor then that prefix will be reused;
      * otherwise a new prefix will be declared in the new element that is as close as possible to desiredPrefix.
-     * @param parent
+     * @param parent The {@link Element} or {@link DocumentFragment} to which the new element is added
      * @param namespace
      * @param desiredPrefix
      */
-    public static Element createAndAppendElementNS(Element parent, String localName, String namespace, String desiredPrefix) {
+    public static Element createAndAppendElementNS(Node parent, String localName, String namespace, String desiredPrefix) {
         Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
         parent.appendChild(element);
         element.setPrefix(getOrCreatePrefixForNamespace(element, namespace, desiredPrefix));

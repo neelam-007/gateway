@@ -6,6 +6,8 @@
 package com.l7tech.common.security.xml;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.HexUtils;
@@ -100,7 +102,7 @@ public class KeyInfoDetails {
      * @param parent  the parent to which we'll be adding a new KeyInfo element.  Must not be null.
      * @return the newly-added element.  Never null.
      */
-    public Element createAndAppendKeyInfoElement(NamespaceFactory nsf, Element parent) {
+    public Element createAndAppendKeyInfoElement(NamespaceFactory nsf, Node parent) {
         if (uri == null && value == null) throw new IllegalStateException(); // can't happen
 
         final Element keyInfo;

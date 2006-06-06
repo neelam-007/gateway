@@ -85,7 +85,7 @@ public class SignedSamlTest extends TestCase {
 
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
-        SamlAssertionGenerator.signAssertion(assertionDoc, caPrivateKey, caCertChain, useThumbprintForSignature);
+        SamlAssertionGenerator.signAssertion(new SamlAssertionGenerator.Options(), assertionDoc, caPrivateKey, caCertChain, useThumbprintForSignature);
         return assertionDoc;
     }
 
