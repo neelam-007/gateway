@@ -642,4 +642,71 @@ public class Utilities {
         if (m instanceof JComponent)
             ((JComponent)m).setToolTipText(null);
     }
+
+    /**
+     * Convert the given object to tooltip text.
+     *
+     * <p>This first calls toString() on the object.</p>
+     *
+     * <p>If escapeNewLines is true then any "\n" is converted to a "<br>"</p>
+     *
+     * <p>The resulting text is wrapped in "<html>" tags.</p>
+     *
+     * @param valueObject The object to convert.
+     * @param escapeNewLines true to escape new lines
+     * @return null if valueObject was null or the tooltip text
+     */
+    public static String toTooltip(Object valueObject, boolean escapeNewLines) {
+        return toTooltip(new Object[]{valueObject}, escapeNewLines);
+    }
+
+    /**
+     * Convert the given object array to tooltip text.
+     *
+     * <p>This first calls toString() on each object.</p>
+     *
+     * <p>If escapeNewLines is true then any "\n" is converted to a "<br>"</p>
+     *
+     * <p>The resulting text is wrapped in "<html>" tags.</p>
+     *
+     * @param valueObjects The objects to convert.
+     * @param escapeNewLines true to escape new lines
+     * @return null if valueObject was null or the tooltip text
+     */
+    public static String toTooltip(Object[] valueObjects, boolean escapeNewLines) {
+        String tooltipText = null;
+
+        if (valueObjects != null) {
+            StringBuffer textBuffer = null;
+
+            for (int o=0; o<valueObjects.length; o++) {
+                Object object = valueObjects[o];
+                if (object != null) {
+                    if (textBuffer == null) {
+                        textBuffer = new StringBuffer();
+                        textBuffer.append("<html>");
+                    }
+
+                    String objectText = object.toString();
+                    if (escapeNewLines) {
+                        textBuffer.append(objectText.replace("\n", "<br>"));
+                    }
+                    else {
+                        textBuffer.append(objectText);
+                    }
+
+                    if (o<valueObjects.length-1) {
+                        textBuffer.append("<br>");
+                    }
+                }
+            }
+
+            if (textBuffer != null) {
+                textBuffer.append("</html>");
+                tooltipText = textBuffer.toString();
+            }
+        }
+
+        return tooltipText;
+    }
 }

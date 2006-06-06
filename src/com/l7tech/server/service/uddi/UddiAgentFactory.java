@@ -138,7 +138,7 @@ public class UddiAgentFactory {
             }
 
             // add urls
-            StringTokenizer strtok = new StringTokenizer(inquiryUrlList, " ");
+            StringTokenizer strtok = new StringTokenizer(inquiryUrlList, " \n\r\t");
             int index = 1;
             while (strtok.hasMoreTokens()) {
                 props.setProperty(UddiAgent.PROP_INQUIRY_URLS + "." + index,

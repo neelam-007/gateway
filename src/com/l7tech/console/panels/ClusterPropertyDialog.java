@@ -65,7 +65,12 @@ public class ClusterPropertyDialog extends JDialog {
                 ClusterProperty entry = (ClusterProperty)properties.get(rowIndex);
                 switch (columnIndex) {
                     case 0: return entry.getName();
-                    case 1: return entry.getValue();
+                    case 1:
+                        String value = entry.getValue();
+                        if (value != null) {
+                            value = value.replace('\n', ' '); // because newlines get truncated
+                        }
+                        return value;
                     default: throw new RuntimeException("column index not supported " + columnIndex);
                 }
             }
@@ -92,6 +97,25 @@ public class ClusterPropertyDialog extends JDialog {
             }
         };
         propsTable.getColumnModel().getColumn(0).setCellRenderer(renderer);
+
+        //Set up tool tips for the value cells.
+        DefaultTableCellRenderer renderer2 = new DefaultTableCellRenderer(){
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if(comp instanceof JComponent) {
+                    ClusterProperty clusterProperty = (ClusterProperty) properties.get(row);
+                    String cpvalue = clusterProperty.getValue();
+                    if (cpvalue != null && cpvalue.length() > 20) {
+                        ((JComponent)comp).setToolTipText(Utilities.toTooltip(cpvalue, true));
+                    }
+                    else {
+                        ((JComponent)comp).setToolTipText(null);
+                    }
+                }
+                return comp;
+            }
+        };
+        propsTable.getColumnModel().getColumn(1).setCellRenderer(renderer2);
 
         setListeners();
 
