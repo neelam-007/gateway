@@ -39,7 +39,7 @@ public class ConfigurationWizardLauncher {
 
         if (CONSOLE_MODE.equalsIgnoreCase(launchType)) {
             ConsoleConfigWizardLauncher.launch(newArgs);
-        } else if (GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
+        } else if (null == launchType || "".equals(launchType) || GRAPHICAL_MODE.equalsIgnoreCase(launchType)) {
             GuiConfigWizardLauncher.launch(newArgs);
         }
         else {
