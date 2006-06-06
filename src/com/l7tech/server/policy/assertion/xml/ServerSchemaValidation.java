@@ -279,10 +279,13 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
         v.setResourceResolver(XmlUtil.getSafeLSResourceResolver());
 
         for (Element element : elementsToValidate) {
+            SAXException rememberException = null;
             try {
                 v.validate(new DOMSource(element));
             } catch (SAXException e) {
                 // drop thru, get the error from the handler
+                logger.log(Level.SEVERE, "exception when validating schema", e);
+                rememberException = e;
             }
             Collection<SAXParseException> errors = reporter.recordedErrors();
             if (!errors.isEmpty()) {
@@ -290,6 +293,9 @@ public class ServerSchemaValidation extends AbstractServerAssertion implements S
                     auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{error.toString()});
                 }
                 return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
+            } else if (rememberException != null) {
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[]{rememberException.getMessage()});
+                return AssertionStatus.BAD_REQUEST;
             }
         }
 
