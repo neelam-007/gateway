@@ -47,7 +47,8 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final Logger logger = Logger.getLogger(WssDecorator.class.getName());
 
     public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
-    private static final int DERIVED_KEY_LENGTH = 16;
+    private static final int NEW_DERIVED_KEY_LENGTH = 32;
+    private static final int OLD_DERIVED_KEY_LENGTH = 16;
 
     public WssDecoratorImpl() {
     }
@@ -597,7 +598,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                   securityHeader,
                                   desiredNextSibling,
                                   KeyInfoDetails.makeUriReference(derivationSourceUri, derivationSourceValueType),
-                                  DERIVED_KEY_LENGTH,
+                                  NEW_DERIVED_KEY_LENGTH,
                                   derivationSourceSecretKey,
                                   "WS-SecureConversation");
         } else {
@@ -607,7 +608,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                   securityHeader,
                                   desiredNextSibling,
                                   KeyInfoDetails.makeUriReferenceRaw(derivationSourceUri, derivationSourceValueType),
-                                  DERIVED_KEY_LENGTH,
+                                  OLD_DERIVED_KEY_LENGTH,
                                   derivationSourceSecretKey,
                                   "WS-SecureConversation");
         }
