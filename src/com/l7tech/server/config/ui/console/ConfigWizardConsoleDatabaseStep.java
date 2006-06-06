@@ -143,10 +143,6 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         defaultDbUsername = defaults.get(SsgDatabaseConfigBean.PROP_DB_USERNAME);
         defaultDbUsername = selectDefault(databaseBean.getDbUsername(), defaultDbUsername );
 
-        defaultDbPassword = defaults.get(SsgDatabaseConfigBean.PROP_DB_PASSWORD);
-        defaultDbPassword = selectDefault(databaseBean.getDbPassword(), defaultDbPassword);
-
-
         if (createNewDb) printText(HEADER_NEW_DB_INFO + getEolChar());
 
         else printText(HEADER_EXISTING_DB_INFO + getEolChar());
@@ -154,7 +150,8 @@ public class ConfigWizardConsoleDatabaseStep extends BaseConsoleStep implements 
         doDbHostnamePrompt(defaultHostname);
         doDBNamePrompt(defaultDbName);
         doDBUsernamePrompts(defaultDbUsername);
-        doDBPasswordPrompts(defaultDbPassword);
+        //don't pass in a default password so a user can enter a blank one if so desired
+        doDBPasswordPrompts("");
     }
 
     private String doGetRootPasswordPrompt(String defaultPassword) throws IOException, WizardNavigationException {
