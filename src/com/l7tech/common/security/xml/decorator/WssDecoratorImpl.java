@@ -339,9 +339,20 @@ public class WssDecoratorImpl implements WssDecorator {
                 if (session == null)
                     throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
                 DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session, sct);
-                XencUtil.XmlEncKey encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
+                XencUtil.XmlEncKey encKey = null;
+                if (derivedKeyToken.derivedKey.length == 32) {
+                    // todo, fix problem below
+                    // but i get a java.security.InvalidKeyException: Illegal key size or default parameters @ XencUtil.encryptElement
+                    //encKey = new XencUtil.XmlEncKey(XencUtil.AES_256_CBC, new AesKey(derivedKeyToken.derivedKey, 256));
+                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
+                } else if (derivedKeyToken.derivedKey.length == 16) {
+                    encKey = new XencUtil.XmlEncKey(XencUtil.AES_128_CBC, new AesKey(derivedKeyToken.derivedKey, 128));
+                } else {
+                    throw new DecoratorException("unexpected key length");
+                }
+
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, null);
-                if (c.nsf.getWsscNs().equals(SoapUtil.WSSC_NAMESPACE2)) {
+                if (derivedKeyToken.derivedKey.length == 32) {
                     addEncryptedReferenceList(c,
                                               securityHeader,
                                               xencDesiredNextSibling,
