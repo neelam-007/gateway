@@ -143,8 +143,11 @@ public class WssDecoratorImpl implements WssDecorator {
             signList.add(relatesTo);
 
         // Add sender cert
+        // note [bugzilla #2551] dont include a x509 BST if this is gonna use a sc context
         KeyInfoDetails senderCertKeyInfo = null;
-        if (dreq.getSenderMessageSigningCertificate() != null && !signList.isEmpty()) {
+        if (dreq.getSenderMessageSigningCertificate() != null &&
+            !signList.isEmpty() &&
+            dreq.getSecureConversationSession() == null) {
             if (dreq.isSuppressBst()) {
                 // Use keyinfo reference target of a SKI
                 X509Certificate senderCert = dreq.getSenderMessageSigningCertificate();
