@@ -288,7 +288,7 @@ class CompiledSchema implements Closeable {
         if (systemId != null) sb.append("systemId=\"").append(systemId).append("\" ");
         if (targetNamespace != null) sb.append("tns=\"").append(targetNamespace).append("\" ");
         sb.append("hardware=\"").append(hardwareStatus).append("\" ");
-        sb.append("doc=\"").append(System.identityHashCode(schemaDocument));
+        sb.append("doc=\"").append(schemaDocument.hashCode()).append("\" ");
         return sb.toString();
     }
 }
