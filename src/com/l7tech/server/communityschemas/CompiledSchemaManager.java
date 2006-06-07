@@ -9,6 +9,7 @@ import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.tarari.TarariSchemaHandler;
 import static com.l7tech.server.communityschemas.CompiledSchema.HardwareStatus.*;
 import org.apache.xmlbeans.XmlException;
@@ -126,7 +127,7 @@ public class CompiledSchemaManager {
         }
     }
 
-    private CompiledSchema cacheNewSchema(String schemadoc, CompiledSchema newSchema) throws InvalidDocumentFormatException {
+    private CompiledSchema cacheNewSchema(String schemadoc, CompiledSchema newSchema) {
         logger.log(Level.FINE, "Caching compiled schema with targetNamespace \"{0}\", systemId \"{1}\"", new Object[] { newSchema.getTargetNamespace(), newSchema.getSystemId() });
         // We got here first, it's our job to create and cache the CompiledSchema
         compiledSchemaCache.put(schemadoc, new WeakReference<CompiledSchema>(newSchema));
@@ -183,14 +184,10 @@ public class CompiledSchemaManager {
             schemas.remove(schema);
             if (schemas.size() == 1) {
                 // Survivor gets hardware privileges
-                try {
-                    logger.fine("Enabling hardware acceleration for sole remaining schema with tns " + schema.getTargetNamespace());
-                    Iterator<CompiledSchema> i = schemas.keySet().iterator();
-                    // Unlikely to throw ConcurrentModificationException, since all finalizers use this method and take out the write lock
-                    if (i.hasNext()) hardwareEnable(i.next());
-                } catch (InvalidDocumentFormatException e) {
-                    logger.log(Level.WARNING, "Hardware rejected schema for namespace " + tns + ", will fallback to software", e);
-                }
+                logger.fine("Enabling hardware acceleration for sole remaining schema with tns " + schema.getTargetNamespace());
+                Iterator<CompiledSchema> i = schemas.keySet().iterator();
+                // Unlikely to throw ConcurrentModificationException, since all finalizers use this method and take out the write lock
+                if (i.hasNext()) hardwareEnable(i.next());
             }
 
         } catch (InterruptedException e) {
@@ -222,21 +219,24 @@ public class CompiledSchemaManager {
     /**
      * Caller must hold write lock
      */
-    private void hardwareEnable(CompiledSchema schema) throws InvalidDocumentFormatException {
+    private void hardwareEnable(CompiledSchema schema) {
         if (schema.getHardwareStatus() != OFF) return;
 
         String tns = schema.getTargetNamespace();
-        logger.info("Enabling hardware acceleration for schema with targetNamespace " + tns);
 
         TarariSchemaHandler tarariSchemaHandler = TarariLoader.getSchemaHandler();
         if (tarariSchemaHandler == null) return;
 
         try {
-            tarariSchemaHandler.loadHardware(tns, schema.getSchemaDocument());
+            tarariSchemaHandler.loadHardware(schema.getSystemId(), schema.getSchemaDocument());
+            logger.info("Enabled hardware acceleration for schema with targetNamespace " + tns);
             schema.setHardwareStatus(ON);
-        } catch (InvalidDocumentFormatException e) {
+        } catch (SoftwareFallbackException e) {
             schema.setHardwareStatus(BAD);
-            throw e;
+            logger.log(Level.WARNING, "Hardware acceleration unavailable for schema with targetNamespace " + tns, e);
+        } catch (SAXException e) {
+            schema.setHardwareStatus(BAD);
+            logger.log(Level.WARNING, "Hardware acceleration unavailable for malformed schema with targetNamespace " + tns, e);
         }
     }
 

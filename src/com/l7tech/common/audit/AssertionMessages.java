@@ -198,9 +198,9 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_WSS_INT_REQUEST_MULTI_SIGNED              = m(5551, Level.WARNING, true, false, "Request has multiple signers, failing.");
 
     // ServerSchemaValidation
-    public static final M SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating response document");
+    public static final M SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating request document");
     public static final M SCHEMA_VALIDATION_RESPONSE_NOT_XML                = m(5601, Level.WARNING, true, true, "Response not well-formed XML; cannot validate schema");
-    public static final M SCHEMA_VALIDATION_VALIDATE_RESPONSE               = m(5602, Level.FINEST, "Validating request document");
+    public static final M SCHEMA_VALIDATION_VALIDATE_RESPONSE               = m(5602, Level.FINEST, "Validating response document");
     public static final M SCHEMA_VALIDATION_REQUEST_NOT_XML                 = m(5603, Level.WARNING, true, false, "Request not well-formed XML; cannot validate schema");
     public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.WARNING, true, true, "Assertion failure: {0}");
     public static final M SCHEMA_VALIDATION_SUCCEEDED                       = m(5605, Level.FINEST, "Schema validation success");

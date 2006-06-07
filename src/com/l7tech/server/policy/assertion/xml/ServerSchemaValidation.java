@@ -237,17 +237,7 @@ public class ServerSchemaValidation
     private Message getMessageToValidate(RoutingStatus routing, PolicyEnforcementContext context) throws IOException {
         Message msg;
 
-        if (!isRequest(routing)) {
-            // try to validate response
-            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_RESPONSE);
-
-            if (!context.getResponse().isXml()) {
-                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_RESPONSE_NOT_XML);
-                throw new IllegalStateException();
-            }
-
-            msg = context.getResponse();
-        } else {
+        if (isRequest(routing)) {
             // try to validate request
             auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_REQUEST);
 
@@ -257,6 +247,16 @@ public class ServerSchemaValidation
             }
 
             msg = context.getRequest();
+        } else {
+            // try to validate response
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_RESPONSE);
+
+            if (!context.getResponse().isXml()) {
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_RESPONSE_NOT_XML);
+                throw new IllegalStateException();
+            }
+
+            msg = context.getResponse();
         }
 
         return msg;

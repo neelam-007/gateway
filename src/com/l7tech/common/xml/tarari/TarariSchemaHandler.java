@@ -3,7 +3,8 @@
  */
 package com.l7tech.common.xml.tarari;
 
-import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.SoftwareFallbackException;
+import org.xml.sax.SAXException;
 
 /**
  * Tarari-specific functionality for schema validation
@@ -11,11 +12,12 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 public interface TarariSchemaHandler {
     /**
      * Loads the provided schema document to hardware.
-     * @param targetNamespace the targetNamespace from the schema to be loaded.  Must be unique system-wide.
+     * @param systemId the systemId from which the was downloaded.
      * @param schemaDocument the schema document to load.
-     * @throws com.l7tech.common.xml.InvalidDocumentFormatException if the schema document cannot be loaded to hardware.
+     * @throws SoftwareFallbackException if the schema document cannot be loaded to hardware.
+     * @throws SAXException if the schema document is not well-formed.
      */
-    void loadHardware(String targetNamespace, String schemaDocument) throws InvalidDocumentFormatException;
+    void loadHardware(String systemId, String schemaDocument) throws SoftwareFallbackException, SAXException;
 
     /**
      * Unloads the schema document with the provided targetNamespace from hardware.

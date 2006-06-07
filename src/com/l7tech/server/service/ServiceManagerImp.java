@@ -11,10 +11,12 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.ServerPolicy;
+import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import com.l7tech.policy.assertion.Assertion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -27,6 +29,7 @@ import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Manages PublishedService instances.
@@ -285,7 +288,17 @@ public class ServiceManagerImp
                 logger.info("building service cache");
                 Collection<PublishedService> services = findAll();
                 for (PublishedService service : services) {
-                    serviceCache.cache(service);
+                    try {
+                        serviceCache.cache(service);
+                    } catch (ServerPolicyException e) {
+                        Assertion ass = e.getAssertion();
+
+                        String ordinal = ass == null ? "" : "#" + Integer.toString(ass.getOrdinal());
+                        String what = ass == null ? "<unknown>" : "(" + ass.getClass().getSimpleName() + ")";
+                        String msg = "Disabling PublishedService #{0} ({1}); policy could not be compiled (assertion {2} {3})";
+                        logger.log(Level.WARNING, MessageFormat.format(msg, service.getOid(), service.getName(), ordinal, what));
+                        service.setDisabled(true);
+                    }
                 }
                 TarariLoader.compile();
             }
